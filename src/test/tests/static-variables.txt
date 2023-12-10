@@ -1,0 +1,35 @@
+static boolean b = true;
+static int i = 100;
+static float d = 1.25;
+static string s = "qwerty";
+static int noinit;
+
+events.onTick(() => {
+    Assert.isTrue("static boolean", b == true);
+});
+
+events.onTick(() => {
+    Assert.isTrue("static int", i == 100);
+});
+
+events.onTick(() => {
+    Assert.isTrue("static float", d == 1.25);
+});
+
+events.onTick(() => {
+    Assert.isTrue("static string", s == "qwerty");
+});
+
+events.onTick(() => {
+    i = i + 1;
+});
+
+Assert.isTrue("static modify", i == 101);
+
+events.onTick(() => {
+    i++;
+});
+
+Assert.isTrue("static inc", i == 102);
+
+Assert.isTrue("static no init", noinit == 0);
