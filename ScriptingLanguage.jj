@@ -26,6 +26,7 @@ TOKEN :
 {
   < BOOLEAN: "boolean" >
 | < FALSE: "false" >
+| < FUNCTION: "function" >
 | < FLOAT: "float" >
 | < INT: "int" >
 | < NEW: "new" >
@@ -105,6 +106,7 @@ ASTInput Input() :
 {}
 {
   StaticVariablesList()
+  FunctionsList()
   ( Statement() )* <EOF>
   { return jjtThis; }
 }
@@ -113,6 +115,18 @@ void StaticVariablesList() :
 {}
 {
   ( StaticVariableDeclaration() ";" )*
+}
+
+void FunctionsList() :
+{}
+{
+  ( FunctionDeclaration() )*
+}
+
+void FunctionDeclaration() :
+{}
+{
+  "function" Identifier() "(" ")" Block()
 }
 
 void Statement() :
