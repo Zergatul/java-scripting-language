@@ -48,7 +48,7 @@ public class VariableContextStack {
         return entry;
     }
 
-    public FunctionEntry addFunction(String identifier, SType returnType, SType[] arguments) throws ScriptCompileException {
+    public void addFunction(String identifier, SType returnType, SType[] arguments, String className) throws ScriptCompileException {
         if (identifier == null) {
             throw new ScriptCompileException("Identifier is required.");
         }
@@ -61,7 +61,8 @@ public class VariableContextStack {
             throw new ScriptCompileException(String.format("Function %s is already declared.", identifier));
         }
 
-        throw new ScriptCompileException("Not implemented.");
+        FunctionEntry entry = new FunctionEntry(className, identifier, arguments, returnType);
+        functions.put(identifier, entry);
     }
 
     public void begin() {
@@ -87,11 +88,15 @@ public class VariableContextStack {
         return null;
     }
 
+    public FunctionEntry getFunction(String identifier) {
+        return functions.get(identifier);
+    }
+
     public Collection<StaticVariableEntry> getStaticVariables() {
         return staticVariables.values();
     }
 
-    public VariableContextStack newForLambda() {
+    public VariableContextStack newWithStaticVariables() {
         VariableContextStack context = new VariableContextStack();
         for (StaticVariableEntry entry : staticVariables.values()) {
             context.staticVariables.put(entry.getIdentifier(), entry);
