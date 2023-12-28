@@ -75,6 +75,7 @@ TOKEN :
 {
   < BREAK: "break" >
 | < CONTINUE: "continue" >
+| < RETURN: "return" >
 | < ELSE: "else">
 | < FOR: "for" >
 | < FOREACH: "foreach" >
@@ -126,7 +127,13 @@ void FunctionsList() :
 void FunctionDeclaration() :
 {}
 {
-  "function" Identifier() "(" ")" Block()
+  "function" [ Type() ] Identifier() "(" FunctionParameterList() ")" Block()
+}
+
+void FunctionParameterList() :
+{}
+{
+  [ Type() Identifier() ( "," Type() Identifier() )* ]
 }
 
 void Statement() :
@@ -149,6 +156,8 @@ void Statement() :
   BreakStatement()
 |
   ContinueStatement()
+|
+  ReturnStatement()
 }
 
 void Block() :
@@ -265,6 +274,12 @@ void ContinueStatement():
 {}
 {
   "continue" ";"
+}
+
+void ReturnStatement():
+{}
+{
+  <RETURN> [ Expression() ] ";"
 }
 
 void Expression() :
@@ -390,13 +405,7 @@ void PrimarySuffix():
 void Arguments() :
 {}
 {
-  "(" [ ArgumentList() ] ")"
-}
-
-void ArgumentList() :
-{}
-{
-  Expression() ( "," Expression() )*
+  "(" [ Expression() ( "," Expression() )* ] ")"
 }
 
 void Name() :

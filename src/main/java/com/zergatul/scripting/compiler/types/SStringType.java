@@ -96,4 +96,14 @@ public class SStringType extends SPrimitiveType {
             return super.compileGetField(field, visitor);
         }
     }
+
+    @Override
+    public int getReturnInst() {
+        return ARETURN;
+    }
+
+    @Override
+    public String toString() {
+        return "string";
+    }
 }

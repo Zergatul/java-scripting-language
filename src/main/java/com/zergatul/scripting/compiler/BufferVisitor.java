@@ -1,5 +1,7 @@
 package com.zergatul.scripting.compiler;
 
+import com.zergatul.scripting.compiler.types.SType;
+import com.zergatul.scripting.compiler.types.SVoidType;
 import com.zergatul.scripting.compiler.variables.VariableContextStack;
 import org.objectweb.asm.Label;
 
@@ -12,10 +14,16 @@ public class BufferVisitor extends CompilerMethodVisitor {
     private final VariableContextStack contexts;
     private final String className;
     private final List<Consumer<CompilerMethodVisitor>> list = new ArrayList<>();
+    private final SType returnType;
 
     public BufferVisitor(VariableContextStack contexts, String className) {
+        this(contexts, className, SVoidType.instance);
+    }
+
+    public BufferVisitor(VariableContextStack contexts, String className, SType returnType) {
         this.contexts = contexts;
         this.className = className;
+        this.returnType = returnType;
     }
 
     @Override
@@ -31,6 +39,11 @@ public class BufferVisitor extends CompilerMethodVisitor {
     @Override
     public LoopContextStack getLoops() {
         return null;
+    }
+
+    @Override
+    public SType getReturnType() {
+        return returnType;
     }
 
     public void releaseBuffer(CompilerMethodVisitor visitor) {

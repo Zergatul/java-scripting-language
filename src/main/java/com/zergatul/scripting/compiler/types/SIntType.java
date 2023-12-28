@@ -195,4 +195,14 @@ public class SIntType extends SPrimitiveType {
     public UnaryOperation minus() {
         return UnaryOperation.MINUS_INT;
     }
+
+    @Override
+    public int getReturnInst() {
+        return IRETURN;
+    }
+
+    @Override
+    public String toString() {
+        return "int";
+    }
 }

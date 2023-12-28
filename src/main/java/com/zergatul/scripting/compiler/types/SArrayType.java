@@ -76,4 +76,14 @@ public class SArrayType extends SType {
             return super.equals(obj);
         }
     }
+
+    @Override
+    public int getReturnInst() {
+        return ARETURN;
+    }
+
+    @Override
+    public String toString() {
+        return type.toString() + "[]";
+    }
 }

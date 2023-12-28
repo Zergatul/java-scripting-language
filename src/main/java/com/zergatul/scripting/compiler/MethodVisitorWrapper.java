@@ -1,5 +1,7 @@
 package com.zergatul.scripting.compiler;
 
+import com.zergatul.scripting.compiler.types.SType;
+import com.zergatul.scripting.compiler.types.SVoidType;
 import com.zergatul.scripting.compiler.variables.VariableContextStack;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
@@ -10,12 +12,18 @@ public class MethodVisitorWrapper extends CompilerMethodVisitor {
     private final String className;
     private final VariableContextStack contexts;
     private final LoopContextStack loops;
+    private final SType returnType;
 
     public MethodVisitorWrapper(MethodVisitor visitor, String className, VariableContextStack contexts) {
+        this(visitor, className, contexts, SVoidType.instance);
+    }
+
+    public MethodVisitorWrapper(MethodVisitor visitor, String className, VariableContextStack contexts, SType returnType) {
         this.visitor = visitor;
         this.className = className;
         this.contexts = contexts;
         this.loops = new LoopContextStack();
+        this.returnType = returnType;
     }
 
     @Override
@@ -31,6 +39,11 @@ public class MethodVisitorWrapper extends CompilerMethodVisitor {
     @Override
     public LoopContextStack getLoops() {
         return loops;
+    }
+
+    @Override
+    public SType getReturnType() {
+        return returnType;
     }
 
     @Override

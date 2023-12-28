@@ -366,8 +366,6 @@ public abstract class BinaryOperation {
 
         @Override
         public void apply(CompilerMethodVisitor left, BufferVisitor right) throws ScriptCompileException {
-            final int stringBuilderLocalVarIndex = 1;
-
             Constructor<StringBuilder> constructor;
             try {
                 constructor = StringBuilder.class.getConstructor();
@@ -376,9 +374,8 @@ public abstract class BinaryOperation {
             }
 
             left.visitTypeInsn(NEW, Type.getInternalName(StringBuilder.class));
-            left.visitVarInsn(ASTORE, stringBuilderLocalVarIndex);
+            left.visitInsn(DUP);
 
-            left.visitVarInsn(ALOAD, stringBuilderLocalVarIndex);
             left.visitMethodInsn(
                     INVOKESPECIAL,
                     Type.getInternalName(StringBuilder.class),
@@ -386,7 +383,6 @@ public abstract class BinaryOperation {
                     Type.getConstructorDescriptor(constructor),
                     false);
 
-            left.visitVarInsn(ALOAD, stringBuilderLocalVarIndex);
             left.visitInsn(SWAP);
 
             Method method;

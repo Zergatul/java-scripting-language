@@ -46,4 +46,14 @@ public class SAction extends SType {
     public boolean isReference() {
         return true;
     }
+
+    @Override
+    public int getReturnInst() {
+        return ARETURN;
+    }
+
+    @Override
+    public String toString() {
+        return "Action";
+    }
 }

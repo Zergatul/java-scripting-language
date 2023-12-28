@@ -7,79 +7,80 @@ public interface ScriptingLanguageTreeConstants
   public int JJTSTATICVARIABLESLIST = 1;
   public int JJTFUNCTIONSLIST = 2;
   public int JJTFUNCTIONDECLARATION = 3;
-  public int JJTSTATEMENT = 4;
-  public int JJTBLOCK = 5;
-  public int JJTBLOCKSTATEMENT = 6;
-  public int JJTEMPTYSTATEMENT = 7;
-  public int JJTASSIGNMENTOPERATOR = 8;
-  public int JJTSTATEMENTEXPRESSION = 9;
-  public int JJTSTATICVARIABLEDECLARATION = 10;
-  public int JJTLOCALVARIABLEDECLARATION = 11;
-  public int JJTVARIABLEDECLARATOR = 12;
-  public int JJTVARIABLEDECLARATORID = 13;
-  public int JJTVARIABLEINITIALIZER = 14;
-  public int JJTIFSTATEMENT = 15;
-  public int JJTFORSTATEMENT = 16;
-  public int JJTFOREACHSTATEMENT = 17;
-  public int JJTFORINIT = 18;
-  public int JJTFORUPDATE = 19;
-  public int JJTSTATEMENTEXPRESSIONLIST = 20;
-  public int JJTBREAKSTATEMENT = 21;
-  public int JJTCONTINUESTATEMENT = 22;
-  public int JJTEXPRESSION = 23;
-  public int JJTLAMBDAEXPRESSION = 24;
-  public int JJTCONDITIONALEXPRESSION = 25;
-  public int JJTCONDITIONALOREXPRESSION = 26;
-  public int JJTCONDITIONALANDEXPRESSION = 27;
-  public int JJTEQUALITYEXPRESSION = 28;
-  public int JJTRELATIONALEXPRESSION = 29;
-  public int JJTADDITIVEEXPRESSION = 30;
-  public int JJTMULTIPLICATIVEEXPRESSION = 31;
-  public int JJTUNARYEXPRESSION = 32;
-  public int JJTPREINCREMENTEXPRESSION = 33;
-  public int JJTPREDECREMENTEXPRESSION = 34;
-  public int JJTUNARYEXPRESSIONNOTPLUSMINUS = 35;
-  public int JJTPRIMARYEXPRESSION = 36;
-  public int JJTPRIMARYPREFIX = 37;
-  public int JJTALLOCATIONEXPRESSION = 38;
-  public int JJTPRIMARYSUFFIX = 39;
-  public int JJTARGUMENTS = 40;
-  public int JJTARGUMENTLIST = 41;
-  public int JJTNAME = 42;
-  public int JJTIDENTIFIER = 43;
-  public int JJTINCREMENT = 44;
-  public int JJTDECREMENT = 45;
-  public int JJTPLUS = 46;
-  public int JJTMINUS = 47;
-  public int JJTMULT = 48;
-  public int JJTDIV = 49;
-  public int JJTMOD = 50;
-  public int JJTFLOORDIV = 51;
-  public int JJTFLOORMOD = 52;
-  public int JJTEQUALITY = 53;
-  public int JJTINEQUALITY = 54;
-  public int JJTGREATERTHAN = 55;
-  public int JJTLESSTHAN = 56;
-  public int JJTGREATEREQUALS = 57;
-  public int JJTLESSEQUALS = 58;
-  public int JJTAND = 59;
-  public int JJTOR = 60;
-  public int JJTNOT = 61;
-  public int JJTTILDE = 62;
-  public int JJTLEFTBRACKET = 63;
-  public int JJTRIGHTBRACKET = 64;
-  public int JJTTYPE = 65;
-  public int JJTPRIMITIVETYPE = 66;
-  public int JJTBOOLEANTYPE = 67;
-  public int JJTINTTYPE = 68;
-  public int JJTFLOATTYPE = 69;
-  public int JJTSTRINGTYPE = 70;
-  public int JJTLITERAL = 71;
-  public int JJTINTEGERLITERAL = 72;
-  public int JJTFLOATINGPOINTLITERAL = 73;
-  public int JJTSTRINGLITERAL = 74;
-  public int JJTBOOLEANLITERAL = 75;
-  public int JJTNULLLITERAL = 76;
+  public int JJTFUNCTIONPARAMETERLIST = 4;
+  public int JJTSTATEMENT = 5;
+  public int JJTBLOCK = 6;
+  public int JJTBLOCKSTATEMENT = 7;
+  public int JJTEMPTYSTATEMENT = 8;
+  public int JJTASSIGNMENTOPERATOR = 9;
+  public int JJTSTATEMENTEXPRESSION = 10;
+  public int JJTSTATICVARIABLEDECLARATION = 11;
+  public int JJTLOCALVARIABLEDECLARATION = 12;
+  public int JJTVARIABLEDECLARATOR = 13;
+  public int JJTVARIABLEDECLARATORID = 14;
+  public int JJTVARIABLEINITIALIZER = 15;
+  public int JJTIFSTATEMENT = 16;
+  public int JJTFORSTATEMENT = 17;
+  public int JJTFOREACHSTATEMENT = 18;
+  public int JJTFORINIT = 19;
+  public int JJTFORUPDATE = 20;
+  public int JJTSTATEMENTEXPRESSIONLIST = 21;
+  public int JJTBREAKSTATEMENT = 22;
+  public int JJTCONTINUESTATEMENT = 23;
+  public int JJTRETURNSTATEMENT = 24;
+  public int JJTEXPRESSION = 25;
+  public int JJTLAMBDAEXPRESSION = 26;
+  public int JJTCONDITIONALEXPRESSION = 27;
+  public int JJTCONDITIONALOREXPRESSION = 28;
+  public int JJTCONDITIONALANDEXPRESSION = 29;
+  public int JJTEQUALITYEXPRESSION = 30;
+  public int JJTRELATIONALEXPRESSION = 31;
+  public int JJTADDITIVEEXPRESSION = 32;
+  public int JJTMULTIPLICATIVEEXPRESSION = 33;
+  public int JJTUNARYEXPRESSION = 34;
+  public int JJTPREINCREMENTEXPRESSION = 35;
+  public int JJTPREDECREMENTEXPRESSION = 36;
+  public int JJTUNARYEXPRESSIONNOTPLUSMINUS = 37;
+  public int JJTPRIMARYEXPRESSION = 38;
+  public int JJTPRIMARYPREFIX = 39;
+  public int JJTALLOCATIONEXPRESSION = 40;
+  public int JJTPRIMARYSUFFIX = 41;
+  public int JJTARGUMENTS = 42;
+  public int JJTNAME = 43;
+  public int JJTIDENTIFIER = 44;
+  public int JJTINCREMENT = 45;
+  public int JJTDECREMENT = 46;
+  public int JJTPLUS = 47;
+  public int JJTMINUS = 48;
+  public int JJTMULT = 49;
+  public int JJTDIV = 50;
+  public int JJTMOD = 51;
+  public int JJTFLOORDIV = 52;
+  public int JJTFLOORMOD = 53;
+  public int JJTEQUALITY = 54;
+  public int JJTINEQUALITY = 55;
+  public int JJTGREATERTHAN = 56;
+  public int JJTLESSTHAN = 57;
+  public int JJTGREATEREQUALS = 58;
+  public int JJTLESSEQUALS = 59;
+  public int JJTAND = 60;
+  public int JJTOR = 61;
+  public int JJTNOT = 62;
+  public int JJTTILDE = 63;
+  public int JJTLEFTBRACKET = 64;
+  public int JJTRIGHTBRACKET = 65;
+  public int JJTTYPE = 66;
+  public int JJTPRIMITIVETYPE = 67;
+  public int JJTBOOLEANTYPE = 68;
+  public int JJTINTTYPE = 69;
+  public int JJTFLOATTYPE = 70;
+  public int JJTSTRINGTYPE = 71;
+  public int JJTLITERAL = 72;
+  public int JJTINTEGERLITERAL = 73;
+  public int JJTFLOATINGPOINTLITERAL = 74;
+  public int JJTSTRINGLITERAL = 75;
+  public int JJTBOOLEANLITERAL = 76;
+  public int JJTNULLLITERAL = 77;
 
 
   public String[] jjtNodeName = {
@@ -87,6 +88,7 @@ public interface ScriptingLanguageTreeConstants
     "StaticVariablesList",
     "FunctionsList",
     "FunctionDeclaration",
+    "FunctionParameterList",
     "Statement",
     "Block",
     "BlockStatement",
@@ -106,6 +108,7 @@ public interface ScriptingLanguageTreeConstants
     "StatementExpressionList",
     "BreakStatement",
     "ContinueStatement",
+    "ReturnStatement",
     "Expression",
     "LambdaExpression",
     "ConditionalExpression",
@@ -124,7 +127,6 @@ public interface ScriptingLanguageTreeConstants
     "AllocationExpression",
     "PrimarySuffix",
     "Arguments",
-    "ArgumentList",
     "Name",
     "Identifier",
     "Increment",
@@ -162,4 +164,4 @@ public interface ScriptingLanguageTreeConstants
     "NullLiteral",
   };
 }
-/* JavaCC - OriginalChecksum=6a366fc9ffa4c1d279a1ef4d2e06f716 (do not edit this line) */
+/* JavaCC - OriginalChecksum=4e543a961db1713df7679c65ae2be20e (do not edit this line) */

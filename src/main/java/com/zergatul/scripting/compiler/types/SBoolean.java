@@ -117,4 +117,14 @@ public class SBoolean extends SPrimitiveType {
     public UnaryOperation not() {
         return UnaryOperation.NOT;
     }
+
+    @Override
+    public int getReturnInst() {
+        return IRETURN;
+    }
+
+    @Override
+    public String toString() {
+        return "boolean";
+    }
 }

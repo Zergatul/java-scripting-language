@@ -1,5 +1,6 @@
 package com.zergatul.scripting.compiler;
 
+import com.zergatul.scripting.compiler.types.SType;
 import com.zergatul.scripting.compiler.variables.VariableContextStack;
 import org.objectweb.asm.Label;
 
@@ -7,6 +8,7 @@ public abstract class CompilerMethodVisitor {
     public abstract String getClassName();
     public abstract VariableContextStack getContextStack();
     public abstract LoopContextStack getLoops();
+    public abstract SType getReturnType();
     public abstract void visitInsn(final int opcode);
     public abstract void visitIntInsn(final int opcode, final int operand);
     public abstract void visitFieldInsn(final int opcode, final String owner, final String name, final String descriptor);

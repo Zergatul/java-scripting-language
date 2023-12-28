@@ -2,6 +2,8 @@ package com.zergatul.scripting.compiler.types;
 
 import com.zergatul.scripting.compiler.CompilerMethodVisitor;
 
+import static org.objectweb.asm.Opcodes.RETURN;
+
 public class SVoidType extends SPrimitiveType {
 
     public static final SVoidType instance = new SVoidType();
@@ -43,5 +45,15 @@ public class SVoidType extends SPrimitiveType {
     @Override
     public int getArrayStoreInst() {
         throw new IllegalStateException();
+    }
+
+    @Override
+    public int getReturnInst() {
+        return RETURN;
+    }
+
+    @Override
+    public String toString() {
+        return "void";
     }
 }

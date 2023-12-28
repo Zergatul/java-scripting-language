@@ -5,6 +5,7 @@ import com.zergatul.scripting.compiler.operations.BinaryOperation;
 import com.zergatul.scripting.compiler.ScriptCompileException;
 import com.zergatul.scripting.compiler.operations.UnaryOperation;
 import com.zergatul.scripting.generated.*;
+import org.objectweb.asm.Type;
 
 public abstract class SType {
 
@@ -15,6 +16,11 @@ public abstract class SType {
     public abstract int getArrayLoadInst();
     public abstract int getArrayStoreInst();
     public abstract boolean isReference();
+    public abstract int getReturnInst();
+
+    public String getDescriptor() {
+        return Type.getDescriptor(getJavaClass());
+    }
 
     public BinaryOperation add(SType other) {
         return null;

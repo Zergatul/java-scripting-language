@@ -53,35 +53,37 @@ public interface ScriptingLanguageConstants {
   /** RegularExpression Id. */
   int CONTINUE = 25;
   /** RegularExpression Id. */
-  int ELSE = 26;
+  int RETURN = 26;
   /** RegularExpression Id. */
-  int FOR = 27;
+  int ELSE = 27;
   /** RegularExpression Id. */
-  int FOREACH = 28;
+  int FOR = 28;
   /** RegularExpression Id. */
-  int IF = 29;
+  int FOREACH = 29;
   /** RegularExpression Id. */
-  int IN = 30;
+  int IF = 30;
   /** RegularExpression Id. */
-  int IDENTIFIER = 31;
+  int IN = 31;
   /** RegularExpression Id. */
-  int LETTER = 32;
+  int IDENTIFIER = 32;
   /** RegularExpression Id. */
-  int DIGIT = 33;
+  int LETTER = 33;
   /** RegularExpression Id. */
-  int LPAREN = 34;
+  int DIGIT = 34;
   /** RegularExpression Id. */
-  int RPAREN = 35;
+  int LPAREN = 35;
   /** RegularExpression Id. */
-  int LBRACKET = 36;
+  int RPAREN = 36;
   /** RegularExpression Id. */
-  int RBRACKET = 37;
+  int LBRACKET = 37;
   /** RegularExpression Id. */
-  int SEMICOLON = 38;
+  int RBRACKET = 38;
   /** RegularExpression Id. */
-  int COMMA = 39;
+  int SEMICOLON = 39;
   /** RegularExpression Id. */
-  int DOT = 40;
+  int COMMA = 40;
+  /** RegularExpression Id. */
+  int DOT = 41;
 
   /** Lexical state. */
   int DEFAULT = 0;
@@ -114,6 +116,7 @@ public interface ScriptingLanguageConstants {
     "<STRING_LITERAL>",
     "\"break\"",
     "\"continue\"",
+    "\"return\"",
     "\"else\"",
     "\"for\"",
     "\"foreach\"",

@@ -11,9 +11,10 @@ public class VariableContextStack {
     private final Map<String, StaticVariableEntry> staticVariables = new HashMap<>();
     private final Map<String, FunctionEntry> functions = new HashMap<>();
     private final Stack<VariableContext> stack = new Stack<>();
-    private int index = 2; // index=1 reserved for StringBuilder
+    private int index;
 
-    public VariableContextStack() {
+    public VariableContextStack(int initialLocalVarIndex) {
+        index = initialLocalVarIndex;
         stack.add(new VariableContext(index));
     }
 
@@ -96,10 +97,13 @@ public class VariableContextStack {
         return staticVariables.values();
     }
 
-    public VariableContextStack newWithStaticVariables() {
-        VariableContextStack context = new VariableContextStack();
+    public VariableContextStack newWithStaticVariables(int initialLocalVarIndex) {
+        VariableContextStack context = new VariableContextStack(initialLocalVarIndex);
         for (StaticVariableEntry entry : staticVariables.values()) {
             context.staticVariables.put(entry.getIdentifier(), entry);
+        }
+        for (FunctionEntry entry : functions.values()) {
+            context.functions.put(entry.getIdentifier(), entry);
         }
         return context;
     }

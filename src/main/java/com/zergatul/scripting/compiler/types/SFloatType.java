@@ -179,4 +179,14 @@ public class SFloatType extends SPrimitiveType {
     public UnaryOperation minus() {
         return UnaryOperation.MINUS_FLOAT;
     }
+
+    @Override
+    public int getReturnInst() {
+        return DRETURN;
+    }
+
+    @Override
+    public String toString() {
+        return "float";
+    }
 }

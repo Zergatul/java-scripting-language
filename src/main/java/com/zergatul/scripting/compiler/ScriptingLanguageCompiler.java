@@ -69,7 +69,9 @@ public class ScriptingLanguageCompiler {
     }
 
     private Class<Runnable> compileRunnable(CompileConsumer consumer) throws ScriptCompileException {
-        return compileRunnable(consumer, new VariableContextStack());
+        // since this is instance method, local vars start from 1
+        // 0 = this
+        return compileRunnable(consumer, new VariableContextStack(1));
     }
 
     @SuppressWarnings("unchecked")
@@ -173,24 +175,23 @@ public class ScriptingLanguageCompiler {
                 throw new ScriptCompileException("ASTFunctionsList: declaration expected.");
             }
 
-            if (functionDeclaration.jjtGetNumChildren() != 2) {
-                throw new ScriptCompileException("ASTFunctionDeclaration: 2 children expected.");
-            }
-
-            if (!(functionDeclaration.jjtGetChild(0) instanceof ASTIdentifier identifier)) {
-                throw new ScriptCompileException("ASTFunctionDeclaration: ASTIdentifier expected.");
-            }
-
-            if (!(functionDeclaration.jjtGetChild(1) instanceof ASTBlock)) {
-                throw new ScriptCompileException("ASTFunctionDeclaration: ASTBlock expected.");
-            }
+            SType type = getFunctionReturnType(functionDeclaration);
+            ASTIdentifier identifier = getFunctionIdentifier(functionDeclaration);
+            List<FunctionParameter> parameters = getFunctionParameters(functionDeclaration);
 
             String name = (String) identifier.jjtGetValue();
-            visitor.getContextStack().addFunction(name, SVoidType.instance, new SType[0], visitor.getClassName());
+            visitor.getContextStack().addFunction(
+                    name,
+                    type,
+                    parameters.stream().map(p -> p.type).toArray(SType[]::new),
+                    visitor.getClassName());
         }
 
         for (int i = 0; i < list.jjtGetNumChildren(); i++) {
-            compile((ASTFunctionDeclaration) list.jjtGetChild(i), classWriter, visitor.getContextStack());
+            compile(
+                    (ASTFunctionDeclaration) list.jjtGetChild(i),
+                    classWriter,
+                    visitor.getContextStack().newWithStaticVariables(0));
         }
     }
 
@@ -242,20 +243,33 @@ public class ScriptingLanguageCompiler {
             ClassWriter classWriter,
             VariableContextStack context
     ) throws ScriptCompileException {
-        ASTIdentifier identifier = (ASTIdentifier) declaration.jjtGetChild(0);
-        ASTBlock block = (ASTBlock) declaration.jjtGetChild(1);
-
+        ASTIdentifier identifier = getFunctionIdentifier(declaration);
         String name = (String) identifier.jjtGetValue();
+        List<FunctionParameter> parameters = getFunctionParameters(declaration);
+        ASTBlock block = getFunctionBody(declaration);
+        FunctionEntry entry = context.getFunction(name);
+
+        if (entry.getReturnType() != SVoidType.instance) {
+            if (!isLastNode(block, ASTReturnStatement.class)) {
+                throw new ScriptCompileException(String.format(
+                        "Function %s: last statement should be return.",
+                        name));
+            }
+        }
+
+        for (FunctionParameter parameter : parameters) {
+            context.addLocal(parameter.identifier, parameter.type);
+        }
 
         MethodVisitor visitor = classWriter.visitMethod(
                 ACC_PUBLIC | ACC_STATIC,
                 name,
-                "()V",
+                entry.getDescriptor(),
                 null,
                 null);
         visitor.visitCode();
 
-        MethodVisitorWrapper visitorWrapper = new MethodVisitorWrapper(visitor, name, context);
+        MethodVisitorWrapper visitorWrapper = new MethodVisitorWrapper(visitor, name, context, entry.getReturnType());
         visitorWrapper.getLoops().push(
                 v -> {
                     throw new ScriptCompileException("Continue statement without loop.");
@@ -269,6 +283,39 @@ public class ScriptingLanguageCompiler {
         visitor.visitInsn(RETURN);
         visitor.visitMaxs(0, 0);
         visitor.visitEnd();
+    }
+
+    private SType getFunctionReturnType(ASTFunctionDeclaration declaration) throws ScriptCompileException {
+        if (declaration.jjtGetChild(0) instanceof ASTType type) {
+            return parseType(type);
+        } else {
+            return SVoidType.instance;
+        }
+    }
+
+    private ASTIdentifier getFunctionIdentifier(ASTFunctionDeclaration declaration) throws ScriptCompileException {
+        if (declaration.jjtGetNumChildren() == 3) {
+            return (ASTIdentifier) declaration.jjtGetChild(0);
+        }
+        if (declaration.jjtGetNumChildren() == 4) {
+            return (ASTIdentifier) declaration.jjtGetChild(1);
+        }
+        throw new ScriptCompileException("ASTFunctionDeclaration: unexpected children count.");
+    }
+
+    private List<FunctionParameter> getFunctionParameters(ASTFunctionDeclaration declaration) throws ScriptCompileException {
+        List<FunctionParameter> parameters = new ArrayList<>();
+        ASTFunctionParameterList list = (ASTFunctionParameterList) declaration.jjtGetChild(declaration.jjtGetNumChildren() - 2);
+        for (int i = 0; i < list.jjtGetNumChildren(); i += 2) {
+            SType type = parseType((ASTType) list.jjtGetChild(i));
+            ASTIdentifier identifier = (ASTIdentifier) list.jjtGetChild(i + 1);
+            parameters.add(new FunctionParameter(type, (String) identifier.jjtGetValue()));
+        }
+        return parameters;
+    }
+
+    private ASTBlock getFunctionBody(ASTFunctionDeclaration declaration) {
+        return (ASTBlock) declaration.jjtGetChild(declaration.jjtGetNumChildren() - 1);
     }
 
     private void compile(ASTStatement statement, CompilerMethodVisitor visitor) throws ScriptCompileException {
@@ -306,6 +353,10 @@ public class ScriptingLanguageCompiler {
         }
         if (node instanceof ASTBreakStatement) {
             visitor.getLoops().compileBreak(visitor);
+            return;
+        }
+        if (node instanceof ASTReturnStatement returnStatement) {
+            compile(returnStatement, visitor);
             return;
         }
 
@@ -550,17 +601,27 @@ public class ScriptingLanguageCompiler {
                 throw new ScriptCompileException("Function " + identifier + " is not declared.");
             }
 
-            if (arguments.jjtGetNumChildren() != entry.getArguments().length) {
+            if (arguments.jjtGetNumChildren() != entry.getParameters().length) {
                 throw new ScriptCompileException("Call to function " + identifier + ": argument count mismatch.");
             }
 
-            // TODO: validate args
+            for (int i = 0; i < arguments.jjtGetNumChildren(); i++) {
+                SType sourceType = compile((ASTExpression) arguments.jjtGetChild(i), visitor);
+                SType destType = entry.getParameters()[i];
+                if (!sourceType.equals(destType)) {
+                    UnaryOperation operation = ImplicitCast.get(sourceType, destType);
+                    if (operation == null) {
+                        throw new ScriptCompileException("Call to function " + identifier + ": cannot cast argument of type " + sourceType + " to " + destType + ".");
+                    }
+                    operation.apply(visitor);
+                }
+            }
 
             visitor.visitMethodInsn(
                     INVOKESTATIC,
                     entry.getClassName(),
                     identifier,
-                    "()V",
+                    entry.getDescriptor(),
                     false);
 
             return entry.getReturnType();
@@ -609,13 +670,12 @@ public class ScriptingLanguageCompiler {
             methodArgumentTypes = new SType[0];
             methodArgumentVisitors = new BufferVisitor[0];
         } else {
-            var argumentList = (ASTArgumentList) arguments.jjtGetChild(0);
-            argsLength = argumentList.jjtGetNumChildren();
+            argsLength = arguments.jjtGetNumChildren();
             methodArgumentTypes = new SType[argsLength];
             methodArgumentVisitors = new BufferVisitor[argsLength];
             for (int i = 0; i < argsLength; i++) {
                 methodArgumentVisitors[i] = new BufferVisitor(visitor.getContextStack(), visitor.getClassName());
-                methodArgumentTypes[i] = compile((ASTExpression) argumentList.jjtGetChild(i), methodArgumentVisitors[i]);
+                methodArgumentTypes[i] = compile((ASTExpression) arguments.jjtGetChild(i), methodArgumentVisitors[i]);
             }
         }
 
@@ -872,6 +932,31 @@ public class ScriptingLanguageCompiler {
         visitor.getContextStack().end();
     }
 
+    private void compile(ASTReturnStatement returnStatement, CompilerMethodVisitor visitor) throws ScriptCompileException {
+        SType type = SVoidType.instance;
+        if (returnStatement.jjtGetNumChildren() > 0) {
+            if (!(returnStatement.jjtGetChild(0) instanceof ASTExpression expression)) {
+                throw new ScriptCompileException("ASTReturnStatement: ASTExpression expected.");
+            }
+
+            type = compile(expression, visitor);
+        }
+
+        if (!visitor.getReturnType().equals(type)) {
+            UnaryOperation operation = ImplicitCast.get(type, visitor.getReturnType());
+            if (operation == null) {
+                throw new ScriptCompileException(String.format(
+                        "Cannot cast %s to %s at return statement.",
+                        type.toString(),
+                        visitor.getReturnType().toString()));
+            }
+
+            operation.apply(visitor);
+        }
+
+        visitor.visitInsn(visitor.getReturnType().getReturnInst());
+    }
+
     private void compile(ASTStatementExpressionList list, CompilerMethodVisitor visitor) throws ScriptCompileException {
         for (int i = 0; i < list.jjtGetNumChildren(); i++) {
             compile((ASTStatementExpression) list.jjtGetChild(i), visitor);
@@ -902,9 +987,10 @@ public class ScriptingLanguageCompiler {
 
         Node node = lambdaExpression.jjtGetChild(0);
         if (node instanceof ASTBlock block) {
+            // this is static function, so initial index for local vars can be 0
             Class<Runnable> dynamic = compileRunnable((cw, v1, v2) -> {
                 compile(block, v2);
-            }, visitor.getContextStack().newWithStaticVariables());
+            }, visitor.getContextStack().newWithStaticVariables(0));
 
             Constructor<Runnable> constructor;
             try {
@@ -1238,6 +1324,17 @@ public class ScriptingLanguageCompiler {
         }
     }
 
+    private <T extends Node> boolean isLastNode(Node node, Class<T> clazz) {
+        if (clazz.isInstance(node)) {
+            return true;
+        } else {
+            if (node.jjtGetNumChildren() == 0) {
+                return false;
+            }
+            return isLastNode(node.jjtGetChild(node.jjtGetNumChildren() - 1), clazz);
+        }
+    }
+
     private void printTopStackInt(CompilerMethodVisitor visitor) throws ScriptCompileException {
         Method method;
         try {
@@ -1270,6 +1367,8 @@ public class ScriptingLanguageCompiler {
     }
 
     private record FindMethodResult(Method method, int count, BufferVisitor[] casts) {}
+
+    private record FunctionParameter(SType type, String identifier) {}
 
     @FunctionalInterface
     private interface CompileNodeFunction<T1> {
