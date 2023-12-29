@@ -112,6 +112,31 @@ events.onSomething(() => {
 })
 ```
 
+### Functions
+
+Functions must be declared after static variables, and before actual script code. Order of functions don't matter, you can do recursion, or call any other function. If function returns a value, last statement must be return statement.
+
+Example:
+```
+static int a = 100;
+
+// void function
+function func1() {
+    do.something();
+}
+
+// return int function
+function int func2(int b, boolean c) {
+    a++;
+    return c ? a + b : a - b;
+}
+
+// script code begins here
+for (int i = 0; i < 3; i++) {
+    func1();
+}
+```
+
 ## How to use
 
 Create class with static fields to group methods allowed to use by users. Example:
