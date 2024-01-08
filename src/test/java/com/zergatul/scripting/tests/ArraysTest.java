@@ -77,6 +77,27 @@ public class ArraysTest {
                 List.of(0, 1, 2));
     }
 
+    @Test
+    public void inlineInitializationTest() throws Exception {
+        String code = """
+                int[] data = new int[] { 10, 20, 30, 40, 50 };
+                storage.add(data.length);
+                storage.add(data[0]);
+                storage.add(data[1]);
+                storage.add(data[2]);
+                storage.add(data[3]);
+                storage.add(data[4]);
+                """;
+
+        ScriptingLanguageCompiler compiler = new ScriptingLanguageCompiler(ApiRoot.class);
+        Runnable program = compiler.compile(code);
+        program.run();
+
+        Assertions.assertIterableEquals(
+                ApiRoot.storage.list,
+                List.of(5, 10, 20, 30, 40, 50));
+    }
+
     public static class ApiRoot {
         public static IntStorage storage;
     }

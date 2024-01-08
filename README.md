@@ -40,6 +40,14 @@ data[0] = 1;
 // data.length == 5 here
 ```
 
+Inline initialization:
+```
+string[] blocks = new string[] { "stone", "cobblestone", "netherrack" };
+// blocks[0] == "stone"
+// blocks[1] == "cobblestone"
+// blocks[2] == "netherrack"
+```
+
 ### Action
 
 You can pass Action into methods that accepts Runnable like this:

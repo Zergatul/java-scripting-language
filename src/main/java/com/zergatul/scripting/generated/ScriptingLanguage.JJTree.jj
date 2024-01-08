@@ -1356,7 +1356,9 @@ void PrimaryPrefix():
 |
   "(" Expression() ")"
 |
-  AllocationExpression()
+  LOOKAHEAD(5) EmptyArrayInitializationExpression()
+|
+  InlineArrayInitializationExpression()
 |
   Name()/*@bgen(jjtree)*/
   } catch (Throwable jjte000) {
@@ -1381,16 +1383,48 @@ void PrimaryPrefix():
 /*@egen*/
 }
 
-void AllocationExpression():
-{/*@bgen(jjtree) AllocationExpression */
-  ASTAllocationExpression jjtn000 = new ASTAllocationExpression(JJTALLOCATIONEXPRESSION);
+void EmptyArrayInitializationExpression():
+{/*@bgen(jjtree) EmptyArrayInitializationExpression */
+  ASTEmptyArrayInitializationExpression jjtn000 = new ASTEmptyArrayInitializationExpression(JJTEMPTYARRAYINITIALIZATIONEXPRESSION);
   boolean jjtc000 = true;
   jjtree.openNodeScope(jjtn000);
 /*@egen*/}
-{/*@bgen(jjtree) AllocationExpression */
+{/*@bgen(jjtree) EmptyArrayInitializationExpression */
   try {
 /*@egen*/
   "new" Type() "[" Expression() "]"/*@bgen(jjtree)*/
+  } catch (Throwable jjte000) {
+    if (jjtc000) {
+      jjtree.clearNodeScope(jjtn000);
+      jjtc000 = false;
+    } else {
+      jjtree.popNode();
+    }
+    if (jjte000 instanceof RuntimeException) {
+      throw (RuntimeException)jjte000;
+    }
+    if (jjte000 instanceof ParseException) {
+      throw (ParseException)jjte000;
+    }
+    throw (Error)jjte000;
+  } finally {
+    if (jjtc000) {
+      jjtree.closeNodeScope(jjtn000, true);
+    }
+  }
+/*@egen*/
+}
+
+void InlineArrayInitializationExpression():
+{/*@bgen(jjtree) InlineArrayInitializationExpression */
+  ASTInlineArrayInitializationExpression jjtn000 = new ASTInlineArrayInitializationExpression(JJTINLINEARRAYINITIALIZATIONEXPRESSION);
+  boolean jjtc000 = true;
+  jjtree.openNodeScope(jjtn000);
+/*@egen*/}
+{/*@bgen(jjtree) InlineArrayInitializationExpression */
+  try {
+/*@egen*/
+  "new" Type() "{" Expression() ( "," Expression() )* "}"/*@bgen(jjtree)*/
   } catch (Throwable jjte000) {
     if (jjtc000) {
       jjtree.clearNodeScope(jjtn000);

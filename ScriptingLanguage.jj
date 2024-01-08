@@ -383,15 +383,23 @@ void PrimaryPrefix():
 |
   "(" Expression() ")"
 |
-  AllocationExpression()
+  LOOKAHEAD(5) EmptyArrayInitializationExpression()
+|
+  InlineArrayInitializationExpression()
 |
   Name()
 }
 
-void AllocationExpression():
+void EmptyArrayInitializationExpression():
 {}
 {
   "new" Type() "[" Expression() "]"
+}
+
+void InlineArrayInitializationExpression():
+{}
+{
+  "new" Type() "{" Expression() ( "," Expression() )* "}"
 }
 
 void PrimarySuffix():

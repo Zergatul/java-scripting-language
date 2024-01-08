@@ -544,8 +544,11 @@ public class ScriptingLanguageCompiler {
             if (prefixNode instanceof ASTExpression expression) {
                 return compile(expression, visitor);
             }
-            if (prefixNode instanceof ASTAllocationExpression allocationExpression) {
-                return compile(allocationExpression, visitor);
+            if (prefixNode instanceof ASTEmptyArrayInitializationExpression emptyArrayInitializationExpression) {
+                return compile(emptyArrayInitializationExpression, visitor);
+            }
+            if (prefixNode instanceof ASTInlineArrayInitializationExpression inlineArrayInitialization) {
+                return compile(inlineArrayInitialization, visitor);
             }
             throw new ScriptCompileException("ASTPrimaryExpression(1) case not implemented: " + prefixNode.getClass().getName() + ".");
         } else {
@@ -746,9 +749,9 @@ public class ScriptingLanguageCompiler {
         return variable;
     }
 
-    private SType compile(ASTAllocationExpression allocationExpression, CompilerMethodVisitor visitor) throws ScriptCompileException {
-        ASTType astType = (ASTType) allocationExpression.jjtGetChild(0);
-        ASTExpression expression = (ASTExpression) allocationExpression.jjtGetChild(1);
+    private SType compile(ASTEmptyArrayInitializationExpression arrayInitializationExpression, CompilerMethodVisitor visitor) throws ScriptCompileException {
+        ASTType astType = (ASTType) arrayInitializationExpression.jjtGetChild(0);
+        ASTExpression expression = (ASTExpression) arrayInitializationExpression.jjtGetChild(1);
 
         SType dimensionsType = compile(expression, visitor);
         if (dimensionsType != SIntType.instance) {
@@ -765,6 +768,43 @@ public class ScriptingLanguageCompiler {
         }
 
         return new SArrayType(type);
+    }
+
+    private SType compile(ASTInlineArrayInitializationExpression arrayInitialization, CompilerMethodVisitor visitor) throws ScriptCompileException {
+        ASTType astType = (ASTType) arrayInitialization.jjtGetChild(0);
+        ASTExpression[] expressions = new ASTExpression[arrayInitialization.jjtGetNumChildren() - 1];
+        for (int i = 0; i < expressions.length; i++) {
+            expressions[i] = (ASTExpression) arrayInitialization.jjtGetChild(i + 1);
+        }
+
+        visitor.visitLdcInsn(expressions.length);
+
+        if (!(parseType(astType) instanceof SArrayType arrayType)) {
+            throw new ScriptCompileException(String.format("ASTInlineArrayInitialization: array type expected. Got: %s", parseType(astType)));
+        }
+
+        SType elementsType = arrayType.getElementsType();
+        if (arrayType.getElementsType().isReference()) {
+            visitor.visitTypeInsn(ANEWARRAY, Type.getInternalName(elementsType.getJavaClass()));
+        } else {
+            visitor.visitIntInsn(NEWARRAY, ((SPrimitiveType) elementsType).getArrayTypeInst());
+        }
+
+        for (int i = 0; i < expressions.length; i++) {
+            visitor.visitInsn(DUP);  // load array
+            visitor.visitLdcInsn(i); // load index
+            SType expressionType = compile(expressions[i], visitor); // load value
+            if (!expressionType.equals(elementsType)) {
+                UnaryOperation operation = ImplicitCast.get(expressionType, elementsType);
+                if (operation == null) {
+                    throw new ScriptCompileException(String.format("Cannot cast %s to %s in inline init expression.", expressionType, elementsType));
+                }
+                operation.apply(visitor);
+            }
+            visitor.visitInsn(elementsType.getArrayStoreInst());
+        }
+
+        return arrayType;
     }
 
     private void compile(ASTIfStatement ifStatement, CompilerMethodVisitor visitor) throws ScriptCompileException {

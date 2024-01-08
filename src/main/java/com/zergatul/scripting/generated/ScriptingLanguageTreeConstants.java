@@ -43,44 +43,45 @@ public interface ScriptingLanguageTreeConstants
   public int JJTUNARYEXPRESSIONNOTPLUSMINUS = 37;
   public int JJTPRIMARYEXPRESSION = 38;
   public int JJTPRIMARYPREFIX = 39;
-  public int JJTALLOCATIONEXPRESSION = 40;
-  public int JJTPRIMARYSUFFIX = 41;
-  public int JJTARGUMENTS = 42;
-  public int JJTNAME = 43;
-  public int JJTIDENTIFIER = 44;
-  public int JJTINCREMENT = 45;
-  public int JJTDECREMENT = 46;
-  public int JJTPLUS = 47;
-  public int JJTMINUS = 48;
-  public int JJTMULT = 49;
-  public int JJTDIV = 50;
-  public int JJTMOD = 51;
-  public int JJTFLOORDIV = 52;
-  public int JJTFLOORMOD = 53;
-  public int JJTEQUALITY = 54;
-  public int JJTINEQUALITY = 55;
-  public int JJTGREATERTHAN = 56;
-  public int JJTLESSTHAN = 57;
-  public int JJTGREATEREQUALS = 58;
-  public int JJTLESSEQUALS = 59;
-  public int JJTAND = 60;
-  public int JJTOR = 61;
-  public int JJTNOT = 62;
-  public int JJTTILDE = 63;
-  public int JJTLEFTBRACKET = 64;
-  public int JJTRIGHTBRACKET = 65;
-  public int JJTTYPE = 66;
-  public int JJTPRIMITIVETYPE = 67;
-  public int JJTBOOLEANTYPE = 68;
-  public int JJTINTTYPE = 69;
-  public int JJTFLOATTYPE = 70;
-  public int JJTSTRINGTYPE = 71;
-  public int JJTLITERAL = 72;
-  public int JJTINTEGERLITERAL = 73;
-  public int JJTFLOATINGPOINTLITERAL = 74;
-  public int JJTSTRINGLITERAL = 75;
-  public int JJTBOOLEANLITERAL = 76;
-  public int JJTNULLLITERAL = 77;
+  public int JJTEMPTYARRAYINITIALIZATIONEXPRESSION = 40;
+  public int JJTINLINEARRAYINITIALIZATIONEXPRESSION = 41;
+  public int JJTPRIMARYSUFFIX = 42;
+  public int JJTARGUMENTS = 43;
+  public int JJTNAME = 44;
+  public int JJTIDENTIFIER = 45;
+  public int JJTINCREMENT = 46;
+  public int JJTDECREMENT = 47;
+  public int JJTPLUS = 48;
+  public int JJTMINUS = 49;
+  public int JJTMULT = 50;
+  public int JJTDIV = 51;
+  public int JJTMOD = 52;
+  public int JJTFLOORDIV = 53;
+  public int JJTFLOORMOD = 54;
+  public int JJTEQUALITY = 55;
+  public int JJTINEQUALITY = 56;
+  public int JJTGREATERTHAN = 57;
+  public int JJTLESSTHAN = 58;
+  public int JJTGREATEREQUALS = 59;
+  public int JJTLESSEQUALS = 60;
+  public int JJTAND = 61;
+  public int JJTOR = 62;
+  public int JJTNOT = 63;
+  public int JJTTILDE = 64;
+  public int JJTLEFTBRACKET = 65;
+  public int JJTRIGHTBRACKET = 66;
+  public int JJTTYPE = 67;
+  public int JJTPRIMITIVETYPE = 68;
+  public int JJTBOOLEANTYPE = 69;
+  public int JJTINTTYPE = 70;
+  public int JJTFLOATTYPE = 71;
+  public int JJTSTRINGTYPE = 72;
+  public int JJTLITERAL = 73;
+  public int JJTINTEGERLITERAL = 74;
+  public int JJTFLOATINGPOINTLITERAL = 75;
+  public int JJTSTRINGLITERAL = 76;
+  public int JJTBOOLEANLITERAL = 77;
+  public int JJTNULLLITERAL = 78;
 
 
   public String[] jjtNodeName = {
@@ -124,7 +125,8 @@ public interface ScriptingLanguageTreeConstants
     "UnaryExpressionNotPlusMinus",
     "PrimaryExpression",
     "PrimaryPrefix",
-    "AllocationExpression",
+    "EmptyArrayInitializationExpression",
+    "InlineArrayInitializationExpression",
     "PrimarySuffix",
     "Arguments",
     "Name",
@@ -164,4 +166,4 @@ public interface ScriptingLanguageTreeConstants
     "NullLiteral",
   };
 }
-/* JavaCC - OriginalChecksum=4e543a961db1713df7679c65ae2be20e (do not edit this line) */
+/* JavaCC - OriginalChecksum=b07b023d5c4f7a7956cf966df9da6ed4 (do not edit this line) */
