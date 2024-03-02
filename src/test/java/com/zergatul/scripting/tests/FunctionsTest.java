@@ -1,7 +1,7 @@
 package com.zergatul.scripting.tests;
 
-import com.zergatul.scripting.compiler.ScriptCompileException;
-import com.zergatul.scripting.compiler.ScriptingLanguageCompiler;
+import com.zergatul.scripting.old.compiler.ScriptCompileException;
+import com.zergatul.scripting.old.compiler.ScriptingLanguageCompiler;
 import com.zergatul.scripting.helpers.FloatStorage;
 import com.zergatul.scripting.helpers.IntStorage;
 import org.junit.jupiter.api.Assertions;

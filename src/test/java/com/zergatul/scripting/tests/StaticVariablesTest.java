@@ -3,7 +3,7 @@ package com.zergatul.scripting.tests;
 import com.zergatul.scripting.helpers.BoolStorage;
 import com.zergatul.scripting.helpers.FloatStorage;
 import com.zergatul.scripting.helpers.IntStorage;
-import com.zergatul.scripting.compiler.ScriptingLanguageCompiler;
+import com.zergatul.scripting.old.compiler.ScriptingLanguageCompiler;
 import com.zergatul.scripting.helpers.Run;
 import com.zergatul.scripting.helpers.StringStorage;
 import org.junit.jupiter.api.Assertions;
