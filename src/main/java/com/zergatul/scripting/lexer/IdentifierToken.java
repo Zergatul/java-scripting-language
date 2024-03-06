@@ -1,11 +1,13 @@
 package com.zergatul.scripting.lexer;
 
+import com.zergatul.scripting.TextRange;
+
 public class IdentifierToken extends Token {
 
     public final String value;
 
-    public IdentifierToken(String value, int line, int column, int position, int length) {
-        super(TokenType.IDENTIFIER, line, column, position, length);
+    public IdentifierToken(String value, TextRange range) {
+        super(TokenType.IDENTIFIER, range);
         this.value = value;
     }
 

@@ -1,15 +1,25 @@
 package com.zergatul.scripting.parser.nodes;
 
-import com.zergatul.scripting.parser.UnaryOperator;
+import com.zergatul.scripting.TextRange;
 
 public class UnaryExpressionNode extends ExpressionNode {
 
-    public final UnaryOperator operator;
+    public final UnaryOperatorNode operator;
     public final ExpressionNode operand;
 
-    public UnaryExpressionNode(UnaryOperator operator, ExpressionNode operand) {
+    public UnaryExpressionNode(UnaryOperatorNode operator, ExpressionNode operand, TextRange range) {
+        super(range);
         this.operator = operator;
         this.operand = operand;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj instanceof UnaryExpressionNode other) {
+            return other.operator.equals(operator) && other.getRange().equals(getRange());
+        } else {
+            return false;
+        }
     }
 
     @Override

@@ -1,6 +1,9 @@
 package com.zergatul.scripting.lexer;
 
 import com.zergatul.scripting.DiagnosticMessage;
+import com.zergatul.scripting.MultiLineTextRange;
+import com.zergatul.scripting.SingleLineTextRange;
+import com.zergatul.scripting.TextRange;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -192,9 +195,9 @@ public class Lexer {
                             advance();
                         }
                         String value = code.substring(beginPosition, position);
-                        list.add(new IntegerToken(value, line, beginColumn, beginPosition, position - beginPosition));
+                        list.add(new IntegerToken(value, new SingleLineTextRange(line, beginColumn, beginPosition, position - beginPosition)));
                     } else {
-                        Token token = new Token(TokenType.INVALID, line, column, position, 1);
+                        Token token = new Token(TokenType.INVALID, new SingleLineTextRange(line, column, position, 1));
                         diagnostics.add(new DiagnosticMessage(LexerErrors.UnexpectedSymbol, token, hex(current)));
                         advance();
                     }
@@ -216,15 +219,16 @@ public class Lexer {
             case "new" -> TokenType.NEW;
             default -> null;
         };
+        TextRange range = new SingleLineTextRange(line, beginColumn, beginPosition, position - beginPosition);
         if (reservedWord != null) {
-            list.add(new Token(reservedWord, line, beginColumn, beginPosition, position - beginPosition));
+            list.add(new Token(reservedWord, range));
         } else {
-            list.add(new IdentifierToken(value, line, beginColumn, beginPosition, position - beginPosition));
+            list.add(new IdentifierToken(value, range));
         }
     }
 
     private void appendToken(TokenType type) {
-        list.add(new Token(type, line, column, position,1));
+        list.add(new Token(type, new SingleLineTextRange(line, column, position, 1)));
     }
 
     private void trackBeginToken() {
@@ -234,7 +238,10 @@ public class Lexer {
     }
 
     private void endToken(TokenType type) {
-        list.add(new Token(type, beginLine, beginColumn, beginPosition, position - beginPosition));
+        TextRange range = beginLine == line ?
+                new SingleLineTextRange(beginLine, beginColumn, beginPosition, position - beginPosition) :
+                new MultiLineTextRange(beginLine, beginColumn, line, column, beginPosition, position - beginPosition);
+        list.add(new Token(type, range));
     }
 
     private void advance() {

@@ -146,7 +146,7 @@ public abstract class SType {
         return null;
     }
 
-    public static SType fromJavaClass(Class<?> type) throws ScriptCompileException {
+    public static SType fromJavaClass(Class<?> type) {
         if (type == void.class) {
             return SVoidType.instance;
         }
@@ -165,6 +165,10 @@ public abstract class SType {
         if (type.isArray()) {
             return new SArrayType(fromJavaClass(type.getComponentType()));
         }
-        throw new ScriptCompileException("Invalid java type.");
+        if (type.getSuperclass() != null) {
+            return new SClassType(type);
+        } else {
+            return null;
+        }
     }
 }

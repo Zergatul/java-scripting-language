@@ -1,3 +1,9 @@
 package com.zergatul.scripting.parser.nodes;
 
-public abstract class LiteralExpressionNode extends ExpressionNode {}
+import com.zergatul.scripting.TextRange;
+
+public abstract class LiteralExpressionNode extends ExpressionNode {
+    protected LiteralExpressionNode(TextRange range) {
+        super(range);
+    }
+}

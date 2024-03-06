@@ -5,4 +5,4 @@ import com.zergatul.scripting.parser.nodes.CompilationUnitNode;
 
 import java.util.List;
 
-public record ParserOutput(CompilationUnitNode unit, List<DiagnosticMessage> diagnostics) {}
+public record ParserOutput(String code, CompilationUnitNode unit, List<DiagnosticMessage> diagnostics) {}

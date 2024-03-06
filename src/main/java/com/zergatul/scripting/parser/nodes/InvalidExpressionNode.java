@@ -1,3 +1,9 @@
 package com.zergatul.scripting.parser.nodes;
 
-public class InvalidExpressionNode extends ExpressionNode {}
+import com.zergatul.scripting.TextRange;
+
+public class InvalidExpressionNode extends ExpressionNode {
+    public InvalidExpressionNode(TextRange range) {
+        super(range);
+    }
+}
