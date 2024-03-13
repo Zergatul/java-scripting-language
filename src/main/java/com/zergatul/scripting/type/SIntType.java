@@ -1,8 +1,8 @@
 package com.zergatul.scripting.type;
 
-import com.zergatul.scripting.old.compiler.CompilerMethodVisitor;
-import com.zergatul.scripting.old.compiler.operations.BinaryOperation;
-import com.zergatul.scripting.old.compiler.operations.UnaryOperation;
+import com.zergatul.scripting.type.operation.BinaryOperation;
+import com.zergatul.scripting.type.operation.IntOperations;
+import org.objectweb.asm.MethodVisitor;
 
 import static org.objectweb.asm.Opcodes.*;
 
@@ -30,7 +30,7 @@ public class SIntType extends SPredefinedType {
     }
 
     @Override
-    public void storeDefaultValue(CompilerMethodVisitor visitor) {
+    public void storeDefaultValue(MethodVisitor visitor) {
         visitor.visitInsn(ICONST_0);
     }
 
@@ -51,16 +51,10 @@ public class SIntType extends SPredefinedType {
 
     @Override
     public BinaryOperation add(SType other) {
-        if (other == SIntType.instance) {
-            return BinaryOperation.INT_ADD_INT;
-        }
-        if (other == SFloatType.instance) {
-            return BinaryOperation.INT_ADD_FLOAT;
-        }
-        return null;
+        return IntOperations.ADD;
     }
 
-    @Override
+    /*@Override
     public BinaryOperation subtract(SType other) {
         if (other == SIntType.instance) {
             return BinaryOperation.INT_SUBTRACT_INT;
@@ -194,7 +188,7 @@ public class SIntType extends SPredefinedType {
     @Override
     public UnaryOperation minus() {
         return UnaryOperation.MINUS_INT;
-    }
+    }*/
 
     @Override
     public int getReturnInst() {

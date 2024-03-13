@@ -1,7 +1,6 @@
 package com.zergatul.scripting.type;
 
-import com.zergatul.scripting.old.compiler.CompilerMethodVisitor;
-import com.zergatul.scripting.old.compiler.ScriptCompileException;
+import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Type;
 
 import static org.objectweb.asm.Opcodes.*;
@@ -49,7 +48,7 @@ public class SArrayType extends SType {
     }
 
     @Override
-    public void storeDefaultValue(CompilerMethodVisitor visitor) {
+    public void storeDefaultValue(MethodVisitor visitor) {
         visitor.visitInsn(ICONST_0);
         if (type.isReference()) {
             visitor.visitTypeInsn(ANEWARRAY, Type.getInternalName(type.getJavaClass()));
@@ -59,7 +58,7 @@ public class SArrayType extends SType {
     }
 
     @Override
-    public SType compileGetField(String field, CompilerMethodVisitor visitor) throws ScriptCompileException {
+    public SType compileGetField(String field, MethodVisitor visitor) {
         if (field.equals("length")) {
             visitor.visitInsn(ARRAYLENGTH);
             return SIntType.instance;

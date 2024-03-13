@@ -1,6 +1,7 @@
 package com.zergatul.scripting.type;
 
-import com.zergatul.scripting.old.compiler.CompilerMethodVisitor;
+import com.zergatul.scripting.InternalException;
+import org.objectweb.asm.MethodVisitor;
 
 import static org.objectweb.asm.Opcodes.*;
 
@@ -18,8 +19,8 @@ public class SAction extends SType {
     }
 
     @Override
-    public void storeDefaultValue(CompilerMethodVisitor visitor) {
-        throw new IllegalStateException("SAction storeDefaultValue not implemented.");
+    public void storeDefaultValue(MethodVisitor visitor) {
+        throw new InternalException();
     }
 
     @Override

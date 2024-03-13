@@ -1,8 +1,6 @@
 package com.zergatul.scripting.type;
 
-import com.zergatul.scripting.old.compiler.CompilerMethodVisitor;
-import com.zergatul.scripting.old.compiler.operations.BinaryOperation;
-import com.zergatul.scripting.old.compiler.operations.UnaryOperation;
+import org.objectweb.asm.MethodVisitor;
 
 import static org.objectweb.asm.Opcodes.*;
 
@@ -30,7 +28,7 @@ public class SFloatType extends SPredefinedType {
     }
 
     @Override
-    public void storeDefaultValue(CompilerMethodVisitor visitor) {
+    public void storeDefaultValue(MethodVisitor visitor) {
         visitor.visitLdcInsn(0.0);
     }
 
@@ -49,7 +47,7 @@ public class SFloatType extends SPredefinedType {
         return DASTORE;
     }
 
-    @Override
+    /*@Override
     public BinaryOperation add(SType other) {
         if (other == SFloatType.instance) {
             return BinaryOperation.FLOAT_ADD_FLOAT;
@@ -178,7 +176,7 @@ public class SFloatType extends SPredefinedType {
     @Override
     public UnaryOperation minus() {
         return UnaryOperation.MINUS_FLOAT;
-    }
+    }*/
 
     @Override
     public int getReturnInst() {

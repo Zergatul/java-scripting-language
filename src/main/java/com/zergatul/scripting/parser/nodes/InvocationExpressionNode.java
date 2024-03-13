@@ -1,6 +1,7 @@
 package com.zergatul.scripting.parser.nodes;
 
 import com.zergatul.scripting.TextRange;
+import com.zergatul.scripting.parser.NodeType;
 
 import java.util.List;
 import java.util.Objects;
@@ -11,7 +12,7 @@ public class InvocationExpressionNode extends ExpressionNode {
     public final ArgumentsListNode arguments;
 
     public InvocationExpressionNode(ExpressionNode callee, ArgumentsListNode arguments, TextRange range) {
-        super(range);
+        super(NodeType.INVOCATION_EXPRESSION, range);
         this.callee = callee;
         this.arguments = arguments;
     }

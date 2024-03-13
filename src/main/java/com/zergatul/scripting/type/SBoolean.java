@@ -1,8 +1,6 @@
 package com.zergatul.scripting.type;
 
-import com.zergatul.scripting.old.compiler.CompilerMethodVisitor;
-import com.zergatul.scripting.old.compiler.operations.BinaryOperation;
-import com.zergatul.scripting.old.compiler.operations.UnaryOperation;
+import org.objectweb.asm.MethodVisitor;
 
 import static org.objectweb.asm.Opcodes.*;
 
@@ -30,7 +28,7 @@ public class SBoolean extends SPredefinedType {
     }
 
     @Override
-    public void storeDefaultValue(CompilerMethodVisitor visitor) {
+    public void storeDefaultValue(MethodVisitor visitor) {
         visitor.visitInsn(ICONST_0);
     }
 
@@ -49,7 +47,7 @@ public class SBoolean extends SPredefinedType {
         return BASTORE;
     }
 
-    @Override
+    /*@Override
     public BinaryOperation lessThan(SType other) {
         if (other == SBoolean.instance) {
             return BinaryOperation.INT_LESS_INT;
@@ -116,7 +114,7 @@ public class SBoolean extends SPredefinedType {
     @Override
     public UnaryOperation not() {
         return UnaryOperation.NOT;
-    }
+    }*/
 
     @Override
     public int getReturnInst() {

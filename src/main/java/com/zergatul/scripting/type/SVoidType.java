@@ -1,6 +1,6 @@
 package com.zergatul.scripting.type;
 
-import com.zergatul.scripting.old.compiler.CompilerMethodVisitor;
+import org.objectweb.asm.MethodVisitor;
 
 import static org.objectweb.asm.Opcodes.RETURN;
 
@@ -18,7 +18,7 @@ public class SVoidType extends SPredefinedType {
     }
 
     @Override
-    public void storeDefaultValue(CompilerMethodVisitor visitor) {
+    public void storeDefaultValue(MethodVisitor visitor) {
         throw new IllegalStateException();
     }
 

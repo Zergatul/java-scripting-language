@@ -1,7 +1,7 @@
 package com.zergatul.scripting.parser.nodes;
 
-import com.zergatul.scripting.Node;
 import com.zergatul.scripting.TextRange;
+import com.zergatul.scripting.parser.NodeType;
 import com.zergatul.scripting.parser.UnaryOperator;
 
 public class UnaryOperatorNode extends Node {
@@ -9,7 +9,7 @@ public class UnaryOperatorNode extends Node {
     public final UnaryOperator operator;
 
     public UnaryOperatorNode(UnaryOperator operator, TextRange range) {
-        super(range);
+        super(NodeType.UNARY_OPERATOR, range);
         this.operator = operator;
     }
 

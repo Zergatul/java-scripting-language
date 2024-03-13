@@ -1,13 +1,14 @@
 package com.zergatul.scripting.parser.nodes;
 
 import com.zergatul.scripting.TextRange;
+import com.zergatul.scripting.parser.NodeType;
 
 public class IntegerLiteralExpressionNode extends ExpressionNode {
 
     public final String value;
 
     public IntegerLiteralExpressionNode(String value, TextRange range) {
-        super(range);
+        super(NodeType.INTEGER_LITERAL, range);
         this.value = value;
     }
 

@@ -1,7 +1,7 @@
 package com.zergatul.scripting.parser.nodes;
 
-import com.zergatul.scripting.Node;
 import com.zergatul.scripting.TextRange;
+import com.zergatul.scripting.parser.NodeType;
 
 import java.util.List;
 import java.util.Objects;
@@ -11,7 +11,7 @@ public class ArgumentsListNode extends Node {
     public final List<ExpressionNode> arguments;
 
     public ArgumentsListNode(List<ExpressionNode> arguments, TextRange range) {
-        super(range);
+        super(NodeType.ARGUMENTS_LIST, range);
         this.arguments = arguments;
     }
 

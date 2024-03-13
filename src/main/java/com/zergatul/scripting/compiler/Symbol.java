@@ -1,6 +1,7 @@
 package com.zergatul.scripting.compiler;
 
 import com.zergatul.scripting.type.SType;
+import org.objectweb.asm.MethodVisitor;
 
 public abstract class Symbol {
 
@@ -20,5 +21,5 @@ public abstract class Symbol {
         return name;
     }
 
-    public abstract void compileLoad(FunctionVisitor visitor);
+    public abstract void compileLoad(MethodVisitor visitor);
 }

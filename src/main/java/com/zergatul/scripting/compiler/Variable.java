@@ -1,6 +1,7 @@
 package com.zergatul.scripting.compiler;
 
 import com.zergatul.scripting.type.SType;
+import org.objectweb.asm.MethodVisitor;
 
 public abstract class Variable extends Symbol {
 
@@ -8,5 +9,7 @@ public abstract class Variable extends Symbol {
         super(name, type);
     }
 
-    public abstract void compileStore(FunctionVisitor visitor);
+    public abstract boolean isConstant();
+
+    public abstract void compileStore(MethodVisitor visitor);
 }

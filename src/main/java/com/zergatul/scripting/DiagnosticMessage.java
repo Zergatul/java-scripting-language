@@ -1,19 +1,21 @@
 package com.zergatul.scripting;
 
-import com.zergatul.scripting.lexer.Token;
-
 public class DiagnosticMessage {
 
     public DiagnosticLevel level;
     public final String code;
     public final String message;
-    public final Token token;
+    public final TextRange range;
 
-    public DiagnosticMessage(ErrorCode error, Token token, Object... parameters) {
+    public DiagnosticMessage(ErrorCode error, Locatable locatable, Object... parameters) {
+        this(error, locatable.getRange(), parameters);
+    }
+
+    public DiagnosticMessage(ErrorCode error, TextRange range, Object... parameters) {
         this.level = DiagnosticLevel.ERROR;
         this.code = error.code();
         this.message = String.format(error.message(), parameters);
-        this.token = token;
+        this.range = range;
     }
 
     @Override
@@ -22,7 +24,7 @@ public class DiagnosticMessage {
             return  other.level == level &&
                     other.code.equals(code) &&
                     other.message.equals(message) &&
-                    other.token.equals(token);
+                    other.range.equals(range);
         } else {
             return false;
         }

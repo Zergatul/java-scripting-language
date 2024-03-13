@@ -263,8 +263,9 @@ public class Parser {
                     advance();
                     if (current.type == TokenType.IDENTIFIER) {
                         IdentifierToken identifier = (IdentifierToken) current;
+                        NameExpressionNode name = new NameExpressionNode(identifier.value, identifier.getRange());
                         advance();
-                        expression = new MemberAccessExpressionNode(expression, identifier.value, TextRange.combine(expression, identifier));
+                        expression = new MemberAccessExpressionNode(expression, name, TextRange.combine(expression, name));
                     } else {
                         addDiagnostic(ParserErrors.IdentifierExpected, current, current.getRawValue(code));
                         return expression;

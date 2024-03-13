@@ -1,9 +1,9 @@
 package com.zergatul.scripting.type.operation;
 
-import com.zergatul.scripting.compiler.BufferFunctionVisitor;
-import com.zergatul.scripting.compiler.FunctionVisitor;
+import com.zergatul.scripting.compiler.BufferedMethodVisitor;
 import com.zergatul.scripting.type.SBoolean;
 import org.objectweb.asm.Label;
+import org.objectweb.asm.MethodVisitor;
 
 import static org.objectweb.asm.Opcodes.*;
 
@@ -17,7 +17,7 @@ public class IntComparisonOperation extends BinaryOperation {
     }
 
     @Override
-    public void apply(FunctionVisitor left, BufferFunctionVisitor right) {
+    public void apply(MethodVisitor left, BufferedMethodVisitor right) {
         right.release(left);
         Label elseLabel = new Label();
         Label endLabel = new Label();

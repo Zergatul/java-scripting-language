@@ -9,7 +9,7 @@ public class TempTest {
     }
 
     private static Parser createParser(String code) {
-        List<CompilerMessage> messages = new ArrayList<>();
-        return new Parser(new Lexer(code, messages).lex());
+        List<CompilerMessage> diagnostics = new ArrayList<>();
+        return new Parser(new Lexer(code, diagnostics).lex());
     }*/
 }

@@ -1,8 +1,8 @@
 package com.zergatul.scripting.parser.nodes;
 
 
-import com.zergatul.scripting.Node;
 import com.zergatul.scripting.TextRange;
+import com.zergatul.scripting.parser.NodeType;
 
 import java.util.List;
 import java.util.Objects;
@@ -12,7 +12,7 @@ public class CompilationUnitNode extends Node {
     public final List<StatementNode> statements;
 
     public CompilationUnitNode(List<StatementNode> statements, TextRange range) {
-        super(range);
+        super(NodeType.COMPILATION_UNIT, range);
         this.statements = statements;
     }
 

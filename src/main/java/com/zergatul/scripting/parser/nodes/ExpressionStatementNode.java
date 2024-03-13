@@ -1,13 +1,14 @@
 package com.zergatul.scripting.parser.nodes;
 
 import com.zergatul.scripting.TextRange;
+import com.zergatul.scripting.parser.NodeType;
 
 public class ExpressionStatementNode extends StatementNode {
 
     public final ExpressionNode expression;
 
     public ExpressionStatementNode(ExpressionNode expression, TextRange range) {
-        super(range);
+        super(NodeType.EXPRESSION_STATEMENT, range);
         this.expression = expression;
     }
 

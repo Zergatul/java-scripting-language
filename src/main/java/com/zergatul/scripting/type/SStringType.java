@@ -1,8 +1,7 @@
 package com.zergatul.scripting.type;
 
-import com.zergatul.scripting.old.compiler.CompilerMethodVisitor;
-import com.zergatul.scripting.old.compiler.ScriptCompileException;
-import com.zergatul.scripting.old.compiler.operations.BinaryOperation;
+import com.zergatul.scripting.InternalException;
+import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Type;
 
 import java.lang.reflect.Method;
@@ -33,7 +32,7 @@ public class SStringType extends SPredefinedType {
     }
 
     @Override
-    public void storeDefaultValue(CompilerMethodVisitor visitor) {
+    public void storeDefaultValue(MethodVisitor visitor) {
         visitor.visitLdcInsn("");
     }
 
@@ -52,7 +51,7 @@ public class SStringType extends SPredefinedType {
         return AASTORE;
     }
 
-    @Override
+    /*@Override
     public BinaryOperation add(SType other) {
         if (other == SStringType.instance) {
             return BinaryOperation.STRING_ADD_STRING;
@@ -74,16 +73,17 @@ public class SStringType extends SPredefinedType {
             return BinaryOperation.STRING_NOT_EQUALS_STRING;
         }
         return null;
-    }
+    }*/
 
     @Override
-    public SType compileGetField(String field, CompilerMethodVisitor visitor) throws ScriptCompileException {
+    public SType compileGetField(String field, MethodVisitor visitor) {
         if (field.equals("length")) {
             Method method;
             try {
                 method = String.class.getDeclaredMethod("length");
             } catch (NoSuchMethodException e) {
-                throw new ScriptCompileException("Cannot find String.length method.");
+                throw new InternalException();
+                //throw new ScriptCompileException("Cannot find String.length method.");
             }
             visitor.visitMethodInsn(
                     INVOKEVIRTUAL,

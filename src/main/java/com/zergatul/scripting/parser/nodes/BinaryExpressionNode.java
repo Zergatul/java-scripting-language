@@ -2,6 +2,7 @@ package com.zergatul.scripting.parser.nodes;
 
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.parser.BinaryOperator;
+import com.zergatul.scripting.parser.NodeType;
 
 public class BinaryExpressionNode extends ExpressionNode {
 
@@ -10,7 +11,7 @@ public class BinaryExpressionNode extends ExpressionNode {
     public final ExpressionNode right;
 
     public BinaryExpressionNode(ExpressionNode left, BinaryOperatorNode operator, ExpressionNode right, TextRange range) {
-        super(range);
+        super(NodeType.BINARY_EXPRESSION, range);
         this.left = left;
         this.operator = operator;
         this.right = right;

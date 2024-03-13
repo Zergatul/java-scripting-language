@@ -1,6 +1,5 @@
-package com.zergatul.scripting.tests;
+package com.zergatul.scripting.tests.compiler;
 
-import com.zergatul.scripting.old.compiler.ScriptingLanguageCompiler;
 import com.zergatul.scripting.helpers.BoolStorage;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -8,22 +7,23 @@ import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
-public class BooleansTest {
+import static com.zergatul.scripting.tests.compiler.helpers.CompilerHelper.*;
+
+public class BooleanTests {
 
     @BeforeEach
     public void clean() {
-        ApiRoot.storage = new BoolStorage();
+        BooleanTests.ApiRoot.storage = new BoolStorage();
     }
 
     @Test
-    public void initialValueTest() throws Exception {
+    public void initialValueTest() {
         String code = """
                 boolean b;
                 storage.add(b);
                 """;
 
-        ScriptingLanguageCompiler compiler = new ScriptingLanguageCompiler(ApiRoot.class);
-        Runnable program = compiler.compile(code);
+        Runnable program = compile(ApiRoot.class, code);
         program.run();
 
         Assertions.assertIterableEquals(
@@ -32,14 +32,13 @@ public class BooleansTest {
     }
 
     @Test
-    public void initExpressionTest() throws Exception {
+    public void initExpressionTest() {
         String code = """
                 boolean b = true || false;
                 storage.add(b);
                 """;
 
-        ScriptingLanguageCompiler compiler = new ScriptingLanguageCompiler(ApiRoot.class);
-        Runnable program = compiler.compile(code);
+        Runnable program = compile(ApiRoot.class, code);
         program.run();
 
         Assertions.assertIterableEquals(
@@ -48,14 +47,13 @@ public class BooleansTest {
     }
 
     @Test
-    public void constantsTest() throws Exception {
+    public void constantsTest() {
         String code = """
                 storage.add(true);
                 storage.add(false);
                 """;
 
-        ScriptingLanguageCompiler compiler = new ScriptingLanguageCompiler(ApiRoot.class);
-        Runnable program = compiler.compile(code);
+        Runnable program = compile(ApiRoot.class, code);
         program.run();
 
         Assertions.assertIterableEquals(
@@ -64,14 +62,13 @@ public class BooleansTest {
     }
 
     @Test
-    public void notOperatorTest() throws Exception {
+    public void notOperatorTest() {
         String code = """
                 storage.add(!true);
                 storage.add(!false);
                 """;
 
-        ScriptingLanguageCompiler compiler = new ScriptingLanguageCompiler(ApiRoot.class);
-        Runnable program = compiler.compile(code);
+        Runnable program = compile(ApiRoot.class, code);
         program.run();
 
         Assertions.assertIterableEquals(
@@ -80,7 +77,7 @@ public class BooleansTest {
     }
 
     @Test
-    public void equalsOperatorTest() throws Exception {
+    public void equalsOperatorTest() {
         String code = """
                 storage.add(true == true);
                 storage.add(false == false);
@@ -88,8 +85,7 @@ public class BooleansTest {
                 storage.add(false == true);
                 """;
 
-        ScriptingLanguageCompiler compiler = new ScriptingLanguageCompiler(ApiRoot.class);
-        Runnable program = compiler.compile(code);
+        Runnable program = compile(ApiRoot.class, code);
         program.run();
 
         Assertions.assertIterableEquals(
@@ -98,7 +94,7 @@ public class BooleansTest {
     }
 
     @Test
-    public void notEqualsOperatorTest() throws Exception {
+    public void notEqualsOperatorTest() {
         String code = """
                 storage.add(true != true);
                 storage.add(false != false);
@@ -106,8 +102,7 @@ public class BooleansTest {
                 storage.add(false != true);
                 """;
 
-        ScriptingLanguageCompiler compiler = new ScriptingLanguageCompiler(ApiRoot.class);
-        Runnable program = compiler.compile(code);
+        Runnable program = compile(ApiRoot.class, code);
         program.run();
 
         Assertions.assertIterableEquals(
@@ -116,7 +111,7 @@ public class BooleansTest {
     }
 
     @Test
-    public void andOperatorTest() throws Exception {
+    public void andOperatorTest() {
         String code = """
                 storage.add(true && true);
                 storage.add(false && false);
@@ -124,8 +119,7 @@ public class BooleansTest {
                 storage.add(false && true);
                 """;
 
-        ScriptingLanguageCompiler compiler = new ScriptingLanguageCompiler(ApiRoot.class);
-        Runnable program = compiler.compile(code);
+        Runnable program = compile(ApiRoot.class, code);
         program.run();
 
         Assertions.assertIterableEquals(
@@ -134,7 +128,7 @@ public class BooleansTest {
     }
 
     @Test
-    public void orOperatorTest() throws Exception {
+    public void orOperatorTest() {
         String code = """
                 storage.add(true || true);
                 storage.add(false || false);
@@ -142,8 +136,7 @@ public class BooleansTest {
                 storage.add(false || true);
                 """;
 
-        ScriptingLanguageCompiler compiler = new ScriptingLanguageCompiler(ApiRoot.class);
-        Runnable program = compiler.compile(code);
+        Runnable program = compile(ApiRoot.class, code);
         program.run();
 
         Assertions.assertIterableEquals(
@@ -152,7 +145,7 @@ public class BooleansTest {
     }
 
     @Test
-    public void greaterThanOperatorTest() throws Exception {
+    public void greaterThanOperatorTest() {
         String code = """
                 storage.add(true > true);
                 storage.add(false > false);
@@ -160,8 +153,7 @@ public class BooleansTest {
                 storage.add(false > true);
                 """;
 
-        ScriptingLanguageCompiler compiler = new ScriptingLanguageCompiler(ApiRoot.class);
-        Runnable program = compiler.compile(code);
+        Runnable program = compile(ApiRoot.class, code);
         program.run();
 
         Assertions.assertIterableEquals(

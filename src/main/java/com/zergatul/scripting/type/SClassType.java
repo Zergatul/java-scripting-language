@@ -1,6 +1,10 @@
 package com.zergatul.scripting.type;
 
-import com.zergatul.scripting.old.compiler.CompilerMethodVisitor;
+import org.objectweb.asm.MethodVisitor;
+
+import java.lang.reflect.Modifier;
+import java.util.Arrays;
+import java.util.List;
 
 import static org.objectweb.asm.Opcodes.*;
 
@@ -18,7 +22,7 @@ public class SClassType extends SType {
     }
 
     @Override
-    public void storeDefaultValue(CompilerMethodVisitor visitor) {
+    public void storeDefaultValue(MethodVisitor visitor) {
         throw new RuntimeException();
     }
 
@@ -50,5 +54,15 @@ public class SClassType extends SType {
     @Override
     public int getReturnInst() {
         return ARETURN;
+    }
+
+    @Override
+    public List<MethodReference> getInstanceMethods(String name) {
+        return Arrays.stream(this.clazz.getDeclaredMethods())
+                .filter(m -> Modifier.isPublic(m.getModifiers()))
+                .filter(m -> !Modifier.isStatic(m.getModifiers()))
+                .filter(m -> m.getName().equals(name))
+                .map(MethodReference::new)
+                .toList();
     }
 }

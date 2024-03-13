@@ -1,6 +1,7 @@
 package com.zergatul.scripting.parser.nodes;
 
 import com.zergatul.scripting.TextRange;
+import com.zergatul.scripting.parser.NodeType;
 
 import java.util.Objects;
 
@@ -15,7 +16,7 @@ public class VariableDeclarationNode extends StatementNode {
     }
 
     public VariableDeclarationNode(TypeNode type, NameExpressionNode name, ExpressionNode expression, TextRange range) {
-        super(range);
+        super(NodeType.VARIABLE_DECLARATION, range);
         this.type = type;
         this.name = name;
         this.expression = expression;

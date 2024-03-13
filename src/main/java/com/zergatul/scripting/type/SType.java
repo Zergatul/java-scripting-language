@@ -1,16 +1,19 @@
 package com.zergatul.scripting.type;
 
-import com.zergatul.scripting.old.compiler.CompilerMethodVisitor;
-import com.zergatul.scripting.old.compiler.ScriptCompileException;
-import com.zergatul.scripting.old.compiler.operations.BinaryOperation;
-import com.zergatul.scripting.old.compiler.operations.UnaryOperation;
-import com.zergatul.scripting.old.generated.*;
+import com.zergatul.scripting.InternalException;
+import com.zergatul.scripting.parser.BinaryOperator;
+import com.zergatul.scripting.parser.UnaryOperator;
+import com.zergatul.scripting.type.operation.BinaryOperation;
+import com.zergatul.scripting.type.operation.UnaryOperation;
+import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Type;
+
+import java.util.List;
 
 public abstract class SType {
 
     public abstract Class<?> getJavaClass();
-    public abstract void storeDefaultValue(CompilerMethodVisitor visitor);
+    public abstract void storeDefaultValue(MethodVisitor visitor);
     public abstract int getLoadInst();
     public abstract int getStoreInst();
     public abstract int getArrayLoadInst();
@@ -82,40 +85,16 @@ public abstract class SType {
         return null;
     }
 
-    public BinaryOperation binary(Node node, SType other) throws ScriptCompileException {
-        if (node instanceof ASTPlus) {
-            return add(other);
-        } if (node instanceof ASTMinus) {
-            return subtract(other);
-        } if (node instanceof ASTMult) {
-            return multiply(other);
-        } if (node instanceof ASTDiv) {
-            return divide(other);
-        } if (node instanceof ASTMod) {
-            return modulo(other);
-        } if (node instanceof ASTFloorDiv) {
-            return floorDiv(other);
-        } if (node instanceof ASTFloorMod) {
-            return floorMod(other);
-        } if (node instanceof ASTLessThan) {
-            return lessThan(other);
-        } if (node instanceof ASTGreaterThan) {
-            return greaterThan(other);
-        } if (node instanceof ASTLessEquals) {
-            return lessEquals(other);
-        } if (node instanceof ASTGreaterEquals) {
-            return greaterEquals(other);
-        } if (node instanceof ASTEquality) {
-            return equalsOp(other);
-        } if (node instanceof ASTInequality) {
-            return notEqualsOp(other);
-        } if (node instanceof ASTAnd) {
-            return and(other);
-        } if (node instanceof ASTOr) {
-            return or(other);
-        } else {
-            throw new ScriptCompileException(String.format("Unexpected operator %s.", node.getClass().getSimpleName()));
-        }
+    public BinaryOperation binary(BinaryOperator operator, SType other) {
+        return switch (operator) {
+            case PLUS -> add(other);
+            case MINUS -> subtract(other);
+            case MULTIPLY -> multiply(other);
+            case DIVIDE -> divide(other);
+            case MODULO -> modulo(other);
+            case OR -> or(other);
+            case AND -> and(other);
+        };
     }
 
     public UnaryOperation plus() {
@@ -130,19 +109,35 @@ public abstract class SType {
         return null;
     }
 
-    public UnaryOperation unary(Node node) throws ScriptCompileException {
-        if (node instanceof ASTPlus) {
-            return plus();
-        } else if (node instanceof ASTMinus) {
-            return minus();
-        } else if (node instanceof ASTNot) {
-            return not();
-        } else {
-            throw new ScriptCompileException(String.format("Unexpected operator %s.", node.getClass().getSimpleName()));
-        }
+    public UnaryOperation unary(UnaryOperator operator) {
+        return switch (operator) {
+            case PLUS -> plus();
+            case MINUS -> minus();
+            case NOT -> not();
+        };
     }
 
-    public SType compileGetField(String field, CompilerMethodVisitor visitor) throws ScriptCompileException {
+    public UnaryOperation implicitCastTo(SType other) {
+        return null;
+    }
+
+    public BinaryOperation index(SType other) {
+        return null;
+    }
+
+    public List<MethodReference> getInstanceMethods(String name) {
+        return List.of();
+    }
+
+    public List<MethodReference> getStaticMethods(String name) {
+        return List.of();
+    }
+
+    /*public MemberReference getInstanceProperty(String name) {
+        return false;
+    }*/
+
+    public SType compileGetField(String field, MethodVisitor visitor) {
         return null;
     }
 

@@ -1,8 +1,8 @@
 package com.zergatul.scripting.type.operation;
 
-import com.zergatul.scripting.compiler.BufferFunctionVisitor;
-import com.zergatul.scripting.compiler.FunctionVisitor;
+import com.zergatul.scripting.compiler.BufferedMethodVisitor;
 import com.zergatul.scripting.type.SType;
+import org.objectweb.asm.MethodVisitor;
 
 public class SingleInstructionBinaryOperation extends BinaryOperation {
 
@@ -14,7 +14,7 @@ public class SingleInstructionBinaryOperation extends BinaryOperation {
     }
 
     @Override
-    public void apply(FunctionVisitor left, BufferFunctionVisitor right) {
+    public void apply(MethodVisitor left, BufferedMethodVisitor right) {
         right.release(left);
         left.visitInsn(opcode);
     }

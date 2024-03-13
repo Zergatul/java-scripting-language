@@ -132,9 +132,9 @@ public class ParserTest {
                             new MemberAccessExpressionNode(
                                     new MemberAccessExpressionNode(
                                             new NameExpressionNode("abc", new SingleLineTextRange(1, 1, 0, 3)),
-                                            "qwe",
+                                            new NameExpressionNode("qwe", new SingleLineTextRange(1, 5, 4, 3)),
                                             new SingleLineTextRange(1, 1, 0, 7)),
-                                    "x",
+                                    new NameExpressionNode("x", new SingleLineTextRange(1, 9, 8, 1)),
                                     new SingleLineTextRange(1, 1, 0, 9)),
                             new ArgumentsListNode(List.of(), new SingleLineTextRange(1, 10, 9, 2)),
                             new SingleLineTextRange(1, 1, 0, 11)),

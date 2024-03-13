@@ -2,6 +2,7 @@ package com.zergatul.scripting.parser.nodes;
 
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.lexer.IdentifierToken;
+import com.zergatul.scripting.parser.NodeType;
 
 public class NameExpressionNode extends ExpressionNode {
 
@@ -12,7 +13,7 @@ public class NameExpressionNode extends ExpressionNode {
     }
 
     public NameExpressionNode(String value, TextRange range) {
-        super(range);
+        super(NodeType.NAME_EXPRESSION, range);
         this.value = value;
     }
 
