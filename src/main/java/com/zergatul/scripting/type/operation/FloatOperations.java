@@ -1,6 +1,8 @@
 package com.zergatul.scripting.type.operation;
 
 import com.zergatul.scripting.type.SFloatType;
+import com.zergatul.scripting.type.SIntType;
+import org.objectweb.asm.MethodVisitor;
 
 import static org.objectweb.asm.Opcodes.*;
 
@@ -16,4 +18,14 @@ public class FloatOperations {
     public static final BinaryOperation GTE = new FloatComparisonOperation(IF_ICMPGE);
     public static final BinaryOperation EQ = new FloatComparisonOperation(IF_ICMPEQ);
     public static final BinaryOperation NEQ = new FloatComparisonOperation(IF_ICMPNE);
+    public static final UnaryOperation PLUS = new UnaryOperation(SFloatType.instance) {
+        @Override
+        public void apply(MethodVisitor visitor) {}
+    };
+    public static final UnaryOperation MINUS = new UnaryOperation(SFloatType.instance) {
+        @Override
+        public void apply(MethodVisitor visitor) {
+            visitor.visitInsn(DNEG);
+        }
+    };
 }

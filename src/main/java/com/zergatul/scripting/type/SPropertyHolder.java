@@ -3,18 +3,16 @@ package com.zergatul.scripting.type;
 import com.zergatul.scripting.InternalException;
 import org.objectweb.asm.MethodVisitor;
 
-import java.util.List;
+public class SPropertyHolder extends SType {
 
-public class SMethodReferences extends SType {
+    private final PropertyReference property;
 
-    private final List<MethodReference> references;
-
-    public SMethodReferences(List<MethodReference> references) {
-        this.references = references;
+    public SPropertyHolder(PropertyReference property) {
+        this.property = property;
     }
 
-    public List<MethodReference> getReferences() {
-        return this.references;
+    public PropertyReference getProperty() {
+        return property;
     }
 
     @Override

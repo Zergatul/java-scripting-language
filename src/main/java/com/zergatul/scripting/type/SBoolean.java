@@ -1,5 +1,9 @@
 package com.zergatul.scripting.type;
 
+import com.zergatul.scripting.type.operation.BinaryOperation;
+import com.zergatul.scripting.type.operation.BooleanOperations;
+import com.zergatul.scripting.type.operation.IntOperations;
+import com.zergatul.scripting.type.operation.UnaryOperation;
 import org.objectweb.asm.MethodVisitor;
 
 import static org.objectweb.asm.Opcodes.*;
@@ -47,74 +51,50 @@ public class SBoolean extends SPredefinedType {
         return BASTORE;
     }
 
-    /*@Override
+    @Override
     public BinaryOperation lessThan(SType other) {
-        if (other == SBoolean.instance) {
-            return BinaryOperation.INT_LESS_INT;
-        }
-        return null;
+        return other == this ? IntOperations.LT : null;
     }
 
     @Override
     public BinaryOperation greaterThan(SType other) {
-        if (other == SBoolean.instance) {
-            return BinaryOperation.INT_GREATER_INT;
-        }
-        return null;
+        return other == this ? IntOperations.GT : null;
     }
 
     @Override
     public BinaryOperation lessEquals(SType other) {
-        if (other == SBoolean.instance) {
-            return BinaryOperation.INT_LESS_EQUALS_INT;
-        }
-        return null;
+        return other == this ? IntOperations.LTE : null;
     }
 
     @Override
     public BinaryOperation greaterEquals(SType other) {
-        if (other == SBoolean.instance) {
-            return BinaryOperation.INT_GREATER_EQUALS_INT;
-        }
-        return null;
+        return other == this ? IntOperations.GTE : null;
     }
 
     @Override
     public BinaryOperation equalsOp(SType other) {
-        if (other == SBoolean.instance) {
-            return BinaryOperation.INT_EQUALS_INT;
-        }
-        return null;
+        return other == this ? IntOperations.EQ : null;
     }
 
     @Override
     public BinaryOperation notEqualsOp(SType other) {
-        if (other == SBoolean.instance) {
-            return BinaryOperation.INT_NOT_EQUALS_INT;
-        }
-        return null;
+        return other == this ? IntOperations.NEQ : null;
     }
 
     @Override
     public BinaryOperation and(SType other) {
-        if (other == SBoolean.instance) {
-            return BinaryOperation.BOOLEAN_AND_BOOLEAN;
-        }
-        return null;
+        return other == this ? BooleanOperations.AND : null;
     }
 
     @Override
     public BinaryOperation or(SType other) {
-        if (other == SBoolean.instance) {
-            return BinaryOperation.BOOLEAN_OR_BOOLEAN;
-        }
-        return null;
+        return other == this ? BooleanOperations.OR : null;
     }
 
     @Override
     public UnaryOperation not() {
-        return UnaryOperation.NOT;
-    }*/
+        return BooleanOperations.NOT;
+    }
 
     @Override
     public int getReturnInst() {

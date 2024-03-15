@@ -136,9 +136,14 @@ public class Compiler {
         switch (expression.getNodeType()) {
             case BOOLEAN_LITERAL -> compileBooleanLiteral(visitor, (BoundBooleanLiteralExpressionNode) expression);
             case INTEGER_LITERAL -> compileIntegerLiteral(visitor, (BoundIntegerLiteralExpressionNode) expression);
+            case FLOAT_LITERAL -> compileFloatLiteral(visitor, (BoundFloatLiteralExpressionNode) expression);
+            case STRING_LITERAL -> compileStringLiteral(visitor, (BoundStringLiteralExpressionNode) expression);
+            case UNARY_EXPRESSION -> compileUnaryExpression(visitor, context, (BoundUnaryExpressionNode) expression);
             case BINARY_EXPRESSION -> compileBinaryExpression(visitor, context, (BoundBinaryExpressionNode) expression);
+            case IMPLICIT_CAST -> compileImplicitCastExpression(visitor, context, (BoundImplicitCastExpressionNode) expression);
             case NAME_EXPRESSION -> compileNameExpression(visitor, (BoundNameExpressionNode) expression);
             case INVOCATION_EXPRESSION -> compileInvocationExpression(visitor, context, (BoundInvocationExpressionNode) expression);
+            case PROPERTY_ACCESS_EXPRESSION -> compilePropertyAccessExpression(visitor, context, (BoundPropertyAccessExpressionNode) expression);
             default -> throw new InternalException();
         }
     }
@@ -151,11 +156,29 @@ public class Compiler {
         visitor.visitLdcInsn(literal.value);
     }
 
+    private void compileFloatLiteral(MethodVisitor visitor, BoundFloatLiteralExpressionNode literal) {
+        visitor.visitLdcInsn(literal.value);
+    }
+
+    private void compileStringLiteral(MethodVisitor visitor, BoundStringLiteralExpressionNode literal) {
+        visitor.visitLdcInsn(literal.value);
+    }
+
+    private void compileUnaryExpression(MethodVisitor visitor, CompilerContext context, BoundUnaryExpressionNode expression) {
+        compileExpression(visitor, context, expression.operand);
+        expression.operator.operation.apply(visitor);
+    }
+
     private void compileBinaryExpression(MethodVisitor visitor, CompilerContext context, BoundBinaryExpressionNode expression) {
         BufferedMethodVisitor buffer = new BufferedMethodVisitor();
         compileExpression(visitor, context, expression.left);
         compileExpression(buffer, context, expression.right);
         expression.operator.operation.apply(visitor, buffer);
+    }
+
+    private void compileImplicitCastExpression(MethodVisitor visitor, CompilerContext context, BoundImplicitCastExpressionNode expression) {
+        compileExpression(visitor, context, expression.operand);
+        expression.operation.apply(visitor);
     }
 
     private void compileNameExpression(MethodVisitor visitor, BoundNameExpressionNode expression) {
@@ -169,9 +192,9 @@ public class Compiler {
             throw new InternalException();
         }
 
-        if (invocation.callee instanceof BoundMemberAccessExpressionNode memberAccess) {
+        if (invocation.callee instanceof BoundMethodAccessExpressionNode methodAccess) {
             // this is method call
-            compileExpression(visitor, context, memberAccess.callee);
+            compileExpression(visitor, context, methodAccess.callee);
 
             for (BoundExpressionNode expression : invocation.arguments.arguments) {
                 compileExpression(visitor, context, expression);
@@ -183,8 +206,19 @@ public class Compiler {
                     invocation.method.getMethod().getName(),
                     Type.getMethodDescriptor(invocation.method.getMethod()),
                     false);
-        } else {
+
+            return;
+        }
+
+        throw new InternalException();
+    }
+
+    private void compilePropertyAccessExpression(MethodVisitor visitor, CompilerContext context, BoundPropertyAccessExpressionNode propertyAccess) {
+        if (!propertyAccess.property.canGet()) {
             throw new InternalException();
         }
+
+        compileExpression(visitor, context, propertyAccess.callee);
+        propertyAccess.property.compileGet(visitor);
     }
 }

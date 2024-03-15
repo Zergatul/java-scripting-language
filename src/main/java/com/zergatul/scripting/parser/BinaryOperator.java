@@ -7,7 +7,15 @@ public enum BinaryOperator {
     DIVIDE("/"),
     MODULO("%"),
     AND("&&"),
-    OR("||");
+    OR("||"),
+    EQUALS("=="),
+    NOT_EQUALS("!="),
+    LESS("<"),
+    GREATER(">"),
+    LESS_EQUALS("<="),
+    GREATER_EQUALS(">="),
+    BITWISE_AND("&"),
+    BITWISE_OR("|");
 
     private final String value;
 

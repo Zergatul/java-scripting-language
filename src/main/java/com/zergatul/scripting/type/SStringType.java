@@ -1,16 +1,17 @@
 package com.zergatul.scripting.type;
 
 import com.zergatul.scripting.InternalException;
+import com.zergatul.scripting.type.operation.BinaryOperation;
+import com.zergatul.scripting.type.operation.StringOperations;
 import org.objectweb.asm.MethodVisitor;
-import org.objectweb.asm.Type;
-
-import java.lang.reflect.Method;
 
 import static org.objectweb.asm.Opcodes.*;
 
 public class SStringType extends SPredefinedType {
 
     public static final SStringType instance = new SStringType();
+
+    private static final PropertyReference length = new MethodBasedPropertyReference(String.class, "length");
 
     private SStringType() {
         super(String.class);
@@ -38,7 +39,7 @@ public class SStringType extends SPredefinedType {
 
     @Override
     public int getArrayTypeInst() {
-        throw new IllegalStateException();
+        throw new InternalException();
     }
 
     @Override
@@ -51,50 +52,30 @@ public class SStringType extends SPredefinedType {
         return AASTORE;
     }
 
-    /*@Override
+    @Override
     public BinaryOperation add(SType other) {
         if (other == SStringType.instance) {
-            return BinaryOperation.STRING_ADD_STRING;
+            return StringOperations.CONCAT;
         }
         return null;
     }
 
     @Override
     public BinaryOperation equalsOp(SType other) {
-        if (other == SStringType.instance) {
-            return BinaryOperation.STRING_EQUALS_STRING;
-        }
-        return null;
+        return other == SStringType.instance ? StringOperations.EQ : null;
     }
 
     @Override
     public BinaryOperation notEqualsOp(SType other) {
-        if (other == SStringType.instance) {
-            return BinaryOperation.STRING_NOT_EQUALS_STRING;
-        }
-        return null;
-    }*/
+        return other == SStringType.instance ? StringOperations.NEQ : null;
+    }
 
     @Override
-    public SType compileGetField(String field, MethodVisitor visitor) {
-        if (field.equals("length")) {
-            Method method;
-            try {
-                method = String.class.getDeclaredMethod("length");
-            } catch (NoSuchMethodException e) {
-                throw new InternalException();
-                //throw new ScriptCompileException("Cannot find String.length method.");
-            }
-            visitor.visitMethodInsn(
-                    INVOKEVIRTUAL,
-                    Type.getInternalName(String.class),
-                    method.getName(),
-                    Type.getMethodDescriptor(method),
-                    false);
-            return SIntType.instance;
-        } else {
-            return super.compileGetField(field, visitor);
-        }
+    public PropertyReference getInstanceProperty(String name) {
+        return switch (name) {
+            case "length" -> length;
+            default -> null;
+        };
     }
 
     @Override

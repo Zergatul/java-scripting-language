@@ -145,6 +145,23 @@ public class BooleanTests {
     }
 
     @Test
+    public void lessThanOperatorTest() {
+        String code = """
+                storage.add(true < true);
+                storage.add(false < false);
+                storage.add(true < false);
+                storage.add(false < true);
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(
+                ApiRoot.storage.list,
+                List.of(false, false, false, true));
+    }
+
+    @Test
     public void greaterThanOperatorTest() {
         String code = """
                 storage.add(true > true);
@@ -159,6 +176,40 @@ public class BooleanTests {
         Assertions.assertIterableEquals(
                 ApiRoot.storage.list,
                 List.of(false, false, true, false));
+    }
+
+    @Test
+    public void lessEqualsOperatorTest() {
+        String code = """
+                storage.add(true <= true);
+                storage.add(false <= false);
+                storage.add(true <= false);
+                storage.add(false <= true);
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(
+                ApiRoot.storage.list,
+                List.of(true, true, false, true));
+    }
+
+    @Test
+    public void greaterEqualsOperatorTest() {
+        String code = """
+                storage.add(true >= true);
+                storage.add(false >= false);
+                storage.add(true >= false);
+                storage.add(false >= true);
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(
+                ApiRoot.storage.list,
+                List.of(true, true, true, false));
     }
 
     public static class ApiRoot {

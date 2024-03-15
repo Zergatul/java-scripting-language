@@ -32,6 +32,7 @@ public class Parser {
                 statements.add(parseStatement());
             } else {
                 addDiagnostic(ParserErrors.StatementExpected, current, current.getRawValue(code));
+                advance();
             }
         }
 
@@ -173,8 +174,10 @@ public class Parser {
         if (unary != null) {
             Token unaryToken = advance();
             ExpressionNode expression = parseExpressionCore(Precedences.get(unary));
-            if (expression instanceof IntegerLiteralExpressionNode integer) {
-                left = new IntegerLiteralExpressionNode("-" + integer.value, TextRange.combine(unaryToken, integer));
+            if (unary == UnaryOperator.MINUS && expression instanceof IntegerLiteralExpressionNode integer && !integer.value.startsWith("-")) {
+                left = new IntegerLiteralExpressionNode("-" + integer.value, TextRange.combine(unaryToken, expression));
+            } else if (unary == UnaryOperator.MINUS && expression instanceof FloatLiteralExpressionNode floatLiteral && !floatLiteral.value.startsWith("-")) {
+                left = new FloatLiteralExpressionNode("-" + floatLiteral.value, TextRange.combine(unaryToken, expression));
             } else {
                 left = new UnaryExpressionNode(
                         new UnaryOperatorNode(unary, unaryToken.getRange()),
@@ -196,18 +199,26 @@ public class Parser {
                 case ASTERISK -> BinaryOperator.MULTIPLY;
                 case SLASH -> BinaryOperator.DIVIDE;
                 case PERCENT -> BinaryOperator.MODULO;
+                case EQUAL_EQUAL -> BinaryOperator.EQUALS;
+                case EXCLAMATION_EQUAL -> BinaryOperator.NOT_EQUALS;
+                case AMPERSAND_AMPERSAND -> BinaryOperator.AND;
+                case PIPE_PIPE -> BinaryOperator.OR;
+                case LESS -> BinaryOperator.LESS;
+                case GREATER -> BinaryOperator.GREATER;
+                case LESS_EQUAL -> BinaryOperator.LESS_EQUALS;
+                case GREATER_EQUAL -> BinaryOperator.GREATER_EQUALS;
                 default -> null;
             };
             if (binary == null) {
                 break;
             }
 
-            Token binaryToken = advance();
-
             int newPrecedence = Precedences.get(binary);
             if (newPrecedence < precedence) {
                 break;
             }
+
+            Token binaryToken = advance();
 
             if (isPossibleExpression()) {
                 ExpressionNode right = parseExpressionCore(newPrecedence);
@@ -325,6 +336,8 @@ public class Parser {
             case FALSE -> new BooleanLiteralExpressionNode(false, current.getRange());
             case TRUE -> new BooleanLiteralExpressionNode(true, current.getRange());
             case INTEGER_LITERAL -> new IntegerLiteralExpressionNode(((IntegerToken) current).value, current.getRange());
+            case FLOAT_LITERAL -> new FloatLiteralExpressionNode(((FloatToken) current).value, current.getRange());
+            case STRING_LITERAL -> new StringLiteralExpressionNode(((StringToken) current).value, current.getRange());
 
             // () => {}
             // new ...
@@ -347,6 +360,8 @@ public class Parser {
             case TRUE:
             case LEFT_PARENTHESES:
             case INTEGER_LITERAL:
+            case FLOAT_LITERAL:
+            case STRING_LITERAL:
             case NEW:
             case IDENTIFIER:
             case BOOLEAN:

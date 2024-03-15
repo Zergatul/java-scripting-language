@@ -22,16 +22,4 @@ public class UnaryExpressionNode extends ExpressionNode {
             return false;
         }
     }
-
-    @Override
-    public void print(String prefix) {
-        System.out.print(prefix);
-        System.out.println("+---UnaryExpression");
-
-        prefix += "|   ";
-
-        System.out.print(prefix);
-        System.out.println("+---" + operator);
-        operand.print(prefix);
-    }
 }

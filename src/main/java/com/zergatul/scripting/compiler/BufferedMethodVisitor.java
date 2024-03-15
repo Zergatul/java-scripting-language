@@ -1,5 +1,6 @@
 package com.zergatul.scripting.compiler;
 
+import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 
 import java.util.ArrayList;
@@ -30,6 +31,11 @@ public class BufferedMethodVisitor extends MethodVisitor {
     }
 
     @Override
+    public void visitJumpInsn(int opcode, Label label) {
+        buffer.add(visitor -> visitor.visitJumpInsn(opcode, label));
+    }
+
+    @Override
     public void visitFieldInsn(int opcode, String owner, String name, String descriptor) {
         buffer.add(visitor -> visitor.visitFieldInsn(opcode, owner, name, descriptor));
     }
@@ -37,6 +43,11 @@ public class BufferedMethodVisitor extends MethodVisitor {
     @Override
     public void visitMethodInsn(int opcode, String owner, String name, String descriptor, boolean isInterface) {
         buffer.add(visitor -> visitor.visitMethodInsn(opcode, owner, name, descriptor, isInterface));
+    }
+
+    @Override
+    public void visitTypeInsn(int opcode, String type) {
+        buffer.add(visitor -> visitor.visitTypeInsn(opcode, type));
     }
 
     public void release(MethodVisitor visitor) {

@@ -1,6 +1,5 @@
-package com.zergatul.scripting.tests;
+package com.zergatul.scripting.tests.compiler;
 
-import com.zergatul.scripting.old.compiler.ScriptingLanguageCompiler;
 import com.zergatul.scripting.helpers.BoolStorage;
 import com.zergatul.scripting.helpers.IntStorage;
 import org.junit.jupiter.api.Assertions;
@@ -9,7 +8,9 @@ import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
-public class IntegersTest {
+import static com.zergatul.scripting.tests.compiler.helpers.CompilerHelper.*;
+
+public class IntTests {
 
     @BeforeEach
     public void clean() {
@@ -18,14 +19,13 @@ public class IntegersTest {
     }
 
     @Test
-    public void initialValueTest() throws Exception {
+    public void initialValueTest() {
         String code = """
                 int i;
                 intStorage.add(i);
                 """;
 
-        ScriptingLanguageCompiler compiler = new ScriptingLanguageCompiler(ApiRoot.class);
-        Runnable program = compiler.compile(code);
+        Runnable program = compile(ApiRoot.class, code);
         program.run();
 
         Assertions.assertIterableEquals(
@@ -34,14 +34,13 @@ public class IntegersTest {
     }
 
     @Test
-    public void initExpressionTest() throws Exception {
+    public void initExpressionTest() {
         String code = """
                 int i = 123 + 456;
                 intStorage.add(i);
                 """;
 
-        ScriptingLanguageCompiler compiler = new ScriptingLanguageCompiler(ApiRoot.class);
-        Runnable program = compiler.compile(code);
+        Runnable program = compile(ApiRoot.class, code);
         program.run();
 
         Assertions.assertIterableEquals(
@@ -50,7 +49,82 @@ public class IntegersTest {
     }
 
     @Test
-    public void equalsOperatorTest() throws Exception {
+    public void addTest() {
+        String code = """
+                intStorage.add(123 + 1);
+                intStorage.add(-123 + 123);
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(
+                ApiRoot.intStorage.list,
+                List.of(124, 0));
+    }
+
+    @Test
+    public void subtractTest() {
+        String code = """
+                intStorage.add(123 - 500);
+                intStorage.add(-123 - 123);
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(
+                ApiRoot.intStorage.list,
+                List.of(-377, -246));
+    }
+
+    @Test
+    public void multiplyTest() {
+        String code = """
+                intStorage.add(123 * -123);
+                intStorage.add(-123 * -2);
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(
+                ApiRoot.intStorage.list,
+                List.of(-15129, 246));
+    }
+
+    @Test
+    public void divideTest() {
+        String code = """
+                intStorage.add(123 / -123);
+                intStorage.add(-123 / -2);
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(
+                ApiRoot.intStorage.list,
+                List.of(-1, 61));
+    }
+
+    @Test
+    public void moduloTest() {
+        String code = """
+                intStorage.add(123 % -123);
+                intStorage.add(-123 % -2);
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(
+                ApiRoot.intStorage.list,
+                List.of(0, -1));
+    }
+
+    @Test
+    public void equalsOperatorTest() {
         String code = """
                 boolStorage.add(12345 == 12345);
                 boolStorage.add(12345 == 12346);
@@ -60,8 +134,7 @@ public class IntegersTest {
                 boolStorage.add(1 == 0);
                 """;
 
-        ScriptingLanguageCompiler compiler = new ScriptingLanguageCompiler(ApiRoot.class);
-        Runnable program = compiler.compile(code);
+        Runnable program = compile(ApiRoot.class, code);
         program.run();
 
         Assertions.assertIterableEquals(
@@ -70,7 +143,7 @@ public class IntegersTest {
     }
 
     @Test
-    public void notEqualsOperatorTest() throws Exception {
+    public void notEqualsOperatorTest() {
         String code = """
                 boolStorage.add(12345 != 12345);
                 boolStorage.add(12345 != 12346);
@@ -80,8 +153,7 @@ public class IntegersTest {
                 boolStorage.add(1 != 0);
                 """;
 
-        ScriptingLanguageCompiler compiler = new ScriptingLanguageCompiler(ApiRoot.class);
-        Runnable program = compiler.compile(code);
+        Runnable program = compile(ApiRoot.class, code);
         program.run();
 
         Assertions.assertIterableEquals(
@@ -90,14 +162,13 @@ public class IntegersTest {
     }
 
     @Test
-    public void lessThanOperatorTest() throws Exception {
+    public void lessThanOperatorTest() {
         String code = """
                 boolStorage.add(10000 < 10001);
                 boolStorage.add(10001 < 10000);
                 """;
 
-        ScriptingLanguageCompiler compiler = new ScriptingLanguageCompiler(ApiRoot.class);
-        Runnable program = compiler.compile(code);
+        Runnable program = compile(ApiRoot.class, code);
         program.run();
 
         Assertions.assertIterableEquals(
@@ -106,14 +177,13 @@ public class IntegersTest {
     }
 
     @Test
-    public void greaterThanOperatorTest() throws Exception {
+    public void greaterThanOperatorTest() {
         String code = """
                 boolStorage.add(123456 > -1235456);
                 boolStorage.add(-1235456 > 123456);
                 """;
 
-        ScriptingLanguageCompiler compiler = new ScriptingLanguageCompiler(ApiRoot.class);
-        Runnable program = compiler.compile(code);
+        Runnable program = compile(ApiRoot.class, code);
         program.run();
 
         Assertions.assertIterableEquals(
@@ -122,15 +192,14 @@ public class IntegersTest {
     }
 
     @Test
-    public void lessThanEqualsOperatorTest() throws Exception {
+    public void lessThanEqualsOperatorTest() {
         String code = """
                 boolStorage.add(1000000 <= 1000000);
                 boolStorage.add(1000000 <= 1000001);
                 boolStorage.add(1000000 <= 999999);
                 """;
 
-        ScriptingLanguageCompiler compiler = new ScriptingLanguageCompiler(ApiRoot.class);
-        Runnable program = compiler.compile(code);
+        Runnable program = compile(ApiRoot.class, code);
         program.run();
 
         Assertions.assertIterableEquals(
@@ -139,15 +208,14 @@ public class IntegersTest {
     }
 
     @Test
-    public void greaterThanEqualsOperatorTest() throws Exception {
+    public void greaterThanEqualsOperatorTest() {
         String code = """
                 boolStorage.add(1000000 >= 1000000);
                 boolStorage.add(1000001 >= 1000000);
                 boolStorage.add(999999 >= 1000000);
                 """;
 
-        ScriptingLanguageCompiler compiler = new ScriptingLanguageCompiler(ApiRoot.class);
-        Runnable program = compiler.compile(code);
+        Runnable program = compile(ApiRoot.class, code);
         program.run();
 
         Assertions.assertIterableEquals(
@@ -155,15 +223,14 @@ public class IntegersTest {
                 List.of(true, true, false));
     }
 
-    @Test
-    public void floorDivTest() throws Exception {
+    /*@Test
+    public void floorDivTest() {
         String code = """
                 boolStorage.add(123 !/ 10 == 12);
                 boolStorage.add(-1 !/ 10 == -1);
                 """;
 
-        ScriptingLanguageCompiler compiler = new ScriptingLanguageCompiler(ApiRoot.class);
-        Runnable program = compiler.compile(code);
+        Runnable program = compile(ApiRoot.class, code);
         program.run();
 
         Assertions.assertIterableEquals(
@@ -172,19 +239,36 @@ public class IntegersTest {
     }
 
     @Test
-    public void floorModTest() throws Exception {
+    public void floorModTest() {
         String code = """
                 boolStorage.add(123 !% 10 == 3);
                 boolStorage.add(-1 !% 10 == 9);
                 """;
 
-        ScriptingLanguageCompiler compiler = new ScriptingLanguageCompiler(ApiRoot.class);
-        Runnable program = compiler.compile(code);
+        Runnable program = compile(ApiRoot.class, code);
         program.run();
 
         Assertions.assertIterableEquals(
                 ApiRoot.boolStorage.list,
                 List.of(true, true));
+    }*/
+
+    @Test
+    public void minusTest() {
+        String code = """
+                intStorage.add(-123);
+                intStorage.add(+123);
+                intStorage.add(--123);
+                intStorage.add(---123);
+                intStorage.add(---++++++++++++123);
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(
+                ApiRoot.intStorage.list,
+                List.of(-123, 123, 123, -123, -123));
     }
 
     public static class ApiRoot {

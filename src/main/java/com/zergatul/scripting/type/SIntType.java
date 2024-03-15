@@ -2,6 +2,7 @@ package com.zergatul.scripting.type;
 
 import com.zergatul.scripting.type.operation.BinaryOperation;
 import com.zergatul.scripting.type.operation.IntOperations;
+import com.zergatul.scripting.type.operation.UnaryOperation;
 import org.objectweb.asm.MethodVisitor;
 
 import static org.objectweb.asm.Opcodes.*;
@@ -51,54 +52,30 @@ public class SIntType extends SPredefinedType {
 
     @Override
     public BinaryOperation add(SType other) {
-        return IntOperations.ADD;
+        return other == this ? IntOperations.ADD : null;
     }
 
-    /*@Override
+    @Override
     public BinaryOperation subtract(SType other) {
-        if (other == SIntType.instance) {
-            return BinaryOperation.INT_SUBTRACT_INT;
-        }
-        if (other == SFloatType.instance) {
-            return BinaryOperation.INT_SUBTRACT_FLOAT;
-        }
-        return null;
+        return other == this ? IntOperations.SUB : null;
     }
 
     @Override
     public BinaryOperation multiply(SType other) {
-        if (other == SIntType.instance) {
-            return BinaryOperation.INT_MULTIPLY_INT;
-        }
-        if (other == SFloatType.instance) {
-            return BinaryOperation.INT_MULTIPLY_FLOAT;
-        }
-        return null;
+        return other == this ? IntOperations.MUL : null;
     }
 
     @Override
     public BinaryOperation divide(SType other) {
-        if (other == SIntType.instance) {
-            return BinaryOperation.INT_DIVIDE_INT;
-        }
-        if (other == SFloatType.instance) {
-            return BinaryOperation.INT_DIVIDE_FLOAT;
-        }
-        return null;
+        return other == this ? IntOperations.DIV : null;
     }
 
     @Override
     public BinaryOperation modulo(SType other) {
-        if (other == SIntType.instance) {
-            return BinaryOperation.INT_MODULO_INT;
-        }
-        if (other == SFloatType.instance) {
-            return BinaryOperation.INT_MODULO_FLOAT;
-        }
-        return null;
+        return other == this ? IntOperations.MOD : null;
     }
 
-    @Override
+    /*@Override
     public BinaryOperation floorDiv(SType other) {
         if (other == SIntType.instance) {
             return BinaryOperation.INT_FLOORDIV_INT;
@@ -112,83 +89,52 @@ public class SIntType extends SPredefinedType {
             return BinaryOperation.INT_FLOORMOD_INT;
         }
         return null;
-    }
+    }*/
 
     @Override
     public BinaryOperation lessThan(SType other) {
-        if (other == SIntType.instance) {
-            return BinaryOperation.INT_LESS_INT;
-        }
-        if (other == SFloatType.instance) {
-            return BinaryOperation.INT_LESS_FLOAT;
-        }
-        return null;
+        return other == this ? IntOperations.LT : null;
     }
 
     @Override
     public BinaryOperation greaterThan(SType other) {
-        if (other == SIntType.instance) {
-            return BinaryOperation.INT_GREATER_INT;
-        }
-        if (other == SFloatType.instance) {
-            return BinaryOperation.INT_GREATER_FLOAT;
-        }
-        return null;
+        return other == this ? IntOperations.GT : null;
     }
 
     @Override
     public BinaryOperation lessEquals(SType other) {
-        if (other == SIntType.instance) {
-            return BinaryOperation.INT_LESS_EQUALS_INT;
-        }
-        if (other == SFloatType.instance) {
-            return BinaryOperation.INT_LESS_EQUALS_FLOAT;
-        }
-        return null;
+        return other == this ? IntOperations.LTE : null;
     }
 
     @Override
     public BinaryOperation greaterEquals(SType other) {
-        if (other == SIntType.instance) {
-            return BinaryOperation.INT_GREATER_EQUALS_INT;
-        }
-        if (other == SFloatType.instance) {
-            return BinaryOperation.INT_GREATER_EQUALS_FLOAT;
-        }
-        return null;
+        return other == this ? IntOperations.GTE : null;
     }
 
     @Override
     public BinaryOperation equalsOp(SType other) {
-        if (other == SIntType.instance) {
-            return BinaryOperation.INT_EQUALS_INT;
-        }
-        if (other == SFloatType.instance) {
-            return BinaryOperation.INT_EQUALS_FLOAT;
-        }
-        return null;
+        return other == this ? IntOperations.EQ : null;
     }
 
     @Override
     public BinaryOperation notEqualsOp(SType other) {
-        if (other == SIntType.instance) {
-            return BinaryOperation.INT_NOT_EQUALS_INT;
-        }
-        if (other == SFloatType.instance) {
-            return BinaryOperation.INT_NOT_EQUALS_FLOAT;
-        }
-        return null;
+        return other == this ? IntOperations.NEQ : null;
     }
 
     @Override
     public UnaryOperation plus() {
-        return UnaryOperation.PLUS_INT;
+        return IntOperations.PLUS;
     }
 
     @Override
     public UnaryOperation minus() {
-        return UnaryOperation.MINUS_INT;
-    }*/
+        return IntOperations.MINUS;
+    }
+
+    @Override
+    public UnaryOperation implicitCastTo(SType other) {
+        return other == SFloatType.instance ? IntOperations.TO_FLOAT : null;
+    }
 
     @Override
     public int getReturnInst() {

@@ -175,6 +175,24 @@ public class ParserTest {
                 new SingleLineTextRange(1, 1, 0, 9)));
     }
 
+    @Test
+    public void unaryMinusTest() {
+        var result = parse("x = -1 + 1;");
+        Assertions.assertEquals(result.diagnostics().size(), 0);
+        Assertions.assertEquals(result.unit(), new CompilationUnitNode(
+                List.of(
+                        new AssignmentStatementNode(
+                                new NameExpressionNode("x", new SingleLineTextRange(1, 1, 0, 1)),
+                                new AssignmentOperatorNode(AssignmentOperator.ASSIGNMENT, new SingleLineTextRange(1, 3, 2, 1)),
+                                new BinaryExpressionNode(
+                                        new IntegerLiteralExpressionNode("-1", new SingleLineTextRange(1, 5, 4, 2)),
+                                        new BinaryOperatorNode(BinaryOperator.PLUS, new SingleLineTextRange(1, 8, 7, 1)),
+                                        new IntegerLiteralExpressionNode("1", new SingleLineTextRange(1, 10, 9, 1)),
+                                        new SingleLineTextRange(1, 5, 4, 6)),
+                                new SingleLineTextRange(1, 1, 0, 11))),
+                new SingleLineTextRange(1, 1, 0, 11)));
+    }
+
     private ParserOutput parse(String code) {
         return new Parser(new Lexer(new LexerInput(code)).lex()).parse();
     }

@@ -16,6 +16,7 @@ import com.zergatul.scripting.type.operation.UndefinedBinaryOperation;
 import com.zergatul.scripting.type.operation.UndefinedUnaryOperation;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class Binder {
 
@@ -90,6 +91,8 @@ public class Binder {
         return switch (expression.getNodeType()) {
             case BOOLEAN_LITERAL -> bindBooleanLiteralExpression((BooleanLiteralExpressionNode) expression);
             case INTEGER_LITERAL -> bindIntegerLiteralExpression((IntegerLiteralExpressionNode) expression);
+            case FLOAT_LITERAL -> bindFloatLiteralExpression((FloatLiteralExpressionNode) expression);
+            case STRING_LITERAL -> bindStringLiteralExpression((StringLiteralExpressionNode) expression);
             case UNARY_EXPRESSION -> bindUnaryExpression((UnaryExpressionNode) expression);
             case BINARY_EXPRESSION -> bindBinaryExpression((BinaryExpressionNode) expression);
             case CONDITIONAL_EXPRESSION -> bindConditionalExpression((ConditionalExpressionNode) expression);
@@ -123,35 +126,104 @@ public class Binder {
         BoundExpressionNode left = bindExpression(binary.left);
         BoundExpressionNode right = bindExpression(binary.right);
         BinaryOperation operation = left.type.binary(binary.operator.operator, right.type);
-        BoundBinaryOperatorNode operator;
         if (operation != null) {
-            operator = new BoundBinaryOperatorNode(operation, binary.operator.getRange());
+            BoundBinaryOperatorNode operator = new BoundBinaryOperatorNode(operation, binary.operator.getRange());
+            return new BoundBinaryExpressionNode(left, operator, right, binary.getRange());
         } else {
+            // try implicit cast arguments to each other and see if operator is defined
+            if (!left.type.equals(right.type)) {
+                UnaryOperation cast = right.type.implicitCastTo(left.type);
+                if (cast != null) {
+                    operation = left.type.binary(binary.operator.operator, left.type);
+                    if (operation != null) {
+                        right = new BoundImplicitCastExpressionNode(right, cast, right.getRange());
+                        BoundBinaryOperatorNode operator = new BoundBinaryOperatorNode(operation, binary.operator.getRange());
+                        return new BoundBinaryExpressionNode(left, operator, right, binary.getRange());
+                    }
+                }
+
+                cast = left.type.implicitCastTo(right.type);
+                if (cast != null) {
+                    operation = right.type.binary(binary.operator.operator, right.type);
+                    if (operation != null) {
+                        left = new BoundImplicitCastExpressionNode(left, cast, left.getRange());
+                        BoundBinaryOperatorNode operator = new BoundBinaryOperatorNode(operation, binary.operator.getRange());
+                        return new BoundBinaryExpressionNode(left, operator, right, binary.getRange());
+                    }
+                }
+            }
+
             addDiagnostic(
                     BinderErrors.BinaryOperatorNotDefined,
                     binary,
                     binary.operator.operator.toString(),
                     left.type.toString(),
                     right.type.toString());
-            operator = new BoundBinaryOperatorNode(UndefinedBinaryOperation.instance, binary.operator.getRange());
+            BoundBinaryOperatorNode operator = new BoundBinaryOperatorNode(UndefinedBinaryOperation.instance, binary.operator.getRange());
+            return new BoundBinaryExpressionNode(left, operator, right, binary.getRange());
         }
-        return new BoundBinaryExpressionNode(left, operator, right, binary.getRange());
     }
 
     private BoundBooleanLiteralExpressionNode bindBooleanLiteralExpression(BooleanLiteralExpressionNode bool) {
         return new BoundBooleanLiteralExpressionNode(bool.value, bool.getRange());
     }
 
-    private BoundIntegerLiteralExpressionNode bindIntegerLiteralExpression(IntegerLiteralExpressionNode integer) {
+    private BoundIntegerLiteralExpressionNode bindIntegerLiteralExpression(IntegerLiteralExpressionNode literal) {
         int value;
         try {
-            value = Integer.parseInt(integer.value);
+            value = Integer.parseInt(literal.value);
         } catch (NumberFormatException e) {
             value = 0;
-            ErrorCode code = integer.value.charAt(0) == '-' ? BinderErrors.IntegerConstantTooSmall : BinderErrors.IntegerConstantTooLarge;
-            addDiagnostic(code, integer);
+            ErrorCode code = literal.value.charAt(0) == '-' ? BinderErrors.IntegerConstantTooSmall : BinderErrors.IntegerConstantTooLarge;
+            addDiagnostic(code, literal);
         }
-        return new BoundIntegerLiteralExpressionNode(value, integer.getRange());
+        return new BoundIntegerLiteralExpressionNode(value, literal.getRange());
+    }
+
+    private BoundFloatLiteralExpressionNode bindFloatLiteralExpression(FloatLiteralExpressionNode literal) {
+        double value;
+        try {
+            value = Double.parseDouble(literal.value);
+        } catch (NumberFormatException e) {
+            value = 0;
+            addDiagnostic(BinderErrors.InvalidFloatConstant, literal);
+        }
+        return new BoundFloatLiteralExpressionNode(value, literal.getRange());
+    }
+
+    private BoundStringLiteralExpressionNode bindStringLiteralExpression(StringLiteralExpressionNode literal) {
+        String value = literal.value;
+        int begin = 0;
+        int end = value.length();
+        if (value.charAt(0) == '"') {
+            begin++;
+        }
+        if (value.charAt(value.length() - 1) == '"') {
+            end--;
+        }
+
+        StringBuilder builder = new StringBuilder(value.length());
+        int index = begin;
+        while (index < end) {
+            if (value.charAt(index) == '\\') {
+                index++;
+                if (index < end) {
+                    builder.append(switch (value.charAt(index)) {
+                        case 'n' -> '\n';
+                        case 't' -> '\t';
+                        case 'b' -> '\b';
+                        case 'r' -> '\r';
+                        case 'f' -> '\f';
+                        default -> value.charAt(index);
+                    });
+                }
+            } else {
+                builder.append(value.charAt(index));
+            }
+            index++;
+        }
+
+        return new BoundStringLiteralExpressionNode(builder.toString(), literal.getRange());
     }
 
     private BoundConditionalExpressionNode bindConditionalExpression(ConditionalExpressionNode expression) {
@@ -182,11 +254,10 @@ public class Binder {
         BoundArgumentsListNode arguments = bindArgumentsList(invocation.arguments);
 
         MethodReference method = null;
-        if (callee.type instanceof SMethodReferences methodReferences) {
-            List<MethodReference> references = methodReferences
-                    .getReferences()
+        if (callee.type instanceof SMethodsHolder methodReferences) {
+            List<MethodReference> references = methodReferences.getMethods()
                     .stream()
-                    .filter(r -> r.getMethod().getParameterCount() == arguments.arguments.size())
+                    .filter(r -> r == UnknownMethodReference.instance || r.getParameters().size() == arguments.arguments.size())
                     .toList();
             if (references.isEmpty()) {
                 if (isMethodInvocation) {
@@ -204,6 +275,10 @@ public class Binder {
                 List<ArgumentsCast> possibleArgumentsWithCasting = references
                         .stream()
                         .map(r -> {
+                                if (r == UnknownMethodReference.instance) {
+                                    return new ArgumentsCast(r, Collections.nCopies(arguments.arguments.size(), null), 0);
+                                }
+
                                 List<SType> parameterTypes = r.getParameters();
                                 List<UnaryOperation> casts = new ArrayList<>();
                                 int count = 0;
@@ -252,7 +327,11 @@ public class Binder {
             }
         }
 
-        return new BoundInvocationExpressionNode(callee, arguments, method, invocation.getRange());
+        if (method == null) {
+            return new BoundInvocationExpressionNode(callee, arguments, invocation.getRange());
+        } else {
+            return new BoundInvocationExpressionNode(callee, arguments, method, invocation.getRange());
+        }
     }
 
     private BoundNameExpressionNode bindNameExpression(NameExpressionNode name) {
@@ -268,25 +347,40 @@ public class Binder {
         }
     }
 
-    private BoundMemberAccessExpressionNode bindMemberAccessExpression(MemberAccessExpressionNode expression) {
+    private BoundExpressionNode bindMemberAccessExpression(MemberAccessExpressionNode expression) {
         BoundExpressionNode callee =  bindExpression(expression.callee);
         if (callee.type instanceof SStaticTypeReference staticType) {
             throw new InternalException(); // TODO
         }
 
         List<MethodReference> methods = callee.type.getInstanceMethods(expression.name.value);
-        if (methods.isEmpty()) {
+        PropertyReference property = callee.type.getInstanceProperty(expression.name.value);
+        if (methods.isEmpty() && property == null) {
             addDiagnostic(
                     BinderErrors.MemberDoesNotExist,
                     expression.name,
                     callee.type.toString(), expression.name.value);
         }
 
-        return new BoundMemberAccessExpressionNode(
-                callee,
-                expression.name.value,
-                new SMethodReferences(methods),
-                expression.getRange());
+        if (!methods.isEmpty() && property != null) {
+            // can't have method and property of the same name
+            throw new InternalException();
+        }
+
+        // TODO: is this ok to return method access if name doesn't exist?
+        if (property != null) {
+            return new BoundPropertyAccessExpressionNode(
+                    callee,
+                    expression.name.value,
+                    property,
+                    expression.getRange());
+        } else {
+            return new BoundMethodAccessExpressionNode(
+                    callee,
+                    expression.name.value,
+                    new SMethodsHolder(methods),
+                    expression.getRange());
+        }
     }
 
     private BoundIndexExpressionNode bindIndexExpression(IndexExpressionNode indexExpression) {
@@ -309,7 +403,11 @@ public class Binder {
     }
 
     private BoundArgumentsListNode bindArgumentsList(ArgumentsListNode argumentsList) {
-        return new BoundArgumentsListNode(argumentsList.arguments.stream().map(this::bindExpression).toList(), argumentsList.getRange());
+        List<BoundExpressionNode> arguments = argumentsList.arguments
+                .stream()
+                .map(this::bindExpression)
+                .collect(Collectors.toCollection(ArrayList::new));
+        return new BoundArgumentsListNode(arguments, argumentsList.getRange());
     }
 
     private BoundExpressionNode tryCastTo(BoundExpressionNode expression, SType type) {

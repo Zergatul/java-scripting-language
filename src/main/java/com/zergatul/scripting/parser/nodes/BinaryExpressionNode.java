@@ -25,17 +25,4 @@ public class BinaryExpressionNode extends ExpressionNode {
             return false;
         }
     }
-
-    @Override
-    public void print(String prefix) {
-        System.out.print(prefix);
-        System.out.println("+---BinaryExpression");
-
-        prefix += "|    ";
-
-        left.print(prefix);
-        System.out.print(prefix);
-        System.out.println("+---" + operator);
-        right.print(prefix);
-    }
 }

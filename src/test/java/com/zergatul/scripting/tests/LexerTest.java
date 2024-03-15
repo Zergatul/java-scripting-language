@@ -192,6 +192,66 @@ public class LexerTest {
         Assertions.assertEquals(result.diagnostics().size(), 0);
     }
 
+    @Test
+    public void floatTest1() {
+        LexerOutput result = lex("1.,.1,0.0,.1e+1,1e-2,1e3");
+        Assertions.assertIterableEquals(result.tokens(), List.of(
+                new FloatToken("1.", new SingleLineTextRange(1, 1, 0, 2)),
+                new Token(TokenType.COMMA, new SingleLineTextRange(1, 3, 2, 1)),
+                new FloatToken(".1", new SingleLineTextRange(1, 4, 3, 2)),
+                new Token(TokenType.COMMA, new SingleLineTextRange(1, 6, 5, 1)),
+                new FloatToken("0.0", new SingleLineTextRange(1, 7, 6, 3)),
+                new Token(TokenType.COMMA, new SingleLineTextRange(1, 10, 9, 1)),
+                new FloatToken(".1e+1", new SingleLineTextRange(1, 11, 10, 5)),
+                new Token(TokenType.COMMA, new SingleLineTextRange(1, 16, 15, 1)),
+                new FloatToken("1e-2", new SingleLineTextRange(1, 17, 16, 4)),
+                new Token(TokenType.COMMA, new SingleLineTextRange(1, 21, 20, 1)),
+                new FloatToken("1e3", new SingleLineTextRange(1, 22, 21, 3))
+        ));
+        Assertions.assertEquals(result.diagnostics().size(), 0);
+    }
+
+    @Test
+    public void floatTest2() {
+        String[] invalidNumbers = {
+                ".1.",
+                "1e",
+                "1e+3m",
+                "1x"
+        };
+
+        for (String input : invalidNumbers) {
+            LexerOutput result = lex(input);
+            Token token;
+            Assertions.assertIterableEquals(result.tokens(), List.of(
+                    token = new InvalidNumberToken(input, new SingleLineTextRange(1, 1, 0, input.length()))
+            ));
+            Assertions.assertIterableEquals(result.diagnostics(), List.of(
+                    new DiagnosticMessage(LexerErrors.InvalidNumber, token, input)
+            ));
+        }
+    }
+
+    @Test
+    public void stringTest1() {
+        LexerOutput result = lex("\"\"\"test\"\"\\\"\\\"\\\"\\\"\"");
+        Assertions.assertIterableEquals(result.tokens(), List.of(
+                new StringToken("\"\"", new SingleLineTextRange(1, 1, 0, 2)),
+                new StringToken("\"test\"", new SingleLineTextRange(1, 3, 2, 6)),
+                new StringToken("\"\\\"\\\"\\\"\\\"\"", new SingleLineTextRange(1, 9, 8, 10))));
+        Assertions.assertEquals(result.diagnostics().size(), 0);
+    }
+
+    @Test
+    public void stringTest2() {
+        LexerOutput result = lex("\"1\n");
+        Assertions.assertIterableEquals(result.tokens(), List.of(
+                new StringToken("\"1", new SingleLineTextRange(1, 1, 0, 2)),
+                new Token(TokenType.WHITESPACE, new MultiLineTextRange(1, 3, 2, 1, 2, 1))));
+        Assertions.assertIterableEquals(result.diagnostics(), List.of(
+                new DiagnosticMessage(LexerErrors.NewlineInString, new SingleLineTextRange(1, 1, 0, 2))));
+    }
+
     private LexerOutput lex(String code) {
         return new Lexer(new LexerInput(code)).lex();
     }

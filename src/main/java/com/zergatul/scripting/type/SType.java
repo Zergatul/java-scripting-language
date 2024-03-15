@@ -45,13 +45,13 @@ public abstract class SType {
         return null;
     }
 
-    public BinaryOperation floorMod(SType other) {
+    /*public BinaryOperation floorMod(SType other) {
         return null;
     }
 
     public BinaryOperation floorDiv(SType other) {
         return null;
-    }
+    }*/
 
     public BinaryOperation lessThan(SType other) {
         return null;
@@ -94,6 +94,13 @@ public abstract class SType {
             case MODULO -> modulo(other);
             case OR -> or(other);
             case AND -> and(other);
+            case EQUALS -> equalsOp(other);
+            case NOT_EQUALS -> notEqualsOp(other);
+            case LESS -> lessThan(other);
+            case GREATER -> greaterThan(other);
+            case LESS_EQUALS -> lessEquals(other);
+            case GREATER_EQUALS -> greaterEquals(other);
+            case BITWISE_OR, BITWISE_AND -> throw new InternalException();
         };
     }
 
@@ -133,9 +140,9 @@ public abstract class SType {
         return List.of();
     }
 
-    /*public MemberReference getInstanceProperty(String name) {
-        return false;
-    }*/
+    public PropertyReference getInstanceProperty(String name) {
+        return null;
+    }
 
     public SType compileGetField(String field, MethodVisitor visitor) {
         return null;

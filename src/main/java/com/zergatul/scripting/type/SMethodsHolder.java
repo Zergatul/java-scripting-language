@@ -1,18 +1,20 @@
 package com.zergatul.scripting.type;
 
 import com.zergatul.scripting.InternalException;
-import com.zergatul.scripting.type.operation.EmptyUnaryOperation;
-import com.zergatul.scripting.type.operation.UnaryOperation;
 import org.objectweb.asm.MethodVisitor;
 
 import java.util.List;
 
-public class SUnknown extends SType {
+public class SMethodsHolder extends SType {
 
-    public static final SUnknown instance = new SUnknown();
+    private final List<MethodReference> methods;
 
-    private SUnknown() {
+    public SMethodsHolder(List<MethodReference> methods) {
+        this.methods = methods;
+    }
 
+    public List<MethodReference> getMethods() {
+        return methods;
     }
 
     @Override
@@ -53,17 +55,5 @@ public class SUnknown extends SType {
     @Override
     public int getReturnInst() {
         throw new InternalException();
-    }
-
-    @Override
-    public UnaryOperation implicitCastTo(SType other) {
-        // allow SUnknown to be cast to anything
-        // in this way any compilation error will not spread
-        return EmptyUnaryOperation.instance;
-    }
-
-    @Override
-    public List<MethodReference> getInstanceMethods(String name) {
-        return List.of(UnknownMethodReference.instance);
     }
 }

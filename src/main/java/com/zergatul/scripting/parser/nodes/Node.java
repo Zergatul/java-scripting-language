@@ -22,10 +22,6 @@ public abstract class Node implements Locatable {
         return this.range;
     }
 
-    public void print(String prefix) {
-
-    }
-
     @Override
     public boolean equals(Object obj) {
         throw new RuntimeException("Not implemented");

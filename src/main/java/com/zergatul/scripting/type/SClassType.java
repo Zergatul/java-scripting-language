@@ -1,5 +1,6 @@
 package com.zergatul.scripting.type;
 
+import com.zergatul.scripting.InternalException;
 import org.objectweb.asm.MethodVisitor;
 
 import java.lang.reflect.Modifier;
@@ -23,7 +24,7 @@ public class SClassType extends SType {
 
     @Override
     public void storeDefaultValue(MethodVisitor visitor) {
-        throw new RuntimeException();
+        throw new InternalException();
     }
 
     @Override
