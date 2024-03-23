@@ -242,8 +242,90 @@ public class Binder {
         return new BoundConditionalExpressionNode(condition, pair.expression1, pair.expression2, expression.getRange());
     }
 
-    private BoundInvocationExpressionNode bindInvocationExpression(InvocationExpressionNode invocation) {
-        boolean isMethodInvocation = invocation.callee instanceof MemberAccessExpressionNode;
+    private BoundExpressionNode bindInvocationExpression(InvocationExpressionNode invocation) {
+        BoundArgumentsListNode arguments = bindArgumentsList(invocation.arguments);
+        if (invocation.callee instanceof MemberAccessExpressionNode memberAccess) {
+            // method invocation
+            BoundExpressionNode objectReference = bindExpression(memberAccess.callee);
+            // get methods by name
+            List<MethodReference> methodReferences = objectReference.type.getInstanceMethods(memberAccess.name.value);
+
+            MethodReference matchedMethod = UnknownMethodReference.instance;
+            if (methodReferences.isEmpty()) {
+                addDiagnostic(
+                        BinderErrors.MemberDoesNotExist,
+                        memberAccess.name,
+                        objectReference.type.toString(), memberAccess.name.value);
+            } else {
+                // filter by arguments count
+                methodReferences = methodReferences
+                        .stream()
+                        .filter(r -> r == UnknownMethodReference.instance || r.getParameters().size() == arguments.arguments.size())
+                        .toList();
+
+                if (methodReferences.isEmpty()) {
+                    addDiagnostic(
+                            BinderErrors.NoOverloadedMethods,
+                            invocation.callee,
+                            memberAccess.name.value, arguments.arguments.size());
+                } else {
+                    // filter/sort by types with upcasting
+                    List<ArgumentsCast> possibleArgumentsWithCasting = methodReferences
+                            .stream()
+                            .map(r -> {
+                                if (r == UnknownMethodReference.instance) {
+                                    return new ArgumentsCast(r, Collections.nCopies(arguments.arguments.size(), null), 0);
+                                }
+
+                                List<SType> parameterTypes = r.getParameters();
+                                List<UnaryOperation> casts = new ArrayList<>();
+                                int count = 0;
+                                for (int i = 0; i < parameterTypes.size(); i++) {
+                                    SType expected = parameterTypes.get(i);
+                                    SType actual = arguments.arguments.get(i).type;
+                                    if (expected.equals(actual)) {
+                                        casts.add(null);
+                                    } else {
+                                        UnaryOperation cast = actual.implicitCastTo(expected);
+                                        if (cast != null) {
+                                            casts.add(cast);
+                                            count++;
+                                        } else {
+                                            return null;
+                                        }
+                                    }
+                                }
+                                return new ArgumentsCast(r, casts, count);
+                            })
+                            .filter(Objects::nonNull)
+                            .sorted(Comparator.comparingInt(ac -> ac.count))
+                            .toList();
+                    if (possibleArgumentsWithCasting.isEmpty()) {
+                        addDiagnostic(BinderErrors.CannotCastArguments, arguments);
+                    } else {
+                        ArgumentsCast overload = possibleArgumentsWithCasting.get(0);
+                        for (int i = 0; i < arguments.arguments.size(); i++) {
+                            UnaryOperation cast = overload.casts.get(i);
+                            if (cast != null) {
+                                BoundExpressionNode expression = arguments.arguments.get(i);
+                                arguments.arguments.set(i, new BoundImplicitCastExpressionNode(expression, cast, expression.getRange()));
+                            }
+                        }
+                        matchedMethod = overload.method;
+                    }
+                }
+            }
+
+            return new BoundMethodInvocationExpressionNode(objectReference, matchedMethod, arguments, invocation.getRange());
+        }
+        if (invocation.callee instanceof NameExpressionNode name) {
+            // function invocation
+            throw new InternalException(); // TODO
+        }
+
+        throw new InternalException();
+
+        /*boolean isMethodInvocation = invocation.callee instanceof MemberAccessExpressionNode;
         NameExpressionNode methodName = null;
         if (isMethodInvocation) {
             MemberAccessExpressionNode memberAccess = (MemberAccessExpressionNode) invocation.callee;
@@ -331,7 +413,7 @@ public class Binder {
             return new BoundInvocationExpressionNode(callee, arguments, invocation.getRange());
         } else {
             return new BoundInvocationExpressionNode(callee, arguments, method, invocation.getRange());
-        }
+        }*/
     }
 
     private BoundNameExpressionNode bindNameExpression(NameExpressionNode name) {
@@ -347,40 +429,31 @@ public class Binder {
         }
     }
 
-    private BoundExpressionNode bindMemberAccessExpression(MemberAccessExpressionNode expression) {
-        BoundExpressionNode callee =  bindExpression(expression.callee);
+    private BoundPropertyAccessExpressionNode bindMemberAccessExpression(MemberAccessExpressionNode expression) {
+        BoundExpressionNode callee = bindExpression(expression.callee);
         if (callee.type instanceof SStaticTypeReference staticType) {
             throw new InternalException(); // TODO
         }
 
-        List<MethodReference> methods = callee.type.getInstanceMethods(expression.name.value);
         PropertyReference property = callee.type.getInstanceProperty(expression.name.value);
-        if (methods.isEmpty() && property == null) {
+        if (property == null) {
             addDiagnostic(
                     BinderErrors.MemberDoesNotExist,
                     expression.name,
                     callee.type.toString(), expression.name.value);
+            property = UnknownPropertyReference.instance;
         }
 
-        if (!methods.isEmpty() && property != null) {
-            // can't have method and property of the same name
-            throw new InternalException();
-        }
+        // TODO
+        /*if (!property.canGet()) {
 
-        // TODO: is this ok to return method access if name doesn't exist?
-        if (property != null) {
-            return new BoundPropertyAccessExpressionNode(
-                    callee,
-                    expression.name.value,
-                    property,
-                    expression.getRange());
-        } else {
-            return new BoundMethodAccessExpressionNode(
-                    callee,
-                    expression.name.value,
-                    new SMethodsHolder(methods),
-                    expression.getRange());
-        }
+        }*/
+
+        return new BoundPropertyAccessExpressionNode(
+                callee,
+                expression.name.value,
+                property,
+                expression.getRange());
     }
 
     private BoundIndexExpressionNode bindIndexExpression(IndexExpressionNode indexExpression) {

@@ -1,14 +1,15 @@
-package com.zergatul.scripting.tests;
+package com.zergatul.scripting.tests.compiler;
 
-import com.zergatul.scripting.old.compiler.ScriptingLanguageCompiler;
-import com.zergatul.scripting.helpers.BoolStorage;
+import com.zergatul.scripting.tests.compiler.helpers.BoolStorage;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
-public class BaseTest {
+import static com.zergatul.scripting.tests.compiler.helpers.CompilerHelper.compile;
+
+public class NestedClassTests {
 
     @BeforeEach
     public void clean() {
@@ -16,20 +17,7 @@ public class BaseTest {
     }
 
     @Test
-    public void endCommentTest() throws Exception {
-        String code = """
-                // aaa
-                // bbb
-                // ccc
-                """;
-
-        ScriptingLanguageCompiler compiler = new ScriptingLanguageCompiler(ApiRoot.class);
-        Runnable program = compiler.compile(code);
-        program.run();
-    }
-
-    @Test
-    public void nestedMethodTest() throws Exception {
+    public void nestedMethodTest() {
         String code = """
                 boolStorage.add(deep.getValue() == 987);
                 boolStorage.add(deep.deep.getValue() == 101);
@@ -38,8 +26,7 @@ public class BaseTest {
                 boolStorage.add(deep.deep.deep.deep.deep.getValue() == 100);
                 """;
 
-        ScriptingLanguageCompiler compiler = new ScriptingLanguageCompiler(ApiRoot.class);
-        Runnable program = compiler.compile(code);
+        Runnable program = compile(ApiRoot.class, code);
         program.run();
 
         Assertions.assertIterableEquals(

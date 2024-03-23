@@ -3,6 +3,7 @@ package com.zergatul.scripting.type;
 import com.zergatul.scripting.InternalException;
 import org.objectweb.asm.MethodVisitor;
 
+import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.Arrays;
 import java.util.List;
@@ -55,6 +56,22 @@ public class SClassType extends SType {
     @Override
     public int getReturnInst() {
         return ARETURN;
+    }
+
+    @Override
+    public PropertyReference getInstanceProperty(String name) {
+        try {
+            Field field = clazz.getDeclaredField(name);
+            if (Modifier.isStatic(field.getModifiers())) {
+                return null;
+            }
+            if (!Modifier.isPublic(field.getModifiers())) {
+                return null;
+            }
+            return new FieldPropertyReference(field);
+        } catch (NoSuchFieldException e) {
+            return null;
+        }
     }
 
     @Override

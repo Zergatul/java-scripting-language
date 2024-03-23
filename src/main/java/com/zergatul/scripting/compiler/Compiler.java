@@ -142,7 +142,8 @@ public class Compiler {
             case BINARY_EXPRESSION -> compileBinaryExpression(visitor, context, (BoundBinaryExpressionNode) expression);
             case IMPLICIT_CAST -> compileImplicitCastExpression(visitor, context, (BoundImplicitCastExpressionNode) expression);
             case NAME_EXPRESSION -> compileNameExpression(visitor, (BoundNameExpressionNode) expression);
-            case INVOCATION_EXPRESSION -> compileInvocationExpression(visitor, context, (BoundInvocationExpressionNode) expression);
+            //case INVOCATION_EXPRESSION -> compileInvocationExpression(visitor, context, (BoundInvocationExpressionNode) expression);
+            case METHOD_INVOCATION_EXPRESSION -> compileMethodInvocationExpression(visitor, context, (BoundMethodInvocationExpressionNode) expression);
             case PROPERTY_ACCESS_EXPRESSION -> compilePropertyAccessExpression(visitor, context, (BoundPropertyAccessExpressionNode) expression);
             default -> throw new InternalException();
         }
@@ -187,30 +188,17 @@ public class Compiler {
         }
     }
 
-    private void compileInvocationExpression(MethodVisitor visitor, CompilerContext context, BoundInvocationExpressionNode invocation) {
-        if (invocation.method == null) {
-            throw new InternalException();
+    private void compileMethodInvocationExpression(MethodVisitor visitor, CompilerContext context, BoundMethodInvocationExpressionNode invocation) {
+        compileExpression(visitor, context, invocation.objectReference);
+        for (BoundExpressionNode expression : invocation.arguments.arguments) {
+            compileExpression(visitor, context, expression);
         }
-
-        if (invocation.callee instanceof BoundMethodAccessExpressionNode methodAccess) {
-            // this is method call
-            compileExpression(visitor, context, methodAccess.callee);
-
-            for (BoundExpressionNode expression : invocation.arguments.arguments) {
-                compileExpression(visitor, context, expression);
-            }
-
-            visitor.visitMethodInsn(
-                    INVOKEVIRTUAL,
-                    Type.getInternalName(invocation.method.getMethod().getDeclaringClass()),
-                    invocation.method.getMethod().getName(),
-                    Type.getMethodDescriptor(invocation.method.getMethod()),
-                    false);
-
-            return;
-        }
-
-        throw new InternalException();
+        visitor.visitMethodInsn(
+                INVOKEVIRTUAL,
+                Type.getInternalName(invocation.method.getMethod().getDeclaringClass()),
+                invocation.method.getMethod().getName(),
+                Type.getMethodDescriptor(invocation.method.getMethod()),
+                false);
     }
 
     private void compilePropertyAccessExpression(MethodVisitor visitor, CompilerContext context, BoundPropertyAccessExpressionNode propertyAccess) {

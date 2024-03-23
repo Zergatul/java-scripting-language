@@ -54,7 +54,7 @@ public class ParserTest {
                 List.of(new VariableDeclarationNode(
                         new PredefinedTypeNode(PredefinedType.INT, new SingleLineTextRange(1, 1, 0, 3)),
                         new NameExpressionNode("x", new SingleLineTextRange(1, 5, 4, 1)),
-                        new IntegerLiteralExpressionNode("10", new SingleLineTextRange(1, 5, 4, 2)),
+                        new IntegerLiteralExpressionNode("10", new SingleLineTextRange(1, 9, 8, 2)),
                         new SingleLineTextRange(1, 1, 0, 11)
                 )),
                 new SingleLineTextRange(1, 1, 0, 11)));
@@ -107,7 +107,7 @@ public class ParserTest {
                 new AssignmentStatementNode(
                         new NameExpressionNode("b", new SingleLineTextRange(1, 10, 9, 1)),
                         new AssignmentOperatorNode(AssignmentOperator.MINUS_ASSIGNMENT, new SingleLineTextRange(1, 12, 11, 2)),
-                        new IntegerLiteralExpressionNode("15", new SingleLineTextRange(1, 15, 14, 1)),
+                        new IntegerLiteralExpressionNode("15", new SingleLineTextRange(1, 15, 14, 2)),
                         new SingleLineTextRange(1, 10, 9, 8)),
                 new AssignmentStatementNode(
                         new NameExpressionNode("c", new SingleLineTextRange(1, 19, 18, 1)),

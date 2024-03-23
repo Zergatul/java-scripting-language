@@ -1,15 +1,20 @@
-package com.zergatul.scripting.tests;
+package com.zergatul.scripting.tests.compiler;
 
-import com.zergatul.scripting.old.compiler.ScriptingLanguageCompiler;
-import com.zergatul.scripting.helpers.FloatStorage;
-import com.zergatul.scripting.helpers.StringStorage;
+import com.zergatul.scripting.DiagnosticMessage;
+import com.zergatul.scripting.SingleLineTextRange;
+import com.zergatul.scripting.binding.BinderErrors;
+import com.zergatul.scripting.tests.compiler.helpers.FloatStorage;
+import com.zergatul.scripting.tests.compiler.helpers.StringStorage;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
-public class MethodOverloadsTest {
+import static com.zergatul.scripting.tests.compiler.helpers.CompilerHelper.compile;
+import static com.zergatul.scripting.tests.compiler.helpers.CompilerHelper.getDiagnostics;
+
+public class MethodOverloadTests {
 
     @BeforeEach
     public void clean() {
@@ -18,14 +23,13 @@ public class MethodOverloadsTest {
     }
 
     @Test
-    public void simpleTest() throws Exception {
+    public void simpleTest() {
         String code = """
                 stringStorage.add(methods.toString(0));
                 stringStorage.add(methods.toString(0.0));
                 """;
 
-        ScriptingLanguageCompiler compiler = new ScriptingLanguageCompiler(ApiRoot.class);
-        Runnable program = compiler.compile(code);
+        Runnable program = compile(ApiRoot.class, code);
         program.run();
 
         Assertions.assertIterableEquals(
@@ -34,20 +38,33 @@ public class MethodOverloadsTest {
     }
 
     @Test
-    public void upcastTest() throws Exception {
+    public void upcastTest() {
         String code = """
                 floatStorage.add(methods.m1(1, 2, 3, ""));
                 floatStorage.add(methods.m1(1, 2.0, 3, ""));
-                floatStorage.add(methods.m1(1, 2, 3, 4));
                 """;
 
-        ScriptingLanguageCompiler compiler = new ScriptingLanguageCompiler(ApiRoot.class);
-        Runnable program = compiler.compile(code);
+        Runnable program = compile(ApiRoot.class, code);
         program.run();
 
         Assertions.assertIterableEquals(
                 ApiRoot.floatStorage.list,
-                List.of(1.0, 2.0, 1.0));
+                List.of(1.0, 2.0));
+    }
+
+    @Test
+    public void noOverloadTest() {
+        String code = """
+                floatStorage.add(methods.m1(1, 2, 3, 4));
+                """;
+
+        List<DiagnosticMessage> messages = getDiagnostics(ApiRoot.class, code);
+
+        Assertions.assertIterableEquals(
+                messages,
+                List.of(new DiagnosticMessage(
+                        BinderErrors.CannotCastArguments,
+                        new SingleLineTextRange(1, 28,27, 12))));
     }
 
     public static class ApiRoot {

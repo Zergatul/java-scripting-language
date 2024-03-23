@@ -43,4 +43,13 @@ public class SingleLineTextRange extends TextRange {
     public int getLength() {
         return this.length;
     }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj instanceof SingleLineTextRange other) {
+            return other.line == line && other.column == column && other.position == position && other.length == length;
+        } else {
+            return false;
+        }
+    }
 }
