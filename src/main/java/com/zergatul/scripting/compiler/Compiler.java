@@ -9,6 +9,8 @@ import com.zergatul.scripting.lexer.LexerInput;
 import com.zergatul.scripting.lexer.LexerOutput;
 import com.zergatul.scripting.parser.Parser;
 import com.zergatul.scripting.parser.ParserOutput;
+import com.zergatul.scripting.parser.nodes.BlockStatementNode;
+import com.zergatul.scripting.parser.nodes.ForEachLoopStatementNode;
 import com.zergatul.scripting.type.SVoidType;
 import org.objectweb.asm.*;
 
@@ -93,17 +95,18 @@ public class Compiler {
         return createInstance(dynamic);
     }
 
-    private void compileStatements(MethodVisitor visitor, CompilerContext context, List<BoundStatementNode> statements) {
-        for (BoundStatementNode statement : statements) {
-            compileStatement(visitor, context, statement);
-        }
-    }
-
     private void compileStatement(MethodVisitor visitor, CompilerContext context, BoundStatementNode statement) {
         switch (statement.getNodeType()) {
             case VARIABLE_DECLARATION -> compileVariableDeclaration(visitor, context, (BoundVariableDeclarationNode) statement);
             case ASSIGNMENT_STATEMENT -> compileAssignmentStatement(visitor, context, (BoundAssignmentStatementNode) statement);
             case EXPRESSION_STATEMENT -> compileExpressionStatement(visitor, context, (BoundExpressionStatementNode) statement);
+            case IF_STATEMENT -> compileIfStatement(visitor, context, (BoundIfStatementNode) statement);
+            case BLOCK_STATEMENT -> compileBlockStatement(visitor, context, (BoundBlockStatementNode) statement);
+            case RETURN_STATEMENT -> compileReturnStatement(visitor, context, (BoundReturnStatementNode) statement);
+            case FOR_LOOP_STATEMENT -> compileForLoopStatement(visitor, context, (BoundForLoopStatementNode) statement);
+            case BREAK_STATEMENT -> compileBreakStatement(visitor, context);
+            case CONTINUE_STATEMENT -> compileContinueStatement(visitor, context);
+            case EMPTY_STATEMENT -> compileEmptyStatement();
             default -> throw new InternalException();
         }
     }
@@ -122,13 +125,111 @@ public class Compiler {
     }
 
     private void compileAssignmentStatement(MethodVisitor visitor, CompilerContext context, BoundAssignmentStatementNode assignment) {
-        throw new InternalException(); // TODO
+        switch (assignment.operator.operator) {
+            case ASSIGNMENT -> {
+                compileExpression(visitor, context, assignment.right);
+                compileSetExpression(visitor, context, assignment.left);
+            }
+            default -> {
+                throw new InternalException(); // TODO
+            }
+        }
+    }
+
+    private void compileIfStatement(MethodVisitor visitor, CompilerContext context, BoundIfStatementNode statement) {
+        compileExpression(visitor, context, statement.condition);
+        if (statement.elseStatement == null) {
+            Label endLabel = new Label();
+            visitor.visitJumpInsn(IFEQ, endLabel);
+            compileStatement(visitor, context, statement.thenStatement);
+            visitor.visitLabel(endLabel);
+        } else {
+            Label elseLabel = new Label();
+            visitor.visitJumpInsn(IFEQ, elseLabel);
+            compileStatement(visitor, context, statement.thenStatement);
+            Label endLabel = new Label();
+            visitor.visitJumpInsn(GOTO, endLabel);
+            visitor.visitLabel(elseLabel);
+            compileStatement(visitor, context, statement.elseStatement);
+            visitor.visitLabel(endLabel);
+        }
+    }
+
+    private void compileBlockStatement(MethodVisitor visitor, CompilerContext context, BoundBlockStatementNode statement) {
+        compileStatements(visitor, context.createChild(), statement.statements);
+    }
+
+    private void compileReturnStatement(MethodVisitor visitor, CompilerContext context, BoundReturnStatementNode statement) {
+        if (statement.expression == null) {
+            visitor.visitInsn(SVoidType.instance.getReturnInst());
+        } else {
+            throw new InternalException(); // TODO
+        }
+    }
+
+    private void compileForLoopStatement(MethodVisitor visitor, CompilerContext context, BoundForLoopStatementNode statement) {
+        context = context.createChild();
+
+        /*
+            <init>
+            begin:
+            <exit>
+            <body>
+            continueLabel:
+            <update>
+            end:
+        */
+
+        Label begin = new Label();
+        Label continueLabel = new Label();
+        Label end = new Label();
+
+        if (statement.init != null) {
+            compileStatement(visitor, context, statement.init);
+        }
+
+        visitor.visitLabel(begin);
+
+        if (statement.condition != null) {
+            compileExpression(visitor, context, statement.condition);
+            visitor.visitJumpInsn(IFEQ, end);
+        }
+
+        context.setBreak(v -> v.visitJumpInsn(GOTO, end));
+        context.setContinue(v -> v.visitJumpInsn(GOTO, continueLabel));
+        compileStatement(visitor, context, statement.body);
+
+        visitor.visitLabel(continueLabel);
+        if (statement.update != null) {
+            compileStatement(visitor, context, statement.update);
+        }
+
+        visitor.visitJumpInsn(GOTO, begin);
+        visitor.visitLabel(end);
+    }
+
+    private void compileBreakStatement(MethodVisitor visitor, CompilerContext context) {
+        context.compileBreak(visitor);
+    }
+
+    private void compileContinueStatement(MethodVisitor visitor, CompilerContext context) {
+        context.compileContinue(visitor);
+    }
+
+    private void compileEmptyStatement() {
+
     }
 
     private void compileExpressionStatement(MethodVisitor visitor, CompilerContext context, BoundExpressionStatementNode statement) {
         compileExpression(visitor, context, statement.expression);
         if (!statement.expression.type.equals(SVoidType.instance)) {
             visitor.visitInsn(POP);
+        }
+    }
+
+    private void compileStatements(MethodVisitor visitor, CompilerContext context, List<BoundStatementNode> statements) {
+        for (BoundStatementNode statement : statements) {
+            compileStatement(visitor, context, statement);
         }
     }
 
@@ -208,5 +309,17 @@ public class Compiler {
 
         compileExpression(visitor, context, propertyAccess.callee);
         propertyAccess.property.compileGet(visitor);
+    }
+
+    private void compileSetExpression(MethodVisitor visitor, CompilerContext context, BoundExpressionNode expression) {
+        switch (expression.getNodeType()) {
+            case NAME_EXPRESSION -> compileSetNameExpression(visitor, context, (BoundNameExpressionNode) expression);
+            default -> throw new InternalException(); // TODO
+        }
+    }
+
+    private void compileSetNameExpression(MethodVisitor visitor, CompilerContext context, BoundNameExpressionNode name) {
+        Variable variable = (Variable) context.getSymbol(name.value);
+        variable.compileStore(visitor);
     }
 }

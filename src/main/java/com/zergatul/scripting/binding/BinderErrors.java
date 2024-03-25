@@ -19,5 +19,6 @@ public class BinderErrors {
     public static final ErrorCode ArgumentCountMismatch = new ErrorCode("B014", "Function does not take %d arguments");
     public static final ErrorCode CannotCastArguments = new ErrorCode("B015", "Invalid arguments");
     public static final ErrorCode InvalidFloatConstant = new ErrorCode("B016", "Cannot parse float constant");
+    public static final ErrorCode NoLoop = new ErrorCode("B017", "No enclosing loop out of which to break or continue");
     public static final ErrorCode InternalError = new ErrorCode("B999", "Internal error: %s");
 }

@@ -48,5 +48,13 @@ public enum TokenType {
     ASTERISK_EQUAL,
     SLASH_EQUAL,
     PERCENT_EQUAL,
-    INVALID
+    IF,
+    ELSE,
+    RETURN,
+    INVALID,
+    FOR,
+    FOREACH,
+    WHILE,
+    BREAK,
+    CONTINUE
 }

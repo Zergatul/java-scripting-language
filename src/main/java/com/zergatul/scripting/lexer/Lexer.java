@@ -387,6 +387,14 @@ public class Lexer {
             case "false" -> TokenType.FALSE;
             case "true" -> TokenType.TRUE;
             case "new" -> TokenType.NEW;
+            case "if" -> TokenType.IF;
+            case "else" -> TokenType.ELSE;
+            case "return" -> TokenType.RETURN;
+            case "for" -> TokenType.FOR;
+            case "foreach" -> TokenType.FOREACH;
+            case "while" -> TokenType.WHILE;
+            case "break" -> TokenType.BREAK;
+            case "continue" -> TokenType.CONTINUE;
             default -> null;
         };
         TextRange range = getCurrentTokenRange();

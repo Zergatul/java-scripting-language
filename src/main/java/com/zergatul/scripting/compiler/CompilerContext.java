@@ -3,9 +3,11 @@ package com.zergatul.scripting.compiler;
 import com.zergatul.scripting.InternalException;
 import com.zergatul.scripting.type.SFloatType;
 import com.zergatul.scripting.type.SType;
+import org.objectweb.asm.MethodVisitor;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.Consumer;
 
 public class CompilerContext {
 
@@ -14,6 +16,8 @@ public class CompilerContext {
     private final Map<String, Symbol> staticSymbols = new HashMap<>();
     private final Map<String, Symbol> localSymbols = new HashMap<>();
     private int stackIndex;
+    private Consumer<MethodVisitor> breakConsumer;
+    private Consumer<MethodVisitor> continueConsumer;
 
     public CompilerContext() {
         this(1);
@@ -64,6 +68,10 @@ public class CompilerContext {
         return new CompilerContext(stackIndex, this);
     }
 
+    public CompilerContext getParent() {
+        return parent;
+    }
+
     public Symbol getSymbol(String name) {
         Symbol staticSymbol = root.staticSymbols.get(name);
         if (staticSymbol != null) {
@@ -83,5 +91,53 @@ public class CompilerContext {
 
     public boolean hasSymbol(String name) {
         return getSymbol(name) != null;
+    }
+
+    public void setBreak(Consumer<MethodVisitor> consumer) {
+        breakConsumer = consumer;
+    }
+
+    public void setContinue(Consumer<MethodVisitor> consumer) {
+        continueConsumer = consumer;
+    }
+
+    public boolean canBreak() {
+        for (CompilerContext context = this; context != null; context = context.parent) {
+            if (context.breakConsumer != null) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public boolean canContinue() {
+        for (CompilerContext context = this; context != null; context = context.parent) {
+            if (context.continueConsumer != null) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public void compileBreak(MethodVisitor visitor) {
+        for (CompilerContext context = this; context != null; context = context.parent) {
+            if (context.breakConsumer != null) {
+                context.breakConsumer.accept(visitor);
+                return;
+            }
+        }
+
+        throw new InternalException(); // no loop
+    }
+
+    public void compileContinue(MethodVisitor visitor) {
+        for (CompilerContext context = this; context != null; context = context.parent) {
+            if (context.continueConsumer != null) {
+                context.continueConsumer.accept(visitor);
+                return;
+            }
+        }
+
+        throw new InternalException(); // no loop
     }
 }

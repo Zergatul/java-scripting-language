@@ -28,7 +28,7 @@ public class Parser {
     private CompilationUnitNode parseCompilationUnit() {
         List<StatementNode> statements = new ArrayList<>();
         while (current.type != TokenType.END_OF_FILE) {
-            if (isPossibleStatement(current.type)) {
+            if (isPossibleStatement()) {
                 statements.add(parseStatement());
             } else {
                 addDiagnostic(ParserErrors.StatementExpected, current, current.getRawValue(code));
@@ -47,7 +47,7 @@ public class Parser {
 
         List<StatementNode> statements = new ArrayList<>();
         while (current.type != TokenType.RIGHT_CURLY_BRACKET && current.type != TokenType.END_OF_FILE) {
-            if (isPossibleStatement(current.type)) {
+            if (isPossibleStatement()) {
                 statements.add(parseStatement());
             } else {
                 addDiagnostic(ParserErrors.StatementExpected, current, current.getRawValue(code));
@@ -58,10 +58,221 @@ public class Parser {
         return new BlockStatementNode(statements, TextRange.combine(first, last));
     }
 
-    private boolean isPossibleStatement(TokenType type) {
-        switch (type) {
+    private IfStatementNode parseIfStatement() {
+        Token ifToken = advance(TokenType.IF);
+
+        advance(TokenType.LEFT_PARENTHESES);
+
+        ExpressionNode condition;
+        if (isPossibleExpression()) {
+            condition = parseExpression();
+        } else {
+            addDiagnostic(ParserErrors.ExpressionExpected, current, current.getRawValue(code));
+            condition = new InvalidExpressionNode(createMissingTokenRange());
+        }
+
+        advance(TokenType.RIGHT_PARENTHESES);
+
+        StatementNode thenStatement;
+        if (isPossibleStatement()) {
+            thenStatement = parseStatement();
+        } else {
+            addDiagnostic(ParserErrors.StatementExpected, current, current.getRawValue(code));
+            thenStatement = new InvalidStatementNode(createMissingTokenRange());
+        }
+
+        StatementNode elseStatement = null;
+        if (current.type == TokenType.ELSE) {
+            advance();
+            if (isPossibleStatement()) {
+                elseStatement = parseStatement();
+            } else {
+                addDiagnostic(ParserErrors.StatementExpected, current, current.getRawValue(code));
+                elseStatement = new InvalidStatementNode(createMissingTokenRange());
+            }
+        }
+
+        return new IfStatementNode(condition, thenStatement, elseStatement, TextRange.combine(ifToken, elseStatement == null ? thenStatement : elseStatement));
+    }
+
+    private ReturnStatementNode parseReturnStatement() {
+        Token returnToken = advance(TokenType.RETURN);
+        ExpressionNode expression = null;
+        if (isPossibleExpression()) {
+            expression = parseExpression();
+        }
+
+        Token semicolon = advance(TokenType.SEMICOLON);
+        return new ReturnStatementNode(expression, TextRange.combine(returnToken, semicolon));
+    }
+
+    private ForLoopStatementNode parseForLoopStatement() {
+        Token forToken = advance(TokenType.FOR);
+        advance(TokenType.LEFT_PARENTHESES);
+
+        StatementNode init;
+        if (current.type == TokenType.SEMICOLON) {
+            init = new EmptyStatementNode(current.getRange());
+            advance();
+        } else {
+            if (isPossibleVariableDeclaration()) {
+                init = parseVariableDeclaration();
+            } else {
+                addDiagnostic(ParserErrors.VariableDeclarationExpected, current, current.getRawValue(code));
+                init = new InvalidStatementNode(createMissingTokenRange());
+                advance(TokenType.SEMICOLON);
+            }
+        }
+
+        ExpressionNode condition = null;
+        if (current.type == TokenType.SEMICOLON) {
+            advance();
+        } else {
+            if (isPossibleExpression()) {
+                condition = parseExpression();
+            } else {
+                addDiagnostic(ParserErrors.ExpressionExpected, current, current.getRawValue(code));
+            }
+            advance(TokenType.SEMICOLON);
+        }
+
+        StatementNode update;
+        if (current.type == TokenType.RIGHT_PARENTHESES) {
+            update = new EmptyStatementNode(current.getRange());
+        } else {
+            if (current.type == TokenType.IDENTIFIER) {
+                update = parseStatementStartingWithIdentifier(false);
+            } else {
+                addDiagnostic(ParserErrors.SimpleStatementExpected, current, current.getRawValue(code));
+                update = new InvalidStatementNode(createMissingTokenRange());
+            }
+        }
+
+        advance(TokenType.RIGHT_PARENTHESES);
+        StatementNode body = parseStatement();
+
+        return new ForLoopStatementNode(init, condition, update, body, TextRange.combine(forToken, body));
+    }
+
+    private ForEachLoopStatementNode parseForEachLoopStatement() {
+        throw new InternalException(); // TODO
+    }
+
+    private WhileLoopStatementNode parseWhileLoopStatement() {
+        throw new InternalException(); // TODO
+    }
+
+    private BreakStatementNode parseBreakStatement() {
+        Token breakToken = advance(TokenType.BREAK);
+        Token semicolon = advance(TokenType.SEMICOLON);
+        return new BreakStatementNode(TextRange.combine(breakToken, semicolon));
+    }
+
+    private BreakStatementNode parseContinueStatement() {
+        Token continueToken = advance(TokenType.CONTINUE);
+        Token semicolon = advance(TokenType.SEMICOLON);
+        return new BreakStatementNode(TextRange.combine(continueToken, semicolon));
+    }
+
+    private EmptyStatementNode parseEmptyStatementNode() {
+        Token semicolon = advance(TokenType.SEMICOLON);
+        return new EmptyStatementNode(semicolon.getRange());
+    }
+
+    private StatementNode parseVariableDeclaration() {
+        TypeNode type = parseTypeNode();
+        if (current.type == TokenType.IDENTIFIER) {
+            IdentifierToken identifier = (IdentifierToken) advance();
+            NameExpressionNode name = new NameExpressionNode(identifier);
+            switch (current.type) {
+                case SEMICOLON -> {
+                    Token semicolon = advance();
+                    return new VariableDeclarationNode(type, name, TextRange.combine(type, semicolon));
+                }
+                case EQUAL -> {
+                    advance();
+                    if (isPossibleExpression()) {
+                        ExpressionNode expression = parseExpression();
+                        Token semicolon = advance(TokenType.SEMICOLON);
+                        return new VariableDeclarationNode(type, name, expression, TextRange.combine(type, semicolon));
+                    } else {
+                        addDiagnostic(ParserErrors.ExpressionExpected, current, current.getRawValue(code));
+                        ExpressionNode invalid = new InvalidExpressionNode(createMissingTokenRange());
+                        return new VariableDeclarationNode(type, name, TextRange.combine(type, invalid));
+                    }
+                }
+                default -> {
+                    addDiagnostic(ParserErrors.SemicolonOrEqualExpected, current, current.getRawValue(code));
+                    return new InvalidStatementNode(createMissingTokenRange());
+                }
+            }
+        } else {
+            addDiagnostic(ParserErrors.IdentifierExpected, current, current.getRawValue(code));
+            return new InvalidStatementNode(createMissingTokenRange());
+        }
+    }
+
+    private StatementNode parseStatementStartingWithIdentifier(boolean includeSemicolon) {
+        // TODO: custom types
+        ExpressionNode expression1 = parseExpression();
+        AssignmentOperator assignment = switch (current.type) {
+            case EQUAL -> AssignmentOperator.ASSIGNMENT;
+            case PLUS_EQUAL -> AssignmentOperator.PLUS_ASSIGNMENT;
+            case MINUS_EQUAL -> AssignmentOperator.MINUS_ASSIGNMENT;
+            case ASTERISK_EQUAL -> AssignmentOperator.MULTIPLY_ASSIGNMENT;
+            case SLASH_EQUAL -> AssignmentOperator.DIVIDE_ASSIGNMENT;
+            default -> null;
+        };
+
+        if (assignment == null) {
+            Locatable last = includeSemicolon ? advance(TokenType.SEMICOLON) : expression1;
+            return new ExpressionStatementNode(expression1, TextRange.combine(expression1, last));
+        } else {
+            Token assignmentToken = advance();
+
+            ExpressionNode expression2;
+            Locatable last;
+            if (isPossibleExpression()) {
+                expression2 = parseExpression();
+                last = includeSemicolon ? advance(TokenType.SEMICOLON) : expression2;
+            } else {
+                addDiagnostic(ParserErrors.ExpressionExpected, current, current.getRawValue(code));
+                expression2 = new InvalidExpressionNode(createMissingTokenRange());
+                last = expression2;
+            }
+            return new AssignmentStatementNode(
+                    expression1,
+                    new AssignmentOperatorNode(assignment, assignmentToken.getRange()),
+                    expression2,
+                    TextRange.combine(expression1, last));
+        }
+    }
+
+    private boolean isPossibleStatement() {
+        switch (current.type) {
             case LEFT_CURLY_BRACKET:
             case SEMICOLON:
+            case IDENTIFIER:
+            case BOOLEAN:
+            case INT:
+            case FLOAT:
+            case STRING:
+            case IF:
+            case RETURN:
+            case FOR:
+            case FOREACH:
+            case WHILE:
+            case BREAK:
+            case CONTINUE:
+                return true;
+
+            default:
+                return false;
+        }
+    }
+
+    private boolean isPossibleExpressionLikeStatement() {
+        switch (current.type) {
             case IDENTIFIER:
             case BOOLEAN:
             case INT:
@@ -75,86 +286,20 @@ public class Parser {
     }
 
     private StatementNode parseStatement() {
-        switch (current.type) {
-            case LEFT_CURLY_BRACKET -> {
-                return parseBlockStatement();
-            }
-
-            case SEMICOLON -> {
-                Token semicolon = advance();
-                return new EmptyStatementNode(semicolon.getRange());
-            }
-
-            case BOOLEAN, INT, FLOAT, STRING -> {
-                TypeNode type = parseTypeNode();
-                if (current.type == TokenType.IDENTIFIER) {
-                    IdentifierToken identifier = (IdentifierToken) advance();
-                    NameExpressionNode name = new NameExpressionNode(identifier);
-                    switch (current.type) {
-                        case SEMICOLON -> {
-                            Token semicolon = advance();
-                            return new VariableDeclarationNode(type, name, TextRange.combine(type, semicolon));
-                        }
-                        case EQUAL -> {
-                            advance();
-                            if (isPossibleExpression()) {
-                                ExpressionNode expression = parseExpression();
-                                Token semicolon = advance(TokenType.SEMICOLON);
-                                return new VariableDeclarationNode(type, name, expression, TextRange.combine(type, semicolon));
-                            } else {
-                                addDiagnostic(ParserErrors.ExpressionExpected, current, current.getRawValue(code));
-                                ExpressionNode invalid = new InvalidExpressionNode(createMissingTokenRange());
-                                return new VariableDeclarationNode(type, name, TextRange.combine(type, invalid));
-                            }
-                        }
-                        default -> {
-                            addDiagnostic(ParserErrors.SemicolonOrEqualExpected, current, current.getRawValue(code));
-                            return new InvalidStatementNode(createMissingTokenRange());
-                        }
-                    }
-                } else {
-                    addDiagnostic(ParserErrors.IdentifierExpected, current, current.getRawValue(code));
-                    return new InvalidStatementNode(createMissingTokenRange());
-                }
-            }
-
-            case IDENTIFIER -> {
-                // TODO: custom types
-                ExpressionNode expression1 = parseExpression();
-                AssignmentOperator assignment = switch (current.type) {
-                    case EQUAL -> AssignmentOperator.ASSIGNMENT;
-                    case PLUS_EQUAL -> AssignmentOperator.PLUS_ASSIGNMENT;
-                    case MINUS_EQUAL -> AssignmentOperator.MINUS_ASSIGNMENT;
-                    case ASTERISK_EQUAL -> AssignmentOperator.MULTIPLY_ASSIGNMENT;
-                    case SLASH_EQUAL -> AssignmentOperator.DIVIDE_ASSIGNMENT;
-                    default -> null;
-                };
-
-                if (assignment == null) {
-                    Token semicolon = advance(TokenType.SEMICOLON);
-                    return new ExpressionStatementNode(expression1, TextRange.combine(expression1, semicolon));
-                } else {
-                    Token assignmentToken = advance();
-
-                    ExpressionNode expression2;
-                    Locatable last;
-                    if (isPossibleExpression()) {
-                        expression2 = parseExpression();
-                        last = advance(TokenType.SEMICOLON);
-                    } else {
-                        addDiagnostic(ParserErrors.ExpressionExpected, current, current.getRawValue(code));
-                        expression2 = new InvalidExpressionNode(createMissingTokenRange());
-                        last = expression2;
-                    }
-                    return new AssignmentStatementNode(
-                            expression1,
-                            new AssignmentOperatorNode(assignment, assignmentToken.getRange()),
-                            expression2,
-                            TextRange.combine(expression1, last));
-                }
-            }
+        return switch (current.type) {
+            case LEFT_CURLY_BRACKET -> parseBlockStatement();
+            case IF -> parseIfStatement();
+            case RETURN -> parseReturnStatement();
+            case FOR -> parseForLoopStatement();
+            case FOREACH -> parseForEachLoopStatement();
+            case WHILE -> parseWhileLoopStatement();
+            case BREAK -> parseBreakStatement();
+            case CONTINUE -> parseContinueStatement();
+            case SEMICOLON -> parseEmptyStatementNode();
+            case BOOLEAN, INT, FLOAT, STRING -> parseVariableDeclaration();
+            case IDENTIFIER -> parseStatementStartingWithIdentifier(true);
             default -> throw new RuntimeException("TODO");
-        }
+        };
     }
 
     private ExpressionNode parseExpression() {

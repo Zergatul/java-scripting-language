@@ -1,17 +1,19 @@
-package com.zergatul.scripting.tests;
+package com.zergatul.scripting.tests.compiler;
 
-import com.zergatul.scripting.old.compiler.ScriptCompileException;
-import com.zergatul.scripting.old.compiler.ScriptingLanguageCompiler;
-import com.zergatul.scripting.helpers.IntStorage;
+import com.zergatul.scripting.DiagnosticMessage;
+import com.zergatul.scripting.SingleLineTextRange;
+import com.zergatul.scripting.binding.BinderErrors;
+import com.zergatul.scripting.tests.compiler.helpers.IntStorage;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static com.zergatul.scripting.tests.compiler.helpers.CompilerHelper.compile;
+import static com.zergatul.scripting.tests.compiler.helpers.CompilerHelper.getDiagnostics;
 
-public class VariablesTest {
+public class VariableTests {
 
     @BeforeEach
     public void clean() {
@@ -19,7 +21,7 @@ public class VariablesTest {
     }
 
     @Test
-    public void sumTest() throws Exception {
+    public void sumTest() {
         String code = """
                 int x;
                 x = x + 1;
@@ -29,8 +31,7 @@ public class VariablesTest {
                 intStorage.add(y);
                 """;
 
-        ScriptingLanguageCompiler compiler = new ScriptingLanguageCompiler(ApiRoot.class);
-        Runnable program = compiler.compile(code);
+        Runnable program = compile(ApiRoot.class, code);
         program.run();
 
         Assertions.assertIterableEquals(
@@ -46,8 +47,9 @@ public class VariablesTest {
                 int x = y;
                 """;
 
-        ScriptingLanguageCompiler compiler = new ScriptingLanguageCompiler(ApiRoot.class);
-        assertThrows(ScriptCompileException.class, () -> compiler.compile(code));
+        List<DiagnosticMessage> messages = getDiagnostics(ApiRoot.class, code);
+        Assertions.assertIterableEquals(messages, List.of(
+                new DiagnosticMessage(BinderErrors.SymbolAlreadyDeclared, new SingleLineTextRange(3, 5, 22, 1), "x")));
     }
 
     @Test
@@ -59,12 +61,13 @@ public class VariablesTest {
                 }
                 """;
 
-        ScriptingLanguageCompiler compiler = new ScriptingLanguageCompiler(ApiRoot.class);
-        assertThrows(ScriptCompileException.class, () -> compiler.compile(code));
+        List<DiagnosticMessage> messages = getDiagnostics(ApiRoot.class, code);
+        Assertions.assertIterableEquals(messages, List.of(
+                new DiagnosticMessage(BinderErrors.SymbolAlreadyDeclared, new SingleLineTextRange(3, 9, 28, 1), "x")));
     }
 
     @Test
-    public void reuseIdentifierInAnotherScopeTest() throws Exception {
+    public void reuseIdentifierInAnotherScopeTest() {
         String code = """
                 boolean b = true;
                 if (b) {
@@ -80,8 +83,7 @@ public class VariablesTest {
                 intStorage.add(inner);
                 """;
 
-        ScriptingLanguageCompiler compiler = new ScriptingLanguageCompiler(ApiRoot.class);
-        Runnable program = compiler.compile(code);
+        Runnable program = compile(ApiRoot.class, code);
         program.run();
 
         Assertions.assertIterableEquals(
@@ -90,7 +92,7 @@ public class VariablesTest {
     }
 
     @Test
-    public void rawBlocksTest() throws Exception {
+    public void rawBlocksTest() {
         String code = """
                 {
                     int x = 23;
@@ -106,8 +108,7 @@ public class VariablesTest {
                 }
                 """;
 
-        ScriptingLanguageCompiler compiler = new ScriptingLanguageCompiler(ApiRoot.class);
-        Runnable program = compiler.compile(code);
+        Runnable program = compile(ApiRoot.class, code);
         program.run();
 
         Assertions.assertIterableEquals(

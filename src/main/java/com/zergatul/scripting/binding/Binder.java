@@ -7,6 +7,7 @@ import com.zergatul.scripting.Locatable;
 import com.zergatul.scripting.binding.nodes.*;
 import com.zergatul.scripting.compiler.CompilerContext;
 import com.zergatul.scripting.compiler.Symbol;
+import com.zergatul.scripting.parser.AssignmentOperator;
 import com.zergatul.scripting.parser.ParserOutput;
 import com.zergatul.scripting.parser.nodes.*;
 import com.zergatul.scripting.type.*;
@@ -23,7 +24,7 @@ public class Binder {
     private final String code;
     private final CompilationUnitNode unit;
     private final List<DiagnosticMessage> diagnostics;
-    private final CompilerContext context;
+    private CompilerContext context;
 
     public Binder(ParserOutput input, CompilerContext context) {
         this.code = input.code();
@@ -43,14 +44,40 @@ public class Binder {
     private BoundStatementNode bindStatement(StatementNode statement) {
         return switch (statement.getNodeType()) {
             case ASSIGNMENT_STATEMENT -> bindAssignmentStatement((AssignmentStatementNode) statement);
+            case BLOCK_STATEMENT -> bindBlockStatement((BlockStatementNode) statement);
             case VARIABLE_DECLARATION -> bindVariableDeclaration((VariableDeclarationNode) statement);
             case EXPRESSION_STATEMENT -> bindExpressionStatement((ExpressionStatementNode) statement);
+            case IF_STATEMENT -> bindIfStatement((IfStatementNode) statement);
+            case RETURN_STATEMENT -> bindReturnStatement((ReturnStatementNode) statement);
+            case FOR_LOOP_STATEMENT -> bindForLoopStatement((ForLoopStatementNode) statement);
+            case BREAK_STATEMENT -> bindBreakStatement((BreakStatementNode) statement);
+            case CONTINUE_STATEMENT -> bindContinueStatement((ContinueStatementNode) statement);
+            case EMPTY_STATEMENT -> bindEmptyStatement((EmptyStatementNode) statement);
+            case INVALID_STATEMENT -> bindInvalidStatement((InvalidStatementNode) statement);
             default -> throw new InternalException();
         };
     }
 
-    private BoundAssignmentStatementNode bindAssignmentStatement(AssignmentStatementNode assignmentStatement) {
-        throw new InternalException();
+    private BoundBlockStatementNode bindBlockStatement(BlockStatementNode block) {
+        pushScope();
+        List<BoundStatementNode> statements = block.statements.stream().map(this::bindStatement).toList();
+        popScope();
+        return new BoundBlockStatementNode(statements, block.getRange());
+    }
+
+    private BoundAssignmentStatementNode bindAssignmentStatement(AssignmentStatementNode statement) {
+        BoundExpressionNode left = bindExpression(statement.left);
+        BoundAssignmentOperatorNode operator = new BoundAssignmentOperatorNode(statement.operator.operator, statement.operator.getRange());
+        BoundExpressionNode right = bindExpression(statement.right);
+        switch (statement.operator.operator) {
+            case ASSIGNMENT -> {
+                right = tryCastTo(right, left.type);
+                return new BoundAssignmentStatementNode(left, operator, right, statement.getRange());
+            }
+            default -> {
+                throw new InternalException(); // TODO
+            }
+        }
     }
 
     private BoundVariableDeclarationNode bindVariableDeclaration(VariableDeclarationNode variableDeclaration) {
@@ -85,6 +112,68 @@ public class Binder {
 
     private BoundExpressionStatementNode bindExpressionStatement(ExpressionStatementNode statement) {
         return new BoundExpressionStatementNode(bindExpression(statement.expression), statement.getRange());
+    }
+
+    private BoundIfStatementNode bindIfStatement(IfStatementNode statement) {
+        BoundExpressionNode condition = tryCastTo(bindExpression(statement.condition), SBoolean.instance);
+        BoundStatementNode thenStatement = bindStatement(statement.thenStatement);
+        BoundStatementNode elseStatement = statement.elseStatement == null ? null : bindStatement(statement.elseStatement);
+        return new BoundIfStatementNode(condition, thenStatement, elseStatement, statement.getRange());
+    }
+
+    private BoundReturnStatementNode bindReturnStatement(ReturnStatementNode statement) {
+        if (statement.expression == null) {
+            return new BoundReturnStatementNode(null, statement.getRange());
+        } else {
+            throw new InternalException(); // TODO
+        }
+    }
+
+    private BoundForLoopStatementNode bindForLoopStatement(ForLoopStatementNode statement) {
+        pushScope();
+        BoundStatementNode init = statement.init != null ? bindStatement(statement.init) : null;
+
+        BoundExpressionNode condition;
+        if (statement.condition != null) {
+            condition = tryCastTo(bindExpression(statement.condition), SBoolean.instance);
+            if (condition.type != SBoolean.instance) {
+                addDiagnostic(BinderErrors.CannotImplicitlyConvert, condition, condition.type.toString(), SBoolean.instance.toString());
+            }
+        } else {
+            condition = null;
+        }
+
+        BoundStatementNode update = statement.update != null ? bindStatement(statement.update) : null;
+
+        context.setBreak(v -> {});
+        context.setContinue(v -> {});
+        BoundStatementNode body = bindStatement(statement.body);
+
+        popScope();
+
+        return new BoundForLoopStatementNode(init, condition, update, body, statement.getRange());
+    }
+
+    private BoundBreakStatementNode bindBreakStatement(BreakStatementNode statement) {
+        if (!context.canBreak()) {
+            addDiagnostic(BinderErrors.NoLoop, statement);
+        }
+        return new BoundBreakStatementNode(statement.getRange());
+    }
+
+    private BoundBreakStatementNode bindContinueStatement(ContinueStatementNode statement) {
+        if (!context.canContinue()) {
+            addDiagnostic(BinderErrors.NoLoop, statement);
+        }
+        return new BoundBreakStatementNode(statement.getRange());
+    }
+
+    private BoundEmptyStatementNode bindEmptyStatement(EmptyStatementNode statement) {
+        return new BoundEmptyStatementNode(statement.getRange());
+    }
+
+    private BoundInvalidStatementNode bindInvalidStatement(InvalidStatementNode statement) {
+        return new BoundInvalidStatementNode(statement.getRange());
     }
 
     private BoundExpressionNode bindExpression(ExpressionNode expression) {
@@ -538,6 +627,14 @@ public class Binder {
         }
 
         throw new InternalException();
+    }
+
+    private void pushScope() {
+        context = context.createChild();
+    }
+
+    private void popScope() {
+        context = context.getParent();
     }
 
     private void addDiagnostic(ErrorCode code, Locatable locatable, Object... parameters) {

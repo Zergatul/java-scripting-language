@@ -11,4 +11,13 @@ public class BooleanLiteralExpressionNode extends ExpressionNode {
         super(NodeType.BOOLEAN_LITERAL, range);
         this.value = value;
     }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj instanceof BooleanLiteralExpressionNode other) {
+            return other.value == value && other.getRange().equals(getRange());
+        } else {
+            return false;
+        }
+    }
 }

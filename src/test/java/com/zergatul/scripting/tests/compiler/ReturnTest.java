@@ -1,14 +1,15 @@
-package com.zergatul.scripting.tests;
+package com.zergatul.scripting.tests.compiler;
 
-import com.zergatul.scripting.old.compiler.ScriptingLanguageCompiler;
-import com.zergatul.scripting.helpers.IntStorage;
+import com.zergatul.scripting.tests.compiler.helpers.IntStorage;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
-public class ReturnsTest {
+import static com.zergatul.scripting.tests.compiler.helpers.CompilerHelper.compile;
+
+public class ReturnTest {
 
     @BeforeEach
     public void clean() {
@@ -16,7 +17,7 @@ public class ReturnsTest {
     }
 
     @Test
-    public void simpleTest() throws Exception {
+    public void simpleTest() {
         String code = """
                 int a1 = 123;
                 int a2 = 456;
@@ -31,8 +32,7 @@ public class ReturnsTest {
                 return;
                 """;
 
-        ScriptingLanguageCompiler compiler = new ScriptingLanguageCompiler(ApiRoot.class);
-        Runnable program = compiler.compile(code);
+        Runnable program = compile(ApiRoot.class, code);
         program.run();
 
         Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(15));

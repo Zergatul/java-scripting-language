@@ -193,6 +193,64 @@ public class ParserTest {
                 new SingleLineTextRange(1, 1, 0, 11)));
     }
 
+    @Test
+    public void ifStatementTest1() {
+        var result = parse("if (a) b = 3;");
+        Assertions.assertEquals(result.diagnostics().size(), 0);
+        Assertions.assertEquals(result.unit(), new CompilationUnitNode(
+                List.of(
+                        new IfStatementNode(
+                                new NameExpressionNode("a", new SingleLineTextRange(1, 5, 4, 1)),
+                                new AssignmentStatementNode(
+                                        new NameExpressionNode("b", new SingleLineTextRange(1, 8, 7, 1)),
+                                        new AssignmentOperatorNode(AssignmentOperator.ASSIGNMENT, new SingleLineTextRange(1, 10, 9, 1)),
+                                        new IntegerLiteralExpressionNode("3", new SingleLineTextRange(1, 12, 11, 1)),
+                                        new SingleLineTextRange(1, 8, 7, 6)),
+                                null,
+                                new SingleLineTextRange(1, 1, 0, 13))),
+                new SingleLineTextRange(1, 1, 0, 13)));
+    }
+
+    @Test
+    public void ifStatementTest2() {
+        var result = parse("if (a) b = 3;else{}");
+        Assertions.assertEquals(result.diagnostics().size(), 0);
+        Assertions.assertEquals(result.unit(), new CompilationUnitNode(
+                List.of(
+                        new IfStatementNode(
+                                new NameExpressionNode("a", new SingleLineTextRange(1, 5, 4, 1)),
+                                new AssignmentStatementNode(
+                                        new NameExpressionNode("b", new SingleLineTextRange(1, 8, 7, 1)),
+                                        new AssignmentOperatorNode(AssignmentOperator.ASSIGNMENT, new SingleLineTextRange(1, 10, 9, 1)),
+                                        new IntegerLiteralExpressionNode("3", new SingleLineTextRange(1, 12, 11, 1)),
+                                        new SingleLineTextRange(1, 8, 7, 6)),
+                                new BlockStatementNode(List.of(), new SingleLineTextRange(1, 18, 17, 2)),
+                                new SingleLineTextRange(1, 1, 0, 19))),
+                new SingleLineTextRange(1, 1, 0, 19)));
+    }
+
+    @Test
+    public void returnStatementTest1() {
+        var result = parse("return;");
+        Assertions.assertEquals(result.diagnostics().size(), 0);
+        Assertions.assertEquals(result.unit(), new CompilationUnitNode(
+                List.of(
+                        new ReturnStatementNode(null, new SingleLineTextRange(1, 1, 0, 7))),
+                new SingleLineTextRange(1, 1, 0, 7)));
+    }
+
+    @Test
+    public void returnStatementTest2() {
+        var result = parse("return true;");
+        Assertions.assertEquals(result.diagnostics().size(), 0);
+        Assertions.assertEquals(result.unit(), new CompilationUnitNode(
+                List.of(
+                        new ReturnStatementNode(
+                                new BooleanLiteralExpressionNode(true, new SingleLineTextRange(1, 8, 7, 4)),
+                                new SingleLineTextRange(1, 1, 0, 12))),
+                new SingleLineTextRange(1, 1, 0, 12)));
+    }
+
     private ParserOutput parse(String code) {
         return new Parser(new Lexer(new LexerInput(code)).lex()).parse();
     }
