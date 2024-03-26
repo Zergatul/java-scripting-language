@@ -258,9 +258,9 @@ public class IntTests {
         String code = """
                 intStorage.add(-123);
                 intStorage.add(+123);
-                intStorage.add(--123);
-                intStorage.add(---123);
-                intStorage.add(---++++++++++++123);
+                intStorage.add(- -123);
+                intStorage.add(- - -123);
+                intStorage.add(- - - + + + + + + + + +  + + +123);
                 """;
 
         Runnable program = compile(ApiRoot.class, code);
@@ -269,6 +269,46 @@ public class IntTests {
         Assertions.assertIterableEquals(
                 ApiRoot.intStorage.list,
                 List.of(-123, 123, 123, -123, -123));
+    }
+
+    @Test
+    public void incrementTest() {
+        String code = """
+                int x;
+                x++;
+                intStorage.add(x);
+                x++;
+                intStorage.add(x);
+                x++;
+                intStorage.add(x);
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(
+                ApiRoot.intStorage.list,
+                List.of(1, 2, 3));
+    }
+
+    @Test
+    public void decrementTest() {
+        String code = """
+                int x;
+                x--;
+                intStorage.add(x);
+                x--;
+                intStorage.add(x);
+                x--;
+                intStorage.add(x);
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(
+                ApiRoot.intStorage.list,
+                List.of(-1, -2, -3));
     }
 
     public static class ApiRoot {

@@ -1,11 +1,16 @@
 package com.zergatul.scripting.parser.nodes;
 
 import com.zergatul.scripting.TextRange;
+import com.zergatul.scripting.lexer.FloatToken;
 import com.zergatul.scripting.parser.NodeType;
 
 public class FloatLiteralExpressionNode extends ExpressionNode {
 
     public final String value;
+
+    public FloatLiteralExpressionNode(FloatToken token) {
+        this(token.value, token.getRange());
+    }
 
     public FloatLiteralExpressionNode(String value, TextRange range) {
         super(NodeType.FLOAT_LITERAL, range);

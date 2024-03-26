@@ -1,14 +1,15 @@
-package com.zergatul.scripting.tests;
+package com.zergatul.scripting.tests.compiler;
 
-import com.zergatul.scripting.old.compiler.ScriptingLanguageCompiler;
-import com.zergatul.scripting.helpers.IntStorage;
+import com.zergatul.scripting.tests.compiler.helpers.IntStorage;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
-public class ForEachLoopsTest {
+import static com.zergatul.scripting.tests.compiler.helpers.CompilerHelper.compile;
+
+public class ForEachLoopTests {
 
     @BeforeEach
     public void clean() {
@@ -16,7 +17,7 @@ public class ForEachLoopsTest {
     }
 
     @Test
-    public void breakStatementTest() throws Exception {
+    public void breakStatementTest() {
         String code = """
                 int[] array = new int[10];
                 for (int i = 0; i < array.length; i++) {
@@ -30,8 +31,7 @@ public class ForEachLoopsTest {
                 }
                 """;
 
-        ScriptingLanguageCompiler compiler = new ScriptingLanguageCompiler(ApiRoot.class);
-        Runnable program = compiler.compile(code);
+        Runnable program = compile(ApiRoot.class, code);
         program.run();
 
         Assertions.assertIterableEquals(
@@ -40,7 +40,7 @@ public class ForEachLoopsTest {
     }
 
     @Test
-    public void continueStatementTest() throws Exception {
+    public void continueStatementTest()  {
         String code = """
                 int[] array = new int[10];
                 for (int i = 0; i < array.length; i++) {
@@ -54,8 +54,7 @@ public class ForEachLoopsTest {
                 }
                 """;
 
-        ScriptingLanguageCompiler compiler = new ScriptingLanguageCompiler(ApiRoot.class);
-        Runnable program = compiler.compile(code);
+        Runnable program = compile(ApiRoot.class, code);
         program.run();
 
         Assertions.assertIterableEquals(

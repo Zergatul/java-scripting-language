@@ -12,4 +12,12 @@ public abstract class BoundExpressionNode extends BoundNode {
         super(nodeType, range);
         this.type = type;
     }
+
+    public boolean canGet() {
+        return true;
+    }
+
+    public boolean canSet() {
+        return false;
+    }
 }

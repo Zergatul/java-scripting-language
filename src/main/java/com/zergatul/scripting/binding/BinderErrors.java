@@ -20,5 +20,11 @@ public class BinderErrors {
     public static final ErrorCode CannotCastArguments = new ErrorCode("B015", "Invalid arguments");
     public static final ErrorCode InvalidFloatConstant = new ErrorCode("B016", "Cannot parse float constant");
     public static final ErrorCode NoLoop = new ErrorCode("B017", "No enclosing loop out of which to break or continue");
+    public static final ErrorCode CannotApplyIncDec = new ErrorCode("B018", "Cannot apply '%s' to operand of type '%s'");
+    public static final ErrorCode NewSupportArraysOnly = new ErrorCode("B019", "new expression support only arrays");
+    public static final ErrorCode InvalidArrayCreation = new ErrorCode("B020", "Array creation must have array size or array initializer");
+    public static final ErrorCode ExpressionCannotBeSet = new ErrorCode("B021", "The left-hand side of an assignment must be a variable, property or indexer");
+    public static final ErrorCode CannotIterate = new ErrorCode("B022", "foreach statement cannot operate on expression of type '%s'");
+    public static final ErrorCode ForEachTypesNotMatch = new ErrorCode("B023", "foreach variable type and expression type doesn't match");
     public static final ErrorCode InternalError = new ErrorCode("B999", "Internal error: %s");
 }

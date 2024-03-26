@@ -94,6 +94,11 @@ public class Lexer {
                         advance();
                         advance();
                         endToken(TokenType.PLUS_EQUAL);
+                    } else if (next == '+') {
+                        trackBeginToken();
+                        advance();
+                        advance();
+                        endToken(TokenType.PLUS_PLUS);
                     } else {
                         appendToken(TokenType.PLUS);
                         advance();
@@ -105,6 +110,11 @@ public class Lexer {
                         advance();
                         advance();
                         endToken(TokenType.MINUS_EQUAL);
+                    } if (next == '-') {
+                        trackBeginToken();
+                        advance();
+                        advance();
+                        endToken(TokenType.MINUS_MINUS);
                     } else {
                         appendToken(TokenType.MINUS);
                         advance();
@@ -395,6 +405,7 @@ public class Lexer {
             case "while" -> TokenType.WHILE;
             case "break" -> TokenType.BREAK;
             case "continue" -> TokenType.CONTINUE;
+            case "in" -> TokenType.IN;
             default -> null;
         };
         TextRange range = getCurrentTokenRange();

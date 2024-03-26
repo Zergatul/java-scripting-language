@@ -148,7 +148,7 @@ public class FloatTests {
     public void minusTest() {
         String code = """
                 float f = -123;
-                floatStorage.add(--f);
+                floatStorage.add(- -f);
                 """;
 
         Runnable program = compile(ApiRoot.class, code);

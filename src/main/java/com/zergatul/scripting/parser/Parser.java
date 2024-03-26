@@ -115,13 +115,13 @@ public class Parser {
             init = new EmptyStatementNode(current.getRange());
             advance();
         } else {
-            if (isPossibleVariableDeclaration()) {
-                init = parseVariableDeclaration();
+            if (isPossibleSimpleStatement()) {
+                init = parseSimpleStatement();
             } else {
-                addDiagnostic(ParserErrors.VariableDeclarationExpected, current, current.getRawValue(code));
+                addDiagnostic(ParserErrors.SimpleStatementExpected, current, current.getRawValue(code));
                 init = new InvalidStatementNode(createMissingTokenRange());
-                advance(TokenType.SEMICOLON);
             }
+            advance(TokenType.SEMICOLON);
         }
 
         ExpressionNode condition = null;
@@ -140,8 +140,8 @@ public class Parser {
         if (current.type == TokenType.RIGHT_PARENTHESES) {
             update = new EmptyStatementNode(current.getRange());
         } else {
-            if (current.type == TokenType.IDENTIFIER) {
-                update = parseStatementStartingWithIdentifier(false);
+            if (isPossibleSimpleStatement() && !isPossibleDeclaration()) {
+                update = parseSimpleStatementNotDeclaration();
             } else {
                 addDiagnostic(ParserErrors.SimpleStatementExpected, current, current.getRawValue(code));
                 update = new InvalidStatementNode(createMissingTokenRange());
@@ -155,7 +155,51 @@ public class Parser {
     }
 
     private ForEachLoopStatementNode parseForEachLoopStatement() {
-        throw new InternalException(); // TODO
+        Token foreachToken = advance(TokenType.FOREACH);
+        advance(TokenType.LEFT_PARENTHESES);
+
+        TypeNode typeNode;
+        if (isPossibleDeclaration()) {
+            typeNode = parseTypeNode();
+        } else {
+            addDiagnostic(ParserErrors.ForEachTypeIdentifierRequired, current);
+            typeNode = new InvalidTypeNode(createMissingTokenRange());
+        }
+
+        IdentifierToken identifier;
+        if (current.type == TokenType.IDENTIFIER) {
+            identifier = (IdentifierToken) advance();
+        } else {
+            addDiagnostic(ParserErrors.IdentifierExpected, current, current.getRawValue(code));
+            identifier = new IdentifierToken("", createMissingTokenRange());
+        }
+
+        advance(TokenType.IN);
+
+        ExpressionNode iterable;
+        if (isPossibleExpression()) {
+            iterable = parseExpression();
+        } else {
+            addDiagnostic(ParserErrors.ExpressionExpected, current, current.getRawValue(code));
+            iterable = new InvalidExpressionNode(createMissingTokenRange());
+        }
+
+        advance(TokenType.RIGHT_PARENTHESES);
+
+        StatementNode body;
+        if (isPossibleStatement()) {
+            body = parseStatement();
+        } else {
+            addDiagnostic(ParserErrors.StatementExpected, current, current.getRawValue(code));
+            body = new InvalidStatementNode(createMissingTokenRange());
+        }
+
+        return new ForEachLoopStatementNode(
+                typeNode,
+                new NameExpressionNode(identifier),
+                iterable,
+                body,
+                TextRange.combine(foreachToken, body));
     }
 
     private WhileLoopStatementNode parseWhileLoopStatement() {
@@ -168,15 +212,42 @@ public class Parser {
         return new BreakStatementNode(TextRange.combine(breakToken, semicolon));
     }
 
-    private BreakStatementNode parseContinueStatement() {
+    private ContinueStatementNode parseContinueStatement() {
         Token continueToken = advance(TokenType.CONTINUE);
         Token semicolon = advance(TokenType.SEMICOLON);
-        return new BreakStatementNode(TextRange.combine(continueToken, semicolon));
+        return new ContinueStatementNode(TextRange.combine(continueToken, semicolon));
     }
 
-    private EmptyStatementNode parseEmptyStatementNode() {
+    private EmptyStatementNode parseEmptyStatement() {
         Token semicolon = advance(TokenType.SEMICOLON);
         return new EmptyStatementNode(semicolon.getRange());
+    }
+
+    private StatementNode parseSimpleStatement() {
+        if (isPossibleDeclaration()) {
+            return parseVariableDeclaration();
+        } else {
+            return parseSimpleStatementNotDeclaration();
+        }
+    }
+
+    private boolean isPossibleDeclaration() {
+        Token next = peek(1);
+        // "int." is not declaration
+        if (isPredefinedType() && next.type != TokenType.DOT) {
+            return true;
+        }
+
+        if (current.type == TokenType.IDENTIFIER) {
+            if (next.type == TokenType.LEFT_SQUARE_BRACKET && peek(2).type == TokenType.RIGHT_SQUARE_BRACKET) {
+                return true;
+            }
+            if (next.type == TokenType.IDENTIFIER) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private StatementNode parseVariableDeclaration() {
@@ -186,15 +257,13 @@ public class Parser {
             NameExpressionNode name = new NameExpressionNode(identifier);
             switch (current.type) {
                 case SEMICOLON -> {
-                    Token semicolon = advance();
-                    return new VariableDeclarationNode(type, name, TextRange.combine(type, semicolon));
+                    return new VariableDeclarationNode(type, name, TextRange.combine(type, name));
                 }
                 case EQUAL -> {
                     advance();
                     if (isPossibleExpression()) {
                         ExpressionNode expression = parseExpression();
-                        Token semicolon = advance(TokenType.SEMICOLON);
-                        return new VariableDeclarationNode(type, name, expression, TextRange.combine(type, semicolon));
+                        return new VariableDeclarationNode(type, name, expression, TextRange.combine(type, expression));
                     } else {
                         addDiagnostic(ParserErrors.ExpressionExpected, current, current.getRawValue(code));
                         ExpressionNode invalid = new InvalidExpressionNode(createMissingTokenRange());
@@ -212,7 +281,7 @@ public class Parser {
         }
     }
 
-    private StatementNode parseStatementStartingWithIdentifier(boolean includeSemicolon) {
+    private StatementNode parseSimpleStatementNotDeclaration() {
         // TODO: custom types
         ExpressionNode expression1 = parseExpression();
         AssignmentOperator assignment = switch (current.type) {
@@ -225,8 +294,21 @@ public class Parser {
         };
 
         if (assignment == null) {
-            Locatable last = includeSemicolon ? advance(TokenType.SEMICOLON) : expression1;
-            return new ExpressionStatementNode(expression1, TextRange.combine(expression1, last));
+            if (current.type == TokenType.PLUS_PLUS) {
+                Token plusPlus = advance();
+                if (!canIncDec(expression1)) {
+                    addDiagnostic(ParserErrors.CannotApplyIncDec, expression1);
+                }
+                return new IncDecStatementNode(NodeType.INCREMENT_STATEMENT, expression1, TextRange.combine(expression1, plusPlus));
+            } else if (current.type == TokenType.MINUS_MINUS) {
+                Token minusMinus = advance();
+                if (!canIncDec(expression1)) {
+                    addDiagnostic(ParserErrors.CannotApplyIncDec, expression1);
+                }
+                return new IncDecStatementNode(NodeType.DECREMENT_STATEMENT, expression1, TextRange.combine(expression1, minusMinus));
+            } else {
+                return new ExpressionStatementNode(expression1, expression1.getRange());
+            }
         } else {
             Token assignmentToken = advance();
 
@@ -234,7 +316,6 @@ public class Parser {
             Locatable last;
             if (isPossibleExpression()) {
                 expression2 = parseExpression();
-                last = includeSemicolon ? advance(TokenType.SEMICOLON) : expression2;
             } else {
                 addDiagnostic(ParserErrors.ExpressionExpected, current, current.getRawValue(code));
                 expression2 = new InvalidExpressionNode(createMissingTokenRange());
@@ -244,19 +325,19 @@ public class Parser {
                     expression1,
                     new AssignmentOperatorNode(assignment, assignmentToken.getRange()),
                     expression2,
-                    TextRange.combine(expression1, last));
+                    TextRange.combine(expression1, expression2));
         }
+    }
+
+    private boolean canIncDec(ExpressionNode expression) {
+        NodeType type = expression.getNodeType();
+        return type == NodeType.NAME_EXPRESSION || type == NodeType.INDEX_EXPRESSION || type == NodeType.MEMBER_ACCESS_EXPRESSION;
     }
 
     private boolean isPossibleStatement() {
         switch (current.type) {
             case LEFT_CURLY_BRACKET:
             case SEMICOLON:
-            case IDENTIFIER:
-            case BOOLEAN:
-            case INT:
-            case FLOAT:
-            case STRING:
             case IF:
             case RETURN:
             case FOR:
@@ -264,6 +345,13 @@ public class Parser {
             case WHILE:
             case BREAK:
             case CONTINUE:
+
+            case BOOLEAN:
+            case INT:
+            case FLOAT:
+            case STRING:
+            case IDENTIFIER:
+            case LEFT_PARENTHESES:
                 return true;
 
             default:
@@ -271,17 +359,18 @@ public class Parser {
         }
     }
 
-    private boolean isPossibleExpressionLikeStatement() {
+    private boolean isPossibleSimpleStatement() {
         switch (current.type) {
-            case IDENTIFIER:
             case BOOLEAN:
             case INT:
             case FLOAT:
             case STRING:
+            case IDENTIFIER:
+            case LEFT_PARENTHESES:
                 return true;
 
             default:
-                return false;
+                return isPossibleExpression();
         }
     }
 
@@ -295,10 +384,21 @@ public class Parser {
             case WHILE -> parseWhileLoopStatement();
             case BREAK -> parseBreakStatement();
             case CONTINUE -> parseContinueStatement();
-            case SEMICOLON -> parseEmptyStatementNode();
-            case BOOLEAN, INT, FLOAT, STRING -> parseVariableDeclaration();
-            case IDENTIFIER -> parseStatementStartingWithIdentifier(true);
-            default -> throw new RuntimeException("TODO");
+            case SEMICOLON -> parseEmptyStatement();
+            case BOOLEAN, INT, FLOAT, STRING, IDENTIFIER, LEFT_PARENTHESES -> {
+                StatementNode statement = parseSimpleStatement();
+                advance(TokenType.SEMICOLON); // TODO: semicolon not included in statement??
+                yield statement;
+            }
+            default -> {
+                if (isPossibleExpression()) {
+                    StatementNode statement = parseSimpleStatement();
+                    advance(TokenType.SEMICOLON); // TODO: semicolon not included in statement??
+                    yield statement;
+                } else {
+                    throw new InternalException("Cannot parse statement.");
+                }
+            }
         };
     }
 
@@ -477,26 +577,82 @@ public class Parser {
 
     private ExpressionNode parseTermWithoutPostfix(int precedence) {
         ExpressionNode expression = switch (current.type) {
-            case IDENTIFIER -> new NameExpressionNode((IdentifierToken) current);
-            case FALSE -> new BooleanLiteralExpressionNode(false, current.getRange());
-            case TRUE -> new BooleanLiteralExpressionNode(true, current.getRange());
-            case INTEGER_LITERAL -> new IntegerLiteralExpressionNode(((IntegerToken) current).value, current.getRange());
-            case FLOAT_LITERAL -> new FloatLiteralExpressionNode(((FloatToken) current).value, current.getRange());
-            case STRING_LITERAL -> new StringLiteralExpressionNode(((StringToken) current).value, current.getRange());
-
+            case IDENTIFIER -> new NameExpressionNode((IdentifierToken) advance());
+            case FALSE -> new BooleanLiteralExpressionNode(false, advance().getRange());
+            case TRUE -> new BooleanLiteralExpressionNode(true, advance().getRange());
+            case INTEGER_LITERAL -> new IntegerLiteralExpressionNode((IntegerToken) advance());
+            case FLOAT_LITERAL -> new FloatLiteralExpressionNode((FloatToken) advance());
+            case STRING_LITERAL -> new StringLiteralExpressionNode((StringToken) advance());
+            case NEW -> parseNewExpression();
+            case LEFT_PARENTHESES -> parseParenthesizedExpression();
             // () => {}
-            // new ...
-
             default -> null;
         };
 
         if (expression != null) {
-            advance();
             return expression;
         } else {
             addDiagnostic(ParserErrors.ExpressionExpected, current, current.getRawValue(code));
             return new InvalidExpressionNode(createMissingTokenRange());
         }
+    }
+
+    private ExpressionNode parseNewExpression() {
+        Token newToken = advance(TokenType.NEW);
+        TypeNode typeNode = parseTypeNode();
+
+        Locatable last = typeNode;
+        ExpressionNode lengthExpression = null;
+        if (current.type == TokenType.LEFT_SQUARE_BRACKET) {
+            advance();
+            if (isPossibleExpression()) {
+                lengthExpression = parseExpression();
+            } else {
+                addDiagnostic(ParserErrors.ExpressionExpected, current, current.getRange());
+                lengthExpression = new InvalidExpressionNode(createMissingTokenRange());
+            }
+            last = advance(TokenType.RIGHT_SQUARE_BRACKET);
+
+            typeNode = new ArrayTypeNode(typeNode, TextRange.combine(typeNode, last));
+        }
+
+        List<ExpressionNode> items = null;
+        if (typeNode.getNodeType() == NodeType.ARRAY_TYPE && current.type == TokenType.LEFT_CURLY_BRACKET) {
+            advance();
+
+            items = new ArrayList<>();
+            boolean expectExpression = true;
+            while (current.type != TokenType.END_OF_FILE) {
+                if (expectExpression) {
+                    if (current.type == TokenType.RIGHT_CURLY_BRACKET) {
+                        last = advance();
+                        break;
+                    }
+                    if (isPossibleExpression()) {
+                        items.add(parseExpression());
+                    } else {
+                        addDiagnostic(ParserErrors.ExpressionExpected, current, current.getRange());
+                    }
+                    expectExpression = false;
+                } else {
+                    if (current.type == TokenType.RIGHT_CURLY_BRACKET) {
+                        last = advance();
+                        break;
+                    }
+                    advance(TokenType.COMMA);
+                    expectExpression = true;
+                }
+            }
+        }
+
+        return new NewExpressionNode(typeNode, lengthExpression, items, TextRange.combine(newToken, last));
+    }
+
+    private ExpressionNode parseParenthesizedExpression() {
+        advance(TokenType.LEFT_PARENTHESES);
+        ExpressionNode expression = parseExpression();
+        advance(TokenType.RIGHT_PARENTHESES);
+        return expression;
     }
 
     private boolean isPossibleExpression() {
@@ -536,27 +692,34 @@ public class Parser {
         }
     }
 
+    private boolean isPredefinedType() {
+        switch (current.type) {
+            case BOOLEAN:
+            case INT:
+            case FLOAT:
+            case STRING:
+                return true;
+
+            default:
+                return false;
+        }
+    }
+
     private TypeNode parseTypeNode() {
         TypeNode type = switch (current.type) {
             case BOOLEAN -> new PredefinedTypeNode(PredefinedType.BOOLEAN, current.getRange());
             case INT -> new PredefinedTypeNode(PredefinedType.INT, current.getRange());
             case FLOAT -> new PredefinedTypeNode(PredefinedType.FLOAT, current.getRange());
             case STRING -> new PredefinedTypeNode(PredefinedType.STRING, current.getRange());
-            default -> throw new RuntimeException("Unknown type.");
+            default -> new InvalidTypeNode(current.getRange());
         };
 
         advance();
 
         while (true) {
-            if (current.type == TokenType.LEFT_SQUARE_BRACKET) {
+            if (current.type == TokenType.LEFT_SQUARE_BRACKET && peek(1).type == TokenType.RIGHT_SQUARE_BRACKET) {
                 advance();
-                Token right;
-                if (current.type == TokenType.RIGHT_SQUARE_BRACKET) {
-                    right = advance();
-                } else {
-                    addDiagnostic(ParserErrors.CloseSquareBracketExpected, current, current.getRawValue(code));
-                    right = createMissingToken(TokenType.RIGHT_SQUARE_BRACKET);
-                }
+                Token right = advance();
                 type = new ArrayTypeNode(type, TextRange.combine(type, right));
             } else {
                 break;
@@ -588,6 +751,7 @@ public class Parser {
                 case LEFT_CURLY_BRACKET -> addDiagnostic(ParserErrors.OpenCurlyBracketExpected, current, current.getRawValue(code));
                 case RIGHT_SQUARE_BRACKET -> addDiagnostic(ParserErrors.CloseSquareBracketExpected, current, current.getRawValue(code));
                 case SEMICOLON -> addDiagnostic(ParserErrors.SemicolonExpected, current);
+                case IN -> addDiagnostic(ParserErrors.InExpected, current);
                 default -> throw new RuntimeException("Not implemented");
             }
 
@@ -595,8 +759,22 @@ public class Parser {
         }
     }
 
-    private void addDiagnostic(ErrorCode code, Token token, Object... parameters) {
-        diagnostics.add(new DiagnosticMessage(code, token, parameters));
+    private Token peek(int n) {
+        int shift = 1;
+        while (true) {
+            if (tokens.peek(shift).type != TokenType.WHITESPACE) {
+                n--;
+                if (n == 0) {
+                    break;
+                }
+            }
+            shift++;
+        }
+        return tokens.peek(shift);
+    }
+
+    private void addDiagnostic(ErrorCode code, Locatable locatable, Object... parameters) {
+        diagnostics.add(new DiagnosticMessage(code, locatable, parameters));
     }
 
     private Token createMissingToken(TokenType type) {

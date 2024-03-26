@@ -22,6 +22,11 @@ public class LocalVariable extends Variable {
     }
 
     @Override
+    public boolean canSet() {
+        return true;
+    }
+
+    @Override
     public void compileLoad(MethodVisitor visitor) {
         visitor.visitVarInsn(getType().getLoadInst(), stackIndex);
     }

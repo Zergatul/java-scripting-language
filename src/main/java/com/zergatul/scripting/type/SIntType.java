@@ -132,6 +132,16 @@ public class SIntType extends SPredefinedType {
     }
 
     @Override
+    public UnaryOperation increment() {
+        return IntOperations.INC;
+    }
+
+    @Override
+    public UnaryOperation decrement() {
+        return IntOperations.DEC;
+    }
+
+    @Override
     public UnaryOperation implicitCastTo(SType other) {
         return other == SFloatType.instance ? IntOperations.TO_FLOAT : null;
     }

@@ -26,6 +26,16 @@ public class BufferedMethodVisitor extends MethodVisitor {
     }
 
     @Override
+    public void visitIntInsn(int opcode, int operand) {
+        buffer.add(visitor -> visitor.visitIntInsn(opcode, operand));
+    }
+
+    @Override
+    public void visitIincInsn(int varIndex, int increment) {
+        buffer.add(visitor -> visitor.visitIincInsn(varIndex, increment));
+    }
+
+    @Override
     public void visitVarInsn(int opcode, int varIndex) {
         buffer.add(visitor -> visitor.visitVarInsn(opcode, varIndex));
     }

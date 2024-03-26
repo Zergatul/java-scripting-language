@@ -21,6 +21,14 @@ public class TokenQueue implements Iterable<Token> {
         }
     }
 
+    public Token peek(int n) {
+        if (position + n - 1 < list.size()) {
+            return list.get(position + n - 1);
+        } else {
+            return EndOfFileToken.instance;
+        }
+    }
+
     public int size() {
         return list.size() - position;
     }

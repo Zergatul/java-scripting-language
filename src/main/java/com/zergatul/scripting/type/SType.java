@@ -4,6 +4,7 @@ import com.zergatul.scripting.InternalException;
 import com.zergatul.scripting.parser.BinaryOperator;
 import com.zergatul.scripting.parser.UnaryOperator;
 import com.zergatul.scripting.type.operation.BinaryOperation;
+import com.zergatul.scripting.type.operation.IndexOperation;
 import com.zergatul.scripting.type.operation.UnaryOperation;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Type;
@@ -124,11 +125,23 @@ public abstract class SType {
         };
     }
 
+    public UnaryOperation increment() {
+        return null;
+    }
+
+    public UnaryOperation decrement() {
+        return null;
+    }
+
     public UnaryOperation implicitCastTo(SType other) {
         return null;
     }
 
-    public BinaryOperation index(SType other) {
+    public List<SType> supportedIndexers() {
+        return List.of();
+    }
+
+    public IndexOperation index(SType type) {
         return null;
     }
 
@@ -141,10 +154,6 @@ public abstract class SType {
     }
 
     public PropertyReference getInstanceProperty(String name) {
-        return null;
-    }
-
-    public SType compileGetField(String field, MethodVisitor visitor) {
         return null;
     }
 

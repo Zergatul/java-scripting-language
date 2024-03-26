@@ -21,5 +21,9 @@ public abstract class Symbol {
         return name;
     }
 
+    public boolean canSet() {
+        return false;
+    }
+
     public abstract void compileLoad(MethodVisitor visitor);
 }

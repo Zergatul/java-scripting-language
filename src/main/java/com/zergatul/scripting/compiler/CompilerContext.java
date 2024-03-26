@@ -42,7 +42,7 @@ public class CompilerContext {
     }
 
     public LocalVariable addLocalVariable(String name, SType type) {
-        if (hasSymbol(name)) {
+        if (name != null && hasSymbol(name)) {
             throw new InternalException();
         }
 
@@ -57,7 +57,7 @@ public class CompilerContext {
     }
 
     public void addLocalVariable(LocalVariable variable) {
-        if (hasSymbol(variable.getName())) {
+        if (variable.getName() != null && hasSymbol(variable.getName())) {
             throw new InternalException();
         }
 

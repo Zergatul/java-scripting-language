@@ -30,6 +30,20 @@ public class IntOperations {
             visitor.visitInsn(INEG);
         }
     };
+    public static final UnaryOperation INC = new UnaryOperation(SIntType.instance) {
+        @Override
+        public void apply(MethodVisitor visitor) {
+            visitor.visitInsn(ICONST_1);
+            visitor.visitInsn(IADD);
+        }
+    };
+    public static final UnaryOperation DEC = new UnaryOperation(SIntType.instance) {
+        @Override
+        public void apply(MethodVisitor visitor) {
+            visitor.visitInsn(ICONST_1);
+            visitor.visitInsn(ISUB);
+        }
+    };
     public static final UnaryOperation TO_FLOAT = new UnaryOperation(SFloatType.instance) {
         @Override
         public void apply(MethodVisitor visitor) {

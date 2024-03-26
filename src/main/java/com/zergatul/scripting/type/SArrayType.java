@@ -1,7 +1,12 @@
 package com.zergatul.scripting.type;
 
+import com.zergatul.scripting.compiler.BufferedMethodVisitor;
+import com.zergatul.scripting.type.operation.BinaryOperation;
+import com.zergatul.scripting.type.operation.IndexOperation;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Type;
+
+import java.util.List;
 
 import static org.objectweb.asm.Opcodes.*;
 
@@ -58,12 +63,24 @@ public class SArrayType extends SType {
     }
 
     @Override
-    public SType compileGetField(String field, MethodVisitor visitor) {
-        if (field.equals("length")) {
-            visitor.visitInsn(ARRAYLENGTH);
-            return SIntType.instance;
+    public PropertyReference getInstanceProperty(String name) {
+        return switch (name) {
+            case "length" -> length;
+            default -> null;
+        };
+    }
+
+    @Override
+    public List<SType> supportedIndexers() {
+        return List.of(SIntType.instance);
+    }
+
+    @Override
+    public IndexOperation index(SType type) {
+        if (type == SIntType.instance) {
+            return new ArrayIndexOperation(getElementsType());
         } else {
-            return super.compileGetField(field, visitor);
+            return null;
         }
     }
 
@@ -84,5 +101,54 @@ public class SArrayType extends SType {
     @Override
     public String toString() {
         return type.toString() + "[]";
+    }
+
+    private static final PropertyReference length = new PropertyReference() {
+        @Override
+        public SType getType() {
+            return SIntType.instance;
+        }
+
+        @Override
+        public boolean canGet() {
+            return true;
+        }
+
+        @Override
+        public boolean canSet() {
+            return false;
+        }
+
+        @Override
+        public void compileGet(MethodVisitor visitor) {
+            visitor.visitInsn(ARRAYLENGTH);
+        }
+    };
+
+    private static class ArrayIndexOperation extends IndexOperation {
+
+        public ArrayIndexOperation(SType type) {
+            super(type);
+        }
+
+        @Override
+        public boolean canGet() {
+            return true;
+        }
+
+        @Override
+        public boolean canSet() {
+            return true;
+        }
+
+        @Override
+        public void compileGet(MethodVisitor visitor) {
+            visitor.visitInsn(type.getArrayLoadInst());
+        }
+
+        @Override
+        public void compileSet(MethodVisitor visitor) {
+            visitor.visitInsn(type.getArrayStoreInst());
+        }
     }
 }

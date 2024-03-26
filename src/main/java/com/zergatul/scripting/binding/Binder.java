@@ -1,20 +1,15 @@
 package com.zergatul.scripting.binding;
 
-import com.zergatul.scripting.DiagnosticMessage;
-import com.zergatul.scripting.ErrorCode;
-import com.zergatul.scripting.InternalException;
-import com.zergatul.scripting.Locatable;
+import com.zergatul.scripting.*;
 import com.zergatul.scripting.binding.nodes.*;
 import com.zergatul.scripting.compiler.CompilerContext;
+import com.zergatul.scripting.compiler.LocalVariable;
 import com.zergatul.scripting.compiler.Symbol;
-import com.zergatul.scripting.parser.AssignmentOperator;
+import com.zergatul.scripting.parser.NodeType;
 import com.zergatul.scripting.parser.ParserOutput;
 import com.zergatul.scripting.parser.nodes.*;
 import com.zergatul.scripting.type.*;
-import com.zergatul.scripting.type.operation.BinaryOperation;
-import com.zergatul.scripting.type.operation.UnaryOperation;
-import com.zergatul.scripting.type.operation.UndefinedBinaryOperation;
-import com.zergatul.scripting.type.operation.UndefinedUnaryOperation;
+import com.zergatul.scripting.type.operation.*;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -50,10 +45,12 @@ public class Binder {
             case IF_STATEMENT -> bindIfStatement((IfStatementNode) statement);
             case RETURN_STATEMENT -> bindReturnStatement((ReturnStatementNode) statement);
             case FOR_LOOP_STATEMENT -> bindForLoopStatement((ForLoopStatementNode) statement);
+            case FOREACH_LOOP_STATEMENT -> bindForEachLoopStatement((ForEachLoopStatementNode) statement);
             case BREAK_STATEMENT -> bindBreakStatement((BreakStatementNode) statement);
             case CONTINUE_STATEMENT -> bindContinueStatement((ContinueStatementNode) statement);
             case EMPTY_STATEMENT -> bindEmptyStatement((EmptyStatementNode) statement);
             case INVALID_STATEMENT -> bindInvalidStatement((InvalidStatementNode) statement);
+            case INCREMENT_STATEMENT, DECREMENT_STATEMENT -> bindIncDecStatement((IncDecStatementNode) statement);
             default -> throw new InternalException();
         };
     }
@@ -67,6 +64,10 @@ public class Binder {
 
     private BoundAssignmentStatementNode bindAssignmentStatement(AssignmentStatementNode statement) {
         BoundExpressionNode left = bindExpression(statement.left);
+        if (!left.canSet()) {
+            addDiagnostic(BinderErrors.ExpressionCannotBeSet, statement.left);
+        }
+
         BoundAssignmentOperatorNode operator = new BoundAssignmentOperatorNode(statement.operator.operator, statement.operator.getRange());
         BoundExpressionNode right = bindExpression(statement.right);
         switch (statement.operator.operator) {
@@ -154,6 +155,47 @@ public class Binder {
         return new BoundForLoopStatementNode(init, condition, update, body, statement.getRange());
     }
 
+    private BoundForEachLoopStatementNode bindForEachLoopStatement(ForEachLoopStatementNode statement) {
+        pushScope();
+
+        BoundTypeNode variableType = bindType(statement.typeNode);
+
+        Symbol existing = context.getSymbol(statement.name.value);
+        BoundNameExpressionNode name = null;
+        if (existing != null) {
+            addDiagnostic(
+                    BinderErrors.SymbolAlreadyDeclared,
+                    statement.name,
+                    statement.name.value);
+        } else {
+            LocalVariable variable = context.addLocalVariable(statement.name.value, variableType.type);
+            name = new BoundNameExpressionNode(variable, variableType.type, statement.name.value, statement.name.getRange());
+        }
+
+        LocalVariable index = context.addLocalVariable(null, SIntType.instance);
+        LocalVariable length = context.addLocalVariable(null, SIntType.instance);
+
+        BoundExpressionNode iterable = bindExpression(statement.iterable);
+        if (iterable.type instanceof SArrayType arrayType) {
+            if (!arrayType.getElementsType().equals(variableType.type)) {
+                addDiagnostic(BinderErrors.ForEachTypesNotMatch, statement.typeNode);
+            }
+        } else {
+            addDiagnostic(BinderErrors.CannotIterate, iterable, iterable.type.toString());
+        }
+
+        context.setBreak(v -> {});
+        context.setContinue(v -> {});
+        BoundStatementNode body = bindStatement(statement.body);
+
+        popScope();
+
+        return new BoundForEachLoopStatementNode(
+                variableType, name, iterable, body,
+                index, length,
+                statement.getRange());
+    }
+
     private BoundBreakStatementNode bindBreakStatement(BreakStatementNode statement) {
         if (!context.canBreak()) {
             addDiagnostic(BinderErrors.NoLoop, statement);
@@ -161,11 +203,11 @@ public class Binder {
         return new BoundBreakStatementNode(statement.getRange());
     }
 
-    private BoundBreakStatementNode bindContinueStatement(ContinueStatementNode statement) {
+    private BoundContinueStatementNode bindContinueStatement(ContinueStatementNode statement) {
         if (!context.canContinue()) {
             addDiagnostic(BinderErrors.NoLoop, statement);
         }
-        return new BoundBreakStatementNode(statement.getRange());
+        return new BoundContinueStatementNode(statement.getRange());
     }
 
     private BoundEmptyStatementNode bindEmptyStatement(EmptyStatementNode statement) {
@@ -174,6 +216,27 @@ public class Binder {
 
     private BoundInvalidStatementNode bindInvalidStatement(InvalidStatementNode statement) {
         return new BoundInvalidStatementNode(statement.getRange());
+    }
+
+    private BoundIncDecStatementNode bindIncDecStatement(IncDecStatementNode statement) {
+        BoundExpressionNode expression = bindExpression(statement.expression);
+        if (!expression.canSet()) {
+            addDiagnostic(BinderErrors.ExpressionCannotBeSet, expression);
+        }
+
+        boolean isInc = statement.getNodeType() == NodeType.INCREMENT_STATEMENT;
+
+        SType type = expression.type;
+        UnaryOperation operation = isInc ? type.increment() : type.decrement();
+        if (operation == null) {
+            addDiagnostic(
+                    BinderErrors.CannotApplyIncDec,
+                    statement,
+                    isInc ? "++" : "--",
+                    type.toString());
+        }
+
+        return new BoundIncDecStatementNode(statement.getNodeType(), expression, operation, statement.getRange());
     }
 
     private BoundExpressionNode bindExpression(ExpressionNode expression) {
@@ -189,6 +252,7 @@ public class Binder {
             case INVOCATION_EXPRESSION -> bindInvocationExpression((InvocationExpressionNode) expression);
             case NAME_EXPRESSION -> bindNameExpression((NameExpressionNode) expression);
             case MEMBER_ACCESS_EXPRESSION -> bindMemberAccessExpression((MemberAccessExpressionNode) expression);
+            case NEW_EXPRESSION -> bindNewExpression((NewExpressionNode) expression);
             case INVALID_EXPRESSION -> bindInvalidExpression((InvalidExpressionNode) expression);
             default -> throw new InternalException();
         };
@@ -518,6 +582,41 @@ public class Binder {
         }
     }
 
+    private BoundNewExpressionNode bindNewExpression(NewExpressionNode expression) {
+        BoundTypeNode typeNode = bindType(expression.typeNode);
+
+        BoundExpressionNode lengthExpression = null;
+        if (expression.lengthExpression != null) {
+            lengthExpression = tryCastTo(bindExpression(expression.lengthExpression), SIntType.instance);
+        }
+
+        List<BoundExpressionNode> items = null;
+        if (expression.items != null) {
+            items = new ArrayList<>(expression.items.size());
+            for (ExpressionNode e : expression.items) {
+                items.add(bindExpression(e));
+            }
+        }
+
+        if (typeNode.getNodeType() == NodeType.ARRAY_TYPE) {
+            if (lengthExpression == null ^ items == null) {
+                SArrayType arrayType = (SArrayType) typeNode.type;
+                SType underlying = arrayType.getElementsType();
+                if (items != null) {
+                    for (int i = 0; i < items.size(); i++) {
+                        items.set(i, tryCastTo(items.get(i), underlying));
+                    }
+                }
+            } else {
+                addDiagnostic(BinderErrors.InvalidArrayCreation, expression);
+            }
+        } else {
+            addDiagnostic(BinderErrors.NewSupportArraysOnly, expression);
+        }
+
+        return new BoundNewExpressionNode(typeNode, lengthExpression, items, expression.getRange());
+    }
+
     private BoundPropertyAccessExpressionNode bindMemberAccessExpression(MemberAccessExpressionNode expression) {
         BoundExpressionNode callee = bindExpression(expression.callee);
         if (callee.type instanceof SStaticTypeReference staticType) {
@@ -548,9 +647,25 @@ public class Binder {
     private BoundIndexExpressionNode bindIndexExpression(IndexExpressionNode indexExpression) {
         BoundExpressionNode callee = bindExpression(indexExpression.callee);
         BoundExpressionNode index = bindExpression(indexExpression.index);
-        BinaryOperation operation = callee.type.index(index.type);
+
+        IndexOperation operation = null;
+        if (callee.type.supportedIndexers().contains(index.type)) {
+            operation = callee.type.index(index.type);
+        } else {
+            for (SType type : callee.type.supportedIndexers()) {
+                UnaryOperation cast = index.type.implicitCastTo(type);
+                if (cast != null) {
+                    operation = callee.type.index(type);
+                    index = new BoundImplicitCastExpressionNode(index, cast, index.getRange());
+                    break;
+                }
+            }
+        }
+
+        // TODO: canGet/canSet
+
         if (operation == null) {
-            operation = UndefinedBinaryOperation.instance;
+            operation = UndefinedIndexOperation.instance;
             addDiagnostic(
                     BinderErrors.CannotApplyIndex,
                     indexExpression,

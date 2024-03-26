@@ -7,17 +7,18 @@ import com.zergatul.scripting.binding.nodes.*;
 import com.zergatul.scripting.lexer.Lexer;
 import com.zergatul.scripting.lexer.LexerInput;
 import com.zergatul.scripting.lexer.LexerOutput;
+import com.zergatul.scripting.parser.NodeType;
 import com.zergatul.scripting.parser.Parser;
 import com.zergatul.scripting.parser.ParserOutput;
-import com.zergatul.scripting.parser.nodes.BlockStatementNode;
-import com.zergatul.scripting.parser.nodes.ForEachLoopStatementNode;
-import com.zergatul.scripting.type.SVoidType;
+import com.zergatul.scripting.type.*;
+import com.zergatul.scripting.type.operation.UnaryOperation;
 import org.objectweb.asm.*;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Function;
 
 import static org.objectweb.asm.Opcodes.*;
 
@@ -104,9 +105,11 @@ public class Compiler {
             case BLOCK_STATEMENT -> compileBlockStatement(visitor, context, (BoundBlockStatementNode) statement);
             case RETURN_STATEMENT -> compileReturnStatement(visitor, context, (BoundReturnStatementNode) statement);
             case FOR_LOOP_STATEMENT -> compileForLoopStatement(visitor, context, (BoundForLoopStatementNode) statement);
+            case FOREACH_LOOP_STATEMENT -> compileForEachLoopStatement(visitor, context, (BoundForEachLoopStatementNode) statement);
             case BREAK_STATEMENT -> compileBreakStatement(visitor, context);
             case CONTINUE_STATEMENT -> compileContinueStatement(visitor, context);
             case EMPTY_STATEMENT -> compileEmptyStatement();
+            case INCREMENT_STATEMENT, DECREMENT_STATEMENT -> compileIncDecStatement(visitor, context, (BoundIncDecStatementNode) statement);
             default -> throw new InternalException();
         }
     }
@@ -127,8 +130,21 @@ public class Compiler {
     private void compileAssignmentStatement(MethodVisitor visitor, CompilerContext context, BoundAssignmentStatementNode assignment) {
         switch (assignment.operator.operator) {
             case ASSIGNMENT -> {
-                compileExpression(visitor, context, assignment.right);
-                compileSetExpression(visitor, context, assignment.left);
+                switch (assignment.left.getNodeType()) {
+                    case NAME_EXPRESSION -> {
+                        compileExpression(visitor, context, assignment.right);
+                        BoundNameExpressionNode nameExpression = (BoundNameExpressionNode) assignment.left;
+                        Variable variable = (Variable) context.getSymbol(nameExpression.value);
+                        variable.compileStore(visitor);
+                    }
+                    case INDEX_EXPRESSION -> {
+                        BoundIndexExpressionNode indexExpression = (BoundIndexExpressionNode) assignment.left;
+                        compileExpression(visitor, context, indexExpression.callee);
+                        compileExpression(visitor, context, indexExpression.index);
+                        compileExpression(visitor, context, assignment.right);
+                        indexExpression.operation.compileSet(visitor);
+                    }
+                }
             }
             default -> {
                 throw new InternalException(); // TODO
@@ -208,6 +224,55 @@ public class Compiler {
         visitor.visitLabel(end);
     }
 
+    private void compileForEachLoopStatement(MethodVisitor visitor, CompilerContext context, BoundForEachLoopStatementNode statement) {
+        context = context.createChild();
+
+        Label begin = new Label();
+        Label continueLabel = new Label();
+        Label end = new Label();
+
+        compileExpression(visitor, context, statement.iterable);
+
+        LocalVariable variable = (LocalVariable) statement.name.symbol;
+        context.addLocalVariable(variable);
+        context.addLocalVariable(statement.index);
+        context.addLocalVariable(statement.length);
+
+        visitor.visitInsn(ICONST_0);
+        statement.index.compileStore(visitor);
+
+        visitor.visitInsn(DUP);
+        visitor.visitInsn(ARRAYLENGTH);
+        statement.length.compileStore(visitor);
+
+        visitor.visitLabel(begin);
+
+        // index >= length -- GOTO end
+        statement.index.compileLoad(visitor);
+        statement.length.compileLoad(visitor);
+        visitor.visitJumpInsn(IF_ICMPGE, end);
+
+        // variable = array[index]
+        visitor.visitInsn(DUP);
+        statement.index.compileLoad(visitor);
+        visitor.visitInsn(variable.getType().getArrayLoadInst());
+        variable.compileStore(visitor);
+
+        // body
+        context.setBreak(v -> v.visitJumpInsn(GOTO, end));
+        context.setContinue(v -> v.visitJumpInsn(GOTO, continueLabel));
+        compileStatement(visitor, context, statement.body);
+
+        // index++
+        visitor.visitLabel(continueLabel);
+        visitor.visitIincInsn(statement.index.getStackIndex(), 1);
+
+        visitor.visitJumpInsn(GOTO, begin);
+        visitor.visitLabel(end);
+
+        visitor.visitInsn(POP);
+    }
+
     private void compileBreakStatement(MethodVisitor visitor, CompilerContext context) {
         context.compileBreak(visitor);
     }
@@ -218,6 +283,28 @@ public class Compiler {
 
     private void compileEmptyStatement() {
 
+    }
+
+    private void compileIncDecStatement(MethodVisitor visitor, CompilerContext context, BoundIncDecStatementNode statement) {
+        switch (statement.expression.getNodeType()) {
+            case NAME_EXPRESSION -> {
+                BoundNameExpressionNode nameExpression = (BoundNameExpressionNode) statement.expression;
+                compileExpression(visitor, context, statement.expression);
+                statement.operation.apply(visitor);
+                Variable variable = (Variable) context.getSymbol(nameExpression.value);
+                variable.compileStore(visitor);
+            }
+            case INDEX_EXPRESSION -> {
+                BoundIndexExpressionNode indexExpression = (BoundIndexExpressionNode) statement.expression;
+                compileExpression(visitor, context, indexExpression.callee);
+                compileExpression(visitor, context, indexExpression.index);
+                visitor.visitInsn(DUP2);
+                indexExpression.operation.compileGet(visitor);
+                statement.operation.apply(visitor);
+                indexExpression.operation.compileSet(visitor);
+            }
+            default -> throw new InternalException();
+        }
     }
 
     private void compileExpressionStatement(MethodVisitor visitor, CompilerContext context, BoundExpressionStatementNode statement) {
@@ -246,6 +333,8 @@ public class Compiler {
             //case INVOCATION_EXPRESSION -> compileInvocationExpression(visitor, context, (BoundInvocationExpressionNode) expression);
             case METHOD_INVOCATION_EXPRESSION -> compileMethodInvocationExpression(visitor, context, (BoundMethodInvocationExpressionNode) expression);
             case PROPERTY_ACCESS_EXPRESSION -> compilePropertyAccessExpression(visitor, context, (BoundPropertyAccessExpressionNode) expression);
+            case NEW_EXPRESSION -> compileNewExpression(visitor, context, (BoundNewExpressionNode) expression);
+            case INDEX_EXPRESSION -> compileIndexExpression(visitor, context, (BoundIndexExpressionNode) expression);
             default -> throw new InternalException();
         }
     }
@@ -311,15 +400,34 @@ public class Compiler {
         propertyAccess.property.compileGet(visitor);
     }
 
-    private void compileSetExpression(MethodVisitor visitor, CompilerContext context, BoundExpressionNode expression) {
-        switch (expression.getNodeType()) {
-            case NAME_EXPRESSION -> compileSetNameExpression(visitor, context, (BoundNameExpressionNode) expression);
-            default -> throw new InternalException(); // TODO
+    private void compileNewExpression(MethodVisitor visitor, CompilerContext context, BoundNewExpressionNode expression) {
+        if (expression.lengthExpression != null) {
+            compileExpression(visitor, context, expression.lengthExpression);
+        } else {
+            visitor.visitLdcInsn(expression.items.size());
+        }
+
+        SArrayType arrayType = (SArrayType) expression.type;
+        SType elementsType = arrayType.getElementsType();
+        if (elementsType.isReference()) {
+            visitor.visitTypeInsn(ANEWARRAY, Type.getInternalName(elementsType.getJavaClass()));
+        } else {
+            visitor.visitIntInsn(NEWARRAY, ((SPredefinedType) elementsType).getArrayTypeInst());
+        }
+
+        if (expression.items != null) {
+            for (int i = 0; i < expression.items.size(); i++) {
+                visitor.visitInsn(DUP);
+                visitor.visitLdcInsn(i);
+                compileExpression(visitor, context, expression.items.get(i));
+                visitor.visitInsn(elementsType.getArrayStoreInst());
+            }
         }
     }
 
-    private void compileSetNameExpression(MethodVisitor visitor, CompilerContext context, BoundNameExpressionNode name) {
-        Variable variable = (Variable) context.getSymbol(name.value);
-        variable.compileStore(visitor);
+    private void compileIndexExpression(MethodVisitor visitor, CompilerContext context, BoundIndexExpressionNode expression) {
+        compileExpression(visitor, context, expression.callee);
+        compileExpression(visitor, context, expression.index);
+        expression.operation.compileGet(visitor);
     }
 }

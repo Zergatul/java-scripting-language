@@ -16,7 +16,9 @@ public enum TokenType {
     AMPERSAND,
     PIPE,
     PLUS,
+    PLUS_PLUS,
     MINUS,
+    MINUS_MINUS,
     ASTERISK,
     SLASH,
     PERCENT,
@@ -56,5 +58,6 @@ public enum TokenType {
     FOREACH,
     WHILE,
     BREAK,
-    CONTINUE
+    CONTINUE,
+    IN
 }
