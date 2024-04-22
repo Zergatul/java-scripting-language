@@ -19,7 +19,7 @@ public class MethodBasedPropertyReference extends PropertyReference {
         } catch (NoSuchMethodException e) {
             throw new InternalException();
         }
-        type = SType.fromJavaClass(getMethod.getReturnType());
+        type = SType.fromJavaType(getMethod.getReturnType());
     }
 
     @Override

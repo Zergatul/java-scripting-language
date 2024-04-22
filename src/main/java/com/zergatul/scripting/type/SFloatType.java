@@ -4,6 +4,7 @@ import com.zergatul.scripting.type.operation.BinaryOperation;
 import com.zergatul.scripting.type.operation.FloatOperations;
 import com.zergatul.scripting.type.operation.UnaryOperation;
 import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.Type;
 
 import static org.objectweb.asm.Opcodes.*;
 
@@ -118,6 +119,21 @@ public class SFloatType extends SPredefinedType {
     @Override
     public int getReturnInst() {
         return DRETURN;
+    }
+
+    @Override
+    public Class<?> getBoxedVersion() {
+        return Double.class;
+    }
+
+    @Override
+    public void compileUnboxing(MethodVisitor visitor) {
+        visitor.visitMethodInsn(
+                INVOKEVIRTUAL,
+                Type.getInternalName(Double.class),
+                "doubleValue",
+                Type.getMethodDescriptor(Type.DOUBLE_TYPE),
+                false);
     }
 
     @Override

@@ -7,18 +7,16 @@ import com.zergatul.scripting.binding.nodes.*;
 import com.zergatul.scripting.lexer.Lexer;
 import com.zergatul.scripting.lexer.LexerInput;
 import com.zergatul.scripting.lexer.LexerOutput;
-import com.zergatul.scripting.parser.NodeType;
 import com.zergatul.scripting.parser.Parser;
 import com.zergatul.scripting.parser.ParserOutput;
 import com.zergatul.scripting.type.*;
-import com.zergatul.scripting.type.operation.UnaryOperation;
 import org.objectweb.asm.*;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Function;
 
 import static org.objectweb.asm.Opcodes.*;
 
@@ -74,26 +72,73 @@ public class Compiler {
         String name = "com/zergatul/scripting/dynamic/DynamicClass_" + counter.incrementAndGet();
         writer.visit(V1_5, ACC_PUBLIC, name, null, Type.getInternalName(Object.class), new String[] { Type.getInternalName(Runnable.class) });
 
-        MethodVisitor constructorVisitor = writer.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null);
-        constructorVisitor.visitCode();
-        constructorVisitor.visitVarInsn(ALOAD, 0);
-        constructorVisitor.visitMethodInsn(INVOKESPECIAL, Type.getInternalName(Object.class), "<init>", "()V", false);
-        constructorVisitor.visitInsn(RETURN);
-        constructorVisitor.visitMaxs(0, 0);
-        constructorVisitor.visitEnd();
-
-        MethodVisitor runVisitor = writer.visitMethod(ACC_PUBLIC, "run", "()V", null, null);
-        runVisitor.visitCode();
-        compileStatements(runVisitor, parameters.getContext(), unit.statements);
-        runVisitor.visitInsn(RETURN);
-        runVisitor.visitMaxs(0, 0);
-        runVisitor.visitEnd();
+        buildStaticVariables(unit, writer, name);
+        buildEmptyConstructor(writer);
+        buildRunMethod(unit, writer, name);
 
         writer.visitEnd();
 
         @SuppressWarnings("unchecked")
         Class<Runnable> dynamic = (Class<Runnable>) classLoader.defineClass(name.replace('/', '.'), writer.toByteArray());
         return createInstance(dynamic);
+    }
+
+    private void buildStaticVariables(BoundCompilationUnitNode unit, ClassWriter writer, String className) {
+        if (unit.variables.isEmpty()) {
+            return;
+        }
+
+        for (BoundVariableDeclarationNode variable : unit.variables) {
+            FieldVisitor fieldVisitor = writer.visitField(
+                    ACC_PUBLIC | ACC_STATIC,
+                    variable.name.value,
+                    Type.getDescriptor(variable.type.type.getJavaClass()),
+                    null, null);
+            fieldVisitor.visitEnd();
+        }
+
+        // set static variables values in static constructor
+        MethodVisitor visitor = writer.visitMethod(ACC_STATIC, "<clinit>", Type.getMethodDescriptor(Type.VOID_TYPE), null, null);
+        visitor.visitCode();
+        CompilerContext context = parameters.getContext();
+        context.setClassName(className);
+        for (BoundVariableDeclarationNode variable : unit.variables) {
+            if (variable.expression != null) {
+                compileExpression(visitor, context, variable.expression);
+            } else {
+                variable.type.type.storeDefaultValue(visitor);
+            }
+            ((Variable) variable.name.symbol).compileStore(context, visitor);
+        }
+        visitor.visitInsn(RETURN);
+        visitor.visitMaxs(0, 0);
+        visitor.visitEnd();
+    }
+
+    private static void buildEmptyConstructor(ClassWriter writer) {
+        MethodVisitor constructorVisitor = writer.visitMethod(ACC_PUBLIC, "<init>", Type.getMethodDescriptor(Type.VOID_TYPE), null, null);
+        constructorVisitor.visitCode();
+        constructorVisitor.visitVarInsn(ALOAD, 0);
+        constructorVisitor.visitMethodInsn(INVOKESPECIAL, Type.getInternalName(Object.class), "<init>", Type.getMethodDescriptor(Type.VOID_TYPE), false);
+        constructorVisitor.visitInsn(RETURN);
+        constructorVisitor.visitMaxs(0, 0);
+        constructorVisitor.visitEnd();
+    }
+
+    private void buildRunMethod(BoundCompilationUnitNode unit, ClassWriter writer, String className) {
+        MethodVisitor visitor = writer.visitMethod(ACC_PUBLIC, "run", Type.getMethodDescriptor(Type.VOID_TYPE), null, null);
+        visitor.visitCode();
+
+        CompilerContext context = parameters.getContext();
+        context.setClassName(className);
+        for (BoundVariableDeclarationNode variable : unit.variables) {
+            context.addStaticVariable((DeclaredStaticVariable) variable.name.symbol);
+        }
+
+        compileStatements(visitor, context, unit.statements);
+        visitor.visitInsn(RETURN);
+        visitor.visitMaxs(0, 0);
+        visitor.visitEnd();
     }
 
     private void compileStatement(MethodVisitor visitor, CompilerContext context, BoundStatementNode statement) {
@@ -109,7 +154,7 @@ public class Compiler {
             case BREAK_STATEMENT -> compileBreakStatement(visitor, context);
             case CONTINUE_STATEMENT -> compileContinueStatement(visitor, context);
             case EMPTY_STATEMENT -> compileEmptyStatement();
-            case INCREMENT_STATEMENT, DECREMENT_STATEMENT -> compileIncDecStatement(visitor, context, (BoundIncDecStatementNode) statement);
+            case INCREMENT_STATEMENT, DECREMENT_STATEMENT -> compileIncDecStatement(visitor, context, (BoundPostfixStatementNode) statement);
             default -> throw new InternalException();
         }
     }
@@ -124,7 +169,7 @@ public class Compiler {
         LocalVariable variable = (LocalVariable) declaration.name.symbol;
         context.addLocalVariable(variable);
 
-        variable.compileStore(visitor);
+        variable.compileStore(context, visitor);
     }
 
     private void compileAssignmentStatement(MethodVisitor visitor, CompilerContext context, BoundAssignmentStatementNode assignment) {
@@ -135,7 +180,7 @@ public class Compiler {
                         compileExpression(visitor, context, assignment.right);
                         BoundNameExpressionNode nameExpression = (BoundNameExpressionNode) assignment.left;
                         Variable variable = (Variable) context.getSymbol(nameExpression.value);
-                        variable.compileStore(visitor);
+                        variable.compileStore(context, visitor);
                     }
                     case INDEX_EXPRESSION -> {
                         BoundIndexExpressionNode indexExpression = (BoundIndexExpressionNode) assignment.left;
@@ -239,24 +284,24 @@ public class Compiler {
         context.addLocalVariable(statement.length);
 
         visitor.visitInsn(ICONST_0);
-        statement.index.compileStore(visitor);
+        statement.index.compileStore(context, visitor);
 
         visitor.visitInsn(DUP);
         visitor.visitInsn(ARRAYLENGTH);
-        statement.length.compileStore(visitor);
+        statement.length.compileStore(context, visitor);
 
         visitor.visitLabel(begin);
 
         // index >= length -- GOTO end
-        statement.index.compileLoad(visitor);
-        statement.length.compileLoad(visitor);
+        statement.index.compileLoad(context, visitor);
+        statement.length.compileLoad(context, visitor);
         visitor.visitJumpInsn(IF_ICMPGE, end);
 
         // variable = array[index]
         visitor.visitInsn(DUP);
-        statement.index.compileLoad(visitor);
+        statement.index.compileLoad(context, visitor);
         visitor.visitInsn(variable.getType().getArrayLoadInst());
-        variable.compileStore(visitor);
+        variable.compileStore(context, visitor);
 
         // body
         context.setBreak(v -> v.visitJumpInsn(GOTO, end));
@@ -285,14 +330,14 @@ public class Compiler {
 
     }
 
-    private void compileIncDecStatement(MethodVisitor visitor, CompilerContext context, BoundIncDecStatementNode statement) {
+    private void compileIncDecStatement(MethodVisitor visitor, CompilerContext context, BoundPostfixStatementNode statement) {
         switch (statement.expression.getNodeType()) {
             case NAME_EXPRESSION -> {
                 BoundNameExpressionNode nameExpression = (BoundNameExpressionNode) statement.expression;
                 compileExpression(visitor, context, statement.expression);
                 statement.operation.apply(visitor);
                 Variable variable = (Variable) context.getSymbol(nameExpression.value);
-                variable.compileStore(visitor);
+                variable.compileStore(context, visitor);
             }
             case INDEX_EXPRESSION -> {
                 BoundIndexExpressionNode indexExpression = (BoundIndexExpressionNode) statement.expression;
@@ -328,13 +373,16 @@ public class Compiler {
             case STRING_LITERAL -> compileStringLiteral(visitor, (BoundStringLiteralExpressionNode) expression);
             case UNARY_EXPRESSION -> compileUnaryExpression(visitor, context, (BoundUnaryExpressionNode) expression);
             case BINARY_EXPRESSION -> compileBinaryExpression(visitor, context, (BoundBinaryExpressionNode) expression);
+            case CONDITIONAL_EXPRESSION -> compileConditionalExpression(visitor, context, (BoundConditionalExpressionNode) expression);
             case IMPLICIT_CAST -> compileImplicitCastExpression(visitor, context, (BoundImplicitCastExpressionNode) expression);
-            case NAME_EXPRESSION -> compileNameExpression(visitor, (BoundNameExpressionNode) expression);
+            case NAME_EXPRESSION -> compileNameExpression(visitor, context, (BoundNameExpressionNode) expression);
             //case INVOCATION_EXPRESSION -> compileInvocationExpression(visitor, context, (BoundInvocationExpressionNode) expression);
             case METHOD_INVOCATION_EXPRESSION -> compileMethodInvocationExpression(visitor, context, (BoundMethodInvocationExpressionNode) expression);
             case PROPERTY_ACCESS_EXPRESSION -> compilePropertyAccessExpression(visitor, context, (BoundPropertyAccessExpressionNode) expression);
             case NEW_EXPRESSION -> compileNewExpression(visitor, context, (BoundNewExpressionNode) expression);
             case INDEX_EXPRESSION -> compileIndexExpression(visitor, context, (BoundIndexExpressionNode) expression);
+            case CONTEXTUAL_LAMBDA_EXPRESSION -> compileContextualLambdaExpression();
+            case LAMBDA_EXPRESSION -> compileLambdaExpression(visitor, context, (BoundLambdaExpressionNode) expression);
             default -> throw new InternalException();
         }
     }
@@ -367,14 +415,27 @@ public class Compiler {
         expression.operator.operation.apply(visitor, buffer);
     }
 
+    private void compileConditionalExpression(MethodVisitor visitor, CompilerContext context, BoundConditionalExpressionNode expression) {
+        compileExpression(visitor, context, expression.condition);
+
+        Label elseLabel = new Label();
+        visitor.visitJumpInsn(IFEQ, elseLabel);
+        compileExpression(visitor, context, expression.whenTrue);
+        Label endLabel = new Label();
+        visitor.visitJumpInsn(GOTO, endLabel);
+        visitor.visitLabel(elseLabel);
+        compileExpression(visitor, context, expression.whenFalse);
+        visitor.visitLabel(endLabel);
+    }
+
     private void compileImplicitCastExpression(MethodVisitor visitor, CompilerContext context, BoundImplicitCastExpressionNode expression) {
         compileExpression(visitor, context, expression.operand);
         expression.operation.apply(visitor);
     }
 
-    private void compileNameExpression(MethodVisitor visitor, BoundNameExpressionNode expression) {
+    private void compileNameExpression(MethodVisitor visitor, CompilerContext context, BoundNameExpressionNode expression) {
         if (expression.symbol instanceof Variable variable) {
-            variable.compileLoad(visitor);
+            variable.compileLoad(context, visitor);
         }
     }
 
@@ -429,5 +490,66 @@ public class Compiler {
         compileExpression(visitor, context, expression.callee);
         compileExpression(visitor, context, expression.index);
         expression.operation.compileGet(visitor);
+    }
+
+    private void compileContextualLambdaExpression() {
+        throw new InternalException("Contextual lambda expression should not be here.");
+    }
+
+    private void compileLambdaExpression(MethodVisitor visitor, CompilerContext context, BoundLambdaExpressionNode expression) {
+        Class<?> funcInterface = switch (expression.parameters.size()) {
+            case 0 -> Action0.class;
+            case 1 -> Action1.class;
+            case 2 -> Action2.class;
+            default -> throw new InternalException("Too much Action arguments.");
+        };
+
+        ClassWriter writer = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
+        String name = "com/zergatul/scripting/dynamic/DynamicLambdaClass_" + counter.incrementAndGet();
+        writer.visit(V1_5, ACC_PUBLIC, name, null, Type.getInternalName(Object.class), new String[] { Type.getInternalName(funcInterface) });
+
+        buildEmptyConstructor(writer);
+
+        Type[] argumentTypes = new Type[expression.parameters.size()];
+        Arrays.fill(argumentTypes, Type.getType(Object.class));
+        MethodVisitor invokeVisitor = writer.visitMethod(ACC_PUBLIC, "invoke", Type.getMethodDescriptor(Type.VOID_TYPE, argumentTypes), null, null);
+        invokeVisitor.visitCode();
+
+        CompilerContext lambdaContext = context.createLambda();
+        LocalVariable[] arguments = new LocalVariable[expression.parameters.size()];
+        for (int i = 0; i < expression.parameters.size(); i++) {
+            arguments[i] = lambdaContext.addLocalVariable(null, SType.fromJavaType(Object.class));
+        }
+        for (int i = 0; i < expression.parameters.size(); i++) {
+            BoundParameter parameter = expression.parameters.get(i);
+            LocalVariable unboxed = lambdaContext.addLocalVariable(parameter.getIdentifier(), parameter.getType());
+            Class<?> boxedType = parameter.getType().getBoxedVersion();
+
+            arguments[i].compileLoad(context, invokeVisitor); // load argument
+            if (boxedType != null) {
+                invokeVisitor.visitTypeInsn(CHECKCAST, Type.getInternalName(boxedType)); // cast to boxed, example: java.lang.Integer
+                parameter.getType().compileUnboxing(invokeVisitor); // convert to unboxed
+            } else {
+                invokeVisitor.visitTypeInsn(CHECKCAST, Type.getInternalName(parameter.getType().getJavaClass()));
+            }
+            unboxed.compileStore(context, invokeVisitor);
+        }
+        compileStatement(invokeVisitor, lambdaContext, expression.body);
+        invokeVisitor.visitInsn(RETURN);
+        invokeVisitor.visitMaxs(0, 0);
+        invokeVisitor.visitEnd();
+
+        writer.visitEnd();
+
+        Class<?> dynamic = classLoader.defineClass(name.replace('/', '.'), writer.toByteArray());
+
+        visitor.visitTypeInsn(NEW, Type.getInternalName(dynamic));
+        visitor.visitInsn(DUP);
+        visitor.visitMethodInsn(
+                INVOKESPECIAL,
+                Type.getInternalName(dynamic),
+                "<init>",
+                Type.getMethodDescriptor(Type.VOID_TYPE),
+                false);
     }
 }

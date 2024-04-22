@@ -4,6 +4,7 @@ import com.zergatul.scripting.type.operation.BinaryOperation;
 import com.zergatul.scripting.type.operation.IntOperations;
 import com.zergatul.scripting.type.operation.UnaryOperation;
 import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.Type;
 
 import static org.objectweb.asm.Opcodes.*;
 
@@ -149,6 +150,21 @@ public class SIntType extends SPredefinedType {
     @Override
     public int getReturnInst() {
         return IRETURN;
+    }
+
+    @Override
+    public Class<?> getBoxedVersion() {
+        return Integer.class;
+    }
+
+    @Override
+    public void compileUnboxing(MethodVisitor visitor) {
+        visitor.visitMethodInsn(
+                INVOKEVIRTUAL,
+                Type.getInternalName(Integer.class),
+                "intValue",
+                Type.getMethodDescriptor(Type.INT_TYPE),
+                false);
     }
 
     @Override

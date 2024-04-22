@@ -3,19 +3,47 @@ package com.zergatul.scripting.type;
 import com.zergatul.scripting.InternalException;
 import org.objectweb.asm.MethodVisitor;
 
+import java.util.Arrays;
+
 import static org.objectweb.asm.Opcodes.*;
 
 public class SAction extends SType {
 
-    public static final SAction instance = new SAction();
+    private final SType[] parameters;
 
-    private SAction() {
+    public SAction(SType... parameters) {
+        this.parameters = parameters;
+    }
 
+    public SType[] getParameters() {
+        return parameters;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj instanceof SAction other) {
+            if (parameters.length != other.parameters.length) {
+                return false;
+            }
+            for (int i = 0; i < parameters.length; i++) {
+                if (!parameters[i].equals(other.parameters[i])) {
+                    return false;
+                }
+            }
+            return true;
+        } else {
+            return false;
+        }
     }
 
     @Override
     public Class<?> getJavaClass() {
-        return Runnable.class;
+        return switch (parameters.length) {
+            case 0 -> Action0.class;
+            case 1 -> Action1.class;
+            case 2 -> Action2.class;
+            default -> throw new InternalException("Too much Action parameters.");
+        };
     }
 
     @Override
@@ -55,6 +83,10 @@ public class SAction extends SType {
 
     @Override
     public String toString() {
-        return "Action";
+        if (parameters.length == 0) {
+            return "Action";
+        } else {
+            return "Action<" + String.join(", ", Arrays.stream(this.parameters).map(Object::toString).toArray(String[]::new)) + ">";
+        }
     }
 }

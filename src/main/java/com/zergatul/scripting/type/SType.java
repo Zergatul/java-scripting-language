@@ -9,6 +9,7 @@ import com.zergatul.scripting.type.operation.UnaryOperation;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Type;
 
+import java.lang.reflect.ParameterizedType;
 import java.util.List;
 
 public abstract class SType {
@@ -157,29 +158,62 @@ public abstract class SType {
         return null;
     }
 
-    public static SType fromJavaClass(Class<?> type) {
-        if (type == void.class) {
-            return SVoidType.instance;
+    public Class<?> getBoxedVersion() {
+        return null;
+    }
+
+    public void compileUnboxing(MethodVisitor visitor) {
+        throw new InternalException();
+    }
+
+    public static SType fromJavaType(java.lang.reflect.Type type) {
+        if (type instanceof ParameterizedType parameterized) {
+            java.lang.reflect.Type[] arguments = parameterized.getActualTypeArguments();
+            if (parameterized.getRawType() == Action1.class) {
+                return new SAction(fromJavaType(arguments[0]));
+            }
+            if (parameterized.getRawType() == Action2.class) {
+                return new SAction(fromJavaType(arguments[0]), fromJavaType(arguments[1]));
+            }
+
+            throw new InternalException("Unsupported parametrized type.");
         }
-        if (type == boolean.class) {
-            return SBoolean.instance;
+
+        if (type instanceof Class<?> clazz) {
+            if (clazz == void.class) {
+                return SVoidType.instance;
+            }
+            if (clazz == boolean.class || clazz == Boolean.class) {
+                return SBoolean.instance;
+            }
+            if (clazz == int.class || clazz == Integer.class) {
+                return SIntType.instance;
+            }
+            if (clazz == double.class || clazz == Double.class) {
+                return SFloatType.instance;
+            }
+            if (clazz == String.class) {
+                return SStringType.instance;
+            }
+            if (clazz == Action0.class) {
+                return new SAction();
+            }
+            /*if (type == Action1.class) {
+                return new SAction(SUnknown.instance);
+            }
+            if (type == Action2.class) {
+                return new SAction(SUnknown.instance, SUnknown.instance);
+            }*/
+            if (clazz.isArray()) {
+                return new SArrayType(fromJavaType(clazz.getComponentType()));
+            }
+            if (clazz.getSuperclass() != null || clazz == Object.class) {
+                return new SClassType(clazz);
+            } else {
+                return null;
+            }
         }
-        if (type == int.class) {
-            return SIntType.instance;
-        }
-        if (type == double.class) {
-            return SFloatType.instance;
-        }
-        if (type == String.class) {
-            return SStringType.instance;
-        }
-        if (type.isArray()) {
-            return new SArrayType(fromJavaClass(type.getComponentType()));
-        }
-        if (type.getSuperclass() != null) {
-            return new SClassType(type);
-        } else {
-            return null;
-        }
+
+        return null;
     }
 }

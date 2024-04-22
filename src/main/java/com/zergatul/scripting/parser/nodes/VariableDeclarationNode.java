@@ -1,6 +1,7 @@
 package com.zergatul.scripting.parser.nodes;
 
 import com.zergatul.scripting.TextRange;
+import com.zergatul.scripting.lexer.Token;
 import com.zergatul.scripting.parser.NodeType;
 
 import java.util.Objects;
@@ -32,5 +33,10 @@ public class VariableDeclarationNode extends StatementNode {
         } else {
             return false;
         }
+    }
+
+    @Override
+    public StatementNode expand(Token token) {
+        return new VariableDeclarationNode(type, name, expression, TextRange.combine(getRange(), token.getRange()));
     }
 }

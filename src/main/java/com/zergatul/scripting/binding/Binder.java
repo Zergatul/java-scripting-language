@@ -2,9 +2,7 @@ package com.zergatul.scripting.binding;
 
 import com.zergatul.scripting.*;
 import com.zergatul.scripting.binding.nodes.*;
-import com.zergatul.scripting.compiler.CompilerContext;
-import com.zergatul.scripting.compiler.LocalVariable;
-import com.zergatul.scripting.compiler.Symbol;
+import com.zergatul.scripting.compiler.*;
 import com.zergatul.scripting.parser.NodeType;
 import com.zergatul.scripting.parser.ParserOutput;
 import com.zergatul.scripting.parser.nodes.*;
@@ -29,11 +27,15 @@ public class Binder {
     }
 
     public BinderOutput bind() {
-        return new BinderOutput(code, bindCompilationUnit(unit), diagnostics);
+        BoundCompilationUnitNode unit = bindCompilationUnit(this.unit);
+        new ContextualLambdaChecker(unit, diagnostics).check();
+        return new BinderOutput(code, unit, diagnostics);
     }
 
     private BoundCompilationUnitNode bindCompilationUnit(CompilationUnitNode node) {
-        return new BoundCompilationUnitNode(node.statements.stream().map(this::bindStatement).toList(), node.getRange());
+        List<BoundVariableDeclarationNode> variables = node.variables.stream().map(n -> bindVariableDeclaration(n, true)).toList();
+        List<BoundStatementNode> statements = node.statements.stream().map(this::bindStatement).toList();
+        return new BoundCompilationUnitNode(variables, statements, node.getRange());
     }
 
     private BoundStatementNode bindStatement(StatementNode statement) {
@@ -50,7 +52,7 @@ public class Binder {
             case CONTINUE_STATEMENT -> bindContinueStatement((ContinueStatementNode) statement);
             case EMPTY_STATEMENT -> bindEmptyStatement((EmptyStatementNode) statement);
             case INVALID_STATEMENT -> bindInvalidStatement((InvalidStatementNode) statement);
-            case INCREMENT_STATEMENT, DECREMENT_STATEMENT -> bindIncDecStatement((IncDecStatementNode) statement);
+            case INCREMENT_STATEMENT, DECREMENT_STATEMENT -> bindPostfixStatement((PostfixStatementNode) statement);
             default -> throw new InternalException();
         };
     }
@@ -82,6 +84,10 @@ public class Binder {
     }
 
     private BoundVariableDeclarationNode bindVariableDeclaration(VariableDeclarationNode variableDeclaration) {
+        return bindVariableDeclaration(variableDeclaration, false);
+    }
+
+    private BoundVariableDeclarationNode bindVariableDeclaration(VariableDeclarationNode variableDeclaration, boolean isStatic) {
         BoundTypeNode variableType = bindType(variableDeclaration.type);
 
         BoundExpressionNode expression;
@@ -92,18 +98,24 @@ public class Binder {
         }
 
         Symbol existing = context.getSymbol(variableDeclaration.name.value);
-        Symbol localVar = null;
+        Symbol variable = null;
         if (existing != null) {
             addDiagnostic(
                     BinderErrors.SymbolAlreadyDeclared,
                     variableDeclaration.name,
                     variableDeclaration.name.value);
         } else {
-            localVar = context.addLocalVariable(variableDeclaration.name.value, variableType.type);
+            if (isStatic) {
+                StaticVariable staticVariable = new DeclaredStaticVariable(variableDeclaration.name.value, variableType.type);
+                context.addStaticVariable(staticVariable);
+                variable = staticVariable;
+            } else {
+                variable = context.addLocalVariable(variableDeclaration.name.value, variableType.type);
+            }
         }
 
         BoundNameExpressionNode name = new BoundNameExpressionNode(
-                localVar,
+                variable,
                 variableType.type,
                 variableDeclaration.name.value,
                 variableDeclaration.name.getRange());
@@ -218,7 +230,7 @@ public class Binder {
         return new BoundInvalidStatementNode(statement.getRange());
     }
 
-    private BoundIncDecStatementNode bindIncDecStatement(IncDecStatementNode statement) {
+    private BoundPostfixStatementNode bindPostfixStatement(PostfixStatementNode statement) {
         BoundExpressionNode expression = bindExpression(statement.expression);
         if (!expression.canSet()) {
             addDiagnostic(BinderErrors.ExpressionCannotBeSet, expression);
@@ -236,7 +248,7 @@ public class Binder {
                     type.toString());
         }
 
-        return new BoundIncDecStatementNode(statement.getNodeType(), expression, operation, statement.getRange());
+        return new BoundPostfixStatementNode(statement.getNodeType(), expression, operation, statement.getRange());
     }
 
     private BoundExpressionNode bindExpression(ExpressionNode expression) {
@@ -253,6 +265,7 @@ public class Binder {
             case NAME_EXPRESSION -> bindNameExpression((NameExpressionNode) expression);
             case MEMBER_ACCESS_EXPRESSION -> bindMemberAccessExpression((MemberAccessExpressionNode) expression);
             case NEW_EXPRESSION -> bindNewExpression((NewExpressionNode) expression);
+            case LAMBDA_EXPRESSION -> bindLambdaExpression((LambdaExpressionNode) expression);
             case INVALID_EXPRESSION -> bindInvalidExpression((InvalidExpressionNode) expression);
             default -> throw new InternalException();
         };
@@ -436,7 +449,7 @@ public class Binder {
                                 for (int i = 0; i < parameterTypes.size(); i++) {
                                     SType expected = parameterTypes.get(i);
                                     SType actual = arguments.arguments.get(i).type;
-                                    if (expected.equals(actual)) {
+                                    if (expected.equals(actual) || contextualEquals(expected, actual)) {
                                         casts.add(null);
                                     } else {
                                         UnaryOperation cast = actual.implicitCastTo(expected);
@@ -458,11 +471,17 @@ public class Binder {
                     } else {
                         ArgumentsCast overload = possibleArgumentsWithCasting.get(0);
                         for (int i = 0; i < arguments.arguments.size(); i++) {
+                            BoundExpressionNode expression = arguments.arguments.get(i);
+                            if (expression instanceof BoundContextualLambdaExpressionNode lambda) {
+                                expression = bindContextualLambdaExpression(lambda, (SAction) overload.method.getParameters().get(i));
+                            }
+
                             UnaryOperation cast = overload.casts.get(i);
                             if (cast != null) {
-                                BoundExpressionNode expression = arguments.arguments.get(i);
-                                arguments.arguments.set(i, new BoundImplicitCastExpressionNode(expression, cast, expression.getRange()));
+                                expression = new BoundImplicitCastExpressionNode(expression, cast, expression.getRange());
                             }
+
+                            arguments.arguments.set(i, expression);
                         }
                         matchedMethod = overload.method;
                     }
@@ -675,6 +694,31 @@ public class Binder {
         return new BoundIndexExpressionNode(callee, index, operation, indexExpression.getRange());
     }
 
+    private BoundContextualLambdaExpressionNode bindLambdaExpression(LambdaExpressionNode expression) {
+        return new BoundContextualLambdaExpressionNode(expression);
+    }
+
+    private BoundLambdaExpressionNode bindContextualLambdaExpression(BoundContextualLambdaExpressionNode expression, SAction type) {
+        int parametersCount = type.getParameters().length;
+        if (expression.expression.parameters.size() != parametersCount) {
+            throw new InternalException("Lambda parameters count mismatch.");
+        }
+
+        context = context.createLambda();
+
+        List<BoundParameter> parameters = new ArrayList<>();
+        for (int i = 0; i < parametersCount; i++) {
+            parameters.add(new BoundParameter(expression.expression.parameters.get(i).value, type.getParameters()[i]));
+            context.addLocalVariable(null, SType.fromJavaType(Object.class));
+        }
+
+        for (BoundParameter parameter : parameters) {
+            context.addLocalVariable(parameter.getIdentifier(), parameter.getType());
+        }
+
+        return new BoundLambdaExpressionNode(type, parameters, bindStatement(expression.expression.body), expression.getRange());
+    }
+
     private BoundInvalidExpressionNode bindInvalidExpression(InvalidExpressionNode expression) {
         return new BoundInvalidExpressionNode(expression.getRange());
     }
@@ -750,6 +794,14 @@ public class Binder {
 
     private void popScope() {
         context = context.getParent();
+    }
+
+    private boolean contextualEquals(SType type1, SType type2) {
+        if (type1 instanceof SAction action1 && type2 instanceof SContextualLambda lambda) {
+            return action1.getParameters().length == lambda.getParametersCount();
+        } else {
+            return false;
+        }
     }
 
     private void addDiagnostic(ErrorCode code, Locatable locatable, Object... parameters) {

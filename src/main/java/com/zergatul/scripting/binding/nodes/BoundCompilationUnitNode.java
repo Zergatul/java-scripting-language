@@ -7,10 +7,12 @@ import java.util.List;
 
 public class BoundCompilationUnitNode extends BoundNode {
 
+    public final List<BoundVariableDeclarationNode> variables;
     public final List<BoundStatementNode> statements;
 
-    public BoundCompilationUnitNode(List<BoundStatementNode> statements, TextRange range) {
+    public BoundCompilationUnitNode(List<BoundVariableDeclarationNode> variables, List<BoundStatementNode> statements, TextRange range) {
         super(NodeType.COMPILATION_UNIT, range);
+        this.variables = variables;
         this.statements = statements;
     }
 }

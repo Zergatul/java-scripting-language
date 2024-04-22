@@ -1,18 +1,15 @@
-package com.zergatul.scripting.tests;
+package com.zergatul.scripting.tests.compiler;
 
-import com.zergatul.scripting.helpers.BoolStorage;
-import com.zergatul.scripting.helpers.FloatStorage;
-import com.zergatul.scripting.helpers.IntStorage;
-import com.zergatul.scripting.old.compiler.ScriptingLanguageCompiler;
-import com.zergatul.scripting.helpers.Run;
-import com.zergatul.scripting.helpers.StringStorage;
+import com.zergatul.scripting.tests.compiler.helpers.*;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
-public class StaticVariablesTest {
+import static com.zergatul.scripting.tests.compiler.helpers.CompilerHelper.compile;
+
+public class StaticVariableTests {
 
     @BeforeEach
     public void clean() {
@@ -26,7 +23,7 @@ public class StaticVariablesTest {
     }
 
     @Test
-    public void booleanInitTest() throws Exception {
+    public void booleanInitTest() {
         String code = """
                 static boolean b = true;
                 
@@ -35,15 +32,14 @@ public class StaticVariablesTest {
                 });
                 """;
 
-        ScriptingLanguageCompiler compiler = new ScriptingLanguageCompiler(ApiRoot.class);
-        Runnable program = compiler.compile(code);
+        Runnable program = compile(ApiRoot.class, code);
         program.run();
 
         Assertions.assertIterableEquals(ApiRoot.boolStorage.list, List.of(true));
     }
 
     @Test
-    public void intInitTest() throws Exception {
+    public void intInitTest() {
         String code = """
                 static int i = 100;
                 
@@ -52,15 +48,14 @@ public class StaticVariablesTest {
                 });
                 """;
 
-        ScriptingLanguageCompiler compiler = new ScriptingLanguageCompiler(ApiRoot.class);
-        Runnable program = compiler.compile(code);
+        Runnable program = compile(ApiRoot.class, code);
         program.run();
 
         Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(100));
     }
 
     @Test
-    public void floatInitTest() throws Exception {
+    public void floatInitTest() {
         String code = """
                 static float d = 1.25;
                 
@@ -69,15 +64,14 @@ public class StaticVariablesTest {
                 });
                 """;
 
-        ScriptingLanguageCompiler compiler = new ScriptingLanguageCompiler(ApiRoot.class);
-        Runnable program = compiler.compile(code);
+        Runnable program = compile(ApiRoot.class, code);
         program.run();
 
         Assertions.assertIterableEquals(ApiRoot.floatStorage.list, List.of(1.25));
     }
 
     @Test
-    public void stringInitTest() throws Exception {
+    public void stringInitTest() {
         String code = """
                 static string s = "qwerty";
                 
@@ -86,15 +80,14 @@ public class StaticVariablesTest {
                 });
                 """;
 
-        ScriptingLanguageCompiler compiler = new ScriptingLanguageCompiler(ApiRoot.class);
-        Runnable program = compiler.compile(code);
+        Runnable program = compile(ApiRoot.class, code);
         program.run();
 
         Assertions.assertIterableEquals(ApiRoot.stringStorage.list, List.of("qwerty"));
     }
 
     @Test
-    public void modifyTest() throws Exception {
+    public void modifyTest() {
         String code = """
                 static int i;
                 
@@ -113,15 +106,14 @@ public class StaticVariablesTest {
                 intStorage.add(i);
                 """;
 
-        ScriptingLanguageCompiler compiler = new ScriptingLanguageCompiler(ApiRoot.class);
-        Runnable program = compiler.compile(code);
+        Runnable program = compile(ApiRoot.class, code);
         program.run();
 
         Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(0, 100, 200, 201));
     }
 
     @Test
-    public void initRunOnceTest() throws Exception {
+    public void persistentTest() {
         String code = """
                 static int i1 = 1;
                 static int i2 = i1 + 1;
@@ -131,8 +123,7 @@ public class StaticVariablesTest {
                 storage2.add(i2);
                 """;
 
-        ScriptingLanguageCompiler compiler = new ScriptingLanguageCompiler(ApiRoot.class);
-        Runnable program = compiler.compile(code);
+        Runnable program = compile(ApiRoot.class, code);
         program.run();
         program.run();
         program.run();

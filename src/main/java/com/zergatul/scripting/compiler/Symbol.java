@@ -25,5 +25,5 @@ public abstract class Symbol {
         return false;
     }
 
-    public abstract void compileLoad(MethodVisitor visitor);
+    public abstract void compileLoad(CompilerContext context, MethodVisitor visitor);
 }

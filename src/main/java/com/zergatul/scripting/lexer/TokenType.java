@@ -40,6 +40,7 @@ public enum TokenType {
     STRING,
     NEW,
     EQUAL_EQUAL,
+    EQUAL_GREATER,
     EXCLAMATION_EQUAL,
     AMPERSAND_AMPERSAND,
     PIPE_PIPE,
@@ -59,5 +60,7 @@ public enum TokenType {
     WHILE,
     BREAK,
     CONTINUE,
-    IN
+    IN,
+    STATIC,
+    VOID
 }

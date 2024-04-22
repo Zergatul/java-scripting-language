@@ -16,7 +16,7 @@ public abstract class ConstantStaticVariable extends StaticVariable {
     }
 
     @Override
-    public void compileStore(MethodVisitor visitor) {
+    public void compileStore(CompilerContext context, MethodVisitor visitor) {
         throw new InternalException();
     }
 }

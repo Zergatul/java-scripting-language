@@ -11,5 +11,5 @@ public abstract class Variable extends Symbol {
 
     public abstract boolean isConstant();
 
-    public abstract void compileStore(MethodVisitor visitor);
+    public abstract void compileStore(CompilerContext context, MethodVisitor visitor);
 }

@@ -1,6 +1,7 @@
 package com.zergatul.scripting.parser.nodes;
 
 import com.zergatul.scripting.TextRange;
+import com.zergatul.scripting.lexer.Token;
 import com.zergatul.scripting.parser.AssignmentOperator;
 import com.zergatul.scripting.parser.NodeType;
 
@@ -24,5 +25,10 @@ public class AssignmentStatementNode extends StatementNode {
         } else {
             return false;
         }
+    }
+
+    @Override
+    public StatementNode expand(Token token) {
+        return new AssignmentStatementNode(left, operator, right, TextRange.combine(getRange(), token.getRange()));
     }
 }

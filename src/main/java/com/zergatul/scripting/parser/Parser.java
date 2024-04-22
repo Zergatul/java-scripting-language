@@ -26,20 +26,73 @@ public class Parser {
     }
 
     private CompilationUnitNode parseCompilationUnit() {
+        final int parseStaticVariables = 1;
+        final int parseFunctions = 2;
+        final int parseStatements = 3;
+
+        List<VariableDeclarationNode> variables = new ArrayList<>();
+        List<FunctionNode> functions = new ArrayList<>();
         List<StatementNode> statements = new ArrayList<>();
+
+        int state = parseStaticVariables;
         while (current.type != TokenType.END_OF_FILE) {
-            if (isPossibleStatement()) {
-                statements.add(parseStatement());
-            } else {
-                addDiagnostic(ParserErrors.StatementExpected, current, current.getRawValue(code));
-                advance();
+            switch (state) {
+                case parseStaticVariables -> {
+                    if (current.type == TokenType.STATIC) {
+                        advance();
+                        StatementNode statement = parseVariableDeclaration();
+                        if (statement instanceof VariableDeclarationNode declaration) {
+                            variables.add(declaration);
+                            advance(TokenType.SEMICOLON);
+                        }
+                    } else {
+                        state = parseFunctions;
+                    }
+                }
+                case parseFunctions -> {
+                    if (isPossibleFunction()) {
+                        functions.add(parseFunction());
+                    } else {
+                        state = parseStatements;
+                    }
+                }
+                case parseStatements -> {
+                    if (isPossibleStatement()) {
+                        statements.add(parseStatement());
+                    } else {
+                        addDiagnostic(ParserErrors.StatementExpected, current, current.getRawValue(code));
+                        advance();
+                    }
+                }
             }
         }
 
-        TextRange range = statements.isEmpty() ?
+        Node first;
+        if (!variables.isEmpty()) {
+            first = variables.get(0);
+        } else if (!functions.isEmpty()) {
+            first = functions.get(0);
+        } else if (!statements.isEmpty()) {
+            first = statements.get(0);
+        } else {
+            first = null;
+        }
+
+        Node last;
+        if (!statements.isEmpty()) {
+            last = statements.get(statements.size() - 1);
+        } else if (!functions.isEmpty()) {
+            last = functions.get(functions.size() - 1);
+        } else if (!variables.isEmpty()) {
+            last = variables.get(variables.size() - 1);
+        } else {
+            last = null;
+        }
+
+        TextRange range = first == null ?
                 new SingleLineTextRange(1, 1, 0, 0) :
-                TextRange.combine(statements.get(0), statements.get(statements.size() - 1));
-        return new CompilationUnitNode(statements, range);
+                TextRange.combine(first, last);
+        return new CompilationUnitNode(variables, functions, statements, range);
     }
 
     private BlockStatementNode parseBlockStatement() {
@@ -250,6 +303,87 @@ public class Parser {
         return false;
     }
 
+    private boolean isPossibleFunction() {
+        if (current.type == TokenType.VOID) {
+            return true;
+        }
+
+        // "int." definitely not a function
+        if (isPredefinedType() && peek(1).type == TokenType.DOT) {
+            return false;
+        }
+
+        int cursor = 1;
+        if (isPredefinedType() || current.type == TokenType.IDENTIFIER) {
+            // process possible []
+            while (peek(cursor).type == TokenType.LEFT_SQUARE_BRACKET && peek(cursor + 1).type == TokenType.RIGHT_SQUARE_BRACKET) {
+                cursor += 2;
+            }
+
+            return peek(cursor).type == TokenType.IDENTIFIER && peek(cursor + 1).type == TokenType.LEFT_PARENTHESES;
+        } else {
+            return false;
+        }
+    }
+
+    private FunctionNode parseFunction() {
+        TypeNode returnType;
+        if (current.type == TokenType.VOID) {
+            returnType = new VoidTypeNode(advance().getRange());
+        } else {
+            returnType = parseTypeNode();
+        }
+
+        IdentifierToken identifier;
+        if (current.type == TokenType.IDENTIFIER) {
+            identifier = (IdentifierToken) advance();
+        } else {
+            addDiagnostic(ParserErrors.IdentifierExpected, current, current.getRawValue(code));
+            identifier = new IdentifierToken("", createMissingTokenRange());
+        }
+
+        ParameterListNode parameters = parseParameterList();
+        BlockStatementNode body = parseBlockStatement();
+
+        return new FunctionNode(returnType, identifier, parameters, body, TextRange.combine(returnType, body));
+    }
+
+    private ParameterListNode parseParameterList() {
+        Token begin = advance(TokenType.LEFT_PARENTHESES);
+        Token end;
+
+        List<Parameter> parameters = new ArrayList<>();
+
+        if (current.type == TokenType.RIGHT_PARENTHESES) {
+            end = advance();
+        } else {
+            while (true) {
+                TypeNode type = parseTypeNode();
+                IdentifierToken identifier;
+                if (current.type == TokenType.IDENTIFIER) {
+                    identifier = (IdentifierToken) advance();
+                } else {
+                    addDiagnostic(ParserErrors.IdentifierExpected, current, current.getRawValue(code));
+                    identifier = new IdentifierToken("", createMissingTokenRange());
+                }
+                parameters.add(new Parameter(type, identifier));
+
+                if (current.type == TokenType.RIGHT_PARENTHESES) {
+                    end = advance();
+                    break;
+                } else if (current.type == TokenType.COMMA) {
+                    advance();
+                } else {
+                    addDiagnostic(ParserErrors.CommaOrCloseParenthesesExpected, current, current.getRawValue(code));
+                    end = createMissingToken(TokenType.LEFT_PARENTHESES);
+                    break;
+                }
+            }
+        }
+
+        return new ParameterListNode(parameters, TextRange.combine(begin, end));
+    }
+
     private StatementNode parseVariableDeclaration() {
         TypeNode type = parseTypeNode();
         if (current.type == TokenType.IDENTIFIER) {
@@ -296,16 +430,16 @@ public class Parser {
         if (assignment == null) {
             if (current.type == TokenType.PLUS_PLUS) {
                 Token plusPlus = advance();
-                if (!canIncDec(expression1)) {
+                if (!canPostfix(expression1)) {
                     addDiagnostic(ParserErrors.CannotApplyIncDec, expression1);
                 }
-                return new IncDecStatementNode(NodeType.INCREMENT_STATEMENT, expression1, TextRange.combine(expression1, plusPlus));
+                return new PostfixStatementNode(NodeType.INCREMENT_STATEMENT, expression1, TextRange.combine(expression1, plusPlus));
             } else if (current.type == TokenType.MINUS_MINUS) {
                 Token minusMinus = advance();
-                if (!canIncDec(expression1)) {
+                if (!canPostfix(expression1)) {
                     addDiagnostic(ParserErrors.CannotApplyIncDec, expression1);
                 }
-                return new IncDecStatementNode(NodeType.DECREMENT_STATEMENT, expression1, TextRange.combine(expression1, minusMinus));
+                return new PostfixStatementNode(NodeType.DECREMENT_STATEMENT, expression1, TextRange.combine(expression1, minusMinus));
             } else {
                 return new ExpressionStatementNode(expression1, expression1.getRange());
             }
@@ -329,7 +463,7 @@ public class Parser {
         }
     }
 
-    private boolean canIncDec(ExpressionNode expression) {
+    private boolean canPostfix(ExpressionNode expression) {
         NodeType type = expression.getNodeType();
         return type == NodeType.NAME_EXPRESSION || type == NodeType.INDEX_EXPRESSION || type == NodeType.MEMBER_ACCESS_EXPRESSION;
     }
@@ -385,16 +519,10 @@ public class Parser {
             case BREAK -> parseBreakStatement();
             case CONTINUE -> parseContinueStatement();
             case SEMICOLON -> parseEmptyStatement();
-            case BOOLEAN, INT, FLOAT, STRING, IDENTIFIER, LEFT_PARENTHESES -> {
-                StatementNode statement = parseSimpleStatement();
-                advance(TokenType.SEMICOLON); // TODO: semicolon not included in statement??
-                yield statement;
-            }
+            case BOOLEAN, INT, FLOAT, STRING, IDENTIFIER, LEFT_PARENTHESES -> parseSimpleStatement().expand(advance(TokenType.SEMICOLON));
             default -> {
                 if (isPossibleExpression()) {
-                    StatementNode statement = parseSimpleStatement();
-                    advance(TokenType.SEMICOLON); // TODO: semicolon not included in statement??
-                    yield statement;
+                    yield parseSimpleStatement().expand(advance(TokenType.SEMICOLON));
                 } else {
                     throw new InternalException("Cannot parse statement.");
                 }
@@ -577,15 +705,14 @@ public class Parser {
 
     private ExpressionNode parseTermWithoutPostfix(int precedence) {
         ExpressionNode expression = switch (current.type) {
-            case IDENTIFIER -> new NameExpressionNode((IdentifierToken) advance());
+            case IDENTIFIER -> isPossibleLambdaExpression() ? parseLambdaExpression() : new NameExpressionNode((IdentifierToken) advance());
             case FALSE -> new BooleanLiteralExpressionNode(false, advance().getRange());
             case TRUE -> new BooleanLiteralExpressionNode(true, advance().getRange());
             case INTEGER_LITERAL -> new IntegerLiteralExpressionNode((IntegerToken) advance());
             case FLOAT_LITERAL -> new FloatLiteralExpressionNode((FloatToken) advance());
             case STRING_LITERAL -> new StringLiteralExpressionNode((StringToken) advance());
             case NEW -> parseNewExpression();
-            case LEFT_PARENTHESES -> parseParenthesizedExpression();
-            // () => {}
+            case LEFT_PARENTHESES -> isPossibleLambdaExpression() ? parseLambdaExpression() : parseParenthesizedExpression();
             default -> null;
         };
 
@@ -655,6 +782,52 @@ public class Parser {
         return expression;
     }
 
+    private LambdaExpressionNode parseLambdaExpression() {
+        Token first = current;
+        List<IdentifierToken> parameters = new ArrayList<>();
+        if (current.type == TokenType.IDENTIFIER) {
+            parameters.add((IdentifierToken) advance());
+            advance(TokenType.EQUAL_GREATER);
+        } else if (current.type == TokenType.LEFT_PARENTHESES) {
+            advance();
+            if (current.type == TokenType.RIGHT_PARENTHESES) {
+                advance();
+            } else {
+                while (true) {
+                    if (current.type == TokenType.IDENTIFIER) {
+                        parameters.add((IdentifierToken) advance());
+                        if (current.type == TokenType.RIGHT_PARENTHESES) {
+                            advance();
+                            break;
+                        } else if (current.type == TokenType.COMMA) {
+                            advance();
+                        } else {
+                            addDiagnostic(ParserErrors.CommaOrCloseParenthesesExpected, current, current.getRawValue(code));
+                            break;
+                        }
+                    }
+                }
+            }
+            advance(TokenType.EQUAL_GREATER);
+        } else {
+            throw new InternalException("Check isPossibleLambdaExpression() method.");
+        }
+
+        StatementNode statement;
+        if (current.type == TokenType.LEFT_CURLY_BRACKET) {
+            statement = parseBlockStatement();
+        } else {
+            if (isPossibleSimpleStatement() && !isPossibleDeclaration()) {
+                statement = parseSimpleStatementNotDeclaration();
+            } else {
+                statement = new InvalidStatementNode(createMissingTokenRange());
+                addDiagnostic(ParserErrors.SimpleStatementExpected, current, current.getRawValue(code));
+            }
+        }
+
+        return new LambdaExpressionNode(parameters, statement, TextRange.combine(first, statement));
+    }
+
     private boolean isPossibleExpression() {
         switch (current.type) {
             case FALSE:
@@ -677,6 +850,47 @@ public class Parser {
             default:
                 return false;
         }
+    }
+
+    private boolean isPossibleLambdaExpression() {
+        // x => ...
+        if (current.type == TokenType.IDENTIFIER) {
+            return peek(1).type == TokenType.EQUAL_GREATER;
+        }
+
+        if (current.type == TokenType.LEFT_PARENTHESES) {
+            // () => ...
+            if (peek(1).type == TokenType.RIGHT_PARENTHESES && peek(2).type == TokenType.EQUAL_GREATER) {
+                return true;
+            }
+
+            // (x) => ...
+            // (x, y, z) => ...
+            if (peek(1).type == TokenType.IDENTIFIER) {
+                boolean commaExpected = true;
+                int index = 2;
+                while (true) {
+                    Token next = peek(index++);
+                    if (commaExpected) {
+                        if (next.type == TokenType.COMMA) {
+                            commaExpected = false;
+                        } else if (next.type == TokenType.RIGHT_PARENTHESES) {
+                            return peek(index).type == TokenType.EQUAL_GREATER;
+                        } else {
+                            return false;
+                        }
+                    } else {
+                        if (next.type == TokenType.IDENTIFIER) {
+                            commaExpected = true;
+                        } else {
+                            return false;
+                        }
+                    }
+                }
+            }
+        }
+
+        return false;
     }
 
     private boolean isPossibleVariableDeclaration() {

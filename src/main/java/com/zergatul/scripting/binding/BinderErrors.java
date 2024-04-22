@@ -26,5 +26,6 @@ public class BinderErrors {
     public static final ErrorCode ExpressionCannotBeSet = new ErrorCode("B021", "The left-hand side of an assignment must be a variable, property or indexer");
     public static final ErrorCode CannotIterate = new ErrorCode("B022", "foreach statement cannot operate on expression of type '%s'");
     public static final ErrorCode ForEachTypesNotMatch = new ErrorCode("B023", "foreach variable type and expression type doesn't match");
+    public static final ErrorCode ContextualLambda = new ErrorCode("B024", "Lambda expression is invalid in this context");
     public static final ErrorCode InternalError = new ErrorCode("B999", "Internal error: %s");
 }

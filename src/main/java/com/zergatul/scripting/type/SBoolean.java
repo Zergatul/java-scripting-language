@@ -5,6 +5,7 @@ import com.zergatul.scripting.type.operation.BooleanOperations;
 import com.zergatul.scripting.type.operation.IntOperations;
 import com.zergatul.scripting.type.operation.UnaryOperation;
 import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.Type;
 
 import static org.objectweb.asm.Opcodes.*;
 
@@ -99,6 +100,21 @@ public class SBoolean extends SPredefinedType {
     @Override
     public int getReturnInst() {
         return IRETURN;
+    }
+
+    @Override
+    public Class<?> getBoxedVersion() {
+        return Boolean.class;
+    }
+
+    @Override
+    public void compileUnboxing(MethodVisitor visitor) {
+        visitor.visitMethodInsn(
+                INVOKEVIRTUAL,
+                Type.getInternalName(Boolean.class),
+                "booleanValue",
+                Type.getMethodDescriptor(Type.BOOLEAN_TYPE),
+                false);
     }
 
     @Override

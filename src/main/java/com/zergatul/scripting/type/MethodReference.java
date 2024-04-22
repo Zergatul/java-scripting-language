@@ -17,12 +17,12 @@ public class MethodReference extends MemberReference {
     }
 
     public List<SType> getParameters() {
-        return Arrays.stream(method.getParameterTypes())
-                .map(SType::fromJavaClass)
+        return Arrays.stream(method.getGenericParameterTypes())
+                .map(SType::fromJavaType)
                 .toList();
     }
 
     public SType getReturn() {
-        return SType.fromJavaClass(method.getReturnType());
+        return SType.fromJavaType(method.getReturnType());
     }
 }

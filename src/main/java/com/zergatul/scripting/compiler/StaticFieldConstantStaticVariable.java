@@ -15,7 +15,7 @@ public class StaticFieldConstantStaticVariable extends ConstantStaticVariable {
     private final Field field;
 
     protected StaticFieldConstantStaticVariable(String name, Field field) {
-        super(name, SType.fromJavaClass(field.getType()));
+        super(name, SType.fromJavaType(field.getType()));
 
         if (!Modifier.isStatic(field.getModifiers())) {
             throw new InternalException();
@@ -28,7 +28,7 @@ public class StaticFieldConstantStaticVariable extends ConstantStaticVariable {
     }
 
     @Override
-    public void compileLoad(MethodVisitor visitor) {
+    public void compileLoad(CompilerContext context, MethodVisitor visitor) {
         visitor.visitFieldInsn(
                 GETSTATIC,
                 Type.getInternalName(field.getDeclaringClass()),

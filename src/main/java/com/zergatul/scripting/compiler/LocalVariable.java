@@ -27,12 +27,12 @@ public class LocalVariable extends Variable {
     }
 
     @Override
-    public void compileLoad(MethodVisitor visitor) {
+    public void compileLoad(CompilerContext context, MethodVisitor visitor) {
         visitor.visitVarInsn(getType().getLoadInst(), stackIndex);
     }
 
     @Override
-    public void compileStore(MethodVisitor visitor) {
+    public void compileStore(CompilerContext context, MethodVisitor visitor) {
         visitor.visitVarInsn(getType().getStoreInst(), stackIndex);
     }
 }

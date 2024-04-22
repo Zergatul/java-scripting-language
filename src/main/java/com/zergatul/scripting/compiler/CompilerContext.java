@@ -15,6 +15,8 @@ public class CompilerContext {
     private final CompilerContext parent;
     private final Map<String, Symbol> staticSymbols = new HashMap<>();
     private final Map<String, Symbol> localSymbols = new HashMap<>();
+    private final boolean isLambdaRoot;
+    private String className;
     private int stackIndex;
     private Consumer<MethodVisitor> breakConsumer;
     private Consumer<MethodVisitor> continueConsumer;
@@ -24,13 +26,14 @@ public class CompilerContext {
     }
 
     public CompilerContext(int initialStackIndex) {
-        this(initialStackIndex, null);
+        this(initialStackIndex, false, null);
     }
 
-    public CompilerContext(int initialStackIndex, CompilerContext parent) {
+    public CompilerContext(int initialStackIndex, boolean isLambdaRoot, CompilerContext parent) {
         this.root = parent == null ? this : parent.root;
         this.parent = parent;
         this.stackIndex = initialStackIndex;
+        this.isLambdaRoot = isLambdaRoot;
     }
 
     public void addStaticVariable(StaticVariable variable) {
@@ -65,7 +68,11 @@ public class CompilerContext {
     }
 
     public CompilerContext createChild() {
-        return new CompilerContext(stackIndex, this);
+        return new CompilerContext(stackIndex, false, this);
+    }
+
+    public CompilerContext createLambda() {
+        return new CompilerContext(1, true, this);
     }
 
     public CompilerContext getParent() {
@@ -82,6 +89,9 @@ public class CompilerContext {
             Symbol localSymbol = context.localSymbols.get(name);
             if (localSymbol != null) {
                 return localSymbol;
+            }
+            if (context.isLambdaRoot) {
+                break;
             }
             context = context.parent;
         }
@@ -139,5 +149,13 @@ public class CompilerContext {
         }
 
         throw new InternalException(); // no loop
+    }
+
+    public void setClassName(String className) {
+        this.className = className;
+    }
+
+    public String getClassName() {
+        return root.className;
     }
 }
