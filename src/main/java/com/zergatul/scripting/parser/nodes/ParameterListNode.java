@@ -8,9 +8,9 @@ import java.util.Objects;
 
 public class ParameterListNode extends Node {
 
-    public final List<Parameter> parameters;
+    public final List<ParameterNode> parameters;
 
-    public ParameterListNode(List<Parameter> parameters, TextRange range) {
+    public ParameterListNode(List<ParameterNode> parameters, TextRange range) {
         super(NodeType.PARAMETER_LIST, range);
         this.parameters = parameters;
     }

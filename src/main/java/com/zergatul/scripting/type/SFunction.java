@@ -2,17 +2,32 @@ package com.zergatul.scripting.type;
 
 import com.zergatul.scripting.InternalException;
 import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.Type;
 
-public class SPropertyHolder extends SType {
+import java.util.Arrays;
 
-    private final PropertyReference property;
+public class SFunction extends SType {
 
-    public SPropertyHolder(PropertyReference property) {
-        this.property = property;
+    private final SType returnType;
+    private final SType[] parameters;
+
+    public SFunction(SType returnType, SType[] parameters) {
+        this.returnType = returnType;
+        this.parameters = parameters;
     }
 
-    public PropertyReference getProperty() {
-        return property;
+    public SType[] getParameters() {
+        return parameters;
+    }
+
+    public SType getReturnType() {
+        return returnType;
+    }
+
+    public String getDescriptor() {
+        return Type.getMethodDescriptor(
+                Type.getType(returnType.getJavaClass()),
+                Arrays.stream(parameters).map(SType::getJavaClass).map(Type::getType).toArray(Type[]::new));
     }
 
     @Override

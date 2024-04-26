@@ -285,7 +285,9 @@ public class ParserTest {
                                         new NameExpressionNode("func", new SingleLineTextRange(1, 1, 0, 4)),
                                         new ArgumentsListNode(List.of(
                                                 new LambdaExpressionNode(
-                                                        List.of(new IdentifierToken("a", new SingleLineTextRange(1, 6, 5, 1))),
+                                                        List.of(
+                                                                new NameExpressionNode(
+                                                                    new IdentifierToken("a", new SingleLineTextRange(1, 6, 5, 1)))),
                                                         new BlockStatementNode(
                                                                 List.of(),
                                                                 new SingleLineTextRange(1, 11, 10, 2)),
@@ -308,9 +310,12 @@ public class ParserTest {
                                         new ArgumentsListNode(List.of(
                                                 new LambdaExpressionNode(
                                                         List.of(
-                                                                new IdentifierToken("a", new SingleLineTextRange(1, 7, 6, 1)),
-                                                                new IdentifierToken("b", new SingleLineTextRange(1, 10, 9, 1)),
-                                                                new IdentifierToken("c", new SingleLineTextRange(1, 13, 12, 1))),
+                                                                new NameExpressionNode(
+                                                                        new IdentifierToken("a", new SingleLineTextRange(1, 7, 6, 1))),
+                                                                new NameExpressionNode(
+                                                                        new IdentifierToken("b", new SingleLineTextRange(1, 10, 9, 1))),
+                                                                new NameExpressionNode(
+                                                                        new IdentifierToken("c", new SingleLineTextRange(1, 13, 12, 1)))),
                                                         new BlockStatementNode(
                                                                 List.of(),
                                                                 new SingleLineTextRange(1, 19, 18, 2)),
@@ -330,7 +335,8 @@ public class ParserTest {
                 List.of(
                         new FunctionNode(
                                 new VoidTypeNode(new SingleLineTextRange(1, 1, 0, 4)),
-                                new IdentifierToken("a", new SingleLineTextRange(1, 6, 5, 1)),
+                                new NameExpressionNode(
+                                        new IdentifierToken("a", new SingleLineTextRange(1, 6, 5, 1))),
                                 new ParameterListNode(List.of(), new SingleLineTextRange(1, 7, 6, 2)),
                                 new BlockStatementNode(List.of(), new SingleLineTextRange(1, 9, 8, 2)),
                                 new SingleLineTextRange(1, 1, 0, 10))),
@@ -353,10 +359,11 @@ public class ParserTest {
                                                         new SingleLineTextRange(1, 1, 0, 5)),
                                                 new SingleLineTextRange(1, 1, 0, 7)),
                                         new SingleLineTextRange(1, 1, 0, 9)),
-                                new IdentifierToken("a", new SingleLineTextRange(1, 11, 10, 1)),
+                                new NameExpressionNode(
+                                        new IdentifierToken("a", new SingleLineTextRange(1, 11, 10, 1))),
                                 new ParameterListNode(
                                         List.of(
-                                                new Parameter(
+                                                new ParameterNode(
                                                         new ArrayTypeNode(
                                                                 new ArrayTypeNode(
                                                                         new ArrayTypeNode(
@@ -364,10 +371,14 @@ public class ParserTest {
                                                                                 new SingleLineTextRange(1, 13, 12, 5)),
                                                                         new SingleLineTextRange(1, 13, 12, 7)),
                                                                 new SingleLineTextRange(1, 13, 12, 9)),
-                                                        new IdentifierToken("b", new SingleLineTextRange(1, 23, 22, 1))),
-                                                new Parameter(
+                                                        new NameExpressionNode(
+                                                            new IdentifierToken("b", new SingleLineTextRange(1, 23, 22, 1))),
+                                                        new SingleLineTextRange(1, 13, 12, 11)),
+                                                new ParameterNode(
                                                         new PredefinedTypeNode(PredefinedType.STRING, new SingleLineTextRange(1, 26, 25, 6)),
-                                                        new IdentifierToken("s", new SingleLineTextRange(1, 33, 32, 1)))),
+                                                        new NameExpressionNode(
+                                                            new IdentifierToken("s", new SingleLineTextRange(1, 33, 32, 1))),
+                                                        new SingleLineTextRange(1, 26, 25, 8))),
                                         new SingleLineTextRange(1, 12, 11, 23)),
                                 new BlockStatementNode(List.of(), new SingleLineTextRange(1, 36, 35, 2)),
                                 new SingleLineTextRange(1, 1, 0, 37))),

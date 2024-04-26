@@ -8,10 +8,10 @@ import java.util.List;
 
 public class BoundLambdaExpressionNode extends BoundExpressionNode {
 
-    public final List<BoundParameter> parameters;
+    public final List<BoundParameterNode> parameters;
     public final BoundStatementNode body;
 
-    public BoundLambdaExpressionNode(SType type, List<BoundParameter> parameters, BoundStatementNode body, TextRange range) {
+    public BoundLambdaExpressionNode(SType type, List<BoundParameterNode> parameters, BoundStatementNode body, TextRange range) {
         super(NodeType.LAMBDA_EXPRESSION, type, range);
         this.parameters = parameters;
         this.body = body;

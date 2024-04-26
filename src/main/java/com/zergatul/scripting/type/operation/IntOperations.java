@@ -12,8 +12,8 @@ public class IntOperations {
     public static final BinaryOperation MUL = new SingleInstructionBinaryOperation(SIntType.instance, IMUL);
     public static final BinaryOperation DIV = new SingleInstructionBinaryOperation(SIntType.instance, IDIV);
     public static final BinaryOperation MOD = new SingleInstructionBinaryOperation(SIntType.instance, IREM);
-    public static final BinaryOperation AND = new SingleInstructionBinaryOperation(SIntType.instance, IAND);
-    public static final BinaryOperation OR = new SingleInstructionBinaryOperation(SIntType.instance, IOR);
+    public static final BinaryOperation BITWISE_AND = new SingleInstructionBinaryOperation(SIntType.instance, IAND);
+    public static final BinaryOperation BITWISE_OR = new SingleInstructionBinaryOperation(SIntType.instance, IOR);
     public static final BinaryOperation LT = new IntComparisonOperation(IF_ICMPLT);
     public static final BinaryOperation GT = new IntComparisonOperation(IF_ICMPGT);
     public static final BinaryOperation LTE = new IntComparisonOperation(IF_ICMPLE);

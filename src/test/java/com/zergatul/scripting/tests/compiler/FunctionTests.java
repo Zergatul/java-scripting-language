@@ -1,18 +1,16 @@
-package com.zergatul.scripting.tests;
+package com.zergatul.scripting.tests.compiler;
 
-import com.zergatul.scripting.old.compiler.ScriptCompileException;
-import com.zergatul.scripting.old.compiler.ScriptingLanguageCompiler;
-import com.zergatul.scripting.helpers.FloatStorage;
-import com.zergatul.scripting.helpers.IntStorage;
+import com.zergatul.scripting.tests.compiler.helpers.FloatStorage;
+import com.zergatul.scripting.tests.compiler.helpers.IntStorage;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static com.zergatul.scripting.tests.compiler.helpers.CompilerHelper.compile;
 
-public class FunctionsTest {
+public class FunctionTests {
 
     @BeforeEach
     public void clean() {
@@ -21,11 +19,11 @@ public class FunctionsTest {
     }
 
     @Test
-    public void voidFunctionTest() throws Exception {
+    public void voidFunctionTest() {
         String code = """
                 static int x;
                 
-                function simple() {
+                void simple() {
                     x++;
                 }
                 
@@ -36,8 +34,7 @@ public class FunctionsTest {
                 }
                 """;
 
-        ScriptingLanguageCompiler compiler = new ScriptingLanguageCompiler(ApiRoot.class);
-        Runnable program = compiler.compile(code);
+        Runnable program = compile(ApiRoot.class, code);
         program.run();
 
         Assertions.assertIterableEquals(
@@ -48,32 +45,25 @@ public class FunctionsTest {
     @Test
     public void noReturnZeroStatementsTest() {
         String code = """
-                function int func1() {}
+                int func1() {}
+                intStorage.add(func1());
                 """;
 
-        ScriptingLanguageCompiler compiler = new ScriptingLanguageCompiler(ApiRoot.class);
-        assertThrows(ScriptCompileException.class, () -> compiler.compile(code));
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(
+                ApiRoot.intStorage.list,
+                List.of(0));
     }
 
     @Test
-    public void noReturnNonZeroStatementsTest() {
-        String code = """
-                function int func1() {
-                    intStorage.add(123);
-                }
-                """;
-
-        ScriptingLanguageCompiler compiler = new ScriptingLanguageCompiler(ApiRoot.class);
-        assertThrows(ScriptCompileException.class, () -> compiler.compile(code));
-    }
-
-    @Test
-    public void intFunctionTest() throws Exception {
+    public void intFunctionTest() {
         String code = """
                 static int x = 123;
                 static int y = 23;
                 
-                function int func1() {
+                int func1() {
                     if (x > y) {
                         x = x - y;
                         return x;
@@ -89,8 +79,7 @@ public class FunctionsTest {
                 }
                 """;
 
-        ScriptingLanguageCompiler compiler = new ScriptingLanguageCompiler(ApiRoot.class);
-        Runnable program = compiler.compile(code);
+        Runnable program = compile(ApiRoot.class, code);
         program.run();
 
         Assertions.assertIterableEquals(
@@ -99,17 +88,16 @@ public class FunctionsTest {
     }
 
     @Test
-    public void booleanFunctionTest() throws Exception {
+    public void booleanFunctionTest() {
         String code = """
-                function boolean func1() {
+                boolean func1() {
                     return true;
                 }
                 
                 intStorage.add(func1() ? 3 : 2);
                 """;
 
-        ScriptingLanguageCompiler compiler = new ScriptingLanguageCompiler(ApiRoot.class);
-        Runnable program = compiler.compile(code);
+        Runnable program = compile(ApiRoot.class, code);
         program.run();
 
         Assertions.assertIterableEquals(
@@ -118,17 +106,16 @@ public class FunctionsTest {
     }
 
     @Test
-    public void floatFunctionTest() throws Exception {
+    public void floatFunctionTest() {
         String code = """
-                function float func1() {
+                float func1() {
                     return 123;
                 }
                 
                 intStorage.add(func1() == 123 ? 3 : 2);
                 """;
 
-        ScriptingLanguageCompiler compiler = new ScriptingLanguageCompiler(ApiRoot.class);
-        Runnable program = compiler.compile(code);
+        Runnable program = compile(ApiRoot.class, code);
         program.run();
 
         Assertions.assertIterableEquals(
@@ -137,17 +124,16 @@ public class FunctionsTest {
     }
 
     @Test
-    public void stringFunctionTest() throws Exception {
+    public void stringFunctionTest() {
         String code = """
-                function string func1() {
+                string func1() {
                     return "abc";
                 }
                 
                 intStorage.add(func1() == "abc" ? 3 : 2);
                 """;
 
-        ScriptingLanguageCompiler compiler = new ScriptingLanguageCompiler(ApiRoot.class);
-        Runnable program = compiler.compile(code);
+        Runnable program = compile(ApiRoot.class, code);
         program.run();
 
         Assertions.assertIterableEquals(
@@ -156,9 +142,9 @@ public class FunctionsTest {
     }
 
     @Test
-    public void arrayFunctionTest() throws Exception {
+    public void arrayFunctionTest() {
         String code = """
-                function string[] func1() {
+                string[] func1() {
                     string[] result = new string[3];
                     result[0] = "a";
                     result[1] = "b";
@@ -173,8 +159,7 @@ public class FunctionsTest {
                 intStorage.add(array[2] == "c" ? 3 : 0);
                 """;
 
-        ScriptingLanguageCompiler compiler = new ScriptingLanguageCompiler(ApiRoot.class);
-        Runnable program = compiler.compile(code);
+        Runnable program = compile(ApiRoot.class, code);
         program.run();
 
         Assertions.assertIterableEquals(
@@ -183,9 +168,9 @@ public class FunctionsTest {
     }
 
     @Test
-    public void singleParamTest() throws Exception {
+    public void singleParamTest() {
         String code = """
-                function func(int x) {
+                void func(int x) {
                     intStorage.add(x + 1);
                 }
                 
@@ -194,8 +179,7 @@ public class FunctionsTest {
                 }
                 """;
 
-        ScriptingLanguageCompiler compiler = new ScriptingLanguageCompiler(ApiRoot.class);
-        Runnable program = compiler.compile(code);
+        Runnable program = compile(ApiRoot.class, code);
         program.run();
 
         Assertions.assertIterableEquals(
@@ -204,9 +188,9 @@ public class FunctionsTest {
     }
 
     @Test
-    public void doubleParamTest() throws Exception {
+    public void doubleParamTest() {
         String code = """
-                function int sum(int x, int y) {
+                int sum(int x, int y) {
                     return x + y;
                 }
                 
@@ -215,8 +199,7 @@ public class FunctionsTest {
                 intStorage.add(sum(22, 12));
                 """;
 
-        ScriptingLanguageCompiler compiler = new ScriptingLanguageCompiler(ApiRoot.class);
-        Runnable program = compiler.compile(code);
+        Runnable program = compile(ApiRoot.class, code);
         program.run();
 
         Assertions.assertIterableEquals(
@@ -225,9 +208,9 @@ public class FunctionsTest {
     }
 
     @Test
-    public void implicitCastParamTest() throws Exception {
+    public void implicitCastParamTest() {
         String code = """
-                function float sum(float x, float y) {
+                float sum(float x, float y) {
                     return x + y;
                 }
                 
@@ -237,8 +220,7 @@ public class FunctionsTest {
                 floatStorage.add(sum(22, 12));
                 """;
 
-        ScriptingLanguageCompiler compiler = new ScriptingLanguageCompiler(ApiRoot.class);
-        Runnable program = compiler.compile(code);
+        Runnable program = compile(ApiRoot.class, code);
         program.run();
 
         Assertions.assertIterableEquals(
@@ -247,9 +229,9 @@ public class FunctionsTest {
     }
 
     @Test
-    public void recursiveTest() throws Exception {
+    public void recursiveTest() {
         String code = """
-                function int factorial(int x) {
+                int factorial(int x) {
                     if (x <= 1) {
                         return 1;
                     }
@@ -263,8 +245,7 @@ public class FunctionsTest {
                 intStorage.add(factorial(10));
                 """;
 
-        ScriptingLanguageCompiler compiler = new ScriptingLanguageCompiler(ApiRoot.class);
-        Runnable program = compiler.compile(code);
+        Runnable program = compile(ApiRoot.class, code);
         program.run();
 
         Assertions.assertIterableEquals(
@@ -273,20 +254,20 @@ public class FunctionsTest {
     }
 
     @Test
-    public void crossRecursionTest() throws Exception {
+    public void crossRecursionTest() {
         String code = """
-                function int strange(int x) {
+                int strange(int x) {
                     if (x <= 1) {
                         return 1;
                     }
                     return 2 * func1(x - 1) + 3 * func2(x - 1);
                 }
                 
-                function int func1(int x) {
+                int func1(int x) {
                     return strange(x - 2) + 2;
                 }
                 
-                function int func2(int x) {
+                int func2(int x) {
                     return strange(x - 1) + 1;
                 }
                 
@@ -301,8 +282,7 @@ public class FunctionsTest {
                 intStorage.add(strange(20));
                 """;
 
-        ScriptingLanguageCompiler compiler = new ScriptingLanguageCompiler(ApiRoot.class);
-        Runnable program = compiler.compile(code);
+        Runnable program = compile(ApiRoot.class, code);
         program.run();
 
         Assertions.assertIterableEquals(

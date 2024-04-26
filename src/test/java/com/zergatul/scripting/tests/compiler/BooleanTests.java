@@ -1,6 +1,7 @@
 package com.zergatul.scripting.tests.compiler;
 
 import com.zergatul.scripting.helpers.BoolStorage;
+import com.zergatul.scripting.tests.compiler.helpers.IntStorage;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -13,7 +14,8 @@ public class BooleanTests {
 
     @BeforeEach
     public void clean() {
-        BooleanTests.ApiRoot.storage = new BoolStorage();
+        ApiRoot.storage = new BoolStorage();
+        ApiRoot.intStorage = new IntStorage();
     }
 
     @Test
@@ -212,7 +214,72 @@ public class BooleanTests {
                 List.of(true, true, true, false));
     }
 
+    @Test
+    public void bitwiseVsBooleanOr() {
+        String code = """
+                boolean getFalse() {
+                    intStorage.add(101);
+                    return false;
+                }
+                boolean getTrue() {
+                    intStorage.add(102);
+                    return true;
+                }
+                
+                intStorage.add(getTrue() | getFalse() ? 201 : 202);
+                intStorage.add(getFalse() | getTrue() ? 203 : 204);
+                
+                intStorage.add(getTrue() || getFalse() ? 205 : 206);
+                intStorage.add(getFalse() || getTrue() ? 207 : 208);
+                
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(
+                ApiRoot.intStorage.list,
+                List.of(
+                        102, 101, 201,
+                        101, 102, 203,
+                        102, 205,
+                        101, 102, 207));
+    }
+
+    @Test
+    public void bitwiseVsBooleanAnd() {
+        String code = """
+                boolean getFalse() {
+                    intStorage.add(101);
+                    return false;
+                }
+                boolean getTrue() {
+                    intStorage.add(102);
+                    return true;
+                }
+                
+                intStorage.add(getTrue() & getFalse() ? 201 : 202);
+                intStorage.add(getFalse() & getTrue() ? 203 : 204);
+                
+                intStorage.add(getTrue() && getFalse() ? 205 : 206);
+                intStorage.add(getFalse() && getTrue() ? 207 : 208);
+                
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(
+                ApiRoot.intStorage.list,
+                List.of(
+                        102, 101, 202,
+                        101, 102, 204,
+                        102, 101, 206,
+                        101, 208));
+    }
+
     public static class ApiRoot {
         public static BoolStorage storage;
+        public static IntStorage intStorage;
     }
 }

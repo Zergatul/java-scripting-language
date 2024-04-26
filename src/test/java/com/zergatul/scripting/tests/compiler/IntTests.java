@@ -311,6 +311,21 @@ public class IntTests {
                 List.of(-1, -2, -3));
     }
 
+    @Test
+    public void bitwiseTest() {
+        String code = """
+                intStorage.add(12345678 | 87654321);
+                intStorage.add(12345678 & 87654321);
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(
+                ApiRoot.intStorage.list,
+                List.of(96305151, 3694848));
+    }
+
     public static class ApiRoot {
         public static BoolStorage boolStorage;
         public static IntStorage intStorage;

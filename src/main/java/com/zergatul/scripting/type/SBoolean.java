@@ -83,13 +83,23 @@ public class SBoolean extends SPredefinedType {
     }
 
     @Override
-    public BinaryOperation and(SType other) {
-        return other == this ? BooleanOperations.AND : null;
+    public BinaryOperation booleanAnd(SType other) {
+        return other == this ? BooleanOperations.BOOLEAN_AND : null;
     }
 
     @Override
-    public BinaryOperation or(SType other) {
-        return other == this ? BooleanOperations.OR : null;
+    public BinaryOperation booleanOr(SType other) {
+        return other == this ? BooleanOperations.BOOLEAN_OR : null;
+    }
+
+    @Override
+    public BinaryOperation bitwiseAnd(SType other) {
+        return other == this ? BooleanOperations.BITWISE_AND : null;
+    }
+
+    @Override
+    public BinaryOperation bitwiseOr(SType other) {
+        return other == this ? BooleanOperations.BITWISE_OR : null;
     }
 
     @Override

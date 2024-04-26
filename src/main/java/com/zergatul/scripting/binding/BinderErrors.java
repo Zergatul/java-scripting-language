@@ -16,7 +16,7 @@ public class BinderErrors {
     public static final ErrorCode FunctionExpected = new ErrorCode("B011", "Function expected");
     public static final ErrorCode NonInvocableMember = new ErrorCode("B012", "Non-invocable member '%s.%s' cannot be used like a method");
     public static final ErrorCode NoOverloadedMethods = new ErrorCode("B013", "No overload for method '%s' takes %d arguments");
-    public static final ErrorCode ArgumentCountMismatch = new ErrorCode("B014", "Function does not take %d arguments");
+    public static final ErrorCode ArgumentCountMismatch = new ErrorCode("B014", "Function '%s' expects %d arguments");
     public static final ErrorCode CannotCastArguments = new ErrorCode("B015", "Invalid arguments");
     public static final ErrorCode InvalidFloatConstant = new ErrorCode("B016", "Cannot parse float constant");
     public static final ErrorCode NoLoop = new ErrorCode("B017", "No enclosing loop out of which to break or continue");
@@ -27,5 +27,8 @@ public class BinderErrors {
     public static final ErrorCode CannotIterate = new ErrorCode("B022", "foreach statement cannot operate on expression of type '%s'");
     public static final ErrorCode ForEachTypesNotMatch = new ErrorCode("B023", "foreach variable type and expression type doesn't match");
     public static final ErrorCode ContextualLambda = new ErrorCode("B024", "Lambda expression is invalid in this context");
+    public static final ErrorCode NotFunction = new ErrorCode("B025", "'%s' is not a function");
+    public static final ErrorCode CannotCastArgument = new ErrorCode("B026", "Argument '%d' cannot convert from '%s' to '%s'");
+    public static final ErrorCode EmptyReturnStatement = new ErrorCode("B027", "Cannot return void");
     public static final ErrorCode InternalError = new ErrorCode("B999", "Internal error: %s");
 }

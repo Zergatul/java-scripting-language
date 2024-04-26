@@ -105,6 +105,21 @@ public class StringTests {
         Assertions.assertIterableEquals(ApiRoot.boolStorage.list, List.of(false, false, true, true));
     }
 
+    @Test
+    public void characterIndexerTest() {
+        String code = """
+                string s = "abc";
+                intStorage.add(s[0]);
+                intStorage.add(s[1]);
+                intStorage.add(s[2]);
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(97, 98, 99));
+    }
+
     public static class ApiRoot {
         public static StringStorage stringStorage;
         public static IntStorage intStorage;

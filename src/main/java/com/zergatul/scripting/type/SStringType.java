@@ -2,8 +2,12 @@ package com.zergatul.scripting.type;
 
 import com.zergatul.scripting.InternalException;
 import com.zergatul.scripting.type.operation.BinaryOperation;
+import com.zergatul.scripting.type.operation.IndexOperation;
 import com.zergatul.scripting.type.operation.StringOperations;
 import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.Type;
+
+import java.util.List;
 
 import static org.objectweb.asm.Opcodes.*;
 
@@ -79,6 +83,20 @@ public class SStringType extends SPredefinedType {
     }
 
     @Override
+    public List<SType> supportedIndexers() {
+        return List.of(SIntType.instance);
+    }
+
+    @Override
+    public IndexOperation index(SType type) {
+        if (type == SIntType.instance) {
+            return new StringIntegerIndexOperation();
+        } else {
+            return null;
+        }
+    }
+
+    @Override
     public int getReturnInst() {
         return ARETURN;
     }
@@ -86,5 +104,32 @@ public class SStringType extends SPredefinedType {
     @Override
     public String toString() {
         return "string";
+    }
+
+    private static class StringIntegerIndexOperation extends IndexOperation {
+
+        public StringIntegerIndexOperation() {
+            super(SIntType.instance);
+        }
+
+        @Override
+        public boolean canGet() {
+            return true;
+        }
+
+        @Override
+        public void compileGet(MethodVisitor visitor) {
+            visitor.visitMethodInsn(
+                    INVOKEVIRTUAL,
+                    Type.getInternalName(String.class),
+                    "charAt",
+                    Type.getMethodDescriptor(Type.CHAR_TYPE, Type.INT_TYPE),
+                    false);
+        }
+
+        @Override
+        public void compileSet(MethodVisitor visitor) {
+            throw new InternalException();
+        }
     }
 }

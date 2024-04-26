@@ -103,11 +103,11 @@ public class ContextualLambdaChecker {
             case INDEX_EXPRESSION -> checkIndexExpression((BoundIndexExpressionNode) node);
             case INVOCATION_EXPRESSION -> checkInvocationExpression((BoundInvocationExpressionNode) node);
             case METHOD_INVOCATION_EXPRESSION -> checkMethodInvocationExpression((BoundMethodInvocationExpressionNode) node);
-            case MEMBER_ACCESS_EXPRESSION -> checkMemberAccessExpression((BoundMethodAccessExpressionNode) node);
             case PROPERTY_ACCESS_EXPRESSION -> checkPropertyAccessExpression((BoundPropertyAccessExpressionNode) node);
             case NEW_EXPRESSION -> checkNewExpression((BoundNewExpressionNode) node);
             case IMPLICIT_CAST -> checkImplicitCastExpression((BoundImplicitCastExpressionNode) node);
             case LAMBDA_EXPRESSION -> checkLambdaExpression((BoundLambdaExpressionNode) node);
+            case FUNCTION_INVOCATION -> checkFunctionInvocation((BoundFunctionInvocationExpression) node);
             case CONTEXTUAL_LAMBDA_EXPRESSION -> addDiagnostic(BinderErrors.ContextualLambda, node);
             default -> throw new InternalException();
         }
@@ -143,10 +143,6 @@ public class ContextualLambdaChecker {
         node.arguments.arguments.forEach(this::checkExpression);
     }
 
-    private void checkMemberAccessExpression(BoundMethodAccessExpressionNode node) {
-        checkExpression(node.callee);
-    }
-
     private void checkPropertyAccessExpression(BoundPropertyAccessExpressionNode node) {
         checkExpression(node.callee);
     }
@@ -166,6 +162,10 @@ public class ContextualLambdaChecker {
 
     private void checkLambdaExpression(BoundLambdaExpressionNode node) {
         checkStatement(node.body);
+    }
+
+    private void checkFunctionInvocation(BoundFunctionInvocationExpression node) {
+        node.arguments.arguments.forEach(this::checkExpression);
     }
 
     private void addDiagnostic(ErrorCode code, Locatable locatable) {

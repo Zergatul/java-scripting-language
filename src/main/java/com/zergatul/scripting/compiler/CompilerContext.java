@@ -3,6 +3,7 @@ package com.zergatul.scripting.compiler;
 import com.zergatul.scripting.InternalException;
 import com.zergatul.scripting.type.SFloatType;
 import com.zergatul.scripting.type.SType;
+import com.zergatul.scripting.type.SVoidType;
 import org.objectweb.asm.MethodVisitor;
 
 import java.util.HashMap;
@@ -15,7 +16,8 @@ public class CompilerContext {
     private final CompilerContext parent;
     private final Map<String, Symbol> staticSymbols = new HashMap<>();
     private final Map<String, Symbol> localSymbols = new HashMap<>();
-    private final boolean isLambdaRoot;
+    private final boolean isFunctionRoot;
+    private final SType returnType;
     private String className;
     private int stackIndex;
     private Consumer<MethodVisitor> breakConsumer;
@@ -26,14 +28,15 @@ public class CompilerContext {
     }
 
     public CompilerContext(int initialStackIndex) {
-        this(initialStackIndex, false, null);
+        this(initialStackIndex, false, SVoidType.instance, null);
     }
 
-    public CompilerContext(int initialStackIndex, boolean isLambdaRoot, CompilerContext parent) {
+    public CompilerContext(int initialStackIndex, boolean isFunctionRoot, SType returnType, CompilerContext parent) {
         this.root = parent == null ? this : parent.root;
         this.parent = parent;
         this.stackIndex = initialStackIndex;
-        this.isLambdaRoot = isLambdaRoot;
+        this.isFunctionRoot = isFunctionRoot;
+        this.returnType = returnType;
     }
 
     public void addStaticVariable(StaticVariable variable) {
@@ -42,6 +45,14 @@ public class CompilerContext {
         }
 
         staticSymbols.put(variable.getName(), variable);
+    }
+
+    public void addFunction(Function function) {
+        if (hasSymbol(function.getName())) {
+            throw new InternalException();
+        }
+
+        staticSymbols.put(function.getName(), function);
     }
 
     public LocalVariable addLocalVariable(String name, SType type) {
@@ -68,11 +79,19 @@ public class CompilerContext {
     }
 
     public CompilerContext createChild() {
-        return new CompilerContext(stackIndex, false, this);
+        return new CompilerContext(stackIndex, false, returnType, this);
     }
 
-    public CompilerContext createLambda() {
-        return new CompilerContext(1, true, this);
+    public CompilerContext createStaticFunction(SType returnType) {
+        return new CompilerContext(0, true, returnType, this);
+    }
+
+    public CompilerContext createFunction(SType returnType) {
+        return new CompilerContext(1, true, returnType, this);
+    }
+
+    public SType getReturnType() {
+        return returnType;
     }
 
     public CompilerContext getParent() {
@@ -90,7 +109,7 @@ public class CompilerContext {
             if (localSymbol != null) {
                 return localSymbol;
             }
-            if (context.isLambdaRoot) {
+            if (context.isFunctionRoot) {
                 break;
             }
             context = context.parent;

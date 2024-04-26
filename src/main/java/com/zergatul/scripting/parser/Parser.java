@@ -342,17 +342,18 @@ public class Parser {
             identifier = new IdentifierToken("", createMissingTokenRange());
         }
 
+        NameExpressionNode name = new NameExpressionNode(identifier);
         ParameterListNode parameters = parseParameterList();
         BlockStatementNode body = parseBlockStatement();
 
-        return new FunctionNode(returnType, identifier, parameters, body, TextRange.combine(returnType, body));
+        return new FunctionNode(returnType, name, parameters, body, TextRange.combine(returnType, body));
     }
 
     private ParameterListNode parseParameterList() {
         Token begin = advance(TokenType.LEFT_PARENTHESES);
         Token end;
 
-        List<Parameter> parameters = new ArrayList<>();
+        List<ParameterNode> parameters = new ArrayList<>();
 
         if (current.type == TokenType.RIGHT_PARENTHESES) {
             end = advance();
@@ -366,7 +367,9 @@ public class Parser {
                     addDiagnostic(ParserErrors.IdentifierExpected, current, current.getRawValue(code));
                     identifier = new IdentifierToken("", createMissingTokenRange());
                 }
-                parameters.add(new Parameter(type, identifier));
+
+                NameExpressionNode name = new NameExpressionNode(identifier);
+                parameters.add(new ParameterNode(type, name, TextRange.combine(type, name)));
 
                 if (current.type == TokenType.RIGHT_PARENTHESES) {
                     end = advance();
@@ -574,8 +577,10 @@ public class Parser {
                 case PERCENT -> BinaryOperator.MODULO;
                 case EQUAL_EQUAL -> BinaryOperator.EQUALS;
                 case EXCLAMATION_EQUAL -> BinaryOperator.NOT_EQUALS;
-                case AMPERSAND_AMPERSAND -> BinaryOperator.AND;
-                case PIPE_PIPE -> BinaryOperator.OR;
+                case AMPERSAND -> BinaryOperator.BITWISE_AND;
+                case AMPERSAND_AMPERSAND -> BinaryOperator.BOOLEAN_AND;
+                case PIPE -> BinaryOperator.BITWISE_OR;
+                case PIPE_PIPE -> BinaryOperator.BOOLEAN_OR;
                 case LESS -> BinaryOperator.LESS;
                 case GREATER -> BinaryOperator.GREATER;
                 case LESS_EQUAL -> BinaryOperator.LESS_EQUALS;
@@ -784,9 +789,9 @@ public class Parser {
 
     private LambdaExpressionNode parseLambdaExpression() {
         Token first = current;
-        List<IdentifierToken> parameters = new ArrayList<>();
+        List<NameExpressionNode> parameters = new ArrayList<>();
         if (current.type == TokenType.IDENTIFIER) {
-            parameters.add((IdentifierToken) advance());
+            parameters.add(new NameExpressionNode((IdentifierToken) advance()));
             advance(TokenType.EQUAL_GREATER);
         } else if (current.type == TokenType.LEFT_PARENTHESES) {
             advance();
@@ -795,7 +800,7 @@ public class Parser {
             } else {
                 while (true) {
                     if (current.type == TokenType.IDENTIFIER) {
-                        parameters.add((IdentifierToken) advance());
+                        parameters.add(new NameExpressionNode((IdentifierToken) advance()));
                         if (current.type == TokenType.RIGHT_PARENTHESES) {
                             advance();
                             break;

@@ -123,6 +123,16 @@ public class SIntType extends SPredefinedType {
     }
 
     @Override
+    public BinaryOperation bitwiseAnd(SType other) {
+        return other == this ? IntOperations.BITWISE_AND : null;
+    }
+
+    @Override
+    public BinaryOperation bitwiseOr(SType other) {
+        return other == this ? IntOperations.BITWISE_OR : null;
+    }
+
+    @Override
     public UnaryOperation plus() {
         return IntOperations.PLUS;
     }

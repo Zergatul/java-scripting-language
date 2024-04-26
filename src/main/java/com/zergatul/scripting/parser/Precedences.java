@@ -16,12 +16,12 @@ public class Precedences {
             case EQUALS, NOT_EQUALS -> 50;
             case BITWISE_AND -> 40;
             case BITWISE_OR -> 30;
-            case AND -> 20;
-            case OR -> 10;
+            case BOOLEAN_AND -> 20;
+            case BOOLEAN_OR -> 10;
         };
     }
 
     public static int getConditionalExpression() {
-        return 10;
+        return 5;
     }
 }

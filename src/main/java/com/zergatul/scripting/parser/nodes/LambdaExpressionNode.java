@@ -9,10 +9,10 @@ import java.util.Objects;
 
 public class LambdaExpressionNode extends ExpressionNode {
 
-    public final List<IdentifierToken> parameters;
+    public final List<NameExpressionNode> parameters;
     public final StatementNode body;
 
-    public LambdaExpressionNode(List<IdentifierToken> parameters, StatementNode body, TextRange range) {
+    public LambdaExpressionNode(List<NameExpressionNode> parameters, StatementNode body, TextRange range) {
         super(NodeType.LAMBDA_EXPRESSION, range);
         this.parameters = parameters;
         this.body = body;

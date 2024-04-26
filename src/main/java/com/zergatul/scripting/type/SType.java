@@ -79,11 +79,19 @@ public abstract class SType {
         return null;
     }
 
-    public BinaryOperation and(SType other) {
+    public BinaryOperation bitwiseAnd(SType other) {
         return null;
     }
 
-    public BinaryOperation or(SType other) {
+    public BinaryOperation bitwiseOr(SType other) {
+        return null;
+    }
+
+    public BinaryOperation booleanAnd(SType other) {
+        return null;
+    }
+
+    public BinaryOperation booleanOr(SType other) {
         return null;
     }
 
@@ -94,15 +102,16 @@ public abstract class SType {
             case MULTIPLY -> multiply(other);
             case DIVIDE -> divide(other);
             case MODULO -> modulo(other);
-            case OR -> or(other);
-            case AND -> and(other);
+            case BITWISE_OR -> bitwiseOr(other);
+            case BITWISE_AND -> bitwiseAnd(other);
+            case BOOLEAN_OR -> booleanOr(other);
+            case BOOLEAN_AND -> booleanAnd(other);
             case EQUALS -> equalsOp(other);
             case NOT_EQUALS -> notEqualsOp(other);
             case LESS -> lessThan(other);
             case GREATER -> greaterThan(other);
             case LESS_EQUALS -> lessEquals(other);
             case GREATER_EQUALS -> greaterEquals(other);
-            case BITWISE_OR, BITWISE_AND -> throw new InternalException();
         };
     }
 
