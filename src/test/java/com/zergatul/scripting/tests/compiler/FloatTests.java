@@ -2,6 +2,7 @@ package com.zergatul.scripting.tests.compiler;
 
 import com.zergatul.scripting.tests.compiler.helpers.BoolStorage;
 import com.zergatul.scripting.tests.compiler.helpers.FloatStorage;
+import com.zergatul.scripting.tests.compiler.helpers.StringStorage;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -16,6 +17,7 @@ public class FloatTests {
     public void clean() {
         ApiRoot.boolStorage = new BoolStorage();
         ApiRoot.floatStorage = new FloatStorage();
+        ApiRoot.stringStorage = new StringStorage();
     }
 
     @Test
@@ -231,8 +233,27 @@ public class FloatTests {
         }
     }
 
+    @Test
+    public void toStringTest() {
+        String code = """
+                float x = 100.25;
+                stringStorage.add(x.toString());
+                stringStorage.add((10.125).toString());
+                
+                stringStorage.add((10000.5555).toStandardString(3));
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(
+                ApiRoot.stringStorage.list,
+                List.of("100.25", "10.125", "10,000.556"));
+    }
+
     public static class ApiRoot {
         public static BoolStorage boolStorage;
         public static FloatStorage floatStorage;
+        public static StringStorage stringStorage;
     }
 }

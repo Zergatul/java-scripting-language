@@ -1,5 +1,6 @@
 package com.zergatul.scripting.tests.compiler;
 
+import com.zergatul.scripting.tests.compiler.helpers.FloatStorage;
 import com.zergatul.scripting.tests.compiler.helpers.IntStorage;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -14,6 +15,7 @@ public class ForEachLoopTests {
     @BeforeEach
     public void clean() {
         ApiRoot.intStorage = new IntStorage();
+        ApiRoot.floatStorage = new FloatStorage();
     }
 
     @Test
@@ -62,7 +64,23 @@ public class ForEachLoopTests {
                 List.of(1, 3, 5, 7, 9));
     }
 
+    @Test
+    public void floatArrayTest() {
+        String code = """
+                float[] a = new float[] { 0.5, 1.5, 2.5 };
+                foreach (float f in a) floatStorage.add(f);
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(
+                ApiRoot.floatStorage.list,
+                List.of(0.5, 1.5, 2.5));
+    }
+
     public static class ApiRoot {
         public static IntStorage intStorage;
+        public static FloatStorage floatStorage;
     }
 }

@@ -4,7 +4,6 @@ import com.zergatul.scripting.*;
 import com.zergatul.scripting.binding.nodes.*;
 import com.zergatul.scripting.compiler.*;
 import com.zergatul.scripting.parser.AssignmentOperator;
-import com.zergatul.scripting.parser.BinaryOperator;
 import com.zergatul.scripting.parser.NodeType;
 import com.zergatul.scripting.parser.ParserOutput;
 import com.zergatul.scripting.parser.nodes.*;
@@ -128,30 +127,60 @@ public class Binder {
         return new BoundBlockStatementNode(statements, block.getRange());
     }
 
-    private BoundAssignmentStatementNode bindAssignmentStatement(AssignmentStatementNode statement) {
+    private BoundStatementNode bindAssignmentStatement(AssignmentStatementNode statement) {
         BoundExpressionNode left = bindExpression(statement.left);
         if (!left.canSet()) {
             addDiagnostic(BinderErrors.ExpressionCannotBeSet, statement.left);
         }
 
-        if (statement.operator.operator == AssignmentOperator.ASSIGNMENT) {
-            BoundAssignmentOperatorNode operator = new BoundAssignmentOperatorNode(statement.operator.operator, statement.operator.getRange());
-            BoundExpressionNode right = bindExpression(statement.right);
+        BoundAssignmentOperatorNode operator = new BoundAssignmentOperatorNode(statement.operator.operator, statement.operator.getRange());
+        BoundExpressionNode right = bindExpression(statement.right);
+
+        if (operator.operator == AssignmentOperator.ASSIGNMENT) {
             right = tryCastTo(right, left.type);
             return new BoundAssignmentStatementNode(left, operator, right, statement.getRange());
         }
 
-        BinaryExpressionNode implicitBinaryExpression = new BinaryExpressionNode(
-                statement.left,
-                new BinaryOperatorNode(statement.operator.operator.getBinaryOperator(), statement.operator.getRange()),
-                statement.right,
+        BinaryOperation operation = left.type.binary(operator.operator.getBinaryOperator(), right.type);
+        if (operation == null) {
+            // try implicit cast right to left
+            if (!left.type.equals(right.type)) {
+                UnaryOperation cast = right.type.implicitCastTo(left.type);
+                if (cast != null) {
+                    operation = left.type.binary(operator.operator.getBinaryOperator(), left.type);
+                    if (operation != null) {
+                        right = new BoundImplicitCastExpressionNode(right, cast, right.getRange());
+                    }
+                }
+            }
+        }
+
+        if (operation != null) {
+            if (!operation.type.equals(left.type)) {
+                addDiagnostic(
+                        BinderErrors.AugmentedAssignmentInvalidType,
+                        operator,
+                        operator.operator.getBinaryOperator(),
+                        left.type,
+                        right.type,
+                        operation.type);
+            }
+        } else {
+            operation = UndefinedBinaryOperation.instance;
+            addDiagnostic(
+                    BinderErrors.BinaryOperatorNotDefined,
+                    operator,
+                    operator.operator.getBinaryOperator(),
+                    left.type.toString(),
+                    right.type.toString());
+        }
+
+        return new BoundAugmentedAssignmentStatementNode(
+                left,
+                operator,
+                new BoundBinaryOperatorNode(operation, operator.getRange()),
+                right,
                 statement.getRange());
-        return bindAssignmentStatement(
-                new AssignmentStatementNode(
-                        statement.left,
-                        new AssignmentOperatorNode(AssignmentOperator.ASSIGNMENT, statement.operator.getRange()),
-                        implicitBinaryExpression,
-                        statement.getRange()));
     }
 
     private BoundVariableDeclarationNode bindVariableDeclaration(VariableDeclarationNode variableDeclaration) {

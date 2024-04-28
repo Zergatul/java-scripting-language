@@ -122,6 +122,128 @@ public class StringTests {
         Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(97, 98, 99));
     }
 
+    @Test
+    public void substringTest() {
+        String code = """
+                stringStorage.add("0123456789".substring(0));
+                stringStorage.add("0123456789".substring(3));
+                stringStorage.add("0123456789".substring(2, 4));
+                stringStorage.add("0123456789".substring(4, 8));
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(ApiRoot.stringStorage.list,
+                List.of("0123456789", "3456789", "23", "4567"));
+    }
+
+    @Test
+    public void containsTest() {
+        String code = """
+                boolStorage.add("banana".contains("ana"));
+                boolStorage.add("banana".contains("anab"));
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(ApiRoot.boolStorage.list, List.of(true, false));
+    }
+
+    @Test
+    public void indexOfTest() {
+        String code = """
+                intStorage.add("banana".indexOf("ana"));
+                intStorage.add("banana".indexOf("anab"));
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(1, -1));
+    }
+
+    @Test
+    public void startsWithTest() {
+        String code = """
+                boolStorage.add("banana".startsWith("bana"));
+                boolStorage.add("banana".startsWith("anan"));
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(ApiRoot.boolStorage.list, List.of(true, false));
+    }
+
+    @Test
+    public void endsWithTest() {
+        String code = """
+                boolStorage.add("banana".endsWith("bana"));
+                boolStorage.add("banana".endsWith("nana"));
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(ApiRoot.boolStorage.list, List.of(false, true));
+    }
+
+    @Test
+    public void toLowerTest() {
+        String code = """
+                stringStorage.add("aBcDeF".toLower());
+                stringStorage.add("Їжак".toLower());
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(ApiRoot.stringStorage.list, List.of("abcdef", "їжак"));
+    }
+
+    @Test
+    public void toUpperTest() {
+        String code = """
+                stringStorage.add("aBcDeF".toUpper());
+                stringStorage.add("Їжак".toUpper());
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(ApiRoot.stringStorage.list, List.of("ABCDEF", "ЇЖАК"));
+    }
+
+    @Test
+    public void matchesTest() {
+        String code = """
+                boolStorage.add("banana".matches("an.na"));
+                boolStorage.add("banana".matches("an..na"));
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(ApiRoot.boolStorage.list, List.of(true, false));
+    }
+
+    @Test
+    public void getMatchesTest() {
+        String code = """
+                string[] matches = "[1022] Log message.".getMatches("\\\\[(.+)\\\\]\\\\s+(.+)");
+                intStorage.add(matches.length);
+                foreach (string s in matches) stringStorage.add(s);
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(3));
+        Assertions.assertIterableEquals(ApiRoot.stringStorage.list, List.of("[1022] Log message.", "1022", "Log message."));
+    }
+
     public static class ApiRoot {
         public static StringStorage stringStorage;
         public static IntStorage intStorage;

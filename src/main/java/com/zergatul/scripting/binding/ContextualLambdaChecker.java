@@ -30,6 +30,7 @@ public class ContextualLambdaChecker {
     private void checkStatement(BoundStatementNode node) {
         switch (node.getNodeType()) {
             case ASSIGNMENT_STATEMENT -> checkAssignmentStatement((BoundAssignmentStatementNode) node);
+            case AUGMENTED_ASSIGNMENT_STATEMENT -> checkAugmentedAssignmentStatement((BoundAugmentedAssignmentStatementNode) node);
             case BLOCK_STATEMENT -> checkBlockStatement((BoundBlockStatementNode) node);
             case VARIABLE_DECLARATION -> checkVariableDeclaration((BoundVariableDeclarationNode) node);
             case EXPRESSION_STATEMENT -> checkExpressionStatement((BoundExpressionStatementNode) node);
@@ -44,6 +45,11 @@ public class ContextualLambdaChecker {
     }
 
     private void checkAssignmentStatement(BoundAssignmentStatementNode node) {
+        checkExpression(node.left);
+        checkExpression(node.right);
+    }
+
+    private void checkAugmentedAssignmentStatement(BoundAugmentedAssignmentStatementNode node) {
         checkExpression(node.left);
         checkExpression(node.right);
     }

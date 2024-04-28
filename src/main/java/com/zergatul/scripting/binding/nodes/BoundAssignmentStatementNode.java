@@ -6,7 +6,7 @@ import com.zergatul.scripting.parser.NodeType;
 public class BoundAssignmentStatementNode extends BoundStatementNode {
 
     public final BoundExpressionNode left;
-    public BoundAssignmentOperatorNode operator;
+    public final BoundAssignmentOperatorNode operator;
     public final BoundExpressionNode right;
 
     public BoundAssignmentStatementNode(BoundExpressionNode left, BoundAssignmentOperatorNode operator, BoundExpressionNode right, TextRange range) {

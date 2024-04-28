@@ -1,12 +1,16 @@
 package com.zergatul.scripting.type;
 
 import com.zergatul.scripting.compiler.BufferedMethodVisitor;
+import com.zergatul.scripting.runtime.IntUtils;
 import com.zergatul.scripting.type.operation.BinaryOperation;
 import com.zergatul.scripting.type.operation.SingleInstructionBinaryOperation;
 import com.zergatul.scripting.type.operation.UnaryOperation;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Type;
+
+import java.util.List;
+import java.util.Locale;
 
 import static org.objectweb.asm.Opcodes.*;
 
@@ -164,6 +168,15 @@ public class SIntType extends SPredefinedType {
     }
 
     @Override
+    public List<MethodReference> getInstanceMethods(String name) {
+        return switch (name) {
+            case "toString" -> List.of(METHOD_TO_STRING);
+            case "toStandardString" -> List.of(METHOD_TO_STANDARD_STRING);
+            default -> List.of();
+        };
+    }
+
+    @Override
     public String toString() {
         return "int";
     }
@@ -209,6 +222,48 @@ public class SIntType extends SPredefinedType {
         @Override
         public void apply(MethodVisitor visitor) {
             visitor.visitInsn(I2D);
+        }
+    };
+    private static final MethodReference METHOD_TO_STRING = new MethodReference() {
+        @Override
+        public SType getReturn() {
+            return SStringType.instance;
+        }
+
+        @Override
+        public List<SType> getParameters() {
+            return List.of();
+        }
+
+        @Override
+        public void compileInvoke(MethodVisitor visitor) {
+            visitor.visitMethodInsn(
+                    INVOKESTATIC,
+                    Type.getInternalName(Integer.class),
+                    "toString",
+                    Type.getMethodDescriptor(Type.getType(String.class), Type.INT_TYPE),
+                    false);
+        }
+    };
+    private static final MethodReference METHOD_TO_STANDARD_STRING = new MethodReference() {
+        @Override
+        public SType getReturn() {
+            return SStringType.instance;
+        }
+
+        @Override
+        public List<SType> getParameters() {
+            return List.of();
+        }
+
+        @Override
+        public void compileInvoke(MethodVisitor visitor) {
+            visitor.visitMethodInsn(
+                    INVOKESTATIC,
+                    Type.getInternalName(IntUtils.class),
+                    "toStandardString",
+                    Type.getMethodDescriptor(Type.getType(String.class), Type.INT_TYPE),
+                    false);
         }
     };
 

@@ -1,6 +1,7 @@
 package com.zergatul.scripting.type;
 
 import com.zergatul.scripting.InternalException;
+import org.objectweb.asm.MethodVisitor;
 
 import java.lang.reflect.Method;
 import java.util.List;
@@ -9,13 +10,11 @@ public class UnknownMethodReference extends MethodReference {
 
     public static final MethodReference instance = new UnknownMethodReference();
 
-    private UnknownMethodReference() {
-        super(null);
-    }
+    private UnknownMethodReference() {}
 
     @Override
-    public Method getMethod() {
-        throw new InternalException();
+    public SType getReturn() {
+        return SUnknown.instance;
     }
 
     @Override
@@ -24,7 +23,7 @@ public class UnknownMethodReference extends MethodReference {
     }
 
     @Override
-    public SType getReturn() {
-        return SUnknown.instance;
+    public void compileInvoke(MethodVisitor visitor) {
+        throw new InternalException();
     }
 }

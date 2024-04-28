@@ -746,7 +746,7 @@ public class Parser {
             if (isPossibleExpression()) {
                 lengthExpression = parseExpression();
             } else {
-                addDiagnostic(ParserErrors.ExpressionExpected, current, current.getRange());
+                addDiagnostic(ParserErrors.ExpressionExpected, current, current.getRawValue(code));
                 lengthExpression = new InvalidExpressionNode(createMissingTokenRange());
             }
             last = advance(TokenType.RIGHT_SQUARE_BRACKET);
@@ -769,7 +769,7 @@ public class Parser {
                     if (isPossibleExpression()) {
                         items.add(parseExpression());
                     } else {
-                        addDiagnostic(ParserErrors.ExpressionExpected, current, current.getRange());
+                        addDiagnostic(ParserErrors.ExpressionExpected, current, current.getRawValue(code));
                     }
                     expectExpression = false;
                 } else {

@@ -23,6 +23,10 @@ public abstract class SType {
     public abstract boolean isReference();
     public abstract int getReturnInst();
 
+    public boolean isJvmCategoryOneComputationalType() {
+        return true;
+    }
+
     public String getDescriptor() {
         return Type.getDescriptor(getJavaClass());
     }

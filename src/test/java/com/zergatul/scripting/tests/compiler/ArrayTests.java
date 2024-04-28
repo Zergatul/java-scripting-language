@@ -20,6 +20,7 @@ public class ArrayTests {
         ApiRoot.intStorage = new IntStorage();
         ApiRoot.floatStorage = new FloatStorage();
         ApiRoot.stringStorage = new StringStorage();
+        ApiRoot.test = new TestApi();
     }
 
     @Test
@@ -243,7 +244,7 @@ public class ArrayTests {
 
         Assertions.assertIterableEquals(
                 ApiRoot.intStorage.list,
-                List.of(0xABCD, 0xCDEF, 0, 0xABCD, 0xCDEF, 100));
+                List.of(0xABCD, 0xCDEF, 0, 0xABCD, 0xCDEF, 130));
     }
 
     public static class ApiRoot {
@@ -251,7 +252,7 @@ public class ArrayTests {
         public static IntStorage intStorage;
         public static FloatStorage floatStorage;
         public static StringStorage stringStorage;
-        public static TestApi test = new TestApi();
+        public static TestApi test;
     }
 
     public static class TestApi {

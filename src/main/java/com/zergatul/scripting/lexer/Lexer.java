@@ -219,7 +219,7 @@ public class Lexer {
                         advance();
                         advance();
                         endToken(TokenType.AMPERSAND_AMPERSAND);
-                    } if (next == '=') {
+                    } else if (next == '=') {
                         trackBeginToken();
                         advance();
                         advance();
@@ -235,7 +235,7 @@ public class Lexer {
                         advance();
                         advance();
                         endToken(TokenType.PIPE_PIPE);
-                    } if (next == '=') {
+                    } else if (next == '=') {
                         trackBeginToken();
                         advance();
                         advance();

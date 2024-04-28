@@ -1,7 +1,6 @@
 package com.zergatul.scripting.compiler;
 
 import com.zergatul.scripting.InternalException;
-import com.zergatul.scripting.SingleLineTextRange;
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.Binder;
 import com.zergatul.scripting.binding.BinderOutput;
@@ -183,6 +182,7 @@ public class Compiler {
         switch (statement.getNodeType()) {
             case VARIABLE_DECLARATION -> compileVariableDeclaration(visitor, context, (BoundVariableDeclarationNode) statement);
             case ASSIGNMENT_STATEMENT -> compileAssignmentStatement(visitor, context, (BoundAssignmentStatementNode) statement);
+            case AUGMENTED_ASSIGNMENT_STATEMENT -> compileAugmentedAssignmentStatement(visitor, context, (BoundAugmentedAssignmentStatementNode) statement);
             case EXPRESSION_STATEMENT -> compileExpressionStatement(visitor, context, (BoundExpressionStatementNode) statement);
             case IF_STATEMENT -> compileIfStatement(visitor, context, (BoundIfStatementNode) statement);
             case BLOCK_STATEMENT -> compileBlockStatement(visitor, context, (BoundBlockStatementNode) statement);
@@ -192,7 +192,7 @@ public class Compiler {
             case BREAK_STATEMENT -> compileBreakStatement(visitor, context);
             case CONTINUE_STATEMENT -> compileContinueStatement(visitor, context);
             case EMPTY_STATEMENT -> compileEmptyStatement();
-            case INCREMENT_STATEMENT, DECREMENT_STATEMENT -> compileIncDecStatement(visitor, context, (BoundPostfixStatementNode) statement);
+            case INCREMENT_STATEMENT, DECREMENT_STATEMENT -> compilePostfixStatement(visitor, context, (BoundPostfixStatementNode) statement);
             default -> throw new InternalException();
         }
     }
@@ -229,6 +229,34 @@ public class Compiler {
             }
         } else {
             throw new InternalException("Should not happen.");
+        }
+    }
+
+    private void compileAugmentedAssignmentStatement(MethodVisitor visitor, CompilerContext context, BoundAugmentedAssignmentStatementNode assignment) {
+        switch (assignment.left.getNodeType()) {
+            case NAME_EXPRESSION -> {
+                BufferedMethodVisitor buffer = new BufferedMethodVisitor();
+                compileExpression(visitor, context, assignment.left);
+                compileExpression(buffer, context, assignment.right);
+                assignment.operator.operation.apply(visitor, buffer);
+
+                BoundNameExpressionNode nameExpression = (BoundNameExpressionNode) assignment.left;
+                Variable variable = (Variable) context.getSymbol(nameExpression.value);
+                variable.compileStore(context, visitor);
+            }
+            case INDEX_EXPRESSION -> {
+                BoundIndexExpressionNode indexExpression = (BoundIndexExpressionNode) assignment.left;
+                compileExpression(visitor, context, indexExpression.callee);
+                compileExpression(visitor, context, indexExpression.index);
+                StackHelper.duplicate2(visitor, indexExpression.callee.type, indexExpression.index.type);
+
+                BufferedMethodVisitor buffer = new BufferedMethodVisitor();
+                indexExpression.operation.compileGet(visitor);
+                compileExpression(buffer, context, assignment.right);
+                assignment.operator.operation.apply(visitor, buffer);
+
+                indexExpression.operation.compileSet(visitor);
+            }
         }
     }
 
@@ -365,7 +393,7 @@ public class Compiler {
 
     }
 
-    private void compileIncDecStatement(MethodVisitor visitor, CompilerContext context, BoundPostfixStatementNode statement) {
+    private void compilePostfixStatement(MethodVisitor visitor, CompilerContext context, BoundPostfixStatementNode statement) {
         switch (statement.expression.getNodeType()) {
             case NAME_EXPRESSION -> {
                 BoundNameExpressionNode nameExpression = (BoundNameExpressionNode) statement.expression;
@@ -378,7 +406,7 @@ public class Compiler {
                 BoundIndexExpressionNode indexExpression = (BoundIndexExpressionNode) statement.expression;
                 compileExpression(visitor, context, indexExpression.callee);
                 compileExpression(visitor, context, indexExpression.index);
-                visitor.visitInsn(DUP2);
+                StackHelper.duplicate2(visitor, indexExpression.callee.type, indexExpression.index.type);
                 indexExpression.operation.compileGet(visitor);
                 statement.operation.apply(visitor);
                 indexExpression.operation.compileSet(visitor);
@@ -522,12 +550,7 @@ public class Compiler {
         for (BoundExpressionNode expression : invocation.arguments.arguments) {
             compileExpression(visitor, context, expression);
         }
-        visitor.visitMethodInsn(
-                INVOKEVIRTUAL,
-                Type.getInternalName(invocation.method.getMethod().getDeclaringClass()),
-                invocation.method.getMethod().getName(),
-                Type.getMethodDescriptor(invocation.method.getMethod()),
-                false);
+        invocation.method.compileInvoke(visitor);
     }
 
     private void compilePropertyAccessExpression(MethodVisitor visitor, CompilerContext context, BoundPropertyAccessExpressionNode propertyAccess) {
