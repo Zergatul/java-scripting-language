@@ -15,4 +15,8 @@ public class Function extends Symbol {
     public void compileLoad(CompilerContext context, MethodVisitor visitor) {
         throw new InternalException();
     }
+
+    public SFunction getFunctionType() {
+        return (SFunction) getType();
+    }
 }

@@ -1,7 +1,7 @@
 package com.zergatul.scripting.tests.compiler;
 
-import com.zergatul.scripting.helpers.BoolStorage;
-import com.zergatul.scripting.helpers.IntStorage;
+import com.zergatul.scripting.tests.compiler.helpers.BoolStorage;
+import com.zergatul.scripting.tests.compiler.helpers.IntStorage;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -324,6 +324,40 @@ public class IntTests {
         Assertions.assertIterableEquals(
                 ApiRoot.intStorage.list,
                 List.of(96305151, 3694848));
+    }
+
+    @Test
+    public void augmentedAssignmentTest() {
+        String code = """
+                int x = 10;
+                x += 5;
+                intStorage.add(x);
+                
+                x -= 10;
+                intStorage.add(x);
+                
+                x *= 6;
+                intStorage.add(x);
+                
+                x /= 3;
+                intStorage.add(x);
+                
+                x %= 3;
+                intStorage.add(x);
+                
+                x &= 13;
+                intStorage.add(x);
+                
+                x |= 12;
+                intStorage.add(x);
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(
+                ApiRoot.intStorage.list,
+                List.of(15, 5, 30, 10, 1, 1, 13));
     }
 
     public static class ApiRoot {

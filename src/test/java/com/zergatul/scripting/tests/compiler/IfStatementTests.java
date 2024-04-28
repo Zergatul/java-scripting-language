@@ -1,6 +1,6 @@
 package com.zergatul.scripting.tests.compiler;
 
-import com.zergatul.scripting.helpers.IntStorage;
+import com.zergatul.scripting.tests.compiler.helpers.IntStorage;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

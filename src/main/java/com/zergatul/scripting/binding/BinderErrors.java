@@ -30,5 +30,7 @@ public class BinderErrors {
     public static final ErrorCode NotFunction = new ErrorCode("B025", "'%s' is not a function");
     public static final ErrorCode CannotCastArgument = new ErrorCode("B026", "Argument '%d' cannot convert from '%s' to '%s'");
     public static final ErrorCode EmptyReturnStatement = new ErrorCode("B027", "Cannot return void");
+    public static final ErrorCode EmptyCharLiteral = new ErrorCode("B028", "Empty character literal");
+    public static final ErrorCode TooManyCharsInCharLiteral = new ErrorCode("B028", "Too many characters in character literal");
     public static final ErrorCode InternalError = new ErrorCode("B999", "Internal error: %s");
 }

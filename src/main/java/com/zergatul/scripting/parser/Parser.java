@@ -427,6 +427,9 @@ public class Parser {
             case MINUS_EQUAL -> AssignmentOperator.MINUS_ASSIGNMENT;
             case ASTERISK_EQUAL -> AssignmentOperator.MULTIPLY_ASSIGNMENT;
             case SLASH_EQUAL -> AssignmentOperator.DIVIDE_ASSIGNMENT;
+            case PERCENT_EQUAL -> AssignmentOperator.MODULO_ASSIGNMENT;
+            case AMPERSAND_EQUAL -> AssignmentOperator.AND_ASSIGNMENT;
+            case PIPE_EQUAL -> AssignmentOperator.OR_ASSIGNMENT;
             default -> null;
         };
 
@@ -487,6 +490,7 @@ public class Parser {
             case INT:
             case FLOAT:
             case STRING:
+            case CHAR:
             case IDENTIFIER:
             case LEFT_PARENTHESES:
                 return true;
@@ -502,6 +506,7 @@ public class Parser {
             case INT:
             case FLOAT:
             case STRING:
+            case CHAR:
             case IDENTIFIER:
             case LEFT_PARENTHESES:
                 return true;
@@ -522,7 +527,7 @@ public class Parser {
             case BREAK -> parseBreakStatement();
             case CONTINUE -> parseContinueStatement();
             case SEMICOLON -> parseEmptyStatement();
-            case BOOLEAN, INT, FLOAT, STRING, IDENTIFIER, LEFT_PARENTHESES -> parseSimpleStatement().expand(advance(TokenType.SEMICOLON));
+            case BOOLEAN, INT, FLOAT, STRING, CHAR, IDENTIFIER, LEFT_PARENTHESES -> parseSimpleStatement().expand(advance(TokenType.SEMICOLON));
             default -> {
                 if (isPossibleExpression()) {
                     yield parseSimpleStatement().expand(advance(TokenType.SEMICOLON));
@@ -716,6 +721,7 @@ public class Parser {
             case INTEGER_LITERAL -> new IntegerLiteralExpressionNode((IntegerToken) advance());
             case FLOAT_LITERAL -> new FloatLiteralExpressionNode((FloatToken) advance());
             case STRING_LITERAL -> new StringLiteralExpressionNode((StringToken) advance());
+            case CHAR_LITERAL -> new CharLiteralExpressionNode((CharToken) advance());
             case NEW -> parseNewExpression();
             case LEFT_PARENTHESES -> isPossibleLambdaExpression() ? parseLambdaExpression() : parseParenthesizedExpression();
             default -> null;
@@ -841,12 +847,14 @@ public class Parser {
             case INTEGER_LITERAL:
             case FLOAT_LITERAL:
             case STRING_LITERAL:
+            case CHAR_LITERAL:
             case NEW:
             case IDENTIFIER:
             case BOOLEAN:
             case INT:
             case FLOAT:
             case STRING:
+            case CHAR:
             case PLUS:
             case MINUS:
             case EXCLAMATION:
@@ -898,25 +906,13 @@ public class Parser {
         return false;
     }
 
-    private boolean isPossibleVariableDeclaration() {
-        switch (current.type) {
-            case BOOLEAN:
-            case INT:
-            case FLOAT:
-            case STRING:
-                return true;
-
-            default:
-                return false;
-        }
-    }
-
     private boolean isPredefinedType() {
         switch (current.type) {
             case BOOLEAN:
             case INT:
             case FLOAT:
             case STRING:
+            case CHAR:
                 return true;
 
             default:
@@ -930,6 +926,7 @@ public class Parser {
             case INT -> new PredefinedTypeNode(PredefinedType.INT, current.getRange());
             case FLOAT -> new PredefinedTypeNode(PredefinedType.FLOAT, current.getRange());
             case STRING -> new PredefinedTypeNode(PredefinedType.STRING, current.getRange());
+            case CHAR -> new PredefinedTypeNode(PredefinedType.CHAR, current.getRange());
             default -> new InvalidTypeNode(current.getRange());
         };
 

@@ -1,8 +1,8 @@
 package com.zergatul.scripting.tests.compiler;
 
-import com.zergatul.scripting.helpers.IntStorage;
-import com.zergatul.scripting.helpers.StringStorage;
 import com.zergatul.scripting.tests.compiler.helpers.BoolStorage;
+import com.zergatul.scripting.tests.compiler.helpers.IntStorage;
+import com.zergatul.scripting.tests.compiler.helpers.StringStorage;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -54,12 +54,14 @@ public class StringTests {
     public void concatTest() {
         String code = """
                 stringStorage.add("123" + "789");
+                stringStorage.add("123" + '4');
                 """;
 
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
-        Assertions.assertIterableEquals(ApiRoot.stringStorage.list, List.of("123789"));
+        Assertions.assertIterableEquals(ApiRoot.stringStorage.list,
+                List.of("123789", "1234"));
     }
 
     @Test

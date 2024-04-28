@@ -3,6 +3,8 @@ package com.zergatul.scripting.binding;
 import com.zergatul.scripting.*;
 import com.zergatul.scripting.binding.nodes.*;
 import com.zergatul.scripting.compiler.*;
+import com.zergatul.scripting.parser.AssignmentOperator;
+import com.zergatul.scripting.parser.BinaryOperator;
 import com.zergatul.scripting.parser.NodeType;
 import com.zergatul.scripting.parser.ParserOutput;
 import com.zergatul.scripting.parser.nodes.*;
@@ -81,7 +83,7 @@ public class Binder {
         for (int i = 0; i < nodes.size(); i++) {
             context = contexts.get(i);
             FunctionNode node = nodes.get(i);
-            BoundNameExpressionNode name = new BoundNameExpressionNode(symbols.get(i), types.get(i), node.name.value, node.name.getRange());
+            BoundNameExpressionNode name = new BoundNameExpressionNode(symbols.get(i), node.name.getRange());
             BoundBlockStatementNode block = bindBlockStatement(node.body);
             functions.add(new BoundFunctionNode(returnTypes.get(i), name, parametersList.get(i), block, node.getRange()));
         }
@@ -94,7 +96,7 @@ public class Binder {
         for (ParameterNode parameter : node.parameters) {
             BoundTypeNode type = bindType(parameter.getType());
             LocalVariable variable = context.addLocalVariable(parameter.getName().value, type.type);
-            BoundNameExpressionNode name = new BoundNameExpressionNode(variable, type.type, variable.getName(), parameter.getName().getRange());
+            BoundNameExpressionNode name = new BoundNameExpressionNode(variable, parameter.getName().getRange());
             parameters.add(new BoundParameterNode(name, type, parameter.getRange()));
         }
         return new BoundParameterListNode(parameters, node.getRange());
@@ -132,17 +134,24 @@ public class Binder {
             addDiagnostic(BinderErrors.ExpressionCannotBeSet, statement.left);
         }
 
-        BoundAssignmentOperatorNode operator = new BoundAssignmentOperatorNode(statement.operator.operator, statement.operator.getRange());
-        BoundExpressionNode right = bindExpression(statement.right);
-        switch (statement.operator.operator) {
-            case ASSIGNMENT -> {
-                right = tryCastTo(right, left.type);
-                return new BoundAssignmentStatementNode(left, operator, right, statement.getRange());
-            }
-            default -> {
-                throw new InternalException(); // TODO
-            }
+        if (statement.operator.operator == AssignmentOperator.ASSIGNMENT) {
+            BoundAssignmentOperatorNode operator = new BoundAssignmentOperatorNode(statement.operator.operator, statement.operator.getRange());
+            BoundExpressionNode right = bindExpression(statement.right);
+            right = tryCastTo(right, left.type);
+            return new BoundAssignmentStatementNode(left, operator, right, statement.getRange());
         }
+
+        BinaryExpressionNode implicitBinaryExpression = new BinaryExpressionNode(
+                statement.left,
+                new BinaryOperatorNode(statement.operator.operator.getBinaryOperator(), statement.operator.getRange()),
+                statement.right,
+                statement.getRange());
+        return bindAssignmentStatement(
+                new AssignmentStatementNode(
+                        statement.left,
+                        new AssignmentOperatorNode(AssignmentOperator.ASSIGNMENT, statement.operator.getRange()),
+                        implicitBinaryExpression,
+                        statement.getRange()));
     }
 
     private BoundVariableDeclarationNode bindVariableDeclaration(VariableDeclarationNode variableDeclaration) {
@@ -265,7 +274,7 @@ public class Binder {
                     statement.name.value);
         } else {
             LocalVariable variable = context.addLocalVariable(statement.name.value, variableType.type);
-            name = new BoundNameExpressionNode(variable, variableType.type, statement.name.value, statement.name.getRange());
+            name = new BoundNameExpressionNode(variable, statement.name.getRange());
         }
 
         LocalVariable index = context.addLocalVariable(null, SIntType.instance);
@@ -341,6 +350,7 @@ public class Binder {
             case INTEGER_LITERAL -> bindIntegerLiteralExpression((IntegerLiteralExpressionNode) expression);
             case FLOAT_LITERAL -> bindFloatLiteralExpression((FloatLiteralExpressionNode) expression);
             case STRING_LITERAL -> bindStringLiteralExpression((StringLiteralExpressionNode) expression);
+            case CHAR_LITERAL -> bindCharLiteralExpression((CharLiteralExpressionNode) expression);
             case UNARY_EXPRESSION -> bindUnaryExpression((UnaryExpressionNode) expression);
             case BINARY_EXPRESSION -> bindBinaryExpression((BinaryExpressionNode) expression);
             case CONDITIONAL_EXPRESSION -> bindConditionalExpression((ConditionalExpressionNode) expression);
@@ -476,6 +486,47 @@ public class Binder {
         return new BoundStringLiteralExpressionNode(builder.toString(), literal.getRange());
     }
 
+    private BoundCharLiteralExpressionNode bindCharLiteralExpression(CharLiteralExpressionNode literal) {
+        String value = literal.value;
+        int begin = 0;
+        int end = value.length();
+        if (value.charAt(0) == '\'') {
+            begin++;
+        }
+        if (value.charAt(value.length() - 1) == '\'') {
+            end--;
+        }
+
+        value = value.substring(begin, end);
+
+        return new BoundCharLiteralExpressionNode(switch (value.length()) {
+            case 0 -> {
+                addDiagnostic(BinderErrors.EmptyCharLiteral, literal);
+                yield (char) 0;
+            }
+            case 1 -> value.charAt(0);
+            case 2 -> {
+                if (value.charAt(0) == '\\') {
+                    yield switch (value.charAt(1)) {
+                        case 'n' -> '\n';
+                        case 't' -> '\t';
+                        case 'b' -> '\b';
+                        case 'r' -> '\r';
+                        case 'f' -> '\f';
+                        default -> value.charAt(1);
+                    };
+                } else {
+                    addDiagnostic(BinderErrors.TooManyCharsInCharLiteral, literal);
+                    yield (char) 0;
+                }
+            }
+            default -> {
+                addDiagnostic(BinderErrors.TooManyCharsInCharLiteral, literal);
+                yield (char) 0;
+            }
+        }, literal.getRange());
+    }
+
     private BoundConditionalExpressionNode bindConditionalExpression(ConditionalExpressionNode expression) {
         BoundExpressionNode condition = tryCastTo(bindExpression(expression.condition), SBoolean.instance);
         BoundExpressionNode whenTrue = bindExpression(expression.whenTrue);
@@ -580,7 +631,7 @@ public class Binder {
             // function invocation
             BoundNameExpressionNode boundName = bindNameExpression(name);
             if (boundName.symbol instanceof Function function) {
-                SFunction type = (SFunction) function.getType();
+                SFunction type = function.getFunctionType();
                 if (arguments.arguments.size() != type.getParameters().length) {
                     addDiagnostic(
                             BinderErrors.ArgumentCountMismatch,
@@ -630,7 +681,7 @@ public class Binder {
     private BoundNameExpressionNode bindNameExpression(NameExpressionNode name) {
         Symbol symbol = context.getSymbol(name.value);
         if (symbol != null) {
-            return new BoundNameExpressionNode(symbol, symbol.getType(), name.value, name.getRange());
+            return new BoundNameExpressionNode(symbol, name.getRange());
         } else {
             addDiagnostic(
                     BinderErrors.NameDoesNotExist,
@@ -756,7 +807,7 @@ public class Binder {
             SType type = actionType.getParameters()[i];
             Variable variable = context.addLocalVariable(name.value, type);
             TextRange range = name.getRange();
-            BoundNameExpressionNode boundName = new BoundNameExpressionNode(variable, type, name.value, range);
+            BoundNameExpressionNode boundName = new BoundNameExpressionNode(variable, range);
             parameters.add(new BoundParameterNode(boundName, type, range));
         }
 
@@ -828,6 +879,7 @@ public class Binder {
                 case INT -> SIntType.instance;
                 case FLOAT -> SFloatType.instance;
                 case STRING -> SStringType.instance;
+                case CHAR -> SChar.instance;
             };
             return new BoundPredefinedTypeNode(bound, predefined.getRange());
         }

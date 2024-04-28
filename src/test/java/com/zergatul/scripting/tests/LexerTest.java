@@ -252,6 +252,22 @@ public class LexerTest {
                 new DiagnosticMessage(LexerErrors.NewlineInString, new SingleLineTextRange(1, 1, 0, 2))));
     }
 
+    @Test
+    public void charTest1() {
+        LexerOutput result = lex("''");
+        Assertions.assertIterableEquals(result.tokens(), List.of(
+                new CharToken("''", new SingleLineTextRange(1, 1, 0, 2))));
+        Assertions.assertEquals(result.diagnostics().size(), 0);
+    }
+
+    @Test
+    public void charTest2() {
+        LexerOutput result = lex("'\\''");
+        Assertions.assertIterableEquals(result.tokens(), List.of(
+                new CharToken("'\\''", new SingleLineTextRange(1, 1, 0, 4))));
+        Assertions.assertEquals(result.diagnostics().size(), 0);
+    }
+
     private LexerOutput lex(String code) {
         return new Lexer(new LexerInput(code)).lex();
     }

@@ -1,7 +1,7 @@
 package com.zergatul.scripting.tests.compiler;
 
-import com.zergatul.scripting.helpers.FloatStorage;
 import com.zergatul.scripting.tests.compiler.helpers.BoolStorage;
+import com.zergatul.scripting.tests.compiler.helpers.FloatStorage;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

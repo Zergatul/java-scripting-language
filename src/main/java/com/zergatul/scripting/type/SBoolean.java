@@ -1,9 +1,10 @@
 package com.zergatul.scripting.type;
 
+import com.zergatul.scripting.compiler.BufferedMethodVisitor;
 import com.zergatul.scripting.type.operation.BinaryOperation;
-import com.zergatul.scripting.type.operation.BooleanOperations;
-import com.zergatul.scripting.type.operation.IntOperations;
+import com.zergatul.scripting.type.operation.SingleInstructionBinaryOperation;
 import com.zergatul.scripting.type.operation.UnaryOperation;
+import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Type;
 
@@ -54,57 +55,57 @@ public class SBoolean extends SPredefinedType {
 
     @Override
     public BinaryOperation lessThan(SType other) {
-        return other == this ? IntOperations.LT : null;
+        return other == this ? SIntType.instance.lessThan(SIntType.instance) : null;
     }
 
     @Override
     public BinaryOperation greaterThan(SType other) {
-        return other == this ? IntOperations.GT : null;
+        return other == this ? SIntType.instance.greaterThan(SIntType.instance) : null;
     }
 
     @Override
     public BinaryOperation lessEquals(SType other) {
-        return other == this ? IntOperations.LTE : null;
+        return other == this ? SIntType.instance.lessEquals(SIntType.instance) : null;
     }
 
     @Override
     public BinaryOperation greaterEquals(SType other) {
-        return other == this ? IntOperations.GTE : null;
+        return other == this ? SIntType.instance.greaterEquals(SIntType.instance) : null;
     }
 
     @Override
     public BinaryOperation equalsOp(SType other) {
-        return other == this ? IntOperations.EQ : null;
+        return other == this ? SIntType.instance.equalsOp(SIntType.instance) : null;
     }
 
     @Override
     public BinaryOperation notEqualsOp(SType other) {
-        return other == this ? IntOperations.NEQ : null;
+        return other == this ? SIntType.instance.notEqualsOp(SIntType.instance) : null;
     }
 
     @Override
     public BinaryOperation booleanAnd(SType other) {
-        return other == this ? BooleanOperations.BOOLEAN_AND : null;
+        return other == this ? BOOLEAN_AND : null;
     }
 
     @Override
     public BinaryOperation booleanOr(SType other) {
-        return other == this ? BooleanOperations.BOOLEAN_OR : null;
+        return other == this ? BOOLEAN_OR : null;
     }
 
     @Override
     public BinaryOperation bitwiseAnd(SType other) {
-        return other == this ? BooleanOperations.BITWISE_AND : null;
+        return other == this ? BITWISE_AND : null;
     }
 
     @Override
     public BinaryOperation bitwiseOr(SType other) {
-        return other == this ? BooleanOperations.BITWISE_OR : null;
+        return other == this ? BITWISE_OR : null;
     }
 
     @Override
     public UnaryOperation not() {
-        return BooleanOperations.NOT;
+        return NOT;
     }
 
     @Override
@@ -131,4 +132,46 @@ public class SBoolean extends SPredefinedType {
     public String toString() {
         return "boolean";
     }
+
+    private static final BinaryOperation BITWISE_OR = new SingleInstructionBinaryOperation(SBoolean.instance, IOR);
+    private static final BinaryOperation BITWISE_AND = new SingleInstructionBinaryOperation(SBoolean.instance, IAND);
+    private static final UnaryOperation NOT = new UnaryOperation(SBoolean.instance) {
+        @Override
+        public void apply(MethodVisitor visitor) {
+            Label elseLabel = new Label();
+            Label endLabel = new Label();
+            visitor.visitJumpInsn(IFNE, elseLabel);
+            visitor.visitInsn(ICONST_1);
+            visitor.visitJumpInsn(GOTO, endLabel);
+            visitor.visitLabel(elseLabel);
+            visitor.visitInsn(ICONST_0);
+            visitor.visitLabel(endLabel);
+        }
+    };
+    private static final BinaryOperation BOOLEAN_OR = new BinaryOperation(SBoolean.instance) {
+        @Override
+        public void apply(MethodVisitor left, BufferedMethodVisitor right) {
+            Label returnTrue = new Label();
+            Label end = new Label();
+            left.visitJumpInsn(IFNE, returnTrue);
+            right.release(left);
+            left.visitJumpInsn(GOTO, end);
+            left.visitLabel(returnTrue);
+            left.visitInsn(ICONST_1);
+            left.visitLabel(end);
+        }
+    };
+    private static final BinaryOperation BOOLEAN_AND = new BinaryOperation(SBoolean.instance) {
+        @Override
+        public void apply(MethodVisitor left, BufferedMethodVisitor right) {
+            Label returnFalse = new Label();
+            Label end = new Label();
+            left.visitJumpInsn(IFEQ, returnFalse);
+            right.release(left);
+            left.visitJumpInsn(GOTO, end);
+            left.visitLabel(returnFalse);
+            left.visitInsn(ICONST_0);
+            left.visitLabel(end);
+        }
+    };
 }

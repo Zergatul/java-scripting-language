@@ -219,6 +219,11 @@ public class Lexer {
                         advance();
                         advance();
                         endToken(TokenType.AMPERSAND_AMPERSAND);
+                    } if (next == '=') {
+                        trackBeginToken();
+                        advance();
+                        advance();
+                        endToken(TokenType.AMPERSAND_EQUAL);
                     } else {
                         appendToken(TokenType.AMPERSAND);
                         advance();
@@ -230,6 +235,11 @@ public class Lexer {
                         advance();
                         advance();
                         endToken(TokenType.PIPE_PIPE);
+                    } if (next == '=') {
+                        trackBeginToken();
+                        advance();
+                        advance();
+                        endToken(TokenType.PIPE_EQUAL);
                     } else {
                         appendToken(TokenType.PIPE);
                         advance();
@@ -270,6 +280,23 @@ public class Lexer {
                         if (previous != '\\' && current == '"') {
                             advance();
                             list.add(new StringToken(getCurrentTokenValue(), getCurrentTokenRange()));
+                            break;
+                        }
+                    }
+                }
+                case '\'' -> {
+                    trackBeginToken();
+                    while (true) {
+                        advance();
+                        if (current == '\r' || current == '\n') {
+                            Token token = new CharToken(getCurrentTokenValue(), getCurrentTokenRange());
+                            list.add(token);
+                            addDiagnostic(LexerErrors.NewlineInCharacter, token);
+                            break;
+                        }
+                        if (previous != '\\' && current == '\'') {
+                            advance();
+                            list.add(new CharToken(getCurrentTokenValue(), getCurrentTokenRange()));
                             break;
                         }
                     }
@@ -399,6 +426,7 @@ public class Lexer {
             case "int" -> TokenType.INT;
             case "float" -> TokenType.FLOAT;
             case "string" -> TokenType.STRING;
+            case "char" -> TokenType.CHAR;
             case "false" -> TokenType.FALSE;
             case "true" -> TokenType.TRUE;
             case "new" -> TokenType.NEW;

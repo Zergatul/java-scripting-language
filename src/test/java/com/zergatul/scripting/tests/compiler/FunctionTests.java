@@ -2,6 +2,8 @@ package com.zergatul.scripting.tests.compiler;
 
 import com.zergatul.scripting.tests.compiler.helpers.FloatStorage;
 import com.zergatul.scripting.tests.compiler.helpers.IntStorage;
+import com.zergatul.scripting.tests.compiler.helpers.Run;
+import com.zergatul.scripting.tests.compiler.helpers.StringStorage;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -16,6 +18,8 @@ public class FunctionTests {
     public void clean() {
         ApiRoot.intStorage = new IntStorage();
         ApiRoot.floatStorage = new FloatStorage();
+        ApiRoot.stringStorage = new StringStorage();
+        ApiRoot.run = new Run();
     }
 
     @Test
@@ -290,8 +294,64 @@ public class FunctionTests {
                 List.of(1, 12, 12, 45, 67, 166, 298, 639, 2563221));
     }
 
+    @Test
+    public void asLambdaTest1() {
+        String code = """
+                void func() {
+                    intStorage.add(25);
+                }
+                
+                run.once(func);
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(25));
+    }
+
+    @Test
+    public void asLambdaTest2() {
+        String code = """
+                void func(string s) {
+                    stringStorage.add(s + "!");
+                }
+                
+                run.onString(func);
+                run.triggerString("a");
+                run.triggerString("b");
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(ApiRoot.stringStorage.list, List.of("a!", "b!"));
+    }
+
+    @Test
+    public void asLambdaTest3() {
+        String code = """
+                void func(int i, string s) {
+                    intStorage.add(i + 1);
+                    stringStorage.add(s + "!");
+                }
+                
+                run.onIntString(func);
+                run.triggerIntString(10, "a");
+                run.triggerIntString(20, "b");
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(11, 21));
+        Assertions.assertIterableEquals(ApiRoot.stringStorage.list, List.of("a!", "b!"));
+    }
+
     public static class ApiRoot {
         public static IntStorage intStorage;
         public static FloatStorage floatStorage;
+        public static StringStorage stringStorage;
+        public static Run run;
     }
 }

@@ -1,12 +1,15 @@
 package com.zergatul.scripting.compiler;
 
 import com.zergatul.scripting.InternalException;
+import com.zergatul.scripting.SingleLineTextRange;
+import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.Binder;
 import com.zergatul.scripting.binding.BinderOutput;
 import com.zergatul.scripting.binding.nodes.*;
 import com.zergatul.scripting.lexer.Lexer;
 import com.zergatul.scripting.lexer.LexerInput;
 import com.zergatul.scripting.lexer.LexerOutput;
+import com.zergatul.scripting.parser.AssignmentOperator;
 import com.zergatul.scripting.parser.Parser;
 import com.zergatul.scripting.parser.ParserOutput;
 import com.zergatul.scripting.type.*;
@@ -14,6 +17,7 @@ import org.objectweb.asm.*;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -122,7 +126,7 @@ public class Compiler {
     private void buildFunctions(BoundCompilationUnitNode unit, ClassWriter writer, CompilerContext context) {
         for (BoundFunctionNode function : unit.functions) {
             Function symbol = (Function) function.name.symbol;
-            SFunction type = (SFunction) symbol.getType();
+            SFunction type = symbol.getFunctionType();
 
             MethodVisitor visitor = writer.visitMethod(
                     ACC_PUBLIC | ACC_STATIC,
@@ -207,27 +211,24 @@ public class Compiler {
     }
 
     private void compileAssignmentStatement(MethodVisitor visitor, CompilerContext context, BoundAssignmentStatementNode assignment) {
-        switch (assignment.operator.operator) {
-            case ASSIGNMENT -> {
-                switch (assignment.left.getNodeType()) {
-                    case NAME_EXPRESSION -> {
-                        compileExpression(visitor, context, assignment.right);
-                        BoundNameExpressionNode nameExpression = (BoundNameExpressionNode) assignment.left;
-                        Variable variable = (Variable) context.getSymbol(nameExpression.value);
-                        variable.compileStore(context, visitor);
-                    }
-                    case INDEX_EXPRESSION -> {
-                        BoundIndexExpressionNode indexExpression = (BoundIndexExpressionNode) assignment.left;
-                        compileExpression(visitor, context, indexExpression.callee);
-                        compileExpression(visitor, context, indexExpression.index);
-                        compileExpression(visitor, context, assignment.right);
-                        indexExpression.operation.compileSet(visitor);
-                    }
+        if (assignment.operator.operator == AssignmentOperator.ASSIGNMENT) {
+            switch (assignment.left.getNodeType()) {
+                case NAME_EXPRESSION -> {
+                    compileExpression(visitor, context, assignment.right);
+                    BoundNameExpressionNode nameExpression = (BoundNameExpressionNode) assignment.left;
+                    Variable variable = (Variable) context.getSymbol(nameExpression.value);
+                    variable.compileStore(context, visitor);
+                }
+                case INDEX_EXPRESSION -> {
+                    BoundIndexExpressionNode indexExpression = (BoundIndexExpressionNode) assignment.left;
+                    compileExpression(visitor, context, indexExpression.callee);
+                    compileExpression(visitor, context, indexExpression.index);
+                    compileExpression(visitor, context, assignment.right);
+                    indexExpression.operation.compileSet(visitor);
                 }
             }
-            default -> {
-                throw new InternalException(); // TODO
-            }
+        } else {
+            throw new InternalException("Should not happen.");
         }
     }
 
@@ -405,6 +406,7 @@ public class Compiler {
             case INTEGER_LITERAL -> compileIntegerLiteral(visitor, (BoundIntegerLiteralExpressionNode) expression);
             case FLOAT_LITERAL -> compileFloatLiteral(visitor, (BoundFloatLiteralExpressionNode) expression);
             case STRING_LITERAL -> compileStringLiteral(visitor, (BoundStringLiteralExpressionNode) expression);
+            case CHAR_LITERAL -> compileCharLiteral(visitor, (BoundCharLiteralExpressionNode) expression);
             case UNARY_EXPRESSION -> compileUnaryExpression(visitor, context, (BoundUnaryExpressionNode) expression);
             case BINARY_EXPRESSION -> compileBinaryExpression(visitor, context, (BoundBinaryExpressionNode) expression);
             case CONDITIONAL_EXPRESSION -> compileConditionalExpression(visitor, context, (BoundConditionalExpressionNode) expression);
@@ -435,6 +437,10 @@ public class Compiler {
     }
 
     private void compileStringLiteral(MethodVisitor visitor, BoundStringLiteralExpressionNode literal) {
+        visitor.visitLdcInsn(literal.value);
+    }
+
+    private void compileCharLiteral(MethodVisitor visitor, BoundCharLiteralExpressionNode literal) {
         visitor.visitLdcInsn(literal.value);
     }
 
@@ -471,7 +477,44 @@ public class Compiler {
     private void compileNameExpression(MethodVisitor visitor, CompilerContext context, BoundNameExpressionNode expression) {
         if (expression.symbol instanceof Variable variable) {
             variable.compileLoad(context, visitor);
+        } else if (expression.symbol instanceof Function function) {
+            compileLambdaFromFunction(visitor, context, function, expression.getRange());
+        } else {
+            throw new InternalException("Not implemented.");
         }
+    }
+
+    private void compileLambdaFromFunction(MethodVisitor visitor, CompilerContext context, Function function, TextRange range) {
+        SFunction type = function.getFunctionType();
+        List<BoundParameterNode> parameters = new ArrayList<>(type.getParameters().length);
+        List<LocalVariable> variables = new ArrayList<>(type.getParameters().length);
+        CompilerContext lambdaContext = context.createFunction(type.getReturnType());
+        for (SType parameterType : type.getParameters()) {
+            LocalVariable variable = lambdaContext.addLocalVariable("p" + variables.size(), parameterType);
+            variables.add(variable);
+            parameters.add(new BoundParameterNode(
+                    new BoundNameExpressionNode(variable, range),
+                    parameterType,
+                    range));
+        }
+
+        List<BoundExpressionNode> arguments = new ArrayList<>(type.getParameters().length);
+        for (LocalVariable variable : variables) {
+            arguments.add(new BoundNameExpressionNode(variable, range));
+        }
+        BoundStatementNode statement = new BoundExpressionStatementNode(
+                new BoundFunctionInvocationExpression(
+                        new BoundNameExpressionNode(function, range),
+                        type.getReturnType(),
+                        new BoundArgumentsListNode(arguments, range),
+                        range),
+                range);
+        BoundLambdaExpressionNode lambda = new BoundLambdaExpressionNode(
+                type.getReturnType(),
+                parameters,
+                statement,
+                range);
+        compileLambdaExpression(visitor, context, lambda);
     }
 
     private void compileMethodInvocationExpression(MethodVisitor visitor, CompilerContext context, BoundMethodInvocationExpressionNode invocation) {
@@ -591,7 +634,7 @@ public class Compiler {
 
     private void compileFunctionInvocationExpression(MethodVisitor visitor, CompilerContext context, BoundFunctionInvocationExpression expression) {
         Function symbol = (Function) expression.name.symbol;
-        SFunction type = (SFunction) symbol.getType();
+        SFunction type = symbol.getFunctionType();
 
         for (BoundExpressionNode argument : expression.arguments.arguments) {
             compileExpression(visitor, context, argument);

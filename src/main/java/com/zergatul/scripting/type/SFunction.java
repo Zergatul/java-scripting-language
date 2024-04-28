@@ -1,6 +1,8 @@
 package com.zergatul.scripting.type;
 
 import com.zergatul.scripting.InternalException;
+import com.zergatul.scripting.type.operation.EmptyUnaryOperation;
+import com.zergatul.scripting.type.operation.UnaryOperation;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Type;
 
@@ -68,5 +70,38 @@ public class SFunction extends SType {
     @Override
     public int getReturnInst() {
         throw new InternalException();
+    }
+
+    @Override
+    public UnaryOperation implicitCastTo(SType other) {
+        if (returnType == SVoidType.instance && other instanceof SAction actionType) {
+            if (parametersMatch(actionType)) {
+                return new FunctionToLambdaOperation(other);
+            }
+        }
+
+        return null;
+    }
+
+    private boolean parametersMatch(SAction action) {
+        if (parameters.length != action.getParameters().length) {
+            return false;
+        }
+        for (int i = 0; i < parameters.length; i++) {
+            if (!parameters[i].equals(action.getParameters()[i])) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private static class FunctionToLambdaOperation extends UnaryOperation {
+
+        private FunctionToLambdaOperation(SType type) {
+            super(type);
+        }
+
+        @Override
+        public void apply(MethodVisitor visitor) {}
     }
 }

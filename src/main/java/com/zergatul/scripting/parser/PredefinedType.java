@@ -4,5 +4,6 @@ public enum PredefinedType {
     BOOLEAN,
     INT,
     FLOAT,
-    STRING
+    STRING,
+    CHAR
 }

@@ -1,6 +1,7 @@
 package com.zergatul.scripting.type;
 
 import com.zergatul.scripting.compiler.BufferedMethodVisitor;
+import com.zergatul.scripting.runtime.ArrayUtils;
 import com.zergatul.scripting.type.operation.BinaryOperation;
 import com.zergatul.scripting.type.operation.IndexOperation;
 import org.objectweb.asm.MethodVisitor;
@@ -65,7 +66,7 @@ public class SArrayType extends SType {
     @Override
     public PropertyReference getInstanceProperty(String name) {
         return switch (name) {
-            case "length" -> length;
+            case "length" -> PROP_LENGTH;
             default -> null;
         };
     }
@@ -99,11 +100,19 @@ public class SArrayType extends SType {
     }
 
     @Override
+    public BinaryOperation add(SType other) {
+        if (other.equals(this)) {
+            return new AddArrayOperation(this);
+        }
+        return null;
+    }
+
+    @Override
     public String toString() {
         return type.toString() + "[]";
     }
 
-    private static final PropertyReference length = new PropertyReference() {
+    private static final PropertyReference PROP_LENGTH = new PropertyReference() {
         @Override
         public SType getType() {
             return SIntType.instance;
@@ -124,6 +133,29 @@ public class SArrayType extends SType {
             visitor.visitInsn(ARRAYLENGTH);
         }
     };
+
+    private static class AddArrayOperation extends BinaryOperation {
+
+        public AddArrayOperation(SArrayType type) {
+            super(type);
+        }
+
+        @Override
+        public void apply(MethodVisitor left, BufferedMethodVisitor right) {
+            right.release(left);
+            boolean isPrimitive = ((SArrayType) type).getElementsType().getJavaClass().isPrimitive();
+            Class<?> clazz = isPrimitive ? type.getJavaClass() : Object[].class;
+            left.visitMethodInsn(
+                    INVOKESTATIC,
+                    Type.getInternalName(ArrayUtils.class),
+                    "concat",
+                    Type.getMethodDescriptor(Type.getType(clazz), Type.getType(clazz), Type.getType(clazz)),
+                    false);
+            if (!isPrimitive) {
+                left.visitTypeInsn(CHECKCAST, Type.getInternalName(type.getJavaClass()));
+            }
+        }
+    }
 
     private static class ArrayIndexOperation extends IndexOperation {
 

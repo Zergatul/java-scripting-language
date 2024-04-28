@@ -1,6 +1,6 @@
 package com.zergatul.scripting.tests.compiler;
 
-import com.zergatul.scripting.helpers.BoolStorage;
+import com.zergatul.scripting.tests.compiler.helpers.BoolStorage;
 import com.zergatul.scripting.tests.compiler.helpers.IntStorage;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -276,6 +276,32 @@ public class BooleanTests {
                         101, 102, 204,
                         102, 101, 206,
                         101, 208));
+    }
+
+    @Test
+    public void augmentedAssignmentTest() {
+        String code = """
+                boolean b = false;
+
+                b |= false;
+                storage.add(b);
+                
+                b |= true;
+                storage.add(b);
+                
+                b &= true;
+                storage.add(b);
+                
+                b &= false;
+                storage.add(b);
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(
+                ApiRoot.storage.list,
+                List.of(false, true, true, false));
     }
 
     public static class ApiRoot {
