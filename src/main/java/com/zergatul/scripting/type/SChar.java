@@ -9,6 +9,7 @@ import static org.objectweb.asm.Opcodes.*;
 public class SChar extends SPredefinedType {
 
     public static final SChar instance = new SChar();
+    public static final SStaticTypeReference staticRef = new SStaticTypeReference(instance);
 
     private SChar() {
         super(char.class);
@@ -56,37 +57,37 @@ public class SChar extends SPredefinedType {
 
     @Override
     public UnaryOperation implicitCastTo(SType other) {
-        return other == SIntType.instance ? CHAR_TO_INT : null;
+        return other == SInt.instance ? CHAR_TO_INT : null;
     }
 
     @Override
     public BinaryOperation lessThan(SType other) {
-        return other == SChar.instance ? SIntType.instance.lessThan(SIntType.instance) : null;
+        return other == SChar.instance ? SInt.instance.lessThan(SInt.instance) : null;
     }
 
     @Override
     public BinaryOperation greaterThan(SType other) {
-        return other == SChar.instance ? SIntType.instance.greaterThan(SIntType.instance) : null;
+        return other == SChar.instance ? SInt.instance.greaterThan(SInt.instance) : null;
     }
 
     @Override
     public BinaryOperation lessEquals(SType other) {
-        return other == SChar.instance ? SIntType.instance.lessEquals(SIntType.instance) : null;
+        return other == SChar.instance ? SInt.instance.lessEquals(SInt.instance) : null;
     }
 
     @Override
     public BinaryOperation greaterEquals(SType other) {
-        return other == SChar.instance ? SIntType.instance.greaterEquals(SIntType.instance) : null;
+        return other == SChar.instance ? SInt.instance.greaterEquals(SInt.instance) : null;
     }
 
     @Override
     public BinaryOperation equalsOp(SType other) {
-        return other == SChar.instance ? SIntType.instance.equalsOp(SIntType.instance) : null;
+        return other == SChar.instance ? SInt.instance.equalsOp(SInt.instance) : null;
     }
 
     @Override
     public BinaryOperation notEqualsOp(SType other) {
-        return other == SChar.instance ? SIntType.instance.notEqualsOp(SIntType.instance) : null;
+        return other == SChar.instance ? SInt.instance.notEqualsOp(SInt.instance) : null;
     }
 
     @Override
@@ -94,7 +95,7 @@ public class SChar extends SPredefinedType {
         return "char";
     }
 
-    private static final UnaryOperation CHAR_TO_INT = new UnaryOperation(SIntType.instance) {
+    private static final UnaryOperation CHAR_TO_INT = new UnaryOperation(SInt.instance) {
         @Override
         public void apply(MethodVisitor visitor) {}
     };

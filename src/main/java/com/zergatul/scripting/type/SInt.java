@@ -10,15 +10,15 @@ import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Type;
 
 import java.util.List;
-import java.util.Locale;
 
 import static org.objectweb.asm.Opcodes.*;
 
-public class SIntType extends SPredefinedType {
+public class SInt extends SPredefinedType {
 
-    public static final SIntType instance = new SIntType();
+    public static final SInt instance = new SInt();
+    public static final SStaticTypeReference staticRef = new SStaticTypeReference(instance);
 
-    private SIntType() {
+    private SInt() {
         super(int.class);
     }
 
@@ -144,7 +144,7 @@ public class SIntType extends SPredefinedType {
 
     @Override
     public UnaryOperation implicitCastTo(SType other) {
-        return other == SFloatType.instance ? TO_FLOAT : null;
+        return other == SFloat.instance ? TO_FLOAT : null;
     }
 
     @Override
@@ -168,12 +168,8 @@ public class SIntType extends SPredefinedType {
     }
 
     @Override
-    public List<MethodReference> getInstanceMethods(String name) {
-        return switch (name) {
-            case "toString" -> List.of(METHOD_TO_STRING);
-            case "toStandardString" -> List.of(METHOD_TO_STANDARD_STRING);
-            default -> List.of();
-        };
+    public List<MethodReference> getInstanceMethods() {
+        return List.of(METHOD_TO_STRING, METHOD_TO_STANDARD_STRING);
     }
 
     @Override
@@ -181,91 +177,61 @@ public class SIntType extends SPredefinedType {
         return "int";
     }
 
-    private static final BinaryOperation ADD = new SingleInstructionBinaryOperation(SIntType.instance, IADD);
-    private static final BinaryOperation SUB = new SingleInstructionBinaryOperation(SIntType.instance, ISUB);
-    private static final BinaryOperation MUL = new SingleInstructionBinaryOperation(SIntType.instance, IMUL);
-    private static final BinaryOperation DIV = new SingleInstructionBinaryOperation(SIntType.instance, IDIV);
-    private static final BinaryOperation MOD = new SingleInstructionBinaryOperation(SIntType.instance, IREM);
-    private static final BinaryOperation BITWISE_AND = new SingleInstructionBinaryOperation(SIntType.instance, IAND);
-    private static final BinaryOperation BITWISE_OR = new SingleInstructionBinaryOperation(SIntType.instance, IOR);
+    private static final BinaryOperation ADD = new SingleInstructionBinaryOperation(SInt.instance, IADD);
+    private static final BinaryOperation SUB = new SingleInstructionBinaryOperation(SInt.instance, ISUB);
+    private static final BinaryOperation MUL = new SingleInstructionBinaryOperation(SInt.instance, IMUL);
+    private static final BinaryOperation DIV = new SingleInstructionBinaryOperation(SInt.instance, IDIV);
+    private static final BinaryOperation MOD = new SingleInstructionBinaryOperation(SInt.instance, IREM);
+    private static final BinaryOperation BITWISE_AND = new SingleInstructionBinaryOperation(SInt.instance, IAND);
+    private static final BinaryOperation BITWISE_OR = new SingleInstructionBinaryOperation(SInt.instance, IOR);
     private static final BinaryOperation LESS_THAN = new IntComparisonOperation(IF_ICMPLT);
     private static final BinaryOperation GREATER_THAN = new IntComparisonOperation(IF_ICMPGT);
     private static final BinaryOperation LESS_THAN_EQUALS = new IntComparisonOperation(IF_ICMPLE);
     private static final BinaryOperation GREATER_THAN_EQUALS = new IntComparisonOperation(IF_ICMPGE);
     private static final BinaryOperation EQUALS = new IntComparisonOperation(IF_ICMPEQ);
     private static final BinaryOperation NOT_EQUALS = new IntComparisonOperation(IF_ICMPNE);
-    private static final UnaryOperation PLUS = new UnaryOperation(SIntType.instance) {
+    private static final UnaryOperation PLUS = new UnaryOperation(SInt.instance) {
         @Override
         public void apply(MethodVisitor visitor) {}
     };
-    private static final UnaryOperation MINUS = new UnaryOperation(SIntType.instance) {
+    private static final UnaryOperation MINUS = new UnaryOperation(SInt.instance) {
         @Override
         public void apply(MethodVisitor visitor) {
             visitor.visitInsn(INEG);
         }
     };
-    private static final UnaryOperation INC = new UnaryOperation(SIntType.instance) {
+    private static final UnaryOperation INC = new UnaryOperation(SInt.instance) {
         @Override
         public void apply(MethodVisitor visitor) {
             visitor.visitInsn(ICONST_1);
             visitor.visitInsn(IADD);
         }
     };
-    private static final UnaryOperation DEC = new UnaryOperation(SIntType.instance) {
+    private static final UnaryOperation DEC = new UnaryOperation(SInt.instance) {
         @Override
         public void apply(MethodVisitor visitor) {
             visitor.visitInsn(ICONST_1);
             visitor.visitInsn(ISUB);
         }
     };
-    private static final UnaryOperation TO_FLOAT = new UnaryOperation(SFloatType.instance) {
+    private static final UnaryOperation TO_FLOAT = new UnaryOperation(SFloat.instance) {
         @Override
         public void apply(MethodVisitor visitor) {
             visitor.visitInsn(I2D);
         }
     };
-    private static final MethodReference METHOD_TO_STRING = new MethodReference() {
-        @Override
-        public SType getReturn() {
-            return SStringType.instance;
-        }
 
-        @Override
-        public List<SType> getParameters() {
-            return List.of();
-        }
+    private static final MethodReference METHOD_TO_STRING = new StaticMethodReference(
+            Integer.class,
+            SInt.instance,
+            "toString",
+            SString.instance);
 
-        @Override
-        public void compileInvoke(MethodVisitor visitor) {
-            visitor.visitMethodInsn(
-                    INVOKESTATIC,
-                    Type.getInternalName(Integer.class),
-                    "toString",
-                    Type.getMethodDescriptor(Type.getType(String.class), Type.INT_TYPE),
-                    false);
-        }
-    };
-    private static final MethodReference METHOD_TO_STANDARD_STRING = new MethodReference() {
-        @Override
-        public SType getReturn() {
-            return SStringType.instance;
-        }
-
-        @Override
-        public List<SType> getParameters() {
-            return List.of();
-        }
-
-        @Override
-        public void compileInvoke(MethodVisitor visitor) {
-            visitor.visitMethodInsn(
-                    INVOKESTATIC,
-                    Type.getInternalName(IntUtils.class),
-                    "toStandardString",
-                    Type.getMethodDescriptor(Type.getType(String.class), Type.INT_TYPE),
-                    false);
-        }
-    };
+    private static final MethodReference METHOD_TO_STANDARD_STRING = new StaticMethodReference(
+            IntUtils.class,
+            SInt.instance,
+            "toStandardString",
+            SString.instance);
 
     private static class IntComparisonOperation extends BinaryOperation {
 

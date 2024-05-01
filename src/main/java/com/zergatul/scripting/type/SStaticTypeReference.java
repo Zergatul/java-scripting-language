@@ -4,6 +4,17 @@ import com.zergatul.scripting.InternalException;
 import org.objectweb.asm.MethodVisitor;
 
 public class SStaticTypeReference extends SType {
+
+    private final SType underlying;
+
+    public SStaticTypeReference(SType underlying) {
+        this.underlying = underlying;
+    }
+
+    public SType getUnderlying() {
+        return underlying;
+    }
+
     @Override
     public Class<?> getJavaClass() {
         throw new InternalException();

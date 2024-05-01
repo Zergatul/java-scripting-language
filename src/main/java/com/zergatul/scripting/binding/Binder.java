@@ -306,8 +306,8 @@ public class Binder {
             name = new BoundNameExpressionNode(variable, statement.name.getRange());
         }
 
-        LocalVariable index = context.addLocalVariable(null, SIntType.instance);
-        LocalVariable length = context.addLocalVariable(null, SIntType.instance);
+        LocalVariable index = context.addLocalVariable(null, SInt.instance);
+        LocalVariable length = context.addLocalVariable(null, SInt.instance);
 
         BoundExpressionNode iterable = bindExpression(statement.iterable);
         if (iterable.type instanceof SArrayType arrayType) {
@@ -386,6 +386,7 @@ public class Binder {
             case INDEX_EXPRESSION -> bindIndexExpression((IndexExpressionNode) expression);
             case INVOCATION_EXPRESSION -> bindInvocationExpression((InvocationExpressionNode) expression);
             case NAME_EXPRESSION -> bindNameExpression((NameExpressionNode) expression);
+            case STATIC_REFERENCE -> bindStaticReferenceExpression((StaticReferenceNode) expression);
             case MEMBER_ACCESS_EXPRESSION -> bindMemberAccessExpression((MemberAccessExpressionNode) expression);
             case NEW_EXPRESSION -> bindNewExpression((NewExpressionNode) expression);
             case LAMBDA_EXPRESSION -> bindLambdaExpression((LambdaExpressionNode) expression);
@@ -579,7 +580,10 @@ public class Binder {
             // method invocation
             BoundExpressionNode objectReference = bindExpression(memberAccess.callee);
             // get methods by name
-            List<MethodReference> methodReferences = objectReference.type.getInstanceMethods(memberAccess.name.value);
+            List<MethodReference> methodReferences = objectReference.type.getInstanceMethods()
+                    .stream()
+                    .filter(m -> m.getName().equals(memberAccess.name.value))
+                    .toList();
 
             MethodReference matchedMethod = UnknownMethodReference.instance;
             if (methodReferences.isEmpty()) {
@@ -720,12 +724,22 @@ public class Binder {
         }
     }
 
+    private BoundStaticReferenceExpression bindStaticReferenceExpression(StaticReferenceNode node) {
+        return new BoundStaticReferenceExpression(switch (node.typeReference) {
+            case BOOLEAN -> SBoolean.staticRef;
+            case INT -> SInt.staticRef;
+            case CHAR -> SChar.staticRef;
+            case FLOAT -> SFloat.staticRef;
+            case STRING -> SString.staticRef;
+        }, node.getRange());
+    }
+
     private BoundNewExpressionNode bindNewExpression(NewExpressionNode expression) {
         BoundTypeNode typeNode = bindType(expression.typeNode);
 
         BoundExpressionNode lengthExpression = null;
         if (expression.lengthExpression != null) {
-            lengthExpression = tryCastTo(bindExpression(expression.lengthExpression), SIntType.instance);
+            lengthExpression = tryCastTo(bindExpression(expression.lengthExpression), SInt.instance);
         }
 
         List<BoundExpressionNode> items = null;
@@ -905,9 +919,9 @@ public class Binder {
         if (type instanceof PredefinedTypeNode predefined) {
             SType bound = switch (predefined.type) {
                 case BOOLEAN -> SBoolean.instance;
-                case INT -> SIntType.instance;
-                case FLOAT -> SFloatType.instance;
-                case STRING -> SStringType.instance;
+                case INT -> SInt.instance;
+                case FLOAT -> SFloat.instance;
+                case STRING -> SString.instance;
                 case CHAR -> SChar.instance;
             };
             return new BoundPredefinedTypeNode(bound, predefined.getRange());

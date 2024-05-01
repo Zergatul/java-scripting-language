@@ -13,6 +13,7 @@ import static org.objectweb.asm.Opcodes.*;
 public class SBoolean extends SPredefinedType {
 
     public static final SBoolean instance = new SBoolean();
+    public static final SStaticTypeReference staticRef = new SStaticTypeReference(instance);
 
     private SBoolean() {
         super(boolean.class);
@@ -55,32 +56,32 @@ public class SBoolean extends SPredefinedType {
 
     @Override
     public BinaryOperation lessThan(SType other) {
-        return other == this ? SIntType.instance.lessThan(SIntType.instance) : null;
+        return other == this ? SInt.instance.lessThan(SInt.instance) : null;
     }
 
     @Override
     public BinaryOperation greaterThan(SType other) {
-        return other == this ? SIntType.instance.greaterThan(SIntType.instance) : null;
+        return other == this ? SInt.instance.greaterThan(SInt.instance) : null;
     }
 
     @Override
     public BinaryOperation lessEquals(SType other) {
-        return other == this ? SIntType.instance.lessEquals(SIntType.instance) : null;
+        return other == this ? SInt.instance.lessEquals(SInt.instance) : null;
     }
 
     @Override
     public BinaryOperation greaterEquals(SType other) {
-        return other == this ? SIntType.instance.greaterEquals(SIntType.instance) : null;
+        return other == this ? SInt.instance.greaterEquals(SInt.instance) : null;
     }
 
     @Override
     public BinaryOperation equalsOp(SType other) {
-        return other == this ? SIntType.instance.equalsOp(SIntType.instance) : null;
+        return other == this ? SInt.instance.equalsOp(SInt.instance) : null;
     }
 
     @Override
     public BinaryOperation notEqualsOp(SType other) {
-        return other == this ? SIntType.instance.notEqualsOp(SIntType.instance) : null;
+        return other == this ? SInt.instance.notEqualsOp(SInt.instance) : null;
     }
 
     @Override

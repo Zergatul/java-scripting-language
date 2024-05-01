@@ -2,7 +2,6 @@ package com.zergatul.scripting.type;
 
 import com.zergatul.scripting.InternalException;
 import com.zergatul.scripting.compiler.BufferedMethodVisitor;
-import com.zergatul.scripting.runtime.IntUtils;
 import com.zergatul.scripting.runtime.StringUtils;
 import com.zergatul.scripting.type.operation.BinaryOperation;
 import com.zergatul.scripting.type.operation.IndexOperation;
@@ -15,11 +14,12 @@ import java.util.Objects;
 
 import static org.objectweb.asm.Opcodes.*;
 
-public class SStringType extends SPredefinedType {
+public class SString extends SPredefinedType {
 
-    public static final SStringType instance = new SStringType();
+    public static final SString instance = new SString();
+    public static final SStaticTypeReference staticRef = new SStaticTypeReference(instance);
 
-    private SStringType() {
+    private SString() {
         super(String.class);
     }
 
@@ -60,7 +60,7 @@ public class SStringType extends SPredefinedType {
 
     @Override
     public BinaryOperation add(SType other) {
-        if (other == SStringType.instance) {
+        if (other == SString.instance) {
             return ADD_STRING;
         }
         if (other == SChar.instance) {
@@ -71,12 +71,12 @@ public class SStringType extends SPredefinedType {
 
     @Override
     public BinaryOperation equalsOp(SType other) {
-        return other == SStringType.instance ? EQUALS_STRING : null;
+        return other == SString.instance ? EQUALS_STRING : null;
     }
 
     @Override
     public BinaryOperation notEqualsOp(SType other) {
-        return other == SStringType.instance ? NOT_EQUALS_STRING : null;
+        return other == SString.instance ? NOT_EQUALS_STRING : null;
     }
 
     @Override
@@ -89,12 +89,12 @@ public class SStringType extends SPredefinedType {
 
     @Override
     public List<SType> supportedIndexers() {
-        return List.of(SIntType.instance);
+        return List.of(SInt.instance);
     }
 
     @Override
     public IndexOperation index(SType type) {
-        if (type == SIntType.instance) {
+        if (type == SInt.instance) {
             return INDEX_INT;
         } else {
             return null;
@@ -107,19 +107,18 @@ public class SStringType extends SPredefinedType {
     }
 
     @Override
-    public List<MethodReference> getInstanceMethods(String name) {
-        return switch (name) {
-            case "contains" -> List.of(METHOD_CONTAINS);
-            case "indexOf" -> List.of(METHOD_INDEX_OF);
-            case "substring" -> List.of(METHOD_SUBSTRING_INT, METHOD_SUBSTRING_INT_INT);
-            case "startsWith" -> List.of(METHOD_STARTS_WITH);
-            case "endsWith" -> List.of(METHOD_ENDS_WITH);
-            case "toLower" -> List.of(METHOD_TO_LOWER);
-            case "toUpper" -> List.of(METHOD_TO_UPPER);
-            case "matches" -> List.of(METHOD_MATCHES);
-            case "getMatches" -> List.of(METHOD_GET_MATCHES);
-            default -> List.of();
-        };
+    public List<MethodReference> getInstanceMethods() {
+        return List.of(
+                METHOD_CONTAINS,
+                METHOD_INDEX_OF,
+                METHOD_SUBSTRING_INT,
+                METHOD_SUBSTRING_INT_INT,
+                METHOD_STARTS_WITH,
+                METHOD_ENDS_WITH,
+                METHOD_TO_LOWER,
+                METHOD_TO_UPPER,
+                METHOD_MATCHES,
+                METHOD_GET_MATCHES);
     }
 
     @Override
@@ -129,7 +128,7 @@ public class SStringType extends SPredefinedType {
 
     private static final PropertyReference PROP_LENGTH = new MethodBasedPropertyReference(String.class, "length");
 
-    private static final BinaryOperation ADD_STRING = new BinaryOperation(SStringType.instance) {
+    private static final BinaryOperation ADD_STRING = new BinaryOperation(SString.instance) {
         @Override
         public void apply(MethodVisitor left, BufferedMethodVisitor right) {
             // stack = ..., left
@@ -171,7 +170,7 @@ public class SStringType extends SPredefinedType {
         }
     };
 
-    private static final BinaryOperation ADD_CHAR = new BinaryOperation(SStringType.instance) {
+    private static final BinaryOperation ADD_CHAR = new BinaryOperation(SString.instance) {
         @Override
         public void apply(MethodVisitor left, BufferedMethodVisitor right) {
             // stack = ..., left
@@ -229,7 +228,7 @@ public class SStringType extends SPredefinedType {
     private static final BinaryOperation NOT_EQUALS_STRING = new BinaryOperation(SBoolean.instance) {
         @Override
         public void apply(MethodVisitor left, BufferedMethodVisitor right) {
-            SStringType.EQUALS_STRING.apply(left, right);
+            SString.EQUALS_STRING.apply(left, right);
             SBoolean.instance.not().apply(left);
         }
     };
@@ -256,51 +255,25 @@ public class SStringType extends SPredefinedType {
         }
     };
 
-    private static final MethodReference METHOD_SUBSTRING_INT = new MethodReference() {
-        @Override
-        public SType getReturn() {
-            return SStringType.instance;
-        }
+    private static final MethodReference METHOD_SUBSTRING_INT = new InstanceMethodReference(
+            String.class,
+            "substring",
+            SString.instance,
+            new MethodParameter("beginIndex", SInt.instance));
 
-        @Override
-        public List<SType> getParameters() {
-            return List.of(SIntType.instance);
-        }
-
-        @Override
-        public void compileInvoke(MethodVisitor visitor) {
-            visitor.visitMethodInsn(
-                    INVOKEVIRTUAL,
-                    Type.getInternalName(String.class),
-                    "substring",
-                    Type.getMethodDescriptor(Type.getType(String.class), Type.INT_TYPE),
-                    false);
-        }
-    };
-
-    private static final MethodReference METHOD_SUBSTRING_INT_INT = new MethodReference() {
-        @Override
-        public SType getReturn() {
-            return SStringType.instance;
-        }
-
-        @Override
-        public List<SType> getParameters() {
-            return List.of(SIntType.instance, SIntType.instance);
-        }
-
-        @Override
-        public void compileInvoke(MethodVisitor visitor) {
-            visitor.visitMethodInsn(
-                    INVOKEVIRTUAL,
-                    Type.getInternalName(String.class),
-                    "substring",
-                    Type.getMethodDescriptor(Type.getType(String.class), Type.INT_TYPE, Type.INT_TYPE),
-                    false);
-        }
-    };
+    private static final MethodReference METHOD_SUBSTRING_INT_INT = new InstanceMethodReference(
+            String.class,
+            "substring",
+            SString.instance,
+            new MethodParameter("beginIndex", SInt.instance),
+            new MethodParameter("endIndex", SInt.instance));
 
     private static final MethodReference METHOD_CONTAINS = new MethodReference() {
+        @Override
+        public String getName() {
+            return "contains";
+        }
+
         @Override
         public SType getReturn() {
             return SBoolean.instance;
@@ -308,7 +281,7 @@ public class SStringType extends SPredefinedType {
 
         @Override
         public List<SType> getParameters() {
-            return List.of(SStringType.instance);
+            return List.of(SString.instance);
         }
 
         @Override
@@ -322,76 +295,33 @@ public class SStringType extends SPredefinedType {
         }
     };
 
-    private static final MethodReference METHOD_INDEX_OF = new MethodReference() {
-        @Override
-        public SType getReturn() {
-            return SIntType.instance;
-        }
+    private static final MethodReference METHOD_INDEX_OF = new InstanceMethodReference(
+            String.class,
+            "indexOf",
+            SInt.instance,
+            new MethodParameter("str", SString.instance));
 
-        @Override
-        public List<SType> getParameters() {
-            return List.of(SStringType.instance);
-        }
+    private static final MethodReference METHOD_STARTS_WITH = new InstanceMethodReference(
+            String.class,
+            "startsWith",
+            SBoolean.instance,
+            new MethodParameter("prefix", SString.instance));
 
-        @Override
-        public void compileInvoke(MethodVisitor visitor) {
-            visitor.visitMethodInsn(
-                    INVOKEVIRTUAL,
-                    Type.getInternalName(String.class),
-                    "indexOf",
-                    Type.getMethodDescriptor(Type.INT_TYPE, Type.getType(String.class)),
-                    false);
-        }
-    };
-
-    private static final MethodReference METHOD_STARTS_WITH = new MethodReference() {
-        @Override
-        public SType getReturn() {
-            return SBoolean.instance;
-        }
-
-        @Override
-        public List<SType> getParameters() {
-            return List.of(SStringType.instance);
-        }
-
-        @Override
-        public void compileInvoke(MethodVisitor visitor) {
-            visitor.visitMethodInsn(
-                    INVOKEVIRTUAL,
-                    Type.getInternalName(String.class),
-                    "startsWith",
-                    Type.getMethodDescriptor(Type.BOOLEAN_TYPE, Type.getType(String.class)),
-                    false);
-        }
-    };
-
-    private static final MethodReference METHOD_ENDS_WITH = new MethodReference() {
-        @Override
-        public SType getReturn() {
-            return SBoolean.instance;
-        }
-
-        @Override
-        public List<SType> getParameters() {
-            return List.of(SStringType.instance);
-        }
-
-        @Override
-        public void compileInvoke(MethodVisitor visitor) {
-            visitor.visitMethodInsn(
-                    INVOKEVIRTUAL,
-                    Type.getInternalName(String.class),
-                    "endsWith",
-                    Type.getMethodDescriptor(Type.BOOLEAN_TYPE, Type.getType(String.class)),
-                    false);
-        }
-    };
+    private static final MethodReference METHOD_ENDS_WITH = new InstanceMethodReference(
+            String.class,
+            "endsWith",
+            SBoolean.instance,
+            new MethodParameter("suffix", SString.instance));
 
     private static final MethodReference METHOD_TO_LOWER = new MethodReference() {
         @Override
+        public String getName() {
+            return "toLower";
+        }
+
+        @Override
         public SType getReturn() {
-            return SStringType.instance;
+            return SString.instance;
         }
 
         @Override
@@ -417,8 +347,13 @@ public class SStringType extends SPredefinedType {
 
     private static final MethodReference METHOD_TO_UPPER = new MethodReference() {
         @Override
+        public String getName() {
+            return "toUpper";
+        }
+
+        @Override
         public SType getReturn() {
-            return SStringType.instance;
+            return SString.instance;
         }
 
         @Override
@@ -442,47 +377,17 @@ public class SStringType extends SPredefinedType {
         }
     };
 
-    private static final MethodReference METHOD_MATCHES = new MethodReference() {
-        @Override
-        public SType getReturn() {
-            return SBoolean.instance;
-        }
+    private static final MethodReference METHOD_MATCHES = new StaticMethodReference(
+            StringUtils.class,
+            SString.instance,
+            "matches",
+            SBoolean.instance,
+            new MethodParameter("regex", SString.instance));
 
-        @Override
-        public List<SType> getParameters() {
-            return List.of(SStringType.instance);
-        }
-
-        @Override
-        public void compileInvoke(MethodVisitor visitor) {
-            visitor.visitMethodInsn(
-                    INVOKESTATIC,
-                    Type.getInternalName(StringUtils.class),
-                    "matches",
-                    Type.getMethodDescriptor(Type.BOOLEAN_TYPE, Type.getType(String.class), Type.getType(String.class)),
-                    false);
-        }
-    };
-
-    private static final MethodReference METHOD_GET_MATCHES = new MethodReference() {
-        @Override
-        public SType getReturn() {
-            return new SArrayType(SStringType.instance);
-        }
-
-        @Override
-        public List<SType> getParameters() {
-            return List.of(SStringType.instance);
-        }
-
-        @Override
-        public void compileInvoke(MethodVisitor visitor) {
-            visitor.visitMethodInsn(
-                    INVOKESTATIC,
-                    Type.getInternalName(StringUtils.class),
-                    "getMatches",
-                    Type.getMethodDescriptor(Type.getType(String[].class), Type.getType(String.class), Type.getType(String.class)),
-                    false);
-        }
-    };
+    private static final MethodReference METHOD_GET_MATCHES = new StaticMethodReference(
+            StringUtils.class,
+            SString.instance,
+            "getMatches",
+            new SArrayType(SString.instance),
+            new MethodParameter("regex", SString.instance));
 }

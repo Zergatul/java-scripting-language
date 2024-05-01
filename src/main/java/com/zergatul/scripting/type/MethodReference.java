@@ -7,6 +7,7 @@ import java.util.Arrays;
 import java.util.List;
 
 public abstract class MethodReference extends MemberReference {
+    public abstract String getName();
     public abstract SType getReturn();
     public abstract List<SType> getParameters();
     public abstract void compileInvoke(MethodVisitor visitor);

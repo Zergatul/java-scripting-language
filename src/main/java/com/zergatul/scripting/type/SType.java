@@ -159,7 +159,7 @@ public abstract class SType {
         return null;
     }
 
-    public List<MethodReference> getInstanceMethods(String name) {
+    public List<MethodReference> getInstanceMethods() {
         return List.of();
     }
 
@@ -200,13 +200,13 @@ public abstract class SType {
                 return SBoolean.instance;
             }
             if (clazz == int.class || clazz == Integer.class) {
-                return SIntType.instance;
+                return SInt.instance;
             }
             if (clazz == double.class || clazz == Double.class) {
-                return SFloatType.instance;
+                return SFloat.instance;
             }
             if (clazz == String.class) {
-                return SStringType.instance;
+                return SString.instance;
             }
             if (clazz == Action0.class) {
                 return new SAction();

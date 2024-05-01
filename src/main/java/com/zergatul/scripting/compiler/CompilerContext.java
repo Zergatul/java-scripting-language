@@ -1,7 +1,7 @@
 package com.zergatul.scripting.compiler;
 
 import com.zergatul.scripting.InternalException;
-import com.zergatul.scripting.type.SFloatType;
+import com.zergatul.scripting.type.SFloat;
 import com.zergatul.scripting.type.SType;
 import com.zergatul.scripting.type.SVoidType;
 import org.objectweb.asm.MethodVisitor;
@@ -62,7 +62,7 @@ public class CompilerContext {
 
         LocalVariable variable = new LocalVariable(name, type, stackIndex);
         addLocalVariable(variable);
-        if (type == SFloatType.instance) {
+        if (type == SFloat.instance) {
             stackIndex += 2;
         } else {
             stackIndex += 1;

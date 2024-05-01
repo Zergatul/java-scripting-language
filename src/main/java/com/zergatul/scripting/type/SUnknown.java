@@ -63,7 +63,7 @@ public class SUnknown extends SType {
     }
 
     @Override
-    public List<MethodReference> getInstanceMethods(String name) {
+    public List<MethodReference> getInstanceMethods() {
         return List.of(UnknownMethodReference.instance);
     }
 }

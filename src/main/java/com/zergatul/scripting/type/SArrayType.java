@@ -73,12 +73,12 @@ public class SArrayType extends SType {
 
     @Override
     public List<SType> supportedIndexers() {
-        return List.of(SIntType.instance);
+        return List.of(SInt.instance);
     }
 
     @Override
     public IndexOperation index(SType type) {
-        if (type == SIntType.instance) {
+        if (type == SInt.instance) {
             return new ArrayIndexOperation(getElementsType());
         } else {
             return null;
@@ -115,7 +115,7 @@ public class SArrayType extends SType {
     private static final PropertyReference PROP_LENGTH = new PropertyReference() {
         @Override
         public SType getType() {
-            return SIntType.instance;
+            return SInt.instance;
         }
 
         @Override

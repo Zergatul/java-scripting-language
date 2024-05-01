@@ -75,11 +75,10 @@ public class SClassType extends SType {
     }
 
     @Override
-    public List<MethodReference> getInstanceMethods(String name) {
+    public List<MethodReference> getInstanceMethods() {
         return Arrays.stream(this.clazz.getDeclaredMethods())
                 .filter(m -> Modifier.isPublic(m.getModifiers()))
                 .filter(m -> !Modifier.isStatic(m.getModifiers()))
-                .filter(m -> m.getName().equals(name))
                 .map(NativeMethodReference::new)
                 .map(r -> (MethodReference) r)
                 .toList();

@@ -13,6 +13,11 @@ public class UnknownMethodReference extends MethodReference {
     private UnknownMethodReference() {}
 
     @Override
+    public String getName() {
+        return "";
+    }
+
+    @Override
     public SType getReturn() {
         return SUnknown.instance;
     }

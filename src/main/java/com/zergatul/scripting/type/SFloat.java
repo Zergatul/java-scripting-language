@@ -2,7 +2,6 @@ package com.zergatul.scripting.type;
 
 import com.zergatul.scripting.compiler.BufferedMethodVisitor;
 import com.zergatul.scripting.runtime.FloatUtils;
-import com.zergatul.scripting.runtime.IntUtils;
 import com.zergatul.scripting.type.operation.*;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
@@ -12,11 +11,12 @@ import java.util.List;
 
 import static org.objectweb.asm.Opcodes.*;
 
-public class SFloatType extends SPredefinedType {
+public class SFloat extends SPredefinedType {
 
-    public static final SFloatType instance = new SFloatType();
+    public static final SFloat instance = new SFloat();
+    public static final SStaticTypeReference staticRef = new SStaticTypeReference(instance);
 
-    private SFloatType() {
+    private SFloat() {
         super(double.class);
     }
 
@@ -146,12 +146,8 @@ public class SFloatType extends SPredefinedType {
     }
 
     @Override
-    public List<MethodReference> getInstanceMethods(String name) {
-        return switch (name) {
-            case "toString" -> List.of(METHOD_TO_STRING);
-            case "toStandardString" -> List.of(METHOD_TO_STANDARD_STRING);
-            default -> List.of();
-        };
+    public List<MethodReference> getInstanceMethods() {
+        return List.of(METHOD_TO_STRING, METHOD_TO_STANDARD_STRING);
     }
 
     @Override
@@ -159,69 +155,40 @@ public class SFloatType extends SPredefinedType {
         return "float";
     }
 
-    private static final BinaryOperation ADD = new SingleInstructionBinaryOperation(SFloatType.instance, DADD);
-    private static final BinaryOperation SUB = new SingleInstructionBinaryOperation(SFloatType.instance, DSUB);
-    private static final BinaryOperation MUL = new SingleInstructionBinaryOperation(SFloatType.instance, DMUL);
-    private static final BinaryOperation DIV = new SingleInstructionBinaryOperation(SFloatType.instance, DDIV);
-    private static final BinaryOperation MOD = new SingleInstructionBinaryOperation(SFloatType.instance, DREM);
+    private static final BinaryOperation ADD = new SingleInstructionBinaryOperation(SFloat.instance, DADD);
+    private static final BinaryOperation SUB = new SingleInstructionBinaryOperation(SFloat.instance, DSUB);
+    private static final BinaryOperation MUL = new SingleInstructionBinaryOperation(SFloat.instance, DMUL);
+    private static final BinaryOperation DIV = new SingleInstructionBinaryOperation(SFloat.instance, DDIV);
+    private static final BinaryOperation MOD = new SingleInstructionBinaryOperation(SFloat.instance, DREM);
     private static final BinaryOperation LESS_THAN = new FloatComparisonOperation(IF_ICMPLT);
     private static final BinaryOperation GREATER_THAN = new FloatComparisonOperation(IF_ICMPGT);
     private static final BinaryOperation LESS_THAN_EQUALS = new FloatComparisonOperation(IF_ICMPLE);
     private static final BinaryOperation GREATER_THAN_EQUALS = new FloatComparisonOperation(IF_ICMPGE);
     private static final BinaryOperation EQUALS = new FloatComparisonOperation(IF_ICMPEQ);
     private static final BinaryOperation NOT_EQUALS = new FloatComparisonOperation(IF_ICMPNE);
-    public static final UnaryOperation PLUS = new UnaryOperation(SFloatType.instance) {
+    public static final UnaryOperation PLUS = new UnaryOperation(SFloat.instance) {
         @Override
         public void apply(MethodVisitor visitor) {}
     };
-    public static final UnaryOperation MINUS = new UnaryOperation(SFloatType.instance) {
+    public static final UnaryOperation MINUS = new UnaryOperation(SFloat.instance) {
         @Override
         public void apply(MethodVisitor visitor) {
             visitor.visitInsn(DNEG);
         }
     };
-    private static final MethodReference METHOD_TO_STRING = new MethodReference() {
-        @Override
-        public SType getReturn() {
-            return SStringType.instance;
-        }
 
-        @Override
-        public List<SType> getParameters() {
-            return List.of();
-        }
+    private static final MethodReference METHOD_TO_STRING = new StaticMethodReference(
+            Double.class,
+            SFloat.instance,
+            "toString",
+            SString.instance);
 
-        @Override
-        public void compileInvoke(MethodVisitor visitor) {
-            visitor.visitMethodInsn(
-                    INVOKESTATIC,
-                    Type.getInternalName(Double.class),
-                    "toString",
-                    Type.getMethodDescriptor(Type.getType(String.class), Type.DOUBLE_TYPE),
-                    false);
-        }
-    };
-    private static final MethodReference METHOD_TO_STANDARD_STRING = new MethodReference() {
-        @Override
-        public SType getReturn() {
-            return SStringType.instance;
-        }
-
-        @Override
-        public List<SType> getParameters() {
-            return List.of(SIntType.instance);
-        }
-
-        @Override
-        public void compileInvoke(MethodVisitor visitor) {
-            visitor.visitMethodInsn(
-                    INVOKESTATIC,
-                    Type.getInternalName(FloatUtils.class),
-                    "toStandardString",
-                    Type.getMethodDescriptor(Type.getType(String.class), Type.DOUBLE_TYPE, Type.INT_TYPE),
-                    false);
-        }
-    };
+    private static final MethodReference METHOD_TO_STANDARD_STRING = new StaticMethodReference(
+            FloatUtils.class,
+            SFloat.instance,
+            "toStandardString",
+            SString.instance,
+            new MethodParameter("digits", SInt.instance));
 
     private static class FloatComparisonOperation extends BinaryOperation {
 

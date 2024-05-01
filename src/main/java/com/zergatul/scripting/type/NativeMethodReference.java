@@ -18,6 +18,11 @@ public class NativeMethodReference extends MethodReference {
     }
 
     @Override
+    public String getName() {
+        return method.getName();
+    }
+
+    @Override
     public SType getReturn() {
         return SType.fromJavaType(method.getReturnType());
     }

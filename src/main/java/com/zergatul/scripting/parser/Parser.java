@@ -724,6 +724,7 @@ public class Parser {
             case CHAR_LITERAL -> new CharLiteralExpressionNode((CharToken) advance());
             case NEW -> parseNewExpression();
             case LEFT_PARENTHESES -> isPossibleLambdaExpression() ? parseLambdaExpression() : parseParenthesizedExpression();
+            case BOOLEAN, INT, CHAR, FLOAT, STRING -> parseStaticReference();
             default -> null;
         };
 
@@ -837,6 +838,18 @@ public class Parser {
         }
 
         return new LambdaExpressionNode(parameters, statement, TextRange.combine(first, statement));
+    }
+
+    private StaticReferenceNode parseStaticReference() {
+        Token token = advance();
+        return new StaticReferenceNode(switch (token.type) {
+            case BOOLEAN -> PredefinedType.BOOLEAN;
+            case INT -> PredefinedType.INT;
+            case CHAR -> PredefinedType.CHAR;
+            case FLOAT -> PredefinedType.FLOAT;
+            case STRING -> PredefinedType.STRING;
+            default -> throw new InternalException();
+        }, token.getRange());
     }
 
     private boolean isPossibleExpression() {
