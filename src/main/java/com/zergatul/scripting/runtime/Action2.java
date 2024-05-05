@@ -1,4 +1,4 @@
-package com.zergatul.scripting.type;
+package com.zergatul.scripting.runtime;
 
 @FunctionalInterface
 public interface Action2<T1, T2> {

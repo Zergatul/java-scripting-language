@@ -11,9 +11,13 @@ import com.zergatul.scripting.lexer.LexerOutput;
 import com.zergatul.scripting.parser.AssignmentOperator;
 import com.zergatul.scripting.parser.Parser;
 import com.zergatul.scripting.parser.ParserOutput;
+import com.zergatul.scripting.runtime.Action0;
+import com.zergatul.scripting.runtime.Action1;
+import com.zergatul.scripting.runtime.Action2;
 import com.zergatul.scripting.type.*;
 import org.objectweb.asm.*;
 
+import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
@@ -440,7 +444,8 @@ public class Compiler {
             case CONDITIONAL_EXPRESSION -> compileConditionalExpression(visitor, context, (BoundConditionalExpressionNode) expression);
             case IMPLICIT_CAST -> compileImplicitCastExpression(visitor, context, (BoundImplicitCastExpressionNode) expression);
             case NAME_EXPRESSION -> compileNameExpression(visitor, context, (BoundNameExpressionNode) expression);
-            //case INVOCATION_EXPRESSION -> compileInvocationExpression(visitor, context, (BoundInvocationExpressionNode) expression);
+            case STATIC_REFERENCE -> compileStaticReferenceExpression();
+            case REF_EXPRESSION -> compileRefExpression(visitor, context, (BoundRefExpressionNode) expression);
             case METHOD_INVOCATION_EXPRESSION -> compileMethodInvocationExpression(visitor, context, (BoundMethodInvocationExpressionNode) expression);
             case PROPERTY_ACCESS_EXPRESSION -> compilePropertyAccessExpression(visitor, context, (BoundPropertyAccessExpressionNode) expression);
             case NEW_EXPRESSION -> compileNewExpression(visitor, context, (BoundNewExpressionNode) expression);
@@ -502,6 +507,10 @@ public class Compiler {
         expression.operation.apply(visitor);
     }
 
+    private void compileStaticReferenceExpression() {
+
+    }
+
     private void compileNameExpression(MethodVisitor visitor, CompilerContext context, BoundNameExpressionNode expression) {
         if (expression.symbol instanceof Variable variable) {
             variable.compileLoad(context, visitor);
@@ -510,6 +519,30 @@ public class Compiler {
         } else {
             throw new InternalException("Not implemented.");
         }
+    }
+
+    private void compileRefExpression(MethodVisitor visitor, CompilerContext context, BoundRefExpressionNode expression) {
+        Variable variable = (Variable) expression.name.symbol;
+        LocalVariable holder = expression.holder;
+
+        String refClassDescriptor = Type.getInternalName(holder.getType().getJavaClass());
+        visitor.visitTypeInsn(NEW, refClassDescriptor);
+        // ..., Ref
+        visitor.visitInsn(DUP);
+        // ..., Ref, Ref
+        visitor.visitInsn(DUP);
+        // ..., Ref, Ref, Ref
+        variable.compileLoad(context, visitor);
+        // ..., Ref, Ref, Ref, value
+        visitor.visitMethodInsn(
+                INVOKESPECIAL,
+                refClassDescriptor,
+                "<init>",
+                Type.getMethodDescriptor(Type.VOID_TYPE, Type.getType(variable.getType().getJavaClass())),
+                false);
+        // ..., Ref, Ref
+        holder.compileStore(context, visitor);
+        // ..., Ref
     }
 
     private void compileLambdaFromFunction(MethodVisitor visitor, CompilerContext context, Function function, TextRange range) {
@@ -551,6 +584,19 @@ public class Compiler {
             compileExpression(visitor, context, expression);
         }
         invocation.method.compileInvoke(visitor);
+
+        for (RefHolder ref : invocation.refVariables) {
+            LocalVariable holder = ref.getHolder();
+            Variable variable = ref.getVariable();
+            holder.compileLoad(context, visitor);
+            visitor.visitMethodInsn(
+                    INVOKEVIRTUAL,
+                    Type.getInternalName(holder.getType().getJavaClass()),
+                    "get",
+                    Type.getMethodDescriptor(Type.getType(variable.getType().getJavaClass())),
+                    false);
+            variable.compileStore(context, visitor);
+        }
     }
 
     private void compilePropertyAccessExpression(MethodVisitor visitor, CompilerContext context, BoundPropertyAccessExpressionNode propertyAccess) {

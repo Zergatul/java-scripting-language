@@ -1,8 +1,8 @@
 package com.zergatul.scripting.tests.compiler.helpers;
 
-import com.zergatul.scripting.type.Action0;
-import com.zergatul.scripting.type.Action1;
-import com.zergatul.scripting.type.Action2;
+import com.zergatul.scripting.runtime.Action0;
+import com.zergatul.scripting.runtime.Action1;
+import com.zergatul.scripting.runtime.Action2;
 
 import java.util.ArrayList;
 import java.util.List;

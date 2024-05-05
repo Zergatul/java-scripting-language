@@ -66,5 +66,6 @@ public enum TokenType {
     CONTINUE,
     IN,
     STATIC,
-    VOID
+    VOID,
+    REF
 }

@@ -3,23 +3,23 @@ package com.zergatul.scripting.type;
 import com.zergatul.scripting.InternalException;
 import org.objectweb.asm.MethodVisitor;
 
-import java.util.List;
+import static org.objectweb.asm.Opcodes.ALOAD;
+import static org.objectweb.asm.Opcodes.ASTORE;
 
-public class SStaticTypeReference extends SType {
+public class SReference extends SType {
+
+    public static final SReference INT = new SReference(SInt.instance);
+    public static final SReference FLOAT = new SReference(SFloat.instance);
 
     private final SType underlying;
 
-    public SStaticTypeReference(SType underlying) {
+    private SReference(SType underlying) {
         this.underlying = underlying;
-    }
-
-    public SType getUnderlying() {
-        return underlying;
     }
 
     @Override
     public Class<?> getJavaClass() {
-        throw new InternalException();
+        return underlying.getReferenceClass();
     }
 
     @Override
@@ -29,12 +29,12 @@ public class SStaticTypeReference extends SType {
 
     @Override
     public int getLoadInst() {
-        throw new InternalException();
+        return ALOAD;
     }
 
     @Override
     public int getStoreInst() {
-        throw new InternalException();
+        return ASTORE;
     }
 
     @Override
@@ -58,7 +58,7 @@ public class SStaticTypeReference extends SType {
     }
 
     @Override
-    public List<MethodReference> getInstanceMethods() {
-        return underlying.getStaticMethods();
+    public String toString() {
+        return "ref " + underlying.toString();
     }
 }

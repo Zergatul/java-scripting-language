@@ -377,14 +377,14 @@ public class SString extends SPredefinedType {
         }
     };
 
-    private static final MethodReference METHOD_MATCHES = new StaticMethodReference(
+    private static final MethodReference METHOD_MATCHES = new StaticAsInstanceMethodReference(
             StringUtils.class,
             SString.instance,
             "matches",
             SBoolean.instance,
             new MethodParameter("regex", SString.instance));
 
-    private static final MethodReference METHOD_GET_MATCHES = new StaticMethodReference(
+    private static final MethodReference METHOD_GET_MATCHES = new StaticAsInstanceMethodReference(
             StringUtils.class,
             SString.instance,
             "getMatches",

@@ -102,7 +102,7 @@ public class ContextualLambdaChecker {
 
     private void checkExpression(BoundExpressionNode node) {
         switch (node.getNodeType()) {
-            case BOOLEAN_LITERAL, STRING_LITERAL, CHAR_LITERAL, FLOAT_LITERAL, INTEGER_LITERAL, NAME_EXPRESSION, INVALID_EXPRESSION -> {}
+            case BOOLEAN_LITERAL, STRING_LITERAL, CHAR_LITERAL, FLOAT_LITERAL, INTEGER_LITERAL, NAME_EXPRESSION, INVALID_EXPRESSION, STATIC_REFERENCE, REF_EXPRESSION -> {}
             case UNARY_EXPRESSION -> checkUnaryExpression((BoundUnaryExpressionNode) node);
             case BINARY_EXPRESSION -> checkBinaryExpression((BoundBinaryExpressionNode) node);
             case CONDITIONAL_EXPRESSION -> checkConditionalExpression((BoundConditionalExpressionNode) node);

@@ -1,7 +1,9 @@
 package com.zergatul.scripting.type;
 
 import com.zergatul.scripting.compiler.BufferedMethodVisitor;
+import com.zergatul.scripting.runtime.FloatReference;
 import com.zergatul.scripting.runtime.FloatUtils;
+import com.zergatul.scripting.runtime.IntUtils;
 import com.zergatul.scripting.type.operation.*;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
@@ -151,6 +153,21 @@ public class SFloat extends SPredefinedType {
     }
 
     @Override
+    public List<MethodReference> getStaticMethods() {
+        return List.of(METHOD_TRY_PARSE);
+    }
+
+    @Override
+    public SReference getReferenceType() {
+        return SReference.FLOAT;
+    }
+
+    @Override
+    public Class<?> getReferenceClass() {
+        return FloatReference.class;
+    }
+
+    @Override
     public String toString() {
         return "float";
     }
@@ -177,18 +194,25 @@ public class SFloat extends SPredefinedType {
         }
     };
 
-    private static final MethodReference METHOD_TO_STRING = new StaticMethodReference(
+    private static final MethodReference METHOD_TO_STRING = new StaticAsInstanceMethodReference(
             Double.class,
             SFloat.instance,
             "toString",
             SString.instance);
 
-    private static final MethodReference METHOD_TO_STANDARD_STRING = new StaticMethodReference(
+    private static final MethodReference METHOD_TO_STANDARD_STRING = new StaticAsInstanceMethodReference(
             FloatUtils.class,
             SFloat.instance,
             "toStandardString",
             SString.instance,
             new MethodParameter("digits", SInt.instance));
+
+    private static final MethodReference METHOD_TRY_PARSE = new StaticMethodReference(
+            FloatUtils.class,
+            "tryParse",
+            SBoolean.instance,
+            new MethodParameter("str", SString.instance),
+            new MethodParameter("result", SReference.FLOAT));
 
     private static class FloatComparisonOperation extends BinaryOperation {
 

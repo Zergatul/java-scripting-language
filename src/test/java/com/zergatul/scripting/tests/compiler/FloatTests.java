@@ -251,6 +251,28 @@ public class FloatTests {
                 List.of("100.25", "10.125", "10,000.556"));
     }
 
+    @Test
+    public void tryParseTest() {
+        String code = """
+                float x;
+                boolStorage.add(float.tryParse("0.75", ref x));
+                floatStorage.add(x);
+                
+                boolStorage.add(float.tryParse("0.0.0", ref x));
+                floatStorage.add(x);
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(
+                ApiRoot.boolStorage.list,
+                List.of(true, false));
+        Assertions.assertIterableEquals(
+                ApiRoot.floatStorage.list,
+                List.of(0.75, 0.75));
+    }
+
     public static class ApiRoot {
         public static BoolStorage boolStorage;
         public static FloatStorage floatStorage;

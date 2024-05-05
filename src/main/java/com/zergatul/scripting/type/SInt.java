@@ -1,6 +1,7 @@
 package com.zergatul.scripting.type;
 
 import com.zergatul.scripting.compiler.BufferedMethodVisitor;
+import com.zergatul.scripting.runtime.IntReference;
 import com.zergatul.scripting.runtime.IntUtils;
 import com.zergatul.scripting.type.operation.BinaryOperation;
 import com.zergatul.scripting.type.operation.SingleInstructionBinaryOperation;
@@ -173,6 +174,21 @@ public class SInt extends SPredefinedType {
     }
 
     @Override
+    public List<MethodReference> getStaticMethods() {
+        return List.of(METHOD_TRY_PARSE);
+    }
+
+    @Override
+    public SReference getReferenceType() {
+        return SReference.INT;
+    }
+
+    @Override
+    public Class<?> getReferenceClass() {
+        return IntReference.class;
+    }
+
+    @Override
     public String toString() {
         return "int";
     }
@@ -221,17 +237,24 @@ public class SInt extends SPredefinedType {
         }
     };
 
-    private static final MethodReference METHOD_TO_STRING = new StaticMethodReference(
+    private static final MethodReference METHOD_TO_STRING = new StaticAsInstanceMethodReference(
             Integer.class,
             SInt.instance,
             "toString",
             SString.instance);
 
-    private static final MethodReference METHOD_TO_STANDARD_STRING = new StaticMethodReference(
+    private static final MethodReference METHOD_TO_STANDARD_STRING = new StaticAsInstanceMethodReference(
             IntUtils.class,
             SInt.instance,
             "toStandardString",
             SString.instance);
+
+    private static final MethodReference METHOD_TRY_PARSE = new StaticMethodReference(
+            IntUtils.class,
+            "tryParse",
+            SBoolean.instance,
+            new MethodParameter("str", SString.instance),
+            new MethodParameter("result", SReference.INT));
 
     private static class IntComparisonOperation extends BinaryOperation {
 

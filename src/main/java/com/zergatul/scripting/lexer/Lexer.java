@@ -441,6 +441,7 @@ public class Lexer {
             case "in" -> TokenType.IN;
             case "static" -> TokenType.STATIC;
             case "void" -> TokenType.VOID;
+            case "ref" -> TokenType.REF;
             default -> null;
         };
         TextRange range = getCurrentTokenRange();

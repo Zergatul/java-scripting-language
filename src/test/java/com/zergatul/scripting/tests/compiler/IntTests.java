@@ -380,6 +380,28 @@ public class IntTests {
                 List.of("500", "400", "123,456,789"));
     }
 
+    @Test
+    public void tryParseTest() {
+        String code = """
+                int x;
+                boolStorage.add(int.tryParse("2010", ref x));
+                intStorage.add(x);
+                
+                boolStorage.add(int.tryParse("a", ref x));
+                intStorage.add(x);
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(
+                ApiRoot.boolStorage.list,
+                List.of(true, false));
+        Assertions.assertIterableEquals(
+                ApiRoot.intStorage.list,
+                List.of(2010, 2010));
+    }
+
     public static class ApiRoot {
         public static BoolStorage boolStorage;
         public static IntStorage intStorage;

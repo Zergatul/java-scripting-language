@@ -3,6 +3,7 @@ package com.zergatul.scripting.type;
 import com.zergatul.scripting.InternalException;
 import com.zergatul.scripting.parser.BinaryOperator;
 import com.zergatul.scripting.parser.UnaryOperator;
+import com.zergatul.scripting.runtime.*;
 import com.zergatul.scripting.type.operation.BinaryOperation;
 import com.zergatul.scripting.type.operation.IndexOperation;
 import com.zergatul.scripting.type.operation.UnaryOperation;
@@ -163,7 +164,7 @@ public abstract class SType {
         return List.of();
     }
 
-    public List<MethodReference> getStaticMethods(String name) {
+    public List<MethodReference> getStaticMethods() {
         return List.of();
     }
 
@@ -176,6 +177,14 @@ public abstract class SType {
     }
 
     public void compileUnboxing(MethodVisitor visitor) {
+        throw new InternalException();
+    }
+
+    public SReference getReferenceType() {
+        throw new InternalException();
+    }
+
+    public Class<?> getReferenceClass() {
         throw new InternalException();
     }
 
@@ -210,6 +219,12 @@ public abstract class SType {
             }
             if (clazz == Action0.class) {
                 return new SAction();
+            }
+            if (clazz == IntReference.class) {
+                return SReference.INT;
+            }
+            if (clazz == FloatReference.class) {
+                return SReference.FLOAT;
             }
             /*if (type == Action1.class) {
                 return new SAction(SUnknown.instance);

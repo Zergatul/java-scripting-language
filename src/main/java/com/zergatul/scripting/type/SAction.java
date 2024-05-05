@@ -1,6 +1,9 @@
 package com.zergatul.scripting.type;
 
 import com.zergatul.scripting.InternalException;
+import com.zergatul.scripting.runtime.Action0;
+import com.zergatul.scripting.runtime.Action1;
+import com.zergatul.scripting.runtime.Action2;
 import org.objectweb.asm.MethodVisitor;
 
 import java.util.Arrays;

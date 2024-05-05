@@ -16,4 +16,5 @@ public class ParserErrors {
     public static final ErrorCode CannotApplyIncDec = new ErrorCode("C010", "The operand of an increment or decrement must be a variable, property or indexer");
     public static final ErrorCode ForEachTypeIdentifierRequired = new ErrorCode("C011", "Type and identifier are both required in a foreach statement");
     public static final ErrorCode InExpected = new ErrorCode("C012", "in expected");
+    public static final ErrorCode InvalidRefExpression = new ErrorCode("C013", "A ref value should be assignable variable");
 }

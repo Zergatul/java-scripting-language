@@ -388,6 +388,7 @@ public class Binder {
             case NAME_EXPRESSION -> bindNameExpression((NameExpressionNode) expression);
             case STATIC_REFERENCE -> bindStaticReferenceExpression((StaticReferenceNode) expression);
             case MEMBER_ACCESS_EXPRESSION -> bindMemberAccessExpression((MemberAccessExpressionNode) expression);
+            case REF_EXPRESSION -> bindRefExpression((RefExpressionNode) expression);
             case NEW_EXPRESSION -> bindNewExpression((NewExpressionNode) expression);
             case LAMBDA_EXPRESSION -> bindLambdaExpression((LambdaExpressionNode) expression);
             case INVALID_EXPRESSION -> bindInvalidExpression((InvalidExpressionNode) expression);
@@ -657,7 +658,7 @@ public class Binder {
                 }
             }
 
-            return new BoundMethodInvocationExpressionNode(objectReference, matchedMethod, arguments, invocation.getRange());
+            return new BoundMethodInvocationExpressionNode(objectReference, matchedMethod, arguments, context.releaseRefVariables(), invocation.getRange());
         }
 
         if (invocation.callee instanceof NameExpressionNode name) {
@@ -794,6 +795,21 @@ public class Binder {
                 expression.name.value,
                 property,
                 expression.getRange());
+    }
+
+    private BoundRefExpressionNode bindRefExpression(RefExpressionNode expression) {
+        BoundNameExpressionNode name = bindNameExpression(expression.name);
+        SType type;
+        LocalVariable holder;
+        if (name.type == SUnknown.instance) {
+            type = SUnknown.instance;
+            holder = null;
+        } else {
+            type = name.type.getReferenceType();
+            Variable variable = (Variable) name.symbol;
+            holder = context.createRefVariable(variable);
+        }
+        return new BoundRefExpressionNode(name, holder, type, expression.getRange());
     }
 
     private BoundIndexExpressionNode bindIndexExpression(IndexExpressionNode indexExpression) {

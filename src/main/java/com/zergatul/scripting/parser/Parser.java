@@ -673,6 +673,21 @@ public class Parser {
         }
     }
 
+    private ExpressionNode parseRefExpression() {
+        if (current.type == TokenType.REF) {
+            Token ref = advance();
+            if (current.type == TokenType.IDENTIFIER) {
+                NameExpressionNode name = new NameExpressionNode((IdentifierToken) advance());
+                return new RefExpressionNode(name, TextRange.combine(ref, name));
+            } else {
+                addDiagnostic(ParserErrors.InvalidRefExpression, current);
+                return new InvalidExpressionNode(ref.getRange());
+            }
+        } else {
+            return parseExpression();
+        }
+    }
+
     private ArgumentsListNode parseArgumentsList() {
         Token left = advance(TokenType.LEFT_PARENTHESES);
 
@@ -682,8 +697,8 @@ public class Parser {
             return new ArgumentsListNode(expressions, TextRange.combine(left, right));
         }
 
-        if (isPossibleExpression()) {
-            expressions.add(parseExpression());
+        if (isPossibleRefExpression()) {
+            expressions.add(parseRefExpression());
         } else {
             addDiagnostic(ParserErrors.ExpressionOrCloseParenthesesExpected, current, current.getRawValue(code));
             Token right = createMissingToken(TokenType.RIGHT_PARENTHESES);
@@ -698,8 +713,8 @@ public class Parser {
 
             if (current.type == TokenType.COMMA) {
                 advance();
-                if (isPossibleExpression()) {
-                    expressions.add(parseExpression());
+                if (isPossibleRefExpression()) {
+                    expressions.add(parseRefExpression());
                 } else {
                     addDiagnostic(ParserErrors.ExpressionExpected, current, current.getRawValue(code));
                     Token right = createMissingToken(TokenType.RIGHT_PARENTHESES);
@@ -875,6 +890,14 @@ public class Parser {
 
             default:
                 return false;
+        }
+    }
+
+    private boolean isPossibleRefExpression() {
+        if (current.type == TokenType.REF) {
+            return true;
+        } else {
+            return isPossibleExpression();
         }
     }
 

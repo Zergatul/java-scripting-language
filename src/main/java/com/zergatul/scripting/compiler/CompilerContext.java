@@ -6,8 +6,11 @@ import com.zergatul.scripting.type.SType;
 import com.zergatul.scripting.type.SVoidType;
 import org.objectweb.asm.MethodVisitor;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 public class CompilerContext {
@@ -22,6 +25,7 @@ public class CompilerContext {
     private int stackIndex;
     private Consumer<MethodVisitor> breakConsumer;
     private Consumer<MethodVisitor> continueConsumer;
+    private List<RefHolder> refVariables = new ArrayList<>();
 
     public CompilerContext() {
         this(1);
@@ -76,6 +80,16 @@ public class CompilerContext {
         }
 
         localSymbols.put(variable.getName(), variable);
+    }
+
+    public LocalVariable createRefVariable(Variable variable) {
+        LocalVariable holder = addLocalVariable(null, variable.getType().getReferenceType());
+        refVariables.add(new RefHolder(holder, variable));
+        return holder;
+    }
+
+    public List<RefHolder> releaseRefVariables() {
+        return List.of(refVariables.toArray(RefHolder[]::new));
     }
 
     public CompilerContext createChild() {
