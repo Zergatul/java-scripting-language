@@ -17,7 +17,6 @@ import com.zergatul.scripting.runtime.Action2;
 import com.zergatul.scripting.type.*;
 import org.objectweb.asm.*;
 
-import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
@@ -219,8 +218,8 @@ public class Compiler {
             switch (assignment.left.getNodeType()) {
                 case NAME_EXPRESSION -> {
                     compileExpression(visitor, context, assignment.right);
-                    BoundNameExpressionNode nameExpression = (BoundNameExpressionNode) assignment.left;
-                    Variable variable = (Variable) context.getSymbol(nameExpression.value);
+                    BoundNameExpressionNode name = (BoundNameExpressionNode) assignment.left;
+                    Variable variable = (Variable) name.symbol;
                     variable.compileStore(context, visitor);
                 }
                 case INDEX_EXPRESSION -> {
@@ -244,8 +243,8 @@ public class Compiler {
                 compileExpression(buffer, context, assignment.right);
                 assignment.operator.operation.apply(visitor, buffer);
 
-                BoundNameExpressionNode nameExpression = (BoundNameExpressionNode) assignment.left;
-                Variable variable = (Variable) context.getSymbol(nameExpression.value);
+                BoundNameExpressionNode name = (BoundNameExpressionNode) assignment.left;
+                Variable variable = (Variable) name.symbol;
                 variable.compileStore(context, visitor);
             }
             case INDEX_EXPRESSION -> {
@@ -400,10 +399,10 @@ public class Compiler {
     private void compilePostfixStatement(MethodVisitor visitor, CompilerContext context, BoundPostfixStatementNode statement) {
         switch (statement.expression.getNodeType()) {
             case NAME_EXPRESSION -> {
-                BoundNameExpressionNode nameExpression = (BoundNameExpressionNode) statement.expression;
+                BoundNameExpressionNode name = (BoundNameExpressionNode) statement.expression;
                 compileExpression(visitor, context, statement.expression);
                 statement.operation.apply(visitor);
-                Variable variable = (Variable) context.getSymbol(nameExpression.value);
+                Variable variable = (Variable) name.symbol;
                 variable.compileStore(context, visitor);
             }
             case INDEX_EXPRESSION -> {
@@ -445,7 +444,7 @@ public class Compiler {
             case IMPLICIT_CAST -> compileImplicitCastExpression(visitor, context, (BoundImplicitCastExpressionNode) expression);
             case NAME_EXPRESSION -> compileNameExpression(visitor, context, (BoundNameExpressionNode) expression);
             case STATIC_REFERENCE -> compileStaticReferenceExpression();
-            case REF_EXPRESSION -> compileRefExpression(visitor, context, (BoundRefExpressionNode) expression);
+            case REF_ARGUMENT_EXPRESSION -> compileRefArgumentExpression(visitor, context, (BoundRefArgumentExpressionNode) expression);
             case METHOD_INVOCATION_EXPRESSION -> compileMethodInvocationExpression(visitor, context, (BoundMethodInvocationExpressionNode) expression);
             case PROPERTY_ACCESS_EXPRESSION -> compilePropertyAccessExpression(visitor, context, (BoundPropertyAccessExpressionNode) expression);
             case NEW_EXPRESSION -> compileNewExpression(visitor, context, (BoundNewExpressionNode) expression);
@@ -521,7 +520,7 @@ public class Compiler {
         }
     }
 
-    private void compileRefExpression(MethodVisitor visitor, CompilerContext context, BoundRefExpressionNode expression) {
+    private void compileRefArgumentExpression(MethodVisitor visitor, CompilerContext context, BoundRefArgumentExpressionNode expression) {
         Variable variable = (Variable) expression.name.symbol;
         LocalVariable holder = expression.holder;
 
@@ -568,6 +567,7 @@ public class Compiler {
                         new BoundNameExpressionNode(function, range),
                         type.getReturnType(),
                         new BoundArgumentsListNode(arguments, range),
+                        List.of(), // TODO: ref parameters?
                         range),
                 range);
         BoundLambdaExpressionNode lambda = new BoundLambdaExpressionNode(
@@ -584,19 +584,7 @@ public class Compiler {
             compileExpression(visitor, context, expression);
         }
         invocation.method.compileInvoke(visitor);
-
-        for (RefHolder ref : invocation.refVariables) {
-            LocalVariable holder = ref.getHolder();
-            Variable variable = ref.getVariable();
-            holder.compileLoad(context, visitor);
-            visitor.visitMethodInsn(
-                    INVOKEVIRTUAL,
-                    Type.getInternalName(holder.getType().getJavaClass()),
-                    "get",
-                    Type.getMethodDescriptor(Type.getType(variable.getType().getJavaClass())),
-                    false);
-            variable.compileStore(context, visitor);
-        }
+        releaseRefVariables(visitor, context, invocation.refVariables);
     }
 
     private void compilePropertyAccessExpression(MethodVisitor visitor, CompilerContext context, BoundPropertyAccessExpressionNode propertyAccess) {
@@ -715,5 +703,22 @@ public class Compiler {
                 symbol.getName(),
                 type.getDescriptor(),
                 false);
+
+        releaseRefVariables(visitor, context, expression.refVariables);
+    }
+
+    private void releaseRefVariables(MethodVisitor visitor, CompilerContext context, List<RefHolder> refs) {
+        for (RefHolder ref : refs) {
+            LocalVariable holder = ref.getHolder();
+            Variable variable = ref.getVariable();
+            holder.compileLoad(context, visitor);
+            visitor.visitMethodInsn(
+                    INVOKEVIRTUAL,
+                    Type.getInternalName(holder.getType().getJavaClass()),
+                    "get",
+                    Type.getMethodDescriptor(Type.getType(variable.getType().getJavaClass())),
+                    false);
+            variable.compileStore(context, visitor);
+        }
     }
 }

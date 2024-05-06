@@ -359,7 +359,7 @@ public class Parser {
             end = advance();
         } else {
             while (true) {
-                TypeNode type = parseTypeNode();
+                TypeNode type = parseRefTypeNode();
                 IdentifierToken identifier;
                 if (current.type == TokenType.IDENTIFIER) {
                     identifier = (IdentifierToken) advance();
@@ -673,12 +673,12 @@ public class Parser {
         }
     }
 
-    private ExpressionNode parseRefExpression() {
+    private ExpressionNode parseArgumentExpression() {
         if (current.type == TokenType.REF) {
             Token ref = advance();
             if (current.type == TokenType.IDENTIFIER) {
                 NameExpressionNode name = new NameExpressionNode((IdentifierToken) advance());
-                return new RefExpressionNode(name, TextRange.combine(ref, name));
+                return new RefArgumentExpressionNode(name, TextRange.combine(ref, name));
             } else {
                 addDiagnostic(ParserErrors.InvalidRefExpression, current);
                 return new InvalidExpressionNode(ref.getRange());
@@ -697,8 +697,8 @@ public class Parser {
             return new ArgumentsListNode(expressions, TextRange.combine(left, right));
         }
 
-        if (isPossibleRefExpression()) {
-            expressions.add(parseRefExpression());
+        if (isPossibleArgumentExpression()) {
+            expressions.add(parseArgumentExpression());
         } else {
             addDiagnostic(ParserErrors.ExpressionOrCloseParenthesesExpected, current, current.getRawValue(code));
             Token right = createMissingToken(TokenType.RIGHT_PARENTHESES);
@@ -713,8 +713,8 @@ public class Parser {
 
             if (current.type == TokenType.COMMA) {
                 advance();
-                if (isPossibleRefExpression()) {
-                    expressions.add(parseRefExpression());
+                if (isPossibleArgumentExpression()) {
+                    expressions.add(parseArgumentExpression());
                 } else {
                     addDiagnostic(ParserErrors.ExpressionExpected, current, current.getRawValue(code));
                     Token right = createMissingToken(TokenType.RIGHT_PARENTHESES);
@@ -893,7 +893,7 @@ public class Parser {
         }
     }
 
-    private boolean isPossibleRefExpression() {
+    private boolean isPossibleArgumentExpression() {
         if (current.type == TokenType.REF) {
             return true;
         } else {
@@ -979,6 +979,16 @@ public class Parser {
         }
 
         return type;
+    }
+
+    private TypeNode parseRefTypeNode() {
+        if (current.type == TokenType.REF) {
+            Token ref = advance();
+            TypeNode underlying = parseTypeNode();
+            return new RefTypeNode(underlying, TextRange.combine(ref, underlying));
+        } else {
+            return parseTypeNode();
+        }
     }
 
     private Token advance() {

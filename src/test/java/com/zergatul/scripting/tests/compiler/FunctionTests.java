@@ -348,6 +348,72 @@ public class FunctionTests {
         Assertions.assertIterableEquals(ApiRoot.stringStorage.list, List.of("a!", "b!"));
     }
 
+    @Test
+    public void refParameterTest1() {
+        String code = """
+                void inc(ref int x) {
+                    x++;
+                }
+                
+                int a = 100;
+                inc(ref a);
+                intStorage.add(a);
+                inc(ref a);
+                intStorage.add(a);
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(101, 102));
+    }
+
+    @Test
+    public void refParameterTest2() {
+        String code = """
+                void ten(ref float x) {
+                    x *= 10;
+                }
+                
+                float x = 1.0625;
+                for (int i = 0; i < 4; i++) {
+                    ten(ref x);
+                    floatStorage.add(x);
+                }
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(ApiRoot.floatStorage.list, List.of(10.625, 106.25, 1062.5, 10625.0));
+    }
+
+    @Test
+    public void multiLayerRefTest() {
+        String code = """
+                void f1(ref int x) {
+                    x += 10;
+                }
+                void f2(ref int x) {
+                    x += 100;
+                    f1(ref x);
+                }
+                void f3(ref int x) {
+                    x += 1000;
+                    f2(ref x);
+                }
+                
+                int a = 1;
+                f3(ref a);
+                intStorage.add(a);
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(1111));
+    }
+
     public static class ApiRoot {
         public static IntStorage intStorage;
         public static FloatStorage floatStorage;

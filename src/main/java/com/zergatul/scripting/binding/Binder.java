@@ -45,7 +45,6 @@ public class Binder {
         List<BoundTypeNode> returnTypes = new ArrayList<>(nodes.size());
         List<CompilerContext> contexts = new ArrayList<>(nodes.size());
         List<BoundParameterListNode> parametersList = new ArrayList<>(nodes.size());
-        List<SFunction> types = new ArrayList<>(nodes.size());
         List<Function> symbols = new ArrayList<>(nodes.size());
         for (FunctionNode node : nodes) {
             BoundTypeNode returnType = bindType(node.returnType);
@@ -72,7 +71,6 @@ public class Binder {
 
             returnTypes.add(returnType);
             parametersList.add(parameters);
-            types.add(type);
             symbols.add(symbol);
         }
 
@@ -94,7 +92,9 @@ public class Binder {
         List<BoundParameterNode> parameters = new ArrayList<>(node.parameters.size());
         for (ParameterNode parameter : node.parameters) {
             BoundTypeNode type = bindType(parameter.getType());
-            LocalVariable variable = context.addLocalVariable(parameter.getName().value, type.type);
+            LocalVariable variable = type instanceof BoundRefTypeNode ref ?
+                    context.addLocalRefVariable(parameter.getName().value, (SReference) ref.type, ref.underlying.type) :
+                    context.addLocalVariable(parameter.getName().value, type.type);
             BoundNameExpressionNode name = new BoundNameExpressionNode(variable, parameter.getName().getRange());
             parameters.add(new BoundParameterNode(name, type, parameter.getRange()));
         }
@@ -388,7 +388,7 @@ public class Binder {
             case NAME_EXPRESSION -> bindNameExpression((NameExpressionNode) expression);
             case STATIC_REFERENCE -> bindStaticReferenceExpression((StaticReferenceNode) expression);
             case MEMBER_ACCESS_EXPRESSION -> bindMemberAccessExpression((MemberAccessExpressionNode) expression);
-            case REF_EXPRESSION -> bindRefExpression((RefExpressionNode) expression);
+            case REF_ARGUMENT_EXPRESSION -> bindRefArgumentExpression((RefArgumentExpressionNode) expression);
             case NEW_EXPRESSION -> bindNewExpression((NewExpressionNode) expression);
             case LAMBDA_EXPRESSION -> bindLambdaExpression((LambdaExpressionNode) expression);
             case INVALID_EXPRESSION -> bindInvalidExpression((InvalidExpressionNode) expression);
@@ -699,7 +699,7 @@ public class Binder {
                     }
                 }
 
-                return new BoundFunctionInvocationExpression(boundName, type.getReturnType(), arguments, invocation.getRange());
+                return new BoundFunctionInvocationExpression(boundName, type.getReturnType(), arguments, context.releaseRefVariables(), invocation.getRange());
             } else {
                 addDiagnostic(
                         BinderErrors.NotFunction,
@@ -797,7 +797,7 @@ public class Binder {
                 expression.getRange());
     }
 
-    private BoundRefExpressionNode bindRefExpression(RefExpressionNode expression) {
+    private BoundRefArgumentExpressionNode bindRefArgumentExpression(RefArgumentExpressionNode expression) {
         BoundNameExpressionNode name = bindNameExpression(expression.name);
         SType type;
         LocalVariable holder;
@@ -809,7 +809,7 @@ public class Binder {
             Variable variable = (Variable) name.symbol;
             holder = context.createRefVariable(variable);
         }
-        return new BoundRefExpressionNode(name, holder, type, expression.getRange());
+        return new BoundRefArgumentExpressionNode(name, holder, type, expression.getRange());
     }
 
     private BoundIndexExpressionNode bindIndexExpression(IndexExpressionNode indexExpression) {
@@ -945,6 +945,10 @@ public class Binder {
         if (type instanceof ArrayTypeNode array) {
             BoundTypeNode underlying = bindType(array.underlying);
             return new BoundArrayTypeNode(underlying, array.getRange());
+        }
+        if (type instanceof RefTypeNode ref) {
+            BoundTypeNode underlying = bindType(ref.underlying);
+            return new BoundRefTypeNode(underlying, underlying.type.getReferenceType(), ref.getRange());
         }
 
         throw new InternalException();

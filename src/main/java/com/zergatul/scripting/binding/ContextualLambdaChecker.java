@@ -5,7 +5,6 @@ import com.zergatul.scripting.ErrorCode;
 import com.zergatul.scripting.InternalException;
 import com.zergatul.scripting.Locatable;
 import com.zergatul.scripting.binding.nodes.*;
-import com.zergatul.scripting.parser.nodes.*;
 
 import java.util.List;
 
@@ -102,7 +101,8 @@ public class ContextualLambdaChecker {
 
     private void checkExpression(BoundExpressionNode node) {
         switch (node.getNodeType()) {
-            case BOOLEAN_LITERAL, STRING_LITERAL, CHAR_LITERAL, FLOAT_LITERAL, INTEGER_LITERAL, NAME_EXPRESSION, INVALID_EXPRESSION, STATIC_REFERENCE, REF_EXPRESSION -> {}
+            case BOOLEAN_LITERAL, STRING_LITERAL, CHAR_LITERAL, FLOAT_LITERAL, INTEGER_LITERAL, NAME_EXPRESSION, INVALID_EXPRESSION, STATIC_REFERENCE,
+                 REF_ARGUMENT_EXPRESSION -> {}
             case UNARY_EXPRESSION -> checkUnaryExpression((BoundUnaryExpressionNode) node);
             case BINARY_EXPRESSION -> checkBinaryExpression((BoundBinaryExpressionNode) node);
             case CONDITIONAL_EXPRESSION -> checkConditionalExpression((BoundConditionalExpressionNode) node);

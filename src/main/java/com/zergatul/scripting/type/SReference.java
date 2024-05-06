@@ -3,8 +3,7 @@ package com.zergatul.scripting.type;
 import com.zergatul.scripting.InternalException;
 import org.objectweb.asm.MethodVisitor;
 
-import static org.objectweb.asm.Opcodes.ALOAD;
-import static org.objectweb.asm.Opcodes.ASTORE;
+import static org.objectweb.asm.Opcodes.*;
 
 public class SReference extends SType {
 

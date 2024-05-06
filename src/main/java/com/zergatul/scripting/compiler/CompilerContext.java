@@ -2,6 +2,7 @@ package com.zergatul.scripting.compiler;
 
 import com.zergatul.scripting.InternalException;
 import com.zergatul.scripting.type.SFloat;
+import com.zergatul.scripting.type.SReference;
 import com.zergatul.scripting.type.SType;
 import com.zergatul.scripting.type.SVoidType;
 import org.objectweb.asm.MethodVisitor;
@@ -80,6 +81,16 @@ public class CompilerContext {
         }
 
         localSymbols.put(variable.getName(), variable);
+    }
+
+    public LocalVariable addLocalRefVariable(String name, SReference refType, SType underlying) {
+        if (name == null || name.isEmpty()) {
+            throw new InternalException();
+        }
+
+        LocalVariable variable = new LocalRefVariable(name, refType, underlying, stackIndex++);
+        addLocalVariable(variable);
+        return variable;
     }
 
     public LocalVariable createRefVariable(Variable variable) {
