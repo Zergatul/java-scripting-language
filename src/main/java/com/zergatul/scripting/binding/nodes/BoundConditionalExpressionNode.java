@@ -3,6 +3,8 @@ package com.zergatul.scripting.binding.nodes;
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.parser.NodeType;
 
+import java.util.List;
+
 public class BoundConditionalExpressionNode extends BoundExpressionNode {
 
     public final BoundExpressionNode condition;
@@ -14,5 +16,10 @@ public class BoundConditionalExpressionNode extends BoundExpressionNode {
         this.condition = condition;
         this.whenTrue = whenTrue;
         this.whenFalse = whenFalse;
+    }
+
+    @Override
+    public List<BoundNode> getChildren() {
+        return List.of(condition, whenTrue, whenFalse);
     }
 }

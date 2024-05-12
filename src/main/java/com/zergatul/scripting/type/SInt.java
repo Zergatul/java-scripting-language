@@ -1,11 +1,12 @@
 package com.zergatul.scripting.type;
 
 import com.zergatul.scripting.compiler.BufferedMethodVisitor;
+import com.zergatul.scripting.parser.BinaryOperator;
+import com.zergatul.scripting.parser.PostfixOperator;
+import com.zergatul.scripting.parser.UnaryOperator;
 import com.zergatul.scripting.runtime.IntReference;
 import com.zergatul.scripting.runtime.IntUtils;
-import com.zergatul.scripting.type.operation.BinaryOperation;
-import com.zergatul.scripting.type.operation.SingleInstructionBinaryOperation;
-import com.zergatul.scripting.type.operation.UnaryOperation;
+import com.zergatul.scripting.type.operation.*;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Type;
@@ -134,17 +135,17 @@ public class SInt extends SPredefinedType {
     }
 
     @Override
-    public UnaryOperation increment() {
+    public PostfixOperation increment() {
         return INC;
     }
 
     @Override
-    public UnaryOperation decrement() {
+    public PostfixOperation decrement() {
         return DEC;
     }
 
     @Override
-    public UnaryOperation implicitCastTo(SType other) {
+    public CastOperation implicitCastTo(SType other) {
         return other == SFloat.instance ? TO_FLOAT : null;
     }
 
@@ -193,44 +194,44 @@ public class SInt extends SPredefinedType {
         return "int";
     }
 
-    private static final BinaryOperation ADD = new SingleInstructionBinaryOperation(SInt.instance, IADD);
-    private static final BinaryOperation SUB = new SingleInstructionBinaryOperation(SInt.instance, ISUB);
-    private static final BinaryOperation MUL = new SingleInstructionBinaryOperation(SInt.instance, IMUL);
-    private static final BinaryOperation DIV = new SingleInstructionBinaryOperation(SInt.instance, IDIV);
-    private static final BinaryOperation MOD = new SingleInstructionBinaryOperation(SInt.instance, IREM);
-    private static final BinaryOperation BITWISE_AND = new SingleInstructionBinaryOperation(SInt.instance, IAND);
-    private static final BinaryOperation BITWISE_OR = new SingleInstructionBinaryOperation(SInt.instance, IOR);
-    private static final BinaryOperation LESS_THAN = new IntComparisonOperation(IF_ICMPLT);
-    private static final BinaryOperation GREATER_THAN = new IntComparisonOperation(IF_ICMPGT);
-    private static final BinaryOperation LESS_THAN_EQUALS = new IntComparisonOperation(IF_ICMPLE);
-    private static final BinaryOperation GREATER_THAN_EQUALS = new IntComparisonOperation(IF_ICMPGE);
-    private static final BinaryOperation EQUALS = new IntComparisonOperation(IF_ICMPEQ);
-    private static final BinaryOperation NOT_EQUALS = new IntComparisonOperation(IF_ICMPNE);
-    private static final UnaryOperation PLUS = new UnaryOperation(SInt.instance) {
+    private static final BinaryOperation ADD = new SingleInstructionBinaryOperation(BinaryOperator.PLUS, SInt.instance, IADD);
+    private static final BinaryOperation SUB = new SingleInstructionBinaryOperation(BinaryOperator.MINUS, SInt.instance, ISUB);
+    private static final BinaryOperation MUL = new SingleInstructionBinaryOperation(BinaryOperator.MULTIPLY, SInt.instance, IMUL);
+    private static final BinaryOperation DIV = new SingleInstructionBinaryOperation(BinaryOperator.DIVIDE, SInt.instance, IDIV);
+    private static final BinaryOperation MOD = new SingleInstructionBinaryOperation(BinaryOperator.MODULO, SInt.instance, IREM);
+    private static final BinaryOperation BITWISE_AND = new SingleInstructionBinaryOperation(BinaryOperator.BITWISE_AND, SInt.instance, IAND);
+    private static final BinaryOperation BITWISE_OR = new SingleInstructionBinaryOperation(BinaryOperator.BITWISE_OR, SInt.instance, IOR);
+    private static final BinaryOperation LESS_THAN = new IntComparisonOperation(BinaryOperator.LESS, IF_ICMPLT);
+    private static final BinaryOperation GREATER_THAN = new IntComparisonOperation(BinaryOperator.GREATER, IF_ICMPGT);
+    private static final BinaryOperation LESS_THAN_EQUALS = new IntComparisonOperation(BinaryOperator.LESS_EQUALS, IF_ICMPLE);
+    private static final BinaryOperation GREATER_THAN_EQUALS = new IntComparisonOperation(BinaryOperator.GREATER_EQUALS, IF_ICMPGE);
+    private static final BinaryOperation EQUALS = new IntComparisonOperation(BinaryOperator.EQUALS, IF_ICMPEQ);
+    private static final BinaryOperation NOT_EQUALS = new IntComparisonOperation(BinaryOperator.NOT_EQUALS, IF_ICMPNE);
+    private static final UnaryOperation PLUS = new UnaryOperation(UnaryOperator.PLUS, SInt.instance) {
         @Override
         public void apply(MethodVisitor visitor) {}
     };
-    private static final UnaryOperation MINUS = new UnaryOperation(SInt.instance) {
+    private static final UnaryOperation MINUS = new UnaryOperation(UnaryOperator.MINUS, SInt.instance) {
         @Override
         public void apply(MethodVisitor visitor) {
             visitor.visitInsn(INEG);
         }
     };
-    private static final UnaryOperation INC = new UnaryOperation(SInt.instance) {
+    private static final PostfixOperation INC = new PostfixOperation(PostfixOperator.PLUS_PLUS, SInt.instance) {
         @Override
         public void apply(MethodVisitor visitor) {
             visitor.visitInsn(ICONST_1);
             visitor.visitInsn(IADD);
         }
     };
-    private static final UnaryOperation DEC = new UnaryOperation(SInt.instance) {
+    private static final PostfixOperation DEC = new PostfixOperation(PostfixOperator.MINUS_MINUS, SInt.instance) {
         @Override
         public void apply(MethodVisitor visitor) {
             visitor.visitInsn(ICONST_1);
             visitor.visitInsn(ISUB);
         }
     };
-    private static final UnaryOperation TO_FLOAT = new UnaryOperation(SFloat.instance) {
+    private static final CastOperation TO_FLOAT = new CastOperation(SFloat.instance) {
         @Override
         public void apply(MethodVisitor visitor) {
             visitor.visitInsn(I2D);
@@ -251,6 +252,7 @@ public class SInt extends SPredefinedType {
 
     private static final MethodReference METHOD_TRY_PARSE = new StaticMethodReference(
             IntUtils.class,
+            SFloat.instance,
             "tryParse",
             SBoolean.instance,
             new MethodParameter("str", SString.instance),
@@ -260,8 +262,8 @@ public class SInt extends SPredefinedType {
 
         private final int opcode;
 
-        public IntComparisonOperation(int opcode) {
-            super(SBoolean.instance);
+        public IntComparisonOperation(BinaryOperator operator, int opcode) {
+            super(operator, SBoolean.instance, SInt.instance);
             this.opcode = opcode;
         }
 

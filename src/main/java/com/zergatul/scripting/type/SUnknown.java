@@ -1,6 +1,8 @@
 package com.zergatul.scripting.type;
 
 import com.zergatul.scripting.InternalException;
+import com.zergatul.scripting.type.operation.CastOperation;
+import com.zergatul.scripting.type.operation.EmptyCastOperation;
 import com.zergatul.scripting.type.operation.EmptyUnaryOperation;
 import com.zergatul.scripting.type.operation.UnaryOperation;
 import org.objectweb.asm.MethodVisitor;
@@ -56,10 +58,10 @@ public class SUnknown extends SType {
     }
 
     @Override
-    public UnaryOperation implicitCastTo(SType other) {
+    public CastOperation implicitCastTo(SType other) {
         // allow SUnknown to be cast to anything
         // in this way any compilation error will not spread
-        return EmptyUnaryOperation.instance;
+        return EmptyCastOperation.instance;
     }
 
     @Override

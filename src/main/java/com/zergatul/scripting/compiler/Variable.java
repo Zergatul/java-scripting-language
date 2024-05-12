@@ -1,12 +1,13 @@
 package com.zergatul.scripting.compiler;
 
+import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.type.SType;
 import org.objectweb.asm.MethodVisitor;
 
 public abstract class Variable extends Symbol {
 
-    protected Variable(String name, SType type) {
-        super(name, type);
+    protected Variable(String name, SType type, TextRange definition) {
+        super(name, type, definition);
     }
 
     public abstract boolean isConstant();

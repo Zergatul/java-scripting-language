@@ -1,6 +1,7 @@
 package com.zergatul.scripting.type;
 
 import com.zergatul.scripting.compiler.BufferedMethodVisitor;
+import com.zergatul.scripting.parser.BinaryOperator;
 import com.zergatul.scripting.runtime.ArrayUtils;
 import com.zergatul.scripting.type.operation.BinaryOperation;
 import com.zergatul.scripting.type.operation.IndexOperation;
@@ -137,7 +138,7 @@ public class SArrayType extends SType {
     private static class AddArrayOperation extends BinaryOperation {
 
         public AddArrayOperation(SArrayType type) {
-            super(type);
+            super(BinaryOperator.PLUS, type);
         }
 
         @Override

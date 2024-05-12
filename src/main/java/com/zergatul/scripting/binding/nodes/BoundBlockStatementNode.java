@@ -13,4 +13,9 @@ public class BoundBlockStatementNode extends BoundStatementNode {
         super(NodeType.BLOCK_STATEMENT, range);
         this.statements = statements;
     }
+
+    @Override
+    public List<BoundNode> getChildren() {
+        return List.copyOf(statements);
+    }
 }

@@ -11,15 +11,22 @@ import static org.objectweb.asm.Opcodes.INVOKESTATIC;
 public class StaticMethodReference extends MethodReference {
 
     private final Class<?> ownerClass;
+    private final SType ownerType;
     private final String name;
     private final SType returnType;
     private final MethodParameter[] parameters;
 
-    public StaticMethodReference(Class<?> ownerClass, String name, SType returnType, MethodParameter... parameters) {
+    public StaticMethodReference(Class<?> ownerClass, SType ownerType, String name, SType returnType, MethodParameter... parameters) {
         this.ownerClass = ownerClass;
+        this.ownerType = ownerType;
         this.name = name;
         this.returnType = returnType;
         this.parameters = parameters;
+    }
+
+    @Override
+    public SType getOwner() {
+        return ownerType;
     }
 
     @Override
@@ -33,8 +40,8 @@ public class StaticMethodReference extends MethodReference {
     }
 
     @Override
-    public List<SType> getParameters() {
-        return Arrays.stream(parameters).map(MethodParameter::type).toList();
+    public List<MethodParameter> getParameters() {
+        return List.of(parameters);
     }
 
     @Override
@@ -45,7 +52,7 @@ public class StaticMethodReference extends MethodReference {
                 name,
                 Type.getMethodDescriptor(
                         Type.getType(returnType.getJavaClass()),
-                        getParameters().stream()
+                        getParameterTypes().stream()
                                 .map(SType::getJavaClass)
                                 .map(Type::getType)
                                 .toArray(Type[]::new)),

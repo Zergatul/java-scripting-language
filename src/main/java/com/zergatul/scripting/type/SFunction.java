@@ -1,25 +1,29 @@
 package com.zergatul.scripting.type;
 
 import com.zergatul.scripting.InternalException;
-import com.zergatul.scripting.type.operation.EmptyUnaryOperation;
-import com.zergatul.scripting.type.operation.UnaryOperation;
+import com.zergatul.scripting.type.operation.CastOperation;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Type;
 
 import java.util.Arrays;
+import java.util.List;
 
 public class SFunction extends SType {
 
     private final SType returnType;
-    private final SType[] parameters;
+    private final MethodParameter[] parameters;
 
-    public SFunction(SType returnType, SType[] parameters) {
+    public SFunction(SType returnType, MethodParameter[] parameters) {
         this.returnType = returnType;
         this.parameters = parameters;
     }
 
-    public SType[] getParameters() {
-        return parameters;
+    public List<MethodParameter> getParameters() {
+        return List.of(parameters);
+    }
+
+    public List<SType> getParameterTypes() {
+        return Arrays.stream(parameters).map(MethodParameter::type).toList();
     }
 
     public SType getReturnType() {
@@ -29,7 +33,7 @@ public class SFunction extends SType {
     public String getDescriptor() {
         return Type.getMethodDescriptor(
                 Type.getType(returnType.getJavaClass()),
-                Arrays.stream(parameters).map(SType::getJavaClass).map(Type::getType).toArray(Type[]::new));
+                getParameterTypes().stream().map(SType::getJavaClass).map(Type::getType).toArray(Type[]::new));
     }
 
     @Override
@@ -73,7 +77,7 @@ public class SFunction extends SType {
     }
 
     @Override
-    public UnaryOperation implicitCastTo(SType other) {
+    public CastOperation implicitCastTo(SType other) {
         if (returnType == SVoidType.instance && other instanceof SAction actionType) {
             if (parametersMatch(actionType)) {
                 return new FunctionToLambdaOperation(other);
@@ -88,14 +92,14 @@ public class SFunction extends SType {
             return false;
         }
         for (int i = 0; i < parameters.length; i++) {
-            if (!parameters[i].equals(action.getParameters()[i])) {
+            if (!parameters[i].type().equals(action.getParameters()[i])) {
                 return false;
             }
         }
         return true;
     }
 
-    private static class FunctionToLambdaOperation extends UnaryOperation {
+    private static class FunctionToLambdaOperation extends CastOperation {
 
         private FunctionToLambdaOperation(SType type) {
             super(type);

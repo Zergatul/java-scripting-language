@@ -4,6 +4,8 @@ import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.parser.AssignmentOperator;
 import com.zergatul.scripting.parser.NodeType;
 
+import java.util.List;
+
 public class BoundAssignmentOperatorNode extends BoundNode {
 
     public final AssignmentOperator operator;
@@ -11,5 +13,10 @@ public class BoundAssignmentOperatorNode extends BoundNode {
     public BoundAssignmentOperatorNode(AssignmentOperator operator, TextRange range) {
         super(NodeType.ASSIGNMENT_OPERATOR, range);
         this.operator = operator;
+    }
+
+    @Override
+    public List<BoundNode> getChildren() {
+        return List.of();
     }
 }

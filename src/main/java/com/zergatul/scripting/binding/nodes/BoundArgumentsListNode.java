@@ -13,4 +13,9 @@ public class BoundArgumentsListNode extends BoundNode {
         super(NodeType.ARGUMENTS_LIST, range);
         this.arguments = arguments;
     }
+
+    @Override
+    public List<BoundNode> getChildren() {
+        return List.copyOf(arguments);
+    }
 }

@@ -3,6 +3,8 @@ package com.zergatul.scripting.binding.nodes;
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.parser.NodeType;
 
+import java.util.List;
+
 public class BoundAugmentedAssignmentStatementNode extends BoundStatementNode {
 
     public final BoundExpressionNode left;
@@ -16,5 +18,10 @@ public class BoundAugmentedAssignmentStatementNode extends BoundStatementNode {
         this.assignmentOperator = assignmentOperator;
         this.operator = operator;
         this.right = right;
+    }
+
+    @Override
+    public List<BoundNode> getChildren() {
+        return List.of(left, assignmentOperator, operator, right);
     }
 }

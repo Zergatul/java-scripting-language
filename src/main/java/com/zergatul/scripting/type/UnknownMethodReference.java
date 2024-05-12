@@ -3,7 +3,6 @@ package com.zergatul.scripting.type;
 import com.zergatul.scripting.InternalException;
 import org.objectweb.asm.MethodVisitor;
 
-import java.lang.reflect.Method;
 import java.util.List;
 
 public class UnknownMethodReference extends MethodReference {
@@ -11,6 +10,11 @@ public class UnknownMethodReference extends MethodReference {
     public static final MethodReference instance = new UnknownMethodReference();
 
     private UnknownMethodReference() {}
+
+    @Override
+    public SType getOwner() {
+        return SUnknown.instance;
+    }
 
     @Override
     public String getName() {
@@ -23,7 +27,7 @@ public class UnknownMethodReference extends MethodReference {
     }
 
     @Override
-    public List<SType> getParameters() {
+    public List<MethodParameter> getParameters() {
         throw new InternalException();
     }
 

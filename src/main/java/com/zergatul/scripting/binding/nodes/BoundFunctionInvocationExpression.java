@@ -19,4 +19,9 @@ public class BoundFunctionInvocationExpression extends BoundExpressionNode {
         this.arguments = arguments;
         this.refVariables = refVariables;
     }
+
+    @Override
+    public List<BoundNode> getChildren() {
+        return List.of(name, arguments);
+    }
 }

@@ -51,19 +51,19 @@ public class Binder {
             pushStaticFunctionScope(returnType.type);
             contexts.add(context);
             BoundParameterListNode parameters = bindParameterList(node.parameters);
-            SFunction type = new SFunction(returnType.type, parameters.parameters.stream().map(BoundParameterNode::getType).toArray(SType[]::new));
+            SFunction type = new SFunction(returnType.type, parameters.parameters.stream().map(pn -> new MethodParameter(pn.getName().value, pn.getType())).toArray(MethodParameter[]::new));
 
             String identifier = node.name.value;
             Symbol existing = context.getSymbol(identifier);
             Function symbol;
             if (existing != null) {
-                symbol = new Function(null, type);
+                symbol = new Function(null, type, node.getRange());
                 addDiagnostic(
                         BinderErrors.SymbolAlreadyDeclared,
                         node.name,
                         node.name.value);
             } else {
-                symbol = new Function(identifier, type);
+                symbol = new Function(identifier, type, node.getRange());
                 context.getParent().addFunction(symbol);
             }
 
@@ -93,8 +93,8 @@ public class Binder {
         for (ParameterNode parameter : node.parameters) {
             BoundTypeNode type = bindType(parameter.getType());
             LocalVariable variable = type instanceof BoundRefTypeNode ref ?
-                    context.addLocalRefVariable(parameter.getName().value, (SReference) ref.type, ref.underlying.type) :
-                    context.addLocalVariable(parameter.getName().value, type.type);
+                    context.addLocalRefParameter(parameter.getName().value, (SReference) ref.type, ref.underlying.type, parameter.getRange()) :
+                    context.addLocalParameter(parameter.getName().value, type.type, parameter.getRange());
             BoundNameExpressionNode name = new BoundNameExpressionNode(variable, parameter.getName().getRange());
             parameters.add(new BoundParameterNode(name, type, parameter.getRange()));
         }
@@ -146,7 +146,7 @@ public class Binder {
         if (operation == null) {
             // try implicit cast right to left
             if (!left.type.equals(right.type)) {
-                UnaryOperation cast = right.type.implicitCastTo(left.type);
+                CastOperation cast = right.type.implicitCastTo(left.type);
                 if (cast != null) {
                     operation = left.type.binary(operator.operator.getBinaryOperator(), left.type);
                     if (operation != null) {
@@ -207,11 +207,11 @@ public class Binder {
                     variableDeclaration.name.value);
         } else {
             if (isStatic) {
-                StaticVariable staticVariable = new DeclaredStaticVariable(variableDeclaration.name.value, variableType.type);
+                StaticVariable staticVariable = new DeclaredStaticVariable(variableDeclaration.name.value, variableType.type, variableDeclaration.getRange());
                 context.addStaticVariable(staticVariable);
                 variable = staticVariable;
             } else {
-                variable = context.addLocalVariable(variableDeclaration.name.value, variableType.type);
+                variable = context.addLocalVariable(variableDeclaration.name.value, variableType.type, variableDeclaration.getRange());
             }
         }
 
@@ -250,7 +250,7 @@ public class Binder {
             SType actual = expression.type;
             SType expected = context.getReturnType();
             if (!actual.equals(expected)) {
-                UnaryOperation cast = actual.implicitCastTo(expected);
+                CastOperation cast = actual.implicitCastTo(expected);
                 if (cast == null) {
                     addDiagnostic(
                             BinderErrors.CannotImplicitlyConvert,
@@ -303,12 +303,12 @@ public class Binder {
                     statement.name,
                     statement.name.value);
         } else {
-            LocalVariable variable = context.addLocalVariable(statement.name.value, variableType.type);
+            LocalVariable variable = context.addLocalVariable(statement.name.value, variableType.type, TextRange.combine(statement.typeNode, statement.name));
             name = new BoundNameExpressionNode(variable, statement.name.getRange());
         }
 
-        LocalVariable index = context.addLocalVariable(null, SInt.instance);
-        LocalVariable length = context.addLocalVariable(null, SInt.instance);
+        LocalVariable index = context.addLocalVariable(null, SInt.instance, null);
+        LocalVariable length = context.addLocalVariable(null, SInt.instance, null);
 
         BoundExpressionNode iterable = bindExpression(statement.iterable);
         if (iterable.type instanceof SArrayType arrayType) {
@@ -379,7 +379,7 @@ public class Binder {
         boolean isInc = statement.getNodeType() == NodeType.INCREMENT_STATEMENT;
 
         SType type = expression.type;
-        UnaryOperation operation = isInc ? type.increment() : type.decrement();
+        PostfixOperation operation = isInc ? type.increment() : type.decrement();
         if (operation == null) {
             addDiagnostic(
                     BinderErrors.CannotApplyIncDec,
@@ -441,7 +441,7 @@ public class Binder {
         } else {
             // try implicit cast arguments to each other and see if operator is defined
             if (!left.type.equals(right.type)) {
-                UnaryOperation cast = right.type.implicitCastTo(left.type);
+                CastOperation cast = right.type.implicitCastTo(left.type);
                 if (cast != null) {
                     operation = left.type.binary(binary.operator.operator, left.type);
                     if (operation != null) {
@@ -631,8 +631,8 @@ public class Binder {
                                     return new ArgumentsCast(r, Collections.nCopies(arguments.arguments.size(), null), 0);
                                 }
 
-                                List<SType> parameterTypes = r.getParameters();
-                                List<UnaryOperation> casts = new ArrayList<>();
+                                List<SType> parameterTypes = r.getParameterTypes();
+                                List<CastOperation> casts = new ArrayList<>();
                                 int count = 0;
                                 for (int i = 0; i < parameterTypes.size(); i++) {
                                     SType expected = parameterTypes.get(i);
@@ -640,7 +640,7 @@ public class Binder {
                                     if (expected.equals(actual) || contextualEquals(expected, actual)) {
                                         casts.add(null);
                                     } else {
-                                        UnaryOperation cast = actual.implicitCastTo(expected);
+                                        CastOperation cast = actual.implicitCastTo(expected);
                                         if (cast != null) {
                                             casts.add(cast);
                                             count++;
@@ -661,10 +661,10 @@ public class Binder {
                         for (int i = 0; i < arguments.arguments.size(); i++) {
                             BoundExpressionNode expression = arguments.arguments.get(i);
                             if (expression instanceof BoundContextualLambdaExpressionNode lambda) {
-                                expression = bindContextualLambdaExpression(lambda, (SAction) overload.method.getParameters().get(i));
+                                expression = bindContextualLambdaExpression(lambda, (SAction) overload.method.getParameterTypes().get(i));
                             }
 
-                            UnaryOperation cast = overload.casts.get(i);
+                            CastOperation cast = overload.casts.get(i);
                             if (cast != null) {
                                 expression = new BoundImplicitCastExpressionNode(expression, cast, expression.getRange());
                             }
@@ -676,7 +676,8 @@ public class Binder {
                 }
             }
 
-            return new BoundMethodInvocationExpressionNode(objectReference, matchedMethod, arguments, context.releaseRefVariables(), invocation.getRange());
+            BoundMethodNode methodNode = new BoundMethodNode(matchedMethod, memberAccess.name.getRange());
+            return new BoundMethodInvocationExpressionNode(objectReference, methodNode, arguments, context.releaseRefVariables(), invocation.getRange());
         }
 
         if (invocation.callee instanceof NameExpressionNode name) {
@@ -684,24 +685,24 @@ public class Binder {
             BoundNameExpressionNode boundName = bindNameExpression(name);
             if (boundName.symbol instanceof Function function) {
                 SFunction type = function.getFunctionType();
-                if (arguments.arguments.size() != type.getParameters().length) {
+                if (arguments.arguments.size() != type.getParameters().size()) {
                     addDiagnostic(
                             BinderErrors.ArgumentCountMismatch,
                             name,
                             name.value,
-                            type.getParameters().length);
+                            type.getParameters().size());
                     return new BoundInvalidExpressionNode(invocation.getRange());
                 }
 
-                int parametersCount = type.getParameters().length;
-                for (int i = 0; i < parametersCount; i++) {
-                    SType expected = type.getParameters()[i];
+                List<SType> parameterTypes = type.getParameterTypes();
+                for (int i = 0; i < parameterTypes.size(); i++) {
+                    SType expected = parameterTypes.get(i);
                     SType actual = arguments.arguments.get(i).type;
                     // TODO: BoundContextualLambdaExpressionNode ???
                     if (expected.equals(actual) || contextualEquals(expected, actual)) {
                         continue;
                     } else {
-                        UnaryOperation cast = actual.implicitCastTo(expected);
+                        CastOperation cast = actual.implicitCastTo(expected);
                         if (cast != null) {
                             BoundExpressionNode expression = arguments.arguments.get(i);
                             arguments.arguments.set(i, new BoundImplicitCastExpressionNode(expression, cast, expression.getRange()));
@@ -839,7 +840,7 @@ public class Binder {
             operation = callee.type.index(index.type);
         } else {
             for (SType type : callee.type.supportedIndexers()) {
-                UnaryOperation cast = index.type.implicitCastTo(type);
+                CastOperation cast = index.type.implicitCastTo(type);
                 if (cast != null) {
                     operation = callee.type.index(type);
                     index = new BoundImplicitCastExpressionNode(index, cast, index.getRange());
@@ -875,14 +876,14 @@ public class Binder {
 
         for (int i = 0; i < parametersCount; i++) {
             // parameters type will be Object due to type erasure
-            context.addLocalVariable(null, SType.fromJavaType(Object.class));
+            context.addLocalVariable(null, SType.fromJavaType(Object.class), null);
         }
 
         List<BoundParameterNode> parameters = new ArrayList<>();
         for (int i = 0; i < parametersCount; i++) {
             NameExpressionNode name = expression.expression.parameters.get(i);
             SType type = actionType.getParameters()[i];
-            Variable variable = context.addLocalVariable(name.value, type);
+            Variable variable = context.addLocalVariable(name.value, type, expression.expression.parameters.get(i).getRange());
             TextRange range = name.getRange();
             BoundNameExpressionNode boundName = new BoundNameExpressionNode(variable, range);
             parameters.add(new BoundParameterNode(boundName, type, range));
@@ -912,7 +913,7 @@ public class Binder {
             return expression;
         }
 
-        UnaryOperation operation = expression.type.implicitCastTo(type);
+        CastOperation operation = expression.type.implicitCastTo(type);
         if (operation != null) {
             return new BoundImplicitCastExpressionNode(expression, operation, expression.getRange());
         } else {
@@ -929,20 +930,20 @@ public class Binder {
             return new ExpressionPair(expression1, expression2);
         }
 
-        UnaryOperation operation1 = expression1.type.implicitCastTo(expression2.type);
+        CastOperation operation1 = expression1.type.implicitCastTo(expression2.type);
         if (operation1 != null) {
             expression1 = new BoundImplicitCastExpressionNode(expression1, operation1, expression1.getRange());
             return new ExpressionPair(expression1, expression2);
         }
 
-        UnaryOperation operation2 = expression2.type.implicitCastTo(expression1.type);
+        CastOperation operation2 = expression2.type.implicitCastTo(expression1.type);
         if (operation2 != null) {
             expression2 = new BoundImplicitCastExpressionNode(expression2, operation2, expression2.getRange());
             return new ExpressionPair(expression1, expression2);
         }
 
-        expression1 = new BoundImplicitCastExpressionNode(expression1, UndefinedUnaryOperation.instance, expression1.getRange());
-        expression2 = new BoundImplicitCastExpressionNode(expression2, UndefinedUnaryOperation.instance, expression2.getRange());
+        expression1 = new BoundImplicitCastExpressionNode(expression1, UndefinedCastOperation.instance, expression1.getRange());
+        expression2 = new BoundImplicitCastExpressionNode(expression2, UndefinedCastOperation.instance, expression2.getRange());
         return new ExpressionPair(false, expression1, expression2);
     }
 
@@ -1006,5 +1007,5 @@ public class Binder {
         }
     }
 
-    private record ArgumentsCast(MethodReference method, List<UnaryOperation> casts, int count) {}
+    private record ArgumentsCast(MethodReference method, List<CastOperation> casts, int count) {}
 }

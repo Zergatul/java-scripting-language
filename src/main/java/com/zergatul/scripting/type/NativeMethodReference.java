@@ -4,7 +4,8 @@ import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Type;
 
 import java.lang.reflect.Method;
-import java.util.Arrays;
+import java.lang.reflect.Parameter;
+import java.util.ArrayList;
 import java.util.List;
 
 import static org.objectweb.asm.Opcodes.INVOKEVIRTUAL;
@@ -18,6 +19,11 @@ public class NativeMethodReference extends MethodReference {
     }
 
     @Override
+    public SType getOwner() {
+        return SType.fromJavaType(method.getDeclaringClass());
+    }
+
+    @Override
     public String getName() {
         return method.getName();
     }
@@ -28,10 +34,14 @@ public class NativeMethodReference extends MethodReference {
     }
 
     @Override
-    public List<SType> getParameters() {
-        return Arrays.stream(method.getGenericParameterTypes())
-                .map(SType::fromJavaType)
-                .toList();
+    public List<MethodParameter> getParameters() {
+        Parameter[] parameters = method.getParameters();
+        java.lang.reflect.Type[] types = method.getGenericParameterTypes();
+        List<MethodParameter> list = new ArrayList<>(parameters.length);
+        for (int i = 0; i < parameters.length; i++) {
+            list.add(new MethodParameter(parameters[i].getName(), SType.fromJavaType(types[i])));
+        }
+        return list;
     }
 
     @Override

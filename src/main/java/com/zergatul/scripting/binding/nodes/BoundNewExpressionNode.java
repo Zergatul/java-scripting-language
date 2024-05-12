@@ -4,6 +4,7 @@ import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.parser.NodeType;
 
 import java.util.List;
+import java.util.stream.Stream;
 
 public class BoundNewExpressionNode extends BoundExpressionNode {
 
@@ -16,5 +17,10 @@ public class BoundNewExpressionNode extends BoundExpressionNode {
         this.typeNode = typeNode;
         this.lengthExpression = lengthExpression;
         this.items = items;
+    }
+
+    @Override
+    public List<BoundNode> getChildren() {
+        return Stream.concat(Stream.of(typeNode, lengthExpression), items.stream()).toList();
     }
 }

@@ -1,6 +1,7 @@
 package com.zergatul.scripting.compiler;
 
 import com.zergatul.scripting.InternalException;
+import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.type.SType;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Type;
@@ -10,8 +11,8 @@ import static org.objectweb.asm.Opcodes.PUTSTATIC;
 
 public class DeclaredStaticVariable extends StaticVariable {
 
-    public DeclaredStaticVariable(String name, SType type) {
-        super(name, type);
+    public DeclaredStaticVariable(String name, SType type, TextRange definition) {
+        super(name, type, definition);
     }
 
     @Override

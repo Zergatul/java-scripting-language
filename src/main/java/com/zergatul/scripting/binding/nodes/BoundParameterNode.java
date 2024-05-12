@@ -4,6 +4,8 @@ import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.parser.NodeType;
 import com.zergatul.scripting.type.SType;
 
+import java.util.List;
+
 public class BoundParameterNode extends BoundNode {
 
     private final BoundNameExpressionNode name;
@@ -34,5 +36,10 @@ public class BoundParameterNode extends BoundNode {
 
     public SType getType() {
         return type;
+    }
+
+    @Override
+    public List<BoundNode> getChildren() {
+        return typeNode == null ? List.of(name) : List.of(name, typeNode);
     }
 }

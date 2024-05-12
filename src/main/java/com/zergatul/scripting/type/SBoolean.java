@@ -1,6 +1,8 @@
 package com.zergatul.scripting.type;
 
 import com.zergatul.scripting.compiler.BufferedMethodVisitor;
+import com.zergatul.scripting.parser.BinaryOperator;
+import com.zergatul.scripting.parser.UnaryOperator;
 import com.zergatul.scripting.type.operation.BinaryOperation;
 import com.zergatul.scripting.type.operation.SingleInstructionBinaryOperation;
 import com.zergatul.scripting.type.operation.UnaryOperation;
@@ -134,9 +136,9 @@ public class SBoolean extends SPredefinedType {
         return "boolean";
     }
 
-    private static final BinaryOperation BITWISE_OR = new SingleInstructionBinaryOperation(SBoolean.instance, IOR);
-    private static final BinaryOperation BITWISE_AND = new SingleInstructionBinaryOperation(SBoolean.instance, IAND);
-    private static final UnaryOperation NOT = new UnaryOperation(SBoolean.instance) {
+    private static final BinaryOperation BITWISE_OR = new SingleInstructionBinaryOperation(BinaryOperator.BITWISE_OR, SBoolean.instance, IOR);
+    private static final BinaryOperation BITWISE_AND = new SingleInstructionBinaryOperation(BinaryOperator.BITWISE_AND, SBoolean.instance, IAND);
+    private static final UnaryOperation NOT = new UnaryOperation(UnaryOperator.NOT, SBoolean.instance) {
         @Override
         public void apply(MethodVisitor visitor) {
             Label elseLabel = new Label();
@@ -149,7 +151,7 @@ public class SBoolean extends SPredefinedType {
             visitor.visitLabel(endLabel);
         }
     };
-    private static final BinaryOperation BOOLEAN_OR = new BinaryOperation(SBoolean.instance) {
+    private static final BinaryOperation BOOLEAN_OR = new BinaryOperation(BinaryOperator.BOOLEAN_OR, SBoolean.instance) {
         @Override
         public void apply(MethodVisitor left, BufferedMethodVisitor right) {
             Label returnTrue = new Label();
@@ -162,7 +164,7 @@ public class SBoolean extends SPredefinedType {
             left.visitLabel(end);
         }
     };
-    private static final BinaryOperation BOOLEAN_AND = new BinaryOperation(SBoolean.instance) {
+    private static final BinaryOperation BOOLEAN_AND = new BinaryOperation(BinaryOperator.BOOLEAN_AND, SBoolean.instance) {
         @Override
         public void apply(MethodVisitor left, BufferedMethodVisitor right) {
             Label returnFalse = new Label();

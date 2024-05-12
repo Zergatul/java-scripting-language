@@ -1,8 +1,11 @@
 package com.zergatul.scripting.binding.nodes;
 
+import com.zergatul.scripting.InternalException;
 import com.zergatul.scripting.Locatable;
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.parser.NodeType;
+
+import java.util.List;
 
 public abstract class BoundNode implements Locatable {
 
@@ -22,8 +25,10 @@ public abstract class BoundNode implements Locatable {
         return this.range;
     }
 
+    public abstract List<BoundNode> getChildren();
+
     @Override
     public boolean equals(Object obj) {
-        throw new RuntimeException("Not implemented");
+        throw new InternalException("Not implemented");
     }
 }

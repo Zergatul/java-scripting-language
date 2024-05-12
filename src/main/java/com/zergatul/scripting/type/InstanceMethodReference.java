@@ -10,16 +10,23 @@ import static org.objectweb.asm.Opcodes.INVOKEVIRTUAL;
 
 public class InstanceMethodReference extends MethodReference {
 
-    private final Class<?> owner;
+    private final Class<?> ownerClass;
+    private final SType ownerType;
     private final String name;
     private final SType returnType;
     private final MethodParameter[] parameters;
 
-    public InstanceMethodReference(Class<?> owner, String name, SType returnType, MethodParameter... parameters) {
-        this.owner = owner;
+    public InstanceMethodReference(Class<?> ownerClass, SType ownerType, String name, SType returnType, MethodParameter... parameters) {
+        this.ownerClass = ownerClass;
+        this.ownerType = ownerType;
         this.name = name;
         this.returnType = returnType;
         this.parameters = parameters;
+    }
+
+    @Override
+    public SType getOwner() {
+        return ownerType;
     }
 
     @Override
@@ -33,19 +40,19 @@ public class InstanceMethodReference extends MethodReference {
     }
 
     @Override
-    public List<SType> getParameters() {
-        return Arrays.stream(parameters).map(MethodParameter::type).toList();
+    public List<MethodParameter> getParameters() {
+        return List.of(parameters);
     }
 
     @Override
     public void compileInvoke(MethodVisitor visitor) {
         visitor.visitMethodInsn(
                 INVOKEVIRTUAL,
-                Type.getInternalName(owner),
+                Type.getInternalName(ownerClass),
                 name,
                 Type.getMethodDescriptor(
                         Type.getType(returnType.getJavaClass()),
-                        getParameters().stream().map(p -> Type.getType(p.getJavaClass())).toArray(Type[]::new)),
+                        getParameterTypes().stream().map(p -> Type.getType(p.getJavaClass())).toArray(Type[]::new)),
                 false);
     }
 }

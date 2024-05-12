@@ -4,6 +4,8 @@ import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.parser.NodeType;
 import com.zergatul.scripting.type.PropertyReference;
 
+import java.util.List;
+
 public class BoundPropertyAccessExpressionNode extends BoundExpressionNode {
 
     public final BoundExpressionNode callee;
@@ -15,5 +17,10 @@ public class BoundPropertyAccessExpressionNode extends BoundExpressionNode {
         this.callee = callee;
         this.name = name;
         this.property = property;
+    }
+
+    @Override
+    public List<BoundNode> getChildren() {
+        return List.of(callee);
     }
 }

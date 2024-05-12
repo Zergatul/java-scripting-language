@@ -1,16 +1,13 @@
 package com.zergatul.scripting.type.operation;
 
-import com.zergatul.scripting.parser.UnaryOperator;
 import com.zergatul.scripting.type.SType;
 import org.objectweb.asm.MethodVisitor;
 
-public abstract class UnaryOperation {
+public abstract class CastOperation {
 
-    public final UnaryOperator operator;
     public final SType type;
 
-    protected UnaryOperation(UnaryOperator operator, SType type) {
-        this.operator = operator;
+    protected CastOperation(SType type) {
         this.type = type;
     }
 

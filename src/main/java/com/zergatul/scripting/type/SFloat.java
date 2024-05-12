@@ -1,6 +1,8 @@
 package com.zergatul.scripting.type;
 
 import com.zergatul.scripting.compiler.BufferedMethodVisitor;
+import com.zergatul.scripting.parser.BinaryOperator;
+import com.zergatul.scripting.parser.UnaryOperator;
 import com.zergatul.scripting.runtime.FloatReference;
 import com.zergatul.scripting.runtime.FloatUtils;
 import com.zergatul.scripting.runtime.IntUtils;
@@ -172,22 +174,22 @@ public class SFloat extends SPredefinedType {
         return "float";
     }
 
-    private static final BinaryOperation ADD = new SingleInstructionBinaryOperation(SFloat.instance, DADD);
-    private static final BinaryOperation SUB = new SingleInstructionBinaryOperation(SFloat.instance, DSUB);
-    private static final BinaryOperation MUL = new SingleInstructionBinaryOperation(SFloat.instance, DMUL);
-    private static final BinaryOperation DIV = new SingleInstructionBinaryOperation(SFloat.instance, DDIV);
-    private static final BinaryOperation MOD = new SingleInstructionBinaryOperation(SFloat.instance, DREM);
-    private static final BinaryOperation LESS_THAN = new FloatComparisonOperation(IF_ICMPLT);
-    private static final BinaryOperation GREATER_THAN = new FloatComparisonOperation(IF_ICMPGT);
-    private static final BinaryOperation LESS_THAN_EQUALS = new FloatComparisonOperation(IF_ICMPLE);
-    private static final BinaryOperation GREATER_THAN_EQUALS = new FloatComparisonOperation(IF_ICMPGE);
-    private static final BinaryOperation EQUALS = new FloatComparisonOperation(IF_ICMPEQ);
-    private static final BinaryOperation NOT_EQUALS = new FloatComparisonOperation(IF_ICMPNE);
-    public static final UnaryOperation PLUS = new UnaryOperation(SFloat.instance) {
+    private static final BinaryOperation ADD = new SingleInstructionBinaryOperation(BinaryOperator.PLUS, SFloat.instance, DADD);
+    private static final BinaryOperation SUB = new SingleInstructionBinaryOperation(BinaryOperator.MINUS, SFloat.instance, DSUB);
+    private static final BinaryOperation MUL = new SingleInstructionBinaryOperation(BinaryOperator.MULTIPLY, SFloat.instance, DMUL);
+    private static final BinaryOperation DIV = new SingleInstructionBinaryOperation(BinaryOperator.DIVIDE, SFloat.instance, DDIV);
+    private static final BinaryOperation MOD = new SingleInstructionBinaryOperation(BinaryOperator.MODULO, SFloat.instance, DREM);
+    private static final BinaryOperation LESS_THAN = new FloatComparisonOperation(BinaryOperator.LESS, IF_ICMPLT);
+    private static final BinaryOperation GREATER_THAN = new FloatComparisonOperation(BinaryOperator.GREATER, IF_ICMPGT);
+    private static final BinaryOperation LESS_THAN_EQUALS = new FloatComparisonOperation(BinaryOperator.LESS_EQUALS, IF_ICMPLE);
+    private static final BinaryOperation GREATER_THAN_EQUALS = new FloatComparisonOperation(BinaryOperator.GREATER_EQUALS, IF_ICMPGE);
+    private static final BinaryOperation EQUALS = new FloatComparisonOperation(BinaryOperator.EQUALS, IF_ICMPEQ);
+    private static final BinaryOperation NOT_EQUALS = new FloatComparisonOperation(BinaryOperator.NOT_EQUALS, IF_ICMPNE);
+    public static final UnaryOperation PLUS = new UnaryOperation(UnaryOperator.PLUS, SFloat.instance) {
         @Override
         public void apply(MethodVisitor visitor) {}
     };
-    public static final UnaryOperation MINUS = new UnaryOperation(SFloat.instance) {
+    public static final UnaryOperation MINUS = new UnaryOperation(UnaryOperator.MINUS, SFloat.instance) {
         @Override
         public void apply(MethodVisitor visitor) {
             visitor.visitInsn(DNEG);
@@ -209,6 +211,7 @@ public class SFloat extends SPredefinedType {
 
     private static final MethodReference METHOD_TRY_PARSE = new StaticMethodReference(
             FloatUtils.class,
+            SFloat.instance,
             "tryParse",
             SBoolean.instance,
             new MethodParameter("str", SString.instance),
@@ -218,8 +221,8 @@ public class SFloat extends SPredefinedType {
 
         private final int opcode;
 
-        protected FloatComparisonOperation(int opcode) {
-            super(SBoolean.instance);
+        protected FloatComparisonOperation(BinaryOperator operator, int opcode) {
+            super(operator, SBoolean.instance, SFloat.instance);
             this.opcode = opcode;
         }
 

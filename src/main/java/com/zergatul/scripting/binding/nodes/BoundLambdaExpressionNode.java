@@ -5,6 +5,7 @@ import com.zergatul.scripting.parser.NodeType;
 import com.zergatul.scripting.type.SType;
 
 import java.util.List;
+import java.util.stream.Stream;
 
 public class BoundLambdaExpressionNode extends BoundExpressionNode {
 
@@ -15,5 +16,10 @@ public class BoundLambdaExpressionNode extends BoundExpressionNode {
         super(NodeType.LAMBDA_EXPRESSION, type, range);
         this.parameters = parameters;
         this.body = body;
+    }
+
+    @Override
+    public List<BoundNode> getChildren() {
+        return Stream.concat(List.copyOf(parameters).stream(), Stream.of(body)).toList();
     }
 }

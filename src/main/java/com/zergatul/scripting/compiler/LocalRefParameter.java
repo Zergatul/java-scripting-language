@@ -1,20 +1,19 @@
 package com.zergatul.scripting.compiler;
 
-import com.zergatul.scripting.InternalException;
+import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.type.SReference;
 import com.zergatul.scripting.type.SType;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Type;
 
 import static org.objectweb.asm.Opcodes.INVOKEVIRTUAL;
-import static org.objectweb.asm.Opcodes.SWAP;
 
-public class LocalRefVariable extends LocalVariable {
+public class LocalRefParameter extends LocalVariable {
 
     private final SReference refType;
 
-    public LocalRefVariable(String name, SReference refType, SType underlying, int stackIndex) {
-        super(name, underlying, stackIndex);
+    public LocalRefParameter(String name, SReference refType, SType underlying, int stackIndex, TextRange definition) {
+        super(name, underlying, stackIndex, definition);
         this.refType = refType;
     }
 

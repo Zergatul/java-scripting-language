@@ -26,6 +26,11 @@ public class StaticAsInstanceMethodReference extends MethodReference {
     }
 
     @Override
+    public SType getOwner() {
+        return ownerType;
+    }
+
+    @Override
     public String getName() {
         return name;
     }
@@ -36,8 +41,8 @@ public class StaticAsInstanceMethodReference extends MethodReference {
     }
 
     @Override
-    public List<SType> getParameters() {
-        return Arrays.stream(parameters).map(MethodParameter::type).toList();
+    public List<MethodParameter> getParameters() {
+        return List.of(parameters);
     }
 
     @Override
@@ -48,7 +53,7 @@ public class StaticAsInstanceMethodReference extends MethodReference {
                 name,
                 Type.getMethodDescriptor(
                         Type.getType(returnType.getJavaClass()),
-                        Stream.concat(Stream.of(ownerType), getParameters().stream())
+                        Stream.concat(Stream.of(ownerType), getParameterTypes().stream())
                                 .map(SType::getJavaClass)
                                 .map(Type::getType)
                                 .toArray(Type[]::new)),

@@ -3,6 +3,8 @@ package com.zergatul.scripting.binding.nodes;
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.parser.NodeType;
 
+import java.util.List;
+
 public class BoundIfStatementNode extends BoundStatementNode {
 
     public final BoundExpressionNode condition;
@@ -14,5 +16,10 @@ public class BoundIfStatementNode extends BoundStatementNode {
         this.condition = condition;
         this.thenStatement = thenStatement;
         this.elseStatement = elseStatement;
+    }
+
+    @Override
+    public List<BoundNode> getChildren() {
+        return elseStatement == null ? List.of(condition, thenStatement) : List.of(condition, thenStatement, elseStatement);
     }
 }

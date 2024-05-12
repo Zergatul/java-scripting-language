@@ -7,6 +7,8 @@ import com.zergatul.scripting.parser.NodeType;
 import com.zergatul.scripting.parser.nodes.NameExpressionNode;
 import com.zergatul.scripting.type.SType;
 
+import java.util.List;
+
 public class BoundNameExpressionNode extends BoundExpressionNode {
 
     public final String value;
@@ -25,5 +27,10 @@ public class BoundNameExpressionNode extends BoundExpressionNode {
     @Override
     public boolean canSet() {
         return symbol.canSet();
+    }
+
+    @Override
+    public List<BoundNode> getChildren() {
+        return List.of();
     }
 }

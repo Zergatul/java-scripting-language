@@ -22,8 +22,8 @@ public class StackHelper {
             visitor.visitInsn(SWAP);
         } else {
             context = context.createChild();
-            LocalVariable var1 = context.addLocalVariable(null, type1);
-            LocalVariable var2 = context.addLocalVariable(null, type2);
+            LocalVariable var1 = context.addLocalVariable(null, type1, null);
+            LocalVariable var2 = context.addLocalVariable(null, type2, null);
             var2.compileStore(context, visitor);
             var1.compileStore(context, visitor);
             var2.compileLoad(context, visitor);

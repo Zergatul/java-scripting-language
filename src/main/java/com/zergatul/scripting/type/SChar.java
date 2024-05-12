@@ -1,6 +1,7 @@
 package com.zergatul.scripting.type;
 
 import com.zergatul.scripting.type.operation.BinaryOperation;
+import com.zergatul.scripting.type.operation.CastOperation;
 import com.zergatul.scripting.type.operation.UnaryOperation;
 import org.objectweb.asm.MethodVisitor;
 
@@ -56,7 +57,7 @@ public class SChar extends SPredefinedType {
     }
 
     @Override
-    public UnaryOperation implicitCastTo(SType other) {
+    public CastOperation implicitCastTo(SType other) {
         return other == SInt.instance ? CHAR_TO_INT : null;
     }
 
@@ -95,7 +96,7 @@ public class SChar extends SPredefinedType {
         return "char";
     }
 
-    private static final UnaryOperation CHAR_TO_INT = new UnaryOperation(SInt.instance) {
+    private static final CastOperation CHAR_TO_INT = new CastOperation(SInt.instance) {
         @Override
         public void apply(MethodVisitor visitor) {}
     };

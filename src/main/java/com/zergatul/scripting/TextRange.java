@@ -9,6 +9,22 @@ public abstract class TextRange {
     public abstract int getPosition();
     public abstract int getLength();
 
+    public boolean contains(int line, int column) {
+        if (line < getLine1()) {
+            return false;
+        }
+        if (line > getLine2()) {
+            return false;
+        }
+        if (line == getLine1() && column < getColumn1()) {
+            return false;
+        }
+        if (line == getLine2() && column > getColumn2()) {
+            return false;
+        }
+        return true;
+    }
+
     @Override
     public boolean equals(Object obj) {
         if (obj instanceof TextRange other) {
@@ -35,9 +51,11 @@ public abstract class TextRange {
                     range1.getPosition(),
                     range2.getPosition() + range2.getLength() - range1.getPosition());
         } else {
-            return new SingleLineTextRange(
+            return new MultiLineTextRange(
                     range1.getLine1(),
                     range1.getColumn1(),
+                    range2.getLine2(),
+                    range2.getColumn2(),
                     range1.getPosition(),
                     range2.getPosition() + range2.getLength() - range1.getPosition());
         }

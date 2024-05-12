@@ -1,15 +1,15 @@
 package com.zergatul.scripting.type.operation;
 
-import com.zergatul.scripting.parser.UnaryOperator;
+import com.zergatul.scripting.parser.PostfixOperator;
 import com.zergatul.scripting.type.SType;
 import org.objectweb.asm.MethodVisitor;
 
-public abstract class UnaryOperation {
+public abstract class PostfixOperation {
 
-    public final UnaryOperator operator;
+    public final PostfixOperator operator;
     public final SType type;
 
-    protected UnaryOperation(UnaryOperator operator, SType type) {
+    protected PostfixOperation(PostfixOperator operator, SType type) {
         this.operator = operator;
         this.type = type;
     }

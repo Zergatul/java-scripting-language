@@ -1,5 +1,6 @@
 package com.zergatul.scripting.compiler;
 
+import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.type.SType;
 import org.objectweb.asm.MethodVisitor;
 
@@ -7,8 +8,8 @@ public class LocalVariable extends Variable {
 
     private final int stackIndex;
 
-    public LocalVariable(String name, SType type, int stackIndex) {
-        super(name, type);
+    public LocalVariable(String name, SType type, int stackIndex, TextRange definition) {
+        super(name, type, definition);
         this.stackIndex = stackIndex;
     }
 

@@ -7,7 +7,7 @@ import org.objectweb.asm.MethodVisitor;
 public abstract class ConstantStaticVariable extends StaticVariable {
 
     protected ConstantStaticVariable(String name, SType type) {
-        super(name, type);
+        super(name, type, null);
     }
 
     @Override

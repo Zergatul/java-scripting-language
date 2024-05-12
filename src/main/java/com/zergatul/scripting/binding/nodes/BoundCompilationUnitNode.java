@@ -4,6 +4,7 @@ import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.parser.NodeType;
 
 import java.util.List;
+import java.util.stream.Stream;
 
 public class BoundCompilationUnitNode extends BoundNode {
 
@@ -16,5 +17,11 @@ public class BoundCompilationUnitNode extends BoundNode {
         this.variables = variables;
         this.functions = functions;
         this.statements = statements;
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public List<BoundNode> getChildren() {
+        return (List<BoundNode>) Stream.of(variables.stream(), functions.stream(), statements.stream()).flatMap(s -> s).toList();
     }
 }

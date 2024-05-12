@@ -2,6 +2,7 @@ package com.zergatul.scripting.type;
 
 import com.zergatul.scripting.InternalException;
 import com.zergatul.scripting.compiler.BufferedMethodVisitor;
+import com.zergatul.scripting.parser.BinaryOperator;
 import com.zergatul.scripting.runtime.StringUtils;
 import com.zergatul.scripting.type.operation.BinaryOperation;
 import com.zergatul.scripting.type.operation.IndexOperation;
@@ -128,7 +129,7 @@ public class SString extends SPredefinedType {
 
     private static final PropertyReference PROP_LENGTH = new MethodBasedPropertyReference(String.class, "length");
 
-    private static final BinaryOperation ADD_STRING = new BinaryOperation(SString.instance) {
+    private static final BinaryOperation ADD_STRING = new BinaryOperation(BinaryOperator.PLUS, SString.instance) {
         @Override
         public void apply(MethodVisitor left, BufferedMethodVisitor right) {
             // stack = ..., left
@@ -170,7 +171,7 @@ public class SString extends SPredefinedType {
         }
     };
 
-    private static final BinaryOperation ADD_CHAR = new BinaryOperation(SString.instance) {
+    private static final BinaryOperation ADD_CHAR = new BinaryOperation(BinaryOperator.PLUS, SString.instance, SString.instance, SChar.instance) {
         @Override
         public void apply(MethodVisitor left, BufferedMethodVisitor right) {
             // stack = ..., left
@@ -212,7 +213,7 @@ public class SString extends SPredefinedType {
         }
     };
 
-    private static final BinaryOperation EQUALS_STRING = new BinaryOperation(SBoolean.instance) {
+    private static final BinaryOperation EQUALS_STRING = new BinaryOperation(BinaryOperator.EQUALS, SBoolean.instance, SString.instance) {
         @Override
         public void apply(MethodVisitor left, BufferedMethodVisitor right) {
             right.release(left);
@@ -225,7 +226,7 @@ public class SString extends SPredefinedType {
         }
     };
 
-    private static final BinaryOperation NOT_EQUALS_STRING = new BinaryOperation(SBoolean.instance) {
+    private static final BinaryOperation NOT_EQUALS_STRING = new BinaryOperation(BinaryOperator.NOT_EQUALS, SBoolean.instance, SString.instance) {
         @Override
         public void apply(MethodVisitor left, BufferedMethodVisitor right) {
             SString.EQUALS_STRING.apply(left, right);
@@ -257,18 +258,25 @@ public class SString extends SPredefinedType {
 
     private static final MethodReference METHOD_SUBSTRING_INT = new InstanceMethodReference(
             String.class,
+            SString.instance,
             "substring",
             SString.instance,
             new MethodParameter("beginIndex", SInt.instance));
 
     private static final MethodReference METHOD_SUBSTRING_INT_INT = new InstanceMethodReference(
             String.class,
+            SString.instance,
             "substring",
             SString.instance,
             new MethodParameter("beginIndex", SInt.instance),
             new MethodParameter("endIndex", SInt.instance));
 
     private static final MethodReference METHOD_CONTAINS = new MethodReference() {
+        @Override
+        public SType getOwner() {
+            return instance;
+        }
+
         @Override
         public String getName() {
             return "contains";
@@ -280,8 +288,8 @@ public class SString extends SPredefinedType {
         }
 
         @Override
-        public List<SType> getParameters() {
-            return List.of(SString.instance);
+        public List<MethodParameter> getParameters() {
+            return List.of(new MethodParameter("str", SString.instance));
         }
 
         @Override
@@ -297,23 +305,31 @@ public class SString extends SPredefinedType {
 
     private static final MethodReference METHOD_INDEX_OF = new InstanceMethodReference(
             String.class,
+            SString.instance,
             "indexOf",
             SInt.instance,
             new MethodParameter("str", SString.instance));
 
     private static final MethodReference METHOD_STARTS_WITH = new InstanceMethodReference(
             String.class,
+            SString.instance,
             "startsWith",
             SBoolean.instance,
             new MethodParameter("prefix", SString.instance));
 
     private static final MethodReference METHOD_ENDS_WITH = new InstanceMethodReference(
             String.class,
+            SString.instance,
             "endsWith",
             SBoolean.instance,
             new MethodParameter("suffix", SString.instance));
 
     private static final MethodReference METHOD_TO_LOWER = new MethodReference() {
+        @Override
+        public SType getOwner() {
+            return instance;
+        }
+
         @Override
         public String getName() {
             return "toLower";
@@ -325,7 +341,7 @@ public class SString extends SPredefinedType {
         }
 
         @Override
-        public List<SType> getParameters() {
+        public List<MethodParameter> getParameters() {
             return List.of();
         }
 
@@ -347,6 +363,11 @@ public class SString extends SPredefinedType {
 
     private static final MethodReference METHOD_TO_UPPER = new MethodReference() {
         @Override
+        public SType getOwner() {
+            return instance;
+        }
+
+        @Override
         public String getName() {
             return "toUpper";
         }
@@ -357,7 +378,7 @@ public class SString extends SPredefinedType {
         }
 
         @Override
-        public List<SType> getParameters() {
+        public List<MethodParameter> getParameters() {
             return List.of();
         }
 

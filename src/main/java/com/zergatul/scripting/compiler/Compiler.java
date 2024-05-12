@@ -569,11 +569,11 @@ public class Compiler {
 
     private void compileLambdaFromFunction(MethodVisitor visitor, CompilerContext context, Function function, TextRange range) {
         SFunction type = function.getFunctionType();
-        List<BoundParameterNode> parameters = new ArrayList<>(type.getParameters().length);
-        List<LocalVariable> variables = new ArrayList<>(type.getParameters().length);
+        List<BoundParameterNode> parameters = new ArrayList<>(type.getParameters().size());
+        List<LocalVariable> variables = new ArrayList<>(type.getParameters().size());
         CompilerContext lambdaContext = context.createFunction(type.getReturnType());
-        for (SType parameterType : type.getParameters()) {
-            LocalVariable variable = lambdaContext.addLocalVariable("p" + variables.size(), parameterType);
+        for (SType parameterType : type.getParameterTypes()) {
+            LocalVariable variable = lambdaContext.addLocalVariable("p" + variables.size(), parameterType, null);
             variables.add(variable);
             parameters.add(new BoundParameterNode(
                     new BoundNameExpressionNode(variable, range),
@@ -581,7 +581,7 @@ public class Compiler {
                     range));
         }
 
-        List<BoundExpressionNode> arguments = new ArrayList<>(type.getParameters().length);
+        List<BoundExpressionNode> arguments = new ArrayList<>(type.getParameters().size());
         for (LocalVariable variable : variables) {
             arguments.add(new BoundNameExpressionNode(variable, range));
         }
@@ -606,7 +606,7 @@ public class Compiler {
         for (BoundExpressionNode expression : invocation.arguments.arguments) {
             compileExpression(visitor, context, expression);
         }
-        invocation.method.compileInvoke(visitor);
+        invocation.method.method.compileInvoke(visitor);
         releaseRefVariables(visitor, context, invocation.refVariables);
     }
 
@@ -676,7 +676,7 @@ public class Compiler {
         CompilerContext lambdaContext = context.createFunction(SVoidType.instance);
         LocalVariable[] arguments = new LocalVariable[expression.parameters.size()];
         for (int i = 0; i < expression.parameters.size(); i++) {
-            arguments[i] = lambdaContext.addLocalVariable(null, SType.fromJavaType(Object.class));
+            arguments[i] = lambdaContext.addLocalVariable(null, SType.fromJavaType(Object.class), null);
         }
         for (int i = 0; i < expression.parameters.size(); i++) {
             BoundParameterNode parameter = expression.parameters.get(i);

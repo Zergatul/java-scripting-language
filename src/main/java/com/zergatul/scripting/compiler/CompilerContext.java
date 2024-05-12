@@ -1,6 +1,7 @@
 package com.zergatul.scripting.compiler;
 
 import com.zergatul.scripting.InternalException;
+import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.type.SFloat;
 import com.zergatul.scripting.type.SReference;
 import com.zergatul.scripting.type.SType;
@@ -11,7 +12,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 public class CompilerContext {
@@ -60,12 +60,12 @@ public class CompilerContext {
         staticSymbols.put(function.getName(), function);
     }
 
-    public LocalVariable addLocalVariable(String name, SType type) {
+    public LocalVariable addLocalVariable(String name, SType type, TextRange definition) {
         if (name != null && hasSymbol(name)) {
             throw new InternalException();
         }
 
-        LocalVariable variable = new LocalVariable(name, type, stackIndex);
+        LocalVariable variable = new LocalVariable(name, type, stackIndex, definition);
         addLocalVariable(variable);
         if (type == SFloat.instance) {
             stackIndex += 2;
@@ -83,18 +83,33 @@ public class CompilerContext {
         localSymbols.put(variable.getName(), variable);
     }
 
-    public LocalVariable addLocalRefVariable(String name, SReference refType, SType underlying) {
+    public LocalVariable addLocalParameter(String name, SType type, TextRange definition) {
+        if (name != null && hasSymbol(name)) {
+            throw new InternalException();
+        }
+
+        LocalVariable variable = new LocalParameter(name, type, stackIndex, definition);
+        addLocalVariable(variable);
+        if (type == SFloat.instance) {
+            stackIndex += 2;
+        } else {
+            stackIndex += 1;
+        }
+        return variable;
+    }
+
+    public LocalVariable addLocalRefParameter(String name, SReference refType, SType underlying, TextRange definition) {
         if (name == null || name.isEmpty()) {
             throw new InternalException();
         }
 
-        LocalVariable variable = new LocalRefVariable(name, refType, underlying, stackIndex++);
+        LocalVariable variable = new LocalRefParameter(name, refType, underlying, stackIndex++, definition);
         addLocalVariable(variable);
         return variable;
     }
 
     public LocalVariable createRefVariable(Variable variable) {
-        LocalVariable holder = addLocalVariable(null, variable.getType().getReferenceType());
+        LocalVariable holder = addLocalVariable(null, variable.getType().getReferenceType(), null);
         refVariables.add(new RefHolder(holder, variable));
         return holder;
     }

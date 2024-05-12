@@ -5,6 +5,8 @@ import com.zergatul.scripting.parser.NodeType;
 import com.zergatul.scripting.type.operation.BinaryOperation;
 import com.zergatul.scripting.type.operation.IndexOperation;
 
+import java.util.List;
+
 public class BoundIndexExpressionNode extends BoundExpressionNode {
 
     public final BoundExpressionNode callee;
@@ -21,5 +23,10 @@ public class BoundIndexExpressionNode extends BoundExpressionNode {
     @Override
     public boolean canSet() {
         return operation.canSet();
+    }
+
+    @Override
+    public List<BoundNode> getChildren() {
+        return List.of(callee, index);
     }
 }

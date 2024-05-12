@@ -4,9 +4,7 @@ import com.zergatul.scripting.InternalException;
 import com.zergatul.scripting.parser.BinaryOperator;
 import com.zergatul.scripting.parser.UnaryOperator;
 import com.zergatul.scripting.runtime.*;
-import com.zergatul.scripting.type.operation.BinaryOperation;
-import com.zergatul.scripting.type.operation.IndexOperation;
-import com.zergatul.scripting.type.operation.UnaryOperation;
+import com.zergatul.scripting.type.operation.*;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Type;
 
@@ -140,15 +138,15 @@ public abstract class SType {
         };
     }
 
-    public UnaryOperation increment() {
+    public PostfixOperation increment() {
         return null;
     }
 
-    public UnaryOperation decrement() {
+    public PostfixOperation decrement() {
         return null;
     }
 
-    public UnaryOperation implicitCastTo(SType other) {
+    public CastOperation implicitCastTo(SType other) {
         return null;
     }
 

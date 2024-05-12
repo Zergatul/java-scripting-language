@@ -1,16 +1,15 @@
 package com.zergatul.scripting.type.operation;
 
 import com.zergatul.scripting.InternalException;
-import com.zergatul.scripting.parser.UnaryOperator;
 import com.zergatul.scripting.type.SUnknown;
 import org.objectweb.asm.MethodVisitor;
 
-public class UndefinedUnaryOperation extends UnaryOperation {
+public class UndefinedCastOperation extends CastOperation {
 
-    public static final UnaryOperation instance = new UndefinedUnaryOperation();
+    public static final CastOperation instance = new UndefinedCastOperation();
 
-    private UndefinedUnaryOperation() {
-        super(UnaryOperator.PLUS, SUnknown.instance);
+    private UndefinedCastOperation() {
+        super(SUnknown.instance);
     }
 
     @Override

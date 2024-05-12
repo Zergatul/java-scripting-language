@@ -3,6 +3,8 @@ package com.zergatul.scripting.binding.nodes;
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.parser.NodeType;
 
+import java.util.List;
+
 public class BoundForLoopStatementNode extends BoundStatementNode {
 
     public final BoundStatementNode init;
@@ -16,5 +18,10 @@ public class BoundForLoopStatementNode extends BoundStatementNode {
         this.condition = condition;
         this.update = update;
         this.body = body;
+    }
+
+    @Override
+    public List<BoundNode> getChildren() {
+        return List.of(init, condition, update, body);
     }
 }

@@ -13,4 +13,9 @@ public class BoundParameterListNode extends BoundNode {
         super(NodeType.PARAMETER_LIST, range);
         this.parameters = parameters;
     }
+
+    @Override
+    public List<BoundNode> getChildren() {
+        return List.copyOf(parameters);
+    }
 }
