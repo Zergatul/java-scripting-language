@@ -37,6 +37,7 @@ public class ContextualLambdaChecker {
             case RETURN_STATEMENT -> checkReturnStatement((BoundReturnStatementNode) node);
             case FOR_LOOP_STATEMENT -> checkForLoopStatement((BoundForLoopStatementNode) node);
             case FOREACH_LOOP_STATEMENT -> checkForEachLoopStatement((BoundForEachLoopStatementNode) node);
+            case WHILE_LOOP_STATEMENT -> checkWhileLoopStatement((BoundWhileLoopStatementNode) node);
             case INCREMENT_STATEMENT, DECREMENT_STATEMENT -> checkPostfixStatement((BoundPostfixStatementNode) node);
             case BREAK_STATEMENT, CONTINUE_STATEMENT, INVALID_STATEMENT, EMPTY_STATEMENT -> {}
             default -> throw new InternalException();
@@ -92,6 +93,11 @@ public class ContextualLambdaChecker {
 
     private void checkForEachLoopStatement(BoundForEachLoopStatementNode node) {
         checkExpression(node.iterable);
+        checkStatement(node.body);
+    }
+
+    private void checkWhileLoopStatement(BoundWhileLoopStatementNode node) {
+        checkExpression(node.condition);
         checkStatement(node.body);
     }
 

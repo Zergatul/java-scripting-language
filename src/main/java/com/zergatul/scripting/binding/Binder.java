@@ -111,6 +111,7 @@ public class Binder {
             case RETURN_STATEMENT -> bindReturnStatement((ReturnStatementNode) statement);
             case FOR_LOOP_STATEMENT -> bindForLoopStatement((ForLoopStatementNode) statement);
             case FOREACH_LOOP_STATEMENT -> bindForEachLoopStatement((ForEachLoopStatementNode) statement);
+            case WHILE_LOOP_STATEMENT -> bindWhileLoopStatement((WhileLoopStatementNode) statement);
             case BREAK_STATEMENT -> bindBreakStatement((BreakStatementNode) statement);
             case CONTINUE_STATEMENT -> bindContinueStatement((ContinueStatementNode) statement);
             case EMPTY_STATEMENT -> bindEmptyStatement((EmptyStatementNode) statement);
@@ -328,6 +329,23 @@ public class Binder {
                 variableType, name, iterable, body,
                 index, length,
                 statement.getRange());
+    }
+
+    private BoundWhileLoopStatementNode bindWhileLoopStatement(WhileLoopStatementNode statement) {
+        pushScope();
+
+        BoundExpressionNode condition = tryCastTo(bindExpression(statement.condition), SBoolean.instance);
+        if (condition.type != SBoolean.instance) {
+            addDiagnostic(BinderErrors.CannotImplicitlyConvert, condition, condition.type.toString(), SBoolean.instance.toString());
+        }
+
+        context.setBreak(v -> {});
+        context.setContinue(v -> {});
+        BoundStatementNode body = bindStatement(statement.body);
+
+        popScope();
+
+        return new BoundWhileLoopStatementNode(condition, body, statement.getRange());
     }
 
     private BoundBreakStatementNode bindBreakStatement(BreakStatementNode statement) {

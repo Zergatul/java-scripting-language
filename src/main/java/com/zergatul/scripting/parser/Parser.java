@@ -256,7 +256,29 @@ public class Parser {
     }
 
     private WhileLoopStatementNode parseWhileLoopStatement() {
-        throw new InternalException(); // TODO
+        Token whileToken = advance(TokenType.WHILE);
+
+        advance(TokenType.LEFT_PARENTHESES);
+
+        ExpressionNode condition;
+        if (isPossibleExpression()) {
+            condition = parseExpression();
+        } else {
+            addDiagnostic(ParserErrors.ExpressionExpected, current, current.getRawValue(code));
+            condition = new InvalidExpressionNode(createMissingTokenRange());
+        }
+
+        advance(TokenType.RIGHT_PARENTHESES);
+
+        StatementNode body;
+        if (isPossibleStatement()) {
+            body = parseStatement();
+        } else {
+            addDiagnostic(ParserErrors.StatementExpected, current, current.getRawValue(code));
+            body = new InvalidStatementNode(createMissingTokenRange());
+        }
+
+        return new WhileLoopStatementNode(condition, body, TextRange.combine(whileToken, body));
     }
 
     private BreakStatementNode parseBreakStatement() {
@@ -994,7 +1016,7 @@ public class Parser {
     private Token advance() {
         Token match = current;
         current = tokens.next();
-        while (current.type == TokenType.WHITESPACE) {
+        while (isSkippable(current.type)) {
             current = tokens.next();
         }
         return match;
@@ -1004,7 +1026,7 @@ public class Parser {
         if (current.type == type) {
             Token match = current;
             current = tokens.next();
-            while (current.type == TokenType.WHITESPACE) {
+            while (isSkippable(current.type)) {
                 current = tokens.next();
             }
             return match;
@@ -1024,7 +1046,7 @@ public class Parser {
     private Token peek(int n) {
         int shift = 1;
         while (true) {
-            if (tokens.peek(shift).type != TokenType.WHITESPACE) {
+            if (!isSkippable(tokens.peek(shift).type)) {
                 n--;
                 if (n == 0) {
                     break;
@@ -1033,6 +1055,10 @@ public class Parser {
             shift++;
         }
         return tokens.peek(shift);
+    }
+
+    private boolean isSkippable(TokenType type) {
+        return type == TokenType.WHITESPACE || type == TokenType.LINE_BREAK || type == TokenType.COMMENT;
     }
 
     private void addDiagnostic(ErrorCode code, Locatable locatable, Object... parameters) {

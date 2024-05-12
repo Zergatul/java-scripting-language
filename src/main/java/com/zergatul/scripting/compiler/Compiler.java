@@ -192,6 +192,7 @@ public class Compiler {
             case RETURN_STATEMENT -> compileReturnStatement(visitor, context, (BoundReturnStatementNode) statement);
             case FOR_LOOP_STATEMENT -> compileForLoopStatement(visitor, context, (BoundForLoopStatementNode) statement);
             case FOREACH_LOOP_STATEMENT -> compileForEachLoopStatement(visitor, context, (BoundForEachLoopStatementNode) statement);
+            case WHILE_LOOP_STATEMENT -> compileWhileLoopStatement(visitor, context, (BoundWhileLoopStatementNode) statement);
             case BREAK_STATEMENT -> compileBreakStatement(visitor, context);
             case CONTINUE_STATEMENT -> compileContinueStatement(visitor, context);
             case EMPTY_STATEMENT -> compileEmptyStatement();
@@ -382,6 +383,28 @@ public class Compiler {
         visitor.visitLabel(end);
 
         visitor.visitInsn(POP);
+    }
+
+    private void compileWhileLoopStatement(MethodVisitor visitor, CompilerContext context, BoundWhileLoopStatementNode statement) {
+        context = context.createChild();
+
+        Label begin = new Label();
+        Label continueLabel = new Label();
+        Label end = new Label();
+
+        visitor.visitLabel(begin);
+
+        compileExpression(visitor, context, statement.condition);
+        visitor.visitJumpInsn(IFEQ, end);
+
+        context.setBreak(v -> v.visitJumpInsn(GOTO, end));
+        context.setContinue(v -> v.visitJumpInsn(GOTO, continueLabel));
+        compileStatement(visitor, context, statement.body);
+
+        visitor.visitLabel(continueLabel);
+
+        visitor.visitJumpInsn(GOTO, begin);
+        visitor.visitLabel(end);
     }
 
     private void compileBreakStatement(MethodVisitor visitor, CompilerContext context) {

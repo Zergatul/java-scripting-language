@@ -16,8 +16,6 @@ public class Lexer {
     private int next;
     private int line;
     private int column;
-    private int newLines;
-    private int lastNewLineChar;
     private int beginPosition;
     private int beginLine;
     private int beginColumn;
@@ -141,27 +139,44 @@ public class Lexer {
                                 advance();
                             }
 
-                            if (current == '\r' && next == '\n') {
-                                advance();
-                            }
-
-                            advance();
-                            endToken(TokenType.WHITESPACE);
+                            endToken(TokenType.COMMENT);
                         }
                         case '*' -> {
                             trackBeginToken();
                             advance();
                             advance();
-                            while (!(current == '*' && next == '/') && current != -1) {
-                                advance();
+                            while (true) {
+                                if (current == -1) {
+                                    break;
+                                } else if (current == '*' && next == '/') {
+                                    advance();
+                                    advance();
+                                    break;
+                                } else if (current == '\n') {
+                                    endToken(TokenType.COMMENT);
+                                    appendToken(TokenType.LINE_BREAK);
+                                    advance();
+                                    newLine();
+                                    trackBeginToken();
+                                } else if (current == '\r') {
+                                    endToken(TokenType.COMMENT);
+                                    if (next == '\n') {
+                                        trackBeginToken();
+                                        advance();
+                                        advance();
+                                        endToken(TokenType.LINE_BREAK);
+                                    } else {
+                                        appendToken(TokenType.LINE_BREAK);
+                                        advance();
+                                    }
+                                    newLine();
+                                    trackBeginToken();
+                                } else {
+                                    advance();
+                                }
                             }
 
-                            if (current == '*') {
-                                advance();
-                                advance();
-                            }
-
-                            endToken(TokenType.WHITESPACE);
+                            endToken(TokenType.COMMENT);
                         }
                         case '=' -> {
                             trackBeginToken();
@@ -300,6 +315,23 @@ public class Lexer {
                             break;
                         }
                     }
+                }
+                case '\n' -> {
+                    appendToken(TokenType.LINE_BREAK);
+                    advance();
+                    newLine();
+                }
+                case '\r' -> {
+                    if (next == '\n') {
+                        trackBeginToken();
+                        advance();
+                        advance();
+                        endToken(TokenType.LINE_BREAK);
+                    } else {
+                        appendToken(TokenType.LINE_BREAK);
+                        advance();
+                    }
+                    newLine();
                 }
                 case -1 -> {
                     break loop;
@@ -471,6 +503,9 @@ public class Lexer {
     }
 
     private void endToken(TokenType type) {
+        if (position - beginPosition == 0) {
+            return;
+        }
         TextRange range = beginLine == line ?
                 new SingleLineTextRange(beginLine, beginColumn, beginPosition, position - beginPosition) :
                 new MultiLineTextRange(beginLine, beginColumn, line, column, beginPosition, position - beginPosition);
@@ -487,47 +522,16 @@ public class Lexer {
         current = next;
         next = charAt(position + 1);
 
-        if (current == '\n' || current == '\r') {
-            appendNewLineCharacter(current);
-        } else {
-            releaseNewLineCharacterBuffer();
-        }
-
         column++;
+    }
+
+    private void newLine() {
+        line++;
+        column = 1;
     }
 
     private int charAt(int index) {
         return index < code.length() ? code.charAt(index) : -1;
-    }
-
-    private void appendNewLineCharacter(int ch) {
-        if (ch == '\n') {
-            advanceLine();
-            lastNewLineChar = 0;
-        } else {
-            if (lastNewLineChar == '\r') {
-                advanceLine();
-            } else {
-                lastNewLineChar = '\r';
-            }
-        }
-    }
-
-    private void releaseNewLineCharacterBuffer() {
-        if (lastNewLineChar != 0) {
-            advanceLine();
-            lastNewLineChar = 0;
-        }
-
-        if (newLines > 0) {
-            line += newLines;
-            newLines = 0;
-            column = 0;
-        }
-    }
-
-    private void advanceLine() {
-        newLines++;
     }
 
     private void addDiagnostic(ErrorCode code, Token token, Object... parameters) {
@@ -535,7 +539,7 @@ public class Lexer {
     }
 
     private boolean isWhiteSpace(int ch) {
-        return ch == '\t' || ch == '\n' || ch == '\r' || ch == ' ';
+        return ch == '\t' || ch == ' ';
     }
 
     private boolean isNumber(int ch) {
