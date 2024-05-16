@@ -141,6 +141,18 @@ public class LambdaTests {
         Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(321, 123));
     }
 
+    @Test
+    public void simpleFunctionTest() {
+        String code = """
+                intStorage.add(run.sumInts(10, () => 10));
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(100));
+    }
+
     public static class ApiRoot {
         public static Run run;
         public static IntStorage intStorage = new IntStorage();

@@ -4,18 +4,25 @@ import com.zergatul.scripting.InternalException;
 import com.zergatul.scripting.runtime.Action0;
 import com.zergatul.scripting.runtime.Action1;
 import com.zergatul.scripting.runtime.Action2;
+import com.zergatul.scripting.runtime.Function0;
 import org.objectweb.asm.MethodVisitor;
 
 import java.util.Arrays;
 
 import static org.objectweb.asm.Opcodes.*;
 
-public class SAction extends SType {
+public class SLambdaFunction extends SType {
 
+    private final SType returnType;
     private final SType[] parameters;
 
-    public SAction(SType... parameters) {
+    public SLambdaFunction(SType returnType, SType... parameters) {
+        this.returnType = returnType;
         this.parameters = parameters;
+    }
+
+    public SType getReturnType() {
+        return returnType;
     }
 
     public SType[] getParameters() {
@@ -24,7 +31,10 @@ public class SAction extends SType {
 
     @Override
     public boolean equals(Object obj) {
-        if (obj instanceof SAction other) {
+        if (obj instanceof SLambdaFunction other) {
+            if (!returnType.equals(other.returnType)) {
+                return false;
+            }
             if (parameters.length != other.parameters.length) {
                 return false;
             }
@@ -41,12 +51,19 @@ public class SAction extends SType {
 
     @Override
     public Class<?> getJavaClass() {
-        return switch (parameters.length) {
-            case 0 -> Action0.class;
-            case 1 -> Action1.class;
-            case 2 -> Action2.class;
-            default -> throw new InternalException("Too much Action parameters.");
-        };
+        if (returnType == SVoidType.instance) {
+            return switch (parameters.length) {
+                case 0 -> Action0.class;
+                case 1 -> Action1.class;
+                case 2 -> Action2.class;
+                default -> throw new InternalException("Too much Action parameters.");
+            };
+        } else {
+            return switch (parameters.length) {
+                case 0 -> Function0.class;
+                default -> throw new InternalException("Too much Function parameters.");
+            };
+        }
     }
 
     @Override
@@ -86,10 +103,14 @@ public class SAction extends SType {
 
     @Override
     public String toString() {
-        if (parameters.length == 0) {
-            return "Action";
+        if (returnType == SVoidType.instance) {
+            if (parameters.length == 0) {
+                return "Action";
+            } else {
+                return "Action<" + String.join(", ", Arrays.stream(this.parameters).map(Object::toString).toArray(String[]::new)) + ">";
+            }
         } else {
-            return "Action<" + String.join(", ", Arrays.stream(this.parameters).map(Object::toString).toArray(String[]::new)) + ">";
+            return "Function<" + returnType.toString() + ">";
         }
     }
 }

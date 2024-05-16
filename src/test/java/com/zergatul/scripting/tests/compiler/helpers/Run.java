@@ -3,6 +3,7 @@ package com.zergatul.scripting.tests.compiler.helpers;
 import com.zergatul.scripting.runtime.Action0;
 import com.zergatul.scripting.runtime.Action1;
 import com.zergatul.scripting.runtime.Action2;
+import com.zergatul.scripting.runtime.Function0;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -67,5 +68,13 @@ public class Run {
 
     public void triggerIntString(int value1, String value2) {
         intStringHandlers.forEach(s -> s.invoke(value1, value2));
+    }
+
+    public int sumInts(int count, Function0<Integer> getter) {
+        int sum = 0;
+        for (int i = 0; i < count; i++) {
+            sum += getter.invoke();
+        }
+        return sum;
     }
 }

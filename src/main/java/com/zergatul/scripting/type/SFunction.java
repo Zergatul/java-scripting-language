@@ -78,8 +78,8 @@ public class SFunction extends SType {
 
     @Override
     public CastOperation implicitCastTo(SType other) {
-        if (returnType == SVoidType.instance && other instanceof SAction actionType) {
-            if (parametersMatch(actionType)) {
+        if (returnType == SVoidType.instance && other instanceof SLambdaFunction lambdaType) {
+            if (parametersMatch(lambdaType)) {
                 return new FunctionToLambdaOperation(other);
             }
         }
@@ -87,12 +87,15 @@ public class SFunction extends SType {
         return null;
     }
 
-    private boolean parametersMatch(SAction action) {
-        if (parameters.length != action.getParameters().length) {
+    private boolean parametersMatch(SLambdaFunction lambda) {
+        if (!returnType.equals(lambda.getReturnType())) {
+            return false;
+        }
+        if (parameters.length != lambda.getParameters().length) {
             return false;
         }
         for (int i = 0; i < parameters.length; i++) {
-            if (!parameters[i].type().equals(action.getParameters()[i])) {
+            if (!parameters[i].type().equals(lambda.getParameters()[i])) {
                 return false;
             }
         }

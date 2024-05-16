@@ -33,5 +33,6 @@ public class BinderErrors {
     public static final ErrorCode EmptyCharLiteral = new ErrorCode("B028", "Empty character literal");
     public static final ErrorCode TooManyCharsInCharLiteral = new ErrorCode("B029", "Too many characters in character literal");
     public static final ErrorCode AugmentedAssignmentInvalidType = new ErrorCode("B030", "'%s' operator on types '%s' and '%s' returns '%s', and it does not match with left side");
+    public static final ErrorCode NotAllPathReturnValue = new ErrorCode("B031", "Not all code paths return a value");
     public static final ErrorCode InternalError = new ErrorCode("B999", "Internal error: %s");
 }

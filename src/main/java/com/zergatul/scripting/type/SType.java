@@ -190,10 +190,13 @@ public abstract class SType {
         if (type instanceof ParameterizedType parameterized) {
             java.lang.reflect.Type[] arguments = parameterized.getActualTypeArguments();
             if (parameterized.getRawType() == Action1.class) {
-                return new SAction(fromJavaType(arguments[0]));
+                return new SLambdaFunction(SVoidType.instance, fromJavaType(arguments[0]));
             }
             if (parameterized.getRawType() == Action2.class) {
-                return new SAction(fromJavaType(arguments[0]), fromJavaType(arguments[1]));
+                return new SLambdaFunction(SVoidType.instance, fromJavaType(arguments[0]), fromJavaType(arguments[1]));
+            }
+            if (parameterized.getRawType() == Function0.class) {
+                return new SLambdaFunction(fromJavaType(arguments[0]));
             }
 
             throw new InternalException("Unsupported parametrized type.");
@@ -216,7 +219,7 @@ public abstract class SType {
                 return SString.instance;
             }
             if (clazz == Action0.class) {
-                return new SAction();
+                return new SLambdaFunction(SVoidType.instance);
             }
             if (clazz == IntReference.class) {
                 return SReference.INT;

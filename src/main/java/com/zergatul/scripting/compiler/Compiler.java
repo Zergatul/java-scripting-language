@@ -139,9 +139,6 @@ public class Compiler {
             visitor.visitCode();
 
             context = context.createStaticFunction(type.getReturnType());
-            /*for (BoundParameterNode parameter : function.parameters.parameters) {
-                context.addLocalVariable((LocalVariable) parameter.getName().symbol); // required??? done in binder
-            }*/
 
             compileBlockStatement(visitor, context, function.block);
 

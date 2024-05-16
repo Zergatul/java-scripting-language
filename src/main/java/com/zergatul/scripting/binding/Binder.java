@@ -82,6 +82,14 @@ public class Binder {
             FunctionNode node = nodes.get(i);
             BoundNameExpressionNode name = new BoundNameExpressionNode(symbols.get(i), node.name.getRange());
             BoundBlockStatementNode block = bindBlockStatement(node.body);
+
+            SType returnType = returnTypes.get(i).type;
+            if (returnType != SVoidType.instance && returnType != SUnknown.instance) {
+                if (!new ReturnPathsVerifier().verify(block)) {
+                    addDiagnostic(BinderErrors.NotAllPathReturnValue, block);
+                }
+            }
+
             functions.add(new BoundFunctionNode(returnTypes.get(i), name, parametersList.get(i), block, node.getRange()));
         }
         context = old;
@@ -661,7 +669,7 @@ public class Binder {
                         for (int i = 0; i < arguments.arguments.size(); i++) {
                             BoundExpressionNode expression = arguments.arguments.get(i);
                             if (expression instanceof BoundContextualLambdaExpressionNode lambda) {
-                                expression = bindContextualLambdaExpression(lambda, (SAction) overload.method.getParameterTypes().get(i));
+                                expression = bindContextualLambdaExpression(lambda, (SLambdaFunction) overload.method.getParameterTypes().get(i));
                             }
 
                             CastOperation cast = overload.casts.get(i);
@@ -866,8 +874,8 @@ public class Binder {
         return new BoundContextualLambdaExpressionNode(expression);
     }
 
-    private BoundLambdaExpressionNode bindContextualLambdaExpression(BoundContextualLambdaExpressionNode expression, SAction actionType) {
-        int parametersCount = actionType.getParameters().length;
+    private BoundLambdaExpressionNode bindContextualLambdaExpression(BoundContextualLambdaExpressionNode expression, SLambdaFunction lambdaType) {
+        int parametersCount = lambdaType.getParameters().length;
         if (expression.expression.parameters.size() != parametersCount) {
             throw new InternalException("Lambda parameters count mismatch.");
         }
@@ -882,7 +890,7 @@ public class Binder {
         List<BoundParameterNode> parameters = new ArrayList<>();
         for (int i = 0; i < parametersCount; i++) {
             NameExpressionNode name = expression.expression.parameters.get(i);
-            SType type = actionType.getParameters()[i];
+            SType type = lambdaType.getParameters()[i];
             Variable variable = context.addLocalVariable(name.value, type, expression.expression.parameters.get(i).getRange());
             TextRange range = name.getRange();
             BoundNameExpressionNode boundName = new BoundNameExpressionNode(variable, range);
@@ -893,7 +901,7 @@ public class Binder {
 
         popScope();
 
-        return new BoundLambdaExpressionNode(actionType, parameters, statement, expression.getRange());
+        return new BoundLambdaExpressionNode(lambdaType, parameters, statement, expression.getRange());
     }
 
     private BoundInvalidExpressionNode bindInvalidExpression(InvalidExpressionNode expression) {
@@ -990,8 +998,8 @@ public class Binder {
     }
 
     private boolean contextualEquals(SType type1, SType type2) {
-        if (type1 instanceof SAction action1 && type2 instanceof SContextualLambda lambda) {
-            return action1.getParameters().length == lambda.getParametersCount();
+        if (type1 instanceof SLambdaFunction lambdaType && type2 instanceof SContextualLambda lambda) {
+            return lambdaType.getParameters().length == lambda.getParametersCount();
         } else {
             return false;
         }

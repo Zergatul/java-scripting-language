@@ -47,21 +47,6 @@ public class FunctionTests {
     }
 
     @Test
-    public void noReturnZeroStatementsTest() {
-        String code = """
-                int func1() {}
-                intStorage.add(func1());
-                """;
-
-        Runnable program = compile(ApiRoot.class, code);
-        program.run();
-
-        Assertions.assertIterableEquals(
-                ApiRoot.intStorage.list,
-                List.of(0));
-    }
-
-    @Test
     public void intFunctionTest() {
         String code = """
                 static int x = 123;

@@ -1,1 +1,0 @@
-./../JavaCC/bin/javacc.bat -STATIC:false -OUTPUT_DIRECTORY:src\main\java\com\zergatul\scripting\generated .\src\main\java\com\zergatul\scripting\generated\ScriptingLanguage.JJTree.jj
