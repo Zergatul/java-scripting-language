@@ -26,7 +26,7 @@ public class BinderErrors {
     public static final ErrorCode ExpressionCannotBeSet = new ErrorCode("B021", "The left-hand side of an assignment must be a variable, property or indexer");
     public static final ErrorCode CannotIterate = new ErrorCode("B022", "foreach statement cannot operate on expression of type '%s'");
     public static final ErrorCode ForEachTypesNotMatch = new ErrorCode("B023", "foreach variable type and expression type doesn't match");
-    public static final ErrorCode ContextualLambda = new ErrorCode("B024", "Lambda expression is invalid in this context");
+    public static final ErrorCode LambdaIsInvalidInCurrentContext = new ErrorCode("B024", "Lambda expression is invalid in this context");
     public static final ErrorCode NotFunction = new ErrorCode("B025", "'%s' is not a function");
     public static final ErrorCode CannotCastArgument = new ErrorCode("B026", "Argument '%d' cannot convert from '%s' to '%s'");
     public static final ErrorCode EmptyReturnStatement = new ErrorCode("B027", "Cannot return void");
@@ -34,5 +34,6 @@ public class BinderErrors {
     public static final ErrorCode TooManyCharsInCharLiteral = new ErrorCode("B029", "Too many characters in character literal");
     public static final ErrorCode AugmentedAssignmentInvalidType = new ErrorCode("B030", "'%s' operator on types '%s' and '%s' returns '%s', and it does not match with left side");
     public static final ErrorCode NotAllPathReturnValue = new ErrorCode("B031", "Not all code paths return a value");
+
     public static final ErrorCode InternalError = new ErrorCode("B999", "Internal error: %s");
 }

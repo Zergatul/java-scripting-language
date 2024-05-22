@@ -1,9 +1,6 @@
 package com.zergatul.scripting.tests.compiler.helpers;
 
-import com.zergatul.scripting.runtime.Action0;
-import com.zergatul.scripting.runtime.Action1;
-import com.zergatul.scripting.runtime.Action2;
-import com.zergatul.scripting.runtime.Function0;
+import com.zergatul.scripting.runtime.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -76,5 +73,28 @@ public class Run {
             sum += getter.invoke();
         }
         return sum;
+    }
+
+    public double sumFloats(int count, Function0<Double> getter) {
+        double sum = 0;
+        for (int i = 0; i < count; i++) {
+            sum += getter.invoke();
+        }
+        return sum;
+    }
+
+    public int[] map(int[] array, Function1<Integer, Integer> mapper) {
+        int[] result = new int[array.length];
+        for (int i = 0; i < result.length; i++) {
+            result[i] = mapper.invoke(array[i]);
+        }
+        return result;
+    }
+
+    public int reduce(int[] array, int initial, Function2<Integer, Integer, Integer> reducer) {
+        for (int element : array) {
+            initial = reducer.invoke(initial, element);
+        }
+        return initial;
     }
 }

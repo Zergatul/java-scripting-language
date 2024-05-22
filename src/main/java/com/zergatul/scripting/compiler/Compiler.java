@@ -287,6 +287,12 @@ public class Compiler {
     private void compileReturnStatement(MethodVisitor visitor, CompilerContext context, BoundReturnStatementNode statement) {
         if (statement.expression != null) {
             compileExpression(visitor, context, statement.expression);
+
+            if (context.isGenericFunction() && context.getReturnType().getBoxedVersion() != null) {
+                context.getReturnType().compileBoxing(visitor);
+                visitor.visitInsn(ARETURN);
+                return;
+            }
         }
 
         visitor.visitInsn(context.getReturnType().getReturnInst());
@@ -469,7 +475,6 @@ public class Compiler {
             case PROPERTY_ACCESS_EXPRESSION -> compilePropertyAccessExpression(visitor, context, (BoundPropertyAccessExpressionNode) expression);
             case NEW_EXPRESSION -> compileNewExpression(visitor, context, (BoundNewExpressionNode) expression);
             case INDEX_EXPRESSION -> compileIndexExpression(visitor, context, (BoundIndexExpressionNode) expression);
-            case CONTEXTUAL_LAMBDA_EXPRESSION -> compileContextualLambdaExpression();
             case LAMBDA_EXPRESSION -> compileLambdaExpression(visitor, context, (BoundLambdaExpressionNode) expression);
             case FUNCTION_INVOCATION -> compileFunctionInvocationExpression(visitor, context, (BoundFunctionInvocationExpression) expression);
             default -> throw new InternalException();
@@ -568,7 +573,7 @@ public class Compiler {
         SFunction type = function.getFunctionType();
         List<BoundParameterNode> parameters = new ArrayList<>(type.getParameters().size());
         List<LocalVariable> variables = new ArrayList<>(type.getParameters().size());
-        CompilerContext lambdaContext = context.createFunction(type.getReturnType());
+        CompilerContext lambdaContext = context.createFunction(type.getReturnType(), true);
         for (SType parameterType : type.getParameterTypes()) {
             LocalVariable variable = lambdaContext.addLocalVariable("p" + variables.size(), parameterType, null);
             variables.add(variable);
@@ -582,16 +587,18 @@ public class Compiler {
         for (LocalVariable variable : variables) {
             arguments.add(new BoundNameExpressionNode(variable, range));
         }
-        BoundStatementNode statement = new BoundExpressionStatementNode(
-                new BoundFunctionInvocationExpression(
-                        new BoundNameExpressionNode(function, range),
-                        type.getReturnType(),
-                        new BoundArgumentsListNode(arguments, range),
-                        List.of(), // TODO: ref parameters?
-                        range),
-                range);
-        BoundLambdaExpressionNode lambda = new BoundLambdaExpressionNode(
+
+        BoundFunctionInvocationExpression invocation = new BoundFunctionInvocationExpression(
+                new BoundNameExpressionNode(function, range),
                 type.getReturnType(),
+                new BoundArgumentsListNode(arguments, range),
+                List.of(), // TODO: ref parameters?
+                range);
+        BoundStatementNode statement = type.getReturnType() == SVoidType.instance ?
+                new BoundExpressionStatementNode(invocation, range) :
+                new BoundReturnStatementNode(invocation, range);
+        BoundLambdaExpressionNode lambda = new BoundLambdaExpressionNode(
+                new SLambdaFunction(type.getReturnType(), type.getParameterTypes().toArray(SType[]::new)),
                 parameters,
                 statement,
                 range);
@@ -652,12 +659,13 @@ public class Compiler {
     }
 
     private void compileLambdaExpression(MethodVisitor visitor, CompilerContext context, BoundLambdaExpressionNode expression) {
-        Class<?> funcInterface = switch (expression.parameters.size()) {
+        SLambdaFunction type = (SLambdaFunction) expression.type;
+        Class<?> funcInterface = type.getJavaClass(); /*switch (expression.parameters.size()) {
             case 0 -> Action0.class;
             case 1 -> Action1.class;
             case 2 -> Action2.class;
             default -> throw new InternalException("Too much Action arguments.");
-        };
+        };*/
 
         ClassWriter writer = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
         String name = "com/zergatul/scripting/dynamic/DynamicLambdaClass_" + counter.incrementAndGet();
@@ -667,10 +675,17 @@ public class Compiler {
 
         Type[] argumentTypes = new Type[expression.parameters.size()];
         Arrays.fill(argumentTypes, Type.getType(Object.class));
-        MethodVisitor invokeVisitor = writer.visitMethod(ACC_PUBLIC, "invoke", Type.getMethodDescriptor(Type.VOID_TYPE, argumentTypes), null, null);
+        MethodVisitor invokeVisitor = writer.visitMethod(
+                ACC_PUBLIC,
+                "invoke",
+                Type.getMethodDescriptor(
+                        type.isFunction() ? Type.getType(Object.class) : Type.VOID_TYPE,
+                        argumentTypes),
+                null,
+                null);
         invokeVisitor.visitCode();
 
-        CompilerContext lambdaContext = context.createFunction(SVoidType.instance);
+        CompilerContext lambdaContext = context.createFunction(type.getReturnType(), true);
         LocalVariable[] arguments = new LocalVariable[expression.parameters.size()];
         for (int i = 0; i < expression.parameters.size(); i++) {
             arguments[i] = lambdaContext.addLocalVariable(null, SType.fromJavaType(Object.class), null);
@@ -691,7 +706,9 @@ public class Compiler {
             unboxed.compileStore(context, invokeVisitor);
         }
         compileStatement(invokeVisitor, lambdaContext, expression.body);
-        invokeVisitor.visitInsn(RETURN);
+        if (!type.isFunction()) {
+            invokeVisitor.visitInsn(RETURN);
+        }
         invokeVisitor.visitMaxs(0, 0);
         invokeVisitor.visitEnd();
 

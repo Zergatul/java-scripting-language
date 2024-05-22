@@ -174,6 +174,10 @@ public abstract class SType {
         return null;
     }
 
+    public void compileBoxing(MethodVisitor visitor) {
+        throw new InternalException();
+    }
+
     public void compileUnboxing(MethodVisitor visitor) {
         throw new InternalException();
     }
@@ -197,6 +201,12 @@ public abstract class SType {
             }
             if (parameterized.getRawType() == Function0.class) {
                 return new SLambdaFunction(fromJavaType(arguments[0]));
+            }
+            if (parameterized.getRawType() == Function1.class) {
+                return new SLambdaFunction(fromJavaType(arguments[0]), fromJavaType(arguments[1]));
+            }
+            if (parameterized.getRawType() == Function2.class) {
+                return new SLambdaFunction(fromJavaType(arguments[0]), fromJavaType(arguments[1]), fromJavaType(arguments[2]));
             }
 
             throw new InternalException("Unsupported parametrized type.");

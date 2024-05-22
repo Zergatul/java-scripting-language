@@ -140,6 +140,16 @@ public class SFloat extends SPredefinedType {
     }
 
     @Override
+    public void compileBoxing(MethodVisitor visitor) {
+        visitor.visitMethodInsn(
+                INVOKESTATIC,
+                Type.getInternalName(Double.class),
+                "valueOf",
+                Type.getMethodDescriptor(Type.getType(Double.class), Type.DOUBLE_TYPE),
+                false);
+    }
+
+    @Override
     public void compileUnboxing(MethodVisitor visitor) {
         visitor.visitMethodInsn(
                 INVOKEVIRTUAL,

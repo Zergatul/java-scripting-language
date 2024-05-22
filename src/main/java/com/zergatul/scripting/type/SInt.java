@@ -160,6 +160,16 @@ public class SInt extends SPredefinedType {
     }
 
     @Override
+    public void compileBoxing(MethodVisitor visitor) {
+        visitor.visitMethodInsn(
+                INVOKESTATIC,
+                Type.getInternalName(Integer.class),
+                "valueOf",
+                Type.getMethodDescriptor(Type.getType(Integer.class), Type.INT_TYPE),
+                false);
+    }
+
+    @Override
     public void compileUnboxing(MethodVisitor visitor) {
         visitor.visitMethodInsn(
                 INVOKEVIRTUAL,

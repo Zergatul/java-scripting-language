@@ -6,6 +6,7 @@ import com.zergatul.scripting.lexer.Token;
 import com.zergatul.scripting.parser.NodeType;
 
 public abstract class StatementNode extends Node {
+
     protected StatementNode(NodeType nodeType, TextRange range) {
         super(nodeType, range);
     }

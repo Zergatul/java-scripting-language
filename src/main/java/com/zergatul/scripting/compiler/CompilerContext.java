@@ -21,6 +21,7 @@ public class CompilerContext {
     private final Map<String, Symbol> staticSymbols = new HashMap<>();
     private final Map<String, Symbol> localSymbols = new HashMap<>();
     private final boolean isFunctionRoot;
+    private final boolean isGenericFunction;
     private final SType returnType;
     private String className;
     private int stackIndex;
@@ -37,10 +38,15 @@ public class CompilerContext {
     }
 
     public CompilerContext(int initialStackIndex, boolean isFunctionRoot, SType returnType, CompilerContext parent) {
+        this(initialStackIndex, isFunctionRoot, false, returnType, parent);
+    }
+
+    public CompilerContext(int initialStackIndex, boolean isFunctionRoot, boolean isGenericFunction, SType returnType, CompilerContext parent) {
         this.root = parent == null ? this : parent.root;
         this.parent = parent;
         this.stackIndex = initialStackIndex;
         this.isFunctionRoot = isFunctionRoot;
+        this.isGenericFunction = isGenericFunction;
         this.returnType = returnType;
     }
 
@@ -108,6 +114,10 @@ public class CompilerContext {
         return variable;
     }
 
+    public boolean isGenericFunction() {
+        return isGenericFunction;
+    }
+
     public LocalVariable createRefVariable(Variable variable) {
         LocalVariable holder = addLocalVariable(null, variable.getType().getReferenceType(), null);
         refVariables.add(new RefHolder(holder, variable));
@@ -127,7 +137,11 @@ public class CompilerContext {
     }
 
     public CompilerContext createFunction(SType returnType) {
-        return new CompilerContext(1, true, returnType, this);
+        return createFunction(returnType, false);
+    }
+
+    public CompilerContext createFunction(SType returnType, boolean generic) {
+        return new CompilerContext(1, true, generic, returnType, this);
     }
 
     public SType getReturnType() {

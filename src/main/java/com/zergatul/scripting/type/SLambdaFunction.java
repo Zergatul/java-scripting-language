@@ -1,10 +1,7 @@
 package com.zergatul.scripting.type;
 
 import com.zergatul.scripting.InternalException;
-import com.zergatul.scripting.runtime.Action0;
-import com.zergatul.scripting.runtime.Action1;
-import com.zergatul.scripting.runtime.Action2;
-import com.zergatul.scripting.runtime.Function0;
+import com.zergatul.scripting.runtime.*;
 import org.objectweb.asm.MethodVisitor;
 
 import java.util.Arrays;
@@ -23,6 +20,10 @@ public class SLambdaFunction extends SType {
 
     public SType getReturnType() {
         return returnType;
+    }
+
+    public boolean isFunction() {
+        return returnType != SVoidType.instance;
     }
 
     public SType[] getParameters() {
@@ -61,6 +62,8 @@ public class SLambdaFunction extends SType {
         } else {
             return switch (parameters.length) {
                 case 0 -> Function0.class;
+                case 1 -> Function1.class;
+                case 2 -> Function2.class;
                 default -> throw new InternalException("Too much Function parameters.");
             };
         }

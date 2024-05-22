@@ -1,5 +1,7 @@
 package com.zergatul.scripting.tests.compiler;
 
+import com.zergatul.scripting.DiagnosticMessage;
+import com.zergatul.scripting.binding.BinderErrors;
 import com.zergatul.scripting.tests.compiler.helpers.FloatStorage;
 import com.zergatul.scripting.tests.compiler.helpers.IntStorage;
 import com.zergatul.scripting.tests.compiler.helpers.Run;
@@ -11,6 +13,7 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 
 import static com.zergatul.scripting.tests.compiler.helpers.CompilerHelper.compile;
+import static com.zergatul.scripting.tests.compiler.helpers.CompilerHelper.getDiagnostics;
 
 public class LambdaTests {
 
@@ -151,6 +154,85 @@ public class LambdaTests {
         program.run();
 
         Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(100));
+    }
+
+    @Test
+    public void simpleFunctionCastTest() {
+        String code = """
+                floatStorage.add(run.sumFloats(5, () => 10));
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(ApiRoot.floatStorage.list, List.of(50.0));
+    }
+
+    @Test
+    public void simpleFunctionCannotCastTest() {
+        String code = """
+                run.sumInts(123, () => 123.0);
+                """;
+
+        List<DiagnosticMessage> messages = getDiagnostics(ApiRoot.class, code);
+        Assertions.assertEquals(1, messages.size());
+        Assertions.assertEquals(messages.get(0).code, BinderErrors.CannotImplicitlyConvert.code());
+    }
+
+    @Test
+    public void map1Test() {
+        String code = """
+                int[] array = run.map(new int[] { 1, 2, 3, 4, 5 }, i => i * 2);
+                foreach (int i in array) intStorage.add(i);
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(2, 4, 6, 8, 10));
+    }
+
+    @Test
+    public void map2Test() {
+        String code = """
+                int x2(int value) { return value * 2; }
+                
+                int[] array = run.map(new int[] { 1, 2, 3, 4, 5 }, x2);
+                foreach (int i in array) intStorage.add(i);
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(2, 4, 6, 8, 10));
+    }
+
+    @Test
+    public void reduce1Test() {
+        String code = """
+                int result = run.reduce(new int[] { 1, 2, 3, 4, 5 }, 100, (acc, value) => acc + value * value);
+                intStorage.add(result);
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(155));
+    }
+
+    @Test
+    public void reduce2Test() {
+        String code = """
+                int func(int acc, int value) { return acc + value * value; }
+                
+                int result = run.reduce(new int[] { 1, 2, 3, 4, 5 }, 100, func);
+                intStorage.add(result);
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(155));
     }
 
     public static class ApiRoot {
