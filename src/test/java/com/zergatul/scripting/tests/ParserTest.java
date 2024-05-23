@@ -1,5 +1,6 @@
 package com.zergatul.scripting.tests;
 
+import com.zergatul.scripting.DiagnosticMessage;
 import com.zergatul.scripting.SingleLineTextRange;
 import com.zergatul.scripting.lexer.IdentifierToken;
 import com.zergatul.scripting.lexer.Lexer;
@@ -384,6 +385,28 @@ public class ParserTest {
                                 new SingleLineTextRange(1, 1, 0, 37))),
                 List.of(),
                 new SingleLineTextRange(1, 1, 0, 37)));
+    }
+
+    @Test
+    public void endOfFileDiagnosticsTest() {
+        var result = parse("a()");
+        Assertions.assertIterableEquals(result.diagnostics(), List.of(
+                new DiagnosticMessage(ParserErrors.SemicolonExpected, new SingleLineTextRange(1, 4, 3, 1))));
+    }
+
+    @Test
+    public void functionAfterVariableTest() {
+        var result = parse("""
+                int x = 0;
+                int func(){ return 1; }
+                """);
+        Assertions.assertFalse(result.diagnostics().isEmpty());
+        Assertions.assertEquals(
+                result.diagnostics().get(0),
+                new DiagnosticMessage(
+                        ParserErrors.SemicolonOrEqualExpected,
+                        new SingleLineTextRange(2, 9, 19, 1),
+                        "("));
     }
 
     private ParserOutput parse(String code) {

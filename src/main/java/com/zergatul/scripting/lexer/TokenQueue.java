@@ -29,6 +29,10 @@ public class TokenQueue implements Iterable<Token> {
         }
     }
 
+    public Token last() {
+        return list.get(list.size() - 1);
+    }
+
     public int size() {
         return list.size() - position;
     }

@@ -1062,6 +1062,14 @@ public class Parser {
     }
 
     private void addDiagnostic(ErrorCode code, Locatable locatable, Object... parameters) {
+        if (locatable == EndOfFileToken.instance) {
+            Token last = tokens.last();
+            locatable = () -> new SingleLineTextRange(
+                    last.getRange().getLine2(),
+                    last.getRange().getColumn2(),
+                    last.getRange().getPosition() + last.getRange().getLength(),
+                    1);
+        }
         diagnostics.add(new DiagnosticMessage(code, locatable, parameters));
     }
 
