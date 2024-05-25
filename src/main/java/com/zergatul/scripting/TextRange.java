@@ -25,6 +25,26 @@ public abstract class TextRange {
         return true;
     }
 
+    public boolean isBefore(int line, int column) {
+        if (getLine2() < line) {
+            return true;
+        }
+        if (getLine2() > line) {
+            return false;
+        }
+        return getColumn1() < column;
+    }
+
+    public boolean isAfter(int line, int column) {
+        if (getLine1() < line) {
+            return false;
+        }
+        if (getLine1() > line) {
+            return true;
+        }
+        return getColumn1() > column;
+    }
+
     @Override
     public boolean equals(Object obj) {
         if (obj instanceof TextRange other) {

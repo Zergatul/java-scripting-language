@@ -36,7 +36,12 @@ public class VariableDeclarationNode extends StatementNode {
     }
 
     @Override
-    public StatementNode expand(Token token) {
+    public StatementNode prepend(Token token) {
+        return new VariableDeclarationNode(type, name, expression, TextRange.combine(token.getRange(), getRange()));
+    }
+
+    @Override
+    public StatementNode append(Token token) {
         return new VariableDeclarationNode(type, name, expression, TextRange.combine(getRange(), token.getRange()));
     }
 }

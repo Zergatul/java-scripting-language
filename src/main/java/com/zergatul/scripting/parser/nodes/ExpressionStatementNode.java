@@ -23,7 +23,7 @@ public class ExpressionStatementNode extends StatementNode {
     }
 
     @Override
-    public StatementNode expand(Token token) {
+    public StatementNode append(Token token) {
         return new ExpressionStatementNode(expression, TextRange.combine(getRange(), token.getRange()));
     }
 }

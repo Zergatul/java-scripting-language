@@ -23,7 +23,7 @@ public class PostfixStatementNode extends StatementNode {
     }
 
     @Override
-    public StatementNode expand(Token token) {
+    public StatementNode append(Token token) {
         return new PostfixStatementNode(getNodeType(), expression, TextRange.combine(getRange(), token.getRange()));
     }
 }

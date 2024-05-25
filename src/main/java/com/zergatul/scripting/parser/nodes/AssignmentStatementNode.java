@@ -28,7 +28,7 @@ public class AssignmentStatementNode extends StatementNode {
     }
 
     @Override
-    public StatementNode expand(Token token) {
+    public StatementNode append(Token token) {
         return new AssignmentStatementNode(left, operator, right, TextRange.combine(getRange(), token.getRange()));
     }
 }

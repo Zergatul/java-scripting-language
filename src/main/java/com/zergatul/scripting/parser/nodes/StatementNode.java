@@ -11,7 +11,11 @@ public abstract class StatementNode extends Node {
         super(nodeType, range);
     }
 
-    public StatementNode expand(Token token) {
+    public StatementNode prepend(Token token) {
+        throw new InternalException("Not supported.");
+    }
+
+    public StatementNode append(Token token) {
         throw new InternalException("Not supported.");
     }
 }

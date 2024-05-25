@@ -11,7 +11,7 @@ public class InvalidStatementNode extends StatementNode {
     }
 
     @Override
-    public StatementNode expand(Token token) {
+    public StatementNode append(Token token) {
         return new InvalidStatementNode(TextRange.combine(getRange(), token.getRange()));
     }
 }

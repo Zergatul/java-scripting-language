@@ -39,11 +39,10 @@ public class Parser {
             switch (state) {
                 case parseStaticVariables -> {
                     if (current.type == TokenType.STATIC) {
-                        advance();
+                        Token staticToken = advance();
                         StatementNode statement = parseVariableDeclaration();
                         if (statement instanceof VariableDeclarationNode declaration) {
-                            variables.add(declaration);
-                            advance(TokenType.SEMICOLON);
+                            variables.add((VariableDeclarationNode) declaration.prepend(staticToken).append(advance(TokenType.SEMICOLON)));
                         }
                     } else {
                         state = parseFunctions;
@@ -549,10 +548,10 @@ public class Parser {
             case BREAK -> parseBreakStatement();
             case CONTINUE -> parseContinueStatement();
             case SEMICOLON -> parseEmptyStatement();
-            case BOOLEAN, INT, FLOAT, STRING, CHAR, IDENTIFIER, LEFT_PARENTHESES -> parseSimpleStatement().expand(advance(TokenType.SEMICOLON));
+            case BOOLEAN, INT, FLOAT, STRING, CHAR, IDENTIFIER, LEFT_PARENTHESES -> parseSimpleStatement().append(advance(TokenType.SEMICOLON));
             default -> {
                 if (isPossibleExpression()) {
-                    yield parseSimpleStatement().expand(advance(TokenType.SEMICOLON));
+                    yield parseSimpleStatement().append(advance(TokenType.SEMICOLON));
                 } else {
                     throw new InternalException("Cannot parse statement.");
                 }
