@@ -19,7 +19,7 @@ public abstract class TextRange {
         if (line == getLine1() && column < getColumn1()) {
             return false;
         }
-        if (line == getLine2() && column > getColumn2()) {
+        if (line == getLine2() && column >= getColumn2()) {
             return false;
         }
         return true;

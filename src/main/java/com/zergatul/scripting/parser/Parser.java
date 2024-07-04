@@ -40,10 +40,8 @@ public class Parser {
                 case parseStaticVariables -> {
                     if (current.type == TokenType.STATIC) {
                         Token staticToken = advance();
-                        StatementNode statement = parseVariableDeclaration();
-                        if (statement instanceof VariableDeclarationNode declaration) {
-                            variables.add((VariableDeclarationNode) declaration.prepend(staticToken).append(advance(TokenType.SEMICOLON)));
-                        }
+                        VariableDeclarationNode declaration = parseVariableDeclaration();
+                        variables.add((VariableDeclarationNode) declaration.prepend(staticToken).append(advance(TokenType.SEMICOLON)));
                     } else {
                         state = parseFunctions;
                     }
@@ -66,32 +64,33 @@ public class Parser {
             }
         }
 
-        Node first;
-        if (!variables.isEmpty()) {
-            first = variables.get(0);
-        } else if (!functions.isEmpty()) {
-            first = functions.get(0);
-        } else if (!statements.isEmpty()) {
-            first = statements.get(0);
-        } else {
-            first = null;
-        }
+        StaticVariablesListNode variablesList = new StaticVariablesListNode(
+                variables,
+                variables.isEmpty() ?
+                        new SingleLineTextRange(1, 1, 0, 0) :
+                        TextRange.combine(variables.get(0), variables.get(variables.size() - 1)));
 
-        Node last;
-        if (!statements.isEmpty()) {
-            last = statements.get(statements.size() - 1);
-        } else if (!functions.isEmpty()) {
-            last = functions.get(functions.size() - 1);
-        } else if (!variables.isEmpty()) {
-            last = variables.get(variables.size() - 1);
-        } else {
-            last = null;
-        }
+        FunctionsListNode functionsList = new FunctionsListNode(
+                functions,
+                functions.isEmpty() ?
+                        new SingleLineTextRange(
+                                variablesList.getRange().getLine2(),
+                                variablesList.getRange().getColumn2(),
+                                variablesList.getRange().getPosition() + variablesList.getRange().getLength(),
+                                0) :
+                        TextRange.combine(functions.get(0), functions.get(functions.size() - 1)));
 
-        TextRange range = first == null ?
-                new SingleLineTextRange(1, 1, 0, 0) :
-                TextRange.combine(first, last);
-        return new CompilationUnitNode(variables, functions, statements, range);
+        StatementsListNode statementsList = new StatementsListNode(
+                statements,
+                statements.isEmpty() ?
+                        new SingleLineTextRange(
+                                functionsList.getRange().getLine2(),
+                                functionsList.getRange().getColumn2(),
+                                functionsList.getRange().getPosition() + functionsList.getRange().getLength(),
+                                0) :
+                        TextRange.combine(statements.get(0), statements.get(statements.size() - 1)));
+
+        return new CompilationUnitNode(variablesList, functionsList, statementsList, TextRange.combine(variablesList, statementsList));
     }
 
     private BlockStatementNode parseBlockStatement() {
@@ -408,7 +407,7 @@ public class Parser {
         return new ParameterListNode(parameters, TextRange.combine(begin, end));
     }
 
-    private StatementNode parseVariableDeclaration() {
+    private VariableDeclarationNode parseVariableDeclaration() {
         TypeNode type = parseTypeNode();
         if (current.type == TokenType.IDENTIFIER) {
             IdentifierToken identifier = (IdentifierToken) advance();
@@ -430,12 +429,15 @@ public class Parser {
                 }
                 default -> {
                     addDiagnostic(ParserErrors.SemicolonOrEqualExpected, current, current.getRawValue(code));
-                    return new InvalidStatementNode(createMissingTokenRange());
+                    return new VariableDeclarationNode(type, name, TextRange.combine(type, name));
                 }
             }
         } else {
             addDiagnostic(ParserErrors.IdentifierExpected, current, current.getRawValue(code));
-            return new InvalidStatementNode(createMissingTokenRange());
+
+            IdentifierToken identifier = new IdentifierToken("", createMissingTokenRange());
+            NameExpressionNode name = new NameExpressionNode(identifier);
+            return new VariableDeclarationNode(type, name, TextRange.combine(type, name));
         }
     }
 
@@ -474,13 +476,11 @@ public class Parser {
             Token assignmentToken = advance();
 
             ExpressionNode expression2;
-            Locatable last;
             if (isPossibleExpression()) {
                 expression2 = parseExpression();
             } else {
                 addDiagnostic(ParserErrors.ExpressionExpected, current, current.getRawValue(code));
                 expression2 = new InvalidExpressionNode(createMissingTokenRange());
-                last = expression2;
             }
             return new AssignmentStatementNode(
                     expression1,

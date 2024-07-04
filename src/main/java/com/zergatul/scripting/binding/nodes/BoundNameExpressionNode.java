@@ -26,7 +26,7 @@ public class BoundNameExpressionNode extends BoundExpressionNode {
 
     @Override
     public boolean canSet() {
-        return symbol.canSet();
+        return symbol != null && symbol.canSet();
     }
 
     @Override

@@ -9,9 +9,13 @@ public class LambdaAnalyzer {
 
     public boolean canBeAction(LambdaExpressionNode lambda) {
         return switch (lambda.body.getNodeType()) {
+            case ASSIGNMENT_STATEMENT -> true;
+            case AUGMENTED_ASSIGNMENT_STATEMENT -> true;
+            case INCREMENT_STATEMENT -> true;
+            case DECREMENT_STATEMENT -> true;
             case EXPRESSION_STATEMENT -> true;
             case BLOCK_STATEMENT -> !hasReturnValue(lambda.body).orElse(false);
-            default -> throw new InternalException();
+            default -> false;
         };
     }
 
@@ -19,7 +23,7 @@ public class LambdaAnalyzer {
         return switch (lambda.body.getNodeType()) {
             case EXPRESSION_STATEMENT -> true;
             case BLOCK_STATEMENT -> hasReturnValue(lambda.body).orElse(false);
-            default -> throw new InternalException();
+            default -> false;
         };
     }
 

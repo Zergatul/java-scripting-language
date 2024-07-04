@@ -94,11 +94,11 @@ public class Compiler {
     }
 
     private void buildStaticVariables(BoundCompilationUnitNode unit, ClassWriter writer, CompilerContext context) {
-        if (unit.variables.isEmpty()) {
+        if (unit.variables.variables.isEmpty()) {
             return;
         }
 
-        for (BoundVariableDeclarationNode variable : unit.variables) {
+        for (BoundVariableDeclarationNode variable : unit.variables.variables) {
             FieldVisitor fieldVisitor = writer.visitField(
                     ACC_PUBLIC | ACC_STATIC,
                     variable.name.value,
@@ -110,7 +110,7 @@ public class Compiler {
         // set static variables values in static constructor
         MethodVisitor visitor = writer.visitMethod(ACC_STATIC, "<clinit>", Type.getMethodDescriptor(Type.VOID_TYPE), null, null);
         visitor.visitCode();
-        for (BoundVariableDeclarationNode variable : unit.variables) {
+        for (BoundVariableDeclarationNode variable : unit.variables.variables) {
             StaticVariable symbol = (StaticVariable) variable.name.symbol;
             context.addStaticVariable(symbol);
             if (variable.expression != null) {
@@ -126,7 +126,7 @@ public class Compiler {
     }
 
     private void buildFunctions(BoundCompilationUnitNode unit, ClassWriter writer, CompilerContext context) {
-        for (BoundFunctionNode function : unit.functions) {
+        for (BoundFunctionNode function : unit.functions.functions) {
             Function symbol = (Function) function.name.symbol;
             SFunction type = symbol.getFunctionType();
 
@@ -168,11 +168,11 @@ public class Compiler {
 
         CompilerContext context = parameters.getContext();
         context.setClassName(className);
-        for (BoundVariableDeclarationNode variable : unit.variables) {
+        for (BoundVariableDeclarationNode variable : unit.variables.variables) {
             context.addStaticVariable((DeclaredStaticVariable) variable.name.symbol);
         }
 
-        compileStatements(visitor, context, unit.statements);
+        compileStatements(visitor, context, unit.statements.statements);
         visitor.visitInsn(RETURN);
         visitor.visitMaxs(0, 0);
         visitor.visitEnd();

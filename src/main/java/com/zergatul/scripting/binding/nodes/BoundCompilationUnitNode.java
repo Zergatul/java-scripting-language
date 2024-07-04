@@ -4,24 +4,22 @@ import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.parser.NodeType;
 
 import java.util.List;
-import java.util.stream.Stream;
 
 public class BoundCompilationUnitNode extends BoundNode {
 
-    public final List<BoundVariableDeclarationNode> variables;
-    public final List<BoundFunctionNode> functions;
-    public final List<BoundStatementNode> statements;
+    public final BoundStaticVariablesListNode variables;
+    public final BoundFunctionsListNode functions;
+    public final BoundStatementsListNode statements;
 
-    public BoundCompilationUnitNode(List<BoundVariableDeclarationNode> variables, List<BoundFunctionNode> functions, List<BoundStatementNode> statements, TextRange range) {
+    public BoundCompilationUnitNode(BoundStaticVariablesListNode variables, BoundFunctionsListNode functions, BoundStatementsListNode statements, TextRange range) {
         super(NodeType.COMPILATION_UNIT, range);
         this.variables = variables;
         this.functions = functions;
         this.statements = statements;
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public List<BoundNode> getChildren() {
-        return (List<BoundNode>) Stream.of(variables.stream(), functions.stream(), statements.stream()).flatMap(s -> s).toList();
+        return List.of(variables, functions, statements);
     }
 }

@@ -47,7 +47,7 @@ public class LambdaTests {
     }
 
     @Test
-    public void noBlockTest() {
+    public void noBlock1Test() {
         String code = """
                 run.once(() => intStorage.add(120));
                 """;
@@ -56,6 +56,62 @@ public class LambdaTests {
         program.run();
 
         Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(120));
+    }
+
+    @Test
+    public void noBlock2Test() {
+        String code = """
+                static int x = 100;
+                run.once(() => x = 200);
+                intStorage.add(x);
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(200));
+    }
+
+    @Test
+    public void noBlock3Test() {
+        String code = """
+                static int x = 100;
+                run.once(() => x++);
+                intStorage.add(x);
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(101));
+    }
+
+    @Test
+    public void noBlock4Test() {
+        String code = """
+                static int x = 100;
+                run.once(() => x--);
+                intStorage.add(x);
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(99));
+    }
+
+    @Test
+    public void noBlock5Test() {
+        String code = """
+                static int x = 100;
+                run.once(() => x *= 3);
+                intStorage.add(x);
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(300));
     }
 
     @Test
@@ -234,6 +290,38 @@ public class LambdaTests {
 
         Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(155));
     }
+
+    /*@Test
+    public void capture1Test() {
+        String code = """
+                int a = 100;
+                run.once(() => a = 200);
+                intStorage.add(a);
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(200));
+    }
+
+    @Test
+    public void capture2Test() {
+        String code = """
+                int a = 100;
+                run.once(() => {
+                    run.once(() => {
+                        a = 200;
+                    });
+                });
+                intStorage.add(a);
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(200));
+    }*/
 
     public static class ApiRoot {
         public static Run run;

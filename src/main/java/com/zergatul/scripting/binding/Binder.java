@@ -32,10 +32,14 @@ public class Binder {
     }
 
     private BoundCompilationUnitNode bindCompilationUnit(CompilationUnitNode node) {
-        List<BoundVariableDeclarationNode> variables = node.variables.stream().map(n -> bindVariableDeclaration(n, true)).toList();
-        List<BoundFunctionNode> functions = bindFunctions(unit.functions);
-        List<BoundStatementNode> statements = node.statements.stream().map(this::bindStatement).toList();
-        return new BoundCompilationUnitNode(variables, functions, statements, node.getRange());
+        List<BoundVariableDeclarationNode> variables = node.variables.variables.stream().map(n -> bindVariableDeclaration(n, true)).toList();
+        List<BoundFunctionNode> functions = bindFunctions(unit.functions.functions);
+        List<BoundStatementNode> statements = node.statements.statements.stream().map(this::bindStatement).toList();
+        return new BoundCompilationUnitNode(
+                new BoundStaticVariablesListNode(variables, node.variables.getRange()),
+                new BoundFunctionsListNode(functions, node.functions.getRange()),
+                new BoundStatementsListNode(statements, node.statements.getRange()),
+                node.getRange());
     }
 
     private List<BoundFunctionNode> bindFunctions(List<FunctionNode> nodes) {
@@ -1043,14 +1047,6 @@ public class Binder {
 
     private void popScope() {
         context = context.getParent();
-    }
-
-    private boolean contextualEquals(SType type1, SType type2) {
-        if (type1 instanceof SLambdaFunction lambdaType && type2 instanceof SContextualLambda lambda) {
-            return lambdaType.getParameters().length == lambda.getParametersCount();
-        } else {
-            return false;
-        }
     }
 
     private void addDiagnostic(ErrorCode code, Locatable locatable, Object... parameters) {
