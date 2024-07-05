@@ -19,7 +19,7 @@ public class CompilerContext {
     private final CompilerContext root;
     private final CompilerContext parent;
     private final Map<String, Symbol> staticSymbols = new HashMap<>();
-    private final Map<String, Symbol> localSymbols = new HashMap<>();
+    private final Map<String, Variable> localSymbols = new HashMap<>();
     private final boolean isFunctionRoot;
     private final boolean isGenericFunction;
     private final SType returnType;
@@ -158,13 +158,26 @@ public class CompilerContext {
             return staticSymbol;
         }
 
+        List<CompilerContext> functions = List.of(); // function boundaries
         for (CompilerContext context = this; context != null; ) {
-            Symbol localSymbol = context.localSymbols.get(name);
+            Variable localSymbol = context.localSymbols.get(name);
             if (localSymbol != null) {
-                return localSymbol;
+                if (functions.isEmpty()) {
+                    return localSymbol;
+                } else {
+                    Variable current = localSymbol;
+                    for (int i = functions.size() - 1; i >= 0; i--) {
+                        current = new CapturedLocalVariable(current);
+                        functions.get(i).localSymbols.put(current.getName(), current);
+                    }
+                    return current;
+                }
             }
             if (context.isFunctionRoot) {
-                break;
+                if (functions.isEmpty()) {
+                    functions = new ArrayList<>();
+                }
+                functions.add(context);
             }
             context = context.parent;
         }

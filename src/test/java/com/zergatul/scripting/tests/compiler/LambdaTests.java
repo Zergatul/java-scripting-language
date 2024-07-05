@@ -291,7 +291,7 @@ public class LambdaTests {
         Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(155));
     }
 
-    /*@Test
+    @Test
     public void capture1Test() {
         String code = """
                 int a = 100;
@@ -305,7 +305,7 @@ public class LambdaTests {
         Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(200));
     }
 
-    @Test
+    /*@Test
     public void capture2Test() {
         String code = """
                 int a = 100;
