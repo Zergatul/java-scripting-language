@@ -323,6 +323,9 @@ public class LambdaTests {
         Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(200));
     }*/
 
+    // TODO: capture function parameters?
+    // maybe not allow!
+
     public static class ApiRoot {
         public static Run run;
         public static IntStorage intStorage = new IntStorage();

@@ -23,11 +23,11 @@ public class CapturedLocalVariable extends Variable {
 
     @Override
     public void compileStore(CompilerContext context, MethodVisitor visitor) {
-
+        throw new RuntimeException();
     }
 
     @Override
     public void compileLoad(CompilerContext context, MethodVisitor visitor) {
-
+        throw new RuntimeException();
     }
 }

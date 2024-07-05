@@ -165,10 +165,14 @@ public class CompilerContext {
                 if (functions.isEmpty()) {
                     return localSymbol;
                 } else {
+                    if (!(localSymbol instanceof LiftedLocalVariable)) {
+                        localSymbol = new LiftedLocalVariable(localSymbol);
+                        context.localSymbols.put(name, localSymbol); // replace local variable with lifted
+                    }
                     Variable current = localSymbol;
+                    CapturedLocalVariable captured = new CapturedLocalVariable(localSymbol);
                     for (int i = functions.size() - 1; i >= 0; i--) {
-                        current = new CapturedLocalVariable(current);
-                        functions.get(i).localSymbols.put(current.getName(), current);
+                        functions.get(i).localSymbols.put(name, captured);
                     }
                     return current;
                 }
