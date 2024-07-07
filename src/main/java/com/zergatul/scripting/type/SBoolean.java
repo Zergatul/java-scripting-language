@@ -3,6 +3,8 @@ package com.zergatul.scripting.type;
 import com.zergatul.scripting.compiler.BufferedMethodVisitor;
 import com.zergatul.scripting.parser.BinaryOperator;
 import com.zergatul.scripting.parser.UnaryOperator;
+import com.zergatul.scripting.runtime.BooleanReference;
+import com.zergatul.scripting.runtime.IntReference;
 import com.zergatul.scripting.type.operation.BinaryOperation;
 import com.zergatul.scripting.type.operation.SingleInstructionBinaryOperation;
 import com.zergatul.scripting.type.operation.UnaryOperation;
@@ -129,6 +131,16 @@ public class SBoolean extends SPredefinedType {
                 "booleanValue",
                 Type.getMethodDescriptor(Type.BOOLEAN_TYPE),
                 false);
+    }
+
+    @Override
+    public SReference getReferenceType() {
+        return SReference.BOOLEAN;
+    }
+
+    @Override
+    public Class<?> getReferenceClass() {
+        return BooleanReference.class;
     }
 
     @Override

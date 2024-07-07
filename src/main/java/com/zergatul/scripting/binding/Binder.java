@@ -823,9 +823,11 @@ public class Binder {
             statement = bindStatement(node.body);
         }
 
+        List<CapturedLocalVariable> captured = context.getCaptured();
+
         popScope();
 
-        return new BoundLambdaExpressionNode(lambdaType, parameters, statement, node.getRange());
+        return new BoundLambdaExpressionNode(lambdaType, parameters, captured, statement, node.getRange());
     }
 
     private BoundNameExpressionNode bindNameExpression(NameExpressionNode name) {

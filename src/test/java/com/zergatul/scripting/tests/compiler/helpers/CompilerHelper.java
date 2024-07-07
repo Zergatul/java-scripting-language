@@ -10,15 +10,17 @@ import java.util.List;
 
 public class CompilerHelper {
 
+    private static final boolean debug = false;
+
     public static Runnable compile(Class<?> api, String code) {
-        Compiler compiler = new Compiler(new CompilationParameters(api));
+        Compiler compiler = new Compiler(new CompilationParameters(api, debug));
         CompilationResult result = compiler.compile(code);
         Assertions.assertNull(result.diagnostics());
         return result.program();
     }
 
     public static List<DiagnosticMessage> getDiagnostics(Class<?> api, String code) {
-        Compiler compiler = new Compiler(new CompilationParameters(api));
+        Compiler compiler = new Compiler(new CompilationParameters(api, debug));
         CompilationResult result = compiler.compile(code);
         Assertions.assertNull(result.program());
         return result.diagnostics();

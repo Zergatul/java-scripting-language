@@ -10,16 +10,22 @@ import java.util.List;
 public class CompilationParameters {
 
     private final List<StaticVariable> staticVariables = new ArrayList<>();
-
-    public CompilationParameters() {
-
-    }
+    private final boolean debug;
 
     public CompilationParameters(Class<?> root) {
+        this(root, false);
+    }
+
+    public CompilationParameters(Class<?> root, boolean debug) {
+        this.debug = debug;
         Arrays.stream(root.getDeclaredFields())
                 .filter(f -> Modifier.isPublic(f.getModifiers()))
                 .filter(f -> Modifier.isStatic(f.getModifiers()))
                 .forEach(f -> addStaticVariable(new StaticFieldConstantStaticVariable(f.getName(), f)));
+    }
+
+    public boolean isDebug() {
+        return debug;
     }
 
     public CompilerContext getContext() {

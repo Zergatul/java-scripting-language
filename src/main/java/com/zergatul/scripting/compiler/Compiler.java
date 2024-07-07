@@ -11,14 +11,15 @@ import com.zergatul.scripting.lexer.LexerOutput;
 import com.zergatul.scripting.parser.AssignmentOperator;
 import com.zergatul.scripting.parser.Parser;
 import com.zergatul.scripting.parser.ParserOutput;
-import com.zergatul.scripting.runtime.Action0;
-import com.zergatul.scripting.runtime.Action1;
-import com.zergatul.scripting.runtime.Action2;
 import com.zergatul.scripting.type.*;
 import org.objectweb.asm.*;
 
+import java.io.File;
+import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -88,8 +89,11 @@ public class Compiler {
 
         writer.visitEnd();
 
+        byte[] bytecode = writer.toByteArray();
+        saveClassFile(name, bytecode);
+
         @SuppressWarnings("unchecked")
-        Class<Runnable> dynamic = (Class<Runnable>) classLoader.defineClass(name.replace('/', '.'), writer.toByteArray());
+        Class<Runnable> dynamic = (Class<Runnable>) classLoader.defineClass(name.replace('/', '.'), bytecode);
         return createInstance(dynamic);
     }
 
@@ -162,6 +166,36 @@ public class Compiler {
         constructorVisitor.visitEnd();
     }
 
+    private static String buildLambdaConstructor(BoundLambdaExpressionNode expression, String className, ClassWriter writer) {
+        int capturedLen = expression.captured.size();
+        Type[] capturedTypes = new Type[capturedLen];
+
+        for (int i = 0; i < capturedLen; i++) {
+            CapturedLocalVariable variable = expression.captured.get(i);
+            capturedTypes[i] = Type.getType(variable.getType().getReferenceType().getJavaClass());
+            String fieldName = "captured" + i;
+            expression.captured.get(i).setClassName(className);
+            expression.captured.get(i).setFieldName(fieldName);
+            writer.visitField(ACC_PUBLIC | ACC_FINAL, fieldName, capturedTypes[i].getDescriptor(), null, null);
+        }
+
+        String constructorDescriptor = Type.getMethodDescriptor(Type.VOID_TYPE, capturedTypes);
+        MethodVisitor visitor = writer.visitMethod(ACC_PUBLIC, "<init>", constructorDescriptor, null, null);
+        visitor.visitCode();
+        visitor.visitVarInsn(ALOAD, 0);
+        visitor.visitMethodInsn(INVOKESPECIAL, Type.getInternalName(Object.class), "<init>", Type.getMethodDescriptor(Type.VOID_TYPE), false);
+        for (int i = 0; i < capturedLen; i++) {
+            visitor.visitVarInsn(ALOAD, 0);
+            visitor.visitVarInsn(ALOAD, i + 1);
+            visitor.visitFieldInsn(PUTFIELD, className, expression.captured.get(i).getFieldName(), capturedTypes[i].getDescriptor());
+        }
+        visitor.visitInsn(RETURN);
+        visitor.visitMaxs(0, 0);
+        visitor.visitEnd();
+
+        return constructorDescriptor;
+    }
+
     private void buildRunMethod(BoundCompilationUnitNode unit, ClassWriter writer, String className) {
         MethodVisitor visitor = writer.visitMethod(ACC_PUBLIC, "run", Type.getMethodDescriptor(Type.VOID_TYPE), null, null);
         visitor.visitCode();
@@ -205,9 +239,10 @@ public class Compiler {
             declaration.type.type.storeDefaultValue(visitor);
         }
 
-        LocalVariable variable = (LocalVariable) declaration.name.symbol;
+        Variable variable = (Variable) declaration.name.symbol;
         context.addLocalVariable(variable);
 
+        variable.compileInit(context, visitor);
         variable.compileStore(context, visitor);
     }
 
@@ -600,6 +635,7 @@ public class Compiler {
         BoundLambdaExpressionNode lambda = new BoundLambdaExpressionNode(
                 new SLambdaFunction(type.getReturnType(), type.getParameterTypes().toArray(SType[]::new)),
                 parameters,
+                List.of(),
                 statement,
                 range);
         compileLambdaExpression(visitor, context, lambda);
@@ -654,24 +690,15 @@ public class Compiler {
         expression.operation.compileGet(visitor);
     }
 
-    private void compileContextualLambdaExpression() {
-        throw new InternalException("Contextual lambda expression should not be here.");
-    }
-
     private void compileLambdaExpression(MethodVisitor visitor, CompilerContext context, BoundLambdaExpressionNode expression) {
         SLambdaFunction type = (SLambdaFunction) expression.type;
-        Class<?> funcInterface = type.getJavaClass(); /*switch (expression.parameters.size()) {
-            case 0 -> Action0.class;
-            case 1 -> Action1.class;
-            case 2 -> Action2.class;
-            default -> throw new InternalException("Too much Action arguments.");
-        };*/
+        Class<?> funcInterface = type.getJavaClass();
 
         ClassWriter writer = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
         String name = "com/zergatul/scripting/dynamic/DynamicLambdaClass_" + counter.incrementAndGet();
         writer.visit(V1_5, ACC_PUBLIC, name, null, Type.getInternalName(Object.class), new String[] { Type.getInternalName(funcInterface) });
 
-        buildEmptyConstructor(writer);
+        String constructorDescriptor = buildLambdaConstructor(expression, name, writer);
 
         Type[] argumentTypes = new Type[expression.parameters.size()];
         Arrays.fill(argumentTypes, Type.getType(Object.class));
@@ -714,15 +741,28 @@ public class Compiler {
 
         writer.visitEnd();
 
-        Class<?> dynamic = classLoader.defineClass(name.replace('/', '.'), writer.toByteArray());
+        byte[] bytecode = writer.toByteArray();
+        saveClassFile(name, bytecode);
 
-        visitor.visitTypeInsn(NEW, Type.getInternalName(dynamic));
+        classLoader.defineClass(name.replace('/', '.'), bytecode);
+
+        visitor.visitTypeInsn(NEW, name);
         visitor.visitInsn(DUP);
+        for (CapturedLocalVariable variable : expression.captured) {
+            Variable underlying = variable.getUnderlyingVariable();
+            if (underlying instanceof LiftedLocalVariable lifted) {
+                lifted.compileReferenceLoad(visitor);
+            } else if (underlying instanceof CapturedLocalVariable captured) {
+                captured.compileReferenceLoad(visitor);
+            } else {
+                throw new InternalException();
+            }
+        }
         visitor.visitMethodInsn(
                 INVOKESPECIAL,
-                Type.getInternalName(dynamic),
+                name,
                 "<init>",
-                Type.getMethodDescriptor(Type.VOID_TYPE),
+                constructorDescriptor,
                 false);
     }
 
@@ -756,6 +796,17 @@ public class Compiler {
                     Type.getMethodDescriptor(Type.getType(variable.getType().getJavaClass())),
                     false);
             variable.compileStore(context, visitor);
+        }
+    }
+
+    private void saveClassFile(String name, byte[] bytecode) {
+        if (parameters.isDebug()) {
+            String[] parts = name.split("/");
+            try {
+                Files.write(Path.of(parts[parts.length - 1] + ".class"), bytecode);
+            } catch (IOException e) {
+                throw new RuntimeException("Cannot write class file.", e);
+            }
         }
     }
 }

@@ -2,6 +2,7 @@ package com.zergatul.scripting.compiler;
 
 import com.zergatul.scripting.InternalException;
 import com.zergatul.scripting.TextRange;
+import com.zergatul.scripting.binding.nodes.BoundNameExpressionNode;
 import com.zergatul.scripting.type.SFloat;
 import com.zergatul.scripting.type.SReference;
 import com.zergatul.scripting.type.SType;
@@ -73,17 +74,22 @@ public class CompilerContext {
 
         LocalVariable variable = new LocalVariable(name, type, stackIndex, definition);
         addLocalVariable(variable);
-        if (type == SFloat.instance) {
-            stackIndex += 2;
-        } else {
-            stackIndex += 1;
-        }
         return variable;
     }
 
-    public void addLocalVariable(LocalVariable variable) {
+    public void addLocalVariable(Variable variable) {
         if (variable.getName() != null && hasSymbol(variable.getName())) {
             throw new InternalException();
+        }
+
+        if (variable instanceof LocalVariable local) {
+            expandStackOnLocalVariable(local);
+        }
+        if (variable instanceof LiftedLocalVariable lifted) {
+            Variable underlying = lifted.getUnderlyingVariable();
+            if (underlying instanceof LocalVariable local) {
+                expandStackOnLocalVariable(local);
+            }
         }
 
         localSymbols.put(variable.getName(), variable);
@@ -96,11 +102,6 @@ public class CompilerContext {
 
         LocalVariable variable = new LocalParameter(name, type, stackIndex, definition);
         addLocalVariable(variable);
-        if (type == SFloat.instance) {
-            stackIndex += 2;
-        } else {
-            stackIndex += 1;
-        }
         return variable;
     }
 
@@ -166,15 +167,21 @@ public class CompilerContext {
                     return localSymbol;
                 } else {
                     if (!(localSymbol instanceof LiftedLocalVariable)) {
-                        localSymbol = new LiftedLocalVariable(localSymbol);
+                        LiftedLocalVariable lifted = new LiftedLocalVariable(localSymbol);
+                        for (BoundNameExpressionNode nameExpression : localSymbol.getReferences()) {
+                            nameExpression.overrideSymbol(lifted);
+                        }
+                        localSymbol = lifted;
                         context.localSymbols.put(name, localSymbol); // replace local variable with lifted
                     }
-                    Variable current = localSymbol;
-                    CapturedLocalVariable captured = new CapturedLocalVariable(localSymbol);
+
+                    Variable prev = localSymbol;
                     for (int i = functions.size() - 1; i >= 0; i--) {
-                        functions.get(i).localSymbols.put(name, captured);
+                        Variable current = new CapturedLocalVariable(prev);
+                        functions.get(i).localSymbols.put(name, current);
+                        prev = current;
                     }
-                    return current;
+                    return functions.get(0).localSymbols.get(name);
                 }
             }
             if (context.isFunctionRoot) {
@@ -247,5 +254,23 @@ public class CompilerContext {
 
     public String getClassName() {
         return root.className;
+    }
+
+    public List<CapturedLocalVariable> getCaptured() {
+        return localSymbols.values().stream()
+                .filter(s -> s instanceof CapturedLocalVariable)
+                .map(s -> (CapturedLocalVariable) s)
+                .toList();
+    }
+
+    private void expandStackOnLocalVariable(LocalVariable variable) {
+        int stack = variable.getStackIndex() + getStackSize(variable.getType());
+        if (stack > stackIndex) {
+            stackIndex = stack;
+        }
+    }
+
+    private int getStackSize(SType type) {
+        return type == SFloat.instance ? 2 : 1;
     }
 }

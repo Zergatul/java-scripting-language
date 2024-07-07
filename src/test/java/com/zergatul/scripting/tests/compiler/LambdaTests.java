@@ -2,10 +2,7 @@ package com.zergatul.scripting.tests.compiler;
 
 import com.zergatul.scripting.DiagnosticMessage;
 import com.zergatul.scripting.binding.BinderErrors;
-import com.zergatul.scripting.tests.compiler.helpers.FloatStorage;
-import com.zergatul.scripting.tests.compiler.helpers.IntStorage;
-import com.zergatul.scripting.tests.compiler.helpers.Run;
-import com.zergatul.scripting.tests.compiler.helpers.StringStorage;
+import com.zergatul.scripting.tests.compiler.helpers.*;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -292,7 +289,7 @@ public class LambdaTests {
     }
 
     @Test
-    public void capture1Test() {
+    public void captureInt1Test() {
         String code = """
                 int a = 100;
                 run.once(() => a = 200);
@@ -305,8 +302,8 @@ public class LambdaTests {
         Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(200));
     }
 
-    /*@Test
-    public void capture2Test() {
+    @Test
+    public void captureInt2Test() {
         String code = """
                 int a = 100;
                 run.once(() => {
@@ -321,13 +318,122 @@ public class LambdaTests {
         program.run();
 
         Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(200));
-    }*/
+    }
+
+    @Test
+    public void captureInt3Test() {
+        String code = """
+                int a = 1;
+                int b = 2;
+                int c = 3;
+                int d = 4;
+                int e = 5;
+                run.once(() => {
+                    a++;
+                    run.once(() => {
+                        b++;
+                        run.once(() => {
+                            c++;
+                            run.once(() => {
+                                d++;
+                                run.once(() => {
+                                    e++;
+                                });
+                            });
+                        });
+                    });
+                });
+                intStorage.add(a);
+                intStorage.add(b);
+                intStorage.add(c);
+                intStorage.add(d);
+                intStorage.add(e);
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(2, 3, 4, 5, 6));
+    }
+
+    @Test
+    public void captureInt4Test() {
+        String code = """
+                int x;
+                run.multiple(1, () => {
+                    run.multiple(2, () => {
+                        run.multiple(3, () => {
+                            run.multiple(4, () => {
+                                run.multiple(5, () => {
+                                    x++;
+                                });
+                            });
+                        });
+                    });
+                });
+                intStorage.add(x);
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(120));
+    }
+
+    @Test
+    public void captureFloatTest() {
+        String code = """
+                float x;
+                run.multiple(1, () => {
+                    run.multiple(2, () => {
+                        run.multiple(3, () => {
+                            run.multiple(4, () => {
+                                run.multiple(5, () => {
+                                    x = x + 1;
+                                });
+                            });
+                        });
+                    });
+                });
+                floatStorage.add(x);
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(ApiRoot.floatStorage.list, List.of(120.0));
+    }
+
+    @Test
+    public void captureBooleanTest() {
+        String code = """
+                boolean b;
+                run.multiple(1, () => {
+                    run.multiple(3, () => {
+                        run.multiple(5, () => {
+                            run.multiple(7, () => {
+                                run.multiple(9, () => {
+                                    b = !b;
+                                });
+                            });
+                        });
+                    });
+                });
+                boolStorage.add(b);
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(ApiRoot.boolStorage.list, List.of(true));
+    }
 
     // TODO: capture function parameters?
     // maybe not allow!
 
     public static class ApiRoot {
         public static Run run;
+        public static BoolStorage boolStorage = new BoolStorage();
         public static IntStorage intStorage = new IntStorage();
         public static FloatStorage floatStorage = new FloatStorage();
         public static StringStorage stringStorage = new StringStorage();
