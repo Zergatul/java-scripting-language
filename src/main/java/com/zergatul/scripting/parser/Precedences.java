@@ -2,6 +2,10 @@ package com.zergatul.scripting.parser;
 
 public class Precedences {
 
+    public static int getAwait() {
+        return 100;
+    }
+
     public static int get(UnaryOperator operator) {
         return switch (operator) {
             case PLUS, MINUS, NOT -> 100;

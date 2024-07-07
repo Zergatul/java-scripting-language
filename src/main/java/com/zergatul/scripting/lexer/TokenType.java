@@ -69,5 +69,7 @@ public enum TokenType {
     IN,
     STATIC,
     VOID,
-    REF
+    REF,
+    ASYNC,
+    AWAIT
 }

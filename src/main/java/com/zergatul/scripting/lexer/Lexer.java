@@ -474,6 +474,8 @@ public class Lexer {
             case "static" -> TokenType.STATIC;
             case "void" -> TokenType.VOID;
             case "ref" -> TokenType.REF;
+            case "async" -> TokenType.ASYNC;
+            case "await" -> TokenType.AWAIT;
             default -> null;
         };
         TextRange range = getCurrentTokenRange();
