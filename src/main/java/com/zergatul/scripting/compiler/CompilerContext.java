@@ -28,7 +28,8 @@ public class CompilerContext {
     private int stackIndex;
     private Consumer<MethodVisitor> breakConsumer;
     private Consumer<MethodVisitor> continueConsumer;
-    private List<RefHolder> refVariables = new ArrayList<>();
+    private final List<RefHolder> refVariables = new ArrayList<>();
+    private boolean isAsync;
 
     public CompilerContext() {
         this(1);
@@ -261,6 +262,14 @@ public class CompilerContext {
                 .filter(s -> s instanceof CapturedLocalVariable)
                 .map(s -> (CapturedLocalVariable) s)
                 .toList();
+    }
+
+    public void markAsync() {
+        isAsync = true;
+    }
+
+    public boolean isAsync() {
+        return isAsync;
     }
 
     private void expandStackOnLocalVariable(LocalVariable variable) {

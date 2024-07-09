@@ -17,4 +17,9 @@ public class NewExpressionNode extends ExpressionNode {
         this.lengthExpression = lengthExpression;
         this.items = items;
     }
+
+    @Override
+    public boolean isAsync() {
+        return false;
+    }
 }

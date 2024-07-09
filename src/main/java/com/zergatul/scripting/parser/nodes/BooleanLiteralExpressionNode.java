@@ -13,6 +13,11 @@ public class BooleanLiteralExpressionNode extends ExpressionNode {
     }
 
     @Override
+    public boolean isAsync() {
+        return false;
+    }
+
+    @Override
     public boolean equals(Object obj) {
         if (obj instanceof BooleanLiteralExpressionNode other) {
             return other.value == value && other.getRange().equals(getRange());

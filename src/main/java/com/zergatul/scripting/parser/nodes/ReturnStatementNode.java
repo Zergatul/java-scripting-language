@@ -15,6 +15,11 @@ public class ReturnStatementNode extends StatementNode {
     }
 
     @Override
+    public boolean isAsync() {
+        return expression.isAsync();
+    }
+
+    @Override
     public boolean equals(Object obj) {
         if (obj instanceof ReturnStatementNode other) {
             return Objects.equals(other.expression, expression) && other.getRange().equals(getRange());

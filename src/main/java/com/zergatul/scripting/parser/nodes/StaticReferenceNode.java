@@ -12,4 +12,9 @@ public class StaticReferenceNode extends ExpressionNode {
         super(NodeType.STATIC_REFERENCE, range);
         this.typeReference = typeReference;
     }
+
+    @Override
+    public boolean isAsync() {
+        return false;
+    }
 }

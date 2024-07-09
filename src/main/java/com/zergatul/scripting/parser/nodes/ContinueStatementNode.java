@@ -8,4 +8,9 @@ public class ContinueStatementNode extends StatementNode {
     public ContinueStatementNode(TextRange range) {
         super(NodeType.CONTINUE_STATEMENT, range);
     }
+
+    @Override
+    public boolean isAsync() {
+        return false;
+    }
 }

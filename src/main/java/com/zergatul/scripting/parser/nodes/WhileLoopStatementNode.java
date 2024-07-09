@@ -13,4 +13,9 @@ public class WhileLoopStatementNode extends StatementNode {
         this.condition = condition;
         this.body = body;
     }
+
+    @Override
+    public boolean isAsync() {
+        return condition.isAsync() || body.isAsync();
+    }
 }

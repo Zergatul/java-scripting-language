@@ -17,4 +17,9 @@ public class ForLoopStatementNode extends StatementNode {
         this.update = update;
         this.body = body;
     }
+
+    @Override
+    public boolean isAsync() {
+        return init.isAsync() || condition.isAsync() || update.isAsync() || body.isAsync();
+    }
 }

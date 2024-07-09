@@ -17,4 +17,9 @@ public class ForEachLoopStatementNode extends StatementNode {
         this.iterable = iterable;
         this.body = body;
     }
+
+    @Override
+    public boolean isAsync() {
+        return iterable.isAsync() || body.isAsync();
+    }
 }

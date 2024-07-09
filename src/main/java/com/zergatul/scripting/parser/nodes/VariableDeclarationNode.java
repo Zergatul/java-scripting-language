@@ -24,6 +24,11 @@ public class VariableDeclarationNode extends StatementNode {
     }
 
     @Override
+    public boolean isAsync() {
+        return expression != null && expression.isAsync();
+    }
+
+    @Override
     public boolean equals(Object obj) {
         if (obj instanceof VariableDeclarationNode other) {
             return  other.type.equals(type) &&

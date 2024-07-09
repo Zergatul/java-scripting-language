@@ -15,6 +15,11 @@ public class MemberAccessExpressionNode extends ExpressionNode {
     }
 
     @Override
+    public boolean isAsync() {
+        return callee.isAsync();
+    }
+
+    @Override
     public boolean equals(Object obj) {
         if (obj instanceof MemberAccessExpressionNode other) {
             return  other.callee.equals(callee) &&

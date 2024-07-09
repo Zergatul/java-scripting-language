@@ -14,6 +14,11 @@ public class PostfixStatementNode extends StatementNode {
     }
 
     @Override
+    public boolean isAsync() {
+        return false;
+    }
+
+    @Override
     public boolean equals(Object obj) {
         if (obj instanceof PostfixStatementNode other) {
             return other.expression.equals(expression) && other.getRange().equals(getRange());

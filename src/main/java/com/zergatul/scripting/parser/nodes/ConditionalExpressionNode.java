@@ -15,4 +15,9 @@ public class ConditionalExpressionNode extends ExpressionNode {
         this.whenTrue = whenTrue;
         this.whenFalse = whenFalse;
     }
+
+    @Override
+    public boolean isAsync() {
+        return condition.isAsync() || whenTrue.isAsync() || whenFalse.isAsync();
+    }
 }

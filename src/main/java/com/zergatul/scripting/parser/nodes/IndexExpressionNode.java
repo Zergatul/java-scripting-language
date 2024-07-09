@@ -13,4 +13,9 @@ public class IndexExpressionNode extends ExpressionNode {
         this.callee = callee;
         this.index = index;
     }
+
+    @Override
+    public boolean isAsync() {
+        return callee.isAsync() || index.isAsync();
+    }
 }

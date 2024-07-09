@@ -1,7 +1,6 @@
 package com.zergatul.scripting.parser.nodes;
 
 import com.zergatul.scripting.TextRange;
-import com.zergatul.scripting.lexer.IdentifierToken;
 import com.zergatul.scripting.parser.NodeType;
 
 import java.util.List;
@@ -16,6 +15,11 @@ public class LambdaExpressionNode extends ExpressionNode {
         super(NodeType.LAMBDA_EXPRESSION, range);
         this.parameters = parameters;
         this.body = body;
+    }
+
+    @Override
+    public boolean isAsync() {
+        return false;
     }
 
     @Override

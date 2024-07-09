@@ -16,6 +16,16 @@ public class BlockStatementNode extends StatementNode {
     }
 
     @Override
+    public boolean isAsync() {
+        for (StatementNode statement : statements) {
+            if (statement.isAsync()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    @Override
     public boolean equals(Object obj) {
         if (obj instanceof BlockStatementNode other) {
             return Objects.equals(other.statements, statements);

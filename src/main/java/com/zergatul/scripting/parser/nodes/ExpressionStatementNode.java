@@ -14,6 +14,11 @@ public class ExpressionStatementNode extends StatementNode {
     }
 
     @Override
+    public boolean isAsync() {
+        return expression.isAsync();
+    }
+
+    @Override
     public boolean equals(Object obj) {
         if (obj instanceof ExpressionStatementNode other) {
             return other.expression.equals(expression) && other.getRange().equals(getRange());

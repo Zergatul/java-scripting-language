@@ -15,6 +15,11 @@ public class UnaryExpressionNode extends ExpressionNode {
     }
 
     @Override
+    public boolean isAsync() {
+        return operand.isAsync();
+    }
+
+    @Override
     public boolean equals(Object obj) {
         if (obj instanceof UnaryExpressionNode other) {
             return other.operator.equals(operator) && other.getRange().equals(getRange());

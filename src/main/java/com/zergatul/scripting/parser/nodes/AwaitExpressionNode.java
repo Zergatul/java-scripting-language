@@ -13,6 +13,11 @@ public class AwaitExpressionNode extends ExpressionNode {
     }
 
     @Override
+    public boolean isAsync() {
+        return true;
+    }
+
+    @Override
     public boolean equals(Object obj) {
         if (obj instanceof AwaitExpressionNode other) {
             return other.expression.equals(expression) && other.getRange().equals(getRange());

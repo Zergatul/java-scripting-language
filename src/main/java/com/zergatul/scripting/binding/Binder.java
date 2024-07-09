@@ -34,11 +34,10 @@ public class Binder {
     private BoundCompilationUnitNode bindCompilationUnit(CompilationUnitNode node) {
         List<BoundVariableDeclarationNode> variables = node.variables.variables.stream().map(n -> bindVariableDeclaration(n, true)).toList();
         List<BoundFunctionNode> functions = bindFunctions(unit.functions.functions);
-        List<BoundStatementNode> statements = node.statements.statements.stream().map(this::bindStatement).toList();
         return new BoundCompilationUnitNode(
                 new BoundStaticVariablesListNode(variables, node.variables.getRange()),
                 new BoundFunctionsListNode(functions, node.functions.getRange()),
-                new BoundStatementsListNode(statements, node.statements.getRange()),
+                bindStatementList(node.statements),
                 node.getRange());
     }
 
@@ -109,6 +108,14 @@ public class Binder {
             parameters.add(new BoundParameterNode(name, type, parameter.getRange()));
         }
         return new BoundParameterListNode(parameters, node.getRange());
+    }
+
+    private BoundStatementsListNode bindStatementList(StatementsListNode node) {
+        if (node.isAsync()) {
+            context.markAsync();
+        }
+        List<BoundStatementNode> statements = node.statements.stream().map(this::bindStatement).toList();
+        return new BoundStatementsListNode(statements, node.getRange());
     }
 
     private BoundStatementNode bindStatement(StatementNode statement) {

@@ -3,9 +3,6 @@ package com.zergatul.scripting.parser.nodes;
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.parser.NodeType;
 
-import java.util.List;
-import java.util.Objects;
-
 public class InvocationExpressionNode extends ExpressionNode {
 
     public final ExpressionNode callee;
@@ -15,6 +12,11 @@ public class InvocationExpressionNode extends ExpressionNode {
         super(NodeType.INVOCATION_EXPRESSION, range);
         this.callee = callee;
         this.arguments = arguments;
+    }
+
+    @Override
+    public boolean isAsync() {
+        return callee.isAsync() || arguments.arguments.stream().anyMatch(ExpressionNode::isAsync);
     }
 
     @Override

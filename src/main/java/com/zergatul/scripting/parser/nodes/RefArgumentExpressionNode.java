@@ -11,4 +11,9 @@ public class RefArgumentExpressionNode extends ExpressionNode {
         super(NodeType.REF_ARGUMENT_EXPRESSION, range);
         this.name = name;
     }
+
+    @Override
+    public boolean isAsync() {
+        return false;
+    }
 }

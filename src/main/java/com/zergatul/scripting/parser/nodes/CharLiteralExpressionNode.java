@@ -12,6 +12,11 @@ public class CharLiteralExpressionNode extends ExpressionNode {
         this(token.value, token.getRange());
     }
 
+    @Override
+    public boolean isAsync() {
+        return false;
+    }
+
     protected CharLiteralExpressionNode(String value, TextRange range) {
         super(NodeType.CHAR_LITERAL, range);
         this.value = value;

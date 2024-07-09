@@ -18,6 +18,11 @@ public class StringLiteralExpressionNode extends ExpressionNode {
     }
 
     @Override
+    public boolean isAsync() {
+        return false;
+    }
+
+    @Override
     public boolean equals(Object obj) {
         if (obj instanceof StringLiteralExpressionNode other) {
             return other.value.equals(value) && other.getRange().equals(getRange());

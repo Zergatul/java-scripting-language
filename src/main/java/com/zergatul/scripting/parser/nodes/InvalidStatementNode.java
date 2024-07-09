@@ -11,6 +11,11 @@ public class InvalidStatementNode extends StatementNode {
     }
 
     @Override
+    public boolean isAsync() {
+        return false;
+    }
+
+    @Override
     public StatementNode append(Token token) {
         return new InvalidStatementNode(TextRange.combine(getRange(), token.getRange()));
     }

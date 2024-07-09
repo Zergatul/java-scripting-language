@@ -19,6 +19,11 @@ public class IfStatementNode extends StatementNode {
     }
 
     @Override
+    public boolean isAsync() {
+        return condition.isAsync() || thenStatement.isAsync() || (elseStatement != null && elseStatement.isAsync());
+    }
+
+    @Override
     public boolean equals(Object obj) {
         if (obj instanceof IfStatementNode other) {
             return  other.condition.equals(condition) &&
