@@ -34,6 +34,11 @@ public class BoundForEachLoopStatementNode extends BoundStatementNode {
     }
 
     @Override
+    public boolean isAsync() {
+        return iterable.isAsync() || body.isAsync();
+    }
+
+    @Override
     public List<BoundNode> getChildren() {
         return List.of(typeNode, name, iterable, body);
     }

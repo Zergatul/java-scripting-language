@@ -10,6 +10,7 @@ import org.objectweb.asm.Type;
 
 import java.lang.reflect.ParameterizedType;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 public abstract class SType {
 
@@ -207,6 +208,9 @@ public abstract class SType {
             }
             if (parameterized.getRawType() == Function2.class) {
                 return new SLambdaFunction(fromJavaType(arguments[0]), fromJavaType(arguments[1]), fromJavaType(arguments[2]));
+            }
+            if (parameterized.getRawType() == CompletableFuture.class) {
+                return new SFuture(fromJavaType(arguments[0]));
             }
 
             throw new InternalException("Unsupported parametrized type.");

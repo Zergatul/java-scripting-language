@@ -15,6 +15,11 @@ public class BoundReturnStatementNode extends BoundStatementNode {
     }
 
     @Override
+    public boolean isAsync() {
+        return expression != null && expression.isAsync();
+    }
+
+    @Override
     public List<BoundNode> getChildren() {
         return expression == null ? List.of() : List.of(expression);
     }

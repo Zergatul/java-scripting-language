@@ -16,6 +16,11 @@ public class BoundFloatLiteralExpressionNode extends BoundExpressionNode {
     }
 
     @Override
+    public boolean isAsync() {
+        return false;
+    }
+
+    @Override
     public List<BoundNode> getChildren() {
         return List.of();
     }

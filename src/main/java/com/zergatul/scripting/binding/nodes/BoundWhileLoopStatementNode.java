@@ -17,6 +17,11 @@ public class BoundWhileLoopStatementNode extends BoundStatementNode {
     }
 
     @Override
+    public boolean isAsync() {
+        return condition.isAsync() || body.isAsync();
+    }
+
+    @Override
     public List<BoundNode> getChildren() {
         return List.of(condition, body);
     }

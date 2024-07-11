@@ -506,18 +506,10 @@ public class Parser {
             case WHILE:
             case BREAK:
             case CONTINUE:
-
-            case BOOLEAN:
-            case INT:
-            case FLOAT:
-            case STRING:
-            case CHAR:
-            case IDENTIFIER:
-            case LEFT_PARENTHESES:
                 return true;
 
             default:
-                return false;
+                return isPossibleExpression();
         }
     }
 
@@ -570,30 +562,30 @@ public class Parser {
             Token awaitToken = advance();
             ExpressionNode expression = parseExpressionCore(Precedences.getAwait());
             left = new AwaitExpressionNode(expression, TextRange.combine(awaitToken, expression));
-        }
-
-        UnaryOperator unary = switch (current.type) {
-            case PLUS -> UnaryOperator.PLUS;
-            case MINUS -> UnaryOperator.MINUS;
-            case EXCLAMATION -> UnaryOperator.NOT;
-            default -> null;
-        };
-
-        if (unary != null) {
-            Token unaryToken = advance();
-            ExpressionNode expression = parseExpressionCore(Precedences.get(unary));
-            if (unary == UnaryOperator.MINUS && expression instanceof IntegerLiteralExpressionNode integer && !integer.value.startsWith("-")) {
-                left = new IntegerLiteralExpressionNode("-" + integer.value, TextRange.combine(unaryToken, expression));
-            } else if (unary == UnaryOperator.MINUS && expression instanceof FloatLiteralExpressionNode floatLiteral && !floatLiteral.value.startsWith("-")) {
-                left = new FloatLiteralExpressionNode("-" + floatLiteral.value, TextRange.combine(unaryToken, expression));
-            } else {
-                left = new UnaryExpressionNode(
-                        new UnaryOperatorNode(unary, unaryToken.getRange()),
-                        expression,
-                        TextRange.combine(unaryToken, expression));
-            }
         } else {
-            left = parseTerm(precedence);
+            UnaryOperator unary = switch (current.type) {
+                case PLUS -> UnaryOperator.PLUS;
+                case MINUS -> UnaryOperator.MINUS;
+                case EXCLAMATION -> UnaryOperator.NOT;
+                default -> null;
+            };
+
+            if (unary != null) {
+                Token unaryToken = advance();
+                ExpressionNode expression = parseExpressionCore(Precedences.get(unary));
+                if (unary == UnaryOperator.MINUS && expression instanceof IntegerLiteralExpressionNode integer && !integer.value.startsWith("-")) {
+                    left = new IntegerLiteralExpressionNode("-" + integer.value, TextRange.combine(unaryToken, expression));
+                } else if (unary == UnaryOperator.MINUS && expression instanceof FloatLiteralExpressionNode floatLiteral && !floatLiteral.value.startsWith("-")) {
+                    left = new FloatLiteralExpressionNode("-" + floatLiteral.value, TextRange.combine(unaryToken, expression));
+                } else {
+                    left = new UnaryExpressionNode(
+                            new UnaryOperatorNode(unary, unaryToken.getRange()),
+                            expression,
+                            TextRange.combine(unaryToken, expression));
+                }
+            } else {
+                left = parseTerm(precedence);
+            }
         }
 
         return parseExpressionContinued(left, precedence);

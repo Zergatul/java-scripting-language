@@ -16,7 +16,7 @@ public class ReturnStatementNode extends StatementNode {
 
     @Override
     public boolean isAsync() {
-        return expression.isAsync();
+        return expression != null && expression.isAsync();
     }
 
     @Override

@@ -21,6 +21,11 @@ public class BoundIndexExpressionNode extends BoundExpressionNode {
     }
 
     @Override
+    public boolean isAsync() {
+        return callee.isAsync() || index.isAsync();
+    }
+
+    @Override
     public boolean canSet() {
         return operation.canSet();
     }

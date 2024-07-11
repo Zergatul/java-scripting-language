@@ -26,7 +26,7 @@ public class AwaitTests {
                 intStorage.add(321);
                 """;
 
-        Runnable program = compile(ArrayTests.ApiRoot.class, code);
+        Runnable program = compile(ApiRoot.class, code);
         program.run();
 
         Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(123));

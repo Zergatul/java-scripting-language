@@ -19,6 +19,11 @@ public class BoundVariableDeclarationNode extends BoundStatementNode {
     }
 
     @Override
+    public boolean isAsync() {
+        return expression != null && expression.isAsync();
+    }
+
+    @Override
     public List<BoundNode> getChildren() {
         return List.of(type, name, expression);
     }

@@ -19,6 +19,11 @@ public class BoundAssignmentStatementNode extends BoundStatementNode {
     }
 
     @Override
+    public boolean isAsync() {
+        return left.isAsync() || right.isAsync();
+    }
+
+    @Override
     public List<BoundNode> getChildren() {
         return List.of(left, operator, right);
     }

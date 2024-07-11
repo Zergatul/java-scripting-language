@@ -426,6 +426,7 @@ public class Binder {
             case REF_ARGUMENT_EXPRESSION -> bindRefArgumentExpression((RefArgumentExpressionNode) expression);
             case NEW_EXPRESSION -> bindNewExpression((NewExpressionNode) expression);
             case LAMBDA_EXPRESSION -> bindLambdaExpression((LambdaExpressionNode) expression);
+            case AWAIT_EXPRESSION -> bindAwaitExpression((AwaitExpressionNode) expression);
             case INVALID_EXPRESSION -> bindInvalidExpression((InvalidExpressionNode) expression);
             default -> throw new InternalException();
         };
@@ -971,6 +972,19 @@ public class Binder {
     private BoundExpressionNode bindLambdaExpression(LambdaExpressionNode expression) {
         addDiagnostic(BinderErrors.LambdaIsInvalidInCurrentContext, expression);
         return new BoundInvalidExpressionNode(expression.getRange());
+    }
+
+    private BoundAwaitExpressionNode bindAwaitExpression(AwaitExpressionNode node) {
+        BoundExpressionNode expression = bindExpression(node.expression);
+        if (expression.type == SUnknown.instance) {
+            return new BoundAwaitExpressionNode(expression, SUnknown.instance, node.getRange());
+        }
+        if (expression.type instanceof SFuture future) {
+            return new BoundAwaitExpressionNode(expression, future.getUnderlying(), node.getRange());
+        } else {
+            addDiagnostic(BinderErrors.CannotAwaitNonFuture, expression);
+            return new BoundAwaitExpressionNode(expression, SUnknown.instance, node.getRange());
+        }
     }
 
     private BoundInvalidExpressionNode bindInvalidExpression(InvalidExpressionNode expression) {

@@ -2,21 +2,22 @@ package com.zergatul.scripting.binding.nodes;
 
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.parser.NodeType;
+import com.zergatul.scripting.type.SType;
 
 import java.util.List;
 
-public class BoundExpressionStatementNode extends BoundStatementNode {
+public class BoundAwaitExpressionNode extends BoundExpressionNode {
 
     public final BoundExpressionNode expression;
 
-    public BoundExpressionStatementNode(BoundExpressionNode expression, TextRange range) {
-        super(NodeType.EXPRESSION_STATEMENT, range);
+    public BoundAwaitExpressionNode(BoundExpressionNode expression, SType type, TextRange range) {
+        super(NodeType.AWAIT_EXPRESSION, type, range);
         this.expression = expression;
     }
 
     @Override
     public boolean isAsync() {
-        return expression.isAsync();
+        return true;
     }
 
     @Override

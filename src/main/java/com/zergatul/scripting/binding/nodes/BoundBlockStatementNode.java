@@ -15,6 +15,16 @@ public class BoundBlockStatementNode extends BoundStatementNode {
     }
 
     @Override
+    public boolean isAsync() {
+        for (BoundStatementNode statement : statements) {
+            if (statement.isAsync()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    @Override
     public List<BoundNode> getChildren() {
         return List.copyOf(statements);
     }

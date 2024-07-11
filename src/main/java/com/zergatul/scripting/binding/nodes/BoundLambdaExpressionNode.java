@@ -22,6 +22,11 @@ public class BoundLambdaExpressionNode extends BoundExpressionNode {
     }
 
     @Override
+    public boolean isAsync() {
+        return false;
+    }
+
+    @Override
     public List<BoundNode> getChildren() {
         return Stream.concat(List.copyOf(parameters).stream(), Stream.of(body)).toList();
     }

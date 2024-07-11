@@ -30,7 +30,7 @@ public class NativeMethodReference extends MethodReference {
 
     @Override
     public SType getReturn() {
-        return SType.fromJavaType(method.getReturnType());
+        return SType.fromJavaType(method.getGenericReturnType());
     }
 
     @Override

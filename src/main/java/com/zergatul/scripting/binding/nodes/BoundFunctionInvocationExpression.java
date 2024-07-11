@@ -21,6 +21,16 @@ public class BoundFunctionInvocationExpression extends BoundExpressionNode {
     }
 
     @Override
+    public boolean isAsync() {
+        for (BoundExpressionNode expression : arguments.arguments) {
+            if (expression.isAsync()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    @Override
     public List<BoundNode> getChildren() {
         return List.of(name, arguments);
     }

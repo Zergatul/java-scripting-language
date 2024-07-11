@@ -20,6 +20,6 @@ public class ForLoopStatementNode extends StatementNode {
 
     @Override
     public boolean isAsync() {
-        return init.isAsync() || condition.isAsync() || update.isAsync() || body.isAsync();
+        return init.isAsync() || (condition != null && condition.isAsync()) || update.isAsync() || body.isAsync();
     }
 }

@@ -18,6 +18,11 @@ public class BoundPostfixStatementNode extends BoundStatementNode {
     }
 
     @Override
+    public boolean isAsync() {
+        return expression.isAsync();
+    }
+
+    @Override
     public List<BoundNode> getChildren() {
         return List.of(expression);
     }

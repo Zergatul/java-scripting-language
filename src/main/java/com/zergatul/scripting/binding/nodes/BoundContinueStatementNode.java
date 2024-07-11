@@ -12,6 +12,11 @@ public class BoundContinueStatementNode extends BoundStatementNode {
     }
 
     @Override
+    public boolean isAsync() {
+        return false;
+    }
+
+    @Override
     public List<BoundNode> getChildren() {
         return List.of();
     }

@@ -1,23 +1,25 @@
 package com.zergatul.scripting.type;
 
 import com.zergatul.scripting.InternalException;
-import com.zergatul.scripting.type.operation.CastOperation;
-import com.zergatul.scripting.type.operation.EmptyCastOperation;
 import org.objectweb.asm.MethodVisitor;
 
-import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
-public class SUnknown extends SType {
+public class SFuture extends SType {
 
-    public static final SUnknown instance = new SUnknown();
+    private final SType underlying;
 
-    private SUnknown() {
+    public SFuture(SType underlying) {
+        this.underlying = underlying;
+    }
 
+    public SType getUnderlying() {
+        return this.underlying;
     }
 
     @Override
     public Class<?> getJavaClass() {
-        throw new InternalException();
+        return CompletableFuture.class;
     }
 
     @Override
@@ -47,23 +49,11 @@ public class SUnknown extends SType {
 
     @Override
     public boolean isReference() {
-        throw new InternalException();
+        return true;
     }
 
     @Override
     public int getReturnInst() {
         throw new InternalException();
-    }
-
-    @Override
-    public CastOperation implicitCastTo(SType other) {
-        // allow SUnknown to be cast to anything
-        // in this way any compilation error will not spread
-        return EmptyCastOperation.instance;
-    }
-
-    @Override
-    public List<MethodReference> getInstanceMethods() {
-        return List.of(UnknownMethodReference.instance);
     }
 }

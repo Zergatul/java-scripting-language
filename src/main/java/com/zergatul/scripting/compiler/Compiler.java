@@ -206,7 +206,13 @@ public class Compiler {
             context.addStaticVariable((DeclaredStaticVariable) variable.name.symbol);
         }
 
-        compileStatements(visitor, context, unit.statements.statements);
+        if (unit.statements.isAsync()) {
+            context.markAsync();
+            compileAsyncFunction(visitor, context, unit.statements.statements);
+        } else {
+            compileStatements(visitor, context, unit.statements.statements);
+        }
+
         visitor.visitInsn(RETURN);
         visitor.visitMaxs(0, 0);
         visitor.visitEnd();
@@ -490,6 +496,81 @@ public class Compiler {
         for (BoundStatementNode statement : statements) {
             compileStatement(visitor, context, statement);
         }
+    }
+
+    private void compileAsyncFunction(MethodVisitor parentVisitor, CompilerContext context, List<BoundStatementNode> statements) {
+        /**/
+        ClassWriter writer = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
+        String name = "com/zergatul/scripting/dynamic/DynamicAsyncStateMachine_" + counter.incrementAndGet();
+        writer.visit(V1_5, ACC_PUBLIC, name, null, Type.getInternalName(Object.class), null);
+
+        buildEmptyConstructor(writer);
+
+        /*Type[] argumentTypes = new Type[expression.parameters.size()];
+        Arrays.fill(argumentTypes, Type.getType(Object.class));
+        MethodVisitor invokeVisitor = writer.visitMethod(
+                ACC_PUBLIC,
+                "invoke",
+                Type.getMethodDescriptor(
+                        type.isFunction() ? Type.getType(Object.class) : Type.VOID_TYPE,
+                        argumentTypes),
+                null,
+                null);
+        invokeVisitor.visitCode();
+
+        CompilerContext lambdaContext = context.createFunction(type.getReturnType(), true);
+        LocalVariable[] arguments = new LocalVariable[expression.parameters.size()];
+        for (int i = 0; i < expression.parameters.size(); i++) {
+            arguments[i] = lambdaContext.addLocalVariable(null, SType.fromJavaType(Object.class), null);
+        }
+        for (int i = 0; i < expression.parameters.size(); i++) {
+            BoundParameterNode parameter = expression.parameters.get(i);
+            LocalVariable unboxed = (LocalVariable) parameter.getName().symbol;
+            lambdaContext.addLocalVariable(unboxed);
+            Class<?> boxedType = parameter.getType().getBoxedVersion();
+
+            arguments[i].compileLoad(context, invokeVisitor); // load argument
+            if (boxedType != null) {
+                invokeVisitor.visitTypeInsn(CHECKCAST, Type.getInternalName(boxedType)); // cast to boxed, example: java.lang.Integer
+                parameter.getType().compileUnboxing(invokeVisitor); // convert to unboxed
+            } else {
+                invokeVisitor.visitTypeInsn(CHECKCAST, Type.getInternalName(parameter.getType().getJavaClass()));
+            }
+            unboxed.compileStore(context, invokeVisitor);
+        }
+        compileStatement(invokeVisitor, lambdaContext, expression.body);
+        if (!type.isFunction()) {
+            invokeVisitor.visitInsn(RETURN);
+        }
+        invokeVisitor.visitMaxs(0, 0);
+        invokeVisitor.visitEnd();
+
+        writer.visitEnd();
+
+        byte[] bytecode = writer.toByteArray();
+        saveClassFile(name, bytecode);
+
+        classLoader.defineClass(name.replace('/', '.'), bytecode);
+
+        visitor.visitTypeInsn(NEW, name);
+        visitor.visitInsn(DUP);
+        for (CapturedLocalVariable variable : expression.captured) {
+            Variable underlying = variable.getUnderlyingVariable();
+            if (underlying instanceof LiftedLocalVariable lifted) {
+                lifted.compileReferenceLoad(visitor);
+            } else if (underlying instanceof CapturedLocalVariable captured) {
+                captured.compileReferenceLoad(visitor);
+            } else {
+                throw new InternalException();
+            }
+        }
+        visitor.visitMethodInsn(
+                INVOKESPECIAL,
+                name,
+                "<init>",
+                constructorDescriptor,
+                false);*/
+        /**/
     }
 
     private void compileExpression(MethodVisitor visitor, CompilerContext context, BoundExpressionNode expression) {

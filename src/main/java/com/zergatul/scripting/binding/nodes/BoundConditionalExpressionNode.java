@@ -19,6 +19,11 @@ public class BoundConditionalExpressionNode extends BoundExpressionNode {
     }
 
     @Override
+    public boolean isAsync() {
+        return condition.isAsync() || whenTrue.isAsync() || whenFalse.isAsync();
+    }
+
+    @Override
     public List<BoundNode> getChildren() {
         return List.of(condition, whenTrue, whenFalse);
     }

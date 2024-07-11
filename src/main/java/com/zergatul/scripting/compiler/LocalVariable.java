@@ -7,6 +7,7 @@ import org.objectweb.asm.MethodVisitor;
 public class LocalVariable extends Variable {
 
     private final int stackIndex;
+    private int asyncState;
 
     public LocalVariable(String name, SType type, int stackIndex, TextRange definition) {
         super(name, type, definition);
@@ -15,6 +16,14 @@ public class LocalVariable extends Variable {
 
     public int getStackIndex() {
         return stackIndex;
+    }
+
+    public int getAsyncState() {
+        return asyncState;
+    }
+
+    public void setAsyncState(int state) {
+        asyncState = state;
     }
 
     @Override

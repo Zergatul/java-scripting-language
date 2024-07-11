@@ -19,6 +19,11 @@ public class BoundImplicitCastExpressionNode extends BoundExpressionNode {
     }
 
     @Override
+    public boolean isAsync() {
+        return operand.isAsync();
+    }
+
+    @Override
     public List<BoundNode> getChildren() {
         return List.of(operand);
     }

@@ -20,6 +20,11 @@ public class BoundPropertyAccessExpressionNode extends BoundExpressionNode {
     }
 
     @Override
+    public boolean isAsync() {
+        return callee.isAsync();
+    }
+
+    @Override
     public List<BoundNode> getChildren() {
         return List.of(callee);
     }

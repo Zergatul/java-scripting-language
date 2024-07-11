@@ -19,6 +19,11 @@ public class BoundIfStatementNode extends BoundStatementNode {
     }
 
     @Override
+    public boolean isAsync() {
+        return condition.isAsync() || thenStatement.isAsync() || (elseStatement != null && elseStatement.isAsync());
+    }
+
+    @Override
     public List<BoundNode> getChildren() {
         return elseStatement == null ? List.of(condition, thenStatement) : List.of(condition, thenStatement, elseStatement);
     }

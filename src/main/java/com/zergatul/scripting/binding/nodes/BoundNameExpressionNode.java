@@ -26,6 +26,11 @@ public class BoundNameExpressionNode extends BoundExpressionNode {
         }
     }
 
+    @Override
+    public boolean isAsync() {
+        return false;
+    }
+
     public void overrideSymbol(Symbol symbol) {
         this.symbol = symbol;
     }

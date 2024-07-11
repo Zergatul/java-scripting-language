@@ -20,6 +20,18 @@ public class BoundNewExpressionNode extends BoundExpressionNode {
     }
 
     @Override
+    public boolean isAsync() {
+        if (items != null) {
+            for (BoundExpressionNode expression : items) {
+                if (expression.isAsync()) {
+                    return true;
+                }
+            }
+        }
+        return lengthExpression.isAsync();
+    }
+
+    @Override
     public List<BoundNode> getChildren() {
         return Stream.concat(Stream.of(typeNode, lengthExpression), items.stream()).toList();
     }
