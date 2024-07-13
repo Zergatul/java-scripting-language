@@ -11,10 +11,10 @@ import com.zergatul.scripting.lexer.LexerOutput;
 import com.zergatul.scripting.parser.AssignmentOperator;
 import com.zergatul.scripting.parser.Parser;
 import com.zergatul.scripting.parser.ParserOutput;
+import com.zergatul.scripting.parser.nodes.ExpressionStatementNode;
 import com.zergatul.scripting.type.*;
 import org.objectweb.asm.*;
 
-import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
@@ -23,6 +23,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.objectweb.asm.Opcodes.*;
@@ -208,7 +209,7 @@ public class Compiler {
 
         if (unit.statements.isAsync()) {
             context.markAsync();
-            compileAsyncFunction(visitor, context, unit.statements.statements);
+            compileAsyncMainFunction(visitor, context, unit.statements.statements);
         } else {
             compileStatements(visitor, context, unit.statements.statements);
         }
@@ -498,13 +499,56 @@ public class Compiler {
         }
     }
 
-    private void compileAsyncFunction(MethodVisitor parentVisitor, CompilerContext context, List<BoundStatementNode> statements) {
+    private void compileAsyncMainFunction(MethodVisitor parentVisitor, CompilerContext context, List<BoundStatementNode> statements) {
         /**/
         ClassWriter writer = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
         String name = "com/zergatul/scripting/dynamic/DynamicAsyncStateMachine_" + counter.incrementAndGet();
         writer.visit(V1_5, ACC_PUBLIC, name, null, Type.getInternalName(Object.class), null);
 
+        writer.visitField(ACC_PRIVATE, "state", Type.getDescriptor(int.class), null, null);
+
         buildEmptyConstructor(writer);
+
+        MethodVisitor nextMethodVisitor = writer.visitMethod(
+                ACC_PUBLIC,
+                "next",
+                Type.getMethodDescriptor(Type.getType(CompletableFuture.class)),
+                null,
+                null);
+
+        nextMethodVisitor.visitVarInsn(ALOAD, 0);
+        nextMethodVisitor.visitFieldInsn(GETFIELD, name, "state", Type.getDescriptor(int.class));
+
+        Label defaultLabel = new Label();
+        int[] keys = new int[] { 0, 1 };
+        Label[] labels = new Label[] { new Label(), new Label() };
+        nextMethodVisitor.visitLookupSwitchInsn(defaultLabel, keys, labels);
+
+        nextMethodVisitor.visitLabel(labels[0]);
+        for (BoundStatementNode statement : statements) {
+            if (statement.isAsync()) {
+                switch (statement.getNodeType()) {
+                    case EXPRESSION_STATEMENT -> {
+                        BoundExpressionStatementNode expressionStatement = (BoundExpressionStatementNode) statement;
+                        BoundExpressionNode expression = expressionStatement.expression;
+                        switch (expression.getNodeType()) {
+                            case AWAIT_EXPRESSION -> {
+                                nextMethodVisitor.visitVarInsn(ALOAD, 0);
+                                nextMethodVisitor.visitLdcInsn(context.getAsyncState() + 1);
+                                nextMethodVisitor.visitFieldInsn(PUTFIELD, name, "state", Type.getDescriptor(int.class));
+                                // ---
+                                BoundAwaitExpressionNode awaitExpression = (BoundAwaitExpressionNode) expression;
+                                compileExpression(nextMethodVisitor, context, awaitExpression.expression);
+                            }
+                            default -> throw new InternalException("Not supported.");
+                        }
+                    }
+                    default -> throw new InternalException("Not supported");
+                }
+            } else {
+                compileStatement(nextMethodVisitor, context, statement);
+            }
+        }
 
         /*Type[] argumentTypes = new Type[expression.parameters.size()];
         Arrays.fill(argumentTypes, Type.getType(Object.class));
@@ -543,7 +587,7 @@ public class Compiler {
             invokeVisitor.visitInsn(RETURN);
         }
         invokeVisitor.visitMaxs(0, 0);
-        invokeVisitor.visitEnd();
+        invokeVisitor.visitEnd();*/
 
         writer.visitEnd();
 
@@ -551,26 +595,6 @@ public class Compiler {
         saveClassFile(name, bytecode);
 
         classLoader.defineClass(name.replace('/', '.'), bytecode);
-
-        visitor.visitTypeInsn(NEW, name);
-        visitor.visitInsn(DUP);
-        for (CapturedLocalVariable variable : expression.captured) {
-            Variable underlying = variable.getUnderlyingVariable();
-            if (underlying instanceof LiftedLocalVariable lifted) {
-                lifted.compileReferenceLoad(visitor);
-            } else if (underlying instanceof CapturedLocalVariable captured) {
-                captured.compileReferenceLoad(visitor);
-            } else {
-                throw new InternalException();
-            }
-        }
-        visitor.visitMethodInsn(
-                INVOKESPECIAL,
-                name,
-                "<init>",
-                constructorDescriptor,
-                false);*/
-        /**/
     }
 
     private void compileExpression(MethodVisitor visitor, CompilerContext context, BoundExpressionNode expression) {
