@@ -12,6 +12,8 @@ import com.zergatul.scripting.parser.AssignmentOperator;
 import com.zergatul.scripting.parser.Parser;
 import com.zergatul.scripting.parser.ParserOutput;
 import com.zergatul.scripting.parser.nodes.ExpressionStatementNode;
+import com.zergatul.scripting.runtime.AsyncStateMachine;
+import com.zergatul.scripting.runtime.AsyncStateMachineException;
 import com.zergatul.scripting.type.*;
 import org.objectweb.asm.*;
 
@@ -500,10 +502,15 @@ public class Compiler {
     }
 
     private void compileAsyncMainFunction(MethodVisitor parentVisitor, CompilerContext context, List<BoundStatementNode> statements) {
-        /**/
         ClassWriter writer = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
         String name = "com/zergatul/scripting/dynamic/DynamicAsyncStateMachine_" + counter.incrementAndGet();
-        writer.visit(V1_5, ACC_PUBLIC, name, null, Type.getInternalName(Object.class), null);
+        writer.visit(
+                V1_5,
+                ACC_PUBLIC,
+                name,
+                null,
+                Type.getInternalName(Object.class),
+                new String[] { Type.getInternalName(AsyncStateMachine.class) });
 
         writer.visitField(ACC_PRIVATE, "state", Type.getDescriptor(int.class), null, null);
 
@@ -539,6 +546,27 @@ public class Compiler {
                                 // ---
                                 BoundAwaitExpressionNode awaitExpression = (BoundAwaitExpressionNode) expression;
                                 compileExpression(nextMethodVisitor, context, awaitExpression.expression);
+
+                                nextMethodVisitor.visitVarInsn(ALOAD, 0);
+                                nextMethodVisitor.visitMethodInsn(
+                                        INVOKEVIRTUAL,
+                                        name,
+                                        "continuation",
+                                        Type.getMethodDescriptor(Type.getType(Runnable.class)),
+                                        false);
+
+                                nextMethodVisitor.visitMethodInsn(
+                                        INVOKEVIRTUAL,
+                                        Type.getInternalName(CompletableFuture.class),
+                                        "thenRunAsync",
+                                        Type.getMethodDescriptor(Type.getType(CompletableFuture.class), Type.getType(Runnable.class)),
+                                        false);
+                                nextMethodVisitor.visitInsn(ARETURN);
+                                context.newAsyncStateBoundary();
+                                // ---
+                                if (context.getAsyncState() < labels.length) {
+                                    nextMethodVisitor.visitLabel(labels[context.getAsyncState()]);
+                                }
                             }
                             default -> throw new InternalException("Not supported.");
                         }
@@ -550,44 +578,28 @@ public class Compiler {
             }
         }
 
-        /*Type[] argumentTypes = new Type[expression.parameters.size()];
-        Arrays.fill(argumentTypes, Type.getType(Object.class));
-        MethodVisitor invokeVisitor = writer.visitMethod(
-                ACC_PUBLIC,
-                "invoke",
-                Type.getMethodDescriptor(
-                        type.isFunction() ? Type.getType(Object.class) : Type.VOID_TYPE,
-                        argumentTypes),
-                null,
-                null);
-        invokeVisitor.visitCode();
+        nextMethodVisitor.visitInsn(ACONST_NULL);
+        nextMethodVisitor.visitMethodInsn(
+                INVOKESTATIC,
+                Type.getInternalName(CompletableFuture.class),
+                "completedFuture",
+                Type.getMethodDescriptor(Type.getType(CompletableFuture.class), Type.getType(Object.class)),
+                false);
+        nextMethodVisitor.visitInsn(ARETURN);
 
-        CompilerContext lambdaContext = context.createFunction(type.getReturnType(), true);
-        LocalVariable[] arguments = new LocalVariable[expression.parameters.size()];
-        for (int i = 0; i < expression.parameters.size(); i++) {
-            arguments[i] = lambdaContext.addLocalVariable(null, SType.fromJavaType(Object.class), null);
-        }
-        for (int i = 0; i < expression.parameters.size(); i++) {
-            BoundParameterNode parameter = expression.parameters.get(i);
-            LocalVariable unboxed = (LocalVariable) parameter.getName().symbol;
-            lambdaContext.addLocalVariable(unboxed);
-            Class<?> boxedType = parameter.getType().getBoxedVersion();
+        nextMethodVisitor.visitLabel(defaultLabel);
+        nextMethodVisitor.visitTypeInsn(NEW, Type.getInternalName(AsyncStateMachineException.class));
+        nextMethodVisitor.visitInsn(DUP);
+        nextMethodVisitor.visitMethodInsn(
+                INVOKESPECIAL,
+                Type.getInternalName(AsyncStateMachineException.class),
+                "<init>",
+                Type.getMethodDescriptor(Type.VOID_TYPE),
+                false);
+        nextMethodVisitor.visitInsn(ATHROW);
 
-            arguments[i].compileLoad(context, invokeVisitor); // load argument
-            if (boxedType != null) {
-                invokeVisitor.visitTypeInsn(CHECKCAST, Type.getInternalName(boxedType)); // cast to boxed, example: java.lang.Integer
-                parameter.getType().compileUnboxing(invokeVisitor); // convert to unboxed
-            } else {
-                invokeVisitor.visitTypeInsn(CHECKCAST, Type.getInternalName(parameter.getType().getJavaClass()));
-            }
-            unboxed.compileStore(context, invokeVisitor);
-        }
-        compileStatement(invokeVisitor, lambdaContext, expression.body);
-        if (!type.isFunction()) {
-            invokeVisitor.visitInsn(RETURN);
-        }
-        invokeVisitor.visitMaxs(0, 0);
-        invokeVisitor.visitEnd();*/
+        nextMethodVisitor.visitMaxs(0, 0);
+        nextMethodVisitor.visitEnd();
 
         writer.visitEnd();
 
@@ -595,6 +607,22 @@ public class Compiler {
         saveClassFile(name, bytecode);
 
         classLoader.defineClass(name.replace('/', '.'), bytecode);
+
+        /**/
+        parentVisitor.visitTypeInsn(NEW, name);
+        parentVisitor.visitInsn(DUP);
+        parentVisitor.visitMethodInsn(
+                INVOKESPECIAL,
+                name,
+                "<init>",
+                Type.getMethodDescriptor(Type.VOID_TYPE),
+                false);
+        parentVisitor.visitMethodInsn(
+                INVOKEVIRTUAL,
+                name,
+                "next",
+                Type.getMethodDescriptor(Type.getType(CompletableFuture.class)),
+                false);
     }
 
     private void compileExpression(MethodVisitor visitor, CompilerContext context, BoundExpressionNode expression) {

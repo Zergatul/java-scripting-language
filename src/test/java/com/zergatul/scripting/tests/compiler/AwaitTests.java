@@ -30,8 +30,10 @@ public class AwaitTests {
         program.run();
 
         Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(123));
+        var x = ApiRoot.futures.manuals.get(0).whenCompleteAsync((r, e) -> {});
         ApiRoot.futures.manuals.get(0).complete(Void.TYPE.cast(null));
-        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(321));
+        x.join();
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(123, 321));
     }
 
     public static class ApiRoot {
