@@ -2,7 +2,7 @@ package com.zergatul.scripting.parser.nodes;
 
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.parser.NodeType;
-import com.zergatul.scripting.parser.ParserVisitor;
+import com.zergatul.scripting.parser.ParserTreeVisitor;
 
 import java.util.List;
 import java.util.Objects;
@@ -17,12 +17,12 @@ public class StatementsListNode extends StatementNode {
     }
 
     @Override
-    public void accept(ParserVisitor visitor) {
+    public void accept(ParserTreeVisitor visitor) {
         visitor.explicitVisit(this);
     }
 
     @Override
-    public void acceptChildren(ParserVisitor visitor) {
+    public void acceptChildren(ParserTreeVisitor visitor) {
         for (StatementNode statement : statements) {
             statement.accept(visitor);
         }

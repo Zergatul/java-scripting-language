@@ -13,8 +13,6 @@ public abstract class BoundExpressionNode extends BoundNode {
         this.type = type;
     }
 
-    public abstract boolean isAsync();
-
     public boolean canGet() {
         return true;
     }

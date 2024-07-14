@@ -2,7 +2,7 @@ package com.zergatul.scripting.parser.nodes;
 
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.parser.NodeType;
-import com.zergatul.scripting.parser.ParserVisitor;
+import com.zergatul.scripting.parser.ParserTreeVisitor;
 
 public class InvocationExpressionNode extends ExpressionNode {
 
@@ -16,12 +16,12 @@ public class InvocationExpressionNode extends ExpressionNode {
     }
 
     @Override
-    public void accept(ParserVisitor visitor) {
+    public void accept(ParserTreeVisitor visitor) {
         visitor.explicitVisit(this);
     }
 
     @Override
-    public void acceptChildren(ParserVisitor visitor) {
+    public void acceptChildren(ParserTreeVisitor visitor) {
         callee.accept(visitor);
         arguments.accept(visitor);
     }

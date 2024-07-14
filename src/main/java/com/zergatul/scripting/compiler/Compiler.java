@@ -2,8 +2,10 @@ package com.zergatul.scripting.compiler;
 
 import com.zergatul.scripting.InternalException;
 import com.zergatul.scripting.TextRange;
+import com.zergatul.scripting.binding.AsyncBinderTreeVisitor;
 import com.zergatul.scripting.binding.Binder;
 import com.zergatul.scripting.binding.BinderOutput;
+import com.zergatul.scripting.binding.LiftedVariablesBinderTreeVisitor;
 import com.zergatul.scripting.binding.nodes.*;
 import com.zergatul.scripting.lexer.Lexer;
 import com.zergatul.scripting.lexer.LexerInput;
@@ -208,7 +210,7 @@ public class Compiler {
             context.addStaticVariable((DeclaredStaticVariable) variable.name.symbol);
         }
 
-        if (unit.statements.isAsync()) {
+        if (isAsync(unit.statements)) {
             context.markAsync();
             compileAsyncBoundStatementList(visitor, context, unit.statements);
         } else {
@@ -517,6 +519,14 @@ public class Compiler {
         writer.visitField(ACC_PRIVATE, "state", Type.getDescriptor(int.class), null, null);
 
         // lifted variables
+        LiftedVariablesBinderTreeVisitor treeVisitor = new LiftedVariablesBinderTreeVisitor();
+        node.accept(treeVisitor);
+        List<LiftedLocalVariable> variables = treeVisitor.getVariables();
+        for (int i = 0; i < variables.size(); i++) {
+            LiftedLocalVariable variable = variables.get(i);
+            String fieldName = "lifted_" + i + "_" + variable.getName();
+            writer.visitField(ACC_PRIVATE, fieldName, Type.getDescriptor(variable.getType().getReferenceClass()), null, null);
+        }
 
         // build constructor
         MethodVisitor constructorVisitor = writer.visitMethod(ACC_PUBLIC, "<init>", Type.getMethodDescriptor(Type.VOID_TYPE), null, null);
@@ -550,7 +560,7 @@ public class Compiler {
 
         nextMethodVisitor.visitLabel(labels[0]);
         for (BoundStatementNode statement : statements) {
-            if (statement.isAsync()) {
+            if (isAsync(statement)) {
                 switch (statement.getNodeType()) {
                     case EXPRESSION_STATEMENT -> {
                         BoundExpressionStatementNode expressionStatement = (BoundExpressionStatementNode) statement;
@@ -947,6 +957,12 @@ public class Compiler {
                     false);
             variable.compileStore(context, visitor);
         }
+    }
+
+    private boolean isAsync(BoundNode node) {
+        AsyncBinderTreeVisitor visitor = new AsyncBinderTreeVisitor();
+        node.accept(visitor);
+        return visitor.isAsync();
     }
 
     private void saveClassFile(String name, byte[] bytecode) {

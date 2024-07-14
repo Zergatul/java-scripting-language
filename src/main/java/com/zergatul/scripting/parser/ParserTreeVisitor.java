@@ -2,7 +2,7 @@ package com.zergatul.scripting.parser;
 
 import com.zergatul.scripting.parser.nodes.*;
 
-public abstract class ParserVisitor {
+public abstract class ParserTreeVisitor {
 
     public void explicitVisit(ArgumentsListNode node) {
         visit(node);

@@ -1,6 +1,7 @@
 package com.zergatul.scripting.binding.nodes;
 
 import com.zergatul.scripting.TextRange;
+import com.zergatul.scripting.binding.BinderTreeVisitor;
 import com.zergatul.scripting.compiler.Symbol;
 import com.zergatul.scripting.parser.NodeType;
 import com.zergatul.scripting.type.SType;
@@ -27,9 +28,12 @@ public class BoundNameExpressionNode extends BoundExpressionNode {
     }
 
     @Override
-    public boolean isAsync() {
-        return false;
+    public void accept(BinderTreeVisitor visitor) {
+        visitor.explicitVisit(this);
     }
+
+    @Override
+    public void acceptChildren(BinderTreeVisitor visitor) {}
 
     public void overrideSymbol(Symbol symbol) {
         this.symbol = symbol;

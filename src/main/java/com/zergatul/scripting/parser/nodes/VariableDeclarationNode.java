@@ -3,7 +3,7 @@ package com.zergatul.scripting.parser.nodes;
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.lexer.Token;
 import com.zergatul.scripting.parser.NodeType;
-import com.zergatul.scripting.parser.ParserVisitor;
+import com.zergatul.scripting.parser.ParserTreeVisitor;
 
 import java.util.Objects;
 
@@ -25,12 +25,12 @@ public class VariableDeclarationNode extends StatementNode {
     }
 
     @Override
-    public void accept(ParserVisitor visitor) {
+    public void accept(ParserTreeVisitor visitor) {
         visitor.explicitVisit(this);
     }
 
     @Override
-    public void acceptChildren(ParserVisitor visitor) {
+    public void acceptChildren(ParserTreeVisitor visitor) {
         type.accept(visitor);
         name.accept(visitor);
         expression.accept(visitor);

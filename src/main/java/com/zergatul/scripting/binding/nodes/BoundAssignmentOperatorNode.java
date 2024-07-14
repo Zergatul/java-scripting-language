@@ -1,6 +1,7 @@
 package com.zergatul.scripting.binding.nodes;
 
 import com.zergatul.scripting.TextRange;
+import com.zergatul.scripting.binding.BinderTreeVisitor;
 import com.zergatul.scripting.parser.AssignmentOperator;
 import com.zergatul.scripting.parser.NodeType;
 
@@ -14,6 +15,14 @@ public class BoundAssignmentOperatorNode extends BoundNode {
         super(NodeType.ASSIGNMENT_OPERATOR, range);
         this.operator = operator;
     }
+
+    @Override
+    public void accept(BinderTreeVisitor visitor) {
+        visitor.explicitVisit(this);
+    }
+
+    @Override
+    public void acceptChildren(BinderTreeVisitor visitor) {}
 
     @Override
     public List<BoundNode> getChildren() {

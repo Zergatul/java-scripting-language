@@ -1,6 +1,7 @@
 package com.zergatul.scripting.binding.nodes;
 
 import com.zergatul.scripting.TextRange;
+import com.zergatul.scripting.binding.BinderTreeVisitor;
 import com.zergatul.scripting.parser.NodeType;
 
 import java.util.List;
@@ -20,15 +21,19 @@ public class BoundNewExpressionNode extends BoundExpressionNode {
     }
 
     @Override
-    public boolean isAsync() {
+    public void accept(BinderTreeVisitor visitor) {
+        visitor.explicitVisit(this);
+    }
+
+    @Override
+    public void acceptChildren(BinderTreeVisitor visitor) {
+        typeNode.accept(visitor);
+        lengthExpression.accept(visitor);
         if (items != null) {
             for (BoundExpressionNode expression : items) {
-                if (expression.isAsync()) {
-                    return true;
-                }
+                expression.accept(visitor);
             }
         }
-        return lengthExpression.isAsync();
     }
 
     @Override

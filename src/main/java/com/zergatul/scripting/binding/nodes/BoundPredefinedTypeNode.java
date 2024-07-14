@@ -1,6 +1,7 @@
 package com.zergatul.scripting.binding.nodes;
 
 import com.zergatul.scripting.TextRange;
+import com.zergatul.scripting.binding.BinderTreeVisitor;
 import com.zergatul.scripting.parser.NodeType;
 import com.zergatul.scripting.type.SType;
 
@@ -11,6 +12,14 @@ public class BoundPredefinedTypeNode extends BoundTypeNode {
     public BoundPredefinedTypeNode(SType type, TextRange range) {
         super(NodeType.PREDEFINED_TYPE, type, range);
     }
+
+    @Override
+    public void accept(BinderTreeVisitor visitor) {
+        visitor.explicitVisit(this);
+    }
+
+    @Override
+    public void acceptChildren(BinderTreeVisitor visitor) {}
 
     @Override
     public List<BoundNode> getChildren() {

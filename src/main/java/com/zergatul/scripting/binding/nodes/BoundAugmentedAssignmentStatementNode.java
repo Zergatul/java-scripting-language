@@ -1,6 +1,7 @@
 package com.zergatul.scripting.binding.nodes;
 
 import com.zergatul.scripting.TextRange;
+import com.zergatul.scripting.binding.BinderTreeVisitor;
 import com.zergatul.scripting.parser.NodeType;
 
 import java.util.List;
@@ -21,8 +22,16 @@ public class BoundAugmentedAssignmentStatementNode extends BoundStatementNode {
     }
 
     @Override
-    public boolean isAsync() {
-        return left.isAsync() || right.isAsync();
+    public void accept(BinderTreeVisitor visitor) {
+        visitor.explicitVisit(this);
+    }
+
+    @Override
+    public void acceptChildren(BinderTreeVisitor visitor) {
+        left.accept(visitor);
+        assignmentOperator.accept(visitor);
+        operator.accept(visitor);
+        right.accept(visitor);
     }
 
     @Override
