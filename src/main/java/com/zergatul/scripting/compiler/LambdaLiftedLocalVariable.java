@@ -7,11 +7,11 @@ import org.objectweb.asm.Type;
 
 import static org.objectweb.asm.Opcodes.*;
 
-public class LiftedLocalVariable extends Variable {
+public class LambdaLiftedLocalVariable extends Variable {
 
     private final Variable variable;
 
-    public LiftedLocalVariable(Variable variable) {
+    public LambdaLiftedLocalVariable(Variable variable) {
         super(variable.getName(), variable.getType(), variable.getDefinition());
         this.variable = variable;
     }

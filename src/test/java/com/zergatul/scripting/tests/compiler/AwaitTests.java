@@ -57,6 +57,44 @@ public class AwaitTests {
         Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(1, 2, 3));
     }
 
+    @Test
+    public void doubleCapture1Test() {
+        String code = """
+                int x = 1;
+                await futures.manual();
+                intStorage.add(x);
+                run.once(() => x++);
+                intStorage.add(x);
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of());
+        ApiRoot.futures.getManualFuture(0).complete(null);
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(1, 2));
+    }
+
+    @Test
+    public void doubleCapture2Test() {
+        String code = """
+                int x = 1;
+                intStorage.add(x);
+                run.once(() => x++);
+                intStorage.add(x);
+                await futures.manual();
+                x++;
+                intStorage.add(x);
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(1, 2));
+        ApiRoot.futures.getManualFuture(0).complete(null);
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(1, 2, 3));
+    }
+
     public static class ApiRoot {
         public static FutureHelper futures;
         public static IntStorage intStorage;

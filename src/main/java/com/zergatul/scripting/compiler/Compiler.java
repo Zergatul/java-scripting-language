@@ -2,10 +2,7 @@ package com.zergatul.scripting.compiler;
 
 import com.zergatul.scripting.InternalException;
 import com.zergatul.scripting.TextRange;
-import com.zergatul.scripting.binding.AsyncBinderTreeVisitor;
-import com.zergatul.scripting.binding.Binder;
-import com.zergatul.scripting.binding.BinderOutput;
-import com.zergatul.scripting.binding.LiftedVariablesBinderTreeVisitor;
+import com.zergatul.scripting.binding.*;
 import com.zergatul.scripting.binding.nodes.*;
 import com.zergatul.scripting.lexer.Lexer;
 import com.zergatul.scripting.lexer.LexerInput;
@@ -521,11 +518,12 @@ public class Compiler {
         // lifted variables
         LiftedVariablesBinderTreeVisitor treeVisitor = new LiftedVariablesBinderTreeVisitor();
         node.accept(treeVisitor);
-        List<LiftedLocalVariable> variables = treeVisitor.getVariables();
+        List<AsyncLiftedLocalVariable> variables = treeVisitor.getVariables();
         for (int i = 0; i < variables.size(); i++) {
-            LiftedLocalVariable variable = variables.get(i);
+            AsyncLiftedLocalVariable variable = variables.get(i);
             String fieldName = "lifted_" + i + "_" + variable.getName();
-            writer.visitField(ACC_PRIVATE, fieldName, Type.getDescriptor(variable.getType().getReferenceClass()), null, null);
+            variable.setField(name, fieldName);
+            writer.visitField(ACC_PUBLIC, fieldName, Type.getDescriptor(variable.getType().getReferenceClass()), null, null);
         }
 
         // build constructor
@@ -910,7 +908,7 @@ public class Compiler {
         visitor.visitInsn(DUP);
         for (CapturedLocalVariable variable : expression.captured) {
             Variable underlying = variable.getUnderlyingVariable();
-            if (underlying instanceof LiftedLocalVariable lifted) {
+            if (underlying instanceof LambdaLiftedLocalVariable lifted) {
                 lifted.compileReferenceLoad(visitor);
             } else if (underlying instanceof CapturedLocalVariable captured) {
                 captured.compileReferenceLoad(visitor);

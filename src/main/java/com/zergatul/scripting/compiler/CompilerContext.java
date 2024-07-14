@@ -2,6 +2,7 @@ package com.zergatul.scripting.compiler;
 
 import com.zergatul.scripting.InternalException;
 import com.zergatul.scripting.TextRange;
+import com.zergatul.scripting.binding.AsyncLiftedLocalVariable;
 import com.zergatul.scripting.binding.nodes.BoundNameExpressionNode;
 import com.zergatul.scripting.type.SFloat;
 import com.zergatul.scripting.type.SReference;
@@ -90,7 +91,7 @@ public class CompilerContext {
                 local.setAsyncState(asyncState);
             }
         }
-        if (variable instanceof LiftedLocalVariable lifted) {
+        if (variable instanceof LambdaLiftedLocalVariable lifted) {
             Variable underlying = lifted.getUnderlyingVariable();
             if (underlying instanceof LocalVariable local) {
                 expandStackOnLocalVariable(local);
@@ -167,7 +168,7 @@ public class CompilerContext {
         // async state boundary lifting
         if (isAsync && localSymbols.get(name) instanceof LocalVariable localVariable) {
             if (localVariable.getAsyncState() != asyncState) {
-                LiftedLocalVariable lifted = new LiftedLocalVariable(localVariable);
+                AsyncLiftedLocalVariable lifted = new AsyncLiftedLocalVariable(localVariable);
                 for (BoundNameExpressionNode nameExpression : localVariable.getReferences()) {
                     nameExpression.overrideSymbol(lifted);
                 }
@@ -183,8 +184,8 @@ public class CompilerContext {
                 if (functions.isEmpty()) {
                     return localSymbol;
                 } else {
-                    if (!(localSymbol instanceof LiftedLocalVariable)) {
-                        LiftedLocalVariable lifted = new LiftedLocalVariable(localSymbol);
+                    if (!(localSymbol instanceof LambdaLiftedLocalVariable)) {
+                        LambdaLiftedLocalVariable lifted = new LambdaLiftedLocalVariable(localSymbol);
                         for (BoundNameExpressionNode nameExpression : localSymbol.getReferences()) {
                             nameExpression.overrideSymbol(lifted);
                         }
