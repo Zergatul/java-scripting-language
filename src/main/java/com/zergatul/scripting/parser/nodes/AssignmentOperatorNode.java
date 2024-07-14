@@ -3,6 +3,7 @@ package com.zergatul.scripting.parser.nodes;
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.parser.AssignmentOperator;
 import com.zergatul.scripting.parser.NodeType;
+import com.zergatul.scripting.parser.ParserVisitor;
 
 public class AssignmentOperatorNode extends Node {
 
@@ -12,6 +13,14 @@ public class AssignmentOperatorNode extends Node {
         super(NodeType.ASSIGNMENT_OPERATOR, range);
         this.operator = operator;
     }
+
+    @Override
+    public void accept(ParserVisitor visitor) {
+        visitor.explicitVisit(this);
+    }
+
+    @Override
+    public void acceptChildren(ParserVisitor visitor) {}
 
     @Override
     public boolean equals(Object obj) {

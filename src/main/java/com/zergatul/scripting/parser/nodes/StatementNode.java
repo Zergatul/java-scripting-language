@@ -11,8 +11,6 @@ public abstract class StatementNode extends Node {
         super(nodeType, range);
     }
 
-    public abstract boolean isAsync();
-
     public StatementNode prepend(Token token) {
         throw new InternalException("Not supported.");
     }

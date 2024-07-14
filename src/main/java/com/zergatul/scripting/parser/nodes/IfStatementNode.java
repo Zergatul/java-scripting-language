@@ -2,6 +2,7 @@ package com.zergatul.scripting.parser.nodes;
 
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.parser.NodeType;
+import com.zergatul.scripting.parser.ParserVisitor;
 
 import java.util.Objects;
 
@@ -19,8 +20,17 @@ public class IfStatementNode extends StatementNode {
     }
 
     @Override
-    public boolean isAsync() {
-        return condition.isAsync() || thenStatement.isAsync() || (elseStatement != null && elseStatement.isAsync());
+    public void accept(ParserVisitor visitor) {
+        visitor.explicitVisit(this);
+    }
+
+    @Override
+    public void acceptChildren(ParserVisitor visitor) {
+        condition.accept(visitor);
+        thenStatement.accept(visitor);
+        if (elseStatement != null) {
+            elseStatement.accept(visitor);
+        }
     }
 
     @Override

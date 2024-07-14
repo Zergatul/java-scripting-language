@@ -8,7 +8,7 @@ import java.util.concurrent.TimeUnit;
 
 public class FutureHelper {
 
-    public final List<CompletableFuture<Void>> manuals = new ArrayList<>();
+    private final List<CompletableFuture<Void>> manuals = new ArrayList<>();
 
     public CompletableFuture<Void> sleep(int milliseconds) {
         Executor executor = CompletableFuture.delayedExecutor(milliseconds, TimeUnit.MILLISECONDS);
@@ -19,5 +19,9 @@ public class FutureHelper {
         CompletableFuture<Void> future = new CompletableFuture<>();
         manuals.add(future);
         return future;
+    }
+
+    public CompletableFuture<Void> getManualFuture(int index) {
+        return manuals.get(index);
     }
 }

@@ -2,6 +2,7 @@ package com.zergatul.scripting.parser.nodes;
 
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.parser.NodeType;
+import com.zergatul.scripting.parser.ParserVisitor;
 
 public class ForEachLoopStatementNode extends StatementNode {
 
@@ -19,7 +20,15 @@ public class ForEachLoopStatementNode extends StatementNode {
     }
 
     @Override
-    public boolean isAsync() {
-        return iterable.isAsync() || body.isAsync();
+    public void accept(ParserVisitor visitor) {
+        visitor.explicitVisit(this);
+    }
+
+    @Override
+    public void acceptChildren(ParserVisitor visitor) {
+        typeNode.accept(visitor);
+        name.accept(visitor);
+        iterable.accept(visitor);
+        body.accept(visitor);
     }
 }

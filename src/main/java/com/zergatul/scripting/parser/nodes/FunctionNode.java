@@ -1,8 +1,8 @@
 package com.zergatul.scripting.parser.nodes;
 
 import com.zergatul.scripting.TextRange;
-import com.zergatul.scripting.lexer.IdentifierToken;
 import com.zergatul.scripting.parser.NodeType;
+import com.zergatul.scripting.parser.ParserVisitor;
 
 public class FunctionNode extends Node {
 
@@ -17,6 +17,19 @@ public class FunctionNode extends Node {
         this.name = name;
         this.parameters = parameters;
         this.body = body;
+    }
+
+    @Override
+    public void accept(ParserVisitor visitor) {
+        visitor.explicitVisit(this);
+    }
+
+    @Override
+    public void acceptChildren(ParserVisitor visitor) {
+        returnType.accept(visitor);
+        name.accept(visitor);
+        parameters.accept(visitor);
+        body.accept(visitor);
     }
 
     @Override

@@ -11,7 +11,6 @@ import com.zergatul.scripting.lexer.LexerOutput;
 import com.zergatul.scripting.parser.AssignmentOperator;
 import com.zergatul.scripting.parser.Parser;
 import com.zergatul.scripting.parser.ParserOutput;
-import com.zergatul.scripting.parser.nodes.ExpressionStatementNode;
 import com.zergatul.scripting.runtime.AsyncStateMachine;
 import com.zergatul.scripting.runtime.AsyncStateMachineException;
 import com.zergatul.scripting.type.*;
@@ -211,7 +210,7 @@ public class Compiler {
 
         if (unit.statements.isAsync()) {
             context.markAsync();
-            compileAsyncMainFunction(visitor, context, unit.statements.statements);
+            compileAsyncBoundStatementList(visitor, context, unit.statements);
         } else {
             compileStatements(visitor, context, unit.statements.statements);
         }
@@ -501,7 +500,9 @@ public class Compiler {
         }
     }
 
-    private void compileAsyncMainFunction(MethodVisitor parentVisitor, CompilerContext context, List<BoundStatementNode> statements) {
+    private void compileAsyncBoundStatementList(MethodVisitor parentVisitor, CompilerContext context, BoundStatementsListNode node) {
+        List<BoundStatementNode> statements = node.statements;
+
         ClassWriter writer = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
         String name = "com/zergatul/scripting/dynamic/DynamicAsyncStateMachine_" + counter.incrementAndGet();
         writer.visit(
@@ -512,10 +513,22 @@ public class Compiler {
                 Type.getInternalName(Object.class),
                 new String[] { Type.getInternalName(AsyncStateMachine.class) });
 
+        // state field
         writer.visitField(ACC_PRIVATE, "state", Type.getDescriptor(int.class), null, null);
 
-        buildEmptyConstructor(writer);
+        // lifted variables
 
+        // build constructor
+        MethodVisitor constructorVisitor = writer.visitMethod(ACC_PUBLIC, "<init>", Type.getMethodDescriptor(Type.VOID_TYPE), null, null);
+        constructorVisitor.visitCode();
+        constructorVisitor.visitVarInsn(ALOAD, 0);
+        constructorVisitor.visitMethodInsn(INVOKESPECIAL, Type.getInternalName(Object.class), "<init>", Type.getMethodDescriptor(Type.VOID_TYPE), false);
+        //
+        constructorVisitor.visitInsn(RETURN);
+        constructorVisitor.visitMaxs(0, 0);
+        constructorVisitor.visitEnd();
+
+        // build next method
         MethodVisitor nextMethodVisitor = writer.visitMethod(
                 ACC_PUBLIC,
                 "next",
@@ -527,8 +540,12 @@ public class Compiler {
         nextMethodVisitor.visitFieldInsn(GETFIELD, name, "state", Type.getDescriptor(int.class));
 
         Label defaultLabel = new Label();
-        int[] keys = new int[] { 0, 1 };
-        Label[] labels = new Label[] { new Label(), new Label() };
+        int[] keys = new int[node.asyncStates + 1];
+        Label[] labels = new Label[node.asyncStates + 1];
+        for (int i = 0; i <= node.asyncStates; i++) {
+            keys[i] = i;
+            labels[i] = new Label();
+        }
         nextMethodVisitor.visitLookupSwitchInsn(defaultLabel, keys, labels);
 
         nextMethodVisitor.visitLabel(labels[0]);
@@ -558,7 +575,7 @@ public class Compiler {
                                 nextMethodVisitor.visitMethodInsn(
                                         INVOKEVIRTUAL,
                                         Type.getInternalName(CompletableFuture.class),
-                                        "thenRunAsync",
+                                        "thenRun",
                                         Type.getMethodDescriptor(Type.getType(CompletableFuture.class), Type.getType(Runnable.class)),
                                         false);
                                 nextMethodVisitor.visitInsn(ARETURN);

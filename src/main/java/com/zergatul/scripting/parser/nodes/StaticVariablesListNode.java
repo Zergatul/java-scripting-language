@@ -2,6 +2,7 @@ package com.zergatul.scripting.parser.nodes;
 
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.parser.NodeType;
+import com.zergatul.scripting.parser.ParserVisitor;
 
 import java.util.List;
 import java.util.Objects;
@@ -13,6 +14,18 @@ public class StaticVariablesListNode extends Node {
     public StaticVariablesListNode(List<VariableDeclarationNode> variables, TextRange range) {
         super(NodeType.STATIC_VARIABLES_LIST, range);
         this.variables = variables;
+    }
+
+    @Override
+    public void accept(ParserVisitor visitor) {
+        visitor.explicitVisit(this);
+    }
+
+    @Override
+    public void acceptChildren(ParserVisitor visitor) {
+        for (VariableDeclarationNode variable : variables) {
+            variable.accept(visitor);
+        }
     }
 
     @Override

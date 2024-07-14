@@ -115,7 +115,7 @@ public class Binder {
             context.markAsync();
         }
         List<BoundStatementNode> statements = node.statements.stream().map(this::bindStatement).toList();
-        return new BoundStatementsListNode(statements, node.getRange());
+        return new BoundStatementsListNode(statements, context.getAsyncState(), node.getRange());
     }
 
     private BoundStatementNode bindStatement(StatementNode statement) {
@@ -976,6 +976,7 @@ public class Binder {
 
     private BoundAwaitExpressionNode bindAwaitExpression(AwaitExpressionNode node) {
         BoundExpressionNode expression = bindExpression(node.expression);
+        context.newAsyncStateBoundary();
         if (expression.type == SUnknown.instance) {
             return new BoundAwaitExpressionNode(expression, SUnknown.instance, node.getRange());
         }

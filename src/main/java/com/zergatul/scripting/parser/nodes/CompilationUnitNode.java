@@ -2,6 +2,7 @@ package com.zergatul.scripting.parser.nodes;
 
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.parser.NodeType;
+import com.zergatul.scripting.parser.ParserVisitor;
 
 public class CompilationUnitNode extends Node {
 
@@ -14,6 +15,18 @@ public class CompilationUnitNode extends Node {
         this.variables = variables;
         this.functions = functions;
         this.statements = statements;
+    }
+
+    @Override
+    public void accept(ParserVisitor visitor) {
+        visitor.explicitVisit(this);
+    }
+
+    @Override
+    public void acceptChildren(ParserVisitor visitor) {
+        variables.accept(visitor);
+        functions.accept(visitor);
+        statements.accept(visitor);
     }
 
     @Override

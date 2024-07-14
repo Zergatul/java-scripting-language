@@ -3,6 +3,7 @@ package com.zergatul.scripting.parser.nodes;
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.lexer.Token;
 import com.zergatul.scripting.parser.NodeType;
+import com.zergatul.scripting.parser.ParserVisitor;
 
 public class ExpressionStatementNode extends StatementNode {
 
@@ -14,8 +15,13 @@ public class ExpressionStatementNode extends StatementNode {
     }
 
     @Override
-    public boolean isAsync() {
-        return expression.isAsync();
+    public void accept(ParserVisitor visitor) {
+        visitor.explicitVisit(this);
+    }
+
+    @Override
+    public void acceptChildren(ParserVisitor visitor) {
+        expression.accept(visitor);
     }
 
     @Override

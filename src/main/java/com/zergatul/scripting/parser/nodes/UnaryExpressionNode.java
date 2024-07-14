@@ -2,6 +2,7 @@ package com.zergatul.scripting.parser.nodes;
 
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.parser.NodeType;
+import com.zergatul.scripting.parser.ParserVisitor;
 
 public class UnaryExpressionNode extends ExpressionNode {
 
@@ -15,8 +16,14 @@ public class UnaryExpressionNode extends ExpressionNode {
     }
 
     @Override
-    public boolean isAsync() {
-        return operand.isAsync();
+    public void accept(ParserVisitor visitor) {
+        visitor.explicitVisit(this);
+    }
+
+    @Override
+    public void acceptChildren(ParserVisitor visitor) {
+        operator.accept(visitor);
+        operand.accept(visitor);
     }
 
     @Override

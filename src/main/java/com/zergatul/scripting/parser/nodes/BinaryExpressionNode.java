@@ -1,8 +1,8 @@
 package com.zergatul.scripting.parser.nodes;
 
 import com.zergatul.scripting.TextRange;
-import com.zergatul.scripting.parser.BinaryOperator;
 import com.zergatul.scripting.parser.NodeType;
+import com.zergatul.scripting.parser.ParserVisitor;
 
 public class BinaryExpressionNode extends ExpressionNode {
 
@@ -18,8 +18,15 @@ public class BinaryExpressionNode extends ExpressionNode {
     }
 
     @Override
-    public boolean isAsync() {
-        return left.isAsync() || right.isAsync();
+    public void accept(ParserVisitor visitor) {
+        visitor.explicitVisit(this);
+    }
+
+    @Override
+    public void acceptChildren(ParserVisitor visitor) {
+        left.accept(visitor);
+        operator.accept(visitor);
+        right.accept(visitor);
     }
 
     @Override

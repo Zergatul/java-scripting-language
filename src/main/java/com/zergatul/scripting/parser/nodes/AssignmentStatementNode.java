@@ -2,8 +2,8 @@ package com.zergatul.scripting.parser.nodes;
 
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.lexer.Token;
-import com.zergatul.scripting.parser.AssignmentOperator;
 import com.zergatul.scripting.parser.NodeType;
+import com.zergatul.scripting.parser.ParserVisitor;
 
 public class AssignmentStatementNode extends StatementNode {
 
@@ -19,8 +19,15 @@ public class AssignmentStatementNode extends StatementNode {
     }
 
     @Override
-    public boolean isAsync() {
-        return right.isAsync();
+    public void accept(ParserVisitor visitor) {
+        visitor.explicitVisit(this);
+    }
+
+    @Override
+    public void acceptChildren(ParserVisitor visitor) {
+        left.accept(visitor);
+        operator.accept(visitor);
+        right.accept(visitor);
     }
 
     @Override

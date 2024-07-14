@@ -2,6 +2,7 @@ package com.zergatul.scripting.parser.nodes;
 
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.parser.NodeType;
+import com.zergatul.scripting.parser.ParserVisitor;
 
 import java.util.List;
 import java.util.Objects;
@@ -18,8 +19,16 @@ public class LambdaExpressionNode extends ExpressionNode {
     }
 
     @Override
-    public boolean isAsync() {
-        return false;
+    public void accept(ParserVisitor visitor) {
+        visitor.explicitVisit(this);
+    }
+
+    @Override
+    public void acceptChildren(ParserVisitor visitor) {
+        for (NameExpressionNode name : parameters) {
+            name.accept(visitor);
+        }
+        body.accept(visitor);
     }
 
     @Override

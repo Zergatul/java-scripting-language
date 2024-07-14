@@ -2,6 +2,7 @@ package com.zergatul.scripting.parser.nodes;
 
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.parser.NodeType;
+import com.zergatul.scripting.parser.ParserVisitor;
 
 public class IndexExpressionNode extends ExpressionNode {
 
@@ -15,7 +16,13 @@ public class IndexExpressionNode extends ExpressionNode {
     }
 
     @Override
-    public boolean isAsync() {
-        return callee.isAsync() || index.isAsync();
+    public void accept(ParserVisitor visitor) {
+        visitor.explicitVisit(this);
+    }
+
+    @Override
+    public void acceptChildren(ParserVisitor visitor) {
+        callee.accept(visitor);
+        index.accept(visitor);
     }
 }

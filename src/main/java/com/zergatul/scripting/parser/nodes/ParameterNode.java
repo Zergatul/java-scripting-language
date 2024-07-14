@@ -2,6 +2,7 @@ package com.zergatul.scripting.parser.nodes;
 
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.parser.NodeType;
+import com.zergatul.scripting.parser.ParserVisitor;
 
 public class ParameterNode extends Node {
 
@@ -12,6 +13,17 @@ public class ParameterNode extends Node {
         super(NodeType.PARAMETER, range);
         this.type = type;
         this.name = name;
+    }
+
+    @Override
+    public void accept(ParserVisitor visitor) {
+        visitor.explicitVisit(this);
+    }
+
+    @Override
+    public void acceptChildren(ParserVisitor visitor) {
+        type.accept(visitor);
+        name.accept(visitor);
     }
 
     public TypeNode getType() {
