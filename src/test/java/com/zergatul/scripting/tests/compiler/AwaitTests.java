@@ -2,6 +2,7 @@ package com.zergatul.scripting.tests.compiler;
 
 import com.zergatul.scripting.tests.compiler.helpers.FutureHelper;
 import com.zergatul.scripting.tests.compiler.helpers.IntStorage;
+import com.zergatul.scripting.tests.compiler.helpers.Run;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -16,6 +17,7 @@ public class AwaitTests {
     public void clean() {
         ApiRoot.futures = new FutureHelper();
         ApiRoot.intStorage = new IntStorage();
+        ApiRoot.run = new Run();
     }
 
     @Test
@@ -95,8 +97,11 @@ public class AwaitTests {
         Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(1, 2, 3));
     }
 
+    // TODO: lambda capture depth 2+?
+
     public static class ApiRoot {
         public static FutureHelper futures;
         public static IntStorage intStorage;
+        public static Run run;
     }
 }

@@ -167,34 +167,52 @@ public class Compiler {
         constructorVisitor.visitEnd();
     }
 
-    private static String buildLambdaConstructor(BoundLambdaExpressionNode expression, String className, ClassWriter writer) {
-        int capturedLen = expression.captured.size();
-        Type[] capturedTypes = new Type[capturedLen];
+    private static String buildLambdaConstructor(CompilerContext context, BoundLambdaExpressionNode expression, String className, ClassWriter writer) {
+        if (!expression.asyncCaptured.isEmpty()) {
+            writer.visitField(ACC_PUBLIC | ACC_FINAL, "capturedAsyncStateMachine", "L" + context.getAsyncStateMachineClassName() + ";", null, null);
 
-        for (int i = 0; i < capturedLen; i++) {
-            CapturedLocalVariable variable = expression.captured.get(i);
-            capturedTypes[i] = Type.getType(variable.getType().getReferenceType().getJavaClass());
-            String fieldName = "captured" + i;
-            expression.captured.get(i).setClassName(className);
-            expression.captured.get(i).setFieldName(fieldName);
-            writer.visitField(ACC_PUBLIC | ACC_FINAL, fieldName, capturedTypes[i].getDescriptor(), null, null);
-        }
-
-        String constructorDescriptor = Type.getMethodDescriptor(Type.VOID_TYPE, capturedTypes);
-        MethodVisitor visitor = writer.visitMethod(ACC_PUBLIC, "<init>", constructorDescriptor, null, null);
-        visitor.visitCode();
-        visitor.visitVarInsn(ALOAD, 0);
-        visitor.visitMethodInsn(INVOKESPECIAL, Type.getInternalName(Object.class), "<init>", Type.getMethodDescriptor(Type.VOID_TYPE), false);
-        for (int i = 0; i < capturedLen; i++) {
+            String constructorDescriptor = Type.getMethodDescriptor(Type.VOID_TYPE, Type.getType("L" + context.getAsyncStateMachineClassName() + ";"));
+            MethodVisitor visitor = writer.visitMethod(ACC_PUBLIC, "<init>", constructorDescriptor, null, null);
+            visitor.visitCode();
             visitor.visitVarInsn(ALOAD, 0);
-            visitor.visitVarInsn(ALOAD, i + 1);
-            visitor.visitFieldInsn(PUTFIELD, className, expression.captured.get(i).getFieldName(), capturedTypes[i].getDescriptor());
-        }
-        visitor.visitInsn(RETURN);
-        visitor.visitMaxs(0, 0);
-        visitor.visitEnd();
+            visitor.visitMethodInsn(INVOKESPECIAL, Type.getInternalName(Object.class), "<init>", Type.getMethodDescriptor(Type.VOID_TYPE), false);
+            visitor.visitVarInsn(ALOAD, 0);
+            visitor.visitVarInsn(ALOAD, 1);
+            visitor.visitFieldInsn(PUTFIELD, className, "capturedAsyncStateMachine", "L" + context.getAsyncStateMachineClassName() + ";");
+            visitor.visitInsn(RETURN);
+            visitor.visitMaxs(0, 0);
+            visitor.visitEnd();
 
-        return constructorDescriptor;
+            return constructorDescriptor;
+        } else {
+            int capturedLen = expression.lambdaCaptured.size();
+            Type[] capturedTypes = new Type[capturedLen];
+
+            for (int i = 0; i < capturedLen; i++) {
+                CapturedLocalVariable variable = expression.lambdaCaptured.get(i);
+                capturedTypes[i] = Type.getType(variable.getType().getReferenceType().getJavaClass());
+                String fieldName = "captured" + i;
+                expression.lambdaCaptured.get(i).setClassName(className);
+                expression.lambdaCaptured.get(i).setFieldName(fieldName);
+                writer.visitField(ACC_PUBLIC | ACC_FINAL, fieldName, capturedTypes[i].getDescriptor(), null, null);
+            }
+
+            String constructorDescriptor = Type.getMethodDescriptor(Type.VOID_TYPE, capturedTypes);
+            MethodVisitor visitor = writer.visitMethod(ACC_PUBLIC, "<init>", constructorDescriptor, null, null);
+            visitor.visitCode();
+            visitor.visitVarInsn(ALOAD, 0);
+            visitor.visitMethodInsn(INVOKESPECIAL, Type.getInternalName(Object.class), "<init>", Type.getMethodDescriptor(Type.VOID_TYPE), false);
+            for (int i = 0; i < capturedLen; i++) {
+                visitor.visitVarInsn(ALOAD, 0);
+                visitor.visitVarInsn(ALOAD, i + 1);
+                visitor.visitFieldInsn(PUTFIELD, className, expression.lambdaCaptured.get(i).getFieldName(), capturedTypes[i].getDescriptor());
+            }
+            visitor.visitInsn(RETURN);
+            visitor.visitMaxs(0, 0);
+            visitor.visitEnd();
+
+            return constructorDescriptor;
+        }
     }
 
     private void buildRunMethod(BoundCompilationUnitNode unit, ClassWriter writer, String className) {
@@ -512,6 +530,8 @@ public class Compiler {
                 Type.getInternalName(Object.class),
                 new String[] { Type.getInternalName(AsyncStateMachine.class) });
 
+        context.setAsyncStateMachineClassName(name);
+
         // state field
         writer.visitField(ACC_PRIVATE, "state", Type.getDescriptor(int.class), null, null);
 
@@ -523,7 +543,7 @@ public class Compiler {
             AsyncLiftedLocalVariable variable = variables.get(i);
             String fieldName = "lifted_" + i + "_" + variable.getName();
             variable.setField(name, fieldName);
-            writer.visitField(ACC_PUBLIC, fieldName, Type.getDescriptor(variable.getType().getReferenceClass()), null, null);
+            writer.visitField(ACC_PUBLIC, fieldName, Type.getDescriptor(variable.getType().getJavaClass()), null, null);
         }
 
         // build constructor
@@ -794,6 +814,7 @@ public class Compiler {
                 new SLambdaFunction(type.getReturnType(), type.getParameterTypes().toArray(SType[]::new)),
                 parameters,
                 List.of(),
+                List.of(),
                 statement,
                 range);
         compileLambdaExpression(visitor, context, lambda);
@@ -856,7 +877,12 @@ public class Compiler {
         String name = "com/zergatul/scripting/dynamic/DynamicLambdaClass_" + counter.incrementAndGet();
         writer.visit(V1_5, ACC_PUBLIC, name, null, Type.getInternalName(Object.class), new String[] { Type.getInternalName(funcInterface) });
 
-        String constructorDescriptor = buildLambdaConstructor(expression, name, writer);
+        for (CapturedAsyncStateMachineFieldVariable captured : expression.asyncCaptured) {
+            AsyncLiftedLocalVariable lifted = (AsyncLiftedLocalVariable) context.getSymbol(captured.getName());
+            captured.setField(context.getAsyncStateMachineClassName(), lifted.getFieldName());
+        }
+
+        String constructorDescriptor = buildLambdaConstructor(context, expression, name, writer);
 
         Type[] argumentTypes = new Type[expression.parameters.size()];
         Arrays.fill(argumentTypes, Type.getType(Object.class));
@@ -871,6 +897,8 @@ public class Compiler {
         invokeVisitor.visitCode();
 
         CompilerContext lambdaContext = context.createFunction(type.getReturnType(), true);
+        lambdaContext.setClassName(name);
+
         LocalVariable[] arguments = new LocalVariable[expression.parameters.size()];
         for (int i = 0; i < expression.parameters.size(); i++) {
             arguments[i] = lambdaContext.addLocalVariable(null, SType.fromJavaType(Object.class), null);
@@ -906,7 +934,10 @@ public class Compiler {
 
         visitor.visitTypeInsn(NEW, name);
         visitor.visitInsn(DUP);
-        for (CapturedLocalVariable variable : expression.captured) {
+        if (!expression.asyncCaptured.isEmpty()) {
+            visitor.visitVarInsn(ALOAD, 0);
+        }
+        for (CapturedLocalVariable variable : expression.lambdaCaptured) {
             Variable underlying = variable.getUnderlyingVariable();
             if (underlying instanceof LambdaLiftedLocalVariable lifted) {
                 lifted.compileReferenceLoad(visitor);

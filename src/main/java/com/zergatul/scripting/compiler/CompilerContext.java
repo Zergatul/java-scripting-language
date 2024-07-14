@@ -32,6 +32,7 @@ public class CompilerContext {
     private final List<RefHolder> refVariables = new ArrayList<>();
     private boolean isAsync;
     private int asyncState;
+    private String asyncStateMachineClassName;
 
     public CompilerContext() {
         this(1);
@@ -184,21 +185,38 @@ public class CompilerContext {
                 if (functions.isEmpty()) {
                     return localSymbol;
                 } else {
-                    if (!(localSymbol instanceof LambdaLiftedLocalVariable)) {
-                        LambdaLiftedLocalVariable lifted = new LambdaLiftedLocalVariable(localSymbol);
-                        for (BoundNameExpressionNode nameExpression : localSymbol.getReferences()) {
-                            nameExpression.overrideSymbol(lifted);
+                    if (context.isAsync) {
+                        if (!(localSymbol instanceof AsyncLiftedLocalVariable)) {
+                            AsyncLiftedLocalVariable lifted = new AsyncLiftedLocalVariable(localSymbol);
+                            for (BoundNameExpressionNode nameExpression : localSymbol.getReferences()) {
+                                nameExpression.overrideSymbol(lifted);
+                            }
+                            localSymbol = lifted;
+                            context.localSymbols.put(name, localSymbol); // replace local variable with lifted
                         }
-                        localSymbol = lifted;
-                        context.localSymbols.put(name, localSymbol); // replace local variable with lifted
+
+                        for (int i = functions.size() - 1; i >= 0; i--) {
+                            Variable current = new CapturedAsyncStateMachineFieldVariable((AsyncLiftedLocalVariable) localSymbol);
+                            functions.get(i).localSymbols.put(name, current);
+                        }
+                    } else {
+                        if (!(localSymbol instanceof LambdaLiftedLocalVariable)) {
+                            LambdaLiftedLocalVariable lifted = new LambdaLiftedLocalVariable(localSymbol);
+                            for (BoundNameExpressionNode nameExpression : localSymbol.getReferences()) {
+                                nameExpression.overrideSymbol(lifted);
+                            }
+                            localSymbol = lifted;
+                            context.localSymbols.put(name, localSymbol); // replace local variable with lifted
+                        }
+
+                        Variable prev = localSymbol;
+                        for (int i = functions.size() - 1; i >= 0; i--) {
+                            Variable current = new CapturedLocalVariable(prev);
+                            functions.get(i).localSymbols.put(name, current);
+                            prev = current;
+                        }
                     }
 
-                    Variable prev = localSymbol;
-                    for (int i = functions.size() - 1; i >= 0; i--) {
-                        Variable current = new CapturedLocalVariable(prev);
-                        functions.get(i).localSymbols.put(name, current);
-                        prev = current;
-                    }
                     return functions.get(0).localSymbols.get(name);
                 }
             }
@@ -274,10 +292,35 @@ public class CompilerContext {
         return root.className;
     }
 
-    public List<CapturedLocalVariable> getCaptured() {
+    public String getCurrentClassName() {
+        CompilerContext current = this;
+        while (true) {
+            if (current.className != null) {
+                return current.className;
+            }
+            current = current.parent;
+        }
+    }
+
+    public void setAsyncStateMachineClassName(String className) {
+        asyncStateMachineClassName = className;
+    }
+
+    public String getAsyncStateMachineClassName() {
+        return asyncStateMachineClassName;
+    }
+
+    public List<CapturedLocalVariable> getLambdaCaptured() {
         return localSymbols.values().stream()
                 .filter(s -> s instanceof CapturedLocalVariable)
                 .map(s -> (CapturedLocalVariable) s)
+                .toList();
+    }
+
+    public List<CapturedAsyncStateMachineFieldVariable> getAsyncCaptured() {
+        return localSymbols.values().stream()
+                .filter(s -> s instanceof CapturedAsyncStateMachineFieldVariable)
+                .map(s -> (CapturedAsyncStateMachineFieldVariable) s)
                 .toList();
     }
 

@@ -834,11 +834,18 @@ public class Binder {
             statement = bindStatement(node.body);
         }
 
-        List<CapturedLocalVariable> captured = context.getCaptured();
+        List<CapturedLocalVariable> lambdaCaptured = context.getLambdaCaptured();
+        List<CapturedAsyncStateMachineFieldVariable> asyncCaptured = context.getAsyncCaptured();;
 
         popScope();
 
-        return new BoundLambdaExpressionNode(lambdaType, parameters, captured, statement, node.getRange());
+        return new BoundLambdaExpressionNode(
+                lambdaType,
+                parameters,
+                lambdaCaptured,
+                asyncCaptured,
+                statement,
+                node.getRange());
     }
 
     private BoundNameExpressionNode bindNameExpression(NameExpressionNode name) {
