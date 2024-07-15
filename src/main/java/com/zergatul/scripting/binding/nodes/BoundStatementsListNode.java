@@ -9,12 +9,10 @@ import java.util.List;
 public class BoundStatementsListNode extends BoundStatementNode {
 
     public final List<BoundStatementNode> statements;
-    public final int asyncStates;
 
-    public BoundStatementsListNode(List<BoundStatementNode> statements, int asyncStates, TextRange range) {
+    public BoundStatementsListNode(List<BoundStatementNode> statements, TextRange range) {
         super(NodeType.STATEMENTS_LIST, range);
         this.statements = statements;
-        this.asyncStates = asyncStates;
     }
 
     @Override

@@ -1,6 +1,7 @@
 package com.zergatul.scripting.compiler;
 
 import com.zergatul.scripting.InternalException;
+import com.zergatul.scripting.binding.nodes.BoundNameExpressionNode;
 import com.zergatul.scripting.type.SReference;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Type;
@@ -14,6 +15,11 @@ public class LambdaLiftedLocalVariable extends Variable {
     public LambdaLiftedLocalVariable(Variable variable) {
         super(variable.getName(), variable.getType(), variable.getDefinition());
         this.variable = variable;
+    }
+
+    @Override
+    public void addReference(BoundNameExpressionNode name) {
+        variable.addReference(name);
     }
 
     public Variable getUnderlyingVariable() {

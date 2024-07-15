@@ -1,8 +1,6 @@
-package com.zergatul.scripting.binding;
+package com.zergatul.scripting.compiler;
 
-import com.zergatul.scripting.compiler.CompilerContext;
-import com.zergatul.scripting.compiler.StackHelper;
-import com.zergatul.scripting.compiler.Variable;
+import com.zergatul.scripting.binding.nodes.BoundNameExpressionNode;
 import com.zergatul.scripting.type.SType;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Type;
@@ -18,6 +16,11 @@ public class AsyncLiftedLocalVariable extends Variable {
     public AsyncLiftedLocalVariable(Variable variable) {
         super(variable.getName(), variable.getType(), variable.getDefinition());
         this.variable = variable;
+    }
+
+    @Override
+    public void addReference(BoundNameExpressionNode name) {
+        variable.addReference(name);
     }
 
     public Variable getUnderlyingVariable() {
@@ -45,6 +48,10 @@ public class AsyncLiftedLocalVariable extends Variable {
         visitor.visitVarInsn(ALOAD, 0);
         StackHelper.swap(visitor, context, variable.getType(), SType.fromJavaType(Object.class));
         visitor.visitFieldInsn(PUTFIELD, className, fieldName, Type.getDescriptor(variable.getType().getJavaClass()));
+    }
+
+    public String getClassName() {
+        return className;
     }
 
     public String getFieldName() {

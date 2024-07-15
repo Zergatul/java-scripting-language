@@ -2,6 +2,7 @@ package com.zergatul.scripting.binding;
 
 import com.zergatul.scripting.binding.nodes.BoundLambdaExpressionNode;
 import com.zergatul.scripting.binding.nodes.BoundVariableDeclarationNode;
+import com.zergatul.scripting.compiler.AsyncLiftedLocalVariable;
 
 import java.util.ArrayList;
 import java.util.List;

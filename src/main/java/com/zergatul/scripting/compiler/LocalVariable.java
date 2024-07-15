@@ -1,13 +1,14 @@
 package com.zergatul.scripting.compiler;
 
 import com.zergatul.scripting.TextRange;
+import com.zergatul.scripting.generator.StateBoundary;
 import com.zergatul.scripting.type.SType;
 import org.objectweb.asm.MethodVisitor;
 
 public class LocalVariable extends Variable {
 
     private final int stackIndex;
-    private int asyncState;
+    private StateBoundary state;
 
     public LocalVariable(String name, SType type, int stackIndex, TextRange definition) {
         super(name, type, definition);
@@ -18,12 +19,12 @@ public class LocalVariable extends Variable {
         return stackIndex;
     }
 
-    public int getAsyncState() {
-        return asyncState;
+    public StateBoundary getGeneratorState() {
+        return state;
     }
 
-    public void setAsyncState(int state) {
-        asyncState = state;
+    public void setGeneratorState(StateBoundary state) {
+        this.state = state;
     }
 
     @Override

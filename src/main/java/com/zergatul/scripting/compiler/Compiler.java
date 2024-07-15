@@ -4,6 +4,8 @@ import com.zergatul.scripting.InternalException;
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.*;
 import com.zergatul.scripting.binding.nodes.*;
+import com.zergatul.scripting.generator.BinderTreeGenerator;
+import com.zergatul.scripting.generator.StateBoundary;
 import com.zergatul.scripting.lexer.Lexer;
 import com.zergatul.scripting.lexer.LexerInput;
 import com.zergatul.scripting.lexer.LexerOutput;
@@ -253,6 +255,9 @@ public class Compiler {
             case CONTINUE_STATEMENT -> compileContinueStatement(visitor, context);
             case EMPTY_STATEMENT -> compileEmptyStatement();
             case INCREMENT_STATEMENT, DECREMENT_STATEMENT -> compilePostfixStatement(visitor, context, (BoundPostfixStatementNode) statement);
+            case SET_GENERATOR_STATE -> compileGoToGeneratorState(visitor, context, (BoundSetGeneratorStateNode) statement);
+            case SET_GENERATOR_BOUNDARY -> compileSetGeneratorBoundary(visitor, context, (BoundSetGeneratorBoundaryNode) statement);
+            case GENERATOR_RETURN -> compileGeneratorReturn(visitor, context, (BoundGeneratorReturnNode) statement);
             default -> throw new InternalException();
         }
     }
@@ -518,7 +523,8 @@ public class Compiler {
     }
 
     private void compileAsyncBoundStatementList(MethodVisitor parentVisitor, CompilerContext context, BoundStatementsListNode node) {
-        List<BoundStatementNode> statements = node.statements;
+        BinderTreeGenerator generator = new BinderTreeGenerator();
+        generator.generate(node.statements);
 
         ClassWriter writer = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
         String name = "com/zergatul/scripting/dynamic/DynamicAsyncStateMachine_" + counter.incrementAndGet();
@@ -537,7 +543,11 @@ public class Compiler {
 
         // lifted variables
         LiftedVariablesBinderTreeVisitor treeVisitor = new LiftedVariablesBinderTreeVisitor();
-        node.accept(treeVisitor);
+        for (StateBoundary boundary : generator.boundaries) {
+            for (BoundStatementNode statement : boundary.statements) {
+                statement.accept(treeVisitor);
+            }
+        }
         List<AsyncLiftedLocalVariable> variables = treeVisitor.getVariables();
         for (int i = 0; i < variables.size(); i++) {
             AsyncLiftedLocalVariable variable = variables.get(i);
@@ -568,69 +578,20 @@ public class Compiler {
         nextMethodVisitor.visitFieldInsn(GETFIELD, name, "state", Type.getDescriptor(int.class));
 
         Label defaultLabel = new Label();
-        int[] keys = new int[node.asyncStates + 1];
-        Label[] labels = new Label[node.asyncStates + 1];
-        for (int i = 0; i <= node.asyncStates; i++) {
+        int[] keys = new int[generator.boundaries.size()];
+        Label[] labels = new Label[generator.boundaries.size()];
+        for (int i = 0; i < generator.boundaries.size(); i++) {
             keys[i] = i;
-            labels[i] = new Label();
+            labels[i] = generator.boundaries.get(i).label;
         }
         nextMethodVisitor.visitLookupSwitchInsn(defaultLabel, keys, labels);
 
-        nextMethodVisitor.visitLabel(labels[0]);
-        for (BoundStatementNode statement : statements) {
-            if (isAsync(statement)) {
-                switch (statement.getNodeType()) {
-                    case EXPRESSION_STATEMENT -> {
-                        BoundExpressionStatementNode expressionStatement = (BoundExpressionStatementNode) statement;
-                        BoundExpressionNode expression = expressionStatement.expression;
-                        switch (expression.getNodeType()) {
-                            case AWAIT_EXPRESSION -> {
-                                nextMethodVisitor.visitVarInsn(ALOAD, 0);
-                                nextMethodVisitor.visitLdcInsn(context.getAsyncState() + 1);
-                                nextMethodVisitor.visitFieldInsn(PUTFIELD, name, "state", Type.getDescriptor(int.class));
-                                // ---
-                                BoundAwaitExpressionNode awaitExpression = (BoundAwaitExpressionNode) expression;
-                                compileExpression(nextMethodVisitor, context, awaitExpression.expression);
-
-                                nextMethodVisitor.visitVarInsn(ALOAD, 0);
-                                nextMethodVisitor.visitMethodInsn(
-                                        INVOKEVIRTUAL,
-                                        name,
-                                        "continuation",
-                                        Type.getMethodDescriptor(Type.getType(Runnable.class)),
-                                        false);
-
-                                nextMethodVisitor.visitMethodInsn(
-                                        INVOKEVIRTUAL,
-                                        Type.getInternalName(CompletableFuture.class),
-                                        "thenRun",
-                                        Type.getMethodDescriptor(Type.getType(CompletableFuture.class), Type.getType(Runnable.class)),
-                                        false);
-                                nextMethodVisitor.visitInsn(ARETURN);
-                                context.newAsyncStateBoundary();
-                                // ---
-                                if (context.getAsyncState() < labels.length) {
-                                    nextMethodVisitor.visitLabel(labels[context.getAsyncState()]);
-                                }
-                            }
-                            default -> throw new InternalException("Not supported.");
-                        }
-                    }
-                    default -> throw new InternalException("Not supported");
-                }
-            } else {
+        for (StateBoundary boundary : generator.boundaries) {
+            nextMethodVisitor.visitLabel(boundary.label);
+            for (BoundStatementNode statement : boundary.statements) {
                 compileStatement(nextMethodVisitor, context, statement);
             }
         }
-
-        nextMethodVisitor.visitInsn(ACONST_NULL);
-        nextMethodVisitor.visitMethodInsn(
-                INVOKESTATIC,
-                Type.getInternalName(CompletableFuture.class),
-                "completedFuture",
-                Type.getMethodDescriptor(Type.getType(CompletableFuture.class), Type.getType(Object.class)),
-                false);
-        nextMethodVisitor.visitInsn(ARETURN);
 
         nextMethodVisitor.visitLabel(defaultLabel);
         nextMethodVisitor.visitTypeInsn(NEW, Type.getInternalName(AsyncStateMachineException.class));
@@ -668,6 +629,43 @@ public class Compiler {
                 "next",
                 Type.getMethodDescriptor(Type.getType(CompletableFuture.class)),
                 false);
+    }
+
+    private void compileSetGeneratorBoundary(MethodVisitor visitor, CompilerContext context, BoundSetGeneratorBoundaryNode node) {
+        compileExpression(visitor, context, node.expression);
+
+        visitor.visitVarInsn(ALOAD, 0);
+        visitor.visitMethodInsn(
+                INVOKEVIRTUAL,
+                context.getAsyncStateMachineClassName(),
+                "continuation",
+                Type.getMethodDescriptor(Type.getType(Runnable.class)),
+                false);
+
+        visitor.visitMethodInsn(
+                INVOKEVIRTUAL,
+                Type.getInternalName(CompletableFuture.class),
+                "thenRun",
+                Type.getMethodDescriptor(Type.getType(CompletableFuture.class), Type.getType(Runnable.class)),
+                false);
+        visitor.visitInsn(ARETURN);
+    }
+
+    private void compileGoToGeneratorState(MethodVisitor visitor, CompilerContext context, BoundSetGeneratorStateNode node) {
+        visitor.visitVarInsn(ALOAD, 0);
+        visitor.visitLdcInsn(node.boundary.index);
+        visitor.visitFieldInsn(PUTFIELD, context.getAsyncStateMachineClassName(), "state", Type.getDescriptor(int.class));
+    }
+
+    private void compileGeneratorReturn(MethodVisitor visitor, CompilerContext context, BoundGeneratorReturnNode node) {
+        visitor.visitInsn(ACONST_NULL);
+        visitor.visitMethodInsn(
+                INVOKESTATIC,
+                Type.getInternalName(CompletableFuture.class),
+                "completedFuture",
+                Type.getMethodDescriptor(Type.getType(CompletableFuture.class), Type.getType(Object.class)),
+                false);
+        visitor.visitInsn(ARETURN);
     }
 
     private void compileExpression(MethodVisitor visitor, CompilerContext context, BoundExpressionNode expression) {
@@ -813,8 +811,6 @@ public class Compiler {
         BoundLambdaExpressionNode lambda = new BoundLambdaExpressionNode(
                 new SLambdaFunction(type.getReturnType(), type.getParameterTypes().toArray(SType[]::new)),
                 parameters,
-                List.of(),
-                List.of(),
                 statement,
                 range);
         compileLambdaExpression(visitor, context, lambda);
@@ -873,14 +869,12 @@ public class Compiler {
         SLambdaFunction type = (SLambdaFunction) expression.type;
         Class<?> funcInterface = type.getJavaClass();
 
+        CapturedVariablesBinderTreeVisitor treeVisitor = new CapturedVariablesBinderTreeVisitor();
+        expression.body.accept(treeVisitor);
+
         ClassWriter writer = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
         String name = "com/zergatul/scripting/dynamic/DynamicLambdaClass_" + counter.incrementAndGet();
         writer.visit(V1_5, ACC_PUBLIC, name, null, Type.getInternalName(Object.class), new String[] { Type.getInternalName(funcInterface) });
-
-        for (CapturedAsyncStateMachineFieldVariable captured : expression.asyncCaptured) {
-            AsyncLiftedLocalVariable lifted = (AsyncLiftedLocalVariable) context.getSymbol(captured.getName());
-            captured.setField(context.getAsyncStateMachineClassName(), lifted.getFieldName());
-        }
 
         String constructorDescriptor = buildLambdaConstructor(context, expression, name, writer);
 

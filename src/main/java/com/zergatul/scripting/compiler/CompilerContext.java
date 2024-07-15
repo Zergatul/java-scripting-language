@@ -2,7 +2,6 @@ package com.zergatul.scripting.compiler;
 
 import com.zergatul.scripting.InternalException;
 import com.zergatul.scripting.TextRange;
-import com.zergatul.scripting.binding.AsyncLiftedLocalVariable;
 import com.zergatul.scripting.binding.nodes.BoundNameExpressionNode;
 import com.zergatul.scripting.type.SFloat;
 import com.zergatul.scripting.type.SReference;
@@ -88,9 +87,6 @@ public class CompilerContext {
 
         if (variable instanceof LocalVariable local) {
             expandStackOnLocalVariable(local);
-            if (isAsync) {
-                local.setAsyncState(asyncState);
-            }
         }
         if (variable instanceof LambdaLiftedLocalVariable lifted) {
             Variable underlying = lifted.getUnderlyingVariable();
@@ -164,18 +160,6 @@ public class CompilerContext {
         Symbol staticSymbol = root.staticSymbols.get(name);
         if (staticSymbol != null) {
             return staticSymbol;
-        }
-
-        // async state boundary lifting
-        if (isAsync && localSymbols.get(name) instanceof LocalVariable localVariable) {
-            if (localVariable.getAsyncState() != asyncState) {
-                AsyncLiftedLocalVariable lifted = new AsyncLiftedLocalVariable(localVariable);
-                for (BoundNameExpressionNode nameExpression : localVariable.getReferences()) {
-                    nameExpression.overrideSymbol(lifted);
-                }
-                localSymbols.put(name, lifted);
-                return lifted;
-            }
         }
 
         List<CompilerContext> functions = List.of(); // function boundaries

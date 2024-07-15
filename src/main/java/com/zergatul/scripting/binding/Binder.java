@@ -4,7 +4,6 @@ import com.zergatul.scripting.*;
 import com.zergatul.scripting.binding.nodes.*;
 import com.zergatul.scripting.compiler.*;
 import com.zergatul.scripting.parser.AssignmentOperator;
-import com.zergatul.scripting.parser.AsyncParserTreeVisitor;
 import com.zergatul.scripting.parser.NodeType;
 import com.zergatul.scripting.parser.ParserOutput;
 import com.zergatul.scripting.parser.nodes.*;
@@ -112,13 +111,8 @@ public class Binder {
     }
 
     private BoundStatementsListNode bindStatementList(StatementsListNode node) {
-        AsyncParserTreeVisitor visitor = new AsyncParserTreeVisitor();
-        node.accept(visitor);
-        if (visitor.isAsync()) {
-            context.markAsync();
-        }
         List<BoundStatementNode> statements = node.statements.stream().map(this::bindStatement).toList();
-        return new BoundStatementsListNode(statements, context.getAsyncState(), node.getRange());
+        return new BoundStatementsListNode(statements, node.getRange());
     }
 
     private BoundStatementNode bindStatement(StatementNode statement) {
@@ -834,16 +828,11 @@ public class Binder {
             statement = bindStatement(node.body);
         }
 
-        List<CapturedLocalVariable> lambdaCaptured = context.getLambdaCaptured();
-        List<CapturedAsyncStateMachineFieldVariable> asyncCaptured = context.getAsyncCaptured();;
-
         popScope();
 
         return new BoundLambdaExpressionNode(
                 lambdaType,
                 parameters,
-                lambdaCaptured,
-                asyncCaptured,
                 statement,
                 node.getRange());
     }
@@ -986,7 +975,6 @@ public class Binder {
 
     private BoundAwaitExpressionNode bindAwaitExpression(AwaitExpressionNode node) {
         BoundExpressionNode expression = bindExpression(node.expression);
-        context.newAsyncStateBoundary();
         if (expression.type == SUnknown.instance) {
             return new BoundAwaitExpressionNode(expression, SUnknown.instance, node.getRange());
         }
