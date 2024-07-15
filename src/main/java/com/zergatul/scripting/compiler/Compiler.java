@@ -10,6 +10,7 @@ import com.zergatul.scripting.lexer.Lexer;
 import com.zergatul.scripting.lexer.LexerInput;
 import com.zergatul.scripting.lexer.LexerOutput;
 import com.zergatul.scripting.parser.AssignmentOperator;
+import com.zergatul.scripting.parser.NodeType;
 import com.zergatul.scripting.parser.Parser;
 import com.zergatul.scripting.parser.ParserOutput;
 import com.zergatul.scripting.runtime.AsyncStateMachine;
@@ -169,8 +170,8 @@ public class Compiler {
         constructorVisitor.visitEnd();
     }
 
-    private static String buildLambdaConstructor(CompilerContext context, BoundLambdaExpressionNode expression, String className, ClassWriter writer) {
-        if (!expression.asyncCaptured.isEmpty()) {
+    private static String buildLambdaConstructor(CompilerContext context, BoundLambdaExpressionNode expression, String className, ClassWriter writer, List<CapturedLocalVariable> lambdaCaptured, List<CapturedAsyncStateMachineFieldVariable> asyncCaptured) {
+        if (!asyncCaptured.isEmpty()) {
             writer.visitField(ACC_PUBLIC | ACC_FINAL, "capturedAsyncStateMachine", "L" + context.getAsyncStateMachineClassName() + ";", null, null);
 
             String constructorDescriptor = Type.getMethodDescriptor(Type.VOID_TYPE, Type.getType("L" + context.getAsyncStateMachineClassName() + ";"));
@@ -187,15 +188,15 @@ public class Compiler {
 
             return constructorDescriptor;
         } else {
-            int capturedLen = expression.lambdaCaptured.size();
+            int capturedLen = lambdaCaptured.size();
             Type[] capturedTypes = new Type[capturedLen];
 
             for (int i = 0; i < capturedLen; i++) {
-                CapturedLocalVariable variable = expression.lambdaCaptured.get(i);
+                CapturedLocalVariable variable = lambdaCaptured.get(i);
                 capturedTypes[i] = Type.getType(variable.getType().getReferenceType().getJavaClass());
                 String fieldName = "captured" + i;
-                expression.lambdaCaptured.get(i).setClassName(className);
-                expression.lambdaCaptured.get(i).setFieldName(fieldName);
+                lambdaCaptured.get(i).setClassName(className);
+                lambdaCaptured.get(i).setFieldName(fieldName);
                 writer.visitField(ACC_PUBLIC | ACC_FINAL, fieldName, capturedTypes[i].getDescriptor(), null, null);
             }
 
@@ -207,7 +208,7 @@ public class Compiler {
             for (int i = 0; i < capturedLen; i++) {
                 visitor.visitVarInsn(ALOAD, 0);
                 visitor.visitVarInsn(ALOAD, i + 1);
-                visitor.visitFieldInsn(PUTFIELD, className, expression.lambdaCaptured.get(i).getFieldName(), capturedTypes[i].getDescriptor());
+                visitor.visitFieldInsn(PUTFIELD, className, lambdaCaptured.get(i).getFieldName(), capturedTypes[i].getDescriptor());
             }
             visitor.visitInsn(RETURN);
             visitor.visitMaxs(0, 0);
@@ -574,6 +575,9 @@ public class Compiler {
                 null,
                 null);
 
+        Label loop = new Label();
+        nextMethodVisitor.visitLabel(loop);
+
         nextMethodVisitor.visitVarInsn(ALOAD, 0);
         nextMethodVisitor.visitFieldInsn(GETFIELD, name, "state", Type.getDescriptor(int.class));
 
@@ -591,6 +595,9 @@ public class Compiler {
             for (BoundStatementNode statement : boundary.statements) {
                 compileStatement(nextMethodVisitor, context, statement);
             }
+            if (boundary.statements.isEmpty() || boundary.statements.get(boundary.statements.size() - 1).getNodeType() != NodeType.RETURN_STATEMENT) {
+                nextMethodVisitor.visitJumpInsn(GOTO, loop);
+            }
         }
 
         nextMethodVisitor.visitLabel(defaultLabel);
@@ -603,6 +610,8 @@ public class Compiler {
                 Type.getMethodDescriptor(Type.VOID_TYPE),
                 false);
         nextMethodVisitor.visitInsn(ATHROW);
+
+        nextMethodVisitor.visitJumpInsn(GOTO, loop);
 
         nextMethodVisitor.visitMaxs(0, 0);
         nextMethodVisitor.visitEnd();
@@ -872,11 +881,15 @@ public class Compiler {
         CapturedVariablesBinderTreeVisitor treeVisitor = new CapturedVariablesBinderTreeVisitor();
         expression.body.accept(treeVisitor);
 
+        if (!treeVisitor.lambdaCaptured.isEmpty() && !treeVisitor.asyncCaptured.isEmpty()) {
+            throw new InternalException("Lambda cannot have 2 types of captured variables.");
+        }
+
         ClassWriter writer = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
         String name = "com/zergatul/scripting/dynamic/DynamicLambdaClass_" + counter.incrementAndGet();
         writer.visit(V1_5, ACC_PUBLIC, name, null, Type.getInternalName(Object.class), new String[] { Type.getInternalName(funcInterface) });
 
-        String constructorDescriptor = buildLambdaConstructor(context, expression, name, writer);
+        String constructorDescriptor = buildLambdaConstructor(context, expression, name, writer, treeVisitor.lambdaCaptured, treeVisitor.asyncCaptured);
 
         Type[] argumentTypes = new Type[expression.parameters.size()];
         Arrays.fill(argumentTypes, Type.getType(Object.class));
@@ -928,10 +941,10 @@ public class Compiler {
 
         visitor.visitTypeInsn(NEW, name);
         visitor.visitInsn(DUP);
-        if (!expression.asyncCaptured.isEmpty()) {
+        if (!treeVisitor.asyncCaptured.isEmpty()) {
             visitor.visitVarInsn(ALOAD, 0);
         }
-        for (CapturedLocalVariable variable : expression.lambdaCaptured) {
+        for (CapturedLocalVariable variable : treeVisitor.lambdaCaptured) {
             Variable underlying = variable.getUnderlyingVariable();
             if (underlying instanceof LambdaLiftedLocalVariable lifted) {
                 lifted.compileReferenceLoad(visitor);

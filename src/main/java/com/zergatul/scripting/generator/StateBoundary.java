@@ -8,9 +8,13 @@ import java.util.List;
 
 public class StateBoundary {
 
-    public final int index;
+    public int index;
     public final Label label;
     public final List<BoundStatementNode> statements;
+
+    public StateBoundary() {
+        this(-1);
+    }
 
     public StateBoundary(int index) {
         this.index = index;

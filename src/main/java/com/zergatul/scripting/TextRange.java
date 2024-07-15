@@ -2,6 +2,38 @@ package com.zergatul.scripting;
 
 public abstract class TextRange {
 
+    public static final TextRange EMPTY = new TextRange() {
+        @Override
+        public int getLine1() {
+            throw new InternalException();
+        }
+
+        @Override
+        public int getColumn1() {
+            throw new InternalException();
+        }
+
+        @Override
+        public int getLine2() {
+            throw new InternalException();
+        }
+
+        @Override
+        public int getColumn2() {
+            throw new InternalException();
+        }
+
+        @Override
+        public int getPosition() {
+            throw new InternalException();
+        }
+
+        @Override
+        public int getLength() {
+            throw new InternalException();
+        }
+    };
+
     public abstract int getLine1();
     public abstract int getColumn1();
     public abstract int getLine2();

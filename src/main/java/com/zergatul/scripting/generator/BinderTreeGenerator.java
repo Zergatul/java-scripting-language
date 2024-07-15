@@ -1,6 +1,8 @@
 package com.zergatul.scripting.generator;
 
 import com.zergatul.scripting.InternalException;
+import com.zergatul.scripting.SingleLineTextRange;
+import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.AsyncBinderTreeVisitor;
 import com.zergatul.scripting.compiler.*;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
@@ -19,21 +21,33 @@ public class BinderTreeGenerator {
     public void generate(List<BoundStatementNode> statements) {
         currentBoundary = newBoundary();
         for (BoundStatementNode statement : statements) {
-            if (isAsync(statement)) {
-                switch (statement.getNodeType()) {
-                    case EXPRESSION_STATEMENT -> rewrite((BoundExpressionStatementNode) statement);
-                    default -> throw new InternalException();
-                }
-            } else {
-                markVariableDeclarations(statement);
-                liftCrossBoundaryVariables(statement);
-                currentBoundary.statements.add(statement);
-            }
+            rewriteStatement(statement);
         }
 
         boolean isLastReturn = statements.get(statements.size() - 1).getNodeType() == NodeType.RETURN_STATEMENT;
         if (!isLastReturn) {
             currentBoundary.statements.add(new BoundGeneratorReturnNode());
+        }
+    }
+
+    private void rewriteStatement(BoundStatementNode node) {
+        if (isAsync(node)) {
+            switch (node.getNodeType()) {
+                case BLOCK_STATEMENT -> rewrite((BoundBlockStatementNode) node);
+                case EXPRESSION_STATEMENT -> rewrite((BoundExpressionStatementNode) node);
+                case IF_STATEMENT -> rewrite((BoundIfStatementNode) node);
+                default -> throw new InternalException("TODO");
+            }
+        } else {
+            markVariableDeclarations(node);
+            liftCrossBoundaryVariables(node);
+            currentBoundary.statements.add(node);
+        }
+    }
+
+    private void rewrite(BoundBlockStatementNode node) {
+        for (BoundStatementNode statement : node.statements) {
+            rewriteStatement(statement);
         }
     }
 
@@ -47,8 +61,44 @@ public class BinderTreeGenerator {
                 currentBoundary.statements.add(new BoundSetGeneratorBoundaryNode(awaitExpression.expression));
                 currentBoundary = boundary;
             }
-            default -> throw new InternalException();
+            default -> throw new InternalException("TODO");
         }
+    }
+
+    private void rewrite(BoundIfStatementNode node) {
+        if (isAsync(node.condition)) {
+            throw new InternalException("TODO");
+        }
+
+        StateBoundary original = currentBoundary;
+        StateBoundary thenTempBoundary = new StateBoundary();
+        StateBoundary elseTempBoundary = new StateBoundary();
+        StateBoundary end = new StateBoundary();
+
+        currentBoundary = thenTempBoundary;
+        rewriteStatement(node.thenStatement);
+        currentBoundary.statements.add(new BoundSetGeneratorStateNode(end));
+        BoundBlockStatementNode thenBlock = new BoundBlockStatementNode(thenTempBoundary.statements, TextRange.EMPTY);
+
+        BoundBlockStatementNode elseBlock;
+        if (node.elseStatement != null) {
+            currentBoundary = elseTempBoundary;
+            rewriteStatement(node.elseStatement);
+            currentBoundary.statements.add(new BoundSetGeneratorStateNode(end));
+            elseBlock = new BoundBlockStatementNode(elseTempBoundary.statements, TextRange.EMPTY);
+        } else {
+            elseBlock = new BoundBlockStatementNode(List.of(new BoundSetGeneratorStateNode(end)), TextRange.EMPTY);
+        }
+
+        original.statements.add(new BoundIfStatementNode(
+                node.condition,
+                thenBlock,
+                elseBlock,
+                TextRange.EMPTY));
+
+        currentBoundary = end;
+        end.index = boundaries.size();
+        boundaries.add(end);
     }
 
     private void markVariableDeclarations(BoundStatementNode statement) {

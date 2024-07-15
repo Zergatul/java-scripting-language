@@ -287,11 +287,21 @@ public class CompilerContext {
     }
 
     public void setAsyncStateMachineClassName(String className) {
-        asyncStateMachineClassName = className;
+        if (parent == null || isFunctionRoot) {
+            asyncStateMachineClassName = className;
+        } else {
+            throw new InternalException("This is not a function root.");
+        }
     }
 
     public String getAsyncStateMachineClassName() {
-        return asyncStateMachineClassName;
+        CompilerContext current = this;
+        while (true) {
+            if (current.parent == null || current.isFunctionRoot) {
+                return current.asyncStateMachineClassName;
+            }
+            current = current.parent;
+        }
     }
 
     public List<CapturedLocalVariable> getLambdaCaptured() {

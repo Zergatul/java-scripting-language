@@ -102,18 +102,16 @@ public class AwaitTests {
     @Test
     public void If1Test() {
         String code = """
-                int i1 = 1;
-                int i2 = 2;
-                if (i1 < i2) {
+                if (true) {
                     int x = 10;
                     intStorage.add(x);
                     await futures.manual();
-                    intStorage.add(x + i1);
+                    intStorage.add(x + 1);
                 } else {
                     int x = 20;
                     intStorage.add(x);
                     await futures.manual();
-                    intStorage.add(x + i2);
+                    intStorage.add(x + 1);
                 }
                 """;
 
@@ -123,6 +121,179 @@ public class AwaitTests {
         Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(10));
         ApiRoot.futures.getManualFuture(0).complete(null);
         Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(10, 11));
+    }
+
+    @Test
+    public void If2Test() {
+        String code = """
+                if (false) {
+                    int x = 10;
+                    intStorage.add(x);
+                    await futures.manual();
+                    intStorage.add(x + 1);
+                } else {
+                    int x = 20;
+                    intStorage.add(x);
+                    await futures.manual();
+                    intStorage.add(x + 1);
+                }
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(20));
+        ApiRoot.futures.getManualFuture(0).complete(null);
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(20, 21));
+    }
+
+    @Test
+    public void If3Test() {
+        String code = """
+                if (true) {
+                    int x = 10;
+                    await futures.manual();
+                    intStorage.add(x + 1);
+                    await futures.manual();
+                    intStorage.add(x + 2);
+                    await futures.manual();
+                    intStorage.add(x + 3);
+                } else {
+                    int x = 20;
+                    await futures.manual();
+                    intStorage.add(x + 1);
+                    await futures.manual();
+                    intStorage.add(x + 2);
+                    await futures.manual();
+                    intStorage.add(x + 3);
+                }
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of());
+        ApiRoot.futures.getManualFuture(0).complete(null);
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(11));
+        ApiRoot.futures.getManualFuture(1).complete(null);
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(11, 12));
+        ApiRoot.futures.getManualFuture(2).complete(null);
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(11, 12, 13));
+    }
+
+    @Test
+    public void If4Test() {
+        String code = """
+                if (false) {
+                    int x = 10;
+                    await futures.manual();
+                    intStorage.add(x + 1);
+                    await futures.manual();
+                    intStorage.add(x + 2);
+                    await futures.manual();
+                    intStorage.add(x + 3);
+                } else {
+                    int x = 20;
+                    await futures.manual();
+                    intStorage.add(x + 1);
+                    await futures.manual();
+                    intStorage.add(x + 2);
+                    await futures.manual();
+                    intStorage.add(x + 3);
+                }
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of());
+        ApiRoot.futures.getManualFuture(0).complete(null);
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(21));
+        ApiRoot.futures.getManualFuture(1).complete(null);
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(21, 22));
+        ApiRoot.futures.getManualFuture(2).complete(null);
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(21, 22, 23));
+    }
+
+    @Test
+    public void If5Test() {
+        String code = """
+                if (true) {
+                    int x = 10;
+                    await futures.manual();
+                    intStorage.add(x);
+                }
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of());
+        ApiRoot.futures.getManualFuture(0).complete(null);
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(10));
+    }
+
+    @Test
+    public void If6Test() {
+        String code = """
+                if (false) {
+                    int x = 10;
+                    await futures.manual();
+                    intStorage.add(x);
+                }
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of());
+        Assertions.assertEquals(ApiRoot.futures.getManualFuturesCount(), 0);
+    }
+
+    @Test
+    public void If7Test() {
+        String code = """
+                if (true) {
+                    int x = 10;
+                    await futures.manual();
+                    intStorage.add(x);
+                } else {
+                    intStorage.add(100);
+                }
+                await futures.manual();
+                intStorage.add(200);
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of());
+        ApiRoot.futures.getManualFuture(0).complete(null);
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(10));
+        ApiRoot.futures.getManualFuture(1).complete(null);
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(10, 200));
+    }
+
+    @Test
+    public void If8Test() {
+        String code = """
+                if (false) {
+                    int x = 10;
+                    await futures.manual();
+                    intStorage.add(x);
+                } else {
+                    intStorage.add(100);
+                }
+                await futures.manual();
+                intStorage.add(200);
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(100));
+        ApiRoot.futures.getManualFuture(0).complete(null);
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(100, 200));
     }
 
     public static class ApiRoot {

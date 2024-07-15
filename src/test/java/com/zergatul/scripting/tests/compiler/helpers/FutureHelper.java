@@ -24,4 +24,8 @@ public class FutureHelper {
     public CompletableFuture<Void> getManualFuture(int index) {
         return manuals.get(index);
     }
+
+    public int getManualFuturesCount() {
+        return manuals.size();
+    }
 }
