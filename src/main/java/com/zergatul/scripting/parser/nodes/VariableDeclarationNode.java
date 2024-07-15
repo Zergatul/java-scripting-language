@@ -33,7 +33,9 @@ public class VariableDeclarationNode extends StatementNode {
     public void acceptChildren(ParserTreeVisitor visitor) {
         type.accept(visitor);
         name.accept(visitor);
-        expression.accept(visitor);
+        if (expression != null) {
+            expression.accept(visitor);
+        }
     }
 
     @Override

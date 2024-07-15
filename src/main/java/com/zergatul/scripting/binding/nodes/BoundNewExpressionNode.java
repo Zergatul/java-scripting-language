@@ -28,7 +28,9 @@ public class BoundNewExpressionNode extends BoundExpressionNode {
     @Override
     public void acceptChildren(BinderTreeVisitor visitor) {
         typeNode.accept(visitor);
-        lengthExpression.accept(visitor);
+        if (lengthExpression != null) {
+            lengthExpression.accept(visitor);
+        }
         if (items != null) {
             for (BoundExpressionNode expression : items) {
                 expression.accept(visitor);

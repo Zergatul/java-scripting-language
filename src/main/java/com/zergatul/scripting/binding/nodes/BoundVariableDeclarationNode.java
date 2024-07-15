@@ -26,6 +26,8 @@ public class BoundVariableDeclarationNode extends BoundStatementNode {
 
     @Override
     public void acceptChildren(BinderTreeVisitor visitor) {
+        type.accept(visitor);
+        name.accept(visitor);
         if (expression != null) {
             expression.accept(visitor);
         }

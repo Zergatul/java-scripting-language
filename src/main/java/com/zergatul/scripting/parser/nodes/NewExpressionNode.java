@@ -27,7 +27,9 @@ public class NewExpressionNode extends ExpressionNode {
     @Override
     public void acceptChildren(ParserTreeVisitor visitor) {
         typeNode.accept(visitor);
-        lengthExpression.accept(visitor);
+        if (lengthExpression != null) {
+            lengthExpression.accept(visitor);
+        }
         if (items != null) {
             for (ExpressionNode expression : items) {
                 expression.accept(visitor);

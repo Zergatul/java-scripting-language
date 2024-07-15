@@ -60,7 +60,7 @@ public class AwaitTests {
     }
 
     @Test
-    public void doubleCapture1Test() {
+    public void lambdaCapture1Test() {
         String code = """
                 int x = 1;
                 await futures.manual();
@@ -78,7 +78,7 @@ public class AwaitTests {
     }
 
     @Test
-    public void doubleCapture2Test() {
+    public void lambdaCapture2Test() {
         String code = """
                 int x = 1;
                 intStorage.add(x);
@@ -98,6 +98,32 @@ public class AwaitTests {
     }
 
     // TODO: lambda capture depth 2+?
+
+    @Test
+    public void If1Test() {
+        String code = """
+                int i1 = 1;
+                int i2 = 2;
+                if (i1 < i2) {
+                    int x = 10;
+                    intStorage.add(x);
+                    await futures.manual();
+                    intStorage.add(x + i1);
+                } else {
+                    int x = 20;
+                    intStorage.add(x);
+                    await futures.manual();
+                    intStorage.add(x + i2);
+                }
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(10));
+        ApiRoot.futures.getManualFuture(0).complete(null);
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(10, 11));
+    }
 
     public static class ApiRoot {
         public static FutureHelper futures;
