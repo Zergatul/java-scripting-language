@@ -1,5 +1,8 @@
 package com.zergatul.scripting.compiler;
 
+import com.zergatul.scripting.symbols.LocalVariable;
+import com.zergatul.scripting.symbols.Variable;
+
 public class RefHolder {
 
     private final LocalVariable holder;

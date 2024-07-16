@@ -1,6 +1,7 @@
 package com.zergatul.scripting.compiler;
 
 import com.zergatul.scripting.InternalException;
+import com.zergatul.scripting.symbols.LocalVariable;
 import com.zergatul.scripting.type.SType;
 import org.objectweb.asm.MethodVisitor;
 

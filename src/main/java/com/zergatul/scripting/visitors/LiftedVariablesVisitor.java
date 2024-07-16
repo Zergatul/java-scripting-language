@@ -1,13 +1,14 @@
-package com.zergatul.scripting.binding;
+package com.zergatul.scripting.visitors;
 
+import com.zergatul.scripting.binding.BinderTreeVisitor;
 import com.zergatul.scripting.binding.nodes.BoundLambdaExpressionNode;
 import com.zergatul.scripting.binding.nodes.BoundVariableDeclarationNode;
-import com.zergatul.scripting.compiler.AsyncLiftedLocalVariable;
+import com.zergatul.scripting.symbols.AsyncLiftedLocalVariable;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class LiftedVariablesBinderTreeVisitor extends BinderTreeVisitor {
+public class LiftedVariablesVisitor extends BinderTreeVisitor {
 
     private final List<AsyncLiftedLocalVariable> variables = new ArrayList<>();
 

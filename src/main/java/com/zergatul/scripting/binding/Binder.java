@@ -7,6 +7,7 @@ import com.zergatul.scripting.parser.AssignmentOperator;
 import com.zergatul.scripting.parser.NodeType;
 import com.zergatul.scripting.parser.ParserOutput;
 import com.zergatul.scripting.parser.nodes.*;
+import com.zergatul.scripting.symbols.*;
 import com.zergatul.scripting.type.*;
 import com.zergatul.scripting.type.operation.*;
 

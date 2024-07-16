@@ -1,6 +1,5 @@
 package com.zergatul.scripting.binding;
 
-import com.zergatul.scripting.InternalException;
 import com.zergatul.scripting.parser.nodes.*;
 
 import java.util.Optional;

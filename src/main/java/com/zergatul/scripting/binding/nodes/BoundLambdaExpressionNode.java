@@ -2,8 +2,6 @@ package com.zergatul.scripting.binding.nodes;
 
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
-import com.zergatul.scripting.compiler.CapturedAsyncStateMachineFieldVariable;
-import com.zergatul.scripting.compiler.CapturedLocalVariable;
 import com.zergatul.scripting.parser.NodeType;
 import com.zergatul.scripting.type.SType;
 

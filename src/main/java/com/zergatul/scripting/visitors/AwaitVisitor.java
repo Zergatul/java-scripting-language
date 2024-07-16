@@ -1,8 +1,9 @@
-package com.zergatul.scripting.binding;
+package com.zergatul.scripting.visitors;
 
+import com.zergatul.scripting.binding.BinderTreeVisitor;
 import com.zergatul.scripting.binding.nodes.BoundAwaitExpressionNode;
 
-public class AsyncBinderTreeVisitor extends BinderTreeVisitor {
+public class AwaitVisitor extends BinderTreeVisitor {
 
     private boolean isAsync;
 

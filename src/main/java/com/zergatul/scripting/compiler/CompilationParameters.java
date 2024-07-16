@@ -1,6 +1,8 @@
 package com.zergatul.scripting.compiler;
 
 import com.zergatul.scripting.InternalException;
+import com.zergatul.scripting.symbols.StaticFieldConstantStaticVariable;
+import com.zergatul.scripting.symbols.StaticVariable;
 
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;

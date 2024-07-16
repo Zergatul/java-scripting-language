@@ -97,7 +97,60 @@ public class AwaitTests {
         Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(1, 2, 3));
     }
 
-    // TODO: lambda capture depth 2+?
+    @Test
+    public void lambdaCapture3Test() {
+        String code = """
+                int x = 1;
+                intStorage.add(x);
+                int y = 4;
+                run.once(() => x += y);
+                intStorage.add(x);
+                await futures.manual();
+                x++;
+                intStorage.add(x);
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(1, 5));
+        ApiRoot.futures.getManualFuture(0).complete(null);
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(1, 5, 6));
+    }
+
+    @Test
+    public void lambdaCapture4Test() {
+        String code = """
+                int x = 1;
+                intStorage.add(x);
+                
+                await futures.manual();
+                
+                int y = 2;
+                run.multiple(2, () => {
+                    run.multiple(3, () => {
+                        run.multiple(4, () => {
+                            x += y;
+                        });
+                    });
+                });
+                intStorage.add(x);
+                
+                await futures.manual();
+                
+                x++;
+                intStorage.add(x);
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(1));
+        ApiRoot.futures.getManualFuture(0).complete(null);
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(1, 49));
+        ApiRoot.futures.getManualFuture(1).complete(null);
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(1, 49, 50));
+    }
 
     @Test
     public void If1Test() {

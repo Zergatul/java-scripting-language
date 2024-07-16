@@ -15,7 +15,11 @@ import com.zergatul.scripting.parser.Parser;
 import com.zergatul.scripting.parser.ParserOutput;
 import com.zergatul.scripting.runtime.AsyncStateMachine;
 import com.zergatul.scripting.runtime.AsyncStateMachineException;
+import com.zergatul.scripting.symbols.*;
 import com.zergatul.scripting.type.*;
+import com.zergatul.scripting.visitors.AwaitVisitor;
+import com.zergatul.scripting.visitors.CapturedVariablesVisitor;
+import com.zergatul.scripting.visitors.LiftedVariablesVisitor;
 import org.objectweb.asm.*;
 
 import java.io.IOException;
@@ -543,7 +547,7 @@ public class Compiler {
         writer.visitField(ACC_PRIVATE, "state", Type.getDescriptor(int.class), null, null);
 
         // lifted variables
-        LiftedVariablesBinderTreeVisitor treeVisitor = new LiftedVariablesBinderTreeVisitor();
+        LiftedVariablesVisitor treeVisitor = new LiftedVariablesVisitor();
         for (StateBoundary boundary : generator.boundaries) {
             for (BoundStatementNode statement : boundary.statements) {
                 statement.accept(treeVisitor);
@@ -878,7 +882,7 @@ public class Compiler {
         SLambdaFunction type = (SLambdaFunction) expression.type;
         Class<?> funcInterface = type.getJavaClass();
 
-        CapturedVariablesBinderTreeVisitor treeVisitor = new CapturedVariablesBinderTreeVisitor();
+        CapturedVariablesVisitor treeVisitor = new CapturedVariablesVisitor();
         expression.body.accept(treeVisitor);
 
         if (!treeVisitor.lambdaCaptured.isEmpty() && !treeVisitor.asyncCaptured.isEmpty()) {
@@ -996,7 +1000,7 @@ public class Compiler {
     }
 
     private boolean isAsync(BoundNode node) {
-        AsyncBinderTreeVisitor visitor = new AsyncBinderTreeVisitor();
+        AwaitVisitor visitor = new AwaitVisitor();
         node.accept(visitor);
         return visitor.isAsync();
     }

@@ -1,13 +1,12 @@
 package com.zergatul.scripting.generator;
 
 import com.zergatul.scripting.InternalException;
-import com.zergatul.scripting.SingleLineTextRange;
 import com.zergatul.scripting.TextRange;
-import com.zergatul.scripting.binding.AsyncBinderTreeVisitor;
-import com.zergatul.scripting.compiler.*;
+import com.zergatul.scripting.visitors.AwaitVisitor;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
 import com.zergatul.scripting.binding.nodes.*;
 import com.zergatul.scripting.parser.NodeType;
+import com.zergatul.scripting.symbols.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -149,7 +148,7 @@ public class BinderTreeGenerator {
     }
 
     private boolean isAsync(BoundNode node) {
-        AsyncBinderTreeVisitor visitor = new AsyncBinderTreeVisitor();
+        AwaitVisitor visitor = new AwaitVisitor();
         node.accept(visitor);
         return visitor.isAsync();
     }
