@@ -19,6 +19,7 @@ import com.zergatul.scripting.symbols.*;
 import com.zergatul.scripting.type.*;
 import com.zergatul.scripting.visitors.AwaitVisitor;
 import com.zergatul.scripting.visitors.CapturedVariablesVisitor;
+import com.zergatul.scripting.visitors.LambdaLiftingVisitor;
 import com.zergatul.scripting.visitors.LiftedVariablesVisitor;
 import org.objectweb.asm.*;
 
@@ -236,6 +237,7 @@ public class Compiler {
             context.markAsync();
             compileAsyncBoundStatementList(visitor, context, unit.statements);
         } else {
+            captureLambdaLocals(unit.statements.statements);
             compileStatements(visitor, context, unit.statements.statements);
         }
 
@@ -524,6 +526,13 @@ public class Compiler {
     private void compileStatements(MethodVisitor visitor, CompilerContext context, List<BoundStatementNode> statements) {
         for (BoundStatementNode statement : statements) {
             compileStatement(visitor, context, statement);
+        }
+    }
+
+    private void captureLambdaLocals(List<BoundStatementNode> statements) {
+        var visitor = new LambdaLiftingVisitor();
+        for (BoundStatementNode statement : statements) {
+            statement.accept(visitor);
         }
     }
 

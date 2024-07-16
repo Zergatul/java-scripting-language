@@ -14,8 +14,8 @@ public class LocalRefParameter extends LocalVariable {
 
     private final SReference refType;
 
-    public LocalRefParameter(String name, SReference refType, SType underlying, int stackIndex, TextRange definition) {
-        super(name, underlying, stackIndex, definition);
+    public LocalRefParameter(String name, SReference refType, SType underlying, int stackIndex, CompilerContext functionContext, TextRange definition) {
+        super(name, underlying, stackIndex, functionContext, definition);
         this.refType = refType;
     }
 

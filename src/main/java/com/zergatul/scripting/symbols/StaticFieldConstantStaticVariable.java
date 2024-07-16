@@ -15,7 +15,7 @@ public class StaticFieldConstantStaticVariable extends ConstantStaticVariable {
 
     private final Field field;
 
-    protected StaticFieldConstantStaticVariable(String name, Field field) {
+    public StaticFieldConstantStaticVariable(String name, Field field) {
         super(name, SType.fromJavaType(field.getType()));
 
         if (!Modifier.isStatic(field.getModifiers())) {

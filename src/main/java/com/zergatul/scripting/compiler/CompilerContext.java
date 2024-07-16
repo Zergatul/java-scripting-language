@@ -39,7 +39,7 @@ public class CompilerContext {
     }
 
     public CompilerContext(int initialStackIndex) {
-        this(initialStackIndex, false, SVoidType.instance, null);
+        this(initialStackIndex, true, SVoidType.instance, null);
     }
 
     public CompilerContext(int initialStackIndex, boolean isFunctionRoot, SType returnType, CompilerContext parent) {
@@ -76,7 +76,7 @@ public class CompilerContext {
             throw new InternalException();
         }
 
-        LocalVariable variable = new LocalVariable(name, type, stackIndex, definition);
+        LocalVariable variable = new LocalVariable(name, type, stackIndex, getCurrentFunction(), definition);
         addLocalVariable(variable);
         return variable;
     }
@@ -104,7 +104,7 @@ public class CompilerContext {
             throw new InternalException();
         }
 
-        LocalVariable variable = new LocalParameter(name, type, stackIndex, definition);
+        LocalVariable variable = new LocalParameter(name, type, stackIndex, getCurrentFunction(), definition);
         addLocalVariable(variable);
         return variable;
     }
@@ -114,7 +114,7 @@ public class CompilerContext {
             throw new InternalException();
         }
 
-        LocalVariable variable = new LocalRefParameter(name, refType, underlying, stackIndex++, definition);
+        LocalVariable variable = new LocalRefParameter(name, refType, underlying, stackIndex++, getCurrentFunction(), definition);
         addLocalVariable(variable);
         return variable;
     }
@@ -163,53 +163,10 @@ public class CompilerContext {
             return staticSymbol;
         }
 
-        List<CompilerContext> functions = List.of(); // function boundaries
         for (CompilerContext context = this; context != null; ) {
-            Variable localSymbol = context.localSymbols.get(name);
+            Symbol localSymbol = context.localSymbols.get(name);
             if (localSymbol != null) {
-                if (functions.isEmpty()) {
-                    return localSymbol;
-                } else {
-                    if (context.isAsync) {
-                        if (!(localSymbol instanceof AsyncLiftedLocalVariable)) {
-                            AsyncLiftedLocalVariable lifted = new AsyncLiftedLocalVariable(localSymbol);
-                            for (BoundNameExpressionNode nameExpression : localSymbol.getReferences()) {
-                                nameExpression.overrideSymbol(lifted);
-                            }
-                            localSymbol = lifted;
-                            context.localSymbols.put(name, localSymbol); // replace local variable with lifted
-                        }
-
-                        for (int i = functions.size() - 1; i >= 0; i--) {
-                            Variable current = new CapturedAsyncStateMachineFieldVariable((AsyncLiftedLocalVariable) localSymbol);
-                            functions.get(i).localSymbols.put(name, current);
-                        }
-                    } else {
-                        if (!(localSymbol instanceof LambdaLiftedLocalVariable)) {
-                            LambdaLiftedLocalVariable lifted = new LambdaLiftedLocalVariable(localSymbol);
-                            for (BoundNameExpressionNode nameExpression : localSymbol.getReferences()) {
-                                nameExpression.overrideSymbol(lifted);
-                            }
-                            localSymbol = lifted;
-                            context.localSymbols.put(name, localSymbol); // replace local variable with lifted
-                        }
-
-                        Variable prev = localSymbol;
-                        for (int i = functions.size() - 1; i >= 0; i--) {
-                            Variable current = new CapturedLocalVariable(prev);
-                            functions.get(i).localSymbols.put(name, current);
-                            prev = current;
-                        }
-                    }
-
-                    return functions.get(0).localSymbols.get(name);
-                }
-            }
-            if (context.isFunctionRoot) {
-                if (functions.isEmpty()) {
-                    functions = new ArrayList<>();
-                }
-                functions.add(context);
+                return localSymbol;
             }
             context = context.parent;
         }
@@ -339,6 +296,16 @@ public class CompilerContext {
         int stack = variable.getStackIndex() + getStackSize(variable.getType());
         if (stack > stackIndex) {
             stackIndex = stack;
+        }
+    }
+
+    private CompilerContext getCurrentFunction() {
+        CompilerContext current = this;
+        while (true) {
+            if (current.isFunctionRoot) {
+                return current;
+            }
+            current = current.parent;
         }
     }
 

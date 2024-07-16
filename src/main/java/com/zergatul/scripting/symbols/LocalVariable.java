@@ -9,15 +9,21 @@ import org.objectweb.asm.MethodVisitor;
 public class LocalVariable extends Variable {
 
     private final int stackIndex;
+    private final CompilerContext functionContext;
     private StateBoundary state;
 
-    public LocalVariable(String name, SType type, int stackIndex, TextRange definition) {
+    public LocalVariable(String name, SType type, int stackIndex, CompilerContext functionContext, TextRange definition) {
         super(name, type, definition);
         this.stackIndex = stackIndex;
+        this.functionContext = functionContext;
     }
 
     public int getStackIndex() {
         return stackIndex;
+    }
+
+    public CompilerContext getFunctionContext() {
+        return functionContext;
     }
 
     public StateBoundary getGeneratorState() {

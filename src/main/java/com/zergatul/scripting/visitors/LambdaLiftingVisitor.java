@@ -4,6 +4,9 @@ import com.zergatul.scripting.binding.BinderTreeVisitor;
 import com.zergatul.scripting.binding.nodes.BoundLambdaExpressionNode;
 import com.zergatul.scripting.binding.nodes.BoundNameExpressionNode;
 import com.zergatul.scripting.binding.nodes.BoundVariableDeclarationNode;
+import com.zergatul.scripting.compiler.CompilerContext;
+import com.zergatul.scripting.symbols.CapturedLocalVariable;
+import com.zergatul.scripting.symbols.LambdaLiftedLocalVariable;
 import com.zergatul.scripting.symbols.LocalParameter;
 import com.zergatul.scripting.symbols.LocalVariable;
 
@@ -18,12 +21,15 @@ public class LambdaLiftingVisitor extends BinderTreeVisitor {
     @Override
     public void explicitVisit(BoundLambdaExpressionNode node) {
         stack.push(new Entry(node));
-        super.visit(node);
+        super.explicitVisit(node);
         stack.pop();
     }
 
     @Override
     public void visit(BoundVariableDeclarationNode node) {
+        if (stack.isEmpty()) {
+            return;
+        }
         if (node.name.symbol instanceof LocalVariable variable) {
             stack.peek().locals.add(variable);
         }
@@ -31,6 +37,9 @@ public class LambdaLiftingVisitor extends BinderTreeVisitor {
 
     @Override
     public void visit(BoundNameExpressionNode node) {
+        if (stack.isEmpty()) {
+            return;
+        }
         if (node.symbol instanceof LocalParameter) {
             return;
         }
@@ -38,9 +47,16 @@ public class LambdaLiftingVisitor extends BinderTreeVisitor {
             if (stack.peek().locals.contains(variable)) {
                 return;
             }
-            for (int i = stack.size() - 2; i >= 0; i--) {
-                if (stack.get(i).locals.contains(variable)) {
+            // variable from another scope
+            CompilerContext context = variable.getFunctionContext();
+            LambdaLiftedLocalVariable lifted = new LambdaLiftedLocalVariable(variable);
+            for (BoundNameExpressionNode name : variable.getReferences()) {
+                if (name)
+            }
 
+            for (int i = stack.size() - 1; i >= 0; i--) {
+                if (stack.get(i).locals.contains(variable)) {
+                    stack.peek();
                 }
             }
         }

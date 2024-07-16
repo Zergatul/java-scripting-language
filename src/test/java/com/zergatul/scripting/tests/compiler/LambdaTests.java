@@ -292,6 +292,8 @@ public class LambdaTests {
     public void captureInt1Test() {
         String code = """
                 int a = 100;
+                a++;
+                intStorage.add(a);
                 run.once(() => a = 200);
                 intStorage.add(a);
                 """;
@@ -299,7 +301,7 @@ public class LambdaTests {
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
-        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(200));
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(101, 200));
     }
 
     @Test
