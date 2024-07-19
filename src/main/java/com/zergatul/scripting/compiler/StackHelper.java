@@ -25,6 +25,8 @@ public class StackHelper {
             context = context.createChild();
             LocalVariable var1 = context.addLocalVariable(null, type1, null);
             LocalVariable var2 = context.addLocalVariable(null, type2, null);
+            context.setStackIndex(var1);
+            context.setStackIndex(var2);
             var2.compileStore(context, visitor);
             var1.compileStore(context, visitor);
             var2.compileLoad(context, visitor);

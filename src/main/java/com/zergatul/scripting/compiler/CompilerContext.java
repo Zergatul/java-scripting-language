@@ -3,6 +3,7 @@ package com.zergatul.scripting.compiler;
 import com.zergatul.scripting.InternalException;
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.nodes.BoundNameExpressionNode;
+import com.zergatul.scripting.binding.nodes.FunctionRootNode;
 import com.zergatul.scripting.symbols.*;
 import com.zergatul.scripting.type.SFloat;
 import com.zergatul.scripting.type.SReference;
@@ -26,13 +27,14 @@ public class CompilerContext {
     private final boolean isGenericFunction;
     private final SType returnType;
     private String className;
-    private int stackIndex;
     private Consumer<MethodVisitor> breakConsumer;
     private Consumer<MethodVisitor> continueConsumer;
     private final List<RefHolder> refVariables = new ArrayList<>();
-    private boolean isAsync;
-    private int asyncState;
+    private String closureClassName;
     private String asyncStateMachineClassName;
+    private final List<LiftedVariable> lifted;
+    private final List<CapturedVariable> captured;
+    private final FunctionStack stack;
 
     public CompilerContext() {
         this(1);
@@ -49,10 +51,18 @@ public class CompilerContext {
     public CompilerContext(int initialStackIndex, boolean isFunctionRoot, boolean isGenericFunction, SType returnType, CompilerContext parent) {
         this.root = parent == null ? this : parent.root;
         this.parent = parent;
-        this.stackIndex = initialStackIndex;
         this.isFunctionRoot = isFunctionRoot;
         this.isGenericFunction = isGenericFunction;
         this.returnType = returnType;
+        if (isFunctionRoot) {
+            lifted = new ArrayList<>();
+            captured = new ArrayList<>();
+        } else {
+            lifted = null;
+            captured = null;
+        }
+        stack = new FunctionStack();
+        stack.set(initialStackIndex);
     }
 
     public void addStaticVariable(StaticVariable variable) {
@@ -76,7 +86,7 @@ public class CompilerContext {
             throw new InternalException();
         }
 
-        LocalVariable variable = new LocalVariable(name, type, stackIndex, getCurrentFunction(), definition);
+        LocalVariable variable = new LocalVariable(name, type, definition);
         addLocalVariable(variable);
         return variable;
     }
@@ -86,13 +96,12 @@ public class CompilerContext {
             throw new InternalException();
         }
 
-        if (variable instanceof LocalVariable local) {
-            expandStackOnLocalVariable(local);
-        }
         if (variable instanceof LambdaLiftedLocalVariable lifted) {
             Variable underlying = lifted.getUnderlyingVariable();
             if (underlying instanceof LocalVariable local) {
                 expandStackOnLocalVariable(local);
+                // what???
+                throw new InternalException();
             }
         }
 
@@ -104,7 +113,7 @@ public class CompilerContext {
             throw new InternalException();
         }
 
-        LocalVariable variable = new LocalParameter(name, type, stackIndex, getCurrentFunction(), definition);
+        LocalVariable variable = new LocalParameter(name, type, definition);
         addLocalVariable(variable);
         return variable;
     }
@@ -114,9 +123,14 @@ public class CompilerContext {
             throw new InternalException();
         }
 
-        LocalVariable variable = new LocalRefParameter(name, refType, underlying, stackIndex++, getCurrentFunction(), definition);
+        LocalVariable variable = new LocalRefParameter(name, refType, underlying, definition);
         addLocalVariable(variable);
         return variable;
+    }
+
+    public void setStackIndex(LocalVariable variable) {
+        variable.setStackIndex(stack.get());
+        stack.inc(getStackSize(variable.getType()));
     }
 
     public boolean isGenericFunction() {
@@ -134,7 +148,7 @@ public class CompilerContext {
     }
 
     public CompilerContext createChild() {
-        return new CompilerContext(stackIndex, false, returnType, this);
+        return new CompilerContext(stack.get(), false, returnType, this);
     }
 
     public CompilerContext createStaticFunction(SType returnType) {
@@ -163,10 +177,39 @@ public class CompilerContext {
             return staticSymbol;
         }
 
+        List<CompilerContext> functions = List.of(); // function boundaries
         for (CompilerContext context = this; context != null; ) {
-            Symbol localSymbol = context.localSymbols.get(name);
+            Variable localSymbol = context.localSymbols.get(name);
             if (localSymbol != null) {
-                return localSymbol;
+                if (functions.isEmpty()) {
+                    return localSymbol;
+                } else {
+                    if (!(localSymbol instanceof LiftedVariable)) {
+                        LiftedVariable lifted = new LiftedVariable((LocalVariable) localSymbol);
+                        for (BoundNameExpressionNode nameExpression : localSymbol.getReferences()) {
+                            nameExpression.overrideSymbol(lifted);
+                        }
+                        localSymbol = lifted;
+                        context.getFunctionContext().lifted.add(lifted);
+                        context.localSymbols.put(name, localSymbol); // replace local variable with lifted
+                    }
+
+                    Variable prev = localSymbol;
+                    for (int i = functions.size() - 1; i >= 0; i--) {
+                        CapturedVariable current = new CapturedVariable(prev);
+                        functions.get(i).captured.add(current);
+                        functions.get(i).localSymbols.put(name, current);
+                        prev = current;
+                    }
+
+                    return functions.get(0).localSymbols.get(name);
+                }
+            }
+            if (context.isFunctionRoot) {
+                if (functions.isEmpty()) {
+                    functions = new ArrayList<>();
+                }
+                functions.add(context);
             }
             context = context.parent;
         }
@@ -244,12 +287,32 @@ public class CompilerContext {
         }
     }
 
+    public List<LiftedVariable> getLifted() {
+        return lifted;
+    }
+
+    public List<CapturedVariable> getCaptured() {
+        return captured;
+    }
+
+    public void setClosureClassName(String className) {
+        if (isFunctionRoot) {
+            closureClassName = className;
+        } else {
+            throw new InternalException("This is not a function root.");
+        }
+    }
+
     public void setAsyncStateMachineClassName(String className) {
-        if (parent == null || isFunctionRoot) {
+        if (isFunctionRoot) {
             asyncStateMachineClassName = className;
         } else {
             throw new InternalException("This is not a function root.");
         }
+    }
+
+    public String getClosureClassName() {
+        return closureClassName != null ? closureClassName : asyncStateMachineClassName;
     }
 
     public String getAsyncStateMachineClassName() {
@@ -276,37 +339,19 @@ public class CompilerContext {
                 .toList();
     }
 
-    public void markAsync() {
-        isAsync = true;
-    }
-
-    public boolean isAsync() {
-        return isAsync;
-    }
-
-    public int getAsyncState() {
-        return asyncState;
-    }
-
-    public void newAsyncStateBoundary() {
-        asyncState++;
-    }
-
     private void expandStackOnLocalVariable(LocalVariable variable) {
-        int stack = variable.getStackIndex() + getStackSize(variable.getType());
-        if (stack > stackIndex) {
-            stackIndex = stack;
-        }
+        /*int index = variable.getStackIndex() + getStackSize(variable.getType());
+        if (index > stack.get()) {
+            stack.set(index);
+        }*/
     }
 
-    private CompilerContext getCurrentFunction() {
+    private CompilerContext getFunctionContext() {
         CompilerContext current = this;
-        while (true) {
-            if (current.isFunctionRoot) {
-                return current;
-            }
+        while (!current.isFunctionRoot) {
             current = current.parent;
         }
+        return current;
     }
 
     private int getStackSize(SType type) {

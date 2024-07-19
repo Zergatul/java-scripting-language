@@ -113,7 +113,7 @@ public class Binder {
 
     private BoundStatementsListNode bindStatementList(StatementsListNode node) {
         List<BoundStatementNode> statements = node.statements.stream().map(this::bindStatement).toList();
-        return new BoundStatementsListNode(statements, node.getRange());
+        return new BoundStatementsListNode(statements, context.getLifted(), node.getRange());
     }
 
     private BoundStatementNode bindStatement(StatementNode statement) {
@@ -829,12 +829,17 @@ public class Binder {
             statement = bindStatement(node.body);
         }
 
+        List<LiftedVariable> lifted = context.getLifted();
+        List<CapturedVariable> captured = context.getCaptured();
+
         popScope();
 
         return new BoundLambdaExpressionNode(
                 lambdaType,
                 parameters,
                 statement,
+                lifted,
+                captured,
                 node.getRange());
     }
 

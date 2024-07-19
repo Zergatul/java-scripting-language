@@ -3,16 +3,19 @@ package com.zergatul.scripting.binding.nodes;
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
 import com.zergatul.scripting.parser.NodeType;
+import com.zergatul.scripting.symbols.LiftedVariable;
 
 import java.util.List;
 
 public class BoundStatementsListNode extends BoundStatementNode {
 
     public final List<BoundStatementNode> statements;
+    public final List<LiftedVariable> lifted;
 
-    public BoundStatementsListNode(List<BoundStatementNode> statements, TextRange range) {
+    public BoundStatementsListNode(List<BoundStatementNode> statements, List<LiftedVariable> lifted, TextRange range) {
         super(NodeType.STATEMENTS_LIST, range);
         this.statements = statements;
+        this.lifted = lifted;
     }
 
     @Override

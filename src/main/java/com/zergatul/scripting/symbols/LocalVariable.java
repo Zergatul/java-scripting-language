@@ -8,22 +8,20 @@ import org.objectweb.asm.MethodVisitor;
 
 public class LocalVariable extends Variable {
 
-    private final int stackIndex;
-    private final CompilerContext functionContext;
+    private int stackIndex;
     private StateBoundary state;
 
-    public LocalVariable(String name, SType type, int stackIndex, CompilerContext functionContext, TextRange definition) {
+    public LocalVariable(String name, SType type, TextRange definition) {
         super(name, type, definition);
-        this.stackIndex = stackIndex;
-        this.functionContext = functionContext;
+        stackIndex = Integer.MIN_VALUE;
     }
 
     public int getStackIndex() {
         return stackIndex;
     }
 
-    public CompilerContext getFunctionContext() {
-        return functionContext;
+    public void setStackIndex(int stackIndex) {
+        this.stackIndex = stackIndex;
     }
 
     public StateBoundary getGeneratorState() {
