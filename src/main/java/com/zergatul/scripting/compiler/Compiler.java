@@ -637,12 +637,18 @@ public class Compiler {
                 statement.accept(treeVisitor);
             }
         }
+
         List<LiftedVariable> variables = treeVisitor.getVariables();
+        String[] fieldNames = new String[variables.size()];
+        for (int i = 0; i < fieldNames.length; i++) {
+            String varName = variables.get(i).getName();
+            fieldNames[i] = varName != null ? varName : "lifted";
+        }
+        uniquify(fieldNames);
         for (int i = 0; i < variables.size(); i++) {
             LiftedVariable variable = variables.get(i);
-            String fieldName = "lifted_" + i + "_" + variable.getName();
-            variable.setField(name, fieldName);
-            writer.visitField(ACC_PUBLIC, fieldName, Type.getDescriptor(variable.getType().getJavaClass()), null, null);
+            variable.setField(name, fieldNames[i]);
+            writer.visitField(ACC_PUBLIC, fieldNames[i], Type.getDescriptor(variable.getType().getJavaClass()), null, null);
         }
 
         // build constructor
@@ -787,6 +793,11 @@ public class Compiler {
     }
 
     private void compileGeneratorReturn(MethodVisitor visitor, CompilerContext context, BoundGeneratorReturnNode node) {
+        // set state to invalid to prevent consequent calls to next()
+        visitor.visitVarInsn(ALOAD, 0);
+        visitor.visitLdcInsn(-1);
+        visitor.visitFieldInsn(PUTFIELD, context.getAsyncStateMachineClassName(), "state", Type.getDescriptor(int.class));
+
         visitor.visitInsn(ACONST_NULL);
         visitor.visitMethodInsn(
                 INVOKESTATIC,
@@ -1127,6 +1138,10 @@ public class Compiler {
     }
 
     private void compileGeneratorGetValue(MethodVisitor visitor, CompilerContext context, BoundGeneratorGetValueNode node) {
+        if (node.type == SVoidType.instance) {
+            return;
+        }
+
         Symbol parameter = context.getSymbol("@result");
         parameter.compileLoad(context, visitor);
         visitor.visitTypeInsn(CHECKCAST, Type.getInternalName(node.type.getBoxedVersion()));

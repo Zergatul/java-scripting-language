@@ -7,11 +7,18 @@ import java.util.concurrent.CompletableFuture;
 public class FutureHelper {
 
     private final List<CompletableFuture<Void>> voids = new ArrayList<>();
+    private final List<CompletableFuture<Boolean>> bools = new ArrayList<>();
     private final List<CompletableFuture<Integer>> ints = new ArrayList<>();
 
     public CompletableFuture<Void> create() {
         CompletableFuture<Void> future = new CompletableFuture<>();
         voids.add(future);
+        return future;
+    }
+
+    public CompletableFuture<Boolean> createBool() {
+        CompletableFuture<Boolean> future = new CompletableFuture<>();
+        bools.add(future);
         return future;
     }
 
@@ -23,6 +30,10 @@ public class FutureHelper {
 
     public CompletableFuture<Void> get(int index) {
         return voids.get(index);
+    }
+
+    public CompletableFuture<Boolean> getBool(int index) {
+        return bools.get(index);
     }
 
     public CompletableFuture<Integer> getInt(int index) {

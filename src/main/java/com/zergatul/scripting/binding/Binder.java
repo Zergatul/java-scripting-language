@@ -1036,6 +1036,9 @@ public class Binder {
     }
 
     private BoundTypeNode bindType(TypeNode type) {
+        if (type instanceof InvalidTypeNode) {
+            return new BoundInvalidTypeNode(type.getRange());
+        }
         if (type instanceof VoidTypeNode) {
             return new BoundVoidTypeNode(type.getRange());
         }

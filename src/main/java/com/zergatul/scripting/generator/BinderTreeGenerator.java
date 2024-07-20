@@ -2,8 +2,7 @@ package com.zergatul.scripting.generator;
 
 import com.zergatul.scripting.InternalException;
 import com.zergatul.scripting.TextRange;
-import com.zergatul.scripting.type.SFuture;
-import com.zergatul.scripting.type.SType;
+import com.zergatul.scripting.type.SBoolean;
 import com.zergatul.scripting.visitors.AwaitVisitor;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
 import com.zergatul.scripting.binding.nodes.*;
@@ -11,6 +10,7 @@ import com.zergatul.scripting.parser.NodeType;
 import com.zergatul.scripting.symbols.*;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class BinderTreeGenerator {
@@ -47,19 +47,6 @@ public class BinderTreeGenerator {
         }
     }
 
-    private void rewriteExpression(BoundExpressionNode node) {
-        switch (node.getNodeType()) {
-            case AWAIT_EXPRESSION -> {
-                BoundAwaitExpressionNode awaitExpression = (BoundAwaitExpressionNode) node;
-                StateBoundary boundary = newBoundary();
-                currentBoundary.statements.add(new BoundSetGeneratorStateNode(boundary));
-                currentBoundary.statements.add(new BoundSetGeneratorBoundaryNode(awaitExpression.expression));
-                currentBoundary = boundary;
-            }
-            default -> throw new InternalException(String.format("Async %s not supported yet.", node.getNodeType()));
-        }
-    }
-
     private void rewrite(BoundBlockStatementNode node) {
         for (BoundStatementNode statement : node.statements) {
             rewriteStatement(statement);
@@ -67,13 +54,13 @@ public class BinderTreeGenerator {
     }
 
     private void rewrite(BoundExpressionStatementNode node) {
-        rewriteExpression(node.expression);
+        BoundExpressionNode expression = rewriteExpression(node.expression);
+        add(new BoundExpressionStatementNode(expression, null));
     }
 
     private void rewrite(BoundIfStatementNode node) {
-        if (isAsync(node.condition)) {
-            throw new InternalException("Async if condition not supported yet.");
-        }
+        LiftedVariable condition = new LiftedVariable(new LocalVariable(null, SBoolean.instance, null));
+        storeExpressionValue(condition, node.condition);
 
         StateBoundary original = currentBoundary;
         StateBoundary thenTempBoundary = new StateBoundary();
@@ -96,7 +83,7 @@ public class BinderTreeGenerator {
         }
 
         original.statements.add(new BoundIfStatementNode(
-                node.condition,
+                new BoundNameExpressionNode(condition, null),
                 thenBlock,
                 elseBlock,
                 TextRange.EMPTY));
@@ -110,13 +97,90 @@ public class BinderTreeGenerator {
         assert node.expression != null;
         assert isAsync(node.expression);
 
-        rewriteExpression(node.expression);
-
+        BoundExpressionNode expression = rewriteExpression(node.expression);
         currentBoundary.statements.add(new BoundVariableDeclarationNode(
                 node.type,
                 node.name,
-                new BoundGeneratorGetValueNode(node.expression.type),
+                expression,
                 node.getRange()));
+    }
+
+    private BoundExpressionNode rewriteExpression(BoundExpressionNode node) {
+        return switch (node.getNodeType()) {
+            case AWAIT_EXPRESSION -> rewrite((BoundAwaitExpressionNode) node);
+            case BINARY_EXPRESSION -> rewrite((BoundBinaryExpressionNode) node);
+            case METHOD_INVOCATION_EXPRESSION -> rewrite((BoundMethodInvocationExpressionNode) node);
+            case UNARY_EXPRESSION -> rewrite((BoundUnaryExpressionNode) node);
+            default -> throw new InternalException(String.format("Async %s not supported yet.", node.getNodeType()));
+        };
+    }
+
+    private BoundExpressionNode rewrite(BoundAwaitExpressionNode node) {
+        StateBoundary boundary = newBoundary();
+        currentBoundary.statements.add(new BoundSetGeneratorStateNode(boundary));
+        currentBoundary.statements.add(new BoundSetGeneratorBoundaryNode(node.expression));
+        currentBoundary = boundary;
+
+        return new BoundGeneratorGetValueNode(node.type);
+    }
+
+    private BoundExpressionNode rewrite(BoundBinaryExpressionNode node) {
+        LiftedVariable lVar = new LiftedVariable(new LocalVariable(null, node.left.type, null));
+        LiftedVariable rVar = new LiftedVariable(new LocalVariable(null, node.right.type, null));
+
+        storeExpressionValue(lVar, node.left);
+        storeExpressionValue(rVar, node.right);
+
+        return new BoundBinaryExpressionNode(
+                new BoundNameExpressionNode(lVar, null),
+                node.operator,
+                new BoundNameExpressionNode(rVar, null),
+                null);
+    }
+
+    private BoundExpressionNode rewrite(BoundMethodInvocationExpressionNode node) {
+        assert !isAsync(node.objectReference);
+        assert node.arguments.arguments.stream().anyMatch(this::isAsync);
+
+        LiftedVariable[] variables = new LiftedVariable[node.arguments.arguments.size()];
+        for (int i = 0; i < variables.length; i++) {
+            BoundExpressionNode argument = node.arguments.arguments.get(i);
+            variables[i] = new LiftedVariable(new LocalVariable(null, argument.type, null));
+            storeExpressionValue(variables[i], argument);
+        }
+
+        return new BoundMethodInvocationExpressionNode(
+                node.objectReference,
+                node.method,
+                new BoundArgumentsListNode(Arrays.stream(variables).map(v -> (BoundExpressionNode) new BoundNameExpressionNode(v, null)).toList(), null),
+                node.refVariables,
+                node.getRange());
+    }
+
+    private BoundExpressionNode rewrite(BoundUnaryExpressionNode node) {
+        LiftedVariable variable = new LiftedVariable(new LocalVariable(null, node.operand.type, null));
+        storeExpressionValue(variable, node.operand);
+        return new BoundUnaryExpressionNode(
+                node.operator,
+                new BoundNameExpressionNode(variable, null),
+                node.getRange());
+    }
+
+    private void storeExpressionValue(LiftedVariable variable, BoundExpressionNode expression) {
+        if (isAsync(expression)) {
+            BoundExpressionNode result = rewriteExpression(expression);
+            add(new BoundVariableDeclarationNode(
+                    createDummyTypeNode(),
+                    new BoundNameExpressionNode(variable, null),
+                    result,
+                    null));
+        } else {
+            add(new BoundVariableDeclarationNode(
+                    createDummyTypeNode(),
+                    new BoundNameExpressionNode(variable, null),
+                    expression,
+                    null));
+        }
     }
 
     private void markVariableDeclarations(BoundStatementNode statement) {
@@ -146,10 +210,18 @@ public class BinderTreeGenerator {
         });
     }
 
+    private void add(BoundStatementNode statement) {
+        currentBoundary.statements.add(statement);
+    }
+
     private StateBoundary newBoundary() {
         StateBoundary boundary = new StateBoundary(boundaries.size());
         boundaries.add(boundary);
         return boundary;
+    }
+
+    private BoundTypeNode createDummyTypeNode() {
+        return new BoundInvalidTypeNode(null);
     }
 
     private boolean isAsync(BoundNode node) {
