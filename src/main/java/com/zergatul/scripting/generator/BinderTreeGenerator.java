@@ -104,20 +104,6 @@ public class BinderTreeGenerator {
         statement.accept(new BinderTreeVisitor() {
             @Override
             public void visit(BoundVariableDeclarationNode node) {
-                if (node.name.symbol instanceof LambdaLiftedLocalVariable lambdaLifted) {
-                    // update lambda lifted to async lifted
-                    Variable underlying = lambdaLifted.getUnderlyingVariable();
-                    AsyncLiftedLocalVariable asyncLifted = new AsyncLiftedLocalVariable(underlying);
-                    CapturedAsyncStateMachineFieldVariable asyncCaptured = new CapturedAsyncStateMachineFieldVariable(asyncLifted);
-                    for (BoundNameExpressionNode name : underlying.getReferences()) {
-                        if (name.symbol instanceof LambdaLiftedLocalVariable) {
-                            name.overrideSymbol(asyncLifted);
-                        }
-                        if (name.symbol instanceof CapturedLocalVariable) {
-                            name.overrideSymbol(asyncCaptured);
-                        }
-                    }
-                }
                 if (node.name.symbol instanceof LocalVariable local) {
                     local.setGeneratorState(currentBoundary);
                 }
@@ -131,7 +117,7 @@ public class BinderTreeGenerator {
             public void visit(BoundNameExpressionNode node) {
                 if (node.symbol instanceof LocalVariable local) {
                     if (local.getGeneratorState() != currentBoundary) {
-                        AsyncLiftedLocalVariable lifted = new AsyncLiftedLocalVariable(local);
+                        LiftedVariable lifted = new LiftedVariable(local);
                         for (BoundNameExpressionNode nameExpression : local.getReferences()) {
                             nameExpression.overrideSymbol(lifted);
                         }

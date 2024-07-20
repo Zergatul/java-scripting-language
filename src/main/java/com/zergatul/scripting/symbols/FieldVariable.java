@@ -28,12 +28,12 @@ public class FieldVariable extends Variable {
     public void compileStore(CompilerContext context, MethodVisitor visitor) {
         visitor.visitVarInsn(ALOAD, 0);
         StackHelper.swap(visitor, context, getType(), SType.fromJavaType(Object.class));
-        visitor.visitFieldInsn(PUTFIELD, className, fieldName, Type.getDescriptor(getType().getJavaClass()));
+        visitor.visitFieldInsn(PUTFIELD, className, fieldName, getType().getDescriptor());
     }
 
     @Override
     public void compileLoad(CompilerContext context, MethodVisitor visitor) {
         visitor.visitVarInsn(ALOAD, 0);
-        visitor.visitFieldInsn(GETFIELD, className, fieldName, Type.getDescriptor(getType().getJavaClass()));
+        visitor.visitFieldInsn(GETFIELD, className, fieldName, getType().getDescriptor());
     }
 }

@@ -325,6 +325,25 @@ public class LambdaTests {
     @Test
     public void captureInt3Test() {
         String code = """
+                int a = 100;
+                run.once(() => {
+                    int b = 200;
+                    run.once(() => {
+                        a += b;
+                    });
+                });
+                intStorage.add(a);
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(300));
+    }
+
+    @Test
+    public void captureInt4Test() {
+        String code = """
                 int a = 1;
                 int b = 2;
                 int c = 3;
@@ -359,7 +378,7 @@ public class LambdaTests {
     }
 
     @Test
-    public void captureInt4Test() {
+    public void captureInt5Test() {
         String code = """
                 int x;
                 run.multiple(1, () => {
@@ -380,6 +399,42 @@ public class LambdaTests {
         program.run();
 
         Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(120));
+    }
+
+    @Test
+    public void captureInt6Test() {
+        String code = """
+                int x1 = 1;
+                run.multiple(1, () => {
+                    int x2 = 2;
+                    run.multiple(2, () => {
+                        int x3 = 3;
+                        run.multiple(3, () => {
+                            int x4 = 4;
+                            run.multiple(4, () => {
+                                int x5 = 5;
+                                run.multiple(5, () => {
+                                    x1++;
+                                    x2++;
+                                    x3++;
+                                    x4++;
+                                    x5++;
+                                });
+                                x1 += x5;
+                            });
+                            x1 += x4;
+                        });
+                        x1 += x3;
+                    });
+                    x1 += x2;
+                });
+                intStorage.add(x1);
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(753));
     }
 
     @Test
@@ -428,6 +483,35 @@ public class LambdaTests {
         program.run();
 
         Assertions.assertIterableEquals(ApiRoot.boolStorage.list, List.of(true));
+    }
+
+    @Test
+    public void captureMultipleTest() {
+        String code = """
+                int a1 = 1;
+                int a2 = 2;
+                int a3 = 3;
+                int sum;
+                run.once(() => {
+                    int b1 = 4;
+                    int b2 = 5;
+                    int b3 = 6;
+                    run.once(() => {
+                        sum += a1;
+                        sum += a2;
+                        sum += a3;
+                        sum += b1;
+                        sum += b2;
+                        sum += b3;
+                    });
+                });
+                intStorage.add(sum);
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(21));
     }
 
     // TODO: capture function parameters?

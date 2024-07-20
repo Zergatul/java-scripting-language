@@ -166,7 +166,7 @@ public class Compiler {
         }
     }
 
-    private static String buildEmptyConstructor(ClassWriter writer) {
+    private static void buildEmptyConstructor(ClassWriter writer) {
         String descriptor = Type.getMethodDescriptor(Type.VOID_TYPE);
         MethodVisitor constructorVisitor = writer.visitMethod(ACC_PUBLIC, "<init>", descriptor, null, null);
         constructorVisitor.visitCode();
@@ -175,24 +175,30 @@ public class Compiler {
         constructorVisitor.visitInsn(RETURN);
         constructorVisitor.visitMaxs(0, 0);
         constructorVisitor.visitEnd();
-        return descriptor;
     }
 
-    private static String buildLambdaConstructor(CompilerContext context, BoundLambdaExpressionNode lambda, String className, ClassWriter writer) {
-        if (lambda.captured.isEmpty()) {
-            return buildEmptyConstructor(writer);
+    private static String buildLambdaConstructor(String className, ClassWriter writer, List<Variable> closures) {
+        for (int i = 0; i < closures.size(); i++) {
+            String descriptor = closures.get(i).getType().getDescriptor();
+            writer.visitField(ACC_PUBLIC | ACC_FINAL, "closure" + i, descriptor, null, null);
         }
 
-        writer.visitField(ACC_PUBLIC | ACC_FINAL, "closure", "L" + context.getClosureClassName() + ";", null, null);
+        Type[] arguments = new Type[closures.size()];
+        for (int i = 0; i < closures.size(); i++) {
+            arguments[i] = Type.getType(closures.get(i).getType().getDescriptor());
+        }
 
-        String constructorDescriptor = Type.getMethodDescriptor(Type.VOID_TYPE, Type.getType("L" + context.getClosureClassName() + ";"));
+        String constructorDescriptor = Type.getMethodDescriptor(Type.VOID_TYPE, arguments);
         MethodVisitor visitor = writer.visitMethod(ACC_PUBLIC, "<init>", constructorDescriptor, null, null);
         visitor.visitCode();
         visitor.visitVarInsn(ALOAD, 0);
         visitor.visitMethodInsn(INVOKESPECIAL, Type.getInternalName(Object.class), "<init>", Type.getMethodDescriptor(Type.VOID_TYPE), false);
-        visitor.visitVarInsn(ALOAD, 0);
-        visitor.visitVarInsn(ALOAD, 1);
-        visitor.visitFieldInsn(PUTFIELD, className, "closure", "L" + context.getClosureClassName() + ";");
+        for (int i = 0; i < closures.size(); i++) {
+            visitor.visitVarInsn(ALOAD, 0);
+            visitor.visitVarInsn(ALOAD, i + 1);
+            String descriptor = closures.get(i).getType().getDescriptor();
+            visitor.visitFieldInsn(PUTFIELD, className, "closure" + i, descriptor);
+        }
         visitor.visitInsn(RETURN);
         visitor.visitMaxs(0, 0);
         visitor.visitEnd();
@@ -566,7 +572,7 @@ public class Compiler {
                 Type.getMethodDescriptor(Type.VOID_TYPE),
                 false);
 
-        LocalVariable closure = parentContext.addLocalVariable("@closure", SType.fromJavaType(closureClass), null);
+        LocalVariable closure = parentContext.addLocalVariable(null, SType.fromJavaType(closureClass), null);
         parentContext.setStackIndex(closure);
         closure.compileStore(parentContext, parentVisitor);
 
@@ -632,9 +638,9 @@ public class Compiler {
                 statement.accept(treeVisitor);
             }
         }
-        List<AsyncLiftedLocalVariable> variables = treeVisitor.getVariables();
+        List<LiftedVariable> variables = treeVisitor.getVariables();
         for (int i = 0; i < variables.size(); i++) {
-            AsyncLiftedLocalVariable variable = variables.get(i);
+            LiftedVariable variable = variables.get(i);
             String fieldName = "lifted_" + i + "_" + variable.getName();
             variable.setField(name, fieldName);
             writer.visitField(ACC_PUBLIC, fieldName, Type.getDescriptor(variable.getType().getJavaClass()), null, null);
@@ -649,6 +655,13 @@ public class Compiler {
         constructorVisitor.visitInsn(RETURN);
         constructorVisitor.visitMaxs(0, 0);
         constructorVisitor.visitEnd();
+
+        // closure reference
+        LocalVariable closure = context.addLocalVariable(null, new SLazyClassType(name), null);
+        closure.setStackIndex(0);
+        for (LiftedVariable lifted : variables) {
+            lifted.setClosure(closure);
+        }
 
         // build next method
         MethodVisitor nextMethodVisitor = writer.visitMethod(
@@ -969,7 +982,22 @@ public class Compiler {
         String name = "com/zergatul/scripting/dynamic/DynamicLambdaClass_" + counter.incrementAndGet();
         writer.visit(V1_5, ACC_PUBLIC, name, null, Type.getInternalName(Object.class), new String[] { Type.getInternalName(funcInterface) });
 
-        String constructorDescriptor = buildLambdaConstructor(context, expression, name, writer);
+        List<Variable> closures = new ArrayList<>();
+        for (CapturedVariable captured : expression.captured) {
+            if (captured.getUnderlying() instanceof CapturedVariable inner) {
+                // captured from another context
+                context.addLocalVariable(inner.getClosure());
+            }
+            Variable closure = context.getVariableOfType(captured.getClosureClassName());
+            if (closure == null) {
+                throw new InternalException();
+            }
+            if (!closures.contains(closure)) {
+                closures.add(closure);
+            }
+        }
+
+        String constructorDescriptor = buildLambdaConstructor(name, writer, closures);
 
         Type[] argumentTypes = new Type[expression.parameters.size()];
         Arrays.fill(argumentTypes, Type.getType(Object.class));
@@ -987,12 +1015,20 @@ public class Compiler {
         lambdaContext.setClassName(name);
 
         if (!expression.captured.isEmpty()) {
-            LocalVariable closure = (LocalVariable) context.getSymbol("@closure");
-            FieldVariable innerClosure = new FieldVariable(closure.getType(), name, "closure");
-            for (CapturedVariable variable : expression.captured) {
-                LiftedVariable lifted = (LiftedVariable) variable.getUnderlying();
-                variable.setField(lifted.getClassName(), lifted.getFieldName());
-                variable.setClosure(innerClosure);
+            FieldVariable[] closureFieldVariables = new FieldVariable[closures.size()];
+            for (int i = 0; i < closures.size(); i++) {
+                Variable closure = closures.get(i);
+                closureFieldVariables[i] = new FieldVariable(closure.getType(), name, "closure" + i);
+            }
+
+            for (CapturedVariable captured : expression.captured) {
+                Variable closure = context.getVariableOfType(captured.getClosureClassName());
+                int index = closures.indexOf(closure);
+                if (index < 0) {
+                    throw new InternalException();
+                }
+
+                captured.setClosure(closureFieldVariables[index]);
             }
         }
 
@@ -1017,6 +1053,9 @@ public class Compiler {
             }
             unboxed.compileStore(context, invokeVisitor);
         }
+        if (!expression.lifted.isEmpty()) {
+            compileClosureClass(invokeVisitor, lambdaContext, expression.lifted);
+        }
         compileStatement(invokeVisitor, lambdaContext, expression.body);
         if (!type.isFunction()) {
             invokeVisitor.visitInsn(RETURN);
@@ -1033,8 +1072,7 @@ public class Compiler {
 
         visitor.visitTypeInsn(NEW, name);
         visitor.visitInsn(DUP);
-        if (!expression.captured.isEmpty()) {
-            LocalVariable closure = (LocalVariable) context.getSymbol("@closure");
+        for (Variable closure : closures) {
             closure.compileLoad(context, visitor);
         }
         visitor.visitMethodInsn(

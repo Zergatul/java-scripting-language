@@ -10,6 +10,7 @@ import com.zergatul.scripting.type.SReference;
 import com.zergatul.scripting.type.SType;
 import com.zergatul.scripting.type.SVoidType;
 import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.Type;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -23,6 +24,7 @@ public class CompilerContext {
     private final CompilerContext parent;
     private final Map<String, Symbol> staticSymbols = new HashMap<>();
     private final Map<String, Variable> localSymbols = new HashMap<>();
+    private final List<Variable> anonymousLocalSymbols = new ArrayList<>();
     private final boolean isFunctionRoot;
     private final boolean isGenericFunction;
     private final SType returnType;
@@ -96,16 +98,7 @@ public class CompilerContext {
             throw new InternalException();
         }
 
-        if (variable instanceof LambdaLiftedLocalVariable lifted) {
-            Variable underlying = lifted.getUnderlyingVariable();
-            if (underlying instanceof LocalVariable local) {
-                expandStackOnLocalVariable(local);
-                // what???
-                throw new InternalException();
-            }
-        }
-
-        localSymbols.put(variable.getName(), variable);
+        insertLocalVariable(variable);
     }
 
     public LocalVariable addLocalParameter(String name, SType type, TextRange definition) {
@@ -191,14 +184,14 @@ public class CompilerContext {
                         }
                         localSymbol = lifted;
                         context.getFunctionContext().lifted.add(lifted);
-                        context.localSymbols.put(name, localSymbol); // replace local variable with lifted
+                        context.insertLocalVariable(localSymbol); // replace local variable with lifted
                     }
 
                     Variable prev = localSymbol;
                     for (int i = functions.size() - 1; i >= 0; i--) {
                         CapturedVariable current = new CapturedVariable(prev);
                         functions.get(i).captured.add(current);
-                        functions.get(i).localSymbols.put(name, current);
+                        functions.get(i).insertLocalVariable(current);
                         prev = current;
                     }
 
@@ -214,6 +207,27 @@ public class CompilerContext {
             context = context.parent;
         }
 
+        return null;
+    }
+
+    public Variable getVariableOfType(String type) {
+        CompilerContext current = this;
+        while (true) {
+            for (Variable variable : current.anonymousLocalSymbols) {
+                if (variable.getType().getInternalName().equals(type)) {
+                    return variable;
+                }
+            }
+            for (Variable variable : current.localSymbols.values()) {
+                if (variable.getType().getInternalName().equals(type)) {
+                    return variable;
+                }
+            }
+            if (current.isFunctionRoot) {
+                break;
+            }
+            current = current.parent;
+        }
         return null;
     }
 
@@ -311,10 +325,6 @@ public class CompilerContext {
         }
     }
 
-    public String getClosureClassName() {
-        return closureClassName != null ? closureClassName : asyncStateMachineClassName;
-    }
-
     public String getAsyncStateMachineClassName() {
         CompilerContext current = this;
         while (true) {
@@ -325,25 +335,12 @@ public class CompilerContext {
         }
     }
 
-    public List<CapturedLocalVariable> getLambdaCaptured() {
-        return localSymbols.values().stream()
-                .filter(s -> s instanceof CapturedLocalVariable)
-                .map(s -> (CapturedLocalVariable) s)
-                .toList();
-    }
-
-    public List<CapturedAsyncStateMachineFieldVariable> getAsyncCaptured() {
-        return localSymbols.values().stream()
-                .filter(s -> s instanceof CapturedAsyncStateMachineFieldVariable)
-                .map(s -> (CapturedAsyncStateMachineFieldVariable) s)
-                .toList();
-    }
-
-    private void expandStackOnLocalVariable(LocalVariable variable) {
-        /*int index = variable.getStackIndex() + getStackSize(variable.getType());
-        if (index > stack.get()) {
-            stack.set(index);
-        }*/
+    private void insertLocalVariable(Variable variable) {
+        if (variable.getName() == null) {
+            anonymousLocalSymbols.add(variable);
+        } else {
+            localSymbols.put(variable.getName(), variable);
+        }
     }
 
     private CompilerContext getFunctionContext() {

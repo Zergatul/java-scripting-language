@@ -7,7 +7,6 @@ import com.zergatul.scripting.symbols.CapturedVariable;
 import com.zergatul.scripting.symbols.LiftedVariable;
 import com.zergatul.scripting.type.SType;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
 
