@@ -31,6 +31,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
 
 import static org.objectweb.asm.Opcodes.*;
 
@@ -626,8 +627,6 @@ public class Compiler {
                 Type.getInternalName(Object.class),
                 new String[] { Type.getInternalName(AsyncStateMachine.class) });
 
-        context.setAsyncStateMachineClassName(name);
-
         // state field
         writer.visitField(ACC_PRIVATE, "state", Type.getDescriptor(int.class), null, null);
 
@@ -656,20 +655,25 @@ public class Compiler {
         constructorVisitor.visitMaxs(0, 0);
         constructorVisitor.visitEnd();
 
-        // closure reference
-        LocalVariable closure = context.addLocalVariable(null, new SLazyClassType(name), null);
-        closure.setStackIndex(0);
-        for (LiftedVariable lifted : variables) {
-            lifted.setClosure(closure);
-        }
-
         // build next method
         MethodVisitor nextMethodVisitor = writer.visitMethod(
                 ACC_PUBLIC,
                 "next",
-                Type.getMethodDescriptor(Type.getType(CompletableFuture.class)),
+                Type.getMethodDescriptor(Type.getType(CompletableFuture.class), Type.getType(Object.class)),
                 null,
                 null);
+
+        CompilerContext nextMethodContext = context.createFunction(SType.fromJavaType(CompletableFuture.class));
+        nextMethodContext.setAsyncStateMachineClassName(name);
+        LocalVariable parameter = nextMethodContext.addLocalParameter("@result", SType.fromJavaType(Object.class), null);
+        nextMethodContext.setStackIndex(parameter);
+
+        // closure reference
+        LocalVariable closure = nextMethodContext.addLocalVariable(null, new SLazyClassType(name), null);
+        closure.setStackIndex(0);
+        for (LiftedVariable lifted : variables) {
+            lifted.setClosure(closure);
+        }
 
         Label loop = new Label();
         nextMethodVisitor.visitLabel(loop);
@@ -689,7 +693,7 @@ public class Compiler {
         for (StateBoundary boundary : generator.boundaries) {
             nextMethodVisitor.visitLabel(boundary.label);
             for (BoundStatementNode statement : boundary.statements) {
-                compileStatement(nextMethodVisitor, context, statement);
+                compileStatement(nextMethodVisitor, nextMethodContext, statement);
             }
             if (boundary.statements.isEmpty() || boundary.statements.get(boundary.statements.size() - 1).getNodeType() != NodeType.RETURN_STATEMENT) {
                 nextMethodVisitor.visitJumpInsn(GOTO, loop);
@@ -728,32 +732,52 @@ public class Compiler {
                 "<init>",
                 Type.getMethodDescriptor(Type.VOID_TYPE),
                 false);
+        parentVisitor.visitInsn(ACONST_NULL);
         parentVisitor.visitMethodInsn(
                 INVOKEVIRTUAL,
                 name,
                 "next",
-                Type.getMethodDescriptor(Type.getType(CompletableFuture.class)),
+                Type.getMethodDescriptor(Type.getType(CompletableFuture.class), Type.getType(Object.class)),
                 false);
     }
 
     private void compileSetGeneratorBoundary(MethodVisitor visitor, CompilerContext context, BoundSetGeneratorBoundaryNode node) {
         compileExpression(visitor, context, node.expression);
 
-        visitor.visitVarInsn(ALOAD, 0);
-        visitor.visitMethodInsn(
-                INVOKEVIRTUAL,
-                context.getAsyncStateMachineClassName(),
-                "continuation",
-                Type.getMethodDescriptor(Type.getType(Runnable.class)),
-                false);
+        SFuture type = (SFuture) node.expression.type;
+        if (type.getUnderlying() == SVoidType.instance) {
+            visitor.visitVarInsn(ALOAD, 0);
+            visitor.visitMethodInsn(
+                    INVOKEVIRTUAL,
+                    context.getAsyncStateMachineClassName(),
+                    "runContinuation",
+                    Type.getMethodDescriptor(Type.getType(Runnable.class)),
+                    false);
 
-        visitor.visitMethodInsn(
-                INVOKEVIRTUAL,
-                Type.getInternalName(CompletableFuture.class),
-                "thenRun",
-                Type.getMethodDescriptor(Type.getType(CompletableFuture.class), Type.getType(Runnable.class)),
-                false);
-        visitor.visitInsn(ARETURN);
+            visitor.visitMethodInsn(
+                    INVOKEVIRTUAL,
+                    Type.getInternalName(CompletableFuture.class),
+                    "thenRun",
+                    Type.getMethodDescriptor(Type.getType(CompletableFuture.class), Type.getType(Runnable.class)),
+                    false);
+            visitor.visitInsn(ARETURN);
+        } else {
+            visitor.visitVarInsn(ALOAD, 0);
+            visitor.visitMethodInsn(
+                    INVOKEVIRTUAL,
+                    context.getAsyncStateMachineClassName(),
+                    "acceptContinuation",
+                    Type.getMethodDescriptor(Type.getType(Consumer.class)),
+                    false);
+
+            visitor.visitMethodInsn(
+                    INVOKEVIRTUAL,
+                    Type.getInternalName(CompletableFuture.class),
+                    "thenAccept",
+                    Type.getMethodDescriptor(Type.getType(CompletableFuture.class), Type.getType(Consumer.class)),
+                    false);
+            visitor.visitInsn(ARETURN);
+        }
     }
 
     private void compileGoToGeneratorState(MethodVisitor visitor, CompilerContext context, BoundSetGeneratorStateNode node) {
@@ -793,6 +817,7 @@ public class Compiler {
             case INDEX_EXPRESSION -> compileIndexExpression(visitor, context, (BoundIndexExpressionNode) expression);
             case LAMBDA_EXPRESSION -> compileLambdaExpression(visitor, context, (BoundLambdaExpressionNode) expression);
             case FUNCTION_INVOCATION -> compileFunctionInvocationExpression(visitor, context, (BoundFunctionInvocationExpression) expression);
+            case GENERATOR_GET_VALUE -> compileGeneratorGetValue(visitor, context, (BoundGeneratorGetValueNode) expression);
             default -> throw new InternalException();
         }
     }
@@ -1099,6 +1124,13 @@ public class Compiler {
                 false);
 
         releaseRefVariables(visitor, context, expression.refVariables);
+    }
+
+    private void compileGeneratorGetValue(MethodVisitor visitor, CompilerContext context, BoundGeneratorGetValueNode node) {
+        Symbol parameter = context.getSymbol("@result");
+        parameter.compileLoad(context, visitor);
+        visitor.visitTypeInsn(CHECKCAST, Type.getInternalName(node.type.getBoxedVersion()));
+        node.type.compileUnboxing(visitor);
     }
 
     private void releaseRefVariables(MethodVisitor visitor, CompilerContext context, List<RefHolder> refs) {

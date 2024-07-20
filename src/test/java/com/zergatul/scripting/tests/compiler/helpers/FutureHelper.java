@@ -3,29 +3,33 @@ package com.zergatul.scripting.tests.compiler.helpers;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Executor;
-import java.util.concurrent.TimeUnit;
 
 public class FutureHelper {
 
-    private final List<CompletableFuture<Void>> manuals = new ArrayList<>();
+    private final List<CompletableFuture<Void>> voids = new ArrayList<>();
+    private final List<CompletableFuture<Integer>> ints = new ArrayList<>();
 
-    public CompletableFuture<Void> sleep(int milliseconds) {
-        Executor executor = CompletableFuture.delayedExecutor(milliseconds, TimeUnit.MILLISECONDS);
-        return CompletableFuture.runAsync(() -> {}, executor);
-    }
-
-    public CompletableFuture<Void> manual() {
+    public CompletableFuture<Void> create() {
         CompletableFuture<Void> future = new CompletableFuture<>();
-        manuals.add(future);
+        voids.add(future);
         return future;
     }
 
-    public CompletableFuture<Void> getManualFuture(int index) {
-        return manuals.get(index);
+    public CompletableFuture<Integer> createInt() {
+        CompletableFuture<Integer> future = new CompletableFuture<>();
+        ints.add(future);
+        return future;
     }
 
-    public int getManualFuturesCount() {
-        return manuals.size();
+    public CompletableFuture<Void> get(int index) {
+        return voids.get(index);
+    }
+
+    public CompletableFuture<Integer> getInt(int index) {
+        return ints.get(index);
+    }
+
+    public int getVoidCount() {
+        return voids.size();
     }
 }

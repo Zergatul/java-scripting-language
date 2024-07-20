@@ -56,4 +56,9 @@ public class SFuture extends SType {
     public int getReturnInst() {
         throw new InternalException();
     }
+
+    @Override
+    public String toString() {
+        return String.format("Future<%s>", underlying);
+    }
 }

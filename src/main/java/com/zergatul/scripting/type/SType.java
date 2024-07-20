@@ -224,6 +224,9 @@ public abstract class SType {
             if (clazz == void.class) {
                 return SVoidType.instance;
             }
+            if (clazz == Void.class) {
+                return SVoidType.instance;
+            }
             if (clazz == boolean.class || clazz == Boolean.class) {
                 return SBoolean.instance;
             }

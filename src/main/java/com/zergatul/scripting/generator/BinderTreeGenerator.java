@@ -2,6 +2,8 @@ package com.zergatul.scripting.generator;
 
 import com.zergatul.scripting.InternalException;
 import com.zergatul.scripting.TextRange;
+import com.zergatul.scripting.type.SFuture;
+import com.zergatul.scripting.type.SType;
 import com.zergatul.scripting.visitors.AwaitVisitor;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
 import com.zergatul.scripting.binding.nodes.*;
@@ -35,12 +37,26 @@ public class BinderTreeGenerator {
                 case BLOCK_STATEMENT -> rewrite((BoundBlockStatementNode) node);
                 case EXPRESSION_STATEMENT -> rewrite((BoundExpressionStatementNode) node);
                 case IF_STATEMENT -> rewrite((BoundIfStatementNode) node);
-                default -> throw new InternalException("TODO");
+                case VARIABLE_DECLARATION -> rewrite((BoundVariableDeclarationNode) node);
+                default -> throw new InternalException(String.format("Async %s not supported yet.", node.getNodeType()));
             }
         } else {
             markVariableDeclarations(node);
             liftCrossBoundaryVariables(node);
             currentBoundary.statements.add(node);
+        }
+    }
+
+    private void rewriteExpression(BoundExpressionNode node) {
+        switch (node.getNodeType()) {
+            case AWAIT_EXPRESSION -> {
+                BoundAwaitExpressionNode awaitExpression = (BoundAwaitExpressionNode) node;
+                StateBoundary boundary = newBoundary();
+                currentBoundary.statements.add(new BoundSetGeneratorStateNode(boundary));
+                currentBoundary.statements.add(new BoundSetGeneratorBoundaryNode(awaitExpression.expression));
+                currentBoundary = boundary;
+            }
+            default -> throw new InternalException(String.format("Async %s not supported yet.", node.getNodeType()));
         }
     }
 
@@ -51,22 +67,12 @@ public class BinderTreeGenerator {
     }
 
     private void rewrite(BoundExpressionStatementNode node) {
-        BoundExpressionNode expression = node.expression;
-        switch (expression.getNodeType()) {
-            case AWAIT_EXPRESSION -> {
-                BoundAwaitExpressionNode awaitExpression = (BoundAwaitExpressionNode) expression;
-                StateBoundary boundary = newBoundary();
-                currentBoundary.statements.add(new BoundSetGeneratorStateNode(boundary));
-                currentBoundary.statements.add(new BoundSetGeneratorBoundaryNode(awaitExpression.expression));
-                currentBoundary = boundary;
-            }
-            default -> throw new InternalException("TODO");
-        }
+        rewriteExpression(node.expression);
     }
 
     private void rewrite(BoundIfStatementNode node) {
         if (isAsync(node.condition)) {
-            throw new InternalException("TODO");
+            throw new InternalException("Async if condition not supported yet.");
         }
 
         StateBoundary original = currentBoundary;
@@ -98,6 +104,19 @@ public class BinderTreeGenerator {
         currentBoundary = end;
         end.index = boundaries.size();
         boundaries.add(end);
+    }
+
+    private void rewrite(BoundVariableDeclarationNode node) {
+        assert node.expression != null;
+        assert isAsync(node.expression);
+
+        rewriteExpression(node.expression);
+
+        currentBoundary.statements.add(new BoundVariableDeclarationNode(
+                node.type,
+                node.name,
+                new BoundGeneratorGetValueNode(node.expression.type),
+                node.getRange()));
     }
 
     private void markVariableDeclarations(BoundStatementNode statement) {
