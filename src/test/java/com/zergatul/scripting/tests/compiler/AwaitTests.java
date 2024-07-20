@@ -551,6 +551,29 @@ public class AwaitTests {
         Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(30));
     }
 
+    @Test
+    public void forLoop1Test() {
+        String code = """
+                for (int i = 0; i < 10; i++) {
+                    intStorage.add(i + await futures.createInt());
+                }
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of());
+        ApiRoot.futures.getInt(0).complete(10);
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of());
+        ApiRoot.futures.getInt(1).complete(20);
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(30));
+    }
+
+    @Test
+    public void return1Test() {
+        // return in the middle
+    }
+
     public static class ApiRoot {
         public static FutureHelper futures;
         public static IntStorage intStorage;
