@@ -9,6 +9,7 @@ import com.zergatul.scripting.type.SFloat;
 import com.zergatul.scripting.type.SReference;
 import com.zergatul.scripting.type.SType;
 import com.zergatul.scripting.type.SVoidType;
+import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Type;
 
@@ -32,11 +33,11 @@ public class CompilerContext {
     private Consumer<MethodVisitor> breakConsumer;
     private Consumer<MethodVisitor> continueConsumer;
     private final List<RefHolder> refVariables = new ArrayList<>();
-    private String closureClassName;
     private String asyncStateMachineClassName;
     private final List<LiftedVariable> lifted;
     private final List<CapturedVariable> captured;
     private final FunctionStack stack;
+    private Label generatorContinueLabel;
 
     public CompilerContext() {
         this(1);
@@ -309,14 +310,6 @@ public class CompilerContext {
         return captured;
     }
 
-    public void setClosureClassName(String className) {
-        if (isFunctionRoot) {
-            closureClassName = className;
-        } else {
-            throw new InternalException("This is not a function root.");
-        }
-    }
-
     public void setAsyncStateMachineClassName(String className) {
         if (isFunctionRoot) {
             asyncStateMachineClassName = className;
@@ -333,6 +326,14 @@ public class CompilerContext {
             }
             current = current.parent;
         }
+    }
+
+    public Label getGeneratorContinueLabel() {
+        return getFunctionContext().generatorContinueLabel;
+    }
+
+    public void setGeneratorContinueLabel(Label label) {
+        generatorContinueLabel = label;
     }
 
     private void insertLocalVariable(Variable variable) {

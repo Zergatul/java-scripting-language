@@ -1,15 +1,14 @@
 package com.zergatul.scripting.binding.nodes;
 
-import com.zergatul.scripting.InternalException;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
 import com.zergatul.scripting.parser.NodeType;
 
 import java.util.List;
 
-public class BoundGeneratorReturnNode extends BoundStatementNode {
+public class BoundGeneratorContinueNode extends BoundStatementNode {
 
-    public BoundGeneratorReturnNode() {
-        super(NodeType.GENERATOR_RETURN, null);
+    public BoundGeneratorContinueNode() {
+        super(NodeType.GENERATOR_CONTINUE, null);
     }
 
     @Override
@@ -24,6 +23,6 @@ public class BoundGeneratorReturnNode extends BoundStatementNode {
 
     @Override
     public List<BoundNode> getChildren() {
-        throw new InternalException();
+        return List.of();
     }
 }

@@ -10,6 +10,14 @@ public class BoundBlockStatementNode extends BoundStatementNode {
 
     public final List<BoundStatementNode> statements;
 
+    public BoundBlockStatementNode(BoundStatementNode statement1, BoundStatementNode statement2) {
+        this(List.of(statement1, statement2), null);
+    }
+
+    public BoundBlockStatementNode(List<BoundStatementNode> statements) {
+        this(statements, null);
+    }
+
     public BoundBlockStatementNode(List<BoundStatementNode> statements, TextRange range) {
         super(NodeType.BLOCK_STATEMENT, range);
         this.statements = statements;

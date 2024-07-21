@@ -247,6 +247,7 @@ public class Compiler {
             case SET_GENERATOR_STATE -> compileGoToGeneratorState(visitor, context, (BoundSetGeneratorStateNode) statement);
             case SET_GENERATOR_BOUNDARY -> compileSetGeneratorBoundary(visitor, context, (BoundSetGeneratorBoundaryNode) statement);
             case GENERATOR_RETURN -> compileGeneratorReturn(visitor, context, (BoundGeneratorReturnNode) statement);
+            case GENERATOR_CONTINUE -> compileGeneratorContinue(visitor, context);
             default -> throw new InternalException();
         }
     }
@@ -537,8 +538,6 @@ public class Compiler {
                 Type.getInternalName(Object.class),
                 null);
 
-        parentContext.setClosureClassName(name);
-
         buildEmptyConstructor(writer);
 
         String[] fieldNames = new String[variables.size()];
@@ -588,18 +587,27 @@ public class Compiler {
         }
 
         List<List<Integer>> copies = new ArrayList<>();
+        boolean[] used = new boolean[array.length];
         while (true) {
             copies.clear();
+            Arrays.fill(used, false);
             for (int i1 = 0; i1 < array.length - 1; i1++) {
+                if (used[i1]) {
+                    continue;
+                }
+
                 List<Integer> current = new ArrayList<>();
                 current.add(i1);
                 for (int i2 = i1 + 1; i2 < array.length; i2++) {
-                    if (array[i1].equals(array[i2])) {
+                    if (!used[i2] && array[i1].equals(array[i2])) {
                         current.add(i2);
                     }
                 }
                 if (current.size() > 1) {
                     copies.add(current);
+                    for (int index : current) {
+                        used[index] = true;
+                    }
                 }
             }
             if (copies.isEmpty()) {
@@ -683,6 +691,7 @@ public class Compiler {
 
         Label loop = new Label();
         nextMethodVisitor.visitLabel(loop);
+        nextMethodContext.setGeneratorContinueLabel(loop);
 
         nextMethodVisitor.visitVarInsn(ALOAD, 0);
         nextMethodVisitor.visitFieldInsn(GETFIELD, name, "state", Type.getDescriptor(int.class));
@@ -806,6 +815,10 @@ public class Compiler {
                 Type.getMethodDescriptor(Type.getType(CompletableFuture.class), Type.getType(Object.class)),
                 false);
         visitor.visitInsn(ARETURN);
+    }
+
+    private void compileGeneratorContinue(MethodVisitor visitor, CompilerContext context) {
+        visitor.visitJumpInsn(GOTO, context.getGeneratorContinueLabel());
     }
 
     private void compileExpression(MethodVisitor visitor, CompilerContext context, BoundExpressionNode expression) {
