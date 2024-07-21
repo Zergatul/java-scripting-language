@@ -29,7 +29,7 @@ public class Binder {
 
     public BinderOutput bind() {
         BoundCompilationUnitNode unit = bindCompilationUnit(this.unit);
-        return new BinderOutput(code, unit, diagnostics);
+        return new BinderOutput(code, unit, context, diagnostics);
     }
 
     private BoundCompilationUnitNode bindCompilationUnit(CompilationUnitNode node) {

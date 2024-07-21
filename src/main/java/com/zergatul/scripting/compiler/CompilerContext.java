@@ -11,10 +11,7 @@ import com.zergatul.scripting.type.SVoidType;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.function.Consumer;
 
 public class CompilerContext {
@@ -161,6 +158,11 @@ public class CompilerContext {
 
     public CompilerContext getParent() {
         return parent;
+    }
+
+    @SuppressWarnings("unused") // used from Monaco integration
+    public Collection<Symbol> getStaticSymbols() {
+        return staticSymbols.values();
     }
 
     public Symbol getSymbol(String name) {
