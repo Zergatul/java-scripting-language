@@ -12,6 +12,14 @@ public class BoundIfStatementNode extends BoundStatementNode {
     public final BoundStatementNode thenStatement;
     public final BoundStatementNode elseStatement;
 
+    public BoundIfStatementNode(BoundExpressionNode condition, BoundStatementNode thenStatement) {
+        this(condition, thenStatement, null, null);
+    }
+
+    public BoundIfStatementNode(BoundExpressionNode condition, BoundStatementNode thenStatement, BoundStatementNode elseStatement) {
+        this(condition, thenStatement, elseStatement, null);
+    }
+
     public BoundIfStatementNode(BoundExpressionNode condition, BoundStatementNode thenStatement, BoundStatementNode elseStatement, TextRange range) {
         super(NodeType.IF_STATEMENT, range);
         this.condition = condition;

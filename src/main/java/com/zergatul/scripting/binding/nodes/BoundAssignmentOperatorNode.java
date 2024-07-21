@@ -11,6 +11,10 @@ public class BoundAssignmentOperatorNode extends BoundNode {
 
     public final AssignmentOperator operator;
 
+    public BoundAssignmentOperatorNode(AssignmentOperator operator) {
+        this(operator, null);
+    }
+
     public BoundAssignmentOperatorNode(AssignmentOperator operator, TextRange range) {
         super(NodeType.ASSIGNMENT_OPERATOR, range);
         this.operator = operator;

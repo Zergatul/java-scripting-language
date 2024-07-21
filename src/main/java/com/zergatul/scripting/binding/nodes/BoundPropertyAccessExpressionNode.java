@@ -13,6 +13,10 @@ public class BoundPropertyAccessExpressionNode extends BoundExpressionNode {
     public final String name;
     public final PropertyReference property;
 
+    public BoundPropertyAccessExpressionNode(BoundExpressionNode callee, String name, PropertyReference property) {
+        this(callee, name, property, null);
+    }
+
     public BoundPropertyAccessExpressionNode(BoundExpressionNode callee, String name, PropertyReference property, TextRange range) {
         super(NodeType.PROPERTY_ACCESS_EXPRESSION, property.getType(), range);
         this.callee = callee;

@@ -11,6 +11,10 @@ public class BoundBinaryOperatorNode extends BoundNode {
 
     public final BinaryOperation operation;
 
+    public BoundBinaryOperatorNode(BinaryOperation operation) {
+        this(operation, null);
+    }
+
     public BoundBinaryOperatorNode(BinaryOperation operation, TextRange range) {
         super(NodeType.BINARY_OPERATOR, range);
         this.operation = operation;

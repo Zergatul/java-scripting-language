@@ -11,6 +11,10 @@ public class BoundIntegerLiteralExpressionNode extends BoundExpressionNode {
 
     public final int value;
 
+    public BoundIntegerLiteralExpressionNode(int value) {
+        this(value, null);
+    }
+
     public BoundIntegerLiteralExpressionNode(int value, TextRange range) {
         super(NodeType.INTEGER_LITERAL, SInt.instance, range);
         this.value = value;

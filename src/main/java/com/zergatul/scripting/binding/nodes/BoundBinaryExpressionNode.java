@@ -12,6 +12,10 @@ public class BoundBinaryExpressionNode extends BoundExpressionNode {
     public final BoundBinaryOperatorNode operator;
     public final BoundExpressionNode right;
 
+    public BoundBinaryExpressionNode(BoundExpressionNode left, BoundBinaryOperatorNode operator, BoundExpressionNode right) {
+        this(left, operator, right, null);
+    }
+
     public BoundBinaryExpressionNode(BoundExpressionNode left, BoundBinaryOperatorNode operator, BoundExpressionNode right, TextRange range) {
         super(NodeType.BINARY_EXPRESSION, operator.operation.type, range);
         this.left = left;

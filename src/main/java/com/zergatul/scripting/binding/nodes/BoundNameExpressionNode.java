@@ -13,6 +13,10 @@ public class BoundNameExpressionNode extends BoundExpressionNode {
     public final String value;
     public Symbol symbol;
 
+    public BoundNameExpressionNode(Symbol symbol) {
+        this(symbol, null);
+    }
+
     public BoundNameExpressionNode(Symbol symbol, TextRange range) {
         this(symbol, symbol.getType(), symbol.getName(), range);
     }

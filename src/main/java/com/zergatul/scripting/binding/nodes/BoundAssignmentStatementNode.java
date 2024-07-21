@@ -12,6 +12,10 @@ public class BoundAssignmentStatementNode extends BoundStatementNode {
     public final BoundAssignmentOperatorNode operator;
     public final BoundExpressionNode right;
 
+    public BoundAssignmentStatementNode(BoundExpressionNode left, BoundAssignmentOperatorNode operator, BoundExpressionNode right) {
+        this(left, operator, right, null);
+    }
+
     public BoundAssignmentStatementNode(BoundExpressionNode left, BoundAssignmentOperatorNode operator, BoundExpressionNode right, TextRange range) {
         super(NodeType.ASSIGNMENT_STATEMENT, range);
         this.left = left;

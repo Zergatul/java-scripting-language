@@ -3,7 +3,6 @@ package com.zergatul.scripting.compiler;
 import com.zergatul.scripting.InternalException;
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.nodes.BoundNameExpressionNode;
-import com.zergatul.scripting.binding.nodes.FunctionRootNode;
 import com.zergatul.scripting.symbols.*;
 import com.zergatul.scripting.type.SFloat;
 import com.zergatul.scripting.type.SReference;
@@ -11,7 +10,6 @@ import com.zergatul.scripting.type.SType;
 import com.zergatul.scripting.type.SVoidType;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
-import org.objectweb.asm.Type;
 
 import java.util.ArrayList;
 import java.util.HashMap;

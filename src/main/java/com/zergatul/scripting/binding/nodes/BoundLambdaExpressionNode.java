@@ -10,7 +10,7 @@ import com.zergatul.scripting.type.SType;
 import java.util.List;
 import java.util.stream.Stream;
 
-public class BoundLambdaExpressionNode extends BoundExpressionNode implements FunctionRootNode {
+public class BoundLambdaExpressionNode extends BoundExpressionNode {
 
     public final List<BoundParameterNode> parameters;
     public final BoundStatementNode body;
@@ -48,10 +48,5 @@ public class BoundLambdaExpressionNode extends BoundExpressionNode implements Fu
     @Override
     public List<BoundNode> getChildren() {
         return Stream.concat(List.copyOf(parameters).stream(), Stream.of(body)).toList();
-    }
-
-    @Override
-    public List<LiftedVariable> getLifted() {
-        return lifted;
     }
 }

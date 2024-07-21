@@ -11,6 +11,10 @@ public class BoundUnaryExpressionNode extends BoundExpressionNode {
     public final BoundUnaryOperatorNode operator;
     public final BoundExpressionNode operand;
 
+    public BoundUnaryExpressionNode(BoundUnaryOperatorNode operator, BoundExpressionNode operand) {
+        this(operator, operand, null);
+    }
+
     public BoundUnaryExpressionNode(BoundUnaryOperatorNode operator, BoundExpressionNode operand, TextRange range) {
         super(NodeType.UNARY_EXPRESSION, operator.operation.type, range);
         this.operator = operator;

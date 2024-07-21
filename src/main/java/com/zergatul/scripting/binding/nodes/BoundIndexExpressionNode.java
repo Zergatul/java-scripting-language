@@ -14,6 +14,10 @@ public class BoundIndexExpressionNode extends BoundExpressionNode {
     public final BoundExpressionNode index;
     public final IndexOperation operation;
 
+    public BoundIndexExpressionNode(BoundExpressionNode callee, BoundExpressionNode index, IndexOperation operation) {
+        this(callee, index, operation, null);
+    }
+
     public BoundIndexExpressionNode(BoundExpressionNode callee, BoundExpressionNode index, IndexOperation operation, TextRange range) {
         super(NodeType.INDEX_EXPRESSION, operation.type, range);
         this.callee = callee;

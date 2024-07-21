@@ -256,7 +256,12 @@ public class Compiler {
         if (declaration.expression != null) {
             compileExpression(visitor, context, declaration.expression);
         } else {
-            declaration.type.type.storeDefaultValue(visitor);
+            if (declaration.type != null) {
+                declaration.type.type.storeDefaultValue(visitor);
+            } else {
+                // generator code doesn't generate type nodes
+                declaration.name.type.storeDefaultValue(visitor);
+            }
         }
 
         Variable variable = (Variable) declaration.name.symbol;

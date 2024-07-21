@@ -12,6 +12,10 @@ public class BoundPostfixStatementNode extends BoundStatementNode {
     public final BoundExpressionNode expression;
     public final PostfixOperation operation;
 
+    public BoundPostfixStatementNode(NodeType nodeType, BoundExpressionNode expression, PostfixOperation operation) {
+        this(nodeType, expression, operation, null);
+    }
+
     public BoundPostfixStatementNode(NodeType nodeType, BoundExpressionNode expression, PostfixOperation operation, TextRange range) {
         super(nodeType, range);
         this.expression = expression;

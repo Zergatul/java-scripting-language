@@ -12,6 +12,14 @@ public class BoundVariableDeclarationNode extends BoundStatementNode {
     public final BoundNameExpressionNode name;
     public final BoundExpressionNode expression;
 
+    public BoundVariableDeclarationNode(BoundNameExpressionNode name) {
+        this(null, name, null, null);
+    }
+
+    public BoundVariableDeclarationNode(BoundNameExpressionNode name, BoundExpressionNode expression) {
+        this(null, name, expression, null);
+    }
+
     public BoundVariableDeclarationNode(BoundTypeNode type, BoundNameExpressionNode name, BoundExpressionNode expression, TextRange range) {
         super(NodeType.VARIABLE_DECLARATION, range);
         this.type = type;
@@ -26,7 +34,10 @@ public class BoundVariableDeclarationNode extends BoundStatementNode {
 
     @Override
     public void acceptChildren(BinderTreeVisitor visitor) {
-        type.accept(visitor);
+        // type can be null for generator tree
+        if (type != null) {
+            type.accept(visitor);
+        }
         name.accept(visitor);
         if (expression != null) {
             expression.accept(visitor);
