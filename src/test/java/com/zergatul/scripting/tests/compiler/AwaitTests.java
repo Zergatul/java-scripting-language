@@ -782,6 +782,83 @@ public class AwaitTests {
     }
 
     @Test
+    public void whileLoopTest() {
+        String code = """
+                while (await futures.createBool()) {
+                    intStorage.add(await futures.createInt());
+                }
+                intStorage.add(100);
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of());
+        ApiRoot.futures.getBool(0).complete(true);
+        ApiRoot.futures.getInt(0).complete(10);
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(10));
+        ApiRoot.futures.getBool(1).complete(true);
+        ApiRoot.futures.getInt(1).complete(20);
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(10, 20));
+        ApiRoot.futures.getBool(2).complete(true);
+        ApiRoot.futures.getInt(2).complete(30);
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(10, 20, 30));
+        ApiRoot.futures.getBool(3).complete(false);
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(10, 20, 30, 100));
+    }
+
+    @Test
+    public void whileLoopBreakTest() {
+        String code = """
+                while (true) {
+                    int x = await futures.createInt();
+                    if (x >= 3) break;
+                    intStorage.add(x);
+                }
+                intStorage.add(100);
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of());
+        ApiRoot.futures.getInt(0).complete(1);
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(1));
+        ApiRoot.futures.getInt(1).complete(2);
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(1, 2));
+        ApiRoot.futures.getInt(2).complete(3);
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(1, 2, 100));
+    }
+
+    @Test
+    public void whileLoopContinueTest() {
+        String code = """
+                while (true) {
+                    int x = await futures.createInt();
+                    if (x % 2 == 0) continue;
+                    intStorage.add(x);
+                    if (x >= 5) break;
+                }
+                intStorage.add(100);
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of());
+        ApiRoot.futures.getInt(0).complete(1);
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(1));
+        ApiRoot.futures.getInt(1).complete(2);
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(1));
+        ApiRoot.futures.getInt(2).complete(3);
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(1, 3));
+        ApiRoot.futures.getInt(3).complete(4);
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(1, 3));
+        ApiRoot.futures.getInt(4).complete(5);
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(1, 3, 5, 100));
+    }
+
+    @Test
     public void return1Test() {
         String code = """
                 if (await futures.createBool()) {

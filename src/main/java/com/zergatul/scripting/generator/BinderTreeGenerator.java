@@ -46,6 +46,7 @@ public class BinderTreeGenerator {
                 case FOREACH_LOOP_STATEMENT -> rewrite((BoundForEachLoopStatementNode) node);
                 case IF_STATEMENT -> rewrite((BoundIfStatementNode) node);
                 case VARIABLE_DECLARATION -> rewrite((BoundVariableDeclarationNode) node);
+                case WHILE_LOOP_STATEMENT -> rewrite((BoundWhileLoopStatementNode) node);
                 default -> throw new InternalException(String.format("Async %s not supported yet.", node.getNodeType()));
             }
         } else {
@@ -63,7 +64,7 @@ public class BinderTreeGenerator {
 
     private void rewrite(BoundExpressionStatementNode node) {
         BoundExpressionNode expression = rewriteExpression(node.expression);
-        add(new BoundExpressionStatementNode(expression, null));
+        add(new BoundExpressionStatementNode(expression));
     }
 
     private void rewrite(BoundIfStatementNode node) {
@@ -125,7 +126,7 @@ public class BinderTreeGenerator {
         if (node.condition != null) {
             BoundExpressionNode expression = rewriteExpression(node.condition);
             expression = new BoundUnaryExpressionNode(
-                    new BoundUnaryOperatorNode(SBoolean.instance.not(), null),
+                    new BoundUnaryOperatorNode(SBoolean.instance.not()),
                     expression);
             add(new BoundIfStatementNode(
                     expression,
@@ -207,6 +208,26 @@ public class BinderTreeGenerator {
         makeCurrent(end);
     }
 
+    private void rewrite(BoundWhileLoopStatementNode node) {
+        StateBoundary begin = newBoundary();
+        StateBoundary end = new StateBoundary();
+
+        add(new BoundSetGeneratorStateNode(begin));
+        currentBoundary = begin;
+
+        BoundExpressionNode condition = rewriteExpression(node.condition);
+        condition = new BoundUnaryExpressionNode(new BoundUnaryOperatorNode(SBoolean.instance.not()), condition);
+        add(new BoundIfStatementNode(
+                condition,
+                new BoundBlockStatementNode(new BoundSetGeneratorStateNode(end), new BoundGeneratorContinueNode())));
+
+        LoopBodyTransformer transformer = new LoopBodyTransformer(node.body, begin, end);
+        rewriteStatement(transformer.process());
+        add(new BoundSetGeneratorStateNode(begin));
+
+        makeCurrent(end);
+    }
+
     private void rewrite(BoundAugmentedAssignmentStatementNode node) {
         if (isAsync(node.left)) {
             throw new InternalException("Async left side augmented assignment is not supported yet.");
@@ -217,8 +238,7 @@ public class BinderTreeGenerator {
                 node.left,
                 node.assignmentOperator,
                 node.operator,
-                expression,
-                null));
+                expression));
     }
 
     private BoundExpressionNode rewriteExpression(BoundExpressionNode node) {
@@ -255,8 +275,7 @@ public class BinderTreeGenerator {
         return new BoundBinaryExpressionNode(
                 new BoundNameExpressionNode(lVar),
                 node.operator,
-                new BoundNameExpressionNode(rVar),
-                null);
+                new BoundNameExpressionNode(rVar));
     }
 
     private BoundExpressionNode rewrite(BoundMethodInvocationExpressionNode node) {
@@ -273,7 +292,7 @@ public class BinderTreeGenerator {
         return new BoundMethodInvocationExpressionNode(
                 node.objectReference,
                 node.method,
-                new BoundArgumentsListNode(Arrays.stream(variables).map(v -> (BoundExpressionNode) new BoundNameExpressionNode(v)).toList(), null),
+                new BoundArgumentsListNode(Arrays.stream(variables).map(v -> (BoundExpressionNode) new BoundNameExpressionNode(v)).toList()),
                 node.refVariables,
                 node.getRange());
     }

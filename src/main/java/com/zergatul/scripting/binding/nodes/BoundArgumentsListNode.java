@@ -10,6 +10,10 @@ public class BoundArgumentsListNode extends BoundNode {
 
     public final List<BoundExpressionNode> arguments;
 
+    public BoundArgumentsListNode(List<BoundExpressionNode> arguments) {
+        this(arguments, null);
+    }
+
     public BoundArgumentsListNode(List<BoundExpressionNode> arguments, TextRange range) {
         super(NodeType.ARGUMENTS_LIST, range);
         this.arguments = arguments;

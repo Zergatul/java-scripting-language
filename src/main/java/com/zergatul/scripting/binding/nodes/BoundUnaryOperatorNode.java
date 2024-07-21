@@ -11,6 +11,10 @@ public class BoundUnaryOperatorNode extends BoundNode {
 
     public final UnaryOperation operation;
 
+    public BoundUnaryOperatorNode(UnaryOperation operation) {
+        this(operation, null);
+    }
+
     public BoundUnaryOperatorNode(UnaryOperation operation, TextRange range) {
         super(NodeType.UNARY_OPERATOR, range);
         this.operation = operation;
