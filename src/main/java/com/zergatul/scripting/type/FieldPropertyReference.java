@@ -17,6 +17,11 @@ public class FieldPropertyReference extends PropertyReference {
     }
 
     @Override
+    public String getName() {
+        return field.getName();
+    }
+
+    @Override
     public SType getType() {
         return SType.fromJavaType(field.getType());
     }

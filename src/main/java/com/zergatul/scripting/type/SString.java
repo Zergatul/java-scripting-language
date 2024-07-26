@@ -81,6 +81,11 @@ public class SString extends SPredefinedType {
     }
 
     @Override
+    public List<PropertyReference> getInstanceProperties() {
+        return List.of(PROP_LENGTH);
+    }
+
+    @Override
     public PropertyReference getInstanceProperty(String name) {
         return switch (name) {
             case "length" -> PROP_LENGTH;
@@ -127,7 +132,7 @@ public class SString extends SPredefinedType {
         return "string";
     }
 
-    private static final PropertyReference PROP_LENGTH = new MethodBasedPropertyReference(String.class, "length");
+    private static final PropertyReference PROP_LENGTH = new MethodBasedPropertyReference("length", String.class, "length");
 
     private static final BinaryOperation ADD_STRING = new BinaryOperation(BinaryOperator.PLUS, SString.instance) {
         @Override
@@ -272,6 +277,7 @@ public class SString extends SPredefinedType {
             new MethodParameter("endIndex", SInt.instance));
 
     private static final MethodReference METHOD_CONTAINS = new MethodReference() {
+
         @Override
         public SType getOwner() {
             return instance;
@@ -325,6 +331,7 @@ public class SString extends SPredefinedType {
             new MethodParameter("suffix", SString.instance));
 
     private static final MethodReference METHOD_TO_LOWER = new MethodReference() {
+
         @Override
         public SType getOwner() {
             return instance;
@@ -362,6 +369,7 @@ public class SString extends SPredefinedType {
     };
 
     private static final MethodReference METHOD_TO_UPPER = new MethodReference() {
+
         @Override
         public SType getOwner() {
             return instance;

@@ -65,6 +65,11 @@ public class SArrayType extends SType {
     }
 
     @Override
+    public List<PropertyReference> getInstanceProperties() {
+        return List.of(PROP_LENGTH);
+    }
+
+    @Override
     public PropertyReference getInstanceProperty(String name) {
         return switch (name) {
             case "length" -> PROP_LENGTH;
@@ -114,6 +119,12 @@ public class SArrayType extends SType {
     }
 
     private static final PropertyReference PROP_LENGTH = new PropertyReference() {
+
+        @Override
+        public String getName() {
+            return "length";
+        }
+
         @Override
         public SType getType() {
             return SInt.instance;

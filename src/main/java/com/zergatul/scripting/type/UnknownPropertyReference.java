@@ -9,6 +9,11 @@ public class UnknownPropertyReference extends PropertyReference {
     }
 
     @Override
+    public String getName() {
+        return "";
+    }
+
+    @Override
     public SType getType() {
         return SUnknown.instance;
     }

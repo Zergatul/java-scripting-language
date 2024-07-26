@@ -171,6 +171,11 @@ public abstract class SType {
         return List.of();
     }
 
+    @SuppressWarnings("unused") // monaco integration
+    public List<PropertyReference> getInstanceProperties() {
+        return List.of();
+    }
+
     public PropertyReference getInstanceProperty(String name) {
         return null;
     }

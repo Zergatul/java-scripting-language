@@ -59,6 +59,16 @@ public class SClassType extends SType {
     }
 
     @Override
+    public List<PropertyReference> getInstanceProperties() {
+        return Arrays.stream(clazz.getDeclaredFields())
+                .filter(f -> !Modifier.isStatic(f.getModifiers()))
+                .filter(f -> Modifier.isPublic(f.getModifiers()))
+                .map(FieldPropertyReference::new)
+                .map(f -> (PropertyReference) f)
+                .toList();
+    }
+
+    @Override
     public PropertyReference getInstanceProperty(String name) {
         try {
             Field field = clazz.getDeclaredField(name);
@@ -82,5 +92,10 @@ public class SClassType extends SType {
                 .map(NativeMethodReference::new)
                 .map(r -> (MethodReference) r)
                 .toList();
+    }
+
+    @Override
+    public String toString() {
+        return String.format("Java<%s>", clazz.getName());
     }
 }

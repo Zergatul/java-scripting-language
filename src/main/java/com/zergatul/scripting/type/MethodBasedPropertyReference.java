@@ -10,16 +10,23 @@ import static org.objectweb.asm.Opcodes.INVOKEVIRTUAL;
 
 public class MethodBasedPropertyReference extends PropertyReference {
 
+    private final String name;
     private final Method getMethod;
     private final SType type;
 
-    public MethodBasedPropertyReference(Class<?> clazz, String getMethodName) {
+    public MethodBasedPropertyReference(String name, Class<?> clazz, String getMethodName) {
+        this.name = name;
         try {
             getMethod = clazz.getDeclaredMethod(getMethodName);
         } catch (NoSuchMethodException e) {
             throw new InternalException();
         }
         type = SType.fromJavaType(getMethod.getReturnType());
+    }
+
+    @Override
+    public String getName() {
+        return name;
     }
 
     @Override
