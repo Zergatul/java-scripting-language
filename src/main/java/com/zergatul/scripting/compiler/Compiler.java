@@ -989,12 +989,12 @@ public class Compiler {
     }
 
     private void compilePropertyAccessExpression(MethodVisitor visitor, CompilerContext context, BoundPropertyAccessExpressionNode propertyAccess) {
-        if (!propertyAccess.property.canGet()) {
+        if (!propertyAccess.property.property.canGet()) {
             throw new InternalException();
         }
 
         compileExpression(visitor, context, propertyAccess.callee);
-        propertyAccess.property.compileGet(visitor);
+        propertyAccess.property.property.compileGet(visitor);
     }
 
     private void compileNewExpression(MethodVisitor visitor, CompilerContext context, BoundNewExpressionNode expression) {

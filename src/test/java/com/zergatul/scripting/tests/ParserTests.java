@@ -13,7 +13,7 @@ import org.junit.jupiter.api.Test;
 import java.util.ArrayList;
 import java.util.List;
 
-public class ParserTest {
+public class ParserTests {
 
     @Test
     public void emptyCodeTest() {
@@ -448,7 +448,7 @@ public class ParserTest {
     public void endOfFileDiagnosticsTest() {
         var result = parse("a()");
         Assertions.assertIterableEquals(result.diagnostics(), List.of(
-                new DiagnosticMessage(ParserErrors.SemicolonExpected, new SingleLineTextRange(1, 4, 3, 1))));
+                new DiagnosticMessage(ParserErrors.SemicolonExpected, new SingleLineTextRange(1, 3, 2, 1))));
     }
 
     @Test

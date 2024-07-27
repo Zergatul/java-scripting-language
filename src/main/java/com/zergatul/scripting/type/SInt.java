@@ -190,6 +190,11 @@ public class SInt extends SPredefinedType {
     }
 
     @Override
+    public List<PropertyReference> getStaticProperties() {
+        return List.of(PROPERTY_MIN_VALUE, PROPERTY_MAX_VALUE);
+    }
+
+    @Override
     public SReference getReferenceType() {
         return SReference.INT;
     }
@@ -267,6 +272,16 @@ public class SInt extends SPredefinedType {
             SBoolean.instance,
             new MethodParameter("str", SString.instance),
             new MethodParameter("result", SReference.INT));
+
+    private static final PropertyReference PROPERTY_MIN_VALUE = new GetterPropertyReference(
+            SInt.instance,
+            "MIN_VALUE",
+            visitor -> visitor.visitLdcInsn(Integer.MIN_VALUE));
+
+    private static final PropertyReference PROPERTY_MAX_VALUE = new GetterPropertyReference(
+            SInt.instance,
+            "MAX_VALUE",
+            visitor -> visitor.visitLdcInsn(Integer.MAX_VALUE));
 
     private static class IntComparisonOperation extends BinaryOperation {
 

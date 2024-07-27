@@ -904,28 +904,36 @@ public class Binder {
     private BoundPropertyAccessExpressionNode bindMemberAccessExpression(MemberAccessExpressionNode expression) {
         BoundExpressionNode callee = bindExpression(expression.callee);
         if (callee.type instanceof SStaticTypeReference staticType) {
-            throw new InternalException(); // TODO
+            List<PropertyReference> properties = staticType.getUnderlying().getStaticProperties();
+            PropertyReference property = properties.stream().filter(p -> p.getName().equals(expression.name.value)).findFirst().orElse(null);
+            if (property == null) {
+                addDiagnostic(
+                        BinderErrors.MemberDoesNotExist,
+                        expression.name,
+                        callee.type.toString(), expression.name.value);
+                property = UnknownPropertyReference.instance;
+            }
+
+            return new BoundPropertyAccessExpressionNode(
+                    callee,
+                    new BoundPropertyNode(expression.name.value, property, expression.name.getRange()),
+                    expression.getRange());
+
+        } else {
+            PropertyReference property = callee.type.getInstanceProperty(expression.name.value);
+            if (property == null) {
+                addDiagnostic(
+                        BinderErrors.MemberDoesNotExist,
+                        expression.name,
+                        callee.type.toString(), expression.name.value);
+                property = UnknownPropertyReference.instance;
+            }
+
+            return new BoundPropertyAccessExpressionNode(
+                    callee,
+                    new BoundPropertyNode(expression.name.value, property, expression.name.getRange()),
+                    expression.getRange());
         }
-
-        PropertyReference property = callee.type.getInstanceProperty(expression.name.value);
-        if (property == null) {
-            addDiagnostic(
-                    BinderErrors.MemberDoesNotExist,
-                    expression.name,
-                    callee.type.toString(), expression.name.value);
-            property = UnknownPropertyReference.instance;
-        }
-
-        // TODO
-        /*if (!property.canGet()) {
-
-        }*/
-
-        return new BoundPropertyAccessExpressionNode(
-                callee,
-                expression.name.value,
-                property,
-                expression.getRange());
     }
 
     private BoundRefArgumentExpressionNode bindRefArgumentExpression(RefArgumentExpressionNode expression) {

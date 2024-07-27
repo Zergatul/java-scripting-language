@@ -10,17 +10,19 @@ import java.util.List;
 public class BoundPropertyAccessExpressionNode extends BoundExpressionNode {
 
     public final BoundExpressionNode callee;
-    public final String name;
-    public final PropertyReference property;
+    public final BoundPropertyNode property;
 
-    public BoundPropertyAccessExpressionNode(BoundExpressionNode callee, String name, PropertyReference property) {
-        this(callee, name, property, null);
+    public BoundPropertyAccessExpressionNode(BoundExpressionNode callee, PropertyReference property) {
+        this(callee, new BoundPropertyNode(null, property));
     }
 
-    public BoundPropertyAccessExpressionNode(BoundExpressionNode callee, String name, PropertyReference property, TextRange range) {
-        super(NodeType.PROPERTY_ACCESS_EXPRESSION, property.getType(), range);
+    public BoundPropertyAccessExpressionNode(BoundExpressionNode callee, BoundPropertyNode property) {
+        this(callee, property, null);
+    }
+
+    public BoundPropertyAccessExpressionNode(BoundExpressionNode callee, BoundPropertyNode property, TextRange range) {
+        super(NodeType.PROPERTY_ACCESS_EXPRESSION, property.property.getType(), range);
         this.callee = callee;
-        this.name = name;
         this.property = property;
     }
 

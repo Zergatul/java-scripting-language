@@ -61,4 +61,9 @@ public class SStaticTypeReference extends SType {
     public List<MethodReference> getInstanceMethods() {
         return underlying.getStaticMethods();
     }
+
+    @Override
+    public List<PropertyReference> getInstanceProperties() {
+        return underlying.getStaticProperties();
+    }
 }

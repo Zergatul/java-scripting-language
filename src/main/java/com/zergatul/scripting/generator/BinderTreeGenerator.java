@@ -166,7 +166,6 @@ public class BinderTreeGenerator {
                 new BoundNameExpressionNode(length),
                 new BoundPropertyAccessExpressionNode(
                     new BoundNameExpressionNode(iterable),
-                    "length",
                     iterable.getType().getInstanceProperty("length"))));
         add(new BoundVariableDeclarationNode(new BoundNameExpressionNode(item)));
 

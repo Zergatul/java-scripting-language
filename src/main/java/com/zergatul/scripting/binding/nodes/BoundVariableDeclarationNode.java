@@ -46,6 +46,10 @@ public class BoundVariableDeclarationNode extends BoundStatementNode {
 
     @Override
     public List<BoundNode> getChildren() {
-        return List.of(type, name, expression);
+        if (expression != null) {
+            return List.of(type, name, expression);
+        } else {
+            return List.of(type, name);
+        }
     }
 }

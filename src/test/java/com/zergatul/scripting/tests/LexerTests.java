@@ -1,7 +1,6 @@
 package com.zergatul.scripting.tests;
 
 import com.zergatul.scripting.DiagnosticMessage;
-import com.zergatul.scripting.MultiLineTextRange;
 import com.zergatul.scripting.SingleLineTextRange;
 import com.zergatul.scripting.lexer.*;
 import org.junit.jupiter.api.Assertions;
@@ -9,7 +8,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
-public class LexerTest {
+public class LexerTests {
 
     @Test
     public void emptyInputTest() {

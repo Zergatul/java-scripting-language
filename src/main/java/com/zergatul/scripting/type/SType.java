@@ -180,6 +180,10 @@ public abstract class SType {
         return null;
     }
 
+    public List<PropertyReference> getStaticProperties() {
+        return List.of();
+    }
+
     public Class<?> getBoxedVersion() {
         return null;
     }

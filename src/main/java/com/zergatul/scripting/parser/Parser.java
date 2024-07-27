@@ -13,6 +13,7 @@ public class Parser {
     private final TokenQueue tokens;
     private final List<DiagnosticMessage> diagnostics;
     private Token current;
+    private Token last;
 
     public Parser(LexerOutput input) {
         this.code = input.code();
@@ -200,7 +201,13 @@ public class Parser {
         }
 
         advance(TokenType.RIGHT_PARENTHESES);
-        StatementNode body = parseStatement();
+        StatementNode body;
+        if (isPossibleStatement()) {
+            body = parseStatement();
+        } else {
+            addDiagnostic(ParserErrors.StatementExpected, current, current.getRawValue(code));
+            body = new InvalidStatementNode(createMissingTokenRange());
+        }
 
         return new ForLoopStatementNode(init, condition, update, body, TextRange.combine(forToken, body));
     }
@@ -673,7 +680,7 @@ public class Parser {
                 }
 
                 case DOT -> {
-                    advance();
+                    Token dot = advance();
                     if (current.type == TokenType.IDENTIFIER) {
                         IdentifierToken identifier = (IdentifierToken) current;
                         NameExpressionNode name = new NameExpressionNode(identifier.value, identifier.getRange());
@@ -681,7 +688,7 @@ public class Parser {
                         expression = new MemberAccessExpressionNode(expression, name, TextRange.combine(expression, name));
                     } else {
                         addDiagnostic(ParserErrors.IdentifierExpected, current, current.getRawValue(code));
-                        return expression;
+                        return new MemberAccessExpressionNode(expression, new NameExpressionNode("", createMissingTokenRangeAfterLast()), TextRange.combine(expression, dot));
                     }
                 }
 
@@ -1012,6 +1019,8 @@ public class Parser {
     }
 
     private Token advance() {
+        last = current;
+
         Token match = current;
         current = tokens.next();
         while (isSkippable(current.type)) {
@@ -1022,6 +1031,8 @@ public class Parser {
 
     private Token advance(TokenType type) {
         if (current.type == type) {
+            last = current;
+
             Token match = current;
             current = tokens.next();
             while (isSkippable(current.type)) {
@@ -1030,14 +1041,20 @@ public class Parser {
             return match;
         } else {
             switch (type) {
+                case LEFT_PARENTHESES -> addDiagnostic(ParserErrors.LeftParenthesisExpected, current, current.getRawValue(code));
+                case RIGHT_PARENTHESES -> addDiagnostic(ParserErrors.RightParenthesisExpected, current, current.getRawValue(code));
                 case LEFT_CURLY_BRACKET -> addDiagnostic(ParserErrors.OpenCurlyBracketExpected, current, current.getRawValue(code));
+                case RIGHT_CURLY_BRACKET -> addDiagnostic(ParserErrors.CloseCurlyBracketExpected, current, current.getRawValue(code));
                 case RIGHT_SQUARE_BRACKET -> addDiagnostic(ParserErrors.CloseSquareBracketExpected, current, current.getRawValue(code));
-                case SEMICOLON -> addDiagnostic(ParserErrors.SemicolonExpected, current);
+                case SEMICOLON -> addDiagnostic(ParserErrors.SemicolonExpected, last);
                 case IN -> addDiagnostic(ParserErrors.InExpected, current);
                 default -> throw new RuntimeException("Not implemented");
             }
 
-            return createMissingToken(type);
+            return switch (type) {
+                case SEMICOLON -> createMissingTokenAfterLast(type);
+                default -> createMissingToken(type);
+            };
         }
     }
 
@@ -1059,6 +1076,14 @@ public class Parser {
         return type == TokenType.WHITESPACE || type == TokenType.LINE_BREAK || type == TokenType.COMMENT;
     }
 
+    private TextRange nextCharacter(TextRange range) {
+        return new SingleLineTextRange(range.getLine2(), range.getColumn2(), range.getPosition() + range.getLength() + 1, 1);
+    }
+
+    private void addDiagnostic(ErrorCode code, TextRange range) {
+        diagnostics.add(new DiagnosticMessage(code, range));
+    }
+
     private void addDiagnostic(ErrorCode code, Locatable locatable, Object... parameters) {
         if (locatable == EndOfFileToken.instance) {
             Token last = tokens.last();
@@ -1073,6 +1098,18 @@ public class Parser {
 
     private Token createMissingToken(TokenType type) {
         return new Token(type, createMissingTokenRange());
+    }
+
+    private Token createMissingTokenAfterLast(TokenType type) {
+        return new Token(type, createMissingTokenRangeAfterLast());
+    }
+
+    private TextRange createMissingTokenRangeAfterLast() {
+        return new SingleLineTextRange(
+                last.getRange().getLine2(),
+                last.getRange().getColumn2(),
+                last.getRange().getPosition() + last.getRange().getLength(),
+                0);
     }
 
     private TextRange createMissingTokenRange() {

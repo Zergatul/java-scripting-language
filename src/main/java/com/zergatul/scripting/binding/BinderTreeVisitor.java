@@ -204,6 +204,11 @@ public abstract class BinderTreeVisitor {
         node.acceptChildren(this);
     }
 
+    public void explicitVisit(BoundPropertyNode node) {
+        visit(node);
+        node.acceptChildren(this);
+    }
+
     public void explicitVisit(BoundRefArgumentExpressionNode node) {
         visit(node);
         node.acceptChildren(this);
@@ -304,6 +309,7 @@ public abstract class BinderTreeVisitor {
     public void visit(BoundPostfixStatementNode node) {}
     public void visit(BoundPredefinedTypeNode node) {}
     public void visit(BoundPropertyAccessExpressionNode node) {}
+    public void visit(BoundPropertyNode node) {}
     public void visit(BoundRefArgumentExpressionNode node) {}
     public void visit(BoundRefTypeNode node) {}
     public void visit(BoundReturnStatementNode node) {}

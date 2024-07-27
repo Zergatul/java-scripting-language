@@ -57,6 +57,10 @@ public abstract class TextRange {
         return true;
     }
 
+    public boolean endsWith(int line, int column) {
+        return line == getLine2() && column == getColumn2();
+    }
+
     public boolean isBefore(int line, int column) {
         if (getLine2() < line) {
             return true;
