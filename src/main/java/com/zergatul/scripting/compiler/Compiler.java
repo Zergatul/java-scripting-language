@@ -13,6 +13,7 @@ import com.zergatul.scripting.parser.AssignmentOperator;
 import com.zergatul.scripting.parser.NodeType;
 import com.zergatul.scripting.parser.Parser;
 import com.zergatul.scripting.parser.ParserOutput;
+import com.zergatul.scripting.parser.nodes.VariableDeclarationNode;
 import com.zergatul.scripting.runtime.AsyncStateMachine;
 import com.zergatul.scripting.runtime.AsyncStateMachineException;
 import com.zergatul.scripting.symbols.*;
@@ -49,7 +50,7 @@ public class Compiler {
         this.parameters = compilationUnitContext;
     }
 
-    public CompilationResult<Runnable> compileRunnable(String code) {
+    public <T> CompilationResult<T> compile(String code, Class<T> functionalInterface) {
         LexerInput lexerInput = new LexerInput(code);
         Lexer lexer = new Lexer(lexerInput);
         LexerOutput lexerOutput = lexer.lex();
@@ -57,47 +58,20 @@ public class Compiler {
         Parser parser = new Parser(lexerOutput);
         ParserOutput parserOutput = parser.parse();
 
-        Binder binder = new Binder(parserOutput, parameters.getContext());
+        Binder binder = new Binder(parserOutput, parameters.getContext(functionalInterface));
         BinderOutput binderOutput = binder.bind();
 
         if (binderOutput.diagnostics().isEmpty()) {
-            return new CompilationResult<>(compileUnit(binderOutput.unit(), new TypeToken<Runnable>() {}));
+            return new CompilationResult<>(compileUnit(binderOutput.unit(), functionalInterface));
         } else {
             return new CompilationResult<>(binderOutput.diagnostics());
         }
     }
 
-    public <T> CompilationResult<Consumer<T>> compileConsumer(String code, String parameterName, Class<T> clazz) {
-        LexerInput lexerInput = new LexerInput(code);
-        Lexer lexer = new Lexer(lexerInput);
-        LexerOutput lexerOutput = lexer.lex();
-
-        Parser parser = new Parser(lexerOutput);
-        ParserOutput parserOutput = parser.parse();
-
-        Binder binder = new Binder(parserOutput, parameters.getContext(parameterName, clazz));
-        BinderOutput binderOutput = binder.bind();
-
-        if (binderOutput.diagnostics().isEmpty()) {
-            return new CompilationResult<>(compileUnit(binderOutput.unit(), new TypeToken<Consumer<T>>() {}));
-        } else {
-            return new CompilationResult<>(binderOutput.diagnostics());
-        }
-    }
-
-    private <T> T compileUnit(BoundCompilationUnitNode unit, TypeToken<T> token) {
-        Class<?> clazz;
-        if (token.getType() instanceof ParameterizedType parameterized) {
-            clazz = (Class<?>) parameterized.getRawType();
-        } else if (token.getType() instanceof Class<?> c) {
-            clazz = c;
-        } else {
-            throw new InternalException();
-        }
-
+    private <T> T compileUnit(BoundCompilationUnitNode unit, Class<T> functionalInterface) {
         ClassWriter writer = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
         String name = "com/zergatul/scripting/dynamic/DynamicClass_" + counter.incrementAndGet();
-        writer.visit(V1_5, ACC_PUBLIC, name, null, Type.getInternalName(Object.class), new String[] { Type.getInternalName(clazz) });
+        writer.visit(V1_5, ACC_PUBLIC, name, null, Type.getInternalName(Object.class), new String[] { Type.getInternalName(functionalInterface) });
 
         CompilerContext context = parameters.getContext();
         context.setClassName(name);
@@ -105,7 +79,7 @@ public class Compiler {
         buildStaticVariables(unit, writer, context);
         buildFunctions(unit, writer, context);
         buildEmptyConstructor(writer);
-        buildMainMethod(unit, writer, name, token);
+        buildMainMethod(unit, writer, name, functionalInterface);
 
         writer.visitEnd();
 
@@ -237,21 +211,12 @@ public class Compiler {
         return constructorDescriptor;
     }
 
-    private <T> void buildMainMethod(BoundCompilationUnitNode unit, ClassWriter writer, String className, TypeToken<T> token) {
-        Class<?> clazz;
-        if (token.getType() instanceof ParameterizedType parameterized) {
-            clazz = (Class<?>) parameterized.getRawType();
-        } else if (token.getType() instanceof Class<?> c) {
-            clazz = c;
-        } else {
+    private <T> void buildMainMethod(BoundCompilationUnitNode unit, ClassWriter writer, String className, Class<T> functionalInterface) {
+        if (!functionalInterface.isInterface()) {
             throw new InternalException();
         }
 
-        if (!clazz.isInterface()) {
-            throw new InternalException();
-        }
-
-        List<Method> methods = Arrays.stream(clazz.getMethods()).filter(m -> !m.isDefault()).toList();
+        List<Method> methods = Arrays.stream(functionalInterface.getMethods()).filter(m -> !m.isDefault()).toList();
         if (methods.size() != 1) {
             throw new InternalException();
         }
@@ -265,7 +230,7 @@ public class Compiler {
 
         ExternalParameterVisitor treeVisitor = new ExternalParameterVisitor();
         unit.statements.accept(treeVisitor);
-        List<BoundStatementNode> prepend = new ArrayList<>();
+        List<BoundVariableDeclarationNode> prepend = new ArrayList<>();
         for (Variable parameter : treeVisitor.getParameters()) {
             int parameterStackIndex;
             if (parameter instanceof LiftedVariable lifted) {
@@ -277,24 +242,20 @@ public class Compiler {
                 throw new InternalException();
             }
 
-            LocalVariable variable = new LocalVariable(null, SType.fromJavaType(Object.class), null);
-            variable.setStackIndex(parameterStackIndex);
-            BoundImplicitCastExpressionNode cast = new BoundImplicitCastExpressionNode(
-                    new BoundNameExpressionNode(variable),
-                    parameter.getType().castFrom(SType.fromJavaType(Object.class)));
             BoundVariableDeclarationNode declaration = new BoundVariableDeclarationNode(
                     new BoundNameExpressionNode(parameter),
-                    cast);
+                    new BoundStackLoadNode(parameterStackIndex, parameter.getType()));
 
             prepend.add(declaration);
         }
 
         if (!prepend.isEmpty()) {
-            List<BoundStatementNode> newStatements = new ArrayList<>();
-            newStatements.addAll(prepend);
-            newStatements.addAll(unit.statements.statements);
-            BoundStatementsListNode statementsListNode = new BoundStatementsListNode(newStatements, unit.statements.lifted, unit.statements.getRange());
-            unit = new BoundCompilationUnitNode(unit.variables, unit.functions, statementsListNode, unit.getRange());
+            BoundStatementsListNode statements = new BoundStatementsListNode(
+                    prepend,
+                    unit.statements.statements,
+                    unit.statements.lifted,
+                    unit.statements.getRange());
+            unit = new BoundCompilationUnitNode(unit.variables, unit.functions, statements, unit.getRange());
         }
 
         context.setClassName(className);
@@ -614,6 +575,9 @@ public class Compiler {
         if (!node.lifted.isEmpty()) {
             compileClosureClass(visitor, context, node.lifted);
         }
+        for (BoundVariableDeclarationNode declaration : node.prepend) {
+            compileVariableDeclaration(visitor, context, declaration);
+        }
         compileStatements(visitor, context, node.statements);
     }
 
@@ -712,6 +676,15 @@ public class Compiler {
     }
 
     private void compileAsyncBoundStatementList(MethodVisitor parentVisitor, CompilerContext context, BoundStatementsListNode node) {
+        for (BoundVariableDeclarationNode declaration : node.prepend) {
+            if (declaration.name.symbol instanceof ExternalParameter parameter) {
+                LiftedVariable lifted = new LiftedVariable(parameter);
+                for (BoundNameExpressionNode name : parameter.getReferences()) {
+                    name.overrideSymbol(lifted);
+                }
+            }
+        }
+
         BinderTreeGenerator generator = new BinderTreeGenerator();
         generator.generate(node.statements);
 
@@ -730,6 +703,9 @@ public class Compiler {
 
         // lifted variables
         LiftedVariablesVisitor treeVisitor = new LiftedVariablesVisitor();
+        for (BoundVariableDeclarationNode declaration : node.prepend) {
+            declaration.accept(treeVisitor);
+        }
         for (StateBoundary boundary : generator.boundaries) {
             for (BoundStatementNode statement : boundary.statements) {
                 statement.accept(treeVisitor);
@@ -837,6 +813,25 @@ public class Compiler {
                 "<init>",
                 Type.getMethodDescriptor(Type.VOID_TYPE),
                 false);
+
+        for (BoundVariableDeclarationNode declaration : node.prepend) {
+            if (declaration.expression instanceof BoundStackLoadNode load) {
+                if (declaration.name.symbol instanceof LiftedVariable lifted) {
+                    int index = variables.indexOf(lifted);
+                    if (index < 0) {
+                        throw new InternalException();
+                    }
+                    parentVisitor.visitInsn(DUP); // dup async state machine
+                    compileStackLoad(parentVisitor, load);
+                    parentVisitor.visitFieldInsn(PUTFIELD, lifted.getClassName(), lifted.getFieldName(), Type.getDescriptor(lifted.getType().getJavaClass()));
+                } else {
+                    throw new InternalException(); // all should be lifted!
+                }
+            } else {
+                throw new InternalException();
+            }
+        }
+
         parentVisitor.visitInsn(ACONST_NULL);
         parentVisitor.visitMethodInsn(
                 INVOKEVIRTUAL,
@@ -932,6 +927,7 @@ public class Compiler {
             case LAMBDA_EXPRESSION -> compileLambdaExpression(visitor, context, (BoundLambdaExpressionNode) expression);
             case FUNCTION_INVOCATION -> compileFunctionInvocationExpression(visitor, context, (BoundFunctionInvocationExpression) expression);
             case GENERATOR_GET_VALUE -> compileGeneratorGetValue(visitor, context, (BoundGeneratorGetValueNode) expression);
+            case STACK_LOAD -> compileStackLoad(visitor, (BoundStackLoadNode) expression);
             default -> throw new InternalException();
         }
     }
@@ -1249,6 +1245,10 @@ public class Compiler {
         parameter.compileLoad(context, visitor);
         visitor.visitTypeInsn(CHECKCAST, Type.getInternalName(node.type.getBoxedVersion()));
         node.type.compileUnboxing(visitor);
+    }
+
+    private void compileStackLoad(MethodVisitor visitor, BoundStackLoadNode node) {
+        visitor.visitVarInsn(node.type.getLoadInst(), node.index);
     }
 
     private void releaseRefVariables(MethodVisitor visitor, CompilerContext context, List<RefHolder> refs) {

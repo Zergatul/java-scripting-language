@@ -9,11 +9,17 @@ import java.util.List;
 
 public class BoundStatementsListNode extends BoundStatementNode {
 
+    public final List<BoundVariableDeclarationNode> prepend;
     public final List<BoundStatementNode> statements;
     public final List<LiftedVariable> lifted;
 
     public BoundStatementsListNode(List<BoundStatementNode> statements, List<LiftedVariable> lifted, TextRange range) {
+        this(List.of(), statements, lifted, range);
+    }
+
+    public BoundStatementsListNode(List<BoundVariableDeclarationNode> prepend, List<BoundStatementNode> statements, List<LiftedVariable> lifted, TextRange range) {
         super(NodeType.STATEMENTS_LIST, range);
+        this.prepend = prepend;
         this.statements = statements;
         this.lifted = lifted;
     }

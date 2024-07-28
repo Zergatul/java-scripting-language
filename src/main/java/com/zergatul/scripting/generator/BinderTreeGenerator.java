@@ -1,7 +1,6 @@
 package com.zergatul.scripting.generator;
 
 import com.zergatul.scripting.InternalException;
-import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.parser.AssignmentOperator;
 import com.zergatul.scripting.type.SBoolean;
 import com.zergatul.scripting.type.SInt;
@@ -316,17 +315,6 @@ public class BinderTreeGenerator {
 
     private void markVariableDeclarations(BoundStatementNode statement) {
         statement.accept(new BinderTreeVisitor() {
-            @Override
-            public void visit(BoundNameExpressionNode node) {
-                // fix local variables which do not have declaration
-                // for example when variable is temp variable from method parameter
-                if (node.symbol instanceof LocalVariable local) {
-                    if (local.getGeneratorState() == null) {
-                        local.setGeneratorState(currentBoundary);
-                    }
-                }
-            }
-
             @Override
             public void visit(BoundVariableDeclarationNode node) {
                 if (node.name.symbol instanceof LocalVariable local) {

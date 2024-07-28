@@ -9,6 +9,7 @@ public class ExternalParameter extends LocalParameter {
     public ExternalParameter(String name, SType type, int index) {
         super(name, type, null);
         this.index = index;
+        this.setStackIndex(1 + index);
     }
 
     public int getIndex() {

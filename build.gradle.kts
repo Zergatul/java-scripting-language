@@ -15,6 +15,7 @@ dependencies {
 
 tasks.withType(JavaCompile::class.java).configureEach {
     options.encoding = "UTF-8"
+    options.compilerArgs.add("-parameters")
 }
 
 tasks.named<Test>("test") {

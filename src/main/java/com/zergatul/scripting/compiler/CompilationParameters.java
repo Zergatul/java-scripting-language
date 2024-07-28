@@ -1,12 +1,13 @@
 package com.zergatul.scripting.compiler;
 
 import com.zergatul.scripting.InternalException;
-import com.zergatul.scripting.symbols.ExternalParameter;
 import com.zergatul.scripting.symbols.StaticFieldConstantStaticVariable;
 import com.zergatul.scripting.symbols.StaticVariable;
 import com.zergatul.scripting.type.SType;
 
+import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.lang.reflect.Parameter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -40,9 +41,21 @@ public class CompilationParameters {
         return context;
     }
 
-    public CompilerContext getContext(String parameterName, Class<?> clazz) {
+    public CompilerContext getContext(Class<?> functionalInterface) {
         CompilerContext context = getContext();
-        context.addExternalParameter(parameterName, SType.fromJavaType(clazz), 0);
+
+        if (!functionalInterface.isInterface()) {
+            throw new InternalException();
+        }
+        List<Method> methods = Arrays.stream(functionalInterface.getMethods()).filter(m -> !m.isDefault()).toList();
+        if (methods.size() != 1) {
+            throw new InternalException();
+        }
+        Parameter[] parameters = methods.get(0).getParameters();
+        for (int i = 0; i < parameters.length; i++) {
+            context.addExternalParameter(parameters[i].getName(), SType.fromJavaType(parameters[i].getType()), i);
+        }
+
         return context;
     }
 

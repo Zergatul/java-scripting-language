@@ -11,7 +11,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
-import java.util.function.Consumer;
 
 public class CompileConsumerTests {
 
@@ -23,12 +22,12 @@ public class CompileConsumerTests {
     }
 
     @Test
-    public void consumerIntSimpleTest() {
+    public void intConsumerBasicTest() {
         String code = """
-                intStorage.add(input);
+                intStorage.add(value);
                 """;
 
-        Consumer<Integer> program = compile(ApiRoot.class, code, "input", Integer.class);
+        IntConsumer program = compile(ApiRoot.class, code, IntConsumer.class);
         program.accept(123);
         program.accept(321);
 
@@ -38,12 +37,12 @@ public class CompileConsumerTests {
     }
 
     @Test
-    public void consumerIntCapture1Test() {
+    public void intConsumerCapture1Test() {
         String code = """
-                run.once(() => intStorage.add(input + 100));
+                run.once(() => intStorage.add(value + 100));
                 """;
 
-        Consumer<Integer> program = compile(ApiRoot.class, code, "input", Integer.class);
+        IntConsumer program = compile(ApiRoot.class, code, IntConsumer.class);
         program.accept(12);
         program.accept(13);
         program.accept(14);
@@ -54,16 +53,16 @@ public class CompileConsumerTests {
     }
 
     @Test
-    public void consumerIntCapture2Test() {
+    public void intConsumerCapture2Test() {
         String code = """
                 run.multiple(2, () => {
                     run.multiple(3, () => {
-                        intStorage.add(x * x);
+                        intStorage.add(value * value);
                     });
                 });
                 """;
 
-        Consumer<Integer> program = compile(ApiRoot.class, code, "x", Integer.class);
+        IntConsumer program = compile(ApiRoot.class, code, IntConsumer.class);
         program.accept(3);
 
         Assertions.assertIterableEquals(
@@ -72,18 +71,31 @@ public class CompileConsumerTests {
     }
 
     @Test
-    public void awaitTest() {
+    public void await1Test() {
         String code = """
-                intStorage.add(x);
+                intStorage.add(value);
                 await futures.create();
-                intStorage.add(x * x);
-                await futures.create();
-                intStorage.add(x * x * x);
-                await futures.create();
-                intStorage.add(x * x * x * x);
                 """;
 
-        Consumer<Integer> program = compile(ApiRoot.class, code, "x", Integer.class);
+        IntConsumer program = compile(ApiRoot.class, code, IntConsumer.class);
+        program.accept(2);
+
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(2));
+    }
+
+    @Test
+    public void await2Test() {
+        String code = """
+                intStorage.add(value);
+                await futures.create();
+                intStorage.add(value * value);
+                await futures.create();
+                intStorage.add(value * value * value);
+                await futures.create();
+                intStorage.add(value * value * value * value);
+                """;
+
+        IntConsumer program = compile(ApiRoot.class, code, IntConsumer.class);
         program.accept(2);
 
         Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(2));
@@ -95,9 +107,29 @@ public class CompileConsumerTests {
         Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(2, 4, 8, 16));
     }
 
-    private static <T> Consumer<T> compile(Class<?> api, String code, String parameterName, Class<T> clazz) {
-        Compiler compiler = new Compiler(new CompilationParameters(api, true));
-        CompilationResult<Consumer<T>> result = compiler.<T>compileConsumer(code, parameterName, clazz);
+    @Test
+    public void blockPosConsumerTest() {
+        String code = """
+                run.once(() => {
+                    run.once(() => {
+                        intStorage.add(x);
+                        intStorage.add(y);
+                        intStorage.add(z);
+                    });
+                });
+                """;
+
+        BlockPosConsumer program = compile(ApiRoot.class, code, BlockPosConsumer.class);
+        program.accept(23, 24, 25);
+
+        Assertions.assertIterableEquals(
+                ApiRoot.intStorage.list,
+                List.of(23, 24, 25));
+    }
+
+    private static <T> T compile(Class<?> api, String code, Class<T> clazz) {
+        Compiler compiler = new Compiler(new CompilationParameters(api, false));
+        CompilationResult<T> result = compiler.compile(code, clazz);
         Assertions.assertNull(result.diagnostics());
         return result.program();
     }
@@ -106,5 +138,14 @@ public class CompileConsumerTests {
         public static Run run;
         public static FutureHelper futures;
         public static IntStorage intStorage;
+    }
+
+    @FunctionalInterface
+    public interface IntConsumer {
+        void accept(int value);
+    }
+
+    public interface BlockPosConsumer {
+        void accept(int x, int y, int z);
     }
 }

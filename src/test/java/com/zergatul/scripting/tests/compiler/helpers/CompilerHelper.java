@@ -14,14 +14,14 @@ public class CompilerHelper {
 
     public static Runnable compile(Class<?> api, String code) {
         Compiler compiler = new Compiler(new CompilationParameters(api, debug));
-        CompilationResult<Runnable> result = compiler.compileRunnable(code);
+        CompilationResult<Runnable> result = compiler.compile(code, Runnable.class);
         Assertions.assertNull(result.diagnostics());
         return result.program();
     }
 
     public static List<DiagnosticMessage> getDiagnostics(Class<?> api, String code) {
         Compiler compiler = new Compiler(new CompilationParameters(api, debug));
-        CompilationResult<Runnable> result = compiler.compileRunnable(code);
+        CompilationResult<Runnable> result = compiler.compile(code, Runnable.class);
         Assertions.assertNull(result.program());
         return result.diagnostics();
     }
