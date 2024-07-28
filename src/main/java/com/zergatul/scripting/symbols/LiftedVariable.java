@@ -20,6 +20,10 @@ public class LiftedVariable extends Variable {
         this.variable = variable;
     }
 
+    public LocalVariable getUnderlying() {
+        return variable;
+    }
+
     @Override
     public boolean canSet() {
         return variable.canSet();

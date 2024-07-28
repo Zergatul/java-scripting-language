@@ -1,8 +1,10 @@
 package com.zergatul.scripting.compiler;
 
 import com.zergatul.scripting.InternalException;
+import com.zergatul.scripting.symbols.ExternalParameter;
 import com.zergatul.scripting.symbols.StaticFieldConstantStaticVariable;
 import com.zergatul.scripting.symbols.StaticVariable;
+import com.zergatul.scripting.type.SType;
 
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
@@ -35,6 +37,12 @@ public class CompilationParameters {
         for (StaticVariable variable : staticVariables) {
             context.addStaticVariable(variable);
         }
+        return context;
+    }
+
+    public CompilerContext getContext(String parameterName, Class<?> clazz) {
+        CompilerContext context = getContext();
+        context.addExternalParameter(parameterName, SType.fromJavaType(clazz), 0);
         return context;
     }
 

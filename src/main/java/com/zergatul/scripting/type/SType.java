@@ -1,6 +1,7 @@
 package com.zergatul.scripting.type;
 
 import com.zergatul.scripting.InternalException;
+import com.zergatul.scripting.compiler.CompilerContext;
 import com.zergatul.scripting.parser.BinaryOperator;
 import com.zergatul.scripting.parser.UnaryOperator;
 import com.zergatul.scripting.runtime.*;
@@ -11,6 +12,8 @@ import org.objectweb.asm.Type;
 import java.lang.reflect.ParameterizedType;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+
+import static org.objectweb.asm.Opcodes.CHECKCAST;
 
 public abstract class SType {
 
@@ -193,6 +196,24 @@ public abstract class SType {
     }
 
     public void compileUnboxing(MethodVisitor visitor) {
+        throw new InternalException();
+    }
+
+    public CastOperation castFrom(SType type) {
+        if (type.getJavaClass() == Object.class) {
+            return new CastOperation(this) {
+                @Override
+                public void apply(MethodVisitor visitor) {
+                    Class<?> boxed = getBoxedVersion();
+                    if (boxed != null) {
+                        visitor.visitTypeInsn(CHECKCAST, Type.getInternalName(boxed));
+                        compileUnboxing(visitor);
+                    } else {
+                        visitor.visitTypeInsn(CHECKCAST, Type.getInternalName(getJavaClass()));
+                    }
+                }
+            };
+        }
         throw new InternalException();
     }
 

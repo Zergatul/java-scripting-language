@@ -97,6 +97,16 @@ public class CompilerContext {
         insertLocalVariable(variable);
     }
 
+    public ExternalParameter addExternalParameter(String name, SType type, int index) {
+        if (name != null && hasSymbol(name)) {
+            throw new InternalException();
+        }
+
+        ExternalParameter parameter = new ExternalParameter(name, type, index);
+        addLocalVariable(parameter);
+        return parameter;
+    }
+
     public LocalVariable addLocalParameter(String name, SType type, TextRange definition) {
         if (name != null && hasSymbol(name)) {
             throw new InternalException();
@@ -209,6 +219,13 @@ public class CompilerContext {
         }
 
         return null;
+    }
+
+    public List<ExternalParameter> getExternalParameters() {
+        return localSymbols.values().stream()
+                .filter(v -> v instanceof ExternalParameter)
+                .map(v -> (ExternalParameter) v)
+                .toList();
     }
 
     public Variable getVariableOfType(String type) {
@@ -334,6 +351,10 @@ public class CompilerContext {
 
     public void setGeneratorContinueLabel(Label label) {
         generatorContinueLabel = label;
+    }
+
+    public void reserveStack(int index) {
+        stack.set(index);
     }
 
     private void insertLocalVariable(Variable variable) {

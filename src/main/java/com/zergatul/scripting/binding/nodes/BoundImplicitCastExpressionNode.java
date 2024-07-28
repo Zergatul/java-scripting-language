@@ -13,6 +13,10 @@ public class BoundImplicitCastExpressionNode extends BoundExpressionNode {
     public final BoundExpressionNode operand;
     public final CastOperation operation;
 
+    public BoundImplicitCastExpressionNode(BoundExpressionNode operand, CastOperation operation) {
+        this(operand, operation, null);
+    }
+
     public BoundImplicitCastExpressionNode(BoundExpressionNode operand, CastOperation operation, TextRange range) {
         super(NodeType.IMPLICIT_CAST, operand.type, range);
         this.operand = operand;

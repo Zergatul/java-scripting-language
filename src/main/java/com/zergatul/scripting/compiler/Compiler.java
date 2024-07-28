@@ -18,12 +18,15 @@ import com.zergatul.scripting.runtime.AsyncStateMachineException;
 import com.zergatul.scripting.symbols.*;
 import com.zergatul.scripting.type.*;
 import com.zergatul.scripting.visitors.AwaitVisitor;
+import com.zergatul.scripting.visitors.ExternalParameterVisitor;
 import com.zergatul.scripting.visitors.LiftedVariablesVisitor;
 import org.objectweb.asm.*;
 
 import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.lang.reflect.ParameterizedType;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -46,7 +49,7 @@ public class Compiler {
         this.parameters = compilationUnitContext;
     }
 
-    public CompilationResult compile(String code) {
+    public CompilationResult<Runnable> compileRunnable(String code) {
         LexerInput lexerInput = new LexerInput(code);
         Lexer lexer = new Lexer(lexerInput);
         LexerOutput lexerOutput = lexer.lex();
@@ -58,34 +61,43 @@ public class Compiler {
         BinderOutput binderOutput = binder.bind();
 
         if (binderOutput.diagnostics().isEmpty()) {
-            return new CompilationResult(compileUnit(binderOutput.unit()));
+            return new CompilationResult<>(compileUnit(binderOutput.unit(), new TypeToken<Runnable>() {}));
         } else {
-            return new CompilationResult(binderOutput.diagnostics());
+            return new CompilationResult<>(binderOutput.diagnostics());
         }
     }
 
-    private Runnable createInstance(Class<Runnable> dynamic) {
-        Constructor<Runnable> constructor;
-        try {
-            constructor = dynamic.getConstructor();
-        } catch (NoSuchMethodException e) {
-            throw new InternalException();
-        }
+    public <T> CompilationResult<Consumer<T>> compileConsumer(String code, String parameterName, Class<T> clazz) {
+        LexerInput lexerInput = new LexerInput(code);
+        Lexer lexer = new Lexer(lexerInput);
+        LexerOutput lexerOutput = lexer.lex();
 
-        Runnable instance;
-        try {
-            instance = constructor.newInstance();
-        } catch (InstantiationException | IllegalAccessException | InvocationTargetException e) {
-            throw new InternalException();
-        }
+        Parser parser = new Parser(lexerOutput);
+        ParserOutput parserOutput = parser.parse();
 
-        return instance;
+        Binder binder = new Binder(parserOutput, parameters.getContext(parameterName, clazz));
+        BinderOutput binderOutput = binder.bind();
+
+        if (binderOutput.diagnostics().isEmpty()) {
+            return new CompilationResult<>(compileUnit(binderOutput.unit(), new TypeToken<Consumer<T>>() {}));
+        } else {
+            return new CompilationResult<>(binderOutput.diagnostics());
+        }
     }
 
-    private Runnable compileUnit(BoundCompilationUnitNode unit) {
+    private <T> T compileUnit(BoundCompilationUnitNode unit, TypeToken<T> token) {
+        Class<?> clazz;
+        if (token.getType() instanceof ParameterizedType parameterized) {
+            clazz = (Class<?>) parameterized.getRawType();
+        } else if (token.getType() instanceof Class<?> c) {
+            clazz = c;
+        } else {
+            throw new InternalException();
+        }
+
         ClassWriter writer = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
         String name = "com/zergatul/scripting/dynamic/DynamicClass_" + counter.incrementAndGet();
-        writer.visit(V1_5, ACC_PUBLIC, name, null, Type.getInternalName(Object.class), new String[] { Type.getInternalName(Runnable.class) });
+        writer.visit(V1_5, ACC_PUBLIC, name, null, Type.getInternalName(Object.class), new String[] { Type.getInternalName(clazz) });
 
         CompilerContext context = parameters.getContext();
         context.setClassName(name);
@@ -93,7 +105,7 @@ public class Compiler {
         buildStaticVariables(unit, writer, context);
         buildFunctions(unit, writer, context);
         buildEmptyConstructor(writer);
-        buildRunMethod(unit, writer, name);
+        buildMainMethod(unit, writer, name, token);
 
         writer.visitEnd();
 
@@ -101,8 +113,26 @@ public class Compiler {
         saveClassFile(name, bytecode);
 
         @SuppressWarnings("unchecked")
-        Class<Runnable> dynamic = (Class<Runnable>) classLoader.defineClass(name.replace('/', '.'), bytecode);
+        Class<T> dynamic = (Class<T>) classLoader.defineClass(name.replace('/', '.'), bytecode);
         return createInstance(dynamic);
+    }
+
+    private <T> T createInstance(Class<T> dynamic) {
+        Constructor<T> constructor;
+        try {
+            constructor = dynamic.getConstructor();
+        } catch (NoSuchMethodException e) {
+            throw new InternalException();
+        }
+
+        T instance;
+        try {
+            instance = constructor.newInstance();
+        } catch (InstantiationException | IllegalAccessException | InvocationTargetException e) {
+            throw new InternalException();
+        }
+
+        return instance;
     }
 
     private void buildStaticVariables(BoundCompilationUnitNode unit, ClassWriter writer, CompilerContext context) {
@@ -207,11 +237,66 @@ public class Compiler {
         return constructorDescriptor;
     }
 
-    private void buildRunMethod(BoundCompilationUnitNode unit, ClassWriter writer, String className) {
-        MethodVisitor visitor = writer.visitMethod(ACC_PUBLIC, "run", Type.getMethodDescriptor(Type.VOID_TYPE), null, null);
+    private <T> void buildMainMethod(BoundCompilationUnitNode unit, ClassWriter writer, String className, TypeToken<T> token) {
+        Class<?> clazz;
+        if (token.getType() instanceof ParameterizedType parameterized) {
+            clazz = (Class<?>) parameterized.getRawType();
+        } else if (token.getType() instanceof Class<?> c) {
+            clazz = c;
+        } else {
+            throw new InternalException();
+        }
+
+        if (!clazz.isInterface()) {
+            throw new InternalException();
+        }
+
+        List<Method> methods = Arrays.stream(clazz.getMethods()).filter(m -> !m.isDefault()).toList();
+        if (methods.size() != 1) {
+            throw new InternalException();
+        }
+        Method method = methods.get(0);
+
+        MethodVisitor visitor = writer.visitMethod(ACC_PUBLIC, method.getName(), Type.getMethodDescriptor(method), null, null);
         visitor.visitCode();
 
         CompilerContext context = parameters.getContext();
+        context.reserveStack(1 + method.getParameterCount()); // assuming all parameters size = 1
+
+        ExternalParameterVisitor treeVisitor = new ExternalParameterVisitor();
+        unit.statements.accept(treeVisitor);
+        List<BoundStatementNode> prepend = new ArrayList<>();
+        for (Variable parameter : treeVisitor.getParameters()) {
+            int parameterStackIndex;
+            if (parameter instanceof LiftedVariable lifted) {
+                parameterStackIndex = 1 + ((ExternalParameter) lifted.getUnderlying()).getIndex();
+            } else if (parameter instanceof ExternalParameter external) {
+                parameterStackIndex = 1 + external.getIndex();
+                external.setStackIndex(parameterStackIndex);
+            } else {
+                throw new InternalException();
+            }
+
+            LocalVariable variable = new LocalVariable(null, SType.fromJavaType(Object.class), null);
+            variable.setStackIndex(parameterStackIndex);
+            BoundImplicitCastExpressionNode cast = new BoundImplicitCastExpressionNode(
+                    new BoundNameExpressionNode(variable),
+                    parameter.getType().castFrom(SType.fromJavaType(Object.class)));
+            BoundVariableDeclarationNode declaration = new BoundVariableDeclarationNode(
+                    new BoundNameExpressionNode(parameter),
+                    cast);
+
+            prepend.add(declaration);
+        }
+
+        if (!prepend.isEmpty()) {
+            List<BoundStatementNode> newStatements = new ArrayList<>();
+            newStatements.addAll(prepend);
+            newStatements.addAll(unit.statements.statements);
+            BoundStatementsListNode statementsListNode = new BoundStatementsListNode(newStatements, unit.statements.lifted, unit.statements.getRange());
+            unit = new BoundCompilationUnitNode(unit.variables, unit.functions, statementsListNode, unit.getRange());
+        }
+
         context.setClassName(className);
         for (BoundVariableDeclarationNode variable : unit.variables.variables) {
             context.addStaticVariable((DeclaredStaticVariable) variable.name.symbol);
@@ -1195,6 +1280,24 @@ public class Compiler {
             } catch (IOException e) {
                 throw new RuntimeException("Cannot write class file.", e);
             }
+        }
+    }
+
+    private static abstract class TypeToken<T> {
+
+        private final java.lang.reflect.Type type;
+
+        protected TypeToken() {
+            java.lang.reflect.Type superclass = getClass().getGenericSuperclass();
+            if (superclass instanceof ParameterizedType parameterized) {
+                type = parameterized.getActualTypeArguments()[0];
+            } else {
+                throw new IllegalArgumentException("TypeToken must be created with a generic type.");
+            }
+        }
+
+        public java.lang.reflect.Type getType() {
+            return type;
         }
     }
 }
