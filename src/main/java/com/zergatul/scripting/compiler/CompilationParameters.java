@@ -15,24 +15,16 @@ import java.util.List;
 public class CompilationParameters {
 
     private final List<StaticVariable> staticVariables = new ArrayList<>();
-    private final boolean keepVariableNames;
+    private final VisibilityChecker checker;
     private final boolean debug;
 
-    public CompilationParameters(Class<?> root) {
-        this(root, false, false);
-    }
-
-    public CompilationParameters(Class<?> root, boolean keepVariableNames, boolean debug) {
-        this.keepVariableNames = keepVariableNames;
+    public CompilationParameters(Class<?> root, VisibilityChecker checker, boolean debug) {
+        this.checker = checker;
         this.debug = debug;
         Arrays.stream(root.getDeclaredFields())
                 .filter(f -> Modifier.isPublic(f.getModifiers()))
                 .filter(f -> Modifier.isStatic(f.getModifiers()))
                 .forEach(f -> addStaticVariable(new StaticFieldConstantStaticVariable(f.getName(), f)));
-    }
-
-    public boolean shouldKeepVariableNames() {
-        return keepVariableNames;
     }
 
     public boolean isDebug() {
@@ -41,6 +33,7 @@ public class CompilationParameters {
 
     public CompilerContext getContext() {
         CompilerContext context = new CompilerContext();
+        context.setChecker(checker);
         for (StaticVariable variable : staticVariables) {
             context.addStaticVariable(variable);
         }

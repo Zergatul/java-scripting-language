@@ -12,6 +12,7 @@ import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Type;
 
+import java.lang.reflect.Method;
 import java.util.*;
 import java.util.function.Consumer;
 
@@ -34,6 +35,7 @@ public class CompilerContext {
     private final List<CapturedVariable> captured;
     private final FunctionStack stack;
     private Label generatorContinueLabel;
+    private VisibilityChecker checker;
 
     public CompilerContext() {
         this(1);
@@ -372,6 +374,14 @@ public class CompilerContext {
                         local.getStackIndex());
             }
         }
+    }
+
+    public boolean isMethodVisible(Method method) {
+        return root.checker == null || root.checker.isVisible(method);
+    }
+
+    public void setChecker(VisibilityChecker checker) {
+        this.checker = checker;
     }
 
     private void insertLocalVariable(Variable variable) {

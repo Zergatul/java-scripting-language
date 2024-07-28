@@ -314,7 +314,7 @@ public class Compiler {
 
         if (variable instanceof LocalVariable local) {
             context.setStackIndex(local);
-            if (parameters.shouldKeepVariableNames()) {
+            if (parameters.isDebug()) {
                 Label label = new Label();
                 visitor.visitLabel(label);
                 local.setDeclarationLabel(label);
@@ -467,7 +467,7 @@ public class Compiler {
 
         LocalVariable variable = (LocalVariable) statement.name.symbol;
         context.addLocalVariable(variable);
-        if (parameters.shouldKeepVariableNames()) {
+        if (parameters.isDebug()) {
             variable.setDeclarationLabel(begin);
         }
         context.addLocalVariable(statement.index);
@@ -1289,7 +1289,7 @@ public class Compiler {
     }
 
     private void markEnd(MethodVisitor visitor, CompilerContext context) {
-        if (parameters.shouldKeepVariableNames()) {
+        if (parameters.isDebug()) {
             context.markEnd(visitor);
         }
     }

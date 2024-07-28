@@ -1,6 +1,6 @@
 package com.zergatul.scripting.tests.compiler;
 
-import com.zergatul.scripting.compiler.CompilationParameters;
+import com.zergatul.scripting.compiler.CompilationParametersBuilder;
 import com.zergatul.scripting.compiler.CompilationResult;
 import com.zergatul.scripting.compiler.Compiler;
 import com.zergatul.scripting.tests.compiler.helpers.FutureHelper;
@@ -27,7 +27,7 @@ public class CompileConsumerTests {
                 intStorage.add(value);
                 """;
 
-        IntConsumer program = compile(ApiRoot.class, code, IntConsumer.class);
+        IntConsumer program = compile(code, IntConsumer.class);
         program.accept(123);
         program.accept(321);
 
@@ -42,7 +42,7 @@ public class CompileConsumerTests {
                 run.once(() => intStorage.add(value + 100));
                 """;
 
-        IntConsumer program = compile(ApiRoot.class, code, IntConsumer.class);
+        IntConsumer program = compile(code, IntConsumer.class);
         program.accept(12);
         program.accept(13);
         program.accept(14);
@@ -62,7 +62,7 @@ public class CompileConsumerTests {
                 });
                 """;
 
-        IntConsumer program = compile(ApiRoot.class, code, IntConsumer.class);
+        IntConsumer program = compile(code, IntConsumer.class);
         program.accept(3);
 
         Assertions.assertIterableEquals(
@@ -77,7 +77,7 @@ public class CompileConsumerTests {
                 await futures.create();
                 """;
 
-        IntConsumer program = compile(ApiRoot.class, code, IntConsumer.class);
+        IntConsumer program = compile(code, IntConsumer.class);
         program.accept(2);
 
         Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(2));
@@ -95,7 +95,7 @@ public class CompileConsumerTests {
                 intStorage.add(value * value * value * value);
                 """;
 
-        IntConsumer program = compile(ApiRoot.class, code, IntConsumer.class);
+        IntConsumer program = compile(code, IntConsumer.class);
         program.accept(2);
 
         Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(2));
@@ -119,7 +119,7 @@ public class CompileConsumerTests {
                 });
                 """;
 
-        BlockPosConsumer program = compile(ApiRoot.class, code, BlockPosConsumer.class);
+        BlockPosConsumer program = compile(code, BlockPosConsumer.class);
         program.accept(23, 24, 25);
 
         Assertions.assertIterableEquals(
@@ -127,8 +127,8 @@ public class CompileConsumerTests {
                 List.of(23, 24, 25));
     }
 
-    private static <T> T compile(Class<?> api, String code, Class<T> clazz) {
-        Compiler compiler = new Compiler(new CompilationParameters(api, false, false));
+    private static <T> T compile(String code, Class<T> clazz) {
+        Compiler compiler = new Compiler(new CompilationParametersBuilder().setRoot(ApiRoot.class).build());
         CompilationResult<T> result = compiler.compile(code, clazz);
         Assertions.assertNull(result.diagnostics());
         return result.program();

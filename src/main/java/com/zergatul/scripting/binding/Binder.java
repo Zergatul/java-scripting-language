@@ -626,6 +626,13 @@ public class Binder {
             List<MethodReference> methodReferences = objectReference.type.getInstanceMethods()
                     .stream()
                     .filter(m -> m.getName().equals(memberAccess.name.value))
+                    .filter(m -> {
+                        if (m instanceof NativeMethodReference ref) {
+                            return context.isMethodVisible(ref.getUnderlying());
+                        } else {
+                            return true;
+                        }
+                    })
                     .toList();
 
             MethodReference matchedMethod = UnknownMethodReference.instance;

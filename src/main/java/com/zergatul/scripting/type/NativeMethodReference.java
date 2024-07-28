@@ -18,6 +18,10 @@ public class NativeMethodReference extends MethodReference {
         this.method = method;
     }
 
+    public Method getUnderlying() {
+        return method;
+    }
+
     @Override
     public SType getOwner() {
         return SType.fromJavaType(method.getDeclaringClass());
