@@ -10,6 +10,7 @@ import com.zergatul.scripting.type.SType;
 import com.zergatul.scripting.type.SVoidType;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.Type;
 
 import java.util.*;
 import java.util.function.Consumer;
@@ -355,6 +356,22 @@ public class CompilerContext {
 
     public void reserveStack(int index) {
         stack.set(index);
+    }
+
+    public void markEnd(MethodVisitor visitor) {
+        Label label = new Label();
+        visitor.visitLabel(label);
+        for (Variable variable : localSymbols.values()) {
+            if (variable instanceof LocalVariable local) {
+                visitor.visitLocalVariable(
+                        local.getName(),
+                        Type.getDescriptor(local.getType().getJavaClass()),
+                        null,
+                        local.getDeclarationLabel(),
+                        label,
+                        local.getStackIndex());
+            }
+        }
     }
 
     private void insertLocalVariable(Variable variable) {

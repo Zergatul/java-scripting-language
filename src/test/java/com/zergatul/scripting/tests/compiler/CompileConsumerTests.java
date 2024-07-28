@@ -128,7 +128,7 @@ public class CompileConsumerTests {
     }
 
     private static <T> T compile(Class<?> api, String code, Class<T> clazz) {
-        Compiler compiler = new Compiler(new CompilationParameters(api, false));
+        Compiler compiler = new Compiler(new CompilationParameters(api, false, false));
         CompilationResult<T> result = compiler.compile(code, clazz);
         Assertions.assertNull(result.diagnostics());
         return result.program();

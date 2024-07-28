@@ -13,7 +13,6 @@ import com.zergatul.scripting.parser.AssignmentOperator;
 import com.zergatul.scripting.parser.NodeType;
 import com.zergatul.scripting.parser.Parser;
 import com.zergatul.scripting.parser.ParserOutput;
-import com.zergatul.scripting.parser.nodes.VariableDeclarationNode;
 import com.zergatul.scripting.runtime.AsyncStateMachine;
 import com.zergatul.scripting.runtime.AsyncStateMachineException;
 import com.zergatul.scripting.symbols.*;
@@ -27,7 +26,6 @@ import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.lang.reflect.ParameterizedType;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -270,6 +268,7 @@ public class Compiler {
         }
 
         visitor.visitInsn(RETURN);
+        markEnd(visitor, context);
         visitor.visitMaxs(0, 0);
         visitor.visitEnd();
     }
@@ -315,9 +314,13 @@ public class Compiler {
 
         if (variable instanceof LocalVariable local) {
             context.setStackIndex(local);
+            if (parameters.shouldKeepVariableNames()) {
+                Label label = new Label();
+                visitor.visitLabel(label);
+                local.setDeclarationLabel(label);
+            }
         }
 
-        variable.compileInit(context, visitor);
         variable.compileStore(context, visitor);
     }
 
@@ -391,7 +394,9 @@ public class Compiler {
     }
 
     private void compileBlockStatement(MethodVisitor visitor, CompilerContext context, BoundBlockStatementNode statement) {
-        compileStatements(visitor, context.createChild(), statement.statements);
+        context = context.createChild();
+        compileStatements(visitor, context, statement.statements);
+        markEnd(visitor, context);
     }
 
     private void compileReturnStatement(MethodVisitor visitor, CompilerContext context, BoundReturnStatementNode statement) {
@@ -447,6 +452,8 @@ public class Compiler {
 
         visitor.visitJumpInsn(GOTO, begin);
         visitor.visitLabel(end);
+
+        markEnd(visitor, context);
     }
 
     private void compileForEachLoopStatement(MethodVisitor visitor, CompilerContext context, BoundForEachLoopStatementNode statement) {
@@ -460,6 +467,9 @@ public class Compiler {
 
         LocalVariable variable = (LocalVariable) statement.name.symbol;
         context.addLocalVariable(variable);
+        if (parameters.shouldKeepVariableNames()) {
+            variable.setDeclarationLabel(begin);
+        }
         context.addLocalVariable(statement.index);
         context.addLocalVariable(statement.length);
 
@@ -500,6 +510,8 @@ public class Compiler {
         visitor.visitLabel(end);
 
         visitor.visitInsn(POP);
+
+        markEnd(visitor, context);
     }
 
     private void compileWhileLoopStatement(MethodVisitor visitor, CompilerContext context, BoundWhileLoopStatementNode statement) {
@@ -522,6 +534,8 @@ public class Compiler {
 
         visitor.visitJumpInsn(GOTO, begin);
         visitor.visitLabel(end);
+
+        markEnd(visitor, context);
     }
 
     private void compileBreakStatement(MethodVisitor visitor, CompilerContext context) {
@@ -793,6 +807,8 @@ public class Compiler {
         nextMethodVisitor.visitInsn(ATHROW);
 
         nextMethodVisitor.visitJumpInsn(GOTO, loop);
+
+        //markEnd(nextMethodVisitor, nextMethodContext);
 
         nextMethodVisitor.visitMaxs(0, 0);
         nextMethodVisitor.visitEnd();
@@ -1272,6 +1288,12 @@ public class Compiler {
         return visitor.isAsync();
     }
 
+    private void markEnd(MethodVisitor visitor, CompilerContext context) {
+        if (parameters.shouldKeepVariableNames()) {
+            context.markEnd(visitor);
+        }
+    }
+
     private void saveClassFile(String name, byte[] bytecode) {
         if (parameters.isDebug()) {
             String[] parts = name.split("/");
@@ -1280,24 +1302,6 @@ public class Compiler {
             } catch (IOException e) {
                 throw new RuntimeException("Cannot write class file.", e);
             }
-        }
-    }
-
-    private static abstract class TypeToken<T> {
-
-        private final java.lang.reflect.Type type;
-
-        protected TypeToken() {
-            java.lang.reflect.Type superclass = getClass().getGenericSuperclass();
-            if (superclass instanceof ParameterizedType parameterized) {
-                type = parameterized.getActualTypeArguments()[0];
-            } else {
-                throw new IllegalArgumentException("TypeToken must be created with a generic type.");
-            }
-        }
-
-        public java.lang.reflect.Type getType() {
-            return type;
         }
     }
 }

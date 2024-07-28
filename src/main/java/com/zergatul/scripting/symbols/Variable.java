@@ -5,7 +5,6 @@ import com.zergatul.scripting.compiler.CompilerContext;
 import com.zergatul.scripting.type.SType;
 import org.objectweb.asm.MethodVisitor;
 
-
 public abstract class Variable extends Symbol {
 
     protected Variable(String name, SType type, TextRange definition) {
@@ -13,10 +12,6 @@ public abstract class Variable extends Symbol {
     }
 
     public abstract boolean isConstant();
-
-    public void compileInit(CompilerContext context, MethodVisitor visitor) {
-
-    }
 
     public abstract void compileStore(CompilerContext context, MethodVisitor visitor);
 }

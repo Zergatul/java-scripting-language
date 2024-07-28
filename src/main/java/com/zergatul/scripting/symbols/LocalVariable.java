@@ -4,12 +4,14 @@ import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.compiler.CompilerContext;
 import com.zergatul.scripting.generator.StateBoundary;
 import com.zergatul.scripting.type.SType;
+import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 
 public class LocalVariable extends Variable {
 
     private int stackIndex;
     private StateBoundary state;
+    private Label declarationLabel;
 
     public LocalVariable(String name, SType type, TextRange definition) {
         super(name, type, definition);
@@ -30,6 +32,14 @@ public class LocalVariable extends Variable {
 
     public void setGeneratorState(StateBoundary state) {
         this.state = state;
+    }
+
+    public Label getDeclarationLabel() {
+        return declarationLabel;
+    }
+
+    public void setDeclarationLabel(Label label) {
+        declarationLabel = label;
     }
 
     @Override
