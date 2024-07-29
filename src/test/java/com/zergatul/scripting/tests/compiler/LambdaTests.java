@@ -1,6 +1,7 @@
 package com.zergatul.scripting.tests.compiler;
 
 import com.zergatul.scripting.DiagnosticMessage;
+import com.zergatul.scripting.SingleLineTextRange;
 import com.zergatul.scripting.binding.BinderErrors;
 import com.zergatul.scripting.tests.compiler.helpers.*;
 import org.junit.jupiter.api.Assertions;
@@ -514,6 +515,21 @@ public class LambdaTests {
         Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(21));
     }
 
+    @Test
+    public void failedArgumentTest() {
+        String code = """
+                bad.run(() => intStorage.add(1));
+                """;
+
+        List<DiagnosticMessage> diagnostics = getDiagnostics(ApiRoot.class, code);
+        Assertions.assertIterableEquals(
+                diagnostics,
+                List.of(
+                        new DiagnosticMessage(
+                                BinderErrors.CannotCastArguments,
+                                new SingleLineTextRange(1, 8, 7, 25))));
+    }
+
     // TODO: capture function parameters?
     // maybe not allow!
 
@@ -523,5 +539,12 @@ public class LambdaTests {
         public static IntStorage intStorage = new IntStorage();
         public static FloatStorage floatStorage = new FloatStorage();
         public static StringStorage stringStorage = new StringStorage();
+        public static Bad bad = new Bad();
+    }
+
+    public static class Bad {
+        public void run(Runnable runnable) {
+            runnable.run();
+        }
     }
 }

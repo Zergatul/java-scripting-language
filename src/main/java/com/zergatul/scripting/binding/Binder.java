@@ -635,6 +635,8 @@ public class Binder {
                     })
                     .toList();
 
+            boolean invalidArguments = false;
+
             MethodReference matchedMethod = UnknownMethodReference.instance;
             if (methodReferences.isEmpty()) {
                 addDiagnostic(
@@ -689,6 +691,7 @@ public class Binder {
                             .toList();
                     if (possibleArgumentsWithCasting.isEmpty()) {
                         addDiagnostic(BinderErrors.CannotCastArguments, invocation.arguments);
+                        invalidArguments = true;
                     } else {
                         ArgumentsCast overload = possibleArgumentsWithCasting.get(0);
                         for (int i = 0; i < argumentsSize; i++) {
@@ -712,7 +715,7 @@ public class Binder {
                 }
             }
 
-            if (arguments.stream().anyMatch(PreBoundArgument::hasLambda)) {
+            if (!invalidArguments && arguments.stream().anyMatch(PreBoundArgument::hasLambda)) {
                 throw new InternalException();
             }
 
