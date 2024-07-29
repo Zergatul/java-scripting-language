@@ -103,6 +103,7 @@ public class Parser {
                 statements.add(parseStatement());
             } else {
                 addDiagnostic(ParserErrors.StatementExpected, current, current.getRawValue(code));
+                advance();
             }
         }
 

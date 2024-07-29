@@ -466,6 +466,14 @@ public class ParserTests {
                         "("));
     }
 
+    @Test
+    public void notClosedBlockTest() {
+        var result = parse("""
+                { *
+                """);
+        Assertions.assertFalse(result.diagnostics().isEmpty());
+    }
+
     private ParserOutput parse(String code) {
         return new Parser(new Lexer(new LexerInput(code)).lex()).parse();
     }
