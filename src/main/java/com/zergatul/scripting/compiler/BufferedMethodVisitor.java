@@ -46,6 +46,11 @@ public class BufferedMethodVisitor extends MethodVisitor {
     }
 
     @Override
+    public void visitLabel(Label label) {
+        buffer.add(visitor -> visitor.visitLabel(label));
+    }
+
+    @Override
     public void visitFieldInsn(int opcode, String owner, String name, String descriptor) {
         buffer.add(visitor -> visitor.visitFieldInsn(opcode, owner, name, descriptor));
     }

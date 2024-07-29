@@ -304,6 +304,20 @@ public class BooleanTests {
                 List.of(false, true, true, false));
     }
 
+    @Test
+    public void complexExpressionTest() {
+        String code = """
+                storage.add(1 < 2 && 3 < 4);
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(
+                ApiRoot.storage.list,
+                List.of(true));
+    }
+
     public static class ApiRoot {
         public static BoolStorage storage;
         public static IntStorage intStorage;
