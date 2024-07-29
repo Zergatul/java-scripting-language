@@ -9,7 +9,6 @@ import com.zergatul.scripting.parser.ParserErrors;
 import com.zergatul.scripting.parser.ParserOutput;
 import com.zergatul.scripting.parser.PredefinedType;
 import com.zergatul.scripting.parser.nodes.*;
-import com.zergatul.scripting.type.SBoolean;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -78,8 +77,21 @@ public class ErrorRecoveryParserTests {
                                 new SingleLineTextRange(2, 1, 5, 19))));
     }
 
-    /*freeCam.
-boolean bbb = s.contains("ex");*/
+    @Test
+    public void notClosedBlockTest() {
+        var result = parse("""
+                { *
+                """);
+        Assertions.assertFalse(result.diagnostics().isEmpty());
+    }
+
+    @Test
+    public void missingArgumentTest() {
+        var result = parse("""
+                main.chat("abc",);
+                """);
+        Assertions.assertFalse(result.diagnostics().isEmpty());
+    }
 
     private ParserOutput parse(String code) {
         return new Parser(new Lexer(new LexerInput(code)).lex()).parse();

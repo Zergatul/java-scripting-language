@@ -38,6 +38,6 @@ public class BoundPropertyAccessExpressionNode extends BoundExpressionNode {
 
     @Override
     public List<BoundNode> getChildren() {
-        return List.of(callee);
+        return List.of(callee, property);
     }
 }
