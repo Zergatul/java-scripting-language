@@ -4,6 +4,7 @@ import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
 import com.zergatul.scripting.parser.NodeType;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
 
@@ -40,6 +41,14 @@ public class BoundNewExpressionNode extends BoundExpressionNode {
 
     @Override
     public List<BoundNode> getChildren() {
-        return Stream.concat(Stream.of(typeNode, lengthExpression), items.stream()).toList();
+        List<BoundNode> children = new ArrayList<>();
+        children.add(typeNode);
+        if (lengthExpression != null) {
+            children.add(lengthExpression);
+        }
+        if (items != null) {
+            children.addAll(items);
+        }
+        return children;
     }
 }
