@@ -38,6 +38,10 @@ public class BoundForLoopStatementNode extends BoundStatementNode {
 
     @Override
     public List<BoundNode> getChildren() {
-        return List.of(init, condition, update, body);
+        if (condition != null) {
+            return List.of(init, condition, update, body);
+        } else {
+            return List.of(init, update, body);
+        }
     }
 }
