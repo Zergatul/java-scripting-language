@@ -47,9 +47,9 @@ public class VisibilityCheckerTests {
 
     private static List<DiagnosticMessage> getDiagnostics(String code, VisibilityChecker checker) {
         Compiler compiler = new Compiler(new CompilationParametersBuilder().setRoot(ApiRoot.class).setVisibilityChecker(checker).build());
-        CompilationResult<Runnable> result = compiler.compile(code, Runnable.class);
-        Assertions.assertNull(result.program());
-        return result.diagnostics();
+        CompilationResult result = compiler.compile(code);
+        Assertions.assertNull(result.getProgram());
+        return result.getDiagnostics();
     }
 
     public static class ApiRoot {

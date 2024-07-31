@@ -18,13 +18,15 @@ public class Binder {
     private final String code;
     private final CompilationUnitNode unit;
     private final List<DiagnosticMessage> diagnostics;
+    private final CompilationParameters parameters;
     private CompilerContext context;
 
-    public Binder(ParserOutput input, CompilerContext context) {
+    public Binder(ParserOutput input, CompilationParameters parameters) {
         this.code = input.code();
         this.unit = input.unit();
         this.diagnostics = input.diagnostics();
-        this.context = context;
+        this.parameters = parameters;
+        this.context = parameters.getContext();
     }
 
     public BinderOutput bind() {
@@ -35,10 +37,14 @@ public class Binder {
     private BoundCompilationUnitNode bindCompilationUnit(CompilationUnitNode node) {
         List<BoundVariableDeclarationNode> variables = node.variables.variables.stream().map(n -> bindVariableDeclaration(n, true)).toList();
         List<BoundFunctionNode> functions = bindFunctions(unit.functions.functions);
+        pushFunctionScope(parameters.getReturnType());
+        parameters.addFunctionalInterfaceParameters(context);
+        BoundStatementsListNode statements = bindStatementList(node.statements);
+        popScope();
         return new BoundCompilationUnitNode(
                 new BoundStaticVariablesListNode(variables, node.variables.getRange()),
                 new BoundFunctionsListNode(functions, node.functions.getRange()),
-                bindStatementList(node.statements),
+                statements,
                 node.getRange());
     }
 

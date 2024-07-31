@@ -4,13 +4,30 @@ import com.zergatul.scripting.DiagnosticMessage;
 
 import java.util.List;
 
-public record CompilationResult<T>(List<DiagnosticMessage> diagnostics, T program) {
+public class CompilationResult {
 
-    public CompilationResult(List<DiagnosticMessage> diagnostics) {
-        this(diagnostics, null);
+    private final List<DiagnosticMessage> diagnostics;
+    private final Object program;
+
+    private CompilationResult(List<DiagnosticMessage> diagnostics, Object program) {
+        this.diagnostics = diagnostics;
+        this.program = program;
     }
 
-    public CompilationResult(T program) {
-        this(null, program);
+    public static CompilationResult failed(List<DiagnosticMessage> diagnostics) {
+        return new CompilationResult(diagnostics, null);
+    }
+
+    public static CompilationResult success(Object program) {
+        return new CompilationResult(null, program);
+    }
+
+    public List<DiagnosticMessage> getDiagnostics() {
+        return diagnostics;
+    }
+
+    @SuppressWarnings("unchecked")
+    public <T> T getProgram() {
+        return (T) program;
     }
 }

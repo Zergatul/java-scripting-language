@@ -15,10 +15,12 @@ import java.util.List;
 public class CompilationParameters {
 
     private final List<StaticVariable> staticVariables = new ArrayList<>();
+    private final Class<?> functionalInterface;
     private final VisibilityChecker checker;
     private final boolean debug;
 
-    public CompilationParameters(Class<?> root, VisibilityChecker checker, boolean debug) {
+    public CompilationParameters(Class<?> root, Class<?> functionalInterface, VisibilityChecker checker, boolean debug) {
+        this.functionalInterface = functionalInterface;
         this.checker = checker;
         this.debug = debug;
         Arrays.stream(root.getDeclaredFields())
@@ -31,6 +33,10 @@ public class CompilationParameters {
         return debug;
     }
 
+    public Class<?> getFunctionalInterface() {
+        return functionalInterface;
+    }
+
     public CompilerContext getContext() {
         CompilerContext context = new CompilerContext();
         context.setChecker(checker);
@@ -40,22 +46,15 @@ public class CompilationParameters {
         return context;
     }
 
-    public CompilerContext getContext(Class<?> functionalInterface) {
-        CompilerContext context = getContext();
-
-        if (!functionalInterface.isInterface()) {
-            throw new InternalException();
-        }
-        List<Method> methods = Arrays.stream(functionalInterface.getMethods()).filter(m -> !m.isDefault()).toList();
-        if (methods.size() != 1) {
-            throw new InternalException();
-        }
-        Parameter[] parameters = methods.get(0).getParameters();
+    public void addFunctionalInterfaceParameters(CompilerContext context) {
+        Parameter[] parameters = getMethod(functionalInterface).getParameters();
         for (int i = 0; i < parameters.length; i++) {
             context.addExternalParameter(parameters[i].getName(), SType.fromJavaType(parameters[i].getType()), i);
         }
+    }
 
-        return context;
+    public SType getReturnType() {
+        return SType.fromJavaType(getMethod(functionalInterface).getReturnType());
     }
 
     protected void addStaticVariable(StaticVariable variable) {
@@ -64,5 +63,16 @@ public class CompilationParameters {
         }
 
         staticVariables.add(variable);
+    }
+
+    private Method getMethod(Class<?> functionalInterface) {
+        if (!functionalInterface.isInterface()) {
+            throw new InternalException();
+        }
+        List<Method> methods = Arrays.stream(functionalInterface.getMethods()).filter(m -> !m.isDefault()).toList();
+        if (methods.size() != 1) {
+            throw new InternalException();
+        }
+        return methods.get(0);
     }
 }

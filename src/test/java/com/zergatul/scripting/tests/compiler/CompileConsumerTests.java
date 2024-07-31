@@ -108,7 +108,7 @@ public class CompileConsumerTests {
     }
 
     @Test
-    public void blockPosConsumerTest() {
+    public void blockPosConsumer1Test() {
         String code = """
                 run.once(() => {
                     run.once(() => {
@@ -127,11 +127,41 @@ public class CompileConsumerTests {
                 List.of(23, 24, 25));
     }
 
+    @Test
+    public void blockPosConsumer2Test() {
+        String code = """
+                void func1(int x, int y, int z) {
+                    intStorage.add(x);
+                    intStorage.add(y);
+                    intStorage.add(z);
+                }
+                
+                void func2(int a, int b, int c) {
+                    intStorage.add(a);
+                    intStorage.add(b);
+                    intStorage.add(c);
+                }
+                
+                func1(x, y, z);
+                func2(x, y, z);
+                """;
+
+        BlockPosConsumer program = compile(code, BlockPosConsumer.class);
+        program.accept(23, 24, 25);
+
+        Assertions.assertIterableEquals(
+                ApiRoot.intStorage.list,
+                List.of(23, 24, 25, 23, 24, 25));
+    }
+
     private static <T> T compile(String code, Class<T> clazz) {
-        Compiler compiler = new Compiler(new CompilationParametersBuilder().setRoot(ApiRoot.class).build());
-        CompilationResult<T> result = compiler.compile(code, clazz);
-        Assertions.assertNull(result.diagnostics());
-        return result.program();
+        Compiler compiler = new Compiler(new CompilationParametersBuilder()
+                .setRoot(ApiRoot.class)
+                .setInterface(clazz)
+                .build());
+        CompilationResult result = compiler.compile(code);
+        Assertions.assertNull(result.getDiagnostics());
+        return result.getProgram();
     }
 
     public static class ApiRoot {

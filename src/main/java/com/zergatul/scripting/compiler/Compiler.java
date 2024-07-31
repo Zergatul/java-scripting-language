@@ -44,11 +44,11 @@ public class Compiler {
 
     private final CompilationParameters parameters;
 
-    public Compiler(CompilationParameters compilationUnitContext) {
-        this.parameters = compilationUnitContext;
+    public Compiler(CompilationParameters parameters) {
+        this.parameters = parameters;
     }
 
-    public <T> CompilationResult<T> compile(String code, Class<T> functionalInterface) {
+    public CompilationResult compile(String code) {
         LexerInput lexerInput = new LexerInput(code);
         Lexer lexer = new Lexer(lexerInput);
         LexerOutput lexerOutput = lexer.lex();
@@ -56,20 +56,26 @@ public class Compiler {
         Parser parser = new Parser(lexerOutput);
         ParserOutput parserOutput = parser.parse();
 
-        Binder binder = new Binder(parserOutput, parameters.getContext(functionalInterface));
+        Binder binder = new Binder(parserOutput, parameters);
         BinderOutput binderOutput = binder.bind();
 
         if (binderOutput.diagnostics().isEmpty()) {
-            return new CompilationResult<>(compileUnit(binderOutput.unit(), functionalInterface));
+            return CompilationResult.success(compileUnit(binderOutput.unit()));
         } else {
-            return new CompilationResult<>(binderOutput.diagnostics());
+            return CompilationResult.failed(binderOutput.diagnostics());
         }
     }
 
-    private <T> T compileUnit(BoundCompilationUnitNode unit, Class<T> functionalInterface) {
+    private <T> T compileUnit(BoundCompilationUnitNode unit) {
         ClassWriter writer = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
         String name = "com/zergatul/scripting/dynamic/DynamicClass_" + counter.incrementAndGet();
-        writer.visit(V1_5, ACC_PUBLIC, name, null, Type.getInternalName(Object.class), new String[] { Type.getInternalName(functionalInterface) });
+        writer.visit(
+                V1_5,
+                ACC_PUBLIC,
+                name,
+                null,
+                Type.getInternalName(Object.class),
+                new String[] { Type.getInternalName(parameters.getFunctionalInterface()) });
 
         CompilerContext context = parameters.getContext();
         context.setClassName(name);
@@ -77,7 +83,7 @@ public class Compiler {
         buildStaticVariables(unit, writer, context);
         buildFunctions(unit, writer, context);
         buildEmptyConstructor(writer);
-        buildMainMethod(unit, writer, name, functionalInterface);
+        buildMainMethod(unit, writer, name);
 
         writer.visitEnd();
 
@@ -209,7 +215,8 @@ public class Compiler {
         return constructorDescriptor;
     }
 
-    private <T> void buildMainMethod(BoundCompilationUnitNode unit, ClassWriter writer, String className, Class<T> functionalInterface) {
+    private <T> void buildMainMethod(BoundCompilationUnitNode unit, ClassWriter writer, String className) {
+        Class<?> functionalInterface = parameters.getFunctionalInterface();
         if (!functionalInterface.isInterface()) {
             throw new InternalException();
         }

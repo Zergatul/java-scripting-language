@@ -12,15 +12,15 @@ public class CompilerHelper {
 
     public static Runnable compile(Class<?> api, String code) {
         Compiler compiler = new Compiler(new CompilationParametersBuilder().setRoot(api).build());
-        CompilationResult<Runnable> result = compiler.compile(code, Runnable.class);
-        Assertions.assertNull(result.diagnostics());
-        return result.program();
+        CompilationResult result = compiler.compile(code);
+        Assertions.assertNull(result.getDiagnostics());
+        return result.getProgram();
     }
 
     public static List<DiagnosticMessage> getDiagnostics(Class<?> api, String code) {
         Compiler compiler = new Compiler(new CompilationParametersBuilder().setRoot(api).build());
-        CompilationResult<Runnable> result = compiler.compile(code, Runnable.class);
-        Assertions.assertNull(result.program());
-        return result.diagnostics();
+        CompilationResult result = compiler.compile(code);
+        Assertions.assertNull(result.getProgram());
+        return result.getDiagnostics();
     }
 }

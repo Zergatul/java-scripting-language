@@ -24,7 +24,7 @@ public class ErrorRecoveryBinderTests {
         CompilationParameters parameters = new CompilationParametersBuilder()
                 .setRoot(ApiRoot.class)
                 .build();
-        return new Binder(new Parser(new Lexer(new LexerInput(code)).lex()).parse(), parameters.getContext()).bind();
+        return new Binder(new Parser(new Lexer(new LexerInput(code)).lex()).parse(), parameters).bind();
     }
 
     public static class ApiRoot {
