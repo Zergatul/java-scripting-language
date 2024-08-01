@@ -796,7 +796,11 @@ public class Binder {
             }
         }
 
-        throw new InternalException();
+        addDiagnostic(
+                BinderErrors.InvalidCallee,
+                invocation.callee,
+                invocation.callee.getNodeType().toString());
+        return new BoundInvalidExpressionNode(invocation.getRange());
     }
 
     private BoundExpressionNode bindLambdaExpression(LambdaExpressionNode node, SLambdaFunction lambdaType) {
