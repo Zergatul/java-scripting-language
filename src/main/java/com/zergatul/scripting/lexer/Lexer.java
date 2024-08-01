@@ -286,6 +286,12 @@ public class Lexer {
                     trackBeginToken();
                     while (true) {
                         advance();
+                        if (current == -1) {
+                            Token token = new StringToken(getCurrentTokenValue(), getCurrentTokenRange());
+                            list.add(token);
+                            addDiagnostic(LexerErrors.UnfinishedString, token);
+                            break;
+                        }
                         if (current == '\r' || current == '\n') {
                             Token token = new StringToken(getCurrentTokenValue(), getCurrentTokenRange());
                             list.add(token);

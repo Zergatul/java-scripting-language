@@ -272,6 +272,15 @@ public class LexerTests {
     }
 
     @Test
+    public void stringTest3() {
+        LexerOutput result = lex("\"");
+        Assertions.assertIterableEquals(result.tokens(), List.of(
+                new StringToken("\"", new SingleLineTextRange(1, 1, 0, 1))));
+        Assertions.assertIterableEquals(result.diagnostics(), List.of(
+                new DiagnosticMessage(LexerErrors.UnfinishedString, new SingleLineTextRange(1, 1, 0, 1))));
+    }
+
+    @Test
     public void charTest1() {
         LexerOutput result = lex("''");
         Assertions.assertIterableEquals(result.tokens(), List.of(
