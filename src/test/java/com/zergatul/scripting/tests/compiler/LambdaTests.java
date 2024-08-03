@@ -516,7 +516,7 @@ public class LambdaTests {
     }
 
     @Test
-    public void failedArgumentTest() {
+    public void failedArguments1Test() {
         String code = """
                 bad.run(() => intStorage.add(1));
                 """;
@@ -528,6 +528,53 @@ public class LambdaTests {
                         new DiagnosticMessage(
                                 BinderErrors.CannotCastArguments,
                                 new SingleLineTextRange(1, 8, 7, 25))));
+    }
+
+    @Test
+    public void failedArguments2Test() {
+        String code = """
+                run.once(10, () => {});
+                """;
+
+        List<DiagnosticMessage> diagnostics = getDiagnostics(ApiRoot.class, code);
+        Assertions.assertIterableEquals(
+                diagnostics,
+                List.of(
+                        new DiagnosticMessage(
+                                BinderErrors.NoOverloadedMethods,
+                                new SingleLineTextRange(1, 1, 0, 8),
+                                "once",
+                                2)));
+    }
+
+    @Test
+    public void failedArguments3Test() {
+        String code = """
+                run.multiple("10", () => {});
+                """;
+
+        List<DiagnosticMessage> diagnostics = getDiagnostics(ApiRoot.class, code);
+        Assertions.assertIterableEquals(
+                diagnostics,
+                List.of(
+                        new DiagnosticMessage(
+                                BinderErrors.CannotCastArguments,
+                                new SingleLineTextRange(1, 13, 12, 16))));
+    }
+
+    @Test
+    public void failedArguments4Test() {
+        String code = """
+                run.multiple(10, (x) => {});
+                """;
+
+        List<DiagnosticMessage> diagnostics = getDiagnostics(ApiRoot.class, code);
+        Assertions.assertIterableEquals(
+                diagnostics,
+                List.of(
+                        new DiagnosticMessage(
+                                BinderErrors.CannotCastArguments,
+                                new SingleLineTextRange(1, 13, 12, 15))));
     }
 
     // TODO: capture function parameters?

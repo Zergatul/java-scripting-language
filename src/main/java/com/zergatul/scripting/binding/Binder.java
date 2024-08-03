@@ -657,6 +657,7 @@ public class Binder {
                         .toList();
 
                 if (methodReferences.isEmpty()) {
+                    invalidArguments = true;
                     addDiagnostic(
                             BinderErrors.NoOverloadedMethods,
                             invocation.callee,
