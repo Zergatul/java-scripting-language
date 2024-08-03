@@ -728,7 +728,9 @@ public class Binder {
 
             BoundMethodNode methodNode = new BoundMethodNode(matchedMethod, memberAccess.name.getRange());
             BoundArgumentsListNode argumentsNode = new BoundArgumentsListNode(
-                    arguments.stream().map(a -> a.expression).toList(),
+                    arguments.stream().map(a -> {
+                        return a.expression == null ? new BoundInvalidExpressionNode(a.lambda.getRange()) : a.expression;
+                    }).toList(),
                     invocation.arguments.getRange());
             return new BoundMethodInvocationExpressionNode(objectReference, methodNode, argumentsNode, context.releaseRefVariables(), invocation.getRange());
         }

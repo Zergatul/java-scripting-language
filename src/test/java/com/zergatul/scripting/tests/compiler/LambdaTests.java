@@ -2,7 +2,16 @@ package com.zergatul.scripting.tests.compiler;
 
 import com.zergatul.scripting.DiagnosticMessage;
 import com.zergatul.scripting.SingleLineTextRange;
+import com.zergatul.scripting.binding.Binder;
 import com.zergatul.scripting.binding.BinderErrors;
+import com.zergatul.scripting.binding.BinderOutput;
+import com.zergatul.scripting.binding.nodes.*;
+import com.zergatul.scripting.compiler.CompilationParametersBuilder;
+import com.zergatul.scripting.lexer.Lexer;
+import com.zergatul.scripting.lexer.LexerInput;
+import com.zergatul.scripting.lexer.LexerOutput;
+import com.zergatul.scripting.parser.Parser;
+import com.zergatul.scripting.parser.ParserOutput;
 import com.zergatul.scripting.tests.compiler.helpers.*;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -575,6 +584,37 @@ public class LambdaTests {
                         new DiagnosticMessage(
                                 BinderErrors.CannotCastArguments,
                                 new SingleLineTextRange(1, 13, 12, 15))));
+    }
+
+    @Test
+    public void failedArgument5Test() {
+        String code = """
+                run.multiple(10, (x) => {});
+                """;
+
+        LexerInput lexerInput = new LexerInput(code);
+        Lexer lexer = new Lexer(lexerInput);
+        LexerOutput lexerOutput = lexer.lex();
+
+        Parser parser = new Parser(lexerOutput);
+        ParserOutput parserOutput = parser.parse();
+
+        Binder binder = new Binder(parserOutput, new CompilationParametersBuilder().setRoot(ApiRoot.class).build());
+        BinderOutput binderOutput = binder.bind();
+
+        List<BoundStatementNode> statements = binderOutput.unit().statements.statements;
+        Assertions.assertEquals(statements.size(), 1);
+
+        BoundExpressionStatementNode statement = (BoundExpressionStatementNode) binderOutput.unit().statements.statements.get(0);
+        BoundMethodInvocationExpressionNode invocation = (BoundMethodInvocationExpressionNode) statement.expression;
+        List<BoundExpressionNode> arguments = invocation.arguments.arguments;
+        Assertions.assertEquals(arguments.size(), 2);
+
+        Assertions.assertEquals(arguments.get(0),
+                new BoundIntegerLiteralExpressionNode(10, new SingleLineTextRange(1, 14, 13, 2)));
+
+        Assertions.assertEquals(arguments.get(1),
+                new BoundInvalidExpressionNode(new SingleLineTextRange(1, 18, 17, 9)));
     }
 
     // TODO: capture function parameters?

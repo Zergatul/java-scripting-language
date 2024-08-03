@@ -32,4 +32,13 @@ public class BoundIntegerLiteralExpressionNode extends BoundExpressionNode {
     public List<BoundNode> getChildren() {
         return List.of();
     }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj instanceof BoundIntegerLiteralExpressionNode other) {
+            return other.value == value && other.getRange().equals(getRange());
+        } else {
+            return false;
+        }
+    }
 }
