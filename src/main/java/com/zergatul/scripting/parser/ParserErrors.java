@@ -20,4 +20,5 @@ public class ParserErrors {
     public static final ErrorCode InvalidRefExpression = new ErrorCode("C015", "A ref value should be assignable variable");
     public static final ErrorCode LeftParenthesisExpected = new ErrorCode("C016", "( expected, found %s");
     public static final ErrorCode RightParenthesisExpected = new ErrorCode("C017", ") expected, found %s");
+    public static final ErrorCode ColonExpected = new ErrorCode("C018", ": expected");
 }

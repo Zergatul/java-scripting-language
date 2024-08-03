@@ -18,7 +18,7 @@ public class ErrorRecoveryParserTests {
 
     @Test
     public void unfinishedMemberAccess1Test() {
-        var result = parse("""
+        ParserOutput result = parse("""
                 freeCam.t
                 freeCam.toggle();
                 """);
@@ -50,7 +50,7 @@ public class ErrorRecoveryParserTests {
 
     @Test
     public void unfinishedMemberAccess2Test() {
-        var result = parse("""
+        ParserOutput result = parse("""
                 obj.
                 boolean bbb = true;
                 """);
@@ -79,7 +79,7 @@ public class ErrorRecoveryParserTests {
 
     @Test
     public void notClosedBlockTest() {
-        var result = parse("""
+        ParserOutput result = parse("""
                 { *
                 """);
         Assertions.assertFalse(result.diagnostics().isEmpty());
@@ -87,10 +87,21 @@ public class ErrorRecoveryParserTests {
 
     @Test
     public void missingArgumentTest() {
-        var result = parse("""
+        ParserOutput result = parse("""
                 main.chat("abc",);
                 """);
         Assertions.assertFalse(result.diagnostics().isEmpty());
+    }
+
+    @Test
+    public void missingColonTest() {
+        ParserOutput result = parse("""
+                2 > 1 ? 3
+                """);
+        Assertions.assertFalse(result.diagnostics().isEmpty());
+        Assertions.assertEquals(
+                result.diagnostics().get(0),
+                new DiagnosticMessage(ParserErrors.ColonExpected, new SingleLineTextRange(1, 9, 8, 1)));
     }
 
     private ParserOutput parse(String code) {

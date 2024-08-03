@@ -1048,6 +1048,7 @@ public class Parser {
                 case RIGHT_CURLY_BRACKET -> addDiagnostic(ParserErrors.CloseCurlyBracketExpected, current, current.getRawValue(code));
                 case RIGHT_SQUARE_BRACKET -> addDiagnostic(ParserErrors.CloseSquareBracketExpected, current, current.getRawValue(code));
                 case SEMICOLON -> addDiagnostic(ParserErrors.SemicolonExpected, last);
+                case COLON -> addDiagnostic(ParserErrors.ColonExpected, last);
                 case IN -> addDiagnostic(ParserErrors.InExpected, current);
                 default -> throw new RuntimeException("Not implemented");
             }
