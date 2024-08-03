@@ -641,14 +641,21 @@ public class Binder {
                     })
                     .toList();
 
+            if (objectReference.type == SUnknown.instance) {
+                methodReferences = List.of(UnknownMethodReference.instance);
+            }
+
             boolean invalidArguments = false;
 
             MethodReference matchedMethod = UnknownMethodReference.instance;
             if (methodReferences.isEmpty()) {
+                invalidArguments = true;
                 addDiagnostic(
                         BinderErrors.MemberDoesNotExist,
                         memberAccess.name,
                         objectReference.type.toString(), memberAccess.name.value);
+            } else if (methodReferences.size() == 1 && methodReferences.get(0) == UnknownMethodReference.instance) {
+                invalidArguments = true;
             } else {
                 // filter by arguments count
                 methodReferences = methodReferences
