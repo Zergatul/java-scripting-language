@@ -1,15 +1,18 @@
 package com.zergatul.scripting.parser.nodes;
 
 import com.zergatul.scripting.TextRange;
+import com.zergatul.scripting.lexer.Token;
 import com.zergatul.scripting.parser.NodeType;
 import com.zergatul.scripting.parser.ParserTreeVisitor;
 
 public class AwaitExpressionNode extends ExpressionNode {
 
+    public final Token awaitToken;
     public final ExpressionNode expression;
 
-    public AwaitExpressionNode(ExpressionNode expression, TextRange range) {
+    public AwaitExpressionNode(Token awaitToken, ExpressionNode expression, TextRange range) {
         super(NodeType.AWAIT_EXPRESSION, range);
+        this.awaitToken = awaitToken;
         this.expression = expression;
     }
 

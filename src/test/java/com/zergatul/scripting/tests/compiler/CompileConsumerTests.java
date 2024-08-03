@@ -6,11 +6,14 @@ import com.zergatul.scripting.compiler.Compiler;
 import com.zergatul.scripting.tests.compiler.helpers.FutureHelper;
 import com.zergatul.scripting.tests.compiler.helpers.IntStorage;
 import com.zergatul.scripting.tests.compiler.helpers.Run;
+import com.zergatul.scripting.type.SType;
+import com.zergatul.scripting.type.SVoidType;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 public class CompileConsumerTests {
 
@@ -77,7 +80,7 @@ public class CompileConsumerTests {
                 await futures.create();
                 """;
 
-        IntConsumer program = compile(code, IntConsumer.class);
+        AsyncIntConsumer program = compileAsync(code, AsyncIntConsumer.class, SVoidType.instance);
         program.accept(2);
 
         Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(2));
@@ -95,7 +98,7 @@ public class CompileConsumerTests {
                 intStorage.add(value * value * value * value);
                 """;
 
-        IntConsumer program = compile(code, IntConsumer.class);
+        AsyncIntConsumer program = compileAsync(code, AsyncIntConsumer.class, SVoidType.instance);
         program.accept(2);
 
         Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(2));
@@ -164,6 +167,17 @@ public class CompileConsumerTests {
         return result.getProgram();
     }
 
+    private static <T> T compileAsync(String code, Class<T> clazz, SType returnType) {
+        Compiler compiler = new Compiler(new CompilationParametersBuilder()
+                .setRoot(ApiRoot.class)
+                .setInterface(clazz)
+                .setAsyncReturnType(returnType)
+                .build());
+        CompilationResult result = compiler.compile(code);
+        Assertions.assertNull(result.getDiagnostics());
+        return result.getProgram();
+    }
+
     public static class ApiRoot {
         public static Run run;
         public static FutureHelper futures;
@@ -173,6 +187,11 @@ public class CompileConsumerTests {
     @FunctionalInterface
     public interface IntConsumer {
         void accept(int value);
+    }
+
+    @FunctionalInterface
+    public interface AsyncIntConsumer {
+        CompletableFuture<?> accept(int value);
     }
 
     public interface BlockPosConsumer {

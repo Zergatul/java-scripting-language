@@ -16,11 +16,13 @@ public class CompilationParameters {
 
     private final List<StaticVariable> staticVariables = new ArrayList<>();
     private final Class<?> functionalInterface;
+    private final SType asyncReturnType;
     private final VisibilityChecker checker;
     private final boolean debug;
 
-    public CompilationParameters(Class<?> root, Class<?> functionalInterface, VisibilityChecker checker, boolean debug) {
+    public CompilationParameters(Class<?> root, Class<?> functionalInterface, SType asyncReturnType, VisibilityChecker checker, boolean debug) {
         this.functionalInterface = functionalInterface;
+        this.asyncReturnType = asyncReturnType;
         this.checker = checker;
         this.debug = debug;
         Arrays.stream(root.getDeclaredFields())
@@ -54,7 +56,15 @@ public class CompilationParameters {
     }
 
     public SType getReturnType() {
-        return SType.fromJavaType(getMethod(functionalInterface).getReturnType());
+        if (asyncReturnType != null) {
+            return asyncReturnType;
+        } else {
+            return SType.fromJavaType(getMethod(functionalInterface).getReturnType());
+        }
+    }
+
+    public boolean isAsync() {
+        return asyncReturnType != null;
     }
 
     protected void addStaticVariable(StaticVariable variable) {

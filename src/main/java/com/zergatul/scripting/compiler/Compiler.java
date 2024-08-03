@@ -268,13 +268,16 @@ public class Compiler {
             context.addStaticVariable((DeclaredStaticVariable) variable.name.symbol);
         }
 
-        if (isAsync(unit.statements)) {
+        if (parameters.isAsync()) {
             compileAsyncBoundStatementList(visitor, context, unit.statements);
         } else {
             compileStatementList(visitor, context, unit.statements);
         }
 
-        visitor.visitInsn(RETURN);
+        if (!parameters.isAsync() && parameters.getReturnType() == SVoidType.instance) {
+            visitor.visitInsn(RETURN);
+        }
+
         markEnd(visitor, context);
         visitor.visitMaxs(0, 0);
         visitor.visitEnd();
@@ -862,45 +865,27 @@ public class Compiler {
                 "next",
                 Type.getMethodDescriptor(Type.getType(CompletableFuture.class), Type.getType(Object.class)),
                 false);
+        parentVisitor.visitInsn(ARETURN);
     }
 
     private void compileSetGeneratorBoundary(MethodVisitor visitor, CompilerContext context, BoundSetGeneratorBoundaryNode node) {
         compileExpression(visitor, context, node.expression);
 
-        SFuture type = (SFuture) node.expression.type;
-        if (type.getUnderlying() == SVoidType.instance) {
-            visitor.visitVarInsn(ALOAD, 0);
-            visitor.visitMethodInsn(
-                    INVOKEVIRTUAL,
-                    context.getAsyncStateMachineClassName(),
-                    "runContinuation",
-                    Type.getMethodDescriptor(Type.getType(Runnable.class)),
-                    false);
+        visitor.visitVarInsn(ALOAD, 0);
+        visitor.visitMethodInsn(
+                INVOKEVIRTUAL,
+                context.getAsyncStateMachineClassName(),
+                "getContinuation",
+                Type.getMethodDescriptor(Type.getType(java.util.function.Function.class)),
+                false);
 
-            visitor.visitMethodInsn(
-                    INVOKEVIRTUAL,
-                    Type.getInternalName(CompletableFuture.class),
-                    "thenRun",
-                    Type.getMethodDescriptor(Type.getType(CompletableFuture.class), Type.getType(Runnable.class)),
-                    false);
-            visitor.visitInsn(ARETURN);
-        } else {
-            visitor.visitVarInsn(ALOAD, 0);
-            visitor.visitMethodInsn(
-                    INVOKEVIRTUAL,
-                    context.getAsyncStateMachineClassName(),
-                    "acceptContinuation",
-                    Type.getMethodDescriptor(Type.getType(Consumer.class)),
-                    false);
-
-            visitor.visitMethodInsn(
-                    INVOKEVIRTUAL,
-                    Type.getInternalName(CompletableFuture.class),
-                    "thenAccept",
-                    Type.getMethodDescriptor(Type.getType(CompletableFuture.class), Type.getType(Consumer.class)),
-                    false);
-            visitor.visitInsn(ARETURN);
-        }
+        visitor.visitMethodInsn(
+                INVOKEVIRTUAL,
+                Type.getInternalName(CompletableFuture.class),
+                "thenCompose",
+                Type.getMethodDescriptor(Type.getType(CompletableFuture.class), Type.getType(java.util.function.Function.class)),
+                false);
+        visitor.visitInsn(ARETURN);
     }
 
     private void compileGoToGeneratorState(MethodVisitor visitor, CompilerContext context, BoundSetGeneratorStateNode node) {

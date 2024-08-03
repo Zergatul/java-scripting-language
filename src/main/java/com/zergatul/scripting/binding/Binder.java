@@ -1008,6 +1008,10 @@ public class Binder {
     }
 
     private BoundAwaitExpressionNode bindAwaitExpression(AwaitExpressionNode node) {
+        if (!parameters.isAsync()) {
+            addDiagnostic(BinderErrors.AwaitInNonAsyncContext, node.awaitToken);
+        }
+
         BoundExpressionNode expression = bindExpression(node.expression);
         if (expression.type == SUnknown.instance) {
             return new BoundAwaitExpressionNode(expression, SUnknown.instance, node.getRange());

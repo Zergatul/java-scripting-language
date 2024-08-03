@@ -1,11 +1,14 @@
 package com.zergatul.scripting.compiler;
 
+import com.zergatul.scripting.type.SType;
+
 public class CompilationParametersBuilder {
 
     private Class<?> root;
     private Class<?> functionalInterface;
-    private boolean debug;
+    private SType asyncReturnType;
     private VisibilityChecker checker;
+    private boolean debug;
 
     public CompilationParametersBuilder() {
         functionalInterface = Runnable.class;
@@ -21,8 +24,8 @@ public class CompilationParametersBuilder {
         return this;
     }
 
-    public CompilationParametersBuilder setDebug() {
-        this.debug = true;
+    public CompilationParametersBuilder setAsyncReturnType(SType type) {
+        this.asyncReturnType = type;
         return this;
     }
 
@@ -31,7 +34,12 @@ public class CompilationParametersBuilder {
         return this;
     }
 
+    public CompilationParametersBuilder setDebug() {
+        this.debug = true;
+        return this;
+    }
+
     public CompilationParameters build() {
-        return new CompilationParameters(root, functionalInterface, checker, debug);
+        return new CompilationParameters(root, functionalInterface, asyncReturnType, checker, debug);
     }
 }

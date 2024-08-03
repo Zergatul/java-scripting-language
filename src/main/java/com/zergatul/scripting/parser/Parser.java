@@ -569,7 +569,7 @@ public class Parser {
         if (current.type == TokenType.AWAIT) {
             Token awaitToken = advance();
             ExpressionNode expression = parseExpressionCore(Precedences.getAwait());
-            left = new AwaitExpressionNode(expression, TextRange.combine(awaitToken, expression));
+            left = new AwaitExpressionNode(awaitToken, expression, TextRange.combine(awaitToken, expression));
         } else {
             UnaryOperator unary = switch (current.type) {
                 case PLUS -> UnaryOperator.PLUS;
