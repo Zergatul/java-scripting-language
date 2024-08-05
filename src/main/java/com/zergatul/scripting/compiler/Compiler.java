@@ -33,7 +33,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Consumer;
 
 import static org.objectweb.asm.Opcodes.*;
 
@@ -936,6 +935,7 @@ public class Compiler {
             case FUNCTION_INVOCATION -> compileFunctionInvocationExpression(visitor, context, (BoundFunctionInvocationExpression) expression);
             case GENERATOR_GET_VALUE -> compileGeneratorGetValue(visitor, context, (BoundGeneratorGetValueNode) expression);
             case STACK_LOAD -> compileStackLoad(visitor, (BoundStackLoadNode) expression);
+            case FUNCTION_AS_LAMBDA -> compileFunctionAsLambda(visitor, context, (BoundFunctionAsLambdaExpressionNode) expression);
             default -> throw new InternalException();
         }
     }
@@ -997,8 +997,6 @@ public class Compiler {
     private void compileNameExpression(MethodVisitor visitor, CompilerContext context, BoundNameExpressionNode expression) {
         if (expression.symbol instanceof Variable variable) {
             variable.compileLoad(context, visitor);
-        } else if (expression.symbol instanceof Function function) {
-            compileLambdaFromFunction(visitor, context, function, expression.getRange());
         } else {
             throw new InternalException("Not implemented.");
         }
@@ -1027,45 +1025,6 @@ public class Compiler {
         // ..., Ref, Ref
         holder.compileStore(context, visitor);
         // ..., Ref
-    }
-
-    private void compileLambdaFromFunction(MethodVisitor visitor, CompilerContext context, Function function, TextRange range) {
-        SFunction type = function.getFunctionType();
-        List<BoundParameterNode> parameters = new ArrayList<>(type.getParameters().size());
-        List<LocalVariable> variables = new ArrayList<>(type.getParameters().size());
-        CompilerContext lambdaContext = context.createFunction(type.getReturnType(), true);
-        for (SType parameterType : type.getParameterTypes()) {
-            LocalVariable variable = lambdaContext.addLocalVariable("p" + variables.size(), parameterType, null);
-            lambdaContext.setStackIndex(variable);
-            variables.add(variable);
-            parameters.add(new BoundParameterNode(
-                    new BoundNameExpressionNode(variable, range),
-                    parameterType,
-                    range));
-        }
-
-        List<BoundExpressionNode> arguments = new ArrayList<>(type.getParameters().size());
-        for (LocalVariable variable : variables) {
-            arguments.add(new BoundNameExpressionNode(variable, range));
-        }
-
-        BoundFunctionInvocationExpression invocation = new BoundFunctionInvocationExpression(
-                new BoundNameExpressionNode(function, range),
-                type.getReturnType(),
-                new BoundArgumentsListNode(arguments, range),
-                List.of(), // TODO: ref parameters?
-                range);
-        BoundStatementNode statement = type.getReturnType() == SVoidType.instance ?
-                new BoundExpressionStatementNode(invocation, range) :
-                new BoundReturnStatementNode(invocation, range);
-        BoundLambdaExpressionNode lambda = new BoundLambdaExpressionNode(
-                new SLambdaFunction(type.getReturnType(), type.getParameterTypes().toArray(SType[]::new)),
-                parameters,
-                statement,
-                List.of(),
-                List.of(),
-                range);
-        compileLambdaExpression(visitor, context, lambda);
     }
 
     private void compileMethodInvocationExpression(MethodVisitor visitor, CompilerContext context, BoundMethodInvocationExpressionNode invocation) {
@@ -1118,7 +1077,7 @@ public class Compiler {
     }
 
     private void compileLambdaExpression(MethodVisitor visitor, CompilerContext context, BoundLambdaExpressionNode expression) {
-        SLambdaFunction type = (SLambdaFunction) expression.type;
+        SFunctionalInterface type = (SFunctionalInterface) expression.type;
         Class<?> funcInterface = type.getJavaClass();
 
         ClassWriter writer = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
@@ -1142,19 +1101,15 @@ public class Compiler {
 
         String constructorDescriptor = buildLambdaConstructor(name, writer, closures);
 
-        Type[] argumentTypes = new Type[expression.parameters.size()];
-        Arrays.fill(argumentTypes, Type.getType(Object.class));
         MethodVisitor invokeVisitor = writer.visitMethod(
                 ACC_PUBLIC,
-                "invoke",
-                Type.getMethodDescriptor(
-                        type.isFunction() ? Type.getType(Object.class) : Type.VOID_TYPE,
-                        argumentTypes),
+                type.getMethodName(),
+                type.getMethodDescriptor(),
                 null,
                 null);
         invokeVisitor.visitCode();
 
-        CompilerContext lambdaContext = context.createFunction(type.getReturnType(), true);
+        CompilerContext lambdaContext = context.createFunction(type.getActualReturnType(), true);
         lambdaContext.setClassName(name);
 
         if (!expression.captured.isEmpty()) {
@@ -1181,20 +1136,28 @@ public class Compiler {
             lambdaContext.setStackIndex(arguments[i]);
         }
         for (int i = 0; i < expression.parameters.size(); i++) {
-            BoundParameterNode parameter = expression.parameters.get(i);
-            LocalVariable unboxed = (LocalVariable) parameter.getName().symbol;
-            lambdaContext.addLocalVariable(unboxed);
-            lambdaContext.setStackIndex(unboxed);
-            Class<?> boxedType = parameter.getType().getBoxedVersion();
+            SType raw = type.getRawParameters()[i];
+            SType actual = type.getActualParameters()[i];
+            if (!raw.equals(actual)) {
+                BoundParameterNode parameter = expression.parameters.get(i);
+                LocalVariable unboxed = (LocalVariable) parameter.getName().symbol;
+                lambdaContext.addLocalVariable(unboxed);
+                lambdaContext.setStackIndex(unboxed);
+                Class<?> boxedType = parameter.getType().getBoxedVersion();
 
-            arguments[i].compileLoad(context, invokeVisitor); // load argument
-            if (boxedType != null) {
-                invokeVisitor.visitTypeInsn(CHECKCAST, Type.getInternalName(boxedType)); // cast to boxed, example: java.lang.Integer
-                parameter.getType().compileUnboxing(invokeVisitor); // convert to unboxed
+                arguments[i].compileLoad(context, invokeVisitor); // load argument
+                if (boxedType != null) {
+                    invokeVisitor.visitTypeInsn(CHECKCAST, Type.getInternalName(boxedType)); // cast to boxed, example: java.lang.Integer
+                    parameter.getType().compileUnboxing(invokeVisitor); // convert to unboxed
+                } else {
+                    invokeVisitor.visitTypeInsn(CHECKCAST, Type.getInternalName(parameter.getType().getJavaClass()));
+                }
+                unboxed.compileStore(context, invokeVisitor);
             } else {
-                invokeVisitor.visitTypeInsn(CHECKCAST, Type.getInternalName(parameter.getType().getJavaClass()));
+                LocalVariable variable = (LocalVariable) expression.parameters.get(i).getName().symbol;
+                lambdaContext.addLocalVariable(variable);
+                variable.setStackIndex(type.getParameterStackIndex(i));
             }
-            unboxed.compileStore(context, invokeVisitor);
         }
         if (!expression.lifted.isEmpty()) {
             compileClosureClass(invokeVisitor, lambdaContext, expression.lifted);
@@ -1259,6 +1222,40 @@ public class Compiler {
         visitor.visitVarInsn(node.type.getLoadInst(), node.index);
     }
 
+    private void compileFunctionAsLambda(MethodVisitor visitor, CompilerContext context, BoundFunctionAsLambdaExpressionNode node) {
+        Function function = (Function) node.name.symbol;
+        SFunction type = function.getFunctionType();
+        List<BoundParameterNode> parameters = new ArrayList<>(type.getParameters().size());
+        List<LocalVariable> variables = new ArrayList<>(type.getParameters().size());
+        CompilerContext lambdaContext = context.createFunction(type.getReturnType(), true);
+        for (SType parameterType : type.getParameterTypes()) {
+            LocalVariable variable = lambdaContext.addLocalVariable("p" + variables.size(), parameterType, null);
+            lambdaContext.setStackIndex(variable);
+            variables.add(variable);
+            parameters.add(new BoundParameterNode(
+                    new BoundNameExpressionNode(variable),
+                    parameterType));
+        }
+
+        List<BoundExpressionNode> arguments = new ArrayList<>(type.getParameters().size());
+        for (LocalVariable variable : variables) {
+            arguments.add(new BoundNameExpressionNode(variable));
+        }
+
+        BoundFunctionInvocationExpression invocation = new BoundFunctionInvocationExpression(
+                new BoundNameExpressionNode(function),
+                type.getReturnType(),
+                new BoundArgumentsListNode(arguments));
+        BoundStatementNode statement = type.getReturnType() == SVoidType.instance ?
+                new BoundExpressionStatementNode(invocation) :
+                new BoundReturnStatementNode(invocation);
+        BoundLambdaExpressionNode lambda = new BoundLambdaExpressionNode(
+                node.type,
+                parameters,
+                statement);
+        compileLambdaExpression(visitor, context, lambda);
+    }
+
     private void releaseRefVariables(MethodVisitor visitor, CompilerContext context, List<RefHolder> refs) {
         for (RefHolder ref : refs) {
             LocalVariable holder = ref.getHolder();
@@ -1272,12 +1269,6 @@ public class Compiler {
                     false);
             variable.compileStore(context, visitor);
         }
-    }
-
-    private boolean isAsync(BoundNode node) {
-        AwaitVisitor visitor = new AwaitVisitor();
-        node.accept(visitor);
-        return visitor.isAsync();
     }
 
     private void markEnd(MethodVisitor visitor, CompilerContext context) {

@@ -10,6 +10,10 @@ public class BoundReturnStatementNode extends BoundStatementNode {
 
     public final BoundExpressionNode expression;
 
+    public BoundReturnStatementNode(BoundExpressionNode expression) {
+        this(expression, null);
+    }
+
     public BoundReturnStatementNode(BoundExpressionNode expression, TextRange range) {
         super(NodeType.RETURN_STATEMENT, range);
         this.expression = expression;

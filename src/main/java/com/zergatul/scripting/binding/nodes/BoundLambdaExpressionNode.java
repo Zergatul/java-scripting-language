@@ -20,6 +20,14 @@ public class BoundLambdaExpressionNode extends BoundExpressionNode {
     public BoundLambdaExpressionNode(
             SType type,
             List<BoundParameterNode> parameters,
+            BoundStatementNode body
+    ) {
+        this(type, parameters, body, List.of(), List.of(), null);
+    }
+
+    public BoundLambdaExpressionNode(
+            SType type,
+            List<BoundParameterNode> parameters,
             BoundStatementNode body,
             List<LiftedVariable> lifted,
             List<CapturedVariable> captured,

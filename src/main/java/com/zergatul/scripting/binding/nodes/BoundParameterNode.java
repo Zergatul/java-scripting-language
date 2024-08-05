@@ -20,6 +20,10 @@ public class BoundParameterNode extends BoundNode {
         this.type = typeNode.type;
     }
 
+    public BoundParameterNode(BoundNameExpressionNode name, SType type) {
+        this(name, type, null);
+    }
+
     public BoundParameterNode(BoundNameExpressionNode name, SType type, TextRange range) {
         super(NodeType.PARAMETER, range);
         this.name = name;

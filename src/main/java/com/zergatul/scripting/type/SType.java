@@ -1,7 +1,7 @@
 package com.zergatul.scripting.type;
 
+import com.zergatul.scripting.InterfaceHelper;
 import com.zergatul.scripting.InternalException;
-import com.zergatul.scripting.compiler.CompilerContext;
 import com.zergatul.scripting.parser.BinaryOperator;
 import com.zergatul.scripting.parser.UnaryOperator;
 import com.zergatul.scripting.runtime.*;
@@ -227,22 +227,14 @@ public abstract class SType {
 
     public static SType fromJavaType(java.lang.reflect.Type type) {
         if (type instanceof ParameterizedType parameterized) {
+            java.lang.reflect.Type raw = parameterized.getRawType();
+            if (raw instanceof Class<?> clazz) {
+                if (InterfaceHelper.isFuncInterface(clazz)) {
+                    return new SFunctionalInterface(parameterized);
+                }
+            }
+
             java.lang.reflect.Type[] arguments = parameterized.getActualTypeArguments();
-            if (parameterized.getRawType() == Action1.class) {
-                return new SLambdaFunction(SVoidType.instance, fromJavaType(arguments[0]));
-            }
-            if (parameterized.getRawType() == Action2.class) {
-                return new SLambdaFunction(SVoidType.instance, fromJavaType(arguments[0]), fromJavaType(arguments[1]));
-            }
-            if (parameterized.getRawType() == Function0.class) {
-                return new SLambdaFunction(fromJavaType(arguments[0]));
-            }
-            if (parameterized.getRawType() == Function1.class) {
-                return new SLambdaFunction(fromJavaType(arguments[0]), fromJavaType(arguments[1]));
-            }
-            if (parameterized.getRawType() == Function2.class) {
-                return new SLambdaFunction(fromJavaType(arguments[0]), fromJavaType(arguments[1]), fromJavaType(arguments[2]));
-            }
             if (parameterized.getRawType() == CompletableFuture.class) {
                 return new SFuture(fromJavaType(arguments[0]));
             }
@@ -269,23 +261,17 @@ public abstract class SType {
             if (clazz == String.class) {
                 return SString.instance;
             }
-            if (clazz == Action0.class) {
-                return new SLambdaFunction(SVoidType.instance);
-            }
             if (clazz == IntReference.class) {
                 return SReference.INT;
             }
             if (clazz == FloatReference.class) {
                 return SReference.FLOAT;
             }
-            /*if (type == Action1.class) {
-                return new SAction(SUnknown.instance);
-            }
-            if (type == Action2.class) {
-                return new SAction(SUnknown.instance, SUnknown.instance);
-            }*/
             if (clazz.isArray()) {
                 return new SArrayType(fromJavaType(clazz.getComponentType()));
+            }
+            if (InterfaceHelper.isFuncInterface(clazz)) {
+                return new SFunctionalInterface(clazz);
             }
             if (clazz.getSuperclass() != null || clazz == Object.class) {
                 return new SClassType(clazz);

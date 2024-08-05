@@ -1,5 +1,6 @@
 package com.zergatul.scripting.compiler;
 
+import com.zergatul.scripting.InterfaceHelper;
 import com.zergatul.scripting.InternalException;
 import com.zergatul.scripting.symbols.StaticFieldConstantStaticVariable;
 import com.zergatul.scripting.symbols.StaticVariable;
@@ -21,6 +22,10 @@ public class CompilationParameters {
     private final boolean debug;
 
     public CompilationParameters(Class<?> root, Class<?> functionalInterface, SType asyncReturnType, VisibilityChecker checker, boolean debug) {
+        if (!InterfaceHelper.isFuncInterface(functionalInterface)) {
+            throw new InternalException(String.format("%s is not a functional interface", functionalInterface));
+        }
+
         this.functionalInterface = functionalInterface;
         this.asyncReturnType = asyncReturnType;
         this.checker = checker;
@@ -49,7 +54,7 @@ public class CompilationParameters {
     }
 
     public void addFunctionalInterfaceParameters(CompilerContext context) {
-        Parameter[] parameters = getMethod(functionalInterface).getParameters();
+        Parameter[] parameters = InterfaceHelper.getFuncInterfaceMethod(functionalInterface).getParameters();
         for (int i = 0; i < parameters.length; i++) {
             context.addExternalParameter(parameters[i].getName(), SType.fromJavaType(parameters[i].getType()), i);
         }
@@ -59,7 +64,7 @@ public class CompilationParameters {
         if (asyncReturnType != null) {
             return asyncReturnType;
         } else {
-            return SType.fromJavaType(getMethod(functionalInterface).getReturnType());
+            return SType.fromJavaType(InterfaceHelper.getFuncInterfaceMethod(functionalInterface).getReturnType());
         }
     }
 

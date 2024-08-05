@@ -11,7 +11,10 @@ import java.util.List;
 public class CompilerHelper {
 
     public static Runnable compile(Class<?> api, String code) {
-        Compiler compiler = new Compiler(new CompilationParametersBuilder().setRoot(api).build());
+        Compiler compiler = new Compiler(new CompilationParametersBuilder()
+                .setRoot(api)
+                //.setDebug()
+                .build());
         CompilationResult result = compiler.compile(code);
         Assertions.assertNull(result.getDiagnostics());
         return result.getProgram();

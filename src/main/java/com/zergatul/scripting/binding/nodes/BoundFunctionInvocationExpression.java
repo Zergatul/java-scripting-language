@@ -14,6 +14,10 @@ public class BoundFunctionInvocationExpression extends BoundExpressionNode {
     public final BoundArgumentsListNode arguments;
     public final List<RefHolder> refVariables;
 
+    public BoundFunctionInvocationExpression(BoundNameExpressionNode name, SType type, BoundArgumentsListNode arguments) {
+        this(name, type, arguments, List.of(), null);
+    }
+
     public BoundFunctionInvocationExpression(BoundNameExpressionNode name, SType type, BoundArgumentsListNode arguments, List<RefHolder> refVariables, TextRange range) {
         super(NodeType.FUNCTION_INVOCATION, type, range);
         this.name = name;

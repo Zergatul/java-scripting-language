@@ -78,7 +78,7 @@ public class SFunction extends SType {
 
     @Override
     public CastOperation implicitCastTo(SType other) {
-        if (other instanceof SLambdaFunction lambdaType) {
+        if (other instanceof SFunctionalInterface lambdaType) {
             if (parametersMatch(lambdaType)) {
                 return new FunctionToLambdaOperation(other);
             }
@@ -102,22 +102,22 @@ public class SFunction extends SType {
         return sb.toString();
     }
 
-    private boolean parametersMatch(SLambdaFunction lambda) {
-        if (!returnType.equals(lambda.getReturnType())) {
+    private boolean parametersMatch(SFunctionalInterface lambda) {
+        if (!returnType.equals(lambda.getActualReturnType())) {
             return false;
         }
-        if (parameters.length != lambda.getParameters().length) {
+        if (parameters.length != lambda.getActualParameters().length) {
             return false;
         }
         for (int i = 0; i < parameters.length; i++) {
-            if (!parameters[i].type().equals(lambda.getParameters()[i])) {
+            if (!parameters[i].type().equals(lambda.getActualParameters()[i])) {
                 return false;
             }
         }
         return true;
     }
 
-    private static class FunctionToLambdaOperation extends CastOperation {
+    public static class FunctionToLambdaOperation extends CastOperation {
 
         private FunctionToLambdaOperation(SType type) {
             super(type);

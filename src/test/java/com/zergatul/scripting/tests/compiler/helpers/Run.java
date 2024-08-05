@@ -13,17 +13,15 @@ public class Run {
     private final List<Action1<Double>> floatHandlers = new ArrayList<>();
     private final List<Action2<Integer, String>> intStringHandlers = new ArrayList<>();
 
-    public void skip(Action0 action) {
+    public void skip(Runnable runnable) {}
 
+    public void once(Runnable runnable) {
+        runnable.run();
     }
 
-    public void once(Action0 action) {
-        action.invoke();
-    }
-
-    public void multiple(int count, Action0 action) {
+    public void multiple(int count, Runnable runnable) {
         for (int i = 0; i < count; i++) {
-            action.invoke();
+            runnable.run();
         }
     }
 
@@ -96,5 +94,30 @@ public class Run {
             initial = reducer.invoke(initial, element);
         }
         return initial;
+    }
+
+    @FunctionalInterface
+    public interface Action1<T> {
+        void invoke(T param1);
+    }
+
+    @FunctionalInterface
+    public interface Action2<T1, T2> {
+        void invoke(T1 param1, T2 param2);
+    }
+
+    @FunctionalInterface
+    public interface Function0<R> {
+        R invoke();
+    }
+
+    @FunctionalInterface
+    public interface Function1<R, T> {
+        R invoke(T param);
+    }
+
+    @FunctionalInterface
+    public interface Function2<R, T1, T2> {
+        R invoke(T1 param1, T2 param2);
     }
 }

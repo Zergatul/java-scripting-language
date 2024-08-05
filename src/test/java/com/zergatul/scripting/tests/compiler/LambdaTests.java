@@ -18,6 +18,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
+import java.util.function.Consumer;
 
 import static com.zergatul.scripting.tests.compiler.helpers.CompilerHelper.compile;
 import static com.zergatul.scripting.tests.compiler.helpers.CompilerHelper.getDiagnostics;
@@ -525,22 +526,47 @@ public class LambdaTests {
     }
 
     @Test
-    public void failedArguments1Test() {
+    public void customFunctionalInterface1Test() {
         String code = """
-                bad.run(() => intStorage.add(1));
+                custom.test(id => intStorage.add(id));
                 """;
 
-        List<DiagnosticMessage> diagnostics = getDiagnostics(ApiRoot.class, code);
-        Assertions.assertIterableEquals(
-                diagnostics,
-                List.of(
-                        new DiagnosticMessage(
-                                BinderErrors.CannotCastArguments,
-                                new SingleLineTextRange(1, 8, 7, 25))));
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(100, 101, 102, 103, 104));
     }
 
     @Test
-    public void failedArguments2Test() {
+    public void customFunctionalInterface2Test() {
+        String code = """
+                custom.test((i1, d1, i2, d2, i3, d3) => {
+                    intStorage.add(i1 + i2 + i3);
+                    floatStorage.add(d1 + d2 + d3);
+                });
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(33));
+        Assertions.assertIterableEquals(ApiRoot.floatStorage.list, List.of(0.875));
+    }
+
+    @Test
+    public void genericConsumerIntTest() {
+        String code = """
+                custom.acceptInt(i => intStorage.add(i));
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(10, 11, 12, 13, 14));
+    }
+
+    @Test
+    public void failedArguments1Test() {
         String code = """
                 run.once(10, () => {});
                 """;
@@ -557,7 +583,7 @@ public class LambdaTests {
     }
 
     @Test
-    public void failedArguments3Test() {
+    public void failedArguments2Test() {
         String code = """
                 run.multiple("10", () => {});
                 """;
@@ -572,7 +598,7 @@ public class LambdaTests {
     }
 
     @Test
-    public void failedArguments4Test() {
+    public void failedArguments3Test() {
         String code = """
                 run.multiple(10, (x) => {});
                 """;
@@ -587,7 +613,7 @@ public class LambdaTests {
     }
 
     @Test
-    public void failedArgument5Test() {
+    public void failedArgument4Test() {
         String code = """
                 run.multiple(10, (x) => {});
                 """;
@@ -626,12 +652,46 @@ public class LambdaTests {
         public static IntStorage intStorage = new IntStorage();
         public static FloatStorage floatStorage = new FloatStorage();
         public static StringStorage stringStorage = new StringStorage();
-        public static Bad bad = new Bad();
+        public static Custom custom = new Custom();
     }
 
-    public static class Bad {
-        public void run(Runnable runnable) {
-            runnable.run();
+    public static class Custom {
+        public void test(EntityIdConsumer consumer) {
+            for (int i = 100; i < 105; i++) {
+                consumer.accept(i);
+            }
         }
+
+        public void test(MultipleConsumer consumer) {
+            consumer.accept(10, 0.5, 11, 0.25, 12, 0.125);
+        }
+
+        public void acceptInt(Consumer<Integer> consumer) {
+            for (int i = 10; i < 15; i++) {
+                consumer.accept(i);
+            }
+        }
+
+        public void acceptFloat(Consumer<Double> consumer) {
+            for (double d = 10; d < 11; d += 0.25) {
+                consumer.accept(d);
+            }
+        }
+
+        public void acceptString(Consumer<String> consumer) {
+            for (String s = ""; s.length() < 5; s += "w") {
+                consumer.accept(s);
+            }
+        }
+    }
+
+    @FunctionalInterface
+    public interface EntityIdConsumer {
+        void accept(int entityId);
+    }
+
+    @FunctionalInterface
+    public interface MultipleConsumer {
+        void accept(int i1, double d1, int i2, double d2, int i3, double d3);
     }
 }

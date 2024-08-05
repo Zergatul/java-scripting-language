@@ -713,14 +713,24 @@ public class Binder {
                             if (argument.hasLambda()) {
                                 arguments.set(i, new PreBoundArgument(bindLambdaExpression(
                                         argument.lambda,
-                                        (SLambdaFunction) overload.method.getParameterTypes().get(i))));
+                                        (SFunctionalInterface) overload.method.getParameterTypes().get(i))));
                             } else {
                                 CastOperation cast = overload.casts.get(i);
                                 if (cast != null) {
-                                    arguments.set(i, new PreBoundArgument(new BoundImplicitCastExpressionNode(
-                                            argument.expression,
-                                            cast,
-                                            argument.expression.getRange())));
+                                    if (cast instanceof SFunction.FunctionToLambdaOperation) {
+                                        if (!(argument.expression instanceof BoundNameExpressionNode name)) {
+                                            throw new InternalException();
+                                        }
+                                        arguments.set(i, new PreBoundArgument(new BoundFunctionAsLambdaExpressionNode(
+                                                overload.method.getParameterTypes().get(i),
+                                                name,
+                                                name.getRange())));
+                                    } else {
+                                        arguments.set(i, new PreBoundArgument(new BoundImplicitCastExpressionNode(
+                                                argument.expression,
+                                                cast,
+                                                argument.expression.getRange())));
+                                    }
                                 }
                             }
                         }
@@ -764,7 +774,7 @@ public class Binder {
                         if (argument.hasLambda()) {
                             arguments.set(i, new PreBoundArgument(bindLambdaExpression(
                                     argument.lambda,
-                                    (SLambdaFunction) expected)));
+                                    (SFunctionalInterface) expected)));
                         }
                     } else if (argument.hasExpression()) {
                         CastOperation cast = argument.expression.type.implicitCastTo(expected);
@@ -813,13 +823,13 @@ public class Binder {
         return new BoundInvalidExpressionNode(invocation.getRange());
     }
 
-    private BoundExpressionNode bindLambdaExpression(LambdaExpressionNode node, SLambdaFunction lambdaType) {
-        int parametersCount = lambdaType.getParameters().length;
+    private BoundExpressionNode bindLambdaExpression(LambdaExpressionNode node, SFunctionalInterface lambdaType) {
+        int parametersCount = lambdaType.getActualParameters().length;
         if (node.parameters.size() != parametersCount) {
             throw new InternalException("Lambda parameters count mismatch.");
         }
 
-        pushFunctionScope(lambdaType.getReturnType());
+        pushFunctionScope(lambdaType.getActualReturnType());
 
         for (int i = 0; i < parametersCount; i++) {
             // parameters type will be Object due to type erasure
@@ -829,7 +839,7 @@ public class Binder {
         List<BoundParameterNode> parameters = new ArrayList<>();
         for (int i = 0; i < parametersCount; i++) {
             NameExpressionNode name = node.parameters.get(i);
-            SType type = lambdaType.getParameters()[i];
+            SType type = lambdaType.getActualParameters()[i];
             Variable variable = context.addLocalVariable(name.value, type, node.parameters.get(i).getRange());
             TextRange range = name.getRange();
             BoundNameExpressionNode boundName = new BoundNameExpressionNode(variable, range);
@@ -841,7 +851,7 @@ public class Binder {
             // rewrite to return statement
             BoundExpressionNode expression = bindExpression(expressionStatement.expression);
             SType actual = expression.type;
-            SType expected = lambdaType.getReturnType();
+            SType expected = lambdaType.getActualReturnType();
             if (!actual.equals(expected)) {
                 CastOperation cast = actual.implicitCastTo(expected);
                 if (cast == null) {
@@ -1148,9 +1158,9 @@ public class Binder {
             if (expression != null) {
                 return expression.type.equals(expected);
             } else {
-                if (expected instanceof SLambdaFunction lambdaType) {
+                if (expected instanceof SFunctionalInterface abstractFunction) {
                     LambdaAnalyzer analyzer = new LambdaAnalyzer();
-                    if (lambdaType.isFunction()) {
+                    if (abstractFunction.isFunction()) {
                         if (!analyzer.canBeFunction(lambda)) {
                             return false;
                         }
@@ -1160,7 +1170,7 @@ public class Binder {
                         }
                     }
 
-                    SType[] parameters1 = lambdaType.getParameters();
+                    SType[] parameters1 = abstractFunction.getActualParameters();
                     List<NameExpressionNode> parameters2 = lambda.parameters;
                     return parameters1.length == parameters2.size();
                 } else {
