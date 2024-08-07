@@ -67,6 +67,10 @@ public class SFunctionalInterface extends SType {
         this.paramStackIndexes = buildStackIndexes(rawParameters);
     }
 
+    public Method getMethod() {
+        return method;
+    }
+
     public boolean isFunction() {
         return getActualReturnType() != SVoidType.instance;
     }
