@@ -67,7 +67,8 @@ public class SFunctionalInterface extends SType {
         this.paramStackIndexes = buildStackIndexes(rawParameters);
     }
 
-    public Method getMethod() {
+    @SuppressWarnings("unused") // for monaco integration
+    public Method getInterfaceMethod() {
         return method;
     }
 
