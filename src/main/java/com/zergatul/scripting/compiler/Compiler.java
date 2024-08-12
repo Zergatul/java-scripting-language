@@ -1,7 +1,6 @@
 package com.zergatul.scripting.compiler;
 
 import com.zergatul.scripting.InternalException;
-import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.*;
 import com.zergatul.scripting.binding.nodes.*;
 import com.zergatul.scripting.generator.BinderTreeGenerator;
@@ -17,9 +16,9 @@ import com.zergatul.scripting.runtime.AsyncStateMachine;
 import com.zergatul.scripting.runtime.AsyncStateMachineException;
 import com.zergatul.scripting.symbols.*;
 import com.zergatul.scripting.type.*;
-import com.zergatul.scripting.visitors.AwaitVisitor;
 import com.zergatul.scripting.visitors.ExternalParameterVisitor;
 import com.zergatul.scripting.visitors.LiftedVariablesVisitor;
+import com.zergatul.scripting.visitors.LocalParameterVisitor;
 import org.objectweb.asm.*;
 
 import java.io.IOException;
@@ -162,13 +161,20 @@ public class Compiler {
             for (BoundParameterNode parameter : function.parameters.parameters) {
                 context.setStackIndex((LocalVariable) parameter.getName().symbol);
             }
-            compileBlockStatement(visitor, context, function.block);
 
-            if (type.getReturnType() != SVoidType.instance) {
-                type.getReturnType().storeDefaultValue(visitor);
+            if (function.isAsync) {
+                compileAsyncBoundStatementList(visitor, context, new BoundStatementsListNode(function.block.statements));
+            } else {
+                compileBlockStatement(visitor, context, function.block);
+                if (type.getReturnType() == SVoidType.instance) {
+                    visitor.visitInsn(RETURN);
+                }
             }
 
-            visitor.visitInsn(type.getReturnType().getReturnInst());
+            if (!function.isAsync && type.getReturnType() == SVoidType.instance) {
+                visitor.visitInsn(RETURN);
+            }
+
             visitor.visitMaxs(0, 0);
             visitor.visitEnd();
         }
@@ -726,16 +732,19 @@ public class Compiler {
 
         // lifted variables
         LiftedVariablesVisitor treeVisitor = new LiftedVariablesVisitor();
+        LocalParameterVisitor parameterVisitor = new LocalParameterVisitor();
         for (BoundVariableDeclarationNode declaration : node.prepend) {
             declaration.accept(treeVisitor);
         }
         for (StateBoundary boundary : generator.boundaries) {
             for (BoundStatementNode statement : boundary.statements) {
                 statement.accept(treeVisitor);
+                statement.accept(parameterVisitor);
             }
         }
 
         List<LiftedVariable> variables = treeVisitor.getVariables();
+        variables.addAll(parameterVisitor.getParameters());
         String[] fieldNames = new String[variables.size()];
         for (int i = 0; i < fieldNames.length; i++) {
             String varName = variables.get(i).getName();
@@ -899,7 +908,15 @@ public class Compiler {
         visitor.visitLdcInsn(-1);
         visitor.visitFieldInsn(PUTFIELD, context.getAsyncStateMachineClassName(), "state", Type.getDescriptor(int.class));
 
-        visitor.visitInsn(ACONST_NULL);
+        if (node.expression == null) {
+            visitor.visitInsn(ACONST_NULL);
+        } else {
+            compileExpression(visitor, context, node.expression);
+            if (node.expression.type.getBoxedVersion() != null) {
+                node.expression.type.compileBoxing(visitor);
+            }
+        }
+
         visitor.visitMethodInsn(
                 INVOKESTATIC,
                 Type.getInternalName(CompletableFuture.class),
@@ -1214,8 +1231,13 @@ public class Compiler {
 
         Symbol parameter = context.getSymbol("@result");
         parameter.compileLoad(context, visitor);
-        visitor.visitTypeInsn(CHECKCAST, Type.getInternalName(node.type.getBoxedVersion()));
-        node.type.compileUnboxing(visitor);
+
+        if (node.type.getBoxedVersion() != null) {
+            visitor.visitTypeInsn(CHECKCAST, Type.getInternalName(node.type.getBoxedVersion()));
+            node.type.compileUnboxing(visitor);
+        } else {
+            visitor.visitTypeInsn(CHECKCAST, Type.getInternalName(node.type.getJavaClass()));
+        }
     }
 
     private void compileStackLoad(MethodVisitor visitor, BoundStackLoadNode node) {

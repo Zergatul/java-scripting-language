@@ -21,52 +21,107 @@ public class BinderTreeGenerator {
     private StateBoundary currentBoundary;
 
     public void generate(List<BoundStatementNode> statements) {
-        ReturnTransformer transformer = new ReturnTransformer();
-        statements = statements.stream().map(transformer::process).toList();
-
         currentBoundary = newBoundary();
         for (BoundStatementNode statement : statements) {
             rewriteStatement(statement);
         }
 
-        boolean isLastReturn = statements.get(statements.size() - 1).getNodeType() == NodeType.RETURN_STATEMENT;
-        if (!isLastReturn) {
-            add(new BoundGeneratorReturnNode());
+        appendReturn();
+    }
+
+    private void appendReturn() {
+        List<BoundStatementNode> statements = currentBoundary.statements;
+        boolean append =
+                statements.isEmpty() ||
+                statements.get(statements.size() - 1).getNodeType() != NodeType.GENERATOR_RETURN;
+        if (append) {
+            statements.add(new BoundGeneratorReturnNode(null));
         }
     }
 
     private void rewriteStatement(BoundStatementNode node) {
         if (isAsync(node)) {
             switch (node.getNodeType()) {
-                case AUGMENTED_ASSIGNMENT_STATEMENT -> rewrite((BoundAugmentedAssignmentStatementNode) node);
-                case BLOCK_STATEMENT -> rewrite((BoundBlockStatementNode) node);
-                case EXPRESSION_STATEMENT -> rewrite((BoundExpressionStatementNode) node);
-                case FOR_LOOP_STATEMENT -> rewrite((BoundForLoopStatementNode) node);
-                case FOREACH_LOOP_STATEMENT -> rewrite((BoundForEachLoopStatementNode) node);
-                case IF_STATEMENT -> rewrite((BoundIfStatementNode) node);
-                case VARIABLE_DECLARATION -> rewrite((BoundVariableDeclarationNode) node);
-                case WHILE_LOOP_STATEMENT -> rewrite((BoundWhileLoopStatementNode) node);
+                case AUGMENTED_ASSIGNMENT_STATEMENT -> rewriteAsync((BoundAugmentedAssignmentStatementNode) node);
+                case BLOCK_STATEMENT -> rewriteAsync((BoundBlockStatementNode) node);
+                case EXPRESSION_STATEMENT -> rewriteAsync((BoundExpressionStatementNode) node);
+                case FOR_LOOP_STATEMENT -> rewriteAsync((BoundForLoopStatementNode) node);
+                case FOREACH_LOOP_STATEMENT -> rewriteAsync((BoundForEachLoopStatementNode) node);
+                case IF_STATEMENT -> rewriteAsync((BoundIfStatementNode) node);
+                case VARIABLE_DECLARATION -> rewriteAsync((BoundVariableDeclarationNode) node);
+                case WHILE_LOOP_STATEMENT -> rewriteAsync((BoundWhileLoopStatementNode) node);
+                case RETURN_STATEMENT -> rewriteAsync((BoundReturnStatementNode) node);
                 default -> throw new InternalException(String.format("Async %s not supported yet.", node.getNodeType()));
             }
         } else {
-            markVariableDeclarations(node);
-            liftCrossBoundaryVariables(node);
-            add(node);
+            processVariables(node);
+            add(rewriteStatementSync(node));
         }
     }
 
-    private void rewrite(BoundBlockStatementNode node) {
+    private BoundStatementNode rewriteStatementSync(BoundStatementNode node) {
+        return switch (node.getNodeType()) {
+            case BLOCK_STATEMENT -> rewrite((BoundBlockStatementNode) node);
+            case IF_STATEMENT -> rewrite((BoundIfStatementNode) node);
+            case FOR_LOOP_STATEMENT -> rewrite((BoundForLoopStatementNode) node);
+            case FOREACH_LOOP_STATEMENT -> rewrite((BoundForEachLoopStatementNode) node);
+            case WHILE_LOOP_STATEMENT -> rewrite((BoundWhileLoopStatementNode) node);
+            case RETURN_STATEMENT -> rewrite((BoundReturnStatementNode) node);
+            default -> node;
+        };
+    }
+
+    private BoundBlockStatementNode rewrite(BoundBlockStatementNode node) {
+        return new BoundBlockStatementNode(node.statements.stream().map(this::rewriteStatementSync).toList());
+    }
+
+    private BoundIfStatementNode rewrite(BoundIfStatementNode node) {
+        return new BoundIfStatementNode(
+                node.condition,
+                rewriteStatementSync(node.thenStatement),
+                node.elseStatement != null ? rewriteStatementSync(node.elseStatement) : null);
+    }
+
+    private BoundForLoopStatementNode rewrite(BoundForLoopStatementNode node) {
+        return new BoundForLoopStatementNode(
+                node.init,
+                node.condition,
+                node.update,
+                rewriteStatementSync(node.body));
+    }
+
+    private BoundForEachLoopStatementNode rewrite(BoundForEachLoopStatementNode node) {
+        return new BoundForEachLoopStatementNode(
+                node.typeNode,
+                node.name,
+                node.iterable,
+                rewriteStatementSync(node.body),
+                node.index,
+                node.length);
+    }
+
+    private BoundWhileLoopStatementNode rewrite(BoundWhileLoopStatementNode node) {
+        return new BoundWhileLoopStatementNode(
+                node.condition,
+                rewriteStatementSync(node.body));
+    }
+
+    private BoundGeneratorReturnNode rewrite(BoundReturnStatementNode node) {
+        return new BoundGeneratorReturnNode(node.expression);
+    }
+
+    private void rewriteAsync(BoundBlockStatementNode node) {
         for (BoundStatementNode statement : node.statements) {
             rewriteStatement(statement);
         }
     }
 
-    private void rewrite(BoundExpressionStatementNode node) {
+    private void rewriteAsync(BoundExpressionStatementNode node) {
         BoundExpressionNode expression = rewriteExpression(node.expression);
         add(new BoundExpressionStatementNode(expression));
     }
 
-    private void rewrite(BoundIfStatementNode node) {
+    private void rewriteAsync(BoundIfStatementNode node) {
         LiftedVariable condition = new LiftedVariable(new LocalVariable(null, SBoolean.instance, null));
         storeExpressionValue(condition, node.condition);
 
@@ -100,7 +155,7 @@ public class BinderTreeGenerator {
         boundaries.add(end);
     }
 
-    private void rewrite(BoundVariableDeclarationNode node) {
+    private void rewriteAsync(BoundVariableDeclarationNode node) {
         assert node.expression != null;
         assert isAsync(node.expression);
 
@@ -112,7 +167,7 @@ public class BinderTreeGenerator {
                 node.getRange()));
     }
 
-    private void rewrite(BoundForLoopStatementNode node) {
+    private void rewriteAsync(BoundForLoopStatementNode node) {
         rewriteStatement(node.init);
 
         StateBoundary begin = new StateBoundary();
@@ -144,7 +199,7 @@ public class BinderTreeGenerator {
         makeCurrent(end);
     }
 
-    private void rewrite(BoundForEachLoopStatementNode node) {
+    private void rewriteAsync(BoundForEachLoopStatementNode node) {
         BoundExpressionNode iterableExpression = rewriteExpression(node.iterable);
         LiftedVariable iterable = new LiftedVariable(new LocalVariable(null, node.iterable.type, null));
         LiftedVariable index = new LiftedVariable(node.index);
@@ -206,7 +261,7 @@ public class BinderTreeGenerator {
         makeCurrent(end);
     }
 
-    private void rewrite(BoundWhileLoopStatementNode node) {
+    private void rewriteAsync(BoundWhileLoopStatementNode node) {
         StateBoundary begin = newBoundary();
         StateBoundary end = new StateBoundary();
 
@@ -226,7 +281,14 @@ public class BinderTreeGenerator {
         makeCurrent(end);
     }
 
-    private void rewrite(BoundAugmentedAssignmentStatementNode node) {
+    private void rewriteAsync(BoundReturnStatementNode node) {
+        assert node.expression != null;
+
+        BoundExpressionNode expression = rewriteExpression(node.expression);
+        add(rewrite(new BoundReturnStatementNode(expression)));
+    }
+
+    private void rewriteAsync(BoundAugmentedAssignmentStatementNode node) {
         if (isAsync(node.left)) {
             throw new InternalException("Async left side augmented assignment is not supported yet.");
         }
@@ -242,19 +304,19 @@ public class BinderTreeGenerator {
     private BoundExpressionNode rewriteExpression(BoundExpressionNode node) {
         if (isAsync(node)) {
             return switch (node.getNodeType()) {
-                case AWAIT_EXPRESSION -> rewrite((BoundAwaitExpressionNode) node);
-                case BINARY_EXPRESSION -> rewrite((BoundBinaryExpressionNode) node);
-                case METHOD_INVOCATION_EXPRESSION -> rewrite((BoundMethodInvocationExpressionNode) node);
-                case UNARY_EXPRESSION -> rewrite((BoundUnaryExpressionNode) node);
-                default ->
-                        throw new InternalException(String.format("Async %s not supported yet.", node.getNodeType()));
+                case AWAIT_EXPRESSION -> rewriteAsync((BoundAwaitExpressionNode) node);
+                case BINARY_EXPRESSION -> rewriteAsync((BoundBinaryExpressionNode) node);
+                case METHOD_INVOCATION_EXPRESSION -> rewriteAsync((BoundMethodInvocationExpressionNode) node);
+                case UNARY_EXPRESSION -> rewriteAsync((BoundUnaryExpressionNode) node);
+                default -> throw new InternalException(String.format("Async %s not supported yet.", node.getNodeType()));
             };
         } else {
+            processVariables(node);
             return node;
         }
     }
 
-    private BoundExpressionNode rewrite(BoundAwaitExpressionNode node) {
+    private BoundExpressionNode rewriteAsync(BoundAwaitExpressionNode node) {
         StateBoundary boundary = newBoundary();
         add(new BoundSetGeneratorStateNode(boundary));
         add(new BoundSetGeneratorBoundaryNode(node.expression));
@@ -263,7 +325,7 @@ public class BinderTreeGenerator {
         return new BoundGeneratorGetValueNode(node.type);
     }
 
-    private BoundExpressionNode rewrite(BoundBinaryExpressionNode node) {
+    private BoundExpressionNode rewriteAsync(BoundBinaryExpressionNode node) {
         LiftedVariable lVar = new LiftedVariable(new LocalVariable(null, node.left.type, null));
         LiftedVariable rVar = new LiftedVariable(new LocalVariable(null, node.right.type, null));
 
@@ -276,7 +338,7 @@ public class BinderTreeGenerator {
                 new BoundNameExpressionNode(rVar));
     }
 
-    private BoundExpressionNode rewrite(BoundMethodInvocationExpressionNode node) {
+    private BoundExpressionNode rewriteAsync(BoundMethodInvocationExpressionNode node) {
         assert !isAsync(node.objectReference);
         assert node.arguments.arguments.stream().anyMatch(this::isAsync);
 
@@ -295,7 +357,7 @@ public class BinderTreeGenerator {
                 node.getRange());
     }
 
-    private BoundExpressionNode rewrite(BoundUnaryExpressionNode node) {
+    private BoundExpressionNode rewriteAsync(BoundUnaryExpressionNode node) {
         LiftedVariable variable = new LiftedVariable(new LocalVariable(null, node.operand.type, null));
         storeExpressionValue(variable, node.operand);
         return new BoundUnaryExpressionNode(
@@ -309,14 +371,27 @@ public class BinderTreeGenerator {
             BoundExpressionNode result = rewriteExpression(expression);
             add(new BoundVariableDeclarationNode(new BoundNameExpressionNode(variable), result));
         } else {
+            processVariables(expression);
             add(new BoundVariableDeclarationNode(new BoundNameExpressionNode(variable), expression));
         }
     }
 
-    private void markVariableDeclarations(BoundStatementNode statement) {
-        statement.accept(new BinderTreeVisitor() {
+    private void processVariables(BoundNode node) {
+        markVariableDeclarations(node);
+        liftCrossBoundaryVariables(node);
+    }
+
+    private void markVariableDeclarations(BoundNode node) {
+        node.accept(new BinderTreeVisitor() {
             @Override
             public void visit(BoundVariableDeclarationNode node) {
+                if (node.name.symbol instanceof LocalVariable local) {
+                    local.setGeneratorState(currentBoundary);
+                }
+            }
+
+            @Override
+            public void visit(BoundForEachLoopStatementNode node) {
                 if (node.name.symbol instanceof LocalVariable local) {
                     local.setGeneratorState(currentBoundary);
                 }
@@ -324,8 +399,8 @@ public class BinderTreeGenerator {
         });
     }
 
-    private void liftCrossBoundaryVariables(BoundStatementNode statement) {
-        statement.accept(new BinderTreeVisitor() {
+    private void liftCrossBoundaryVariables(BoundNode node) {
+        node.accept(new BinderTreeVisitor() {
             @Override
             public void visit(BoundNameExpressionNode node) {
                 if (node.symbol instanceof LocalVariable local) {

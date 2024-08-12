@@ -8,13 +8,15 @@ import java.util.List;
 
 public class BoundFunctionNode extends BoundNode {
 
+    public final boolean isAsync;
     public final BoundTypeNode returnType;
     public final BoundNameExpressionNode name;
     public final BoundParameterListNode parameters;
     public final BoundBlockStatementNode block;
 
-    public BoundFunctionNode(BoundTypeNode returnType, BoundNameExpressionNode name, BoundParameterListNode parameters, BoundBlockStatementNode block, TextRange range) {
+    public BoundFunctionNode(boolean isAsync, BoundTypeNode returnType, BoundNameExpressionNode name, BoundParameterListNode parameters, BoundBlockStatementNode block, TextRange range) {
         super(NodeType.FUNCTION, range);
+        this.isAsync = isAsync;
         this.returnType = returnType;
         this.name = name;
         this.parameters = parameters;

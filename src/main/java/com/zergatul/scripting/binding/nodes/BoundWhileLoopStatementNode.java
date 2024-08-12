@@ -11,6 +11,10 @@ public class BoundWhileLoopStatementNode extends BoundStatementNode {
     public final BoundExpressionNode condition;
     public final BoundStatementNode body;
 
+    public BoundWhileLoopStatementNode(BoundExpressionNode condition, BoundStatementNode body) {
+        this(condition, body, null);
+    }
+
     public BoundWhileLoopStatementNode(BoundExpressionNode condition, BoundStatementNode body, TextRange range) {
         super(NodeType.WHILE_LOOP_STATEMENT, range);
         this.condition = condition;

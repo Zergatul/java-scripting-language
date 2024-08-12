@@ -22,6 +22,17 @@ public class BoundForEachLoopStatementNode extends BoundStatementNode {
             BoundExpressionNode iterable,
             BoundStatementNode body,
             LocalVariable index,
+            LocalVariable length
+    ) {
+        this(typeNode, name, iterable, body, index, length, null);
+    }
+
+    public BoundForEachLoopStatementNode(
+            BoundTypeNode typeNode,
+            BoundNameExpressionNode name,
+            BoundExpressionNode iterable,
+            BoundStatementNode body,
+            LocalVariable index,
             LocalVariable length,
             TextRange range
     ) {

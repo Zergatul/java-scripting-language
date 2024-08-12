@@ -8,8 +8,11 @@ import java.util.List;
 
 public class BoundGeneratorReturnNode extends BoundStatementNode {
 
-    public BoundGeneratorReturnNode() {
+    public final BoundExpressionNode expression;
+
+    public BoundGeneratorReturnNode(BoundExpressionNode expression) {
         super(NodeType.GENERATOR_RETURN, null);
+        this.expression = expression;
     }
 
     @Override

@@ -13,6 +13,10 @@ public class BoundStatementsListNode extends BoundStatementNode {
     public final List<BoundStatementNode> statements;
     public final List<LiftedVariable> lifted;
 
+    public BoundStatementsListNode(List<BoundStatementNode> statements) {
+        this(statements, List.of(), null);
+    }
+
     public BoundStatementsListNode(List<BoundStatementNode> statements, List<LiftedVariable> lifted, TextRange range) {
         this(List.of(), statements, lifted, range);
     }

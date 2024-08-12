@@ -390,6 +390,7 @@ public class ParserTests {
                 new StaticVariablesListNode(List.of(), new SingleLineTextRange(1, 1, 0, 0)),
                 new FunctionsListNode(List.of(
                         new FunctionNode(
+                                null,
                                 new VoidTypeNode(new SingleLineTextRange(1, 1, 0, 4)),
                                 new NameExpressionNode(
                                         new IdentifierToken("a", new SingleLineTextRange(1, 6, 5, 1))),
@@ -409,6 +410,7 @@ public class ParserTests {
                 new StaticVariablesListNode(List.of(), new SingleLineTextRange(1, 1, 0, 0)),
                 new FunctionsListNode(List.of(
                         new FunctionNode(
+                                null,
                                 new ArrayTypeNode(
                                         new ArrayTypeNode(
                                                 new ArrayTypeNode(

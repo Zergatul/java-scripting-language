@@ -55,11 +55,14 @@ public class Binder {
         List<BoundParameterListNode> parametersList = new ArrayList<>(nodes.size());
         List<Function> symbols = new ArrayList<>(nodes.size());
         for (FunctionNode node : nodes) {
+            boolean isAsync = node.asyncToken != null;
             BoundTypeNode returnType = bindType(node.returnType);
+            SType actualReturnType = isAsync ? new SFuture(returnType.type) : returnType.type;
+
             pushStaticFunctionScope(returnType.type);
             contexts.add(context);
             BoundParameterListNode parameters = bindParameterList(node.parameters);
-            SFunction type = new SFunction(returnType.type, parameters.parameters.stream().map(pn -> new MethodParameter(pn.getName().value, pn.getType())).toArray(MethodParameter[]::new));
+            SFunction type = new SFunction(actualReturnType, parameters.parameters.stream().map(pn -> new MethodParameter(pn.getName().value, pn.getType())).toArray(MethodParameter[]::new));
 
             String identifier = node.name.value;
             Symbol existing = context.getSymbol(identifier);
@@ -98,7 +101,7 @@ public class Binder {
                 }
             }
 
-            functions.add(new BoundFunctionNode(returnTypes.get(i), name, parametersList.get(i), block, node.getRange()));
+            functions.add(new BoundFunctionNode(node.asyncToken != null, returnTypes.get(i), name, parametersList.get(i), block, node.getRange()));
         }
         context = old;
         return functions;

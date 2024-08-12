@@ -332,6 +332,9 @@ public class Parser {
     }
 
     private boolean isPossibleFunction() {
+        if (current.type == TokenType.ASYNC) {
+            return true;
+        }
         if (current.type == TokenType.VOID) {
             return true;
         }
@@ -355,6 +358,11 @@ public class Parser {
     }
 
     private FunctionNode parseFunction() {
+        Token asyncToken = null;
+        if (current.type == TokenType.ASYNC) {
+            asyncToken = advance();
+        }
+
         TypeNode returnType;
         if (current.type == TokenType.VOID) {
             returnType = new VoidTypeNode(advance().getRange());
@@ -374,7 +382,8 @@ public class Parser {
         ParameterListNode parameters = parseParameterList();
         BlockStatementNode body = parseBlockStatement();
 
-        return new FunctionNode(returnType, name, parameters, body, TextRange.combine(returnType, body));
+        TextRange range = TextRange.combine(asyncToken != null ? asyncToken : returnType, body);
+        return new FunctionNode(asyncToken, returnType, name, parameters, body, range);
     }
 
     private ParameterListNode parseParameterList() {

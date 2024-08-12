@@ -13,6 +13,10 @@ public class BoundForLoopStatementNode extends BoundStatementNode {
     public final BoundStatementNode update;
     public final BoundStatementNode body;
 
+    public BoundForLoopStatementNode(BoundStatementNode init, BoundExpressionNode condition, BoundStatementNode update, BoundStatementNode body) {
+        this(init, condition, update, body, null);
+    }
+
     public BoundForLoopStatementNode(BoundStatementNode init, BoundExpressionNode condition, BoundStatementNode update, BoundStatementNode body, TextRange range) {
         super(NodeType.FOR_LOOP_STATEMENT, range);
         this.init = init;

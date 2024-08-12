@@ -1,15 +1,12 @@
 package com.zergatul.scripting.tests.compiler;
 
+import com.zergatul.scripting.AsyncRunnable;
 import com.zergatul.scripting.DiagnosticMessage;
 import com.zergatul.scripting.SingleLineTextRange;
 import com.zergatul.scripting.binding.BinderErrors;
-import com.zergatul.scripting.compiler.CompilationParametersBuilder;
-import com.zergatul.scripting.compiler.CompilationResult;
-import com.zergatul.scripting.compiler.Compiler;
 import com.zergatul.scripting.tests.compiler.helpers.FutureHelper;
 import com.zergatul.scripting.tests.compiler.helpers.IntStorage;
 import com.zergatul.scripting.tests.compiler.helpers.Run;
-import com.zergatul.scripting.type.SVoidType;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -18,6 +15,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
+import static com.zergatul.scripting.tests.compiler.helpers.CompilerHelper.compileAsync;
 import static com.zergatul.scripting.tests.compiler.helpers.CompilerHelper.getDiagnostics;
 
 public class AwaitTests {
@@ -48,7 +46,7 @@ public class AwaitTests {
                 intStorage.add(789);
                 """;
 
-        AsyncRunnable program = compileAsync(code);
+        AsyncRunnable program = compileAsync(ApiRoot.class, code);
         CompletableFuture<?> future = program.run();
 
         Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(123, 456, 789));
@@ -63,7 +61,7 @@ public class AwaitTests {
                 intStorage.add(321);
                 """;
 
-        AsyncRunnable program = compileAsync(code);
+        AsyncRunnable program = compileAsync(ApiRoot.class, code);
         CompletableFuture<?> future = program.run();
 
         Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(123));
@@ -87,7 +85,7 @@ public class AwaitTests {
                 intStorage.add(x);
                 """;
 
-        AsyncRunnable program = compileAsync(code);
+        AsyncRunnable program = compileAsync(ApiRoot.class, code);
         CompletableFuture<?> future = program.run();
 
         Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(1));
@@ -112,7 +110,7 @@ public class AwaitTests {
                 intStorage.add(x);
                 """;
 
-        AsyncRunnable program = compileAsync(code);
+        AsyncRunnable program = compileAsync(ApiRoot.class, code);
         CompletableFuture<?> future = program.run();
 
         Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of());
@@ -135,7 +133,7 @@ public class AwaitTests {
                 intStorage.add(x);
                 """;
 
-        AsyncRunnable program = compileAsync(code);
+        AsyncRunnable program = compileAsync(ApiRoot.class, code);
         CompletableFuture<?> future = program.run();
 
         Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(1, 2));
@@ -159,7 +157,7 @@ public class AwaitTests {
                 intStorage.add(x);
                 """;
 
-        AsyncRunnable program = compileAsync(code);
+        AsyncRunnable program = compileAsync(ApiRoot.class, code);
         CompletableFuture<?> future = program.run();
 
         Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(1, 5));
@@ -194,7 +192,7 @@ public class AwaitTests {
                 intStorage.add(x);
                 """;
 
-        AsyncRunnable program = compileAsync(code);
+        AsyncRunnable program = compileAsync(ApiRoot.class, code);
         CompletableFuture<?> future = program.run();
 
         Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(1));
@@ -225,7 +223,7 @@ public class AwaitTests {
                 }
                 """;
 
-        AsyncRunnable program = compileAsync(code);
+        AsyncRunnable program = compileAsync(ApiRoot.class, code);
         CompletableFuture<?> future = program.run();
 
         Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(10));
@@ -252,7 +250,7 @@ public class AwaitTests {
                 }
                 """;
 
-        AsyncRunnable program = compileAsync(code);
+        AsyncRunnable program = compileAsync(ApiRoot.class, code);
         CompletableFuture<?> future = program.run();
 
         Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(20));
@@ -285,7 +283,7 @@ public class AwaitTests {
                 }
                 """;
 
-        AsyncRunnable program = compileAsync(code);
+        AsyncRunnable program = compileAsync(ApiRoot.class, code);
         CompletableFuture<?> future = program.run();
 
         Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of());
@@ -326,7 +324,7 @@ public class AwaitTests {
                 }
                 """;
 
-        AsyncRunnable program = compileAsync(code);
+        AsyncRunnable program = compileAsync(ApiRoot.class, code);
         CompletableFuture<?> future = program.run();
 
         Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of());
@@ -355,7 +353,7 @@ public class AwaitTests {
                 }
                 """;
 
-        AsyncRunnable program = compileAsync(code);
+        AsyncRunnable program = compileAsync(ApiRoot.class, code);
         CompletableFuture<?> future = program.run();
 
         Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of());
@@ -376,7 +374,7 @@ public class AwaitTests {
                 }
                 """;
 
-        AsyncRunnable program = compileAsync(code);
+        AsyncRunnable program = compileAsync(ApiRoot.class, code);
         CompletableFuture<?> future = program.run();
 
         Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of());
@@ -398,7 +396,7 @@ public class AwaitTests {
                 intStorage.add(200);
                 """;
 
-        AsyncRunnable program = compileAsync(code);
+        AsyncRunnable program = compileAsync(ApiRoot.class, code);
         CompletableFuture<?> future = program.run();
 
         Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of());
@@ -427,7 +425,7 @@ public class AwaitTests {
                 intStorage.add(200);
                 """;
 
-        AsyncRunnable program = compileAsync(code);
+        AsyncRunnable program = compileAsync(ApiRoot.class, code);
         CompletableFuture<?> future = program.run();
 
         Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(100));
@@ -448,7 +446,7 @@ public class AwaitTests {
                 }
                 """;
 
-        AsyncRunnable program = compileAsync(code);
+        AsyncRunnable program = compileAsync(ApiRoot.class, code);
         CompletableFuture<?> future = program.run();
 
         Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of());
@@ -469,7 +467,7 @@ public class AwaitTests {
                 }
                 """;
 
-        AsyncRunnable program = compileAsync(code);
+        AsyncRunnable program = compileAsync(ApiRoot.class, code);
         CompletableFuture<?> future = program.run();
 
         Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of());
@@ -490,7 +488,7 @@ public class AwaitTests {
                 }
                 """;
 
-        AsyncRunnable program = compileAsync(code);
+        AsyncRunnable program = compileAsync(ApiRoot.class, code);
         CompletableFuture<?> future = program.run();
 
         Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of());
@@ -515,7 +513,7 @@ public class AwaitTests {
                 }
                 """;
 
-        AsyncRunnable program = compileAsync(code);
+        AsyncRunnable program = compileAsync(ApiRoot.class, code);
         CompletableFuture<?> future = program.run();
 
         Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of());
@@ -533,7 +531,7 @@ public class AwaitTests {
                 intStorage.add(x);
                 """;
 
-        AsyncRunnable program = compileAsync(code);
+        AsyncRunnable program = compileAsync(ApiRoot.class, code);
         CompletableFuture<?> future = program.run();
 
         Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of());
@@ -552,7 +550,7 @@ public class AwaitTests {
                 intStorage.add(a1 + a2);
                 """;
 
-        AsyncRunnable program = compileAsync(code);
+        AsyncRunnable program = compileAsync(ApiRoot.class, code);
         CompletableFuture<?> future = program.run();
 
         Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of());
@@ -574,7 +572,7 @@ public class AwaitTests {
                 intStorage.add(x);
                 """;
 
-        AsyncRunnable program = compileAsync(code);
+        AsyncRunnable program = compileAsync(ApiRoot.class, code);
         CompletableFuture<?> future = program.run();
 
         Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of());
@@ -592,7 +590,7 @@ public class AwaitTests {
                 intStorage.add(b ? 1 : 2);
                 """;
 
-        AsyncRunnable program = compileAsync(code);
+        AsyncRunnable program = compileAsync(ApiRoot.class, code);
         CompletableFuture<?> future = program.run();
 
         Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of());
@@ -614,7 +612,7 @@ public class AwaitTests {
                 intStorage.add(x);
                 """;
 
-        AsyncRunnable program = compileAsync(code);
+        AsyncRunnable program = compileAsync(ApiRoot.class, code);
         CompletableFuture<?> future = program.run();
 
         Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of());
@@ -636,7 +634,7 @@ public class AwaitTests {
                 intStorage.add(x);
                 """;
 
-        AsyncRunnable program = compileAsync(code);
+        AsyncRunnable program = compileAsync(ApiRoot.class, code);
         CompletableFuture<?> future = program.run();
 
         Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of());
@@ -654,7 +652,7 @@ public class AwaitTests {
                 intStorage.add(x);
                 """;
 
-        AsyncRunnable program = compileAsync(code);
+        AsyncRunnable program = compileAsync(ApiRoot.class, code);
         CompletableFuture<?> future = program.run();
 
         Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of());
@@ -671,7 +669,7 @@ public class AwaitTests {
                 intStorage.add(await futures.createInt() + await futures.createInt());
                 """;
 
-        AsyncRunnable program = compileAsync(code);
+        AsyncRunnable program = compileAsync(ApiRoot.class, code);
         CompletableFuture<?> future = program.run();
 
         Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of());
@@ -694,7 +692,7 @@ public class AwaitTests {
                 }
                 """;
 
-        AsyncRunnable program = compileAsync(code);
+        AsyncRunnable program = compileAsync(ApiRoot.class, code);
         CompletableFuture<?> future = program.run();
 
         List<Integer> list = new ArrayList<>();
@@ -722,7 +720,7 @@ public class AwaitTests {
                 }
                 """;
 
-        AsyncRunnable program = compileAsync(code);
+        AsyncRunnable program = compileAsync(ApiRoot.class, code);
         CompletableFuture<?> future = program.run();
 
         List<Integer> list = new ArrayList<>();
@@ -752,7 +750,7 @@ public class AwaitTests {
                 }
                 """;
 
-        AsyncRunnable program = compileAsync(code);
+        AsyncRunnable program = compileAsync(ApiRoot.class, code);
         CompletableFuture<?> future = program.run();
 
         Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of());
@@ -795,7 +793,7 @@ public class AwaitTests {
                 }
                 """;
 
-        AsyncRunnable program = compileAsync(code);
+        AsyncRunnable program = compileAsync(ApiRoot.class, code);
         CompletableFuture<?> future = program.run();
 
         Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(0));
@@ -829,7 +827,7 @@ public class AwaitTests {
                 intStorage.add(sum);
                 """;
 
-        AsyncRunnable program = compileAsync(code);
+        AsyncRunnable program = compileAsync(ApiRoot.class, code);
         CompletableFuture<?> future = program.run();
 
         Assertions.assertFalse(future.isDone());
@@ -853,7 +851,7 @@ public class AwaitTests {
                 intStorage.add(sum);
                 """;
 
-        AsyncRunnable program = compileAsync(code);
+        AsyncRunnable program = compileAsync(ApiRoot.class, code);
         CompletableFuture<?> future = program.run();
 
         Assertions.assertFalse(future.isDone());
@@ -877,7 +875,7 @@ public class AwaitTests {
                 intStorage.add(sum);
                 """;
 
-        AsyncRunnable program = compileAsync(code);
+        AsyncRunnable program = compileAsync(ApiRoot.class, code);
         CompletableFuture<?> future = program.run();
 
         Assertions.assertFalse(future.isDone());
@@ -902,7 +900,7 @@ public class AwaitTests {
                 }
                 """;
 
-        AsyncRunnable program = compileAsync(code);
+        AsyncRunnable program = compileAsync(ApiRoot.class, code);
         CompletableFuture<?> future = program.run();
 
         List<Integer> list = new ArrayList<>();
@@ -931,7 +929,7 @@ public class AwaitTests {
                 intStorage.add(10);
                 """;
 
-        AsyncRunnable program = compileAsync(code);
+        AsyncRunnable program = compileAsync(ApiRoot.class, code);
         CompletableFuture<?> future = program.run();
 
         Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of());
@@ -953,7 +951,7 @@ public class AwaitTests {
                 intStorage.add(10);
                 """;
 
-        AsyncRunnable program = compileAsync(code);
+        AsyncRunnable program = compileAsync(ApiRoot.class, code);
         CompletableFuture<?> future = program.run();
 
         Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of());
@@ -981,7 +979,7 @@ public class AwaitTests {
                 intStorage.add(100);
                 """;
 
-        AsyncRunnable program = compileAsync(code);
+        AsyncRunnable program = compileAsync(ApiRoot.class, code);
         CompletableFuture<?> future = program.run();
 
         Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of());
@@ -1024,7 +1022,7 @@ public class AwaitTests {
                 intStorage.add(100);
                 """;
 
-        AsyncRunnable program = compileAsync(code);
+        AsyncRunnable program = compileAsync(ApiRoot.class, code);
         CompletableFuture<?> future = program.run();
 
         Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of());
@@ -1055,7 +1053,7 @@ public class AwaitTests {
                 intStorage.add(100);
                 """;
 
-        AsyncRunnable program = compileAsync(code);
+        AsyncRunnable program = compileAsync(ApiRoot.class, code);
         CompletableFuture<?> future = program.run();
 
         Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of());
@@ -1091,7 +1089,7 @@ public class AwaitTests {
                 intStorage.add(100);
                 """;
 
-        AsyncRunnable program = compileAsync(code);
+        AsyncRunnable program = compileAsync(ApiRoot.class, code);
         CompletableFuture<?> future = program.run();
 
         Assertions.assertFalse(future.isDone());
@@ -1110,7 +1108,7 @@ public class AwaitTests {
                 intStorage.add(100);
                 """;
 
-        AsyncRunnable program = compileAsync(code);
+        AsyncRunnable program = compileAsync(ApiRoot.class, code);
         CompletableFuture<?> future = program.run();
 
         Assertions.assertFalse(future.isDone());
@@ -1120,26 +1118,9 @@ public class AwaitTests {
         Assertions.assertTrue(future.isDone());
     }
 
-    private static AsyncRunnable compileAsync(String code) {
-        Compiler compiler = new Compiler(new CompilationParametersBuilder()
-                .setRoot(ApiRoot.class)
-                .setInterface(AsyncRunnable.class)
-                .setAsyncReturnType(SVoidType.instance)
-                //.setDebug()
-                .build());
-        CompilationResult result = compiler.compile(code);
-        Assertions.assertNull(result.getDiagnostics());
-        return result.getProgram();
-    }
-
     public static class ApiRoot {
         public static FutureHelper futures;
         public static IntStorage intStorage;
         public static Run run;
-    }
-
-    @FunctionalInterface
-    public interface AsyncRunnable {
-        CompletableFuture<?> run();
     }
 }
