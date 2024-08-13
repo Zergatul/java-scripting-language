@@ -758,10 +758,24 @@ public class Compiler {
         }
 
         // build constructor
-        MethodVisitor constructorVisitor = writer.visitMethod(ACC_PUBLIC, "<init>", Type.getMethodDescriptor(Type.VOID_TYPE), null, null);
+        SType[] ctorParameters1 = new SType[parameterVisitor.getParameters().size()];
+        Type[] ctorParameters2 = new Type[parameterVisitor.getParameters().size()];
+        for (int i = 0; i < ctorParameters1.length; i++) {
+            ctorParameters1[i] = parameterVisitor.getParameters().get(i).getType();
+            ctorParameters2[i] = Type.getType(ctorParameters1[i].getJavaClass());
+        }
+        int[] indexes = StackHelper.buildStackIndexes(ctorParameters1);
+        MethodVisitor constructorVisitor = writer.visitMethod(ACC_PUBLIC, "<init>", Type.getMethodDescriptor(Type.VOID_TYPE, ctorParameters2), null, null);
         constructorVisitor.visitCode();
         constructorVisitor.visitVarInsn(ALOAD, 0);
         constructorVisitor.visitMethodInsn(INVOKESPECIAL, Type.getInternalName(Object.class), "<init>", Type.getMethodDescriptor(Type.VOID_TYPE), false);
+        //
+        for (int i = 0; i < indexes.length; i++) {
+            constructorVisitor.visitVarInsn(ALOAD, 0); // this
+            constructorVisitor.visitVarInsn(ctorParameters1[i].getLoadInst(), indexes[i]);
+            LiftedVariable lifted = parameterVisitor.getParameters().get(i);
+            constructorVisitor.visitFieldInsn(PUTFIELD, lifted.getClassName(), lifted.getFieldName(), Type.getDescriptor(lifted.getType().getJavaClass()));
+        }
         //
         constructorVisitor.visitInsn(RETURN);
         constructorVisitor.visitMaxs(0, 0);
@@ -841,11 +855,15 @@ public class Compiler {
         /**/
         parentVisitor.visitTypeInsn(NEW, name);
         parentVisitor.visitInsn(DUP);
+        for (LiftedVariable lifted : parameterVisitor.getParameters()) {
+            LocalVariable local = lifted.getUnderlying();
+            local.compileLoad(context, parentVisitor);
+        }
         parentVisitor.visitMethodInsn(
                 INVOKESPECIAL,
                 name,
                 "<init>",
-                Type.getMethodDescriptor(Type.VOID_TYPE),
+                Type.getMethodDescriptor(Type.VOID_TYPE, ctorParameters2),
                 false);
 
         for (BoundVariableDeclarationNode declaration : node.prepend) {

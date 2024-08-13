@@ -280,7 +280,7 @@ public class AsyncFunctionTests {
     }
 
     @Test
-    public void parametersTest() {
+    public void parametersTest1() {
         String code = """
                 async int func(int x) {
                     return await futures.createInt() + x;
@@ -296,6 +296,26 @@ public class AsyncFunctionTests {
 
         ApiRoot.futures.getInt(0).complete(23);
         Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(123));
+        Assertions.assertTrue(future.isDone());
+    }
+
+    @Test
+    public void parametersTest2() {
+        String code = """
+                async float func(float a, float b) {
+                    return await futures.createFloat() + a * a + b * b * b;
+                }
+                
+                floatStorage.add(await func(1.5, 2));
+                """;
+
+        AsyncRunnable program = compileAsync(ApiRoot.class, code);
+        CompletableFuture<?> future = program.run();
+
+        Assertions.assertFalse(future.isDone());
+
+        ApiRoot.futures.getFloat(0).complete(0.0125);
+        Assertions.assertIterableEquals(ApiRoot.floatStorage.list, List.of(10.2625));
         Assertions.assertTrue(future.isDone());
     }
 

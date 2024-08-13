@@ -2,6 +2,7 @@ package com.zergatul.scripting.type;
 
 import com.zergatul.scripting.InterfaceHelper;
 import com.zergatul.scripting.InternalException;
+import com.zergatul.scripting.compiler.StackHelper;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Type;
 
@@ -31,7 +32,7 @@ public class SFunctionalInterface extends SType {
                 .map(Parameter::getType)
                 .map(SType::fromJavaType)
                 .toArray(SType[]::new);
-        this.paramStackIndexes = buildStackIndexes(rawParameters);
+        this.paramStackIndexes = StackHelper.buildStackIndexes(rawParameters);
     }
 
     public SFunctionalInterface(ParameterizedType type) {
@@ -64,7 +65,7 @@ public class SFunctionalInterface extends SType {
                 .map(SType::fromJavaType)
                 .toArray(SType[]::new);
 
-        this.paramStackIndexes = buildStackIndexes(rawParameters);
+        this.paramStackIndexes = StackHelper.buildStackIndexes(rawParameters);
     }
 
     @SuppressWarnings("unused") // for monaco integration
@@ -142,14 +143,6 @@ public class SFunctionalInterface extends SType {
 
     public String getMethodDescriptor() {
         return Type.getMethodDescriptor(method);
-    }
-
-    private static int[] buildStackIndexes(SType[] parameters) {
-        int[] indexes = new int[parameters.length];
-        for (int i = 0; i < parameters.length; i++) {
-            indexes[i] = i == 0 ? 1 : indexes[i - 1] + (parameters[i - 1].isJvmCategoryOneComputationalType() ? 1 : 2);
-        }
-        return indexes;
     }
 
     private static int findTypeParamIndex(TypeVariable<? extends Class<?>>[] params, String name) {

@@ -9,6 +9,7 @@ public class FutureHelper {
     private final List<CompletableFuture<Void>> voids = new ArrayList<>();
     private final List<CompletableFuture<Boolean>> bools = new ArrayList<>();
     private final List<CompletableFuture<Integer>> ints = new ArrayList<>();
+    private final List<CompletableFuture<Double>> floats = new ArrayList<>();
 
     public CompletableFuture<Void> create() {
         CompletableFuture<Void> future = new CompletableFuture<>();
@@ -28,6 +29,12 @@ public class FutureHelper {
         return future;
     }
 
+    public CompletableFuture<Double> createFloat() {
+        CompletableFuture<Double> future = new CompletableFuture<>();
+        floats.add(future);
+        return future;
+    }
+
     public CompletableFuture<Void> get(int index) {
         return voids.get(index);
     }
@@ -38,6 +45,10 @@ public class FutureHelper {
 
     public CompletableFuture<Integer> getInt(int index) {
         return ints.get(index);
+    }
+
+    public CompletableFuture<Double> getFloat(int index) {
+        return floats.get(index);
     }
 
     public int getVoidCount() {

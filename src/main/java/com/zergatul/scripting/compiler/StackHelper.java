@@ -10,6 +10,14 @@ import static org.objectweb.asm.Opcodes.SWAP;
 
 public class StackHelper {
 
+    public static int[] buildStackIndexes(SType[] parameters) {
+        int[] indexes = new int[parameters.length];
+        for (int i = 0; i < parameters.length; i++) {
+            indexes[i] = i == 0 ? 1 : indexes[i - 1] + (parameters[i - 1].isJvmCategoryOneComputationalType() ? 1 : 2);
+        }
+        return indexes;
+    }
+
     public static void duplicate2(MethodVisitor visitor, SType type1, SType type2) {
         if (type1.isJvmCategoryOneComputationalType() && type2.isJvmCategoryOneComputationalType()) {
             visitor.visitInsn(DUP2);
