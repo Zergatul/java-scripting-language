@@ -72,6 +72,11 @@ public class CompilationParameters {
         return asyncReturnType != null;
     }
 
+    @SuppressWarnings("unused")
+    public VisibilityChecker getChecker() {
+        return checker;
+    }
+
     protected void addStaticVariable(StaticVariable variable) {
         if (staticVariables.stream().anyMatch(v -> v.getName().equals(variable.getName()))) {
             throw new InternalException();
