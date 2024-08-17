@@ -68,12 +68,15 @@ public class StaticAsInstanceMethodReference extends MethodReference {
                     .filter(m -> m.getName().equals(name))
                     .filter(m -> Modifier.isPublic(m.getModifiers()))
                     .filter(m -> Modifier.isStatic(m.getModifiers()))
-                    .filter(m -> m.getReturnType() == ownerType.getJavaClass())
-                    .filter(m -> m.getParameterCount() == parameters.length)
+                    .filter(m -> m.getReturnType() == returnType.getJavaClass())
+                    .filter(m -> m.getParameterCount() == parameters.length + 1)
                     .filter(m -> {
                         Class<?>[] types = m.getParameterTypes();
+                        if (types[0] != ownerType.getJavaClass()) {
+                            return false;
+                        }
                         for (int i = 0; i < parameters.length; i++) {
-                            if (types[i] != parameters[i].type().getJavaClass()) {
+                            if (types[i + 1] != parameters[i].type().getJavaClass()) {
                                 return false;
                             }
                         }
