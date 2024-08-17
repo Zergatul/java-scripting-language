@@ -45,7 +45,7 @@ public class CompilationParameters {
     }
 
     public CompilerContext getContext() {
-        CompilerContext context = new CompilerContext();
+        CompilerContext context = new CompilerContext(getReturnType());
         context.setChecker(checker);
         for (StaticVariable variable : staticVariables) {
             context.addStaticVariable(variable);

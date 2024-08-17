@@ -10,4 +10,8 @@ public class IntStorage {
     public void add(int value) {
         list.add(value);
     }
+
+    public int last() {
+        return list.get(list.size() - 1);
+    }
 }

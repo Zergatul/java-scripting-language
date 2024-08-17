@@ -41,6 +41,10 @@ public class CompilerContext {
         this(1);
     }
 
+    public CompilerContext(SType returnType) {
+        this(1, true, returnType, null);
+    }
+
     public CompilerContext(int initialStackIndex) {
         this(initialStackIndex, true, SVoidType.instance, null);
     }
