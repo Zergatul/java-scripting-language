@@ -2,8 +2,9 @@ package com.zergatul.scripting.type;
 
 import com.zergatul.scripting.type.operation.BinaryOperation;
 import com.zergatul.scripting.type.operation.CastOperation;
-import com.zergatul.scripting.type.operation.UnaryOperation;
 import org.objectweb.asm.MethodVisitor;
+
+import java.util.List;
 
 import static org.objectweb.asm.Opcodes.*;
 
@@ -57,6 +58,11 @@ public class SChar extends SPredefinedType {
     }
 
     @Override
+    public List<MethodReference> getInstanceMethods() {
+        return List.of(METHOD_TO_STRING);
+    }
+
+    @Override
     public CastOperation implicitCastTo(SType other) {
         return other == SInt.instance ? CHAR_TO_INT : null;
     }
@@ -83,6 +89,7 @@ public class SChar extends SPredefinedType {
 
     @Override
     public BinaryOperation equalsOp(SType other) {
+        String.valueOf('c');
         return other == SChar.instance ? SInt.instance.equalsOp(SInt.instance) : null;
     }
 
@@ -100,4 +107,14 @@ public class SChar extends SPredefinedType {
         @Override
         public void apply(MethodVisitor visitor) {}
     };
+
+    private static final MethodReference METHOD_TO_STRING = new StaticAsInstanceMethodReference(
+            """
+                    Returns a string containing single character
+                    """,
+            String.class,
+            SChar.instance,
+            "valueOf",
+            "toString",
+            SString.instance);
 }

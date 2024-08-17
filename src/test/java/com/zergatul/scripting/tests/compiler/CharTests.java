@@ -2,6 +2,7 @@ package com.zergatul.scripting.tests.compiler;
 
 import com.zergatul.scripting.tests.compiler.helpers.BoolStorage;
 import com.zergatul.scripting.tests.compiler.helpers.IntStorage;
+import com.zergatul.scripting.tests.compiler.helpers.StringStorage;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -16,6 +17,7 @@ public class CharTests {
     public void clean() {
         ApiRoot.boolStorage = new BoolStorage();
         ApiRoot.intStorage = new IntStorage();
+        ApiRoot.stringStorage = new StringStorage();
     }
 
     @Test
@@ -180,8 +182,24 @@ public class CharTests {
                 List.of(true, false, true, true, true, false, false, true, true));
     }
 
+    @Test
+    public void toStringTest() {
+        String code = """
+                stringStorage.add('a'.toString());
+                stringStorage.add('1'.toString());
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(
+                ApiRoot.stringStorage.list,
+                List.of("a", "1"));
+    }
+
     public static class ApiRoot {
         public static BoolStorage boolStorage;
         public static IntStorage intStorage;
+        public static StringStorage stringStorage;
     }
 }

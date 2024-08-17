@@ -12,6 +12,8 @@ import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Type;
 
+import java.util.List;
+
 import static org.objectweb.asm.Opcodes.*;
 
 public class SBoolean extends SPredefinedType {
@@ -134,6 +136,11 @@ public class SBoolean extends SPredefinedType {
     }
 
     @Override
+    public List<MethodReference> getInstanceMethods() {
+        return List.of(METHOD_TO_STRING);
+    }
+
+    @Override
     public SReference getReferenceType() {
         return SReference.BOOLEAN;
     }
@@ -189,4 +196,13 @@ public class SBoolean extends SPredefinedType {
             left.visitLabel(end);
         }
     };
+
+    private static final MethodReference METHOD_TO_STRING = new StaticAsInstanceMethodReference(
+            """
+                    Returns a string representation of a boolean
+                    """,
+            Boolean.class,
+            SBoolean.instance,
+            "toString",
+            SString.instance);
 }

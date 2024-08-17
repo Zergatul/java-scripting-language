@@ -17,23 +17,37 @@ public class StaticAsInstanceMethodReference extends MethodReference {
 
     private final Class<?> ownerClass;
     private final SType ownerType;
+    private final String underlyingName;
     private final String name;
     private final SType returnType;
     private final MethodParameter[] parameters;
     private final Optional<String> description;
 
     public StaticAsInstanceMethodReference(Class<?> ownerClass, SType ownerType, String name, SType returnType, MethodParameter... parameters) {
-        this(Optional.empty(), ownerClass, ownerType, name, returnType, parameters);
+        this(Optional.empty(), ownerClass, ownerType, name, name, returnType, parameters);
+    }
+
+    public StaticAsInstanceMethodReference(String description, Class<?> ownerClass, SType ownerType, String underlyingName, String name, SType returnType, MethodParameter... parameters) {
+        this(Optional.of(description), ownerClass, ownerType, underlyingName, name, returnType, parameters);
     }
 
     public StaticAsInstanceMethodReference(String description, Class<?> ownerClass, SType ownerType, String name, SType returnType, MethodParameter... parameters) {
-        this(Optional.of(description), ownerClass, ownerType, name, returnType, parameters);
+        this(Optional.of(description), ownerClass, ownerType, name, name, returnType, parameters);
     }
 
-    private StaticAsInstanceMethodReference(Optional<String> description, Class<?> ownerClass, SType ownerType, String name, SType returnType, MethodParameter... parameters) {
+    private StaticAsInstanceMethodReference(
+            Optional<String> description,
+            Class<?> ownerClass,
+            SType ownerType,
+            String underlyingName,
+            String name,
+            SType returnType,
+            MethodParameter... parameters
+    ) {
         this.description = description;
         this.ownerClass = ownerClass;
         this.ownerType = ownerType;
+        this.underlyingName = underlyingName;
         this.name = name;
         this.returnType = returnType;
         this.parameters = parameters;
@@ -65,7 +79,7 @@ public class StaticAsInstanceMethodReference extends MethodReference {
             return this.description;
         } else {
             Optional<Method> opt = Arrays.stream(ownerClass.getDeclaredMethods())
-                    .filter(m -> m.getName().equals(name))
+                    .filter(m -> m.getName().equals(underlyingName))
                     .filter(m -> Modifier.isPublic(m.getModifiers()))
                     .filter(m -> Modifier.isStatic(m.getModifiers()))
                     .filter(m -> m.getReturnType() == returnType.getJavaClass())
@@ -99,7 +113,7 @@ public class StaticAsInstanceMethodReference extends MethodReference {
         visitor.visitMethodInsn(
                 INVOKESTATIC,
                 Type.getInternalName(ownerClass),
-                name,
+                underlyingName,
                 Type.getMethodDescriptor(
                         Type.getType(returnType.getJavaClass()),
                         Stream.concat(Stream.of(ownerType), getParameterTypes().stream())
