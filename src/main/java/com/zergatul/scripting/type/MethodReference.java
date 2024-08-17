@@ -1,8 +1,10 @@
 package com.zergatul.scripting.type;
 
+import com.zergatul.scripting.runtime.MethodDescription;
 import org.objectweb.asm.MethodVisitor;
 
 import java.util.List;
+import java.util.Optional;
 
 public abstract class MethodReference extends MemberReference {
 
@@ -12,6 +14,10 @@ public abstract class MethodReference extends MemberReference {
     public abstract SType getReturn();
 
     public abstract List<MethodParameter> getParameters();
+
+    public Optional<String> getDescription() {
+        return Optional.empty();
+    }
 
     public abstract void compileInvoke(MethodVisitor visitor);
 

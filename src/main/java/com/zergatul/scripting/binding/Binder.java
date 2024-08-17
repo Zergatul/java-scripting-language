@@ -505,7 +505,17 @@ public class Binder {
     private BoundIntegerLiteralExpressionNode bindIntegerLiteralExpression(IntegerLiteralExpressionNode literal) {
         int value;
         try {
-            value = Integer.parseInt(literal.value);
+            if (literal.value.startsWith("0x")) {
+                if (literal.value.length() < 10 || (literal.value.length() == 10 && literal.value.charAt(2) < '8')) {
+                    value = Integer.parseInt(literal.value.substring(2), 16);
+                } else if (literal.value.length() == 10 && literal.value.charAt(2) >= '8') {
+                    value = (int) Long.parseLong(literal.value.substring(2), 16);
+                } else {
+                    throw new NumberFormatException();
+                }
+            } else {
+                value = Integer.parseInt(literal.value);
+            }
         } catch (NumberFormatException e) {
             value = 0;
             ErrorCode code = literal.value.charAt(0) == '-' ? BinderErrors.IntegerConstantTooSmall : BinderErrors.IntegerConstantTooLarge;

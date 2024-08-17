@@ -124,7 +124,9 @@ public class SString extends SPredefinedType {
                 METHOD_TO_LOWER,
                 METHOD_TO_UPPER,
                 METHOD_MATCHES,
-                METHOD_GET_MATCHES);
+                METHOD_MATCHES_FLAGS,
+                METHOD_GET_MATCHES,
+                METHOD_GET_MATCHES_FLAGS);
     }
 
     @Override
@@ -413,10 +415,26 @@ public class SString extends SPredefinedType {
             SBoolean.instance,
             new MethodParameter("regex", SString.instance));
 
+    private static final MethodReference METHOD_MATCHES_FLAGS = new StaticAsInstanceMethodReference(
+            StringUtils.class,
+            SString.instance,
+            "matches",
+            SBoolean.instance,
+            new MethodParameter("regex", SString.instance),
+            new MethodParameter("flags", SInt.instance));
+
     private static final MethodReference METHOD_GET_MATCHES = new StaticAsInstanceMethodReference(
             StringUtils.class,
             SString.instance,
             "getMatches",
             new SArrayType(SString.instance),
             new MethodParameter("regex", SString.instance));
+
+    private static final MethodReference METHOD_GET_MATCHES_FLAGS = new StaticAsInstanceMethodReference(
+            StringUtils.class,
+            SString.instance,
+            "getMatches",
+            new SArrayType(SString.instance),
+            new MethodParameter("regex", SString.instance),
+            new MethodParameter("flags", SInt.instance));
 }

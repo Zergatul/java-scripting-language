@@ -1,10 +1,14 @@
 package com.zergatul.scripting.type;
 
+import com.zergatul.scripting.runtime.MethodDescription;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Type;
 
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Stream;
 
 import static org.objectweb.asm.Opcodes.INVOKESTATIC;
@@ -16,8 +20,18 @@ public class StaticAsInstanceMethodReference extends MethodReference {
     private final String name;
     private final SType returnType;
     private final MethodParameter[] parameters;
+    private final Optional<String> description;
 
     public StaticAsInstanceMethodReference(Class<?> ownerClass, SType ownerType, String name, SType returnType, MethodParameter... parameters) {
+        this(Optional.empty(), ownerClass, ownerType, name, returnType, parameters);
+    }
+
+    public StaticAsInstanceMethodReference(String description, Class<?> ownerClass, SType ownerType, String name, SType returnType, MethodParameter... parameters) {
+        this(Optional.of(description), ownerClass, ownerType, name, returnType, parameters);
+    }
+
+    private StaticAsInstanceMethodReference(Optional<String> description, Class<?> ownerClass, SType ownerType, String name, SType returnType, MethodParameter... parameters) {
+        this.description = description;
         this.ownerClass = ownerClass;
         this.ownerType = ownerType;
         this.name = name;
@@ -43,6 +57,38 @@ public class StaticAsInstanceMethodReference extends MethodReference {
     @Override
     public List<MethodParameter> getParameters() {
         return List.of(parameters);
+    }
+
+    @Override
+    public Optional<String> getDescription() {
+        if (this.description.isPresent()) {
+            return this.description;
+        } else {
+            Optional<Method> opt = Arrays.stream(ownerClass.getDeclaredMethods())
+                    .filter(m -> m.getName().equals(name))
+                    .filter(m -> Modifier.isPublic(m.getModifiers()))
+                    .filter(m -> Modifier.isStatic(m.getModifiers()))
+                    .filter(m -> m.getReturnType() == ownerType.getJavaClass())
+                    .filter(m -> m.getParameterCount() == parameters.length)
+                    .filter(m -> {
+                        Class<?>[] types = m.getParameterTypes();
+                        for (int i = 0; i < parameters.length; i++) {
+                            if (types[i] != parameters[i].type().getJavaClass()) {
+                                return false;
+                            }
+                        }
+                        return true;
+                    })
+                    .findFirst();
+
+            if (opt.isEmpty()) {
+                return Optional.empty();
+            } else {
+                Method method = opt.get();
+                MethodDescription description = method.getAnnotation(MethodDescription.class);
+                return description != null ? Optional.of(description.value()) : Optional.empty();
+            }
+        }
     }
 
     @Override

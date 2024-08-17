@@ -372,6 +372,11 @@ public class Lexer {
     }
 
     private void processNumber() {
+        if (current == '0' && next == 'x') {
+            processHexInteger();
+            return;
+        }
+
         trackBeginToken();
 
         NumberParseState state = NumberParseState.MANTIS_INTEGER;
@@ -454,6 +459,29 @@ public class Lexer {
             Token token = new InvalidNumberToken(value, range);
             addDiagnostic(LexerErrors.InvalidNumber, token, value);
             list.add(token);
+        }
+    }
+
+    private void processHexInteger() {
+        trackBeginToken();
+
+        // skip 0x
+        advance();
+        advance();
+
+        while (isIdentifier(current)) {
+            advance();
+        }
+
+        String value = getCurrentTokenValue();
+        TextRange range = getCurrentTokenRange();
+        boolean isValidHex = value.chars().skip(2).allMatch(this::isHexNumber);
+        if (value.length() == 2 || !isValidHex) {
+            Token token = new InvalidNumberToken(value, range);
+            addDiagnostic(LexerErrors.InvalidNumber, token, value);
+            list.add(token);
+        } else {
+            list.add(new IntegerToken(value, range));
         }
     }
 
@@ -552,6 +580,10 @@ public class Lexer {
 
     private boolean isNumber(int ch) {
         return '0' <= ch && ch <= '9';
+    }
+
+    private boolean isHexNumber(int ch) {
+        return ('0' <= ch && ch <= '9') || ('a' <= ch && ch <= 'f') || ('A' <= ch && ch <= 'F');
     }
 
     private boolean isIdentifierStart(int ch) {

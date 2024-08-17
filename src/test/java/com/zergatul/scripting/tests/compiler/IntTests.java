@@ -51,6 +51,28 @@ public class IntTests {
     }
 
     @Test
+    public void hexNumbersTest() {
+        String code = """
+                intStorage.add(0x0);
+                intStorage.add(0x00000000);
+                intStorage.add(0x00000001);
+                intStorage.add(0x0000000a);
+                intStorage.add(0x0000000F);
+                intStorage.add(0x100);
+                intStorage.add(0x7FFFFFFF);
+                intStorage.add(0x8FFFFFFF);
+                intStorage.add(0xFFFFFFFF);
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(
+                ApiRoot.intStorage.list,
+                List.of(0, 0, 1, 0xA, 0xF, 0x100, 0x7FFFFFFF, 0x8FFFFFFF, 0xFFFFFFFF));
+    }
+
+    @Test
     public void addTest() {
         String code = """
                 intStorage.add(123 + 1);

@@ -217,7 +217,7 @@ public class StringTests {
     }
 
     @Test
-    public void matchesTest() {
+    public void matches1Test() {
         String code = """
                 boolStorage.add("banana".matches("an.na"));
                 boolStorage.add("banana".matches("an..na"));
@@ -230,7 +230,21 @@ public class StringTests {
     }
 
     @Test
-    public void getMatchesTest() {
+    public void matches2Test() {
+        String code = """
+                boolStorage.add("BANANA".matches("an.na", 0x00));
+                boolStorage.add("BANANA".matches("an.na", 0x02));
+                boolStorage.add("BANANA".matches("an..na", 0x02));
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(ApiRoot.boolStorage.list, List.of(false, true, false));
+    }
+
+    @Test
+    public void getMatches1Test() {
         String code = """
                 string[] matches = "[1022] Log message.".getMatches("\\\\[(.+)\\\\]\\\\s+(.+)");
                 intStorage.add(matches.length);
@@ -242,6 +256,25 @@ public class StringTests {
 
         Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(3));
         Assertions.assertIterableEquals(ApiRoot.stringStorage.list, List.of("[1022] Log message.", "1022", "Log message."));
+    }
+
+    @Test
+    public void getMatches2Test() {
+        String code = """
+                string[] matches = "BANANA".getMatches("(an)", 0);
+                intStorage.add(matches.length);
+                foreach (string s in matches) stringStorage.add(s);
+                
+                matches = "BANANA".getMatches("(an)", 0x02);
+                intStorage.add(matches.length);
+                foreach (string s in matches) stringStorage.add(s);
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(0, 2));
+        Assertions.assertIterableEquals(ApiRoot.stringStorage.list, List.of("AN", "AN"));
     }
 
     public static class ApiRoot {
