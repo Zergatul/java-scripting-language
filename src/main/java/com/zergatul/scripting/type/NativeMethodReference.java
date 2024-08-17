@@ -1,6 +1,6 @@
 package com.zergatul.scripting.type;
 
-import com.zergatul.scripting.runtime.MethodDescription;
+import com.zergatul.scripting.MethodDescription;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Type;
 

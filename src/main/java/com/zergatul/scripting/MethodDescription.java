@@ -1,4 +1,4 @@
-package com.zergatul.scripting.runtime;
+package com.zergatul.scripting;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

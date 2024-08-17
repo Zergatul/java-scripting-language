@@ -6,7 +6,6 @@ import com.zergatul.scripting.parser.PostfixOperator;
 import com.zergatul.scripting.parser.UnaryOperator;
 import com.zergatul.scripting.runtime.IntReference;
 import com.zergatul.scripting.runtime.IntUtils;
-import com.zergatul.scripting.runtime.MethodDescription;
 import com.zergatul.scripting.type.operation.*;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;

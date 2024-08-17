@@ -1,5 +1,7 @@
 package com.zergatul.scripting.runtime;
 
+import com.zergatul.scripting.MethodDescription;
+
 import java.util.Locale;
 
 @SuppressWarnings("unused")

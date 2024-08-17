@@ -1,6 +1,5 @@
 package com.zergatul.scripting.type;
 
-import com.zergatul.scripting.runtime.MethodDescription;
 import org.objectweb.asm.MethodVisitor;
 
 import java.util.List;
