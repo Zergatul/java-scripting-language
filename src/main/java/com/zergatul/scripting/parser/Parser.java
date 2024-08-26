@@ -1096,14 +1096,7 @@ public class Parser {
     }
 
     private void addDiagnostic(ErrorCode code, Locatable locatable, Object... parameters) {
-        if (locatable == EndOfFileToken.instance) {
-            Token last = tokens.last();
-            locatable = () -> new SingleLineTextRange(
-                    last.getRange().getLine2(),
-                    last.getRange().getColumn2(),
-                    last.getRange().getPosition() + last.getRange().getLength(),
-                    1);
-        }
+        locatable = handleEndOfFile(locatable);
         diagnostics.add(new DiagnosticMessage(code, locatable, parameters));
     }
 
@@ -1124,10 +1117,24 @@ public class Parser {
     }
 
     private TextRange createMissingTokenRange() {
+        Locatable locatable = handleEndOfFile(current);
         return new SingleLineTextRange(
-                current.getRange().getLine1(),
-                current.getRange().getColumn1(),
-                current.getRange().getPosition(),
+                locatable.getRange().getLine1(),
+                locatable.getRange().getColumn1(),
+                locatable.getRange().getPosition(),
                 0);
+    }
+
+    private Locatable handleEndOfFile(Locatable locatable) {
+        if (locatable == EndOfFileToken.instance) {
+            Token last = tokens.last();
+            return () -> new SingleLineTextRange(
+                    last.getRange().getLine2(),
+                    last.getRange().getColumn2(),
+                    last.getRange().getPosition() + last.getRange().getLength(),
+                    1);
+        } else {
+            return locatable;
+        }
     }
 }

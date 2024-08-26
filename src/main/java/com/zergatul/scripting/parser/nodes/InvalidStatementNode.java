@@ -23,4 +23,13 @@ public class InvalidStatementNode extends StatementNode {
     public StatementNode append(Token token) {
         return new InvalidStatementNode(TextRange.combine(getRange(), token.getRange()));
     }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj instanceof InvalidStatementNode other) {
+            return other.getRange().equals(getRange());
+        } else {
+            return false;
+        }
+    }
 }

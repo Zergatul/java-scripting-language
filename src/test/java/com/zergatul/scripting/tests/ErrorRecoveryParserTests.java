@@ -104,6 +104,33 @@ public class ErrorRecoveryParserTests {
                 new DiagnosticMessage(ParserErrors.ColonExpected, new SingleLineTextRange(1, 9, 8, 1)));
     }
 
+    @Test
+    public void unfinishedIfStatementTest() {
+        ParserOutput result = parse("""
+                if (game.)
+                """);
+
+        Assertions.assertIterableEquals(
+                result.diagnostics(),
+                List.of(
+                        new DiagnosticMessage(ParserErrors.IdentifierExpected, new SingleLineTextRange(1, 10, 9, 1), ")"),
+                        new DiagnosticMessage(ParserErrors.StatementExpected, new SingleLineTextRange(1, 12, 11, 1), "<EOF>")));
+
+        Assertions.assertEquals(
+                result.unit().statements,
+                new StatementsListNode(
+                        List.of(
+                                new IfStatementNode(
+                                        new MemberAccessExpressionNode(
+                                                new NameExpressionNode("game", new SingleLineTextRange(1, 5, 4, 4)),
+                                                new NameExpressionNode("", new SingleLineTextRange(1, 10, 9, 0)),
+                                                new SingleLineTextRange(1, 5, 4, 5)),
+                                        new InvalidStatementNode(new SingleLineTextRange(1, 12, 11, 0)),
+                                        null,
+                                        new SingleLineTextRange(1, 1, 0, 11))),
+                        new SingleLineTextRange(1, 1, 0, 11)));
+    }
+
     private ParserOutput parse(String code) {
         return new Parser(new Lexer(new LexerInput(code)).lex()).parse();
     }
