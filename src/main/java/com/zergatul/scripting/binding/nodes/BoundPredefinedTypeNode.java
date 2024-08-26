@@ -25,4 +25,13 @@ public class BoundPredefinedTypeNode extends BoundTypeNode {
     public List<BoundNode> getChildren() {
         return List.of();
     }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj instanceof BoundPredefinedTypeNode other) {
+            return other.type.equals(type) && other.getRange().equals(getRange());
+        } else {
+            return false;
+        }
+    }
 }

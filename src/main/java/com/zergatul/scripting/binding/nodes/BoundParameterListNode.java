@@ -5,6 +5,7 @@ import com.zergatul.scripting.binding.BinderTreeVisitor;
 import com.zergatul.scripting.parser.NodeType;
 
 import java.util.List;
+import java.util.Objects;
 
 public class BoundParameterListNode extends BoundNode {
 
@@ -30,5 +31,14 @@ public class BoundParameterListNode extends BoundNode {
     @Override
     public List<BoundNode> getChildren() {
         return List.copyOf(parameters);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj instanceof BoundParameterListNode other) {
+            return Objects.equals(other.parameters, parameters) && other.getRange().equals(getRange());
+        } else {
+            return false;
+        }
     }
 }

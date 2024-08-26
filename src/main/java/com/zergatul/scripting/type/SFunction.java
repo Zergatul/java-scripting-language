@@ -7,6 +7,7 @@ import org.objectweb.asm.Type;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 
 public class SFunction extends SType {
 
@@ -85,6 +86,15 @@ public class SFunction extends SType {
         }
 
         return null;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj instanceof SFunction other) {
+            return other.returnType.equals(returnType) && Arrays.equals(other.parameters, parameters);
+        } else {
+            return false;
+        }
     }
 
     @Override

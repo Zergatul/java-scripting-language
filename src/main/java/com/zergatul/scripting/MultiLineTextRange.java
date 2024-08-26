@@ -47,4 +47,15 @@ public class MultiLineTextRange extends TextRange {
     public int getLength() {
         return this.length;
     }
+
+    @Override
+    public TextRange subRange(int skip) {
+        return new MultiLineTextRange(
+                line1,
+                column1 + skip,
+                line2,
+                column2,
+                position + skip,
+                length - skip);
+    }
 }

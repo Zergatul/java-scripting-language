@@ -52,4 +52,13 @@ public class BoundNameExpressionNode extends BoundExpressionNode {
     public List<BoundNode> getChildren() {
         return List.of();
     }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj instanceof BoundNameExpressionNode other) {
+            return Symbol.equals(other.symbol, symbol) && other.getRange().equals(getRange());
+        } else {
+            return false;
+        }
+    }
 }

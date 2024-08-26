@@ -45,6 +45,11 @@ public class SingleLineTextRange extends TextRange {
     }
 
     @Override
+    public TextRange subRange(int skip) {
+        return new SingleLineTextRange(line, column + skip, position + skip, length - skip);
+    }
+
+    @Override
     public boolean equals(Object obj) {
         if (obj instanceof SingleLineTextRange other) {
             return other.line == line && other.column == column && other.position == position && other.length == length;

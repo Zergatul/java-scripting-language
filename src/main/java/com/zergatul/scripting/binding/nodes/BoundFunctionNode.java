@@ -40,4 +40,18 @@ public class BoundFunctionNode extends BoundNode {
     public List<BoundNode> getChildren() {
         return List.of(returnType, name, parameters, block);
     }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj instanceof BoundFunctionNode other) {
+            return  other.isAsync == isAsync &&
+                    other.returnType.equals(returnType) &&
+                    other.name.equals(name) &&
+                    other.parameters.equals(parameters) &&
+                    other.block.equals(block) &&
+                    other.getRange().equals(getRange());
+        } else {
+            return false;
+        }
+    }
 }

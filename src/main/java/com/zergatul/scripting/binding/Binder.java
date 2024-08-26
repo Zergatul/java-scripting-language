@@ -267,7 +267,7 @@ public class Binder {
                 addDiagnostic(
                         BinderErrors.EmptyReturnStatement,
                         statement);
-                return new BoundReturnStatementNode(new BoundInvalidExpressionNode(statement.getRange()), statement.getRange());
+                return new BoundReturnStatementNode(new BoundInvalidExpressionNode(statement.getRange().subRange(6)), statement.getRange());
             }
         } else {
             BoundExpressionNode expression = bindExpression(statement.expression);

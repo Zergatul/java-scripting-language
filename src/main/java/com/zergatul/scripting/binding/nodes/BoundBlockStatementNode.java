@@ -5,6 +5,7 @@ import com.zergatul.scripting.binding.BinderTreeVisitor;
 import com.zergatul.scripting.parser.NodeType;
 
 import java.util.List;
+import java.util.Objects;
 
 public class BoundBlockStatementNode extends BoundStatementNode {
 
@@ -37,5 +38,14 @@ public class BoundBlockStatementNode extends BoundStatementNode {
     @Override
     public List<BoundNode> getChildren() {
         return List.copyOf(statements);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj instanceof BoundBlockStatementNode other) {
+            return Objects.equals(other.statements, statements) && other.getRange().equals(getRange());
+        } else {
+            return false;
+        }
     }
 }

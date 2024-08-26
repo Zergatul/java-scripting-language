@@ -32,6 +32,11 @@ public abstract class TextRange {
         public int getLength() {
             throw new InternalException();
         }
+
+        @Override
+        public TextRange subRange(int skip) {
+            throw new InternalException();
+        }
     };
 
     public abstract int getLine1();
@@ -114,6 +119,8 @@ public abstract class TextRange {
     public String extract(String str) {
         return str.substring(getPosition(), getPosition() + getLength());
     }
+
+    public abstract TextRange subRange(int skip);
 
     public static TextRange combine(TextRange range1, TextRange range2) {
         if (range1.getLine1() == range2.getLine2()) {
