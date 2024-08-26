@@ -17,4 +17,13 @@ public class InvalidExpressionNode extends ExpressionNode {
 
     @Override
     public void acceptChildren(ParserTreeVisitor visitor) {}
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj instanceof InvalidExpressionNode other) {
+            return other.getRange().equals(getRange());
+        } else {
+            return false;
+        }
+    }
 }

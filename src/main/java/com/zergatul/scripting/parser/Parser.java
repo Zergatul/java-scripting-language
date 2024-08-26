@@ -647,6 +647,11 @@ public class Parser {
                         right,
                         TextRange.combine(left, right));
             } else {
+                left = new BinaryExpressionNode(
+                        left,
+                        new BinaryOperatorNode(binary, binaryToken.getRange()),
+                        new InvalidExpressionNode(createMissingTokenRange()),
+                        TextRange.combine(left, binaryToken));
                 addDiagnostic(ParserErrors.ExpressionExpected, current, current.getRawValue(code));
                 break;
             }

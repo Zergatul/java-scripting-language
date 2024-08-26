@@ -4,10 +4,7 @@ import com.zergatul.scripting.DiagnosticMessage;
 import com.zergatul.scripting.SingleLineTextRange;
 import com.zergatul.scripting.lexer.Lexer;
 import com.zergatul.scripting.lexer.LexerInput;
-import com.zergatul.scripting.parser.Parser;
-import com.zergatul.scripting.parser.ParserErrors;
-import com.zergatul.scripting.parser.ParserOutput;
-import com.zergatul.scripting.parser.PredefinedType;
+import com.zergatul.scripting.parser.*;
 import com.zergatul.scripting.parser.nodes.*;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -129,6 +126,35 @@ public class ErrorRecoveryParserTests {
                                         null,
                                         new SingleLineTextRange(1, 1, 0, 11))),
                         new SingleLineTextRange(1, 1, 0, 11)));
+    }
+
+    @Test
+    public void unfinishedBinaryExpressionTest() {
+        ParserOutput result = parse("""
+                return a > b || ;
+                """);
+
+        Assertions.assertIterableEquals(
+                result.diagnostics(),
+                List.of(
+                        new DiagnosticMessage(ParserErrors.ExpressionExpected, new SingleLineTextRange(1, 17, 16, 1), ";")));
+
+        Assertions.assertEquals(
+                result.unit().statements,
+                new StatementsListNode(
+                        List.of(
+                                new ReturnStatementNode(
+                                        new BinaryExpressionNode(
+                                                new BinaryExpressionNode(
+                                                        new NameExpressionNode("a", new SingleLineTextRange(1, 8, 7, 1)),
+                                                        new BinaryOperatorNode(BinaryOperator.GREATER, new SingleLineTextRange(1, 10, 9, 1)),
+                                                        new NameExpressionNode("b", new SingleLineTextRange(1, 12, 11, 1)),
+                                                        new SingleLineTextRange(1, 8, 7, 5)),
+                                                new BinaryOperatorNode(BinaryOperator.BOOLEAN_OR, new SingleLineTextRange(1, 14, 13, 2)),
+                                                new InvalidExpressionNode(new SingleLineTextRange(1, 17, 16, 0)),
+                                                new SingleLineTextRange(1, 8, 7, 8)),
+                                        new SingleLineTextRange(1, 1, 0, 17))),
+                        new SingleLineTextRange(1, 1, 0, 17)));
     }
 
     private ParserOutput parse(String code) {
