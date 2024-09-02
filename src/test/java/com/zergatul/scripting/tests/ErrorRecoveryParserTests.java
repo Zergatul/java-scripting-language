@@ -4,6 +4,8 @@ import com.zergatul.scripting.DiagnosticMessage;
 import com.zergatul.scripting.SingleLineTextRange;
 import com.zergatul.scripting.lexer.Lexer;
 import com.zergatul.scripting.lexer.LexerInput;
+import com.zergatul.scripting.lexer.Token;
+import com.zergatul.scripting.lexer.TokenType;
 import com.zergatul.scripting.parser.*;
 import com.zergatul.scripting.parser.nodes.*;
 import org.junit.jupiter.api.Assertions;
@@ -118,6 +120,8 @@ public class ErrorRecoveryParserTests {
                 new StatementsListNode(
                         List.of(
                                 new IfStatementNode(
+                                        new Token(TokenType.LEFT_PARENTHESES, new SingleLineTextRange(1, 4, 3, 1)),
+                                        new Token(TokenType.RIGHT_PARENTHESES, new SingleLineTextRange(1, 10, 9, 1)),
                                         new MemberAccessExpressionNode(
                                                 new NameExpressionNode("game", new SingleLineTextRange(1, 5, 4, 4)),
                                                 new NameExpressionNode("", new SingleLineTextRange(1, 10, 9, 0)),

@@ -2,9 +2,7 @@ package com.zergatul.scripting.tests;
 
 import com.zergatul.scripting.DiagnosticMessage;
 import com.zergatul.scripting.SingleLineTextRange;
-import com.zergatul.scripting.lexer.IdentifierToken;
-import com.zergatul.scripting.lexer.Lexer;
-import com.zergatul.scripting.lexer.LexerInput;
+import com.zergatul.scripting.lexer.*;
 import com.zergatul.scripting.parser.*;
 import com.zergatul.scripting.parser.nodes.*;
 import org.junit.jupiter.api.Assertions;
@@ -238,6 +236,8 @@ public class ParserTests {
                 new FunctionsListNode(List.of(), new SingleLineTextRange(1, 1, 0, 0)),
                 new StatementsListNode(List.of(
                         new IfStatementNode(
+                                new Token(TokenType.LEFT_PARENTHESES, new SingleLineTextRange(1, 4, 3, 1)),
+                                new Token(TokenType.RIGHT_PARENTHESES, new SingleLineTextRange(1, 6, 5, 1)),
                                 new NameExpressionNode("a", new SingleLineTextRange(1, 5, 4, 1)),
                                 new AssignmentStatementNode(
                                         new NameExpressionNode("b", new SingleLineTextRange(1, 8, 7, 1)),
@@ -259,6 +259,8 @@ public class ParserTests {
                 new FunctionsListNode(List.of(), new SingleLineTextRange(1, 1, 0, 0)),
                 new StatementsListNode(List.of(
                         new IfStatementNode(
+                                new Token(TokenType.LEFT_PARENTHESES, new SingleLineTextRange(1, 4, 3, 1)),
+                                new Token(TokenType.RIGHT_PARENTHESES, new SingleLineTextRange(1, 6, 5, 1)),
                                 new NameExpressionNode("a", new SingleLineTextRange(1, 5, 4, 1)),
                                 new AssignmentStatementNode(
                                         new NameExpressionNode("b", new SingleLineTextRange(1, 8, 7, 1)),

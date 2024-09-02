@@ -2,26 +2,38 @@ package com.zergatul.scripting.binding.nodes;
 
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
+import com.zergatul.scripting.lexer.Token;
 import com.zergatul.scripting.parser.NodeType;
 
 import java.util.List;
 
 public class BoundIfStatementNode extends BoundStatementNode {
 
+    public final Token lParen;
+    public final Token rParen;
     public final BoundExpressionNode condition;
     public final BoundStatementNode thenStatement;
     public final BoundStatementNode elseStatement;
 
     public BoundIfStatementNode(BoundExpressionNode condition, BoundStatementNode thenStatement) {
-        this(condition, thenStatement, null, null);
+        this(null, null, condition, thenStatement, null, null);
     }
 
     public BoundIfStatementNode(BoundExpressionNode condition, BoundStatementNode thenStatement, BoundStatementNode elseStatement) {
-        this(condition, thenStatement, elseStatement, null);
+        this(null, null, condition, thenStatement, elseStatement, null);
     }
 
-    public BoundIfStatementNode(BoundExpressionNode condition, BoundStatementNode thenStatement, BoundStatementNode elseStatement, TextRange range) {
+    public BoundIfStatementNode(
+            Token lParen,
+            Token rParen,
+            BoundExpressionNode condition,
+            BoundStatementNode thenStatement,
+            BoundStatementNode elseStatement,
+            TextRange range
+    ) {
         super(NodeType.IF_STATEMENT, range);
+        this.lParen = lParen;
+        this.rParen = rParen;
         this.condition = condition;
         this.thenStatement = thenStatement;
         this.elseStatement = elseStatement;

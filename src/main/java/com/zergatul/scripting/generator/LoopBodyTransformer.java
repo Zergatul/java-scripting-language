@@ -31,17 +31,14 @@ public class LoopBodyTransformer {
     }
 
     private BoundStatementNode transform(BoundBlockStatementNode node) {
-        return new BoundBlockStatementNode(
-                node.statements.stream().map(this::transformStatement).toList(),
-                node.getRange());
+        return new BoundBlockStatementNode(node.statements.stream().map(this::transformStatement).toList());
     }
 
     private BoundStatementNode transform(BoundIfStatementNode node) {
         return new BoundIfStatementNode(
                 node.condition,
                 transformStatement(node.thenStatement),
-                node.elseStatement != null ? transformStatement(node.elseStatement) : null,
-                node.getRange());
+                node.elseStatement != null ? transformStatement(node.elseStatement) : null);
     }
 
     private BoundStatementNode transform(BoundBreakStatementNode node) {

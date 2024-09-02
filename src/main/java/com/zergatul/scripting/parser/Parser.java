@@ -114,7 +114,7 @@ public class Parser {
     private IfStatementNode parseIfStatement() {
         Token ifToken = advance(TokenType.IF);
 
-        advance(TokenType.LEFT_PARENTHESES);
+        Token lParen = advance(TokenType.LEFT_PARENTHESES);
 
         ExpressionNode condition;
         if (isPossibleExpression()) {
@@ -124,7 +124,7 @@ public class Parser {
             condition = new InvalidExpressionNode(createMissingTokenRange());
         }
 
-        advance(TokenType.RIGHT_PARENTHESES);
+        Token rParen = advance(TokenType.RIGHT_PARENTHESES);
 
         StatementNode thenStatement;
         if (isPossibleStatement()) {
@@ -145,7 +145,7 @@ public class Parser {
             }
         }
 
-        return new IfStatementNode(condition, thenStatement, elseStatement, TextRange.combine(ifToken, elseStatement == null ? thenStatement : elseStatement));
+        return new IfStatementNode(lParen, rParen, condition, thenStatement, elseStatement, TextRange.combine(ifToken, elseStatement == null ? thenStatement : elseStatement));
     }
 
     private ReturnStatementNode parseReturnStatement() {
