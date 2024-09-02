@@ -468,6 +468,33 @@ public class ParserTests {
                         "("));
     }
 
+    @Test
+    public void leftAssociativityTest() {
+        var result = parse("""
+                int x = 1 + 2 + 3;
+                """);
+        Assertions.assertTrue(result.diagnostics().isEmpty());
+        Assertions.assertEquals(result.unit(), new CompilationUnitNode(
+                new StaticVariablesListNode(List.of(), new SingleLineTextRange(1, 1, 0, 0)),
+                new FunctionsListNode(List.of(), new SingleLineTextRange(1, 1, 0, 0)),
+                new StatementsListNode(List.of(
+                        new VariableDeclarationNode(
+                                new PredefinedTypeNode(PredefinedType.INT, new SingleLineTextRange(1, 1, 0, 3)),
+                                new NameExpressionNode("x", new SingleLineTextRange(1, 5, 4, 1)),
+                                new BinaryExpressionNode(
+                                        new BinaryExpressionNode(
+                                                new IntegerLiteralExpressionNode("1", new SingleLineTextRange(1, 9, 8, 1)),
+                                                new BinaryOperatorNode(BinaryOperator.PLUS, new SingleLineTextRange(1, 11, 10, 1)),
+                                                new IntegerLiteralExpressionNode("2", new SingleLineTextRange(1, 13, 12, 1)),
+                                                new SingleLineTextRange(1, 9, 8, 5)),
+                                        new BinaryOperatorNode(BinaryOperator.PLUS, new SingleLineTextRange(1, 15, 14, 1)),
+                                        new IntegerLiteralExpressionNode("3", new SingleLineTextRange(1, 17, 16, 1)),
+                                        new SingleLineTextRange(1, 9, 8, 9)),
+                                new SingleLineTextRange(1, 1, 0, 18))),
+                        new SingleLineTextRange(1, 1, 0, 18)),
+                new SingleLineTextRange(1, 1, 0, 18)));
+    }
+
     private ParserOutput parse(String code) {
         return new Parser(new Lexer(new LexerInput(code)).lex()).parse();
     }

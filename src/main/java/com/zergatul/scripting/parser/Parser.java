@@ -633,7 +633,8 @@ public class Parser {
             }
 
             int newPrecedence = Precedences.get(binary);
-            if (newPrecedence < precedence) {
+            // left/right associativity? equals or not equals?
+            if (newPrecedence <= precedence) {
                 break;
             }
 

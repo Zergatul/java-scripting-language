@@ -273,6 +273,21 @@ public class FloatTests {
                 List.of(0.75, 0.75));
     }
 
+    @Test
+    public void leftAssociativityTest() {
+        String code = """
+                int x1 = 25;
+                int x2 = 200;
+                float percents = 100.0 * x1 / x2;
+                floatStorage.add(percents);
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(ApiRoot.floatStorage.list, List.of(12.5));
+    }
+
     public static class ApiRoot {
         public static BoolStorage boolStorage;
         public static FloatStorage floatStorage;
