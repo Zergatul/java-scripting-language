@@ -40,11 +40,19 @@ public class TextRangeTests {
     }
 
     @Test
-    public void isAfter() {
+    public void isAfterTest() {
         TextRange range = new SingleLineTextRange(1, 10, 0, 1);
         Assertions.assertTrue(range.isAfter(1, 9));
         Assertions.assertFalse(range.isAfter(1, 10));
         Assertions.assertFalse(range.isAfter(1, 11));
         Assertions.assertFalse(range.isAfter(1, 12));
+    }
+
+    @Test
+    public void isBetweenTest() {
+        Assertions.assertTrue(TextRange.isBetween(
+                1, 2,
+                new SingleLineTextRange(1, 1, 0, 1),
+                new SingleLineTextRange(1,2, 1, 1)));
     }
 }

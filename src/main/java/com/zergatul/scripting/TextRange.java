@@ -102,6 +102,22 @@ public abstract class TextRange {
         return getColumn1() > column;
     }
 
+    public static boolean isBetween(int line, int column, TextRange range1, TextRange range2) {
+        if (line < range1.getLine1()) {
+            return false;
+        }
+        if (line == range1.getLine1() && column < range1.getColumn1()) {
+            return false;
+        }
+        if (line > range2.getLine2()) {
+            return false;
+        }
+        if (line == range2.getLine2() && column > range2.getColumn2()) {
+            return false;
+        }
+        return true;
+    }
+
     @Override
     public boolean equals(Object obj) {
         if (obj instanceof TextRange other) {
