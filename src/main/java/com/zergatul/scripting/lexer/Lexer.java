@@ -139,7 +139,7 @@ public class Lexer {
                                 advance();
                             }
 
-                            endToken(TokenType.COMMENT);
+                            endComment(true);
                         }
                         case '*' -> {
                             trackBeginToken();
@@ -147,19 +147,21 @@ public class Lexer {
                             advance();
                             while (true) {
                                 if (current == -1) {
+                                    endComment(true);
                                     break;
                                 } else if (current == '*' && next == '/') {
                                     advance();
                                     advance();
+                                    endComment(false);
                                     break;
                                 } else if (current == '\n') {
-                                    endToken(TokenType.COMMENT);
+                                    endComment(true);
                                     appendToken(TokenType.LINE_BREAK);
                                     advance();
                                     newLine();
                                     trackBeginToken();
                                 } else if (current == '\r') {
-                                    endToken(TokenType.COMMENT);
+                                    endComment(true);
                                     if (next == '\n') {
                                         trackBeginToken();
                                         advance();
@@ -175,8 +177,6 @@ public class Lexer {
                                     advance();
                                 }
                             }
-
-                            endToken(TokenType.COMMENT);
                         }
                         case '=' -> {
                             trackBeginToken();
@@ -546,6 +546,13 @@ public class Lexer {
                 new SingleLineTextRange(beginLine, beginColumn, beginPosition, position - beginPosition) :
                 new MultiLineTextRange(beginLine, beginColumn, line, column, beginPosition, position - beginPosition);
         list.add(new Token(type, range));
+    }
+
+    private void endComment(boolean ending) {
+        if (beginLine != line) {
+            throw new InternalException();
+        }
+        list.add(new CommentToken(ending, new SingleLineTextRange(beginLine, beginColumn, beginPosition, position - beginPosition)));
     }
 
     private void advance() {

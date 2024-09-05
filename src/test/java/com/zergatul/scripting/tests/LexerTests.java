@@ -71,7 +71,7 @@ public class LexerTests {
     public void singleLineCommentTest1() {
         LexerOutput result = lex("//");
         Assertions.assertIterableEquals(result.tokens(), List.of(
-                new Token(TokenType.COMMENT, new SingleLineTextRange(1, 1, 0, 2))));
+                new CommentToken(true, new SingleLineTextRange(1, 1, 0, 2))));
         Assertions.assertEquals(result.diagnostics().size(), 0);
     }
 
@@ -79,7 +79,7 @@ public class LexerTests {
     public void singleLineCommentTest2() {
         LexerOutput result = lex("//abc");
         Assertions.assertIterableEquals(result.tokens(), List.of(
-                new Token(TokenType.COMMENT, new SingleLineTextRange(1, 1, 0, 5))));
+                new CommentToken(true, new SingleLineTextRange(1, 1, 0, 5))));
         Assertions.assertEquals(result.diagnostics().size(), 0);
     }
 
@@ -87,7 +87,7 @@ public class LexerTests {
     public void singleLineCommentTest3() {
         LexerOutput result = lex("//abc\r[");
         Assertions.assertIterableEquals(result.tokens(), List.of(
-                new Token(TokenType.COMMENT, new SingleLineTextRange(1, 1, 0, 5)),
+                new CommentToken(true, new SingleLineTextRange(1, 1, 0, 5)),
                 new Token(TokenType.LINE_BREAK, new SingleLineTextRange(1, 6,5, 1)),
                 new Token(TokenType.LEFT_SQUARE_BRACKET, new SingleLineTextRange(2, 1, 6, 1))));
         Assertions.assertEquals(result.diagnostics().size(), 0);
@@ -96,7 +96,7 @@ public class LexerTests {
     public void singleLineCommentTest4() {
         LexerOutput result = lex("//abc\r\n[");
         Assertions.assertIterableEquals(result.tokens(), List.of(
-                new Token(TokenType.COMMENT, new SingleLineTextRange(1, 1, 0, 5)),
+                new CommentToken(true, new SingleLineTextRange(1, 1, 0, 5)),
                 new Token(TokenType.LINE_BREAK, new SingleLineTextRange(1, 6,5, 2)),
                 new Token(TokenType.LEFT_SQUARE_BRACKET, new SingleLineTextRange(2, 1, 7, 1))));
         Assertions.assertEquals(result.diagnostics().size(), 0);
@@ -105,7 +105,7 @@ public class LexerTests {
     public void singleLineCommentTest5() {
         LexerOutput result = lex("//abc\n[");
         Assertions.assertIterableEquals(result.tokens(), List.of(
-                new Token(TokenType.COMMENT, new SingleLineTextRange(1, 1, 0, 5)),
+                new CommentToken(true, new SingleLineTextRange(1, 1, 0, 5)),
                 new Token(TokenType.LINE_BREAK, new SingleLineTextRange(1, 6,5, 1)),
                 new Token(TokenType.LEFT_SQUARE_BRACKET, new SingleLineTextRange(2, 1, 6, 1))));
         Assertions.assertEquals(result.diagnostics().size(), 0);
@@ -115,7 +115,7 @@ public class LexerTests {
     public void multiLineCommentTest1() {
         LexerOutput result = lex("/*");
         Assertions.assertIterableEquals(result.tokens(), List.of(
-                new Token(TokenType.COMMENT, new SingleLineTextRange(1, 1, 0, 2))));
+                new CommentToken(true, new SingleLineTextRange(1, 1, 0, 2))));
         Assertions.assertEquals(result.diagnostics().size(), 0);
     }
 
@@ -123,7 +123,7 @@ public class LexerTests {
     public void multiLineCommentTest2() {
         LexerOutput result = lex("/*/[");
         Assertions.assertIterableEquals(result.tokens(), List.of(
-                new Token(TokenType.COMMENT, new SingleLineTextRange(1, 1, 0, 4))));
+                new CommentToken(true, new SingleLineTextRange(1, 1, 0, 4))));
         Assertions.assertEquals(result.diagnostics().size(), 0);
     }
 
@@ -131,7 +131,7 @@ public class LexerTests {
     public void multiLineCommentTest3() {
         LexerOutput result = lex("/**/[");
         Assertions.assertIterableEquals(result.tokens(), List.of(
-                new Token(TokenType.COMMENT, new SingleLineTextRange(1, 1, 0, 4)),
+                new CommentToken(false, new SingleLineTextRange(1, 1, 0, 4)),
                 new Token(TokenType.LEFT_SQUARE_BRACKET, new SingleLineTextRange(1, 5, 4, 1))));
         Assertions.assertEquals(result.diagnostics().size(), 0);
     }
@@ -140,9 +140,9 @@ public class LexerTests {
     public void multiLineCommentTest4() {
         LexerOutput result = lex("/*\n*/[");
         Assertions.assertIterableEquals(result.tokens(), List.of(
-                new Token(TokenType.COMMENT, new SingleLineTextRange(1, 1, 0, 2)),
+                new CommentToken(true, new SingleLineTextRange(1, 1, 0, 2)),
                 new Token(TokenType.LINE_BREAK, new SingleLineTextRange(1, 3, 2, 1)),
-                new Token(TokenType.COMMENT, new SingleLineTextRange(2, 1, 3, 2)),
+                new CommentToken(false, new SingleLineTextRange(2, 1, 3, 2)),
                 new Token(TokenType.LEFT_SQUARE_BRACKET, new SingleLineTextRange(2, 3, 5, 1))));
         Assertions.assertEquals(result.diagnostics().size(), 0);
     }
@@ -150,11 +150,13 @@ public class LexerTests {
     public void multiLineCommentTest5() {
         LexerOutput result = lex("/*\r\r\n\r\n*/[");
         Assertions.assertIterableEquals(result.tokens(), List.of(
-                new Token(TokenType.COMMENT, new SingleLineTextRange(1, 1, 0, 2)),
+                new CommentToken(true, new SingleLineTextRange(1, 1, 0, 2)),
                 new Token(TokenType.LINE_BREAK, new SingleLineTextRange(1, 3, 2, 1)),
+                new CommentToken(true, new SingleLineTextRange(2, 1, 3, 0)),
                 new Token(TokenType.LINE_BREAK, new SingleLineTextRange(2, 1, 3, 2)),
+                new CommentToken(true, new SingleLineTextRange(3, 1, 5, 0)),
                 new Token(TokenType.LINE_BREAK, new SingleLineTextRange(3, 1, 5, 2)),
-                new Token(TokenType.COMMENT, new SingleLineTextRange(4, 1, 7, 2)),
+                new CommentToken(false, new SingleLineTextRange(4, 1, 7, 2)),
                 new Token(TokenType.LEFT_SQUARE_BRACKET, new SingleLineTextRange(4, 3, 9, 1))));
         Assertions.assertEquals(result.diagnostics().size(), 0);
     }
