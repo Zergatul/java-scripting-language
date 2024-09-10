@@ -11,6 +11,7 @@ import org.objectweb.asm.Type;
 
 import java.lang.reflect.ParameterizedType;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
 import static org.objectweb.asm.Opcodes.CHECKCAST;
@@ -39,6 +40,13 @@ public abstract class SType {
     }
 
     public BinaryOperation add(SType other) {
+        if (other == SString.instance) {
+            Optional<BinaryOperation> operation = SString.instance.genericLeftAdd(this);
+            if (operation.isPresent()) {
+                return operation.get();
+            }
+        }
+
         return null;
     }
 
@@ -57,14 +65,6 @@ public abstract class SType {
     public BinaryOperation modulo(SType other) {
         return null;
     }
-
-    /*public BinaryOperation floorMod(SType other) {
-        return null;
-    }
-
-    public BinaryOperation floorDiv(SType other) {
-        return null;
-    }*/
 
     public BinaryOperation lessThan(SType other) {
         return null;
@@ -185,6 +185,14 @@ public abstract class SType {
 
     public List<PropertyReference> getStaticProperties() {
         return List.of();
+    }
+
+    public Optional<MethodReference> getToStringMethod() {
+        return getInstanceMethods().stream()
+                .filter(m -> m.getName().equals("toString"))
+                .filter(m -> m.getParameters().isEmpty())
+                .filter(m -> m.getReturn() == SString.instance)
+                .findFirst();
     }
 
     public Class<?> getBoxedVersion() {

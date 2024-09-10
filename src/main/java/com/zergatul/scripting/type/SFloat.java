@@ -12,6 +12,7 @@ import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Type;
 
 import java.util.List;
+import java.util.Optional;
 
 import static org.objectweb.asm.Opcodes.*;
 
@@ -66,6 +67,11 @@ public class SFloat extends SPredefinedType {
 
     @Override
     public BinaryOperation add(SType other) {
+        BinaryOperation operation = super.add(other);
+        if (operation != null) {
+            return operation;
+        }
+
         return other == this ? ADD : null;
     }
 

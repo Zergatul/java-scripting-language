@@ -12,6 +12,7 @@ import org.objectweb.asm.Type;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
+import java.util.Optional;
 
 import static org.objectweb.asm.Opcodes.*;
 
@@ -67,7 +68,8 @@ public class SString extends SPredefinedType {
         if (other == SChar.instance) {
             return ADD_CHAR;
         }
-        return null;
+
+        return genericRightAdd(other).orElse(null);
     }
 
     @Override
@@ -132,6 +134,28 @@ public class SString extends SPredefinedType {
     @Override
     public String toString() {
         return "string";
+    }
+
+    public Optional<BinaryOperation> genericRightAdd(SType other) {
+        Optional<MethodReference> toString = other.getToStringMethod();
+        return toString.map(methodReference -> new BinaryOperation(BinaryOperator.PLUS, SString.instance) {
+            @Override
+            public void apply(MethodVisitor left, BufferedMethodVisitor right) {
+                methodReference.compileInvoke(right);
+                ADD_STRING.apply(left, right);
+            }
+        });
+    }
+
+    public Optional<BinaryOperation> genericLeftAdd(SType other) {
+        Optional<MethodReference> toString = other.getToStringMethod();
+        return toString.map(methodReference -> new BinaryOperation(BinaryOperator.PLUS, SString.instance) {
+            @Override
+            public void apply(MethodVisitor left, BufferedMethodVisitor right) {
+                methodReference.compileInvoke(left);
+                ADD_STRING.apply(left, right);
+            }
+        });
     }
 
     private static final PropertyReference PROP_LENGTH = new MethodBasedPropertyReference("length", String.class, "length");

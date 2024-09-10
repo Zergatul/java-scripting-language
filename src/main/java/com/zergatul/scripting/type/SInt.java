@@ -61,6 +61,11 @@ public class SInt extends SPredefinedType {
 
     @Override
     public BinaryOperation add(SType other) {
+        BinaryOperation operation = super.add(other);
+        if (operation != null) {
+            return operation;
+        }
+
         return other == this ? ADD : null;
     }
 

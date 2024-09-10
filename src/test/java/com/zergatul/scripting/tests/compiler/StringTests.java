@@ -55,13 +55,29 @@ public class StringTests {
         String code = """
                 stringStorage.add("123" + "789");
                 stringStorage.add("123" + '4');
+                //
+                stringStorage.add("-" + true);
+                stringStorage.add("abc" + 123456);
+                stringStorage.add("x" + 123.25);
+                //
+                stringStorage.add(false + "=");
+                stringStorage.add(100 + "!");
+                stringStorage.add(3.25 + "#");
                 """;
 
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
         Assertions.assertIterableEquals(ApiRoot.stringStorage.list,
-                List.of("123789", "1234"));
+                List.of(
+                        "123789",
+                        "1234",
+                        "-true",
+                        "abc123456",
+                        "x123.25",
+                        "false=",
+                        "100!",
+                        "3.25#"));
     }
 
     @Test
