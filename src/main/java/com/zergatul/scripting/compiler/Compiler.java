@@ -952,6 +952,7 @@ public class Compiler {
         switch (expression.getNodeType()) {
             case BOOLEAN_LITERAL -> compileBooleanLiteral(visitor, (BoundBooleanLiteralExpressionNode) expression);
             case INTEGER_LITERAL -> compileIntegerLiteral(visitor, (BoundIntegerLiteralExpressionNode) expression);
+            case INTEGER64_LITERAL -> compileInteger64Literal(visitor, (BoundInteger64LiteralExpressionNode) expression);
             case FLOAT_LITERAL -> compileFloatLiteral(visitor, (BoundFloatLiteralExpressionNode) expression);
             case STRING_LITERAL -> compileStringLiteral(visitor, (BoundStringLiteralExpressionNode) expression);
             case CHAR_LITERAL -> compileCharLiteral(visitor, (BoundCharLiteralExpressionNode) expression);
@@ -980,6 +981,10 @@ public class Compiler {
     }
 
     private void compileIntegerLiteral(MethodVisitor visitor, BoundIntegerLiteralExpressionNode literal) {
+        visitor.visitLdcInsn(literal.value);
+    }
+
+    private void compileInteger64Literal(MethodVisitor visitor, BoundInteger64LiteralExpressionNode literal) {
         visitor.visitLdcInsn(literal.value);
     }
 

@@ -534,6 +534,7 @@ public class Parser {
         switch (current.type) {
             case BOOLEAN:
             case INT:
+            case INT64:
             case FLOAT:
             case STRING:
             case CHAR:
@@ -557,7 +558,7 @@ public class Parser {
             case BREAK -> parseBreakStatement();
             case CONTINUE -> parseContinueStatement();
             case SEMICOLON -> parseEmptyStatement();
-            case BOOLEAN, INT, FLOAT, STRING, CHAR, IDENTIFIER, LEFT_PARENTHESES -> parseSimpleStatement().append(advance(TokenType.SEMICOLON));
+            case BOOLEAN, INT, INT64, FLOAT, STRING, CHAR, IDENTIFIER, LEFT_PARENTHESES -> parseSimpleStatement().append(advance(TokenType.SEMICOLON));
             default -> {
                 if (isPossibleExpression()) {
                     yield parseSimpleStatement().append(advance(TokenType.SEMICOLON));
@@ -592,6 +593,8 @@ public class Parser {
                 ExpressionNode expression = parseExpressionCore(Precedences.get(unary));
                 if (unary == UnaryOperator.MINUS && expression instanceof IntegerLiteralExpressionNode integer && !integer.value.startsWith("-")) {
                     left = new IntegerLiteralExpressionNode("-" + integer.value, TextRange.combine(unaryToken, expression));
+                } else if (unary == UnaryOperator.MINUS && expression instanceof Integer64LiteralExpressionNode integer && !integer.value.startsWith("-")) {
+                    left = new Integer64LiteralExpressionNode("-" + integer.value, TextRange.combine(unaryToken, expression));
                 } else if (unary == UnaryOperator.MINUS && expression instanceof FloatLiteralExpressionNode floatLiteral && !floatLiteral.value.startsWith("-")) {
                     left = new FloatLiteralExpressionNode("-" + floatLiteral.value, TextRange.combine(unaryToken, expression));
                 } else {
@@ -776,12 +779,13 @@ public class Parser {
             case FALSE -> new BooleanLiteralExpressionNode(false, advance().getRange());
             case TRUE -> new BooleanLiteralExpressionNode(true, advance().getRange());
             case INTEGER_LITERAL -> new IntegerLiteralExpressionNode((IntegerToken) advance());
+            case INTEGER64_LITERAL -> new Integer64LiteralExpressionNode((Integer64Token) advance());
             case FLOAT_LITERAL -> new FloatLiteralExpressionNode((FloatToken) advance());
             case STRING_LITERAL -> new StringLiteralExpressionNode((StringToken) advance());
             case CHAR_LITERAL -> new CharLiteralExpressionNode((CharToken) advance());
             case NEW -> parseNewExpression();
             case LEFT_PARENTHESES -> isPossibleLambdaExpression() ? parseLambdaExpression() : parseParenthesizedExpression();
-            case BOOLEAN, INT, CHAR, FLOAT, STRING -> parseStaticReference();
+            case BOOLEAN, INT, INT64, CHAR, FLOAT, STRING -> parseStaticReference();
             default -> null;
         };
 
@@ -902,6 +906,7 @@ public class Parser {
         return new StaticReferenceNode(switch (token.type) {
             case BOOLEAN -> PredefinedType.BOOLEAN;
             case INT -> PredefinedType.INT;
+            case INT64 -> PredefinedType.INT64;
             case CHAR -> PredefinedType.CHAR;
             case FLOAT -> PredefinedType.FLOAT;
             case STRING -> PredefinedType.STRING;
@@ -915,6 +920,7 @@ public class Parser {
             case TRUE:
             case LEFT_PARENTHESES:
             case INTEGER_LITERAL:
+            case INTEGER64_LITERAL:
             case FLOAT_LITERAL:
             case STRING_LITERAL:
             case CHAR_LITERAL:
@@ -922,6 +928,7 @@ public class Parser {
             case IDENTIFIER:
             case BOOLEAN:
             case INT:
+            case INT64:
             case FLOAT:
             case STRING:
             case CHAR:
@@ -989,6 +996,7 @@ public class Parser {
         switch (current.type) {
             case BOOLEAN:
             case INT:
+            case INT64:
             case FLOAT:
             case STRING:
             case CHAR:
@@ -1003,6 +1011,7 @@ public class Parser {
         TypeNode type = switch (current.type) {
             case BOOLEAN -> new PredefinedTypeNode(PredefinedType.BOOLEAN, current.getRange());
             case INT -> new PredefinedTypeNode(PredefinedType.INT, current.getRange());
+            case INT64 -> new PredefinedTypeNode(PredefinedType.INT64, current.getRange());
             case FLOAT -> new PredefinedTypeNode(PredefinedType.FLOAT, current.getRange());
             case STRING -> new PredefinedTypeNode(PredefinedType.STRING, current.getRange());
             case CHAR -> new PredefinedTypeNode(PredefinedType.CHAR, current.getRange());

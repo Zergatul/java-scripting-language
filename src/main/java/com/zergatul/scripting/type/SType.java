@@ -263,6 +263,9 @@ public abstract class SType {
             if (clazz == int.class || clazz == Integer.class) {
                 return SInt.instance;
             }
+            if (clazz == long.class || clazz == Long.class) {
+                return SInt64.instance;
+            }
             if (clazz == double.class || clazz == Double.class) {
                 return SFloat.instance;
             }

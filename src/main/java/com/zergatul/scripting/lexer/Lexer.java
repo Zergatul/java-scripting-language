@@ -441,6 +441,12 @@ public class Lexer {
         boolean isValid = (mantisIntegers + mantisDecimals) > 0 && (!hasExponent || exponentDigits > 0);
         boolean isInteger = !hasDecimalPoint && !hasExponent;
 
+        boolean isLong = false;
+        if (isInteger && (current == 'L' || current == 'l')) {
+            isLong = true;
+            advance();
+        }
+
         // check for improper chars after number
         while (current == '.' || isIdentifier(current)) {
             isValid = false;
@@ -451,7 +457,11 @@ public class Lexer {
         TextRange range = getCurrentTokenRange();
         if (isValid) {
             if (isInteger) {
-                list.add(new IntegerToken(value, range));
+                if (isLong) {
+                    list.add(new Integer64Token(value, range));
+                } else {
+                    list.add(new IntegerToken(value, range));
+                }
             } else {
                 list.add(new FloatToken(value, range));
             }
@@ -473,15 +483,26 @@ public class Lexer {
             advance();
         }
 
+        boolean isLong = false;
         String value = getCurrentTokenValue();
+        if (value.endsWith("L") || value.endsWith("l")) {
+            isLong = true;
+        }
+
         TextRange range = getCurrentTokenRange();
-        boolean isValidHex = value.chars().skip(2).allMatch(this::isHexNumber);
+        boolean isValidHex = isLong ?
+                value.chars().skip(2).limit(value.length() - 3).allMatch(this::isHexNumber) :
+                value.chars().skip(2).allMatch(this::isHexNumber);
         if (value.length() == 2 || !isValidHex) {
             Token token = new InvalidNumberToken(value, range);
             addDiagnostic(LexerErrors.InvalidNumber, token, value);
             list.add(token);
         } else {
-            list.add(new IntegerToken(value, range));
+            if (isLong) {
+                list.add(new Integer64Token(value, range));
+            } else {
+                list.add(new IntegerToken(value, range));
+            }
         }
     }
 
@@ -490,6 +511,7 @@ public class Lexer {
         TokenType reservedWord = switch (value) {
             case "boolean" -> TokenType.BOOLEAN;
             case "int" -> TokenType.INT;
+            case "int64" -> TokenType.INT64;
             case "float" -> TokenType.FLOAT;
             case "string" -> TokenType.STRING;
             case "char" -> TokenType.CHAR;

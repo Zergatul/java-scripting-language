@@ -419,6 +419,7 @@ public class Binder {
         return switch (expression.getNodeType()) {
             case BOOLEAN_LITERAL -> bindBooleanLiteralExpression((BooleanLiteralExpressionNode) expression);
             case INTEGER_LITERAL -> bindIntegerLiteralExpression((IntegerLiteralExpressionNode) expression);
+            case INTEGER64_LITERAL -> bindInteger64LiteralExpression((Integer64LiteralExpressionNode) expression);
             case FLOAT_LITERAL -> bindFloatLiteralExpression((FloatLiteralExpressionNode) expression);
             case STRING_LITERAL -> bindStringLiteralExpression((StringLiteralExpressionNode) expression);
             case CHAR_LITERAL -> bindCharLiteralExpression((CharLiteralExpressionNode) expression);
@@ -503,25 +504,49 @@ public class Binder {
     }
 
     private BoundIntegerLiteralExpressionNode bindIntegerLiteralExpression(IntegerLiteralExpressionNode literal) {
-        int value;
-        try {
-            if (literal.value.startsWith("0x")) {
-                if (literal.value.length() < 10 || (literal.value.length() == 10 && literal.value.charAt(2) < '8')) {
-                    value = Integer.parseInt(literal.value.substring(2), 16);
-                } else if (literal.value.length() == 10 && literal.value.charAt(2) >= '8') {
-                    value = (int) Long.parseLong(literal.value.substring(2), 16);
-                } else {
-                    throw new NumberFormatException();
-                }
-            } else {
-                value = Integer.parseInt(literal.value);
+        int value = 0;
+        if (literal.value.startsWith("0x")) {
+            if (literal.value.length() > 8 + 2) {
+                addDiagnostic(BinderErrors.IntegerConstantTooLarge, literal);
+                return new BoundIntegerLiteralExpressionNode(0, literal.getRange());
             }
-        } catch (NumberFormatException e) {
-            value = 0;
-            ErrorCode code = literal.value.charAt(0) == '-' ? BinderErrors.IntegerConstantTooSmall : BinderErrors.IntegerConstantTooLarge;
-            addDiagnostic(code, literal);
+            for (int i = 2; i < literal.value.length(); i++) {
+                value = (value << 4) | parseHex(literal.value.charAt(i));
+            }
+        } else {
+            try {
+                value = Integer.parseInt(literal.value);
+            } catch (NumberFormatException e) {
+                ErrorCode code = literal.value.charAt(0) == '-' ? BinderErrors.IntegerConstantTooSmall : BinderErrors.IntegerConstantTooLarge;
+                addDiagnostic(code, literal);
+            }
         }
+
         return new BoundIntegerLiteralExpressionNode(value, literal.getRange());
+    }
+
+    private BoundInteger64LiteralExpressionNode bindInteger64LiteralExpression(Integer64LiteralExpressionNode literal) {
+        String str = literal.value.substring(0, literal.value.length() - 1); // remove L
+
+        long value = 0;
+        if (str.startsWith("0x")) {
+            if (str.length() > 16 + 2) {
+                addDiagnostic(BinderErrors.IntegerConstantTooLarge, literal);
+                return new BoundInteger64LiteralExpressionNode(0, literal.getRange());
+            }
+            for (int i = 2; i < str.length(); i++) {
+                value = (value << 4) | parseHex(str.charAt(i));
+            }
+        } else {
+            try {
+                value = Long.parseLong(str);
+            } catch (NumberFormatException e) {
+                ErrorCode code = str.charAt(0) == '-' ? BinderErrors.IntegerConstantTooSmall : BinderErrors.IntegerConstantTooLarge;
+                addDiagnostic(code, literal);
+            }
+        }
+
+        return new BoundInteger64LiteralExpressionNode(value, literal.getRange());
     }
 
     private BoundFloatLiteralExpressionNode bindFloatLiteralExpression(FloatLiteralExpressionNode literal) {
@@ -913,6 +938,7 @@ public class Binder {
         return new BoundStaticReferenceExpression(switch (node.typeReference) {
             case BOOLEAN -> SBoolean.staticRef;
             case INT -> SInt.staticRef;
+            case INT64 -> SInt64.staticRef;
             case CHAR -> SChar.staticRef;
             case FLOAT -> SFloat.staticRef;
             case STRING -> SString.staticRef;
@@ -1111,6 +1137,7 @@ public class Binder {
             SType bound = switch (predefined.type) {
                 case BOOLEAN -> SBoolean.instance;
                 case INT -> SInt.instance;
+                case INT64 -> SInt64.instance;
                 case FLOAT -> SFloat.instance;
                 case STRING -> SString.instance;
                 case CHAR -> SChar.instance;
@@ -1147,6 +1174,19 @@ public class Binder {
 
     private void addDiagnostic(ErrorCode code, Locatable locatable, Object... parameters) {
         diagnostics.add(new DiagnosticMessage(code, locatable, parameters));
+    }
+
+    private int parseHex(char ch) {
+        if ('0' <= ch && ch <= '9') {
+            return ch - '0';
+        }
+        if ('A' <= ch && ch <= 'F') {
+            return 10 + ch - 'A';
+        }
+        if ('a' <= ch && ch <= 'f') {
+            return 10 + ch - 'a';
+        }
+        throw new InternalException();
     }
 
     private record ExpressionPair(boolean result, BoundExpressionNode expression1, BoundExpressionNode expression2) {

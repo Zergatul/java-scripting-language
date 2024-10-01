@@ -1,5 +1,8 @@
 package com.zergatul.scripting.tests.compiler;
 
+import com.zergatul.scripting.DiagnosticMessage;
+import com.zergatul.scripting.SingleLineTextRange;
+import com.zergatul.scripting.binding.BinderErrors;
 import com.zergatul.scripting.tests.compiler.helpers.BoolStorage;
 import com.zergatul.scripting.tests.compiler.helpers.IntStorage;
 import com.zergatul.scripting.tests.compiler.helpers.StringStorage;
@@ -11,7 +14,7 @@ import java.util.List;
 
 import static com.zergatul.scripting.tests.compiler.helpers.CompilerHelper.*;
 
-public class IntTests {
+public class Int32Tests {
 
     @BeforeEach
     public void clean() {
@@ -51,7 +54,37 @@ public class IntTests {
     }
 
     @Test
-    public void hexNumbersTest() {
+    public void constantTooSmallTest() {
+        String code = """
+                intStorage.add(-2147483648);
+                intStorage.add(-2147483649);
+                """;
+
+        List<DiagnosticMessage> messages = getDiagnostics(ApiRoot.class, code);
+
+        Assertions.assertIterableEquals(
+                messages,
+                List.of(
+                        new DiagnosticMessage(BinderErrors.IntegerConstantTooSmall, new SingleLineTextRange(2, 16, 44, 11))));
+    }
+
+    @Test
+    public void constantTooLargeTest() {
+        String code = """
+                intStorage.add(2147483647);
+                intStorage.add(2147483648);
+                """;
+
+        List<DiagnosticMessage> messages = getDiagnostics(ApiRoot.class, code);
+
+        Assertions.assertIterableEquals(
+                messages,
+                List.of(
+                        new DiagnosticMessage(BinderErrors.IntegerConstantTooLarge, new SingleLineTextRange(2, 16, 43, 10))));
+    }
+
+    @Test
+    public void hexNumbers1Test() {
         String code = """
                 intStorage.add(0x0);
                 intStorage.add(0x00000000);
@@ -70,6 +103,22 @@ public class IntTests {
         Assertions.assertIterableEquals(
                 ApiRoot.intStorage.list,
                 List.of(0, 0, 1, 0xA, 0xF, 0x100, 0x7FFFFFFF, 0x8FFFFFFF, 0xFFFFFFFF));
+    }
+
+    @Test
+    public void hexNumbers2Test() {
+        String code = """
+                intStorage.add(0x000000000);
+                intStorage.add(0x100000000);
+                """;
+
+        List<DiagnosticMessage> messages = getDiagnostics(ApiRoot.class, code);
+
+        Assertions.assertIterableEquals(
+                messages,
+                List.of(
+                        new DiagnosticMessage(BinderErrors.IntegerConstantTooLarge, new SingleLineTextRange(1, 16, 15, 11)),
+                        new DiagnosticMessage(BinderErrors.IntegerConstantTooLarge, new SingleLineTextRange(2, 16, 44, 11))));
     }
 
     @Test

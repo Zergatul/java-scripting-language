@@ -4,8 +4,8 @@ import com.zergatul.scripting.compiler.BufferedMethodVisitor;
 import com.zergatul.scripting.parser.BinaryOperator;
 import com.zergatul.scripting.parser.PostfixOperator;
 import com.zergatul.scripting.parser.UnaryOperator;
-import com.zergatul.scripting.runtime.IntReference;
-import com.zergatul.scripting.runtime.IntUtils;
+import com.zergatul.scripting.runtime.Int64Reference;
+import com.zergatul.scripting.runtime.Int64Utils;
 import com.zergatul.scripting.type.operation.*;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
@@ -15,13 +15,13 @@ import java.util.List;
 
 import static org.objectweb.asm.Opcodes.*;
 
-public class SInt extends SPredefinedType {
+public class SInt64 extends SPredefinedType {
 
-    public static final SInt instance = new SInt();
+    public static final SInt64 instance = new SInt64();
     public static final SStaticTypeReference staticRef = new SStaticTypeReference(instance);
 
-    private SInt() {
-        super(int.class);
+    private SInt64() {
+        super(long.class);
     }
 
     @Override
@@ -31,32 +31,32 @@ public class SInt extends SPredefinedType {
 
     @Override
     public int getLoadInst() {
-        return ILOAD;
+        return LLOAD;
     }
 
     @Override
     public int getStoreInst() {
-        return ISTORE;
+        return LSTORE;
     }
 
     @Override
     public void storeDefaultValue(MethodVisitor visitor) {
-        visitor.visitInsn(ICONST_0);
+        visitor.visitInsn(LCONST_0);
     }
 
     @Override
     public int getArrayTypeInst() {
-        return T_INT;
+        return T_LONG;
     }
 
     @Override
     public int getArrayLoadInst() {
-        return IALOAD;
+        return LALOAD;
     }
 
     @Override
     public int getArrayStoreInst() {
-        return IASTORE;
+        return LASTORE;
     }
 
     @Override
@@ -151,13 +151,7 @@ public class SInt extends SPredefinedType {
 
     @Override
     public CastOperation implicitCastTo(SType other) {
-        if (other == SInt64.instance) {
-            return TO_INT64;
-        }
-        if (other == SFloat.instance) {
-            return TO_FLOAT;
-        }
-        return null;
+        return other == SFloat.instance ? TO_FLOAT : null;
     }
 
     @Override
@@ -207,110 +201,102 @@ public class SInt extends SPredefinedType {
 
     @Override
     public SReference getReferenceType() {
-        return SReference.INT;
+        return SReference.INT64;
     }
 
     @Override
     public Class<?> getReferenceClass() {
-        return IntReference.class;
+        return Int64Reference.class;
     }
 
     @Override
     public String toString() {
-        return "int";
+        return "int64";
     }
 
-    private static final BinaryOperation ADD = new SingleInstructionBinaryOperation(BinaryOperator.PLUS, SInt.instance, IADD);
-    private static final BinaryOperation SUB = new SingleInstructionBinaryOperation(BinaryOperator.MINUS, SInt.instance, ISUB);
-    private static final BinaryOperation MUL = new SingleInstructionBinaryOperation(BinaryOperator.MULTIPLY, SInt.instance, IMUL);
-    private static final BinaryOperation DIV = new SingleInstructionBinaryOperation(BinaryOperator.DIVIDE, SInt.instance, IDIV);
-    private static final BinaryOperation MOD = new SingleInstructionBinaryOperation(BinaryOperator.MODULO, SInt.instance, IREM);
-    private static final BinaryOperation BITWISE_AND = new SingleInstructionBinaryOperation(BinaryOperator.BITWISE_AND, SInt.instance, IAND);
-    private static final BinaryOperation BITWISE_OR = new SingleInstructionBinaryOperation(BinaryOperator.BITWISE_OR, SInt.instance, IOR);
-    private static final BinaryOperation LESS_THAN = new IntComparisonOperation(BinaryOperator.LESS, IF_ICMPLT);
-    private static final BinaryOperation GREATER_THAN = new IntComparisonOperation(BinaryOperator.GREATER, IF_ICMPGT);
-    private static final BinaryOperation LESS_THAN_EQUALS = new IntComparisonOperation(BinaryOperator.LESS_EQUALS, IF_ICMPLE);
-    private static final BinaryOperation GREATER_THAN_EQUALS = new IntComparisonOperation(BinaryOperator.GREATER_EQUALS, IF_ICMPGE);
-    private static final BinaryOperation EQUALS = new IntComparisonOperation(BinaryOperator.EQUALS, IF_ICMPEQ);
-    private static final BinaryOperation NOT_EQUALS = new IntComparisonOperation(BinaryOperator.NOT_EQUALS, IF_ICMPNE);
-    private static final UnaryOperation PLUS = new UnaryOperation(UnaryOperator.PLUS, SInt.instance) {
+    private static final BinaryOperation ADD = new SingleInstructionBinaryOperation(BinaryOperator.PLUS, SInt64.instance, LADD);
+    private static final BinaryOperation SUB = new SingleInstructionBinaryOperation(BinaryOperator.MINUS, SInt64.instance, LSUB);
+    private static final BinaryOperation MUL = new SingleInstructionBinaryOperation(BinaryOperator.MULTIPLY, SInt64.instance, LMUL);
+    private static final BinaryOperation DIV = new SingleInstructionBinaryOperation(BinaryOperator.DIVIDE, SInt64.instance, LDIV);
+    private static final BinaryOperation MOD = new SingleInstructionBinaryOperation(BinaryOperator.MODULO, SInt64.instance, LREM);
+    private static final BinaryOperation BITWISE_AND = new SingleInstructionBinaryOperation(BinaryOperator.BITWISE_AND, SInt64.instance, LAND);
+    private static final BinaryOperation BITWISE_OR = new SingleInstructionBinaryOperation(BinaryOperator.BITWISE_OR, SInt64.instance, LOR);
+    private static final BinaryOperation LESS_THAN = new Int64ComparisonOperation(BinaryOperator.LESS, IF_ICMPLT);
+    private static final BinaryOperation GREATER_THAN = new Int64ComparisonOperation(BinaryOperator.GREATER, IF_ICMPGT);
+    private static final BinaryOperation LESS_THAN_EQUALS = new Int64ComparisonOperation(BinaryOperator.LESS_EQUALS, IF_ICMPLE);
+    private static final BinaryOperation GREATER_THAN_EQUALS = new Int64ComparisonOperation(BinaryOperator.GREATER_EQUALS, IF_ICMPGE);
+    private static final BinaryOperation EQUALS = new Int64ComparisonOperation(BinaryOperator.EQUALS, IF_ICMPEQ);
+    private static final BinaryOperation NOT_EQUALS = new Int64ComparisonOperation(BinaryOperator.NOT_EQUALS, IF_ICMPNE);
+    private static final UnaryOperation PLUS = new UnaryOperation(UnaryOperator.PLUS, SInt64.instance) {
         @Override
         public void apply(MethodVisitor visitor) {}
     };
-    private static final UnaryOperation MINUS = new UnaryOperation(UnaryOperator.MINUS, SInt.instance) {
+    private static final UnaryOperation MINUS = new UnaryOperation(UnaryOperator.MINUS, SInt64.instance) {
         @Override
         public void apply(MethodVisitor visitor) {
-            visitor.visitInsn(INEG);
+            visitor.visitInsn(LNEG);
         }
     };
-    private static final PostfixOperation INC = new PostfixOperation(PostfixOperator.PLUS_PLUS, SInt.instance) {
+    private static final PostfixOperation INC = new PostfixOperation(PostfixOperator.PLUS_PLUS, SInt64.instance) {
         @Override
         public void apply(MethodVisitor visitor) {
-            visitor.visitInsn(ICONST_1);
-            visitor.visitInsn(IADD);
+            visitor.visitInsn(LCONST_1);
+            visitor.visitInsn(LADD);
         }
     };
-    private static final PostfixOperation DEC = new PostfixOperation(PostfixOperator.MINUS_MINUS, SInt.instance) {
+    private static final PostfixOperation DEC = new PostfixOperation(PostfixOperator.MINUS_MINUS, SInt64.instance) {
         @Override
         public void apply(MethodVisitor visitor) {
-            visitor.visitInsn(ICONST_1);
-            visitor.visitInsn(ISUB);
+            visitor.visitInsn(LCONST_1);
+            visitor.visitInsn(LSUB);
         }
     };
-
     private static final CastOperation TO_FLOAT = new CastOperation(SFloat.instance) {
         @Override
         public void apply(MethodVisitor visitor) {
-            visitor.visitInsn(I2D);
-        }
-    };
-
-    private static final CastOperation TO_INT64 = new CastOperation(SInt64.instance) {
-        @Override
-        public void apply(MethodVisitor visitor) {
-            visitor.visitInsn(I2L);
+            visitor.visitInsn(L2D);
         }
     };
 
     private static final MethodReference METHOD_TO_STRING = new StaticAsInstanceMethodReference(
             """
-                    Returns a string representation of an integer
+                    Returns a string representation of an 64bit integer
                     """,
-            Integer.class,
-            SInt.instance,
+            Long.class,
+            SInt64.instance,
             "toString",
             SString.instance);
 
     private static final MethodReference METHOD_TO_STANDARD_STRING = new StaticAsInstanceMethodReference(
-            IntUtils.class,
-            SInt.instance,
+            Int64Utils.class,
+            SInt64.instance,
             "toStandardString",
             SString.instance);
 
     private static final MethodReference METHOD_TRY_PARSE = new StaticMethodReference(
-            IntUtils.class,
-            SInt.instance,
+            Int64Utils.class,
+            SInt64.instance,
             "tryParse",
             SBoolean.instance,
             new MethodParameter("str", SString.instance),
-            new MethodParameter("result", SReference.INT));
+            new MethodParameter("result", SReference.INT64));
 
     private static final PropertyReference PROPERTY_MIN_VALUE = new GetterPropertyReference(
-            SInt.instance,
+            SInt64.instance,
             "MIN_VALUE",
-            visitor -> visitor.visitLdcInsn(Integer.MIN_VALUE));
+            visitor -> visitor.visitLdcInsn(Long.MIN_VALUE));
 
     private static final PropertyReference PROPERTY_MAX_VALUE = new GetterPropertyReference(
-            SInt.instance,
+            SInt64.instance,
             "MAX_VALUE",
-            visitor -> visitor.visitLdcInsn(Integer.MAX_VALUE));
+            visitor -> visitor.visitLdcInsn(Long.MAX_VALUE));
 
-    private static class IntComparisonOperation extends BinaryOperation {
+    private static class Int64ComparisonOperation extends BinaryOperation {
 
         private final int opcode;
 
-        public IntComparisonOperation(BinaryOperator operator, int opcode) {
-            super(operator, SBoolean.instance, SInt.instance);
+        public Int64ComparisonOperation(BinaryOperator operator, int opcode) {
+            super(operator, SBoolean.instance, SInt64.instance);
             this.opcode = opcode;
         }
 
