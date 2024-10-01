@@ -3,9 +3,10 @@ package com.zergatul.scripting.type;
 import com.zergatul.scripting.Lazy;
 import com.zergatul.scripting.compiler.BufferedMethodVisitor;
 import com.zergatul.scripting.parser.BinaryOperator;
+import com.zergatul.scripting.parser.PostfixOperator;
 import com.zergatul.scripting.parser.UnaryOperator;
-import com.zergatul.scripting.runtime.FloatReference;
-import com.zergatul.scripting.runtime.FloatUtils;
+import com.zergatul.scripting.runtime.Int64Reference;
+import com.zergatul.scripting.runtime.Int64Utils;
 import com.zergatul.scripting.type.operation.*;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
@@ -15,13 +16,13 @@ import java.util.List;
 
 import static org.objectweb.asm.Opcodes.*;
 
-public class SFloat extends SPredefinedType {
+public class SInt64 extends SPredefinedType {
 
-    public static final SFloat instance = new SFloat();
+    public static final SInt64 instance = new SInt64();
     public static final SStaticTypeReference staticRef = new SStaticTypeReference(instance);
 
-    private SFloat() {
-        super(double.class);
+    private SInt64() {
+        super(long.class);
     }
 
     @Override
@@ -31,35 +32,34 @@ public class SFloat extends SPredefinedType {
 
     @Override
     public int getLoadInst() {
-        return DLOAD;
+        return LLOAD;
     }
 
     @Override
     public int getStoreInst() {
-        return DSTORE;
+        return LSTORE;
     }
 
     @Override
     public void storeDefaultValue(MethodVisitor visitor) {
-        visitor.visitLdcInsn(0.0);
+        visitor.visitInsn(LCONST_0);
     }
 
     @Override
     public int getArrayTypeInst() {
-        return T_DOUBLE;
+        return T_LONG;
     }
 
     @Override
     public int getArrayLoadInst() {
-        return DALOAD;
+        return LALOAD;
     }
 
     @Override
     public int getArrayStoreInst() {
-        return DASTORE;
+        return LASTORE;
     }
 
-    @Override
     public boolean isJvmCategoryOneComputationalType() {
         return false;
     }
@@ -125,6 +125,16 @@ public class SFloat extends SPredefinedType {
     }
 
     @Override
+    public BinaryOperation bitwiseAnd(SType other) {
+        return other == this ? BITWISE_AND.value() : null;
+    }
+
+    @Override
+    public BinaryOperation bitwiseOr(SType other) {
+        return other == this ? BITWISE_OR.value() : null;
+    }
+
+    @Override
     public UnaryOperation plus() {
         return PLUS.value();
     }
@@ -135,22 +145,37 @@ public class SFloat extends SPredefinedType {
     }
 
     @Override
+    public PostfixOperation increment() {
+        return INC.value();
+    }
+
+    @Override
+    public PostfixOperation decrement() {
+        return DEC.value();
+    }
+
+    @Override
+    public CastOperation implicitCastTo(SType other) {
+        return other == SFloat.instance ? TO_FLOAT.value() : null;
+    }
+
+    @Override
     public int getReturnInst() {
-        return DRETURN;
+        return IRETURN;
     }
 
     @Override
     public Class<?> getBoxedVersion() {
-        return Double.class;
+        return Long.class;
     }
 
     @Override
     public void compileBoxing(MethodVisitor visitor) {
         visitor.visitMethodInsn(
                 INVOKESTATIC,
-                Type.getInternalName(Double.class),
+                Type.getInternalName(Long.class),
                 "valueOf",
-                Type.getMethodDescriptor(Type.getType(Double.class), Type.DOUBLE_TYPE),
+                Type.getMethodDescriptor(Type.getType(Long.class), Type.LONG_TYPE),
                 false);
     }
 
@@ -158,9 +183,9 @@ public class SFloat extends SPredefinedType {
     public void compileUnboxing(MethodVisitor visitor) {
         visitor.visitMethodInsn(
                 INVOKEVIRTUAL,
-                Type.getInternalName(Double.class),
-                "doubleValue",
-                Type.getMethodDescriptor(Type.DOUBLE_TYPE),
+                Type.getInternalName(Long.class),
+                "longValue",
+                Type.getMethodDescriptor(Type.LONG_TYPE),
                 false);
     }
 
@@ -175,92 +200,138 @@ public class SFloat extends SPredefinedType {
     }
 
     @Override
+    public List<PropertyReference> getStaticProperties() {
+        return List.of(PROPERTY_MIN_VALUE.value(), PROPERTY_MAX_VALUE.value());
+    }
+
+    @Override
     public SReference getReferenceType() {
-        return SReference.FLOAT;
+        return SReference.INT64;
     }
 
     @Override
     public Class<?> getReferenceClass() {
-        return FloatReference.class;
+        return Int64Reference.class;
     }
 
     @Override
     public String toString() {
-        return "float";
+        return "int64";
     }
 
     private static final Lazy<BinaryOperation> ADD = new Lazy<>(() ->
-            new SingleInstructionBinaryOperation(BinaryOperator.PLUS, SFloat.instance, DADD));
+            new SingleInstructionBinaryOperation(BinaryOperator.PLUS, SInt64.instance, LADD));
 
     private static final Lazy<BinaryOperation> SUB = new Lazy<>(() ->
-            new SingleInstructionBinaryOperation(BinaryOperator.MINUS, SFloat.instance, DSUB));
+            new SingleInstructionBinaryOperation(BinaryOperator.MINUS, SInt64.instance, LSUB));
 
     private static final Lazy<BinaryOperation> MUL = new Lazy<>(() ->
-            new SingleInstructionBinaryOperation(BinaryOperator.MULTIPLY, SFloat.instance, DMUL));
+            new SingleInstructionBinaryOperation(BinaryOperator.MULTIPLY, SInt64.instance, LMUL));
 
     private static final Lazy<BinaryOperation> DIV = new Lazy<>(() ->
-            new SingleInstructionBinaryOperation(BinaryOperator.DIVIDE, SFloat.instance, DDIV));
+            new SingleInstructionBinaryOperation(BinaryOperator.DIVIDE, SInt64.instance, LDIV));
 
     private static final Lazy<BinaryOperation> MOD = new Lazy<>(() ->
-            new SingleInstructionBinaryOperation(BinaryOperator.MODULO, SFloat.instance, DREM));
+            new SingleInstructionBinaryOperation(BinaryOperator.MODULO, SInt64.instance, LREM));
+
+    private static final Lazy<BinaryOperation> BITWISE_AND = new Lazy<>(() ->
+            new SingleInstructionBinaryOperation(BinaryOperator.BITWISE_AND, SInt64.instance, LAND));
+
+    private static final Lazy<BinaryOperation> BITWISE_OR = new Lazy<>(() ->
+            new SingleInstructionBinaryOperation(BinaryOperator.BITWISE_OR, SInt64.instance, LOR));
 
     private static final Lazy<BinaryOperation> LESS_THAN = new Lazy<>(() ->
-            new FloatComparisonOperation(BinaryOperator.LESS, IF_ICMPLT));
+            new Int64ComparisonOperation(BinaryOperator.LESS, IFLT));
 
     private static final Lazy<BinaryOperation> GREATER_THAN = new Lazy<>(() ->
-            new FloatComparisonOperation(BinaryOperator.GREATER, IF_ICMPGT));
+            new Int64ComparisonOperation(BinaryOperator.GREATER, IFGT));
 
     private static final Lazy<BinaryOperation> LESS_THAN_EQUALS = new Lazy<>(() ->
-            new FloatComparisonOperation(BinaryOperator.LESS_EQUALS, IF_ICMPLE));
+            new Int64ComparisonOperation(BinaryOperator.LESS_EQUALS, IFLE));
 
     private static final Lazy<BinaryOperation> GREATER_THAN_EQUALS = new Lazy<>(() ->
-            new FloatComparisonOperation(BinaryOperator.GREATER_EQUALS, IF_ICMPGE));
+            new Int64ComparisonOperation(BinaryOperator.GREATER_EQUALS, IFGE));
 
     private static final Lazy<BinaryOperation> EQUALS = new Lazy<>(() ->
-            new FloatComparisonOperation(BinaryOperator.EQUALS, IF_ICMPEQ));
+            new Int64ComparisonOperation(BinaryOperator.EQUALS, IFEQ));
 
     private static final Lazy<BinaryOperation> NOT_EQUALS = new Lazy<>(() ->
-            new FloatComparisonOperation(BinaryOperator.NOT_EQUALS, IF_ICMPNE));
+            new Int64ComparisonOperation(BinaryOperator.NOT_EQUALS, IFNE));
 
-    private static final Lazy<UnaryOperation> PLUS = new Lazy<>(() -> new UnaryOperation(UnaryOperator.PLUS, SFloat.instance) {
+    private static final Lazy<UnaryOperation> PLUS = new Lazy<>(() -> new UnaryOperation(UnaryOperator.PLUS, SInt64.instance) {
         @Override
         public void apply(MethodVisitor visitor) {}
     });
 
-    private static final Lazy<UnaryOperation> MINUS = new Lazy<>(() -> new UnaryOperation(UnaryOperator.MINUS, SFloat.instance) {
+    private static final Lazy<UnaryOperation> MINUS = new Lazy<>(() -> new UnaryOperation(UnaryOperator.MINUS, SInt64.instance) {
         @Override
         public void apply(MethodVisitor visitor) {
-            visitor.visitInsn(DNEG);
+            visitor.visitInsn(LNEG);
+        }
+    });
+
+    private static final Lazy<PostfixOperation> INC = new Lazy<>(() -> new PostfixOperation(PostfixOperator.PLUS_PLUS, SInt64.instance) {
+        @Override
+        public void apply(MethodVisitor visitor) {
+            visitor.visitInsn(LCONST_1);
+            visitor.visitInsn(LADD);
+        }
+    });
+
+    private static final Lazy<PostfixOperation> DEC = new Lazy<>(() -> new PostfixOperation(PostfixOperator.MINUS_MINUS, SInt64.instance) {
+        @Override
+        public void apply(MethodVisitor visitor) {
+            visitor.visitInsn(LCONST_1);
+            visitor.visitInsn(LSUB);
+        }
+    });
+
+    private static final Lazy<CastOperation> TO_FLOAT = new Lazy<>(() -> new CastOperation(SFloat.instance) {
+        @Override
+        public void apply(MethodVisitor visitor) {
+            visitor.visitInsn(L2D);
         }
     });
 
     private static final Lazy<MethodReference> METHOD_TO_STRING = new Lazy<>(() -> new StaticAsInstanceMethodReference(
-            Double.class,
-            SFloat.instance,
+            """
+                    Returns a string representation of an 64bit integer
+                    """,
+            Long.class,
+            SInt64.instance,
             "toString",
             SString.instance));
 
     private static final Lazy<MethodReference> METHOD_TO_STANDARD_STRING = new Lazy<>(() -> new StaticAsInstanceMethodReference(
-            FloatUtils.class,
-            SFloat.instance,
+            Int64Utils.class,
+            SInt64.instance,
             "toStandardString",
-            SString.instance,
-            new MethodParameter("digits", SInt.instance)));
+            SString.instance));
 
     private static final Lazy<MethodReference> METHOD_TRY_PARSE = new Lazy<>(() -> new StaticMethodReference(
-            FloatUtils.class,
-            SFloat.instance,
+            Int64Utils.class,
+            SInt64.instance,
             "tryParse",
             SBoolean.instance,
             new MethodParameter("str", SString.instance),
-            new MethodParameter("result", SReference.FLOAT)));
+            new MethodParameter("result", SReference.INT64)));
 
-    private static class FloatComparisonOperation extends BinaryOperation {
+    private static final Lazy<PropertyReference> PROPERTY_MIN_VALUE = new Lazy<>(() -> new GetterPropertyReference(
+            SInt64.instance,
+            "MIN_VALUE",
+            visitor -> visitor.visitLdcInsn(Long.MIN_VALUE)));
+
+    private final Lazy<PropertyReference> PROPERTY_MAX_VALUE = new Lazy<>(() -> new GetterPropertyReference(
+            SInt64.instance,
+            "MAX_VALUE",
+            visitor -> visitor.visitLdcInsn(Long.MAX_VALUE)));
+
+    private static class Int64ComparisonOperation extends BinaryOperation {
 
         private final int opcode;
 
-        protected FloatComparisonOperation(BinaryOperator operator, int opcode) {
-            super(operator, SBoolean.instance, SFloat.instance);
+        public Int64ComparisonOperation(BinaryOperator operator, int opcode) {
+            super(operator, SBoolean.instance, SInt64.instance);
             this.opcode = opcode;
         }
 
@@ -269,8 +340,7 @@ public class SFloat extends SPredefinedType {
             right.release(left);
             Label elseLabel = new Label();
             Label endLabel = new Label();
-            left.visitInsn(DCMPG);
-            left.visitInsn(ICONST_0);
+            left.visitInsn(LCMP);
             left.visitJumpInsn(opcode, elseLabel);
             left.visitInsn(ICONST_0);
             left.visitJumpInsn(GOTO, endLabel);

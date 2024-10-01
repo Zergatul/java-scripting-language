@@ -11,6 +11,7 @@ public class IntStorage {
         list.add(value);
     }
 
+    @SuppressWarnings("unused")
     public int last() {
         return list.get(list.size() - 1);
     }

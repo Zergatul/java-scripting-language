@@ -124,6 +124,11 @@ public abstract class ParserTreeVisitor {
         node.acceptChildren(this);
     }
 
+    public void explicitVisit(Integer64LiteralExpressionNode node) {
+        visit(node);
+        node.acceptChildren(this);
+    }
+
     public void explicitVisit(InvalidExpressionNode node) {
         visit(node);
         node.acceptChildren(this);
@@ -268,6 +273,7 @@ public abstract class ParserTreeVisitor {
     public void visit(IfStatementNode node) {}
     public void visit(IndexExpressionNode node) {}
     public void visit(IntegerLiteralExpressionNode node) {}
+    public void visit(Integer64LiteralExpressionNode node) {}
     public void visit(InvalidExpressionNode node) {}
     public void visit(InvalidStatementNode node) {}
     public void visit(InvalidTypeNode node) {}

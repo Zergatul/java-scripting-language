@@ -1,10 +1,10 @@
 package com.zergatul.scripting.type;
 
+import com.zergatul.scripting.Lazy;
 import com.zergatul.scripting.compiler.BufferedMethodVisitor;
 import com.zergatul.scripting.parser.BinaryOperator;
 import com.zergatul.scripting.parser.UnaryOperator;
 import com.zergatul.scripting.runtime.BooleanReference;
-import com.zergatul.scripting.runtime.IntReference;
 import com.zergatul.scripting.type.operation.BinaryOperation;
 import com.zergatul.scripting.type.operation.SingleInstructionBinaryOperation;
 import com.zergatul.scripting.type.operation.UnaryOperation;
@@ -92,27 +92,27 @@ public class SBoolean extends SPredefinedType {
 
     @Override
     public BinaryOperation booleanAnd(SType other) {
-        return other == this ? BOOLEAN_AND : null;
+        return other == this ? BOOLEAN_AND.value() : null;
     }
 
     @Override
     public BinaryOperation booleanOr(SType other) {
-        return other == this ? BOOLEAN_OR : null;
+        return other == this ? BOOLEAN_OR.value() : null;
     }
 
     @Override
     public BinaryOperation bitwiseAnd(SType other) {
-        return other == this ? BITWISE_AND : null;
+        return other == this ? BITWISE_AND.value() : null;
     }
 
     @Override
     public BinaryOperation bitwiseOr(SType other) {
-        return other == this ? BITWISE_OR : null;
+        return other == this ? BITWISE_OR.value() : null;
     }
 
     @Override
     public UnaryOperation not() {
-        return NOT;
+        return NOT.value();
     }
 
     @Override
@@ -137,7 +137,7 @@ public class SBoolean extends SPredefinedType {
 
     @Override
     public List<MethodReference> getInstanceMethods() {
-        return List.of(METHOD_TO_STRING);
+        return List.of(METHOD_TO_STRING.value());
     }
 
     @Override
@@ -155,9 +155,13 @@ public class SBoolean extends SPredefinedType {
         return "boolean";
     }
 
-    private static final BinaryOperation BITWISE_OR = new SingleInstructionBinaryOperation(BinaryOperator.BITWISE_OR, SBoolean.instance, IOR);
-    private static final BinaryOperation BITWISE_AND = new SingleInstructionBinaryOperation(BinaryOperator.BITWISE_AND, SBoolean.instance, IAND);
-    private static final UnaryOperation NOT = new UnaryOperation(UnaryOperator.NOT, SBoolean.instance) {
+    private static final Lazy<BinaryOperation> BITWISE_OR = new Lazy<>(() ->
+            new SingleInstructionBinaryOperation(BinaryOperator.BITWISE_OR, SBoolean.instance, IOR));
+
+    private static final Lazy<BinaryOperation> BITWISE_AND = new Lazy<>(() ->
+            new SingleInstructionBinaryOperation(BinaryOperator.BITWISE_AND, SBoolean.instance, IAND));
+
+    private static final Lazy<UnaryOperation> NOT = new Lazy<>(() -> new UnaryOperation(UnaryOperator.NOT, SBoolean.instance) {
         @Override
         public void apply(MethodVisitor visitor) {
             Label elseLabel = new Label();
@@ -169,8 +173,9 @@ public class SBoolean extends SPredefinedType {
             visitor.visitInsn(ICONST_0);
             visitor.visitLabel(endLabel);
         }
-    };
-    private static final BinaryOperation BOOLEAN_OR = new BinaryOperation(BinaryOperator.BOOLEAN_OR, SBoolean.instance) {
+    });
+
+    private static final Lazy<BinaryOperation> BOOLEAN_OR = new Lazy<>(() -> new BinaryOperation(BinaryOperator.BOOLEAN_OR, SBoolean.instance) {
         @Override
         public void apply(MethodVisitor left, BufferedMethodVisitor right) {
             Label returnTrue = new Label();
@@ -182,8 +187,9 @@ public class SBoolean extends SPredefinedType {
             left.visitInsn(ICONST_1);
             left.visitLabel(end);
         }
-    };
-    private static final BinaryOperation BOOLEAN_AND = new BinaryOperation(BinaryOperator.BOOLEAN_AND, SBoolean.instance) {
+    });
+
+    private static final Lazy<BinaryOperation> BOOLEAN_AND = new Lazy<>(() -> new BinaryOperation(BinaryOperator.BOOLEAN_AND, SBoolean.instance) {
         @Override
         public void apply(MethodVisitor left, BufferedMethodVisitor right) {
             Label returnFalse = new Label();
@@ -195,14 +201,14 @@ public class SBoolean extends SPredefinedType {
             left.visitInsn(ICONST_0);
             left.visitLabel(end);
         }
-    };
+    });
 
-    private static final MethodReference METHOD_TO_STRING = new StaticAsInstanceMethodReference(
+    private static final Lazy<MethodReference> METHOD_TO_STRING = new Lazy<>(() -> new StaticAsInstanceMethodReference(
             """
                     Returns a string representation of a boolean
                     """,
             Boolean.class,
             SBoolean.instance,
             "toString",
-            SString.instance);
+            SString.instance));
 }

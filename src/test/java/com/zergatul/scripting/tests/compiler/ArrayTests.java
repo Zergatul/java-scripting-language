@@ -1,9 +1,6 @@
 package com.zergatul.scripting.tests.compiler;
 
-import com.zergatul.scripting.tests.compiler.helpers.BoolStorage;
-import com.zergatul.scripting.tests.compiler.helpers.FloatStorage;
-import com.zergatul.scripting.tests.compiler.helpers.IntStorage;
-import com.zergatul.scripting.tests.compiler.helpers.StringStorage;
+import com.zergatul.scripting.tests.compiler.helpers.*;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -18,6 +15,7 @@ public class ArrayTests {
     public void clean() {
         ApiRoot.boolStorage = new BoolStorage();
         ApiRoot.intStorage = new IntStorage();
+        ApiRoot.int64Storage = new Int64Storage();
         ApiRoot.floatStorage = new FloatStorage();
         ApiRoot.stringStorage = new StringStorage();
         ApiRoot.test = new TestApi();
@@ -247,9 +245,31 @@ public class ArrayTests {
                 List.of(0xABCD, 0xCDEF, 0, 0xABCD, 0xCDEF, 130));
     }
 
+    @Test
+    public void int64ArrayTest() {
+        String code = """
+                long[] array = new long[10];
+                for (int i = 0; i < 10; i++) {
+                    array[i] = i * 1000000000L;
+                }
+                int64Storage.add(array[0]);
+                int64Storage.add(array[4]);
+                int64Storage.add(array[5]);
+                int64Storage.add(array[9]);
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(
+                ApiRoot.int64Storage.list,
+                List.of(0L, 4000000000L, 5000000000L, 9000000000L));
+    }
+
     public static class ApiRoot {
         public static BoolStorage boolStorage;
         public static IntStorage intStorage;
+        public static Int64Storage int64Storage;
         public static FloatStorage floatStorage;
         public static StringStorage stringStorage;
         public static TestApi test;

@@ -150,7 +150,9 @@ public class CompilerContext {
     }
 
     public List<RefHolder> releaseRefVariables() {
-        return List.of(refVariables.toArray(RefHolder[]::new));
+        List<RefHolder> variables = List.of(refVariables.toArray(RefHolder[]::new));
+        refVariables.clear();
+        return variables;
     }
 
     public CompilerContext createChild() {
@@ -405,6 +407,6 @@ public class CompilerContext {
     }
 
     private int getStackSize(SType type) {
-        return type == SFloat.instance ? 2 : 1;
+        return type.isJvmCategoryOneComputationalType() ? 1 : 2;
     }
 }

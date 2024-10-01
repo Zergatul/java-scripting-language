@@ -5,6 +5,7 @@ import com.zergatul.scripting.DiagnosticMessage;
 import com.zergatul.scripting.SingleLineTextRange;
 import com.zergatul.scripting.binding.BinderErrors;
 import com.zergatul.scripting.tests.compiler.helpers.FutureHelper;
+import com.zergatul.scripting.tests.compiler.helpers.Int64Storage;
 import com.zergatul.scripting.tests.compiler.helpers.IntStorage;
 import com.zergatul.scripting.tests.compiler.helpers.Run;
 import org.junit.jupiter.api.Assertions;
@@ -24,6 +25,7 @@ public class AwaitTests {
     public void clean() {
         ApiRoot.futures = new FutureHelper();
         ApiRoot.intStorage = new IntStorage();
+        ApiRoot.longStorage = new Int64Storage();
         ApiRoot.run = new Run();
     }
 
@@ -1118,9 +1120,39 @@ public class AwaitTests {
         Assertions.assertTrue(future.isDone());
     }
 
+    @Test
+    public void longTest() {
+        String code = """
+                for (int i = 0; i < 3; i++) {
+                    longStorage.add(await futures.createLong());
+                }
+                """;
+
+        AsyncRunnable program = compileAsync(ApiRoot.class, code);
+        CompletableFuture<?> future = program.run();
+
+        Assertions.assertFalse(future.isDone());
+
+        ApiRoot.futures.getLong(0).complete(111L);
+        Assertions.assertIterableEquals(ApiRoot.longStorage.list, List.of(111L));
+
+        Assertions.assertFalse(future.isDone());
+
+        ApiRoot.futures.getLong(1).complete(222L);
+        Assertions.assertIterableEquals(ApiRoot.longStorage.list, List.of(111L, 222L));
+
+        Assertions.assertFalse(future.isDone());
+
+        ApiRoot.futures.getLong(2).complete(333L);
+        Assertions.assertIterableEquals(ApiRoot.longStorage.list, List.of(111L, 222L, 333L));
+
+        Assertions.assertTrue(future.isDone());
+    }
+
     public static class ApiRoot {
         public static FutureHelper futures;
         public static IntStorage intStorage;
+        public static Int64Storage longStorage;
         public static Run run;
     }
 }
