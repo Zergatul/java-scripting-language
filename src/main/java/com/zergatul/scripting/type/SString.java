@@ -128,7 +128,8 @@ public class SString extends SPredefinedType {
                 METHOD_MATCHES,
                 METHOD_MATCHES_FLAGS,
                 METHOD_GET_MATCHES,
-                METHOD_GET_MATCHES_FLAGS);
+                METHOD_GET_MATCHES_FLAGS,
+                METHOD_REPLACE);
     }
 
     @Override
@@ -461,4 +462,39 @@ public class SString extends SPredefinedType {
             new SArrayType(SString.instance),
             new MethodParameter("regex", SString.instance),
             new MethodParameter("flags", SInt.instance));
+
+    private static final MethodReference METHOD_REPLACE = new MethodReference() {
+
+        @Override
+        public SType getOwner() {
+            return instance;
+        }
+
+        @Override
+        public String getName() {
+            return "replace";
+        }
+
+        @Override
+        public SType getReturn() {
+            return SString.instance;
+        }
+
+        @Override
+        public List<MethodParameter> getParameters() {
+            return List.of(
+                    new MethodParameter("target", SString.instance),
+                    new MethodParameter("replacement", SString.instance));
+        }
+
+        @Override
+        public void compileInvoke(MethodVisitor visitor) {
+            visitor.visitMethodInsn(
+                    INVOKEVIRTUAL,
+                    Type.getInternalName(String.class),
+                    "replace",
+                    Type.getMethodDescriptor(Type.getType(String.class), Type.getType(CharSequence.class), Type.getType(CharSequence.class)),
+                    false);
+        }
+    };
 }

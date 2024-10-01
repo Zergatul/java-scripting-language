@@ -293,6 +293,18 @@ public class StringTests {
         Assertions.assertIterableEquals(ApiRoot.stringStorage.list, List.of("AN", "AN"));
     }
 
+    @Test
+    public void replaceTest() {
+        String code = """
+                stringStorage.add("aaa".replace("aa", "b"));
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(ApiRoot.stringStorage.list, List.of("ba"));
+    }
+
     public static class ApiRoot {
         public static StringStorage stringStorage;
         public static IntStorage intStorage;
