@@ -1,5 +1,6 @@
 package com.zergatul.scripting.type;
 
+import com.zergatul.scripting.Lazy;
 import com.zergatul.scripting.compiler.BufferedMethodVisitor;
 import com.zergatul.scripting.parser.BinaryOperator;
 import com.zergatul.scripting.runtime.ArrayUtils;
@@ -66,13 +67,13 @@ public class SArrayType extends SType {
 
     @Override
     public List<PropertyReference> getInstanceProperties() {
-        return List.of(PROP_LENGTH);
+        return List.of(PROP_LENGTH.value());
     }
 
     @Override
     public PropertyReference getInstanceProperty(String name) {
         return switch (name) {
-            case "length" -> PROP_LENGTH;
+            case "length" -> PROP_LENGTH.value();
             default -> null;
         };
     }
@@ -118,7 +119,7 @@ public class SArrayType extends SType {
         return type.toString() + "[]";
     }
 
-    private static final PropertyReference PROP_LENGTH = new PropertyReference() {
+    private static final Lazy<PropertyReference> PROP_LENGTH = new Lazy<>(() -> new PropertyReference() {
 
         @Override
         public String getName() {
@@ -144,7 +145,7 @@ public class SArrayType extends SType {
         public void compileGet(MethodVisitor visitor) {
             visitor.visitInsn(ARRAYLENGTH);
         }
-    };
+    });
 
     private static class AddArrayOperation extends BinaryOperation {
 

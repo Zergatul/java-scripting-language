@@ -224,6 +224,253 @@ public class Int64Tests {
                 List.of(0L, -1L, 87210L, 250480L, 250480L));
     }
 
+    @Test
+    public void equalsOperatorTest() {
+        String code = """
+                boolStorage.add(12345L == 12345L);
+                boolStorage.add(12345L == 12346L);
+                boolStorage.add(-12345L == 12345L);
+                boolStorage.add(12345L == -12345L);
+                boolStorage.add(12300L + 45L == 12000L + 345L);
+                boolStorage.add(1L == 0L);
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(
+                ApiRoot.boolStorage.list,
+                List.of(true, false, false, false, true, false));
+    }
+
+    @Test
+    public void notEqualsOperatorTest() {
+        String code = """
+                boolStorage.add(12345L != 12345L);
+                boolStorage.add(12345L != 12346L);
+                boolStorage.add(-12345L != 12345L);
+                boolStorage.add(12345L != -12345L);
+                boolStorage.add(12300L + 45L != 12000L + 345L);
+                boolStorage.add(1L != 0L);
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(
+                ApiRoot.boolStorage.list,
+                List.of(false, true, true, true, false, true));
+    }
+
+    @Test
+    public void lessThanOperatorTest() {
+        String code = """
+                boolStorage.add(10000L < 10001L);
+                boolStorage.add(10001L < 10000L);
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(
+                ApiRoot.boolStorage.list,
+                List.of(true, false));
+    }
+
+    @Test
+    public void greaterThanOperatorTest() {
+        String code = """
+                boolStorage.add(123456L > -1235456L);
+                boolStorage.add(-1235456L > 123456L);
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(
+                ApiRoot.boolStorage.list,
+                List.of(true, false));
+    }
+
+    @Test
+    public void lessThanEqualsOperatorTest() {
+        String code = """
+                boolStorage.add(1000000L <= 1000000L);
+                boolStorage.add(1000000L <= 1000001L);
+                boolStorage.add(1000000L <= 999999L);
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(
+                ApiRoot.boolStorage.list,
+                List.of(true, true, false));
+    }
+
+    @Test
+    public void greaterThanEqualsOperatorTest() {
+        String code = """
+                boolStorage.add(1000000L >= 1000000L);
+                boolStorage.add(1000001L >= 1000000L);
+                boolStorage.add(999999L >= 1000000L);
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(
+                ApiRoot.boolStorage.list,
+                List.of(true, true, false));
+    }
+
+    @Test
+    public void minusTest() {
+        String code = """
+                int64Storage.add(-123L);
+                int64Storage.add(+123L);
+                int64Storage.add(- -123L);
+                int64Storage.add(- - -123L);
+                int64Storage.add(- - - + + + + + + + + +  + + +123L);
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(
+                ApiRoot.int64Storage.list,
+                List.of(-123L, 123L, 123L, -123L, -123L));
+    }
+
+    @Test
+    public void incrementTest() {
+        String code = """
+                int64 x;
+                x++;
+                int64Storage.add(x);
+                x++;
+                int64Storage.add(x);
+                x++;
+                int64Storage.add(x);
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(
+                ApiRoot.int64Storage.list,
+                List.of(1L, 2L, 3L));
+    }
+
+    @Test
+    public void decrementTest() {
+        String code = """
+                int64 x;
+                x--;
+                int64Storage.add(x);
+                x--;
+                int64Storage.add(x);
+                x--;
+                int64Storage.add(x);
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(
+                ApiRoot.int64Storage.list,
+                List.of(-1L, -2L, -3L));
+    }
+
+    @Test
+    public void bitwiseTest() {
+        String code = """
+                int64Storage.add(1234567812345678L | 8765432187654321L);
+                int64Storage.add(1234567812345678L & 8765432187654321L);
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(
+                ApiRoot.int64Storage.list,
+                List.of(8838824591359999L, 1161175408640000L));
+    }
+
+    @Test
+    public void augmentedAssignmentTest() {
+        String code = """
+                int64 x = 10;
+                x += 5;
+                int64Storage.add(x);
+                
+                x -= 10;
+                int64Storage.add(x);
+                
+                x *= 6;
+                int64Storage.add(x);
+                
+                x /= 3;
+                int64Storage.add(x);
+                
+                x %= 3;
+                int64Storage.add(x);
+                
+                x &= 13;
+                int64Storage.add(x);
+                
+                x |= 12;
+                int64Storage.add(x);
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(
+                ApiRoot.int64Storage.list,
+                List.of(15L, 5L, 30L, 10L, 1L, 1L, 13L));
+    }
+
+    @Test
+    public void toStringTest() {
+        String code = """
+                int64 x = 500;
+                stringStorage.add(x.toString());
+                stringStorage.add((400L).toString());
+                
+                stringStorage.add((123456789123456789L).toStandardString());
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(
+                ApiRoot.stringStorage.list,
+                List.of("500", "400", "123,456,789,123,456,789"));
+    }
+
+    @Test
+    public void tryParseTest() {
+        String code = """
+                long x;
+                boolStorage.add(long.tryParse("2010", ref x));
+                int64Storage.add(x);
+                
+                boolStorage.add(int64.tryParse("a", ref x));
+                int64Storage.add(x);
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(
+                ApiRoot.boolStorage.list,
+                List.of(true, false));
+        Assertions.assertIterableEquals(
+                ApiRoot.int64Storage.list,
+                List.of(2010L, 2010L));
+    }
+
     public static class ApiRoot {
         public static BoolStorage boolStorage;
         public static Int64Storage int64Storage;

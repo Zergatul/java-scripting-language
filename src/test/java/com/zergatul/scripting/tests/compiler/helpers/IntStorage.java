@@ -10,4 +10,9 @@ public class IntStorage {
     public void add(int value) {
         list.add(value);
     }
+
+    @SuppressWarnings("unused")
+    public int last() {
+        return list.get(list.size() - 1);
+    }
 }

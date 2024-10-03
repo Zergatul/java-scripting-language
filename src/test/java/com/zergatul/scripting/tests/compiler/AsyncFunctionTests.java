@@ -1,10 +1,7 @@
 package com.zergatul.scripting.tests.compiler;
 
 import com.zergatul.scripting.AsyncRunnable;
-import com.zergatul.scripting.tests.compiler.helpers.FloatStorage;
-import com.zergatul.scripting.tests.compiler.helpers.FutureHelper;
-import com.zergatul.scripting.tests.compiler.helpers.IntStorage;
-import com.zergatul.scripting.tests.compiler.helpers.StringStorage;
+import com.zergatul.scripting.tests.compiler.helpers.*;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -20,6 +17,7 @@ public class AsyncFunctionTests {
     public void clean() {
         ApiRoot.futures = new FutureHelper();
         ApiRoot.intStorage = new IntStorage();
+        ApiRoot.int64Storage = new Int64Storage();
         ApiRoot.floatStorage = new FloatStorage();
         ApiRoot.stringStorage = new StringStorage();
     }
@@ -319,9 +317,30 @@ public class AsyncFunctionTests {
         Assertions.assertTrue(future.isDone());
     }
 
+    @Test
+    public void parametersTest3() {
+        String code = """
+                async long func(int x1, long x2, int x3) {
+                    return await futures.createInt() + x1 + x2 + x3;
+                }
+                
+                int64Storage.add(await func(100, 200, 300));
+                """;
+
+        AsyncRunnable program = compileAsync(ApiRoot.class, code);
+        CompletableFuture<?> future = program.run();
+
+        Assertions.assertFalse(future.isDone());
+
+        ApiRoot.futures.getInt(0).complete(23);
+        Assertions.assertIterableEquals(ApiRoot.int64Storage.list, List.of(623L));
+        Assertions.assertTrue(future.isDone());
+    }
+
     public static class ApiRoot {
         public static FutureHelper futures;
         public static IntStorage intStorage;
+        public static Int64Storage int64Storage;
         public static FloatStorage floatStorage;
         public static StringStorage stringStorage;
     }

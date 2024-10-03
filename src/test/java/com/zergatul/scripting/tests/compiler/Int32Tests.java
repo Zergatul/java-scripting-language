@@ -454,11 +454,11 @@ public class Int32Tests {
     @Test
     public void tryParseTest() {
         String code = """
-                int x;
+                int32 x;
                 boolStorage.add(int.tryParse("2010", ref x));
                 intStorage.add(x);
                 
-                boolStorage.add(int.tryParse("a", ref x));
+                boolStorage.add(int32.tryParse("a", ref x));
                 intStorage.add(x);
                 """;
 

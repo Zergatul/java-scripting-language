@@ -511,7 +511,9 @@ public class Lexer {
         TokenType reservedWord = switch (value) {
             case "boolean" -> TokenType.BOOLEAN;
             case "int" -> TokenType.INT;
+            case "int32" -> TokenType.INT32;
             case "int64" -> TokenType.INT64;
+            case "long" -> TokenType.LONG;
             case "float" -> TokenType.FLOAT;
             case "string" -> TokenType.STRING;
             case "char" -> TokenType.CHAR;

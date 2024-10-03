@@ -29,4 +29,9 @@ public class DiagnosticMessage {
             return false;
         }
     }
+
+    @Override
+    public String toString() {
+        return message;
+    }
 }

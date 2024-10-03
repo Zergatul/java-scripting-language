@@ -275,6 +275,9 @@ public abstract class SType {
             if (clazz == IntReference.class) {
                 return SReference.INT;
             }
+            if (clazz == Int64Reference.class) {
+                return SReference.INT64;
+            }
             if (clazz == FloatReference.class) {
                 return SReference.FLOAT;
             }

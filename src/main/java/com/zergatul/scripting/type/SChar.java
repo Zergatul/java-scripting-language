@@ -1,5 +1,6 @@
 package com.zergatul.scripting.type;
 
+import com.zergatul.scripting.Lazy;
 import com.zergatul.scripting.type.operation.BinaryOperation;
 import com.zergatul.scripting.type.operation.CastOperation;
 import org.objectweb.asm.MethodVisitor;
@@ -59,12 +60,12 @@ public class SChar extends SPredefinedType {
 
     @Override
     public List<MethodReference> getInstanceMethods() {
-        return List.of(METHOD_TO_STRING);
+        return List.of(METHOD_TO_STRING.value());
     }
 
     @Override
     public CastOperation implicitCastTo(SType other) {
-        return other == SInt.instance ? CHAR_TO_INT : null;
+        return other == SInt.instance ? CHAR_TO_INT.value() : null;
     }
 
     @Override
@@ -89,7 +90,6 @@ public class SChar extends SPredefinedType {
 
     @Override
     public BinaryOperation equalsOp(SType other) {
-        String.valueOf('c');
         return other == SChar.instance ? SInt.instance.equalsOp(SInt.instance) : null;
     }
 
@@ -103,12 +103,12 @@ public class SChar extends SPredefinedType {
         return "char";
     }
 
-    private static final CastOperation CHAR_TO_INT = new CastOperation(SInt.instance) {
+    private static final Lazy<CastOperation> CHAR_TO_INT = new Lazy<>(() -> new CastOperation(SInt.instance) {
         @Override
         public void apply(MethodVisitor visitor) {}
-    };
+    });
 
-    private static final MethodReference METHOD_TO_STRING = new StaticAsInstanceMethodReference(
+    private static final Lazy<MethodReference> METHOD_TO_STRING = new Lazy<>(() -> new StaticAsInstanceMethodReference(
             """
                     Returns a string containing single character
                     """,
@@ -116,5 +116,5 @@ public class SChar extends SPredefinedType {
             SChar.instance,
             "valueOf",
             "toString",
-            SString.instance);
+            SString.instance));
 }

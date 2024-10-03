@@ -7,7 +7,6 @@ import org.objectweb.asm.Type;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.Objects;
 
 public class SFunction extends SType {
 
