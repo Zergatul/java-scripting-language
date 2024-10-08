@@ -355,6 +355,13 @@ public class Compiler {
                     compileExpression(visitor, context, assignment.right);
                     indexExpression.operation.compileSet(visitor);
                 }
+                case PROPERTY_ACCESS_EXPRESSION -> {
+                    BoundPropertyAccessExpressionNode access = (BoundPropertyAccessExpressionNode) assignment.left;
+                    compileExpression(visitor, context, access.callee);
+                    compileExpression(visitor, context, assignment.right);
+                    access.property.property.compileSet(visitor);
+                }
+                default -> throw new InternalException("Not implemented.");
             }
         } else {
             throw new InternalException("Should not happen.");
@@ -386,6 +393,17 @@ public class Compiler {
 
                 indexExpression.operation.compileSet(visitor);
             }
+            case PROPERTY_ACCESS_EXPRESSION -> {
+                BoundPropertyAccessExpressionNode propertyAccess = (BoundPropertyAccessExpressionNode) assignment.left;
+                compileExpression(visitor, context, propertyAccess.callee);
+                visitor.visitInsn(DUP);
+                propertyAccess.property.property.compileGet(visitor);
+                BufferedMethodVisitor buffer = new BufferedMethodVisitor();
+                compileExpression(buffer, context, assignment.right);
+                assignment.operator.operation.apply(visitor, buffer);
+                propertyAccess.property.property.compileSet(visitor);
+            }
+            default -> throw new InternalException("Not implemented.");
         }
     }
 

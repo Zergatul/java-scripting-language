@@ -27,6 +27,16 @@ public class BoundPropertyAccessExpressionNode extends BoundExpressionNode {
     }
 
     @Override
+    public boolean canGet() {
+        return property.property.canGet();
+    }
+
+    @Override
+    public boolean canSet() {
+        return property.property.canSet();
+    }
+
+    @Override
     public void accept(BinderTreeVisitor visitor) {
         visitor.explicitVisit(this);
     }

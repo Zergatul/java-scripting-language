@@ -1021,6 +1021,7 @@ public class Parser {
             case FLOAT -> new PredefinedTypeNode(PredefinedType.FLOAT, current.getRange());
             case STRING -> new PredefinedTypeNode(PredefinedType.STRING, current.getRange());
             case CHAR -> new PredefinedTypeNode(PredefinedType.CHAR, current.getRange());
+            case IDENTIFIER -> new CustomTypeNode(((IdentifierToken) current).value, current.getRange());
             default -> new InvalidTypeNode(current.getRange());
         };
 

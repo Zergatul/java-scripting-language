@@ -287,6 +287,9 @@ public abstract class SType {
             if (InterfaceHelper.isFuncInterface(clazz)) {
                 return new SFunctionalInterface(clazz);
             }
+            if (clazz.isAnnotationPresent(CustomType.class)) {
+                return new SCustomType(clazz);
+            }
             if (clazz.getSuperclass() != null || clazz == Object.class) {
                 return new SClassType(clazz);
             } else {

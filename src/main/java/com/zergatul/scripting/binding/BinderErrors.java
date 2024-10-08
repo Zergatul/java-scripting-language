@@ -37,6 +37,7 @@ public class BinderErrors {
     public static final ErrorCode CannotAwaitNonFuture = new ErrorCode("B032", "Only expressions with type Future<?> can be awaited");
     public static final ErrorCode InvalidCallee = new ErrorCode("B033", "Cannot call %s");
     public static final ErrorCode AwaitInNonAsyncContext = new ErrorCode("B034", "Cannot use 'await' in non-async context");
+    public static final ErrorCode TypeNotDefined = new ErrorCode("B035", "Type '%s' is not defined");
 
     public static final ErrorCode InternalError = new ErrorCode("B999", "Internal error: %s");
 }

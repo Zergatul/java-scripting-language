@@ -1144,6 +1144,17 @@ public class Binder {
             };
             return new BoundPredefinedTypeNode(bound, predefined.getRange());
         }
+        if (type instanceof CustomTypeNode custom) {
+            Optional<Class<?>> optional = parameters.getCustomTypes().stream().filter(c -> {
+                return c.getAnnotation(CustomType.class).name().equals(custom.value);
+            }).findFirst();
+            if (optional.isPresent()) {
+                return new BoundCustomTypeNode(SType.fromJavaType(optional.get()), type.getRange());
+            } else {
+                addDiagnostic(BinderErrors.TypeNotDefined, type, custom.value);
+                return new BoundInvalidTypeNode(type.getRange());
+            }
+        }
         if (type instanceof ArrayTypeNode array) {
             BoundTypeNode underlying = bindType(array.underlying);
             return new BoundArrayTypeNode(underlying, array.getRange());

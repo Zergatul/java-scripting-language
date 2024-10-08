@@ -4,6 +4,7 @@ import com.zergatul.scripting.InterfaceHelper;
 import com.zergatul.scripting.InternalException;
 import com.zergatul.scripting.symbols.StaticFieldConstantStaticVariable;
 import com.zergatul.scripting.symbols.StaticVariable;
+import com.zergatul.scripting.type.CustomType;
 import com.zergatul.scripting.type.SType;
 
 import java.lang.reflect.Method;
@@ -18,16 +19,31 @@ public class CompilationParameters {
     private final List<StaticVariable> staticVariables = new ArrayList<>();
     private final Class<?> functionalInterface;
     private final SType asyncReturnType;
+    private final List<Class<?>> customTypes;
     private final VisibilityChecker checker;
     private final boolean debug;
 
-    public CompilationParameters(Class<?> root, Class<?> functionalInterface, SType asyncReturnType, VisibilityChecker checker, boolean debug) {
+    public CompilationParameters(
+            Class<?> root,
+            Class<?> functionalInterface,
+            SType asyncReturnType,
+            List<Class<?>> customTypes,
+            VisibilityChecker checker,
+            boolean debug
+    ) {
         if (!InterfaceHelper.isFuncInterface(functionalInterface)) {
-            throw new InternalException(String.format("%s is not a functional interface", functionalInterface));
+            throw new InternalException(String.format("%s is not a functional interface.", functionalInterface));
+        }
+
+        for (Class<?> type : customTypes) {
+            if (type.getAnnotation(CustomType.class) == null) {
+                throw new InternalException(String.format("%s is not a valid custom type.", type.getName()));
+            }
         }
 
         this.functionalInterface = functionalInterface;
         this.asyncReturnType = asyncReturnType;
+        this.customTypes = customTypes;
         this.checker = checker;
         this.debug = debug;
         Arrays.stream(root.getDeclaredFields())
@@ -70,6 +86,10 @@ public class CompilationParameters {
 
     public boolean isAsync() {
         return asyncReturnType != null;
+    }
+
+    public List<Class<?>> getCustomTypes() {
+        return customTypes;
     }
 
     @SuppressWarnings("unused")
