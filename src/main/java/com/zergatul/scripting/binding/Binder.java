@@ -213,13 +213,24 @@ public class Binder {
     }
 
     private BoundVariableDeclarationNode bindVariableDeclaration(VariableDeclarationNode variableDeclaration, boolean isStatic) {
-        BoundTypeNode variableType = bindType(variableDeclaration.type);
-
+        BoundTypeNode variableType;
         BoundExpressionNode expression;
-        if (variableDeclaration.expression != null) {
-            expression = tryCastTo(bindExpression(variableDeclaration.expression), variableType.type);
+
+        if (variableDeclaration.type.getNodeType() == NodeType.LET_TYPE) {
+            if (variableDeclaration.expression != null) {
+                expression = bindExpression(variableDeclaration.expression);
+            } else {
+                TextRange range = variableDeclaration.name.getRange();
+                expression = new BoundInvalidExpressionNode(new SingleLineTextRange(range.getLine1(), range.getColumn1(), range.getPosition(), 0));
+            }
+            variableType = new BoundLetTypeNode(expression.type, variableDeclaration.type.getRange());
         } else {
-            expression = null;
+            variableType = bindType(variableDeclaration.type);
+            if (variableDeclaration.expression != null) {
+                expression = tryCastTo(bindExpression(variableDeclaration.expression), variableType.type);
+            } else {
+                expression = null;
+            }
         }
 
         Symbol existing = context.getSymbol(variableDeclaration.name.value);
@@ -317,7 +328,30 @@ public class Binder {
     private BoundForEachLoopStatementNode bindForEachLoopStatement(ForEachLoopStatementNode statement) {
         pushScope();
 
-        BoundTypeNode variableType = bindType(statement.typeNode);
+        LocalVariable index = context.addLocalVariable(null, SInt.instance, null);
+        LocalVariable length = context.addLocalVariable(null, SInt.instance, null);
+
+        BoundTypeNode variableType;
+
+        BoundExpressionNode iterable = bindExpression(statement.iterable);
+        if (iterable.type instanceof SArrayType arrayType) {
+            if (statement.typeNode.getNodeType() == NodeType.LET_TYPE) {
+                variableType = new BoundLetTypeNode(arrayType.getElementsType(), statement.typeNode.getRange());
+            } else {
+                variableType = bindType(statement.typeNode);
+                if (!arrayType.getElementsType().equals(variableType.type)) {
+                    addDiagnostic(BinderErrors.ForEachTypesNotMatch, statement.typeNode);
+                }
+            }
+        } else {
+            addDiagnostic(BinderErrors.CannotIterate, iterable, iterable.type.toString());
+
+            if (statement.typeNode.getNodeType() == NodeType.LET_TYPE) {
+                variableType = new BoundLetTypeNode(SUnknown.instance, statement.typeNode.getRange());
+            } else {
+                variableType = bindType(statement.typeNode);
+            }
+        }
 
         Symbol existing = context.getSymbol(statement.name.value);
         BoundNameExpressionNode name = null;
@@ -329,18 +363,6 @@ public class Binder {
         } else {
             LocalVariable variable = context.addLocalVariable(statement.name.value, variableType.type, TextRange.combine(statement.typeNode, statement.name));
             name = new BoundNameExpressionNode(variable, statement.name.getRange());
-        }
-
-        LocalVariable index = context.addLocalVariable(null, SInt.instance, null);
-        LocalVariable length = context.addLocalVariable(null, SInt.instance, null);
-
-        BoundExpressionNode iterable = bindExpression(statement.iterable);
-        if (iterable.type instanceof SArrayType arrayType) {
-            if (!arrayType.getElementsType().equals(variableType.type)) {
-                addDiagnostic(BinderErrors.ForEachTypesNotMatch, statement.typeNode);
-            }
-        } else {
-            addDiagnostic(BinderErrors.CannotIterate, iterable, iterable.type.toString());
         }
 
         context.setBreak(v -> {});

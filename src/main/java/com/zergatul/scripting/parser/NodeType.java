@@ -35,6 +35,7 @@ public enum NodeType {
     NAME_EXPRESSION,
     PREDEFINED_TYPE,
     CUSTOM_TYPE,
+    LET_TYPE,
     REF_TYPE,
     INVALID_TYPE,
     UNARY_EXPRESSION,

@@ -313,6 +313,10 @@ public class Parser {
     }
 
     private boolean isPossibleDeclaration() {
+        if (current.type == TokenType.LET) {
+            return true;
+        }
+
         Token next = peek(1);
         // "int." is not declaration
         if (isPredefinedType() && next.type != TokenType.DOT) {
@@ -431,6 +435,9 @@ public class Parser {
             NameExpressionNode name = new NameExpressionNode(identifier);
             switch (current.type) {
                 case SEMICOLON -> {
+                    if (type.getNodeType() == NodeType.LET_TYPE) {
+                        addDiagnostic(ParserErrors.CannotUseLet, type.getRange());
+                    }
                     return new VariableDeclarationNode(type, name, TextRange.combine(type, name));
                 }
                 case EQUAL -> {
@@ -523,6 +530,7 @@ public class Parser {
             case WHILE:
             case BREAK:
             case CONTINUE:
+            case LET:
                 return true;
 
             default:
@@ -542,6 +550,7 @@ public class Parser {
             case CHAR:
             case IDENTIFIER:
             case LEFT_PARENTHESES:
+            case LET:
                 return true;
 
             default:
@@ -561,6 +570,7 @@ public class Parser {
             case CONTINUE -> parseContinueStatement();
             case SEMICOLON -> parseEmptyStatement();
             case BOOLEAN, INT, INT32, INT64, LONG, FLOAT, STRING, CHAR, IDENTIFIER, LEFT_PARENTHESES -> parseSimpleStatement().append(advance(TokenType.SEMICOLON));
+            case LET -> parseVariableDeclaration();
             default -> {
                 if (isPossibleExpression()) {
                     yield parseSimpleStatement().append(advance(TokenType.SEMICOLON));
@@ -1022,6 +1032,7 @@ public class Parser {
             case STRING -> new PredefinedTypeNode(PredefinedType.STRING, current.getRange());
             case CHAR -> new PredefinedTypeNode(PredefinedType.CHAR, current.getRange());
             case IDENTIFIER -> new CustomTypeNode(((IdentifierToken) current).value, current.getRange());
+            case LET -> new LetTypeNode(current.getRange());
             default -> new InvalidTypeNode(current.getRange());
         };
 

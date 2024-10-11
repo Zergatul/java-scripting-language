@@ -21,4 +21,5 @@ public class ParserErrors {
     public static final ErrorCode LeftParenthesisExpected = new ErrorCode("C016", "( expected, found %s");
     public static final ErrorCode RightParenthesisExpected = new ErrorCode("C017", ") expected, found %s");
     public static final ErrorCode ColonExpected = new ErrorCode("C018", ": expected");
+    public static final ErrorCode CannotUseLet = new ErrorCode("C019", "Cannot use 'let' without initialization");
 }
