@@ -5,6 +5,7 @@ import com.zergatul.scripting.parser.NodeType;
 import com.zergatul.scripting.parser.ParserTreeVisitor;
 
 import java.util.List;
+import java.util.Objects;
 
 public class NewExpressionNode extends ExpressionNode {
 
@@ -34,6 +35,18 @@ public class NewExpressionNode extends ExpressionNode {
             for (ExpressionNode expression : items) {
                 expression.accept(visitor);
             }
+        }
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj instanceof NewExpressionNode other) {
+            return  other.typeNode.equals(typeNode) &&
+                    Objects.equals(other.lengthExpression, lengthExpression) &&
+                    Objects.equals(other.items, items) &&
+                    other.getRange().equals(getRange());
+        } else {
+            return false;
         }
     }
 }

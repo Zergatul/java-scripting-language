@@ -851,8 +851,13 @@ public class Parser {
                         last = advance();
                         break;
                     }
-                    advance(TokenType.COMMA);
-                    expectExpression = true;
+                    if (current.type == TokenType.COMMA) {
+                        advance(TokenType.COMMA);
+                        expectExpression = true;
+                    } else {
+                        addDiagnostic(ParserErrors.CommaOrCloseCurlyBracketExpected, current);
+                        break;
+                    }
                 }
             }
         }

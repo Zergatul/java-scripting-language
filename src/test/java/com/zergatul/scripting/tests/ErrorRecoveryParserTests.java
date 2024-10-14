@@ -161,6 +161,38 @@ public class ErrorRecoveryParserTests {
                         new SingleLineTextRange(1, 1, 0, 17)));
     }
 
+    @Test
+    public void unfinishedArrayDeclarationTest() {
+        ParserOutput result = parse("""
+                int[] x = new int[] { 1 ;
+                """);
+
+        Assertions.assertIterableEquals(
+                result.diagnostics(),
+                List.of(
+                        new DiagnosticMessage(ParserErrors.CommaOrCloseCurlyBracketExpected, new SingleLineTextRange(1, 25, 24, 1))));
+
+        Assertions.assertEquals(
+                result.unit().statements,
+                new StatementsListNode(
+                        List.of(
+                                new VariableDeclarationNode(
+                                        new ArrayTypeNode(
+                                                new PredefinedTypeNode(PredefinedType.INT, new SingleLineTextRange(1, 1, 0, 3)),
+                                                new SingleLineTextRange(1, 1, 0, 5)),
+                                        new NameExpressionNode("x", new SingleLineTextRange(1, 7, 6, 1)),
+                                        new NewExpressionNode(
+                                                new ArrayTypeNode(
+                                                        new PredefinedTypeNode(PredefinedType.INT, new SingleLineTextRange(1, 15, 14, 3)),
+                                                        new SingleLineTextRange(1, 15, 14, 5)),
+                                                null,
+                                                List.of(
+                                                        new IntegerLiteralExpressionNode("1", new SingleLineTextRange(1, 23, 22, 1))),
+                                                new SingleLineTextRange(1, 11, 10, 9)),
+                                        new SingleLineTextRange(1, 1, 0, 25))),
+                        new SingleLineTextRange(1, 1, 0, 25)));
+    }
+
     private ParserOutput parse(String code) {
         return new Parser(new Lexer(new LexerInput(code)).lex()).parse();
     }
