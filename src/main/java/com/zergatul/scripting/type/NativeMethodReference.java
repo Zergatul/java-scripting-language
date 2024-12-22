@@ -1,8 +1,6 @@
 package com.zergatul.scripting.type;
 
 import com.zergatul.scripting.MethodDescription;
-import org.objectweb.asm.MethodVisitor;
-import org.objectweb.asm.Type;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
@@ -10,13 +8,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-import static org.objectweb.asm.Opcodes.INVOKEVIRTUAL;
+public abstract class NativeMethodReference extends MethodReference {
 
-public class NativeMethodReference extends MethodReference {
+    protected final Method method;
 
-    private final Method method;
-
-    public NativeMethodReference(Method method) {
+    protected NativeMethodReference(Method method) {
         this.method = method;
     }
 
@@ -54,15 +50,5 @@ public class NativeMethodReference extends MethodReference {
     public Optional<String> getDescription() {
         MethodDescription description = method.getAnnotation(MethodDescription.class);
         return description != null ? Optional.of(description.value()) : Optional.empty();
-    }
-
-    @Override
-    public void compileInvoke(MethodVisitor visitor) {
-        visitor.visitMethodInsn(
-                INVOKEVIRTUAL,
-                Type.getInternalName(method.getDeclaringClass()),
-                method.getName(),
-                Type.getMethodDescriptor(method),
-                false);
     }
 }

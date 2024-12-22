@@ -4,7 +4,6 @@ import com.zergatul.scripting.InternalException;
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.nodes.BoundNameExpressionNode;
 import com.zergatul.scripting.symbols.*;
-import com.zergatul.scripting.type.SFloat;
 import com.zergatul.scripting.type.SReference;
 import com.zergatul.scripting.type.SType;
 import com.zergatul.scripting.type.SVoidType;

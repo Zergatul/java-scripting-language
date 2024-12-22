@@ -18,7 +18,8 @@ public class SCustomType extends SType {
     private final Class<?> clazz;
     private final CustomType annotation;
     private final Lazy<List<PropertyReference>> properties;
-    private final Lazy<List<MethodReference>> methods;
+    private final Lazy<List<MethodReference>> instanceMethods;
+    private final Lazy<List<MethodReference>> staticMethods;
 
     public SCustomType(Class<?> clazz) {
         CustomType annotation = clazz.getAnnotation(CustomType.class);
@@ -29,7 +30,8 @@ public class SCustomType extends SType {
         this.clazz = clazz;
         this.annotation = annotation;
         this.properties = new Lazy<>(this::loadProperties);
-        this.methods = new Lazy<>(this::loadMethods);
+        this.instanceMethods = new Lazy<>(this::loadInstanceMethods);
+        this.staticMethods = new Lazy<>(this::loadStaticMethods);
     }
 
     @Override
@@ -93,7 +95,12 @@ public class SCustomType extends SType {
 
     @Override
     public List<MethodReference> getInstanceMethods() {
-        return methods.value();
+        return instanceMethods.value();
+    }
+
+    @Override
+    public List<MethodReference> getStaticMethods() {
+        return staticMethods.value();
     }
 
     @Override
@@ -153,14 +160,26 @@ public class SCustomType extends SType {
         return list;
     }
 
-    private List<MethodReference> loadMethods() {
+    private List<MethodReference> loadInstanceMethods() {
         return Arrays.stream(this.clazz.getMethods())
                 .filter(m -> Modifier.isPublic(m.getModifiers()))
                 .filter(m -> !Modifier.isStatic(m.getModifiers()))
                 .filter(m -> m.getDeclaringClass() != Object.class)
                 .filter(m -> !m.isAnnotationPresent(Getter.class))
                 .filter(m -> !m.isAnnotationPresent(Setter.class))
-                .map(NativeMethodReference::new)
+                .map(NativeInstanceMethodReference::new)
+                .map(r -> (MethodReference) r)
+                .toList();
+    }
+
+    private List<MethodReference> loadStaticMethods() {
+        return Arrays.stream(this.clazz.getMethods())
+                .filter(m -> Modifier.isPublic(m.getModifiers()))
+                .filter(m -> Modifier.isStatic(m.getModifiers()))
+                .filter(m -> m.getDeclaringClass() != Object.class)
+                .filter(m -> !m.isAnnotationPresent(Getter.class))
+                .filter(m -> !m.isAnnotationPresent(Setter.class))
+                .map(NativeStaticMethodReference::new)
                 .map(r -> (MethodReference) r)
                 .toList();
     }

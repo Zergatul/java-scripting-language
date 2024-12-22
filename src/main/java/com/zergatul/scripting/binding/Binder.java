@@ -450,7 +450,7 @@ public class Binder {
             case CONDITIONAL_EXPRESSION -> bindConditionalExpression((ConditionalExpressionNode) expression);
             case INDEX_EXPRESSION -> bindIndexExpression((IndexExpressionNode) expression);
             case INVOCATION_EXPRESSION -> bindInvocationExpression((InvocationExpressionNode) expression);
-            case NAME_EXPRESSION -> bindNameExpression((NameExpressionNode) expression);
+            case NAME_EXPRESSION -> bindNameExpressionPossiblyTypeReference((NameExpressionNode) expression);
             case STATIC_REFERENCE -> bindStaticReferenceExpression((StaticReferenceNode) expression);
             case MEMBER_ACCESS_EXPRESSION -> bindMemberAccessExpression((MemberAccessExpressionNode) expression);
             case REF_ARGUMENT_EXPRESSION -> bindRefArgumentExpression((RefArgumentExpressionNode) expression);
@@ -945,6 +945,30 @@ public class Binder {
 
     private BoundNameExpressionNode bindNameExpression(NameExpressionNode name) {
         Symbol symbol = context.getSymbol(name.value);
+
+        if (symbol != null) {
+            return new BoundNameExpressionNode(symbol, name.getRange());
+        } else {
+            addDiagnostic(
+                    BinderErrors.NameDoesNotExist,
+                    name,
+                    name.value);
+            return new BoundNameExpressionNode(null, SUnknown.instance, name.value, name.getRange());
+        }
+    }
+
+    private BoundExpressionNode bindNameExpressionPossiblyTypeReference(NameExpressionNode name) {
+        Symbol symbol = context.getSymbol(name.value);
+
+        if (symbol == null) {
+            Optional<Class<?>> optional = parameters.getCustomTypes().stream().filter(c -> {
+                return c.getAnnotation(CustomType.class).name().equals(name.value);
+            }).findFirst();
+            if (optional.isPresent()) {
+                return new BoundStaticReferenceExpression(new SStaticTypeReference(SType.fromJavaType(optional.get())), name.getRange());
+            }
+        }
+
         if (symbol != null) {
             return new BoundNameExpressionNode(symbol, name.getRange());
         } else {

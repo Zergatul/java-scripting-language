@@ -90,7 +90,7 @@ public class SClassType extends SType {
                 .filter(m -> Modifier.isPublic(m.getModifiers()))
                 .filter(m -> !Modifier.isStatic(m.getModifiers()))
                 .filter(m -> m.getDeclaringClass() != Object.class)
-                .map(NativeMethodReference::new)
+                .map(NativeInstanceMethodReference::new)
                 .map(r -> (MethodReference) r)
                 .toList();
     }
