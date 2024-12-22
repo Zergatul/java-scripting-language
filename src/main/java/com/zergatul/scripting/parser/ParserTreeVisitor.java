@@ -59,6 +59,11 @@ public abstract class ParserTreeVisitor {
         node.acceptChildren(this);
     }
 
+    public void explicitVisit(CollectionExpressionNode node) {
+        visit(node);
+        node.acceptChildren(this);
+    }
+
     public void explicitVisit(CompilationUnitNode node) {
         visit(node);
         node.acceptChildren(this);
@@ -270,6 +275,7 @@ public abstract class ParserTreeVisitor {
     public void visit(BooleanLiteralExpressionNode node) {}
     public void visit(BreakStatementNode node) {}
     public void visit(CharLiteralExpressionNode node) {}
+    public void visit(CollectionExpressionNode node) {}
     public void visit(CompilationUnitNode node) {}
     public void visit(ConditionalExpressionNode node) {}
     public void visit(ContinueStatementNode node) {}

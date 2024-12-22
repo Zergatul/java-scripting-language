@@ -984,6 +984,7 @@ public class Compiler {
             case METHOD_INVOCATION_EXPRESSION -> compileMethodInvocationExpression(visitor, context, (BoundMethodInvocationExpressionNode) expression);
             case PROPERTY_ACCESS_EXPRESSION -> compilePropertyAccessExpression(visitor, context, (BoundPropertyAccessExpressionNode) expression);
             case NEW_EXPRESSION -> compileNewExpression(visitor, context, (BoundNewExpressionNode) expression);
+            case COLLECTION_EXPRESSION -> compileCollectionExpression(visitor, context, (BoundCollectionExpressionNode) expression);
             case INDEX_EXPRESSION -> compileIndexExpression(visitor, context, (BoundIndexExpressionNode) expression);
             case LAMBDA_EXPRESSION -> compileLambdaExpression(visitor, context, (BoundLambdaExpressionNode) expression);
             case FUNCTION_INVOCATION -> compileFunctionInvocationExpression(visitor, context, (BoundFunctionInvocationExpression) expression);
@@ -1125,6 +1126,25 @@ public class Compiler {
                 compileExpression(visitor, context, expression.items.get(i));
                 visitor.visitInsn(elementsType.getArrayStoreInst());
             }
+        }
+    }
+
+    private void compileCollectionExpression(MethodVisitor visitor, CompilerContext context, BoundCollectionExpressionNode expression) {
+        visitor.visitLdcInsn(expression.items.size());
+
+        SArrayType arrayType = (SArrayType) expression.type;
+        SType elementsType = arrayType.getElementsType();
+        if (elementsType.isReference()) {
+            visitor.visitTypeInsn(ANEWARRAY, Type.getInternalName(elementsType.getJavaClass()));
+        } else {
+            visitor.visitIntInsn(NEWARRAY, ((SPredefinedType) elementsType).getArrayTypeInst());
+        }
+
+        for (int i = 0; i < expression.items.size(); i++) {
+            visitor.visitInsn(DUP);
+            visitor.visitLdcInsn(i);
+            compileExpression(visitor, context, expression.items.get(i));
+            visitor.visitInsn(elementsType.getArrayStoreInst());
         }
     }
 

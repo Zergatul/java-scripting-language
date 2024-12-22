@@ -1,5 +1,8 @@
 package com.zergatul.scripting.tests.compiler;
 
+import com.zergatul.scripting.DiagnosticMessage;
+import com.zergatul.scripting.SingleLineTextRange;
+import com.zergatul.scripting.binding.BinderErrors;
 import com.zergatul.scripting.tests.compiler.helpers.*;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -8,6 +11,7 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 
 import static com.zergatul.scripting.tests.compiler.helpers.CompilerHelper.compile;
+import static com.zergatul.scripting.tests.compiler.helpers.CompilerHelper.getDiagnostics;
 
 public class ArrayTests {
 
@@ -264,6 +268,63 @@ public class ArrayTests {
         Assertions.assertIterableEquals(
                 ApiRoot.int64Storage.list,
                 List.of(0L, 4000000000L, 5000000000L, 9000000000L));
+    }
+
+    @Test
+    public void collectionExpressionSimpleTest() {
+        String code = """
+                let a1 = [1];
+                let a2 = ["a", "b"];
+                let a3 = [false, true, true];
+                let a4 = [0.1, 0.2, 0.3, 0.4];
+                
+                intStorage.add(a1.length);
+                intStorage.add(a2.length);
+                intStorage.add(a3.length);
+                intStorage.add(a4.length);
+                intStorage.add(a1[0]);
+                stringStorage.add(a2[0]);
+                stringStorage.add(a2[1]);
+                boolStorage.add(a3[0]);
+                boolStorage.add(a3[1]);
+                boolStorage.add(a3[2]);
+                floatStorage.add(a4[0]);
+                floatStorage.add(a4[1]);
+                floatStorage.add(a4[2]);
+                floatStorage.add(a4[3]);
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(1, 2, 3, 4, 1));
+        Assertions.assertIterableEquals(ApiRoot.stringStorage.list, List.of("a", "b"));
+        Assertions.assertIterableEquals(ApiRoot.boolStorage.list, List.of(false, true, true));
+        Assertions.assertIterableEquals(ApiRoot.floatStorage.list, List.of(0.1, 0.2, 0.3, 0.4));
+    }
+
+    @Test
+    public void collectionExpressionNoItemsTest() {
+        String code = """
+                let a1 = [];
+                """;
+
+        List<DiagnosticMessage> messages = getDiagnostics(ApiRoot.class, code);
+
+        Assertions.assertIterableEquals(messages, List.of(
+                new DiagnosticMessage(BinderErrors.EmptyCollectionExpression, new SingleLineTextRange(1, 10, 9, 2))));
+    }
+
+    @Test
+    public void collectionExpressionCannotInferTypeTest() {
+        String code = """
+                let a1 = [1, 2.5, ];
+                """;
+
+        List<DiagnosticMessage> messages = getDiagnostics(ApiRoot.class, code);
+
+        Assertions.assertIterableEquals(messages, List.of(
+                new DiagnosticMessage(BinderErrors.CannotInferCollectionExpressionTypes, new SingleLineTextRange(1, 14, 13, 3), "int", 1, "float")));
     }
 
     public static class ApiRoot {

@@ -455,6 +455,7 @@ public class Binder {
             case MEMBER_ACCESS_EXPRESSION -> bindMemberAccessExpression((MemberAccessExpressionNode) expression);
             case REF_ARGUMENT_EXPRESSION -> bindRefArgumentExpression((RefArgumentExpressionNode) expression);
             case NEW_EXPRESSION -> bindNewExpression((NewExpressionNode) expression);
+            case COLLECTION_EXPRESSION -> bindCollectionExpression((CollectionExpressionNode) expression);
             case LAMBDA_EXPRESSION -> bindLambdaExpression((LambdaExpressionNode) expression);
             case AWAIT_EXPRESSION -> bindAwaitExpression((AwaitExpressionNode) expression);
             case INVALID_EXPRESSION -> bindInvalidExpression((InvalidExpressionNode) expression);
@@ -1024,6 +1025,24 @@ public class Binder {
         }
 
         return new BoundNewExpressionNode(typeNode, lengthExpression, items, expression.getRange());
+    }
+
+    private BoundCollectionExpressionNode bindCollectionExpression(CollectionExpressionNode collection) {
+        if (collection.items.isEmpty()) {
+            addDiagnostic(BinderErrors.EmptyCollectionExpression, collection);
+            return new BoundCollectionExpressionNode(SUnknown.instance, List.of(), collection.getRange());
+        }
+
+        List<BoundExpressionNode> items = collection.items.stream().map(this::bindExpression).toList();
+        SType type = items.get(0).type;
+        for (int i = 1; i < items.size(); i++) {
+            if (!items.get(i).type.equals(type)) {
+                addDiagnostic(BinderErrors.CannotInferCollectionExpressionTypes, collection.items.get(i), type, i, items.get(i).type);
+                break;
+            }
+        }
+
+        return new BoundCollectionExpressionNode(new SArrayType(type), items, collection.getRange());
     }
 
     private BoundPropertyAccessExpressionNode bindMemberAccessExpression(MemberAccessExpressionNode expression) {

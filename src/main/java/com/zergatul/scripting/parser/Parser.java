@@ -797,6 +797,7 @@ public class Parser {
             case CHAR_LITERAL -> new CharLiteralExpressionNode((CharToken) advance());
             case NEW -> parseNewExpression();
             case LEFT_PARENTHESES -> isPossibleLambdaExpression() ? parseLambdaExpression() : parseParenthesizedExpression();
+            case LEFT_SQUARE_BRACKET -> parseCollectionExpression();
             case BOOLEAN, INT, INT32, INT64, LONG, CHAR, FLOAT, STRING -> parseStaticReference();
             default -> null;
         };
@@ -872,6 +873,41 @@ public class Parser {
         return expression;
     }
 
+    private ExpressionNode parseCollectionExpression() {
+        Token leftBracket = advance(TokenType.LEFT_SQUARE_BRACKET);
+
+        List<ExpressionNode> items = new ArrayList<>();
+        boolean expectExpression = true;
+        while (current.type != TokenType.END_OF_FILE) {
+            if (expectExpression) {
+                if (current.type == TokenType.RIGHT_SQUARE_BRACKET) {
+                    break;
+                }
+                if (isPossibleExpression()) {
+                    items.add(parseExpression());
+                } else {
+                    addDiagnostic(ParserErrors.ExpressionExpected, current, current.getRawValue(code));
+                }
+                expectExpression = false;
+            } else {
+                if (current.type == TokenType.RIGHT_SQUARE_BRACKET) {
+                    break;
+                }
+                if (current.type == TokenType.COMMA) {
+                    advance(TokenType.COMMA);
+                    expectExpression = true;
+                } else {
+                    addDiagnostic(ParserErrors.CommaOrCloseSquareBracketExpected, current);
+                    break;
+                }
+            }
+        }
+
+        Token rightBracket = advance(TokenType.RIGHT_SQUARE_BRACKET);
+
+        return new CollectionExpressionNode(items, TextRange.combine(leftBracket, rightBracket));
+    };
+
     private LambdaExpressionNode parseLambdaExpression() {
         Token first = current;
         List<NameExpressionNode> parameters = new ArrayList<>();
@@ -936,6 +972,7 @@ public class Parser {
             case FALSE:
             case TRUE:
             case LEFT_PARENTHESES:
+            case LEFT_SQUARE_BRACKET:
             case INTEGER_LITERAL:
             case INTEGER64_LITERAL:
             case FLOAT_LITERAL:
