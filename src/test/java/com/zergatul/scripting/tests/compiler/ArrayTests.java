@@ -150,7 +150,7 @@ public class ArrayTests {
         String code = """
                 boolean[] a1 = new boolean[] { false, false, true };
                 boolean[] a2 = new boolean[] { false, true };
-                boolean[] a3 = a1 + a2;
+                boolean[] a3 = a1 + a2 + false;
                 
                 intStorage.add(a3.length);
                 for (int i = 0; i < a3.length; i++) boolStorage.add(a3[i]);
@@ -159,8 +159,8 @@ public class ArrayTests {
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
-        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(5));
-        Assertions.assertIterableEquals(ApiRoot.boolStorage.list, List.of(false, false, true, false, true));
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(6));
+        Assertions.assertIterableEquals(ApiRoot.boolStorage.list, List.of(false, false, true, false, true, false));
     }
 
     @Test
@@ -168,7 +168,7 @@ public class ArrayTests {
         String code = """
                 int[] a1 = new int[] { 1, 2, 3 };
                 int[] a2 = new int[] { 7, 8, 9 };
-                int[] a3 = a1 + a2;
+                int[] a3 = a1 + a2 + 10;
                 
                 intStorage.add(a3.length);
                 for (int i = 0; i < a3.length; i++) intStorage.add(a3[i]);
@@ -177,7 +177,25 @@ public class ArrayTests {
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
-        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(6, 1, 2, 3, 7, 8, 9));
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(7, 1, 2, 3, 7, 8, 9, 10));
+    }
+
+    @Test
+    public void concatLongTest() {
+        String code = """
+                long[] a1 = new long[] { 1, 2, 3 };
+                long[] a2 = new long[] { 7, 8, 9 };
+                long[] a3 = a1 + a2 + 10L;
+                
+                intStorage.add(a3.length);
+                for (int i = 0; i < a3.length; i++) int64Storage.add(a3[i]);
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(7));
+        Assertions.assertIterableEquals(ApiRoot.int64Storage.list, List.of(1L, 2L, 3L, 7L, 8L, 9L, 10L));
     }
 
     @Test
@@ -185,7 +203,7 @@ public class ArrayTests {
         String code = """
                 float[] a1 = new float[] { 0.5, 2, 3 };
                 float[] a2 = new float[] { 7, 8, 9.5 };
-                float[] a3 = a1 + a2;
+                float[] a3 = a1 + a2 + 10.0;
                 
                 intStorage.add(a3.length);
                 for (int i = 0; i < a3.length; i++) floatStorage.add(a3[i]);
@@ -194,8 +212,8 @@ public class ArrayTests {
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
-        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(6));
-        Assertions.assertIterableEquals(ApiRoot.floatStorage.list, List.of(0.5, 2.0, 3.0, 7.0, 8.0, 9.5));
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(7));
+        Assertions.assertIterableEquals(ApiRoot.floatStorage.list, List.of(0.5, 2.0, 3.0, 7.0, 8.0, 9.5, 10.0));
     }
 
     @Test
@@ -203,7 +221,7 @@ public class ArrayTests {
         String code = """
                 char[] a1 = new char[] { 'q' };
                 char[] a2 = new char[] { 'w' };
-                char[] a3 = a1 + a2;
+                char[] a3 = a1 + a2 + 'e';
                 
                 intStorage.add(a3.length);
                 for (int i = 0; i < a3.length; i++) intStorage.add(a3[i]);
@@ -212,7 +230,7 @@ public class ArrayTests {
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
-        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(2, 113, 119));
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(3, 113, 119, 101));
     }
 
     @Test
@@ -220,7 +238,7 @@ public class ArrayTests {
         String code = """
                 string[] a1 = new string[] { "aa", "qq" };
                 string[] a2 = new string[] { "", "!!!" };
-                string[] a3 = a1 + a2;
+                string[] a3 = a1 + a2 + "tt";
                 
                 intStorage.add(a3.length);
                 for (int i = 0; i < a3.length; i++) stringStorage.add(a3[i]);
@@ -229,8 +247,31 @@ public class ArrayTests {
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
-        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(4));
-        Assertions.assertIterableEquals(ApiRoot.stringStorage.list, List.of("aa", "qq", "", "!!!"));
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(5));
+        Assertions.assertIterableEquals(ApiRoot.stringStorage.list, List.of("aa", "qq", "", "!!!", "tt"));
+    }
+
+    @Test
+    public void concatInnerArraysTest() {
+        String code = """
+                let a1 = [["a"], ["bb", "ccc"]];
+                let a2 = [["dddd"], ["1", "2", "3", "4"], ["q"]];
+                let a3 = a1 + a2 + ["ww"];
+                
+                intStorage.add(a3.length);
+                foreach (let array in a3) {
+                    intStorage.add(array.length);
+                    foreach (let str in array) {
+                        stringStorage.add(str);
+                    }
+                }
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(6, 1, 2, 1, 4, 1, 1));
+        Assertions.assertIterableEquals(ApiRoot.stringStorage.list, List.of("a", "bb", "ccc", "dddd", "1", "2", "3", "4", "q", "ww"));
     }
 
     @Test

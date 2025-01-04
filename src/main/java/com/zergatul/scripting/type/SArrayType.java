@@ -15,19 +15,19 @@ import static org.objectweb.asm.Opcodes.*;
 
 public class SArrayType extends SType {
 
-    private final SType type;
+    private final SType underlying;
 
-    public SArrayType(SType type) {
-        this.type = type;
+    public SArrayType(SType underlying) {
+        this.underlying = underlying;
     }
 
     public SType getElementsType() {
-        return type;
+        return underlying;
     }
 
     @Override
     public Class<?> getJavaClass() {
-        return type.getJavaClass().arrayType();
+        return underlying.getJavaClass().arrayType();
     }
 
     @Override
@@ -58,10 +58,10 @@ public class SArrayType extends SType {
     @Override
     public void storeDefaultValue(MethodVisitor visitor) {
         visitor.visitInsn(ICONST_0);
-        if (type.isReference()) {
-            visitor.visitTypeInsn(ANEWARRAY, Type.getInternalName(type.getJavaClass()));
+        if (underlying.isReference()) {
+            visitor.visitTypeInsn(ANEWARRAY, Type.getInternalName(underlying.getJavaClass()));
         } else {
-            visitor.visitIntInsn(NEWARRAY, ((SPredefinedType) type).getArrayTypeInst());
+            visitor.visitIntInsn(NEWARRAY, ((SPredefinedType) underlying).getArrayTypeInst());
         }
     }
 
@@ -95,7 +95,7 @@ public class SArrayType extends SType {
     @Override
     public boolean equals(Object obj) {
         if (obj instanceof SArrayType other) {
-            return type.equals(other.type);
+            return underlying.equals(other.underlying);
         } else {
             return super.equals(obj);
         }
@@ -108,6 +108,9 @@ public class SArrayType extends SType {
 
     @Override
     public BinaryOperation add(SType other) {
+        if (other.equals(underlying)) {
+            return new AddElementOperation(this);
+        }
         if (other.equals(this)) {
             return new AddArrayOperation(this);
         }
@@ -116,7 +119,7 @@ public class SArrayType extends SType {
 
     @Override
     public String toString() {
-        return type.toString() + "[]";
+        return underlying.toString() + "[]";
     }
 
     private static final Lazy<PropertyReference> PROP_LENGTH = new Lazy<>(() -> new PropertyReference() {
@@ -146,6 +149,30 @@ public class SArrayType extends SType {
             visitor.visitInsn(ARRAYLENGTH);
         }
     });
+
+    private static class AddElementOperation extends BinaryOperation {
+
+        public AddElementOperation(SArrayType array) {
+            super(BinaryOperator.PLUS, array, array, array.underlying);
+        }
+
+        @Override
+        public void apply(MethodVisitor left, BufferedMethodVisitor right) {
+            right.release(left);
+            boolean isPrimitive = ((SArrayType) type).getElementsType().getJavaClass().isPrimitive();
+            Class<?> arrayClass = isPrimitive ? type.getJavaClass() : Object[].class;
+            Class<?> elementClass = isPrimitive ? ((SArrayType) type).getElementsType().getJavaClass() : Object.class;
+            left.visitMethodInsn(
+                    INVOKESTATIC,
+                    Type.getInternalName(ArrayUtils.class),
+                    "concat",
+                    Type.getMethodDescriptor(Type.getType(arrayClass), Type.getType(arrayClass), Type.getType(elementClass)),
+                    false);
+            if (!isPrimitive) {
+                left.visitTypeInsn(CHECKCAST, Type.getInternalName(type.getJavaClass()));
+            }
+        }
+    }
 
     private static class AddArrayOperation extends BinaryOperation {
 
