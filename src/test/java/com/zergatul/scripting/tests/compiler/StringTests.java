@@ -305,6 +305,20 @@ public class StringTests {
         Assertions.assertIterableEquals(ApiRoot.stringStorage.list, List.of("ba"));
     }
 
+    @Test
+    public void splitTest() {
+        String code = """
+                foreach (let part in "aa bbb cccc".split(" ")) {
+                    stringStorage.add(part);
+                }
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(ApiRoot.stringStorage.list, List.of("aa", "bbb", "cccc"));
+    }
+
     public static class ApiRoot {
         public static StringStorage stringStorage;
         public static IntStorage intStorage;

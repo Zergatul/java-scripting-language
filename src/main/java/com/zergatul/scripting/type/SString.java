@@ -129,7 +129,8 @@ public class SString extends SPredefinedType {
                 METHOD_MATCHES_FLAGS,
                 METHOD_GET_MATCHES,
                 METHOD_GET_MATCHES_FLAGS,
-                METHOD_REPLACE);
+                METHOD_REPLACE,
+                METHOD_SPLIT);
     }
 
     @Override
@@ -497,4 +498,11 @@ public class SString extends SPredefinedType {
                     false);
         }
     };
+
+    private static final MethodReference METHOD_SPLIT = new InstanceMethodReference(
+            String.class,
+            SString.instance,
+            "split",
+            new SArrayType(SString.instance),
+            new MethodParameter("regex", SString.instance));
 }
