@@ -3,7 +3,6 @@ package com.zergatul.scripting.binding.nodes;
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
 import com.zergatul.scripting.parser.NodeType;
-import com.zergatul.scripting.type.operation.BinaryOperation;
 import com.zergatul.scripting.type.operation.IndexOperation;
 
 import java.util.List;
@@ -19,7 +18,7 @@ public class BoundIndexExpressionNode extends BoundExpressionNode {
     }
 
     public BoundIndexExpressionNode(BoundExpressionNode callee, BoundExpressionNode index, IndexOperation operation, TextRange range) {
-        super(NodeType.INDEX_EXPRESSION, operation.type, range);
+        super(NodeType.INDEX_EXPRESSION, operation.returnType, range);
         this.callee = callee;
         this.index = index;
         this.operation = operation;

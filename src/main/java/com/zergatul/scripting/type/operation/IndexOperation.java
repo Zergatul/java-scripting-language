@@ -1,15 +1,16 @@
 package com.zergatul.scripting.type.operation;
 
-import com.zergatul.scripting.compiler.BufferedMethodVisitor;
 import com.zergatul.scripting.type.SType;
 import org.objectweb.asm.MethodVisitor;
 
 public abstract class IndexOperation {
 
-    public final SType type;
+    public final SType indexType;
+    public final SType returnType;
 
-    protected IndexOperation(SType type) {
-        this.type = type;
+    protected IndexOperation(SType indexType, SType returnType) {
+        this.indexType = indexType;
+        this.returnType = returnType;
     }
 
     public boolean canGet() {

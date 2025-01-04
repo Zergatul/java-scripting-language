@@ -1,10 +1,9 @@
 package com.zergatul.scripting.type;
 
-import com.zergatul.scripting.Getter;
-import com.zergatul.scripting.InternalException;
-import com.zergatul.scripting.Lazy;
-import com.zergatul.scripting.Setter;
+import com.zergatul.scripting.*;
+import com.zergatul.scripting.type.operation.IndexOperation;
 import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.Type;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -20,6 +19,7 @@ public class SCustomType extends SType {
     private final Lazy<List<PropertyReference>> properties;
     private final Lazy<List<MethodReference>> instanceMethods;
     private final Lazy<List<MethodReference>> staticMethods;
+    private final Lazy<List<IndexOperation>> indexes;
 
     public SCustomType(Class<?> clazz) {
         CustomType annotation = clazz.getAnnotation(CustomType.class);
@@ -32,6 +32,7 @@ public class SCustomType extends SType {
         this.properties = new Lazy<>(this::loadProperties);
         this.instanceMethods = new Lazy<>(this::loadInstanceMethods);
         this.staticMethods = new Lazy<>(this::loadStaticMethods);
+        this.indexes = new Lazy<>(this::loadIndexes);
     }
 
     @Override
@@ -101,6 +102,16 @@ public class SCustomType extends SType {
     @Override
     public List<MethodReference> getStaticMethods() {
         return staticMethods.value();
+    }
+
+    @Override
+    public List<SType> supportedIndexers() {
+        return indexes.value().stream().map(o -> o.indexType).toList();
+    }
+
+    @Override
+    public IndexOperation index(SType type) {
+        return indexes.value().stream().filter(o -> o.indexType.equals(type)).findFirst().orElse(null);
     }
 
     @Override
@@ -184,6 +195,38 @@ public class SCustomType extends SType {
                 .toList();
     }
 
+    private List<IndexOperation> loadIndexes() {
+        List<IndexOperation> operations = new ArrayList<>();
+        for (Method method : clazz.getMethods()) {
+            if (Modifier.isStatic(method.getModifiers())) {
+                continue;
+            }
+            if (!Modifier.isPublic(method.getModifiers())) {
+                continue;
+            }
+            if (method.getDeclaringClass() == Object.class) {
+                continue;
+            }
+            IndexGetter getter = method.getAnnotation(IndexGetter.class);
+            if (getter != null) {
+                if (method.getParameterCount() != 1) {
+                    throw new InternalException(String.format("Method %s has invalid @IndexGetter. It should have only 1 parameter.", method.getName()));
+                }
+                if (method.getReturnType() == void.class) {
+                    throw new InternalException(String.format("Method %s has invalid @IndexGetter. It cannot return void.", method.getName()));
+                }
+                SType indexType = SType.fromJavaType(method.getParameters()[0].getType());
+                SType returnType = SType.fromJavaType(method.getReturnType());
+                if (operations.stream().anyMatch(o -> o.indexType.equals(indexType))) {
+                    throw new InternalException(String.format("Method %s has invalid @IndexGetter. @IndexGetter for type %s already defined.", method.getName(), indexType.toString()));
+                }
+                operations.add(new MethodIndexOperation(method, indexType, returnType));
+            }
+        }
+
+        return operations;
+    }
+
     private void validateProperty(Method getter, Method setter) {
         if (getter != null) {
             if (getter.getReturnType() == void.class) {
@@ -207,6 +250,36 @@ public class SCustomType extends SType {
             if (getter.getReturnType() != setter.getParameterTypes()[0]) {
                 throw new InternalException();
             }
+        }
+    }
+
+    private static class MethodIndexOperation extends IndexOperation {
+
+        private final Method method;
+
+        public MethodIndexOperation(Method method, SType indexType, SType returnType) {
+            super(indexType, returnType);
+            this.method = method;
+        }
+
+        @Override
+        public boolean canGet() {
+            return true;
+        }
+
+        @Override
+        public void compileGet(MethodVisitor visitor) {
+            visitor.visitMethodInsn(
+                    INVOKEVIRTUAL,
+                    Type.getInternalName(method.getDeclaringClass()),
+                    method.getName(),
+                    Type.getMethodDescriptor(method),
+                    false);
+        }
+
+        @Override
+        public void compileSet(MethodVisitor visitor) {
+            throw new InternalException();
         }
     }
 }

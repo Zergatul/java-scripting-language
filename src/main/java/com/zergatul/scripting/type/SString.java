@@ -267,7 +267,7 @@ public class SString extends SPredefinedType {
         }
     };
 
-    private static final IndexOperation INDEX_INT = new IndexOperation(SChar.instance) {
+    private static final IndexOperation INDEX_INT = new IndexOperation(SInt.instance, SChar.instance) {
         @Override
         public boolean canGet() {
             return true;

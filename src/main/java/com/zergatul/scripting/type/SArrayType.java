@@ -200,7 +200,7 @@ public class SArrayType extends SType {
     private static class ArrayIndexOperation extends IndexOperation {
 
         public ArrayIndexOperation(SType type) {
-            super(type);
+            super(SInt.instance, type);
         }
 
         @Override
@@ -215,12 +215,12 @@ public class SArrayType extends SType {
 
         @Override
         public void compileGet(MethodVisitor visitor) {
-            visitor.visitInsn(type.getArrayLoadInst());
+            visitor.visitInsn(returnType.getArrayLoadInst());
         }
 
         @Override
         public void compileSet(MethodVisitor visitor) {
-            visitor.visitInsn(type.getArrayStoreInst());
+            visitor.visitInsn(returnType.getArrayStoreInst());
         }
     }
 }

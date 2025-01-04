@@ -9,7 +9,7 @@ public class UndefinedIndexOperation extends IndexOperation {
     public static final IndexOperation instance = new UndefinedIndexOperation();
 
     private UndefinedIndexOperation() {
-        super(SUnknown.instance);
+        super(SUnknown.instance, SUnknown.instance);
     }
 
     @Override
