@@ -178,6 +178,7 @@ public class SCustomType extends SType {
                 .filter(m -> m.getDeclaringClass() != Object.class)
                 .filter(m -> !m.isAnnotationPresent(Getter.class))
                 .filter(m -> !m.isAnnotationPresent(Setter.class))
+                .filter(m -> !m.isAnnotationPresent(IndexGetter.class))
                 .map(NativeInstanceMethodReference::new)
                 .map(r -> (MethodReference) r)
                 .toList();
