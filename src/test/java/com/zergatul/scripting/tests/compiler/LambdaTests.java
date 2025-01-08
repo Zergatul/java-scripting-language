@@ -28,6 +28,7 @@ public class LambdaTests {
     @BeforeEach
     public void clean() {
         ApiRoot.run = new Run();
+        ApiRoot.boolStorage = new BoolStorage();
         ApiRoot.intStorage = new IntStorage();
         ApiRoot.floatStorage = new FloatStorage();
         ApiRoot.stringStorage = new StringStorage();
@@ -262,6 +263,19 @@ public class LambdaTests {
                 int x2(int value) { return value * 2; }
                 
                 int[] array = run.map(new int[] { 1, 2, 3, 4, 5 }, x2);
+                foreach (int i in array) intStorage.add(i);
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(2, 4, 6, 8, 10));
+    }
+
+    @Test
+    public void map3Test() {
+        String code = """
+                int[] array = run.map(new int[] { 1, 2, 3, 4, 5 }, i => { return i * 2; });
                 foreach (int i in array) intStorage.add(i);
                 """;
 
@@ -556,6 +570,18 @@ public class LambdaTests {
     @Test
     public void genericConsumerIntTest() {
         String code = """
+                custom.testPredicate(str => true);
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(ApiRoot.boolStorage.list, List.of(true));
+    }
+
+    @Test
+    public void predicateTest() {
+        String code = """
                 custom.acceptInt(i => intStorage.add(i));
                 """;
 
@@ -683,6 +709,10 @@ public class LambdaTests {
                 consumer.accept(s);
             }
         }
+
+        public void testPredicate(StringPredicate predicate) {
+            ApiRoot.boolStorage.add(predicate.test("qwerty"));
+        }
     }
 
     @FunctionalInterface
@@ -693,5 +723,10 @@ public class LambdaTests {
     @FunctionalInterface
     public interface MultipleConsumer {
         void accept(int i1, double d1, int i2, double d2, int i3, double d3);
+    }
+
+    @FunctionalInterface
+    public interface StringPredicate {
+        boolean test(String value);
     }
 }

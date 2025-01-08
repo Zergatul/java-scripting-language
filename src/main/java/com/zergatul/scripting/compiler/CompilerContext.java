@@ -155,7 +155,7 @@ public class CompilerContext {
     }
 
     public CompilerContext createChild() {
-        return new CompilerContext(stack.get(), false, returnType, this);
+        return new CompilerContext(stack.get(), false, isGenericFunction, returnType, this);
     }
 
     public CompilerContext createStaticFunction(SType returnType) {

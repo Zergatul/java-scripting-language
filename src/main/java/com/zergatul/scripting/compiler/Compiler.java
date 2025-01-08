@@ -1187,7 +1187,7 @@ public class Compiler {
                 null);
         invokeVisitor.visitCode();
 
-        CompilerContext lambdaContext = context.createFunction(type.getActualReturnType(), true);
+        CompilerContext lambdaContext = context.createFunction(type.getActualReturnType(), !type.getActualReturnType().equals(type.getRawReturnType()));
         lambdaContext.setClassName(name);
 
         if (!expression.captured.isEmpty()) {

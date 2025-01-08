@@ -96,6 +96,16 @@ public class ErrorRecoveryBinderTests {
                         new MultiLineTextRange(1, 1, 3, 2, 0, 27)));
     }
 
+    @Test
+    public void unfinishedFunctionTest() {
+        BinderOutput result = bind("""
+                void
+                let x = 1;
+                """);
+
+        Assertions.assertFalse(result.diagnostics().isEmpty());
+    }
+
     private BinderOutput bind(String code) {
         CompilationParameters parameters = new CompilationParametersBuilder()
                 .setRoot(ApiRoot.class)
@@ -110,6 +120,11 @@ public class ErrorRecoveryBinderTests {
     }
 
     public static class Main {
+
         public void chat(String message) {}
+
+        public int getInt() {
+            return 123;
+        }
     }
 }

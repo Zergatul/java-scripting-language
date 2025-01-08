@@ -219,7 +219,7 @@ public class Parser {
 
         TypeNode typeNode;
         if (isPossibleDeclaration()) {
-            typeNode = parseTypeNode();
+            typeNode = parseLetTypeNode();
         } else {
             addDiagnostic(ParserErrors.ForEachTypeIdentifierRequired, current);
             typeNode = new InvalidTypeNode(createMissingTokenRange());
@@ -429,7 +429,7 @@ public class Parser {
     }
 
     private VariableDeclarationNode parseVariableDeclaration() {
-        TypeNode type = parseTypeNode();
+        TypeNode type = parseLetTypeNode();
         if (current.type == TokenType.IDENTIFIER) {
             IdentifierToken identifier = (IdentifierToken) advance();
             NameExpressionNode name = new NameExpressionNode(identifier);
@@ -1065,6 +1065,25 @@ public class Parser {
         }
     }
 
+    private TypeNode parseRefTypeNode() {
+        if (current.type == TokenType.REF) {
+            Token ref = advance();
+            TypeNode underlying = parseTypeNode();
+            return new RefTypeNode(underlying, TextRange.combine(ref, underlying));
+        } else {
+            return parseTypeNode();
+        }
+    }
+
+    private TypeNode parseLetTypeNode() {
+        if (current.type == TokenType.LET) {
+            Token token = advance();
+            return new LetTypeNode(token.getRange());
+        } else {
+            return parseTypeNode();
+        }
+    }
+
     private TypeNode parseTypeNode() {
         TypeNode type = switch (current.type) {
             case BOOLEAN -> new PredefinedTypeNode(PredefinedType.BOOLEAN, current.getRange());
@@ -1074,7 +1093,6 @@ public class Parser {
             case STRING -> new PredefinedTypeNode(PredefinedType.STRING, current.getRange());
             case CHAR -> new PredefinedTypeNode(PredefinedType.CHAR, current.getRange());
             case IDENTIFIER -> new CustomTypeNode(((IdentifierToken) current).value, current.getRange());
-            case LET -> new LetTypeNode(current.getRange());
             default -> new InvalidTypeNode(current.getRange());
         };
 
@@ -1091,16 +1109,6 @@ public class Parser {
         }
 
         return type;
-    }
-
-    private TypeNode parseRefTypeNode() {
-        if (current.type == TokenType.REF) {
-            Token ref = advance();
-            TypeNode underlying = parseTypeNode();
-            return new RefTypeNode(underlying, TextRange.combine(ref, underlying));
-        } else {
-            return parseTypeNode();
-        }
     }
 
     private Token advance() {
