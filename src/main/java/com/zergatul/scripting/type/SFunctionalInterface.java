@@ -145,6 +145,21 @@ public class SFunctionalInterface extends SType {
         return Type.getMethodDescriptor(method);
     }
 
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append('(');
+        for (SType type : actualParameters) {
+            sb.append(type.toString()).append(", ");
+        }
+        if (actualParameters.length > 0) {
+            sb.delete(sb.length() - 2, sb.length());
+        }
+        sb.append(") => ");
+        sb.append(actualReturnType.toString());
+        return sb.toString();
+    }
+
     private static int findTypeParamIndex(TypeVariable<? extends Class<?>>[] params, String name) {
         int index = -1;
         for (int i = 0; i < params.length; i++) {
