@@ -8,6 +8,7 @@ import com.zergatul.scripting.symbols.LiftedVariable;
 import com.zergatul.scripting.type.SType;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Stream;
 
 public class BoundLambdaExpressionNode extends BoundExpressionNode {
@@ -56,5 +57,18 @@ public class BoundLambdaExpressionNode extends BoundExpressionNode {
     @Override
     public List<BoundNode> getChildren() {
         return Stream.concat(List.copyOf(parameters).stream(), Stream.of(body)).toList();
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj instanceof BoundLambdaExpressionNode other) {
+            return  Objects.equals(other.parameters, parameters) &&
+                    other.body.equals(body) &&
+                    Objects.equals(other.lifted, lifted) &&
+                    Objects.equals(other.captured, captured) &&
+                    other.getRange().equals(getRange());
+        } else {
+            return false;
+        }
     }
 }

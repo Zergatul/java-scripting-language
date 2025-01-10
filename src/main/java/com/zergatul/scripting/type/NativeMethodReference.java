@@ -51,4 +51,13 @@ public abstract class NativeMethodReference extends MethodReference {
         MethodDescription description = method.getAnnotation(MethodDescription.class);
         return description != null ? Optional.of(description.value()) : Optional.empty();
     }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj instanceof NativeMethodReference other) {
+            return other.method.equals(method);
+        } else {
+            return false;
+        }
+    }
 }

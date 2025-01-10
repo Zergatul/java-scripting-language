@@ -33,4 +33,13 @@ public class BoundExpressionStatementNode extends BoundStatementNode {
     public List<BoundNode> getChildren() {
         return List.of(expression);
     }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj instanceof BoundExpressionStatementNode other) {
+            return other.expression.equals(expression) && other.getRange().equals(getRange());
+        } else {
+            return false;
+        }
+    }
 }

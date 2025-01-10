@@ -6,6 +6,7 @@ import com.zergatul.scripting.compiler.RefHolder;
 import com.zergatul.scripting.parser.NodeType;
 
 import java.util.List;
+import java.util.Objects;
 
 public class BoundMethodInvocationExpressionNode extends BoundExpressionNode {
 
@@ -37,5 +38,19 @@ public class BoundMethodInvocationExpressionNode extends BoundExpressionNode {
     @Override
     public List<BoundNode> getChildren() {
         return List.of(objectReference, method, arguments);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj instanceof BoundMethodInvocationExpressionNode other) {
+            return  other.type.equals(type) &&
+                    other.objectReference.equals(objectReference) &&
+                    other.method.equals(method) &&
+                    other.arguments.equals(arguments) &&
+                    Objects.equals(other.refVariables, refVariables) &&
+                    other.getRange().equals(getRange());
+        } else {
+            return false;
+        }
     }
 }

@@ -96,6 +96,15 @@ public class SClassType extends SType {
     }
 
     @Override
+    public boolean equals(Object obj) {
+        if (obj instanceof SClassType other) {
+            return other.clazz == clazz;
+        } else {
+            return false;
+        }
+    }
+
+    @Override
     public String toString() {
         return String.format("Java<%s>", clazz.getName());
     }

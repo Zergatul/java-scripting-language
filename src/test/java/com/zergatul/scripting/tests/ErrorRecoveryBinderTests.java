@@ -11,18 +11,19 @@ import com.zergatul.scripting.compiler.CompilationParameters;
 import com.zergatul.scripting.compiler.CompilationParametersBuilder;
 import com.zergatul.scripting.lexer.Lexer;
 import com.zergatul.scripting.lexer.LexerInput;
-import com.zergatul.scripting.parser.NodeType;
-import com.zergatul.scripting.parser.Parser;
+import com.zergatul.scripting.parser.*;
+import com.zergatul.scripting.parser.nodes.*;
 import com.zergatul.scripting.symbols.Function;
+import com.zergatul.scripting.symbols.LocalVariable;
+import com.zergatul.scripting.symbols.StaticFieldConstantStaticVariable;
 import com.zergatul.scripting.tests.compiler.helpers.FutureHelper;
 import com.zergatul.scripting.tests.compiler.helpers.Run;
-import com.zergatul.scripting.type.MethodParameter;
-import com.zergatul.scripting.type.SFunction;
-import com.zergatul.scripting.type.SInt;
-import com.zergatul.scripting.type.SType;
+import com.zergatul.scripting.type.*;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import java.lang.reflect.Field;
+import java.lang.reflect.ParameterizedType;
 import java.util.List;
 
 public class ErrorRecoveryBinderTests {
@@ -104,6 +105,52 @@ public class ErrorRecoveryBinderTests {
                 """);
 
         Assertions.assertFalse(result.diagnostics().isEmpty());
+    }
+
+    @Test
+    public void unfinishedLambdaTest() throws NoSuchFieldException, NoSuchMethodException {
+        BinderOutput result = bind("""
+                run.onString(str => );
+                """);
+
+        Assertions.assertIterableEquals(
+                result.diagnostics(),
+                List.of(new DiagnosticMessage(ParserErrors.SimpleStatementExpected, new SingleLineTextRange(1, 21, 20, 1), ")")));
+
+        Assertions.assertEquals(
+                result.unit().statements,
+                new BoundStatementsListNode(
+                        List.of(
+                                new BoundExpressionStatementNode(
+                                        new BoundMethodInvocationExpressionNode(
+                                                new BoundNameExpressionNode(
+                                                        new StaticFieldConstantStaticVariable("run", ApiRoot.class.getField("run")),
+                                                        SType.fromJavaType(Run.class),
+                                                        "run",
+                                                        new SingleLineTextRange(1, 1, 0, 3)),
+                                                new BoundMethodNode(
+                                                        new NativeInstanceMethodReference(
+                                                                Run.class.getMethod("onString", Run.Action1.class)),
+                                                        new SingleLineTextRange(1, 5, 4, 8)),
+                                                new BoundArgumentsListNode(List.of(
+                                                        new BoundLambdaExpressionNode(
+                                                                new SFunctionalInterface((ParameterizedType) Run.class.getMethod("onString", Run.Action1.class).getGenericParameterTypes()[0]),
+                                                                List.of(new BoundParameterNode(
+                                                                        new BoundNameExpressionNode(
+                                                                                new LocalVariable("str", SString.instance, new SingleLineTextRange(1, 14, 13, 3)),
+                                                                                new SingleLineTextRange(1, 14, 13, 3)),
+                                                                        SString.instance,
+                                                                        new SingleLineTextRange(1, 14, 13, 3))),
+                                                                new BoundInvalidStatementNode(new SingleLineTextRange(1, 21, 20, 0)),
+                                                                List.of(),
+                                                                List.of(),
+                                                                new SingleLineTextRange(1, 14, 13, 7))),
+                                                        new SingleLineTextRange(1, 13, 12, 9)),
+                                                List.of(),
+                                                new SingleLineTextRange(1, 1, 0, 21)),
+                                        new SingleLineTextRange(1, 1, 0, 22))),
+                        List.of(),
+                        new SingleLineTextRange(1, 1, 0, 22)));
     }
 
     private BinderOutput bind(String code) {

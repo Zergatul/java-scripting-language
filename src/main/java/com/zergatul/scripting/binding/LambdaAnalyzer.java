@@ -8,6 +8,7 @@ public class LambdaAnalyzer {
 
     public boolean canBeAction(LambdaExpressionNode lambda) {
         return switch (lambda.body.getNodeType()) {
+            case INVALID_STATEMENT -> true;
             case ASSIGNMENT_STATEMENT -> true;
             case AUGMENTED_ASSIGNMENT_STATEMENT -> true;
             case INCREMENT_STATEMENT -> true;
@@ -20,6 +21,7 @@ public class LambdaAnalyzer {
 
     public boolean canBeFunction(LambdaExpressionNode lambda) {
         return switch (lambda.body.getNodeType()) {
+            case INVALID_STATEMENT -> true;
             case EXPRESSION_STATEMENT -> true;
             case BLOCK_STATEMENT -> hasReturnValue(lambda.body).orElse(false);
             default -> false;

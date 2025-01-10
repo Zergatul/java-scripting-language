@@ -24,4 +24,13 @@ public class BoundInvalidStatementNode extends BoundStatementNode {
     public List<BoundNode> getChildren() {
         return List.of();
     }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj instanceof BoundInvalidStatementNode other) {
+            return other.getRange().equals(getRange());
+        } else {
+            return false;
+        }
+    }
 }

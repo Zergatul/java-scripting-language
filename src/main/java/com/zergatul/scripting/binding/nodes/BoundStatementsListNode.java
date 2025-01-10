@@ -6,6 +6,7 @@ import com.zergatul.scripting.parser.NodeType;
 import com.zergatul.scripting.symbols.LiftedVariable;
 
 import java.util.List;
+import java.util.Objects;
 
 public class BoundStatementsListNode extends BoundStatementNode {
 
@@ -43,5 +44,17 @@ public class BoundStatementsListNode extends BoundStatementNode {
     @Override
     public List<BoundNode> getChildren() {
         return List.copyOf(statements);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj instanceof BoundStatementsListNode other) {
+            return  Objects.equals(other.prepend, prepend) &&
+                    Objects.equals(other.statements, statements) &&
+                    Objects.equals(other.lifted, lifted) &&
+                    other.getRange().equals(getRange());
+        } else {
+            return false;
+        }
     }
 }

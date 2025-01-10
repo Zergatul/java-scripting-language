@@ -28,4 +28,13 @@ public class BoundMethodNode extends BoundNode {
     public List<BoundNode> getChildren() {
         return List.of();
     }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj instanceof BoundMethodNode other) {
+            return other.method.equals(method) && other.getRange().equals(getRange());
+        } else {
+            return false;
+        }
+    }
 }

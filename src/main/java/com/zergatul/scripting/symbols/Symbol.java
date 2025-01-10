@@ -60,7 +60,7 @@ public abstract class Symbol {
         if (!s1.type.equals(s2.type)) {
             return false;
         }
-        if (!s1.definition.equals(s2.definition)) {
+        if (!Objects.equals(s1.definition, s2.definition)) {
             return false;
         }
         if (s1.references.size() != s2.references.size()) {
