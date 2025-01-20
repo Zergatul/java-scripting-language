@@ -25,6 +25,7 @@ public class CompilerContext {
     private final boolean isFunctionRoot;
     private final boolean isGenericFunction;
     private final SType returnType;
+    private final boolean isAsync;
     private String className;
     private Consumer<MethodVisitor> breakConsumer;
     private Consumer<MethodVisitor> continueConsumer;
@@ -36,28 +37,21 @@ public class CompilerContext {
     private Label generatorContinueLabel;
     private VisibilityChecker checker;
 
-    public CompilerContext() {
-        this(1);
+    public CompilerContext(SType returnType, boolean isAsync) {
+        this(1, true, returnType, isAsync, null);
     }
 
-    public CompilerContext(SType returnType) {
-        this(1, true, returnType, null);
+    public CompilerContext(int initialStackIndex, boolean isFunctionRoot, SType returnType, boolean isAsync, CompilerContext parent) {
+        this(initialStackIndex, isFunctionRoot, false, returnType, isAsync, parent);
     }
 
-    public CompilerContext(int initialStackIndex) {
-        this(initialStackIndex, true, SVoidType.instance, null);
-    }
-
-    public CompilerContext(int initialStackIndex, boolean isFunctionRoot, SType returnType, CompilerContext parent) {
-        this(initialStackIndex, isFunctionRoot, false, returnType, parent);
-    }
-
-    public CompilerContext(int initialStackIndex, boolean isFunctionRoot, boolean isGenericFunction, SType returnType, CompilerContext parent) {
+    public CompilerContext(int initialStackIndex, boolean isFunctionRoot, boolean isGenericFunction, SType returnType, boolean isAsync, CompilerContext parent) {
         this.root = parent == null ? this : parent.root;
         this.parent = parent;
         this.isFunctionRoot = isFunctionRoot;
         this.isGenericFunction = isGenericFunction;
         this.returnType = returnType;
+        this.isAsync = isAsync;
         if (isFunctionRoot) {
             lifted = new ArrayList<>();
             captured = new ArrayList<>();
@@ -155,23 +149,27 @@ public class CompilerContext {
     }
 
     public CompilerContext createChild() {
-        return new CompilerContext(stack.get(), false, isGenericFunction, returnType, this);
+        return new CompilerContext(stack.get(), false, isGenericFunction, returnType, isAsync, this);
     }
 
-    public CompilerContext createStaticFunction(SType returnType) {
-        return new CompilerContext(0, true, returnType, this);
+    public CompilerContext createStaticFunction(SType returnType, boolean isAsync) {
+        return new CompilerContext(0, true, returnType, isAsync, this);
     }
 
-    public CompilerContext createFunction(SType returnType) {
-        return createFunction(returnType, false);
+    public CompilerContext createFunction(SType returnType, boolean isAsync) {
+        return createFunction(returnType, isAsync, false);
     }
 
-    public CompilerContext createFunction(SType returnType, boolean generic) {
-        return new CompilerContext(1, true, generic, returnType, this);
+    public CompilerContext createFunction(SType returnType, boolean isAsync, boolean generic) {
+        return new CompilerContext(1, true, generic, returnType, isAsync, this);
     }
 
     public SType getReturnType() {
         return returnType;
+    }
+
+    public boolean isAsync() {
+        return isAsync;
     }
 
     public CompilerContext getParent() {

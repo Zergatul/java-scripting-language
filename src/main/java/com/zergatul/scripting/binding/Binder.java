@@ -37,7 +37,7 @@ public class Binder {
     private BoundCompilationUnitNode bindCompilationUnit(CompilationUnitNode node) {
         List<BoundVariableDeclarationNode> variables = node.variables.variables.stream().map(n -> bindVariableDeclaration(n, true)).toList();
         List<BoundFunctionNode> functions = bindFunctions(unit.functions.functions);
-        pushFunctionScope(parameters.getReturnType());
+        pushFunctionScope(parameters.getReturnType(), parameters.isAsync());
         parameters.addFunctionalInterfaceParameters(context);
         BoundStatementsListNode statements = bindStatementList(node.statements);
         popScope();
@@ -59,7 +59,7 @@ public class Binder {
             BoundTypeNode returnType = bindType(node.returnType);
             SType actualReturnType = isAsync ? new SFuture(returnType.type) : returnType.type;
 
-            pushStaticFunctionScope(returnType.type);
+            pushStaticFunctionScope(returnType.type, isAsync);
             contexts.add(context);
             BoundParameterListNode parameters = bindParameterList(node.parameters);
             SFunction type = new SFunction(actualReturnType, parameters.parameters.stream().map(pn -> new MethodParameter(pn.getName().value, pn.getType())).toArray(MethodParameter[]::new));
@@ -890,7 +890,7 @@ public class Binder {
             throw new InternalException("Lambda parameters count mismatch.");
         }
 
-        pushFunctionScope(lambdaType.getActualReturnType());
+        pushFunctionScope(lambdaType.getActualReturnType(), false);
 
         for (int i = 0; i < parametersCount; i++) {
             // parameters type will be Object due to type erasure
@@ -1132,7 +1132,7 @@ public class Binder {
     }
 
     private BoundAwaitExpressionNode bindAwaitExpression(AwaitExpressionNode node) {
-        if (!parameters.isAsync()) {
+        if (!context.isAsync()) {
             addDiagnostic(BinderErrors.AwaitInNonAsyncContext, node.awaitToken);
         }
 
@@ -1236,12 +1236,12 @@ public class Binder {
         context = context.createChild();
     }
 
-    private void pushFunctionScope(SType returnType) {
-        context = context.createFunction(returnType);
+    private void pushFunctionScope(SType returnType, boolean isAsync) {
+        context = context.createFunction(returnType, isAsync);
     }
 
-    private void pushStaticFunctionScope(SType returnType) {
-        context = context.createStaticFunction(returnType);
+    private void pushStaticFunctionScope(SType returnType, boolean isAsync) {
+        context = context.createStaticFunction(returnType, isAsync);
     }
 
     private void popScope() {

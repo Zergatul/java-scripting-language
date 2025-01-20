@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
+import static com.zergatul.scripting.tests.compiler.helpers.CompilerHelper.compile;
 import static com.zergatul.scripting.tests.compiler.helpers.CompilerHelper.compileAsync;
 
 public class AsyncFunctionTests {
@@ -335,6 +336,30 @@ public class AsyncFunctionTests {
         ApiRoot.futures.getInt(0).complete(23);
         Assertions.assertIterableEquals(ApiRoot.int64Storage.list, List.of(623L));
         Assertions.assertTrue(future.isDone());
+    }
+
+    @Test
+    public void nonAsyncMainContextTest() {
+        String code = """
+                async int func1(int x) {
+                    return await futures.createInt() + x;
+                }
+                
+                async void func2() {
+                    intStorage.add(await func1(10) + await func1(100));
+                }
+                
+                func2();
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertTrue(ApiRoot.intStorage.list.isEmpty());
+
+        ApiRoot.futures.getInt(0).complete(1);
+        ApiRoot.futures.getInt(1).complete(2);
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(113));
     }
 
     public static class ApiRoot {

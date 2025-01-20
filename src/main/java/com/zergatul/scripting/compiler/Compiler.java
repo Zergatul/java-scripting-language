@@ -156,7 +156,7 @@ public class Compiler {
                     null);
             visitor.visitCode();
 
-            context = context.createStaticFunction(type.getReturnType());
+            context = context.createStaticFunction(type.getReturnType(), function.isAsync);
 
             for (BoundParameterNode parameter : function.parameters.parameters) {
                 context.setStackIndex((LocalVariable) parameter.getName().symbol);
@@ -807,7 +807,7 @@ public class Compiler {
                 null,
                 null);
 
-        CompilerContext nextMethodContext = context.createFunction(SType.fromJavaType(CompletableFuture.class));
+        CompilerContext nextMethodContext = context.createFunction(SType.fromJavaType(CompletableFuture.class), false);
         nextMethodContext.setAsyncStateMachineClassName(name);
         LocalVariable parameter = nextMethodContext.addLocalParameter("@result", SType.fromJavaType(Object.class), null);
         nextMethodContext.setStackIndex(parameter);
@@ -1187,7 +1187,7 @@ public class Compiler {
                 null);
         invokeVisitor.visitCode();
 
-        CompilerContext lambdaContext = context.createFunction(type.getActualReturnType(), !type.getActualReturnType().equals(type.getRawReturnType()));
+        CompilerContext lambdaContext = context.createFunction(type.getActualReturnType(), false, !type.getActualReturnType().equals(type.getRawReturnType()));
         lambdaContext.setClassName(name);
 
         if (!expression.captured.isEmpty()) {
@@ -1310,7 +1310,7 @@ public class Compiler {
         SFunction type = function.getFunctionType();
         List<BoundParameterNode> parameters = new ArrayList<>(type.getParameters().size());
         List<LocalVariable> variables = new ArrayList<>(type.getParameters().size());
-        CompilerContext lambdaContext = context.createFunction(type.getReturnType(), true);
+        CompilerContext lambdaContext = context.createFunction(type.getReturnType(), false, true);
         for (SType parameterType : type.getParameterTypes()) {
             LocalVariable variable = lambdaContext.addLocalVariable("p" + variables.size(), parameterType, null);
             lambdaContext.setStackIndex(variable);
