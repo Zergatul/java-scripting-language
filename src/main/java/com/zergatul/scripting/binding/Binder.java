@@ -35,76 +35,42 @@ public class Binder {
     }
 
     private BoundCompilationUnitNode bindCompilationUnit(CompilationUnitNode node) {
-        List<BoundVariableDeclarationNode> variables = node.variables.variables.stream().map(n -> bindVariableDeclaration(n, true)).toList();
-        List<BoundFunctionNode> functions = bindFunctions(unit.functions.functions);
+        List<BoundCompilationUnitMemberNode> members = bindCompilationUnitMembers(node.members.members);
         pushFunctionScope(parameters.getReturnType(), parameters.isAsync());
         parameters.addFunctionalInterfaceParameters(context);
         BoundStatementsListNode statements = bindStatementList(node.statements);
         popScope();
         return new BoundCompilationUnitNode(
-                new BoundStaticVariablesListNode(variables, node.variables.getRange()),
-                new BoundFunctionsListNode(functions, node.functions.getRange()),
+                new BoundCompilationUnitMembersListNode(members, node.members.getRange()),
                 statements,
                 node.getRange());
     }
 
-    private List<BoundFunctionNode> bindFunctions(List<FunctionNode> nodes) {
-        // handle forward declaration
-        List<BoundTypeNode> returnTypes = new ArrayList<>(nodes.size());
-        List<CompilerContext> contexts = new ArrayList<>(nodes.size());
-        List<BoundParameterListNode> parametersList = new ArrayList<>(nodes.size());
-        List<Function> symbols = new ArrayList<>(nodes.size());
-        for (FunctionNode node : nodes) {
-            boolean isAsync = node.asyncToken != null;
-            BoundTypeNode returnType = bindType(node.returnType);
-            SType actualReturnType = isAsync ? new SFuture(returnType.type) : returnType.type;
+    private List<BoundCompilationUnitMemberNode> bindCompilationUnitMembers(List<CompilationUnitMemberNode> nodes) {
+        List<CompilationUnitMemberData> membersData = new ArrayList<>();
 
-            pushStaticFunctionScope(returnType.type, isAsync);
-            contexts.add(context);
-            BoundParameterListNode parameters = bindParameterList(node.parameters);
-            SFunction type = new SFunction(actualReturnType, parameters.parameters.stream().map(pn -> new MethodParameter(pn.getName().value, pn.getType())).toArray(MethodParameter[]::new));
-
-            String identifier = node.name.value;
-            Symbol existing = context.getSymbol(identifier);
-            Function symbol;
-            if (existing != null) {
-                symbol = new Function(null, type, node.getRange());
-                addDiagnostic(
-                        BinderErrors.SymbolAlreadyDeclared,
-                        node.name,
-                        node.name.value);
+        // handle forward declarations
+        for (CompilationUnitMemberNode member : nodes) {
+            CompilationUnitMemberData data;
+            if (member.getNodeType() == NodeType.STATIC_FIELD) {
+                data = new StaticFieldMemberData((StaticFieldNode) member);
+            } else if (member.getNodeType() == NodeType.FUNCTION) {
+                data = new FunctionMemberData((FunctionNode) member);
             } else {
-                symbol = new Function(identifier, type, node.getRange());
-                context.getParent().addFunction(symbol);
+                throw new InternalException();
             }
 
-            popScope();
-
-            returnTypes.add(returnType);
-            parametersList.add(parameters);
-            symbols.add(symbol);
+            data.handleForwardDeclaration(this);
+            membersData.add(data);
         }
 
-        // bind function bodies
-        List<BoundFunctionNode> functions = new ArrayList<>(nodes.size());
-        CompilerContext old = context;
-        for (int i = 0; i < nodes.size(); i++) {
-            context = contexts.get(i);
-            FunctionNode node = nodes.get(i);
-            BoundNameExpressionNode name = new BoundNameExpressionNode(symbols.get(i), node.name.getRange());
-            BoundBlockStatementNode block = bindBlockStatement(node.body);
-
-            SType returnType = returnTypes.get(i).type;
-            if (returnType != SVoidType.instance && returnType != SUnknown.instance) {
-                if (!new ReturnPathsVerifier().verify(block)) {
-                    addDiagnostic(BinderErrors.NotAllPathReturnValue, block);
-                }
-            }
-
-            functions.add(new BoundFunctionNode(node.asyncToken != null, returnTypes.get(i), name, parametersList.get(i), block, node.getRange()));
+        // bind members
+        List<BoundCompilationUnitMemberNode> members = new ArrayList<>();
+        for (CompilationUnitMemberData data : membersData) {
+            members.add(data.bind(this));
         }
-        context = old;
-        return functions;
+
+        return members;
     }
 
     private BoundParameterListNode bindParameterList(ParameterListNode node) {
@@ -123,6 +89,38 @@ public class Binder {
     private BoundStatementsListNode bindStatementList(StatementsListNode node) {
         List<BoundStatementNode> statements = node.statements.stream().map(this::bindStatement).toList();
         return new BoundStatementsListNode(statements, context.getLifted(), node.getRange());
+    }
+
+    private BoundStaticFieldNode bindStaticField(StaticFieldNode node, DeclaredStaticVariable variable) {
+        BoundTypeNode variableType;
+        BoundExpressionNode expression;
+
+        if (node.declaration.type.getNodeType() == NodeType.LET_TYPE) {
+            if (node.declaration.expression != null) {
+                expression = bindExpression(node.declaration.expression);
+            } else {
+                TextRange range = node.declaration.name.getRange();
+                expression = new BoundInvalidExpressionNode(new SingleLineTextRange(range.getLine1(), range.getColumn1(), range.getPosition(), 0));
+            }
+            variableType = new BoundLetTypeNode(expression.type, node.declaration.type.getRange());
+        } else {
+            variableType = bindType(node.declaration.type);
+            if (node.declaration.expression != null) {
+                expression = tryCastTo(bindExpression(node.declaration.expression), variableType.type);
+            } else {
+                expression = null;
+            }
+        }
+
+        BoundNameExpressionNode name = new BoundNameExpressionNode(
+                variable,
+                variableType.type,
+                node.declaration.name.value,
+                node.declaration.name.getRange());
+
+        return new BoundStaticFieldNode(
+                new BoundVariableDeclarationNode(variableType, name, expression, node.declaration.getRange()),
+                node.getRange());
     }
 
     private BoundStatementNode bindStatement(StatementNode statement) {
@@ -209,10 +207,6 @@ public class Binder {
     }
 
     private BoundVariableDeclarationNode bindVariableDeclaration(VariableDeclarationNode variableDeclaration) {
-        return bindVariableDeclaration(variableDeclaration, false);
-    }
-
-    private BoundVariableDeclarationNode bindVariableDeclaration(VariableDeclarationNode variableDeclaration, boolean isStatic) {
         BoundTypeNode variableType;
         BoundExpressionNode expression;
 
@@ -241,13 +235,7 @@ public class Binder {
                     variableDeclaration.name,
                     variableDeclaration.name.value);
         } else {
-            if (isStatic) {
-                StaticVariable staticVariable = new DeclaredStaticVariable(variableDeclaration.name.value, variableType.type, variableDeclaration.getRange());
-                context.addStaticVariable(staticVariable);
-                variable = staticVariable;
-            } else {
-                variable = context.addLocalVariable(variableDeclaration.name.value, variableType.type, variableDeclaration.getRange());
-            }
+            variable = context.addLocalVariable(variableDeclaration.name.value, variableType.type, variableDeclaration.getRange());
         }
 
         BoundNameExpressionNode name = new BoundNameExpressionNode(
@@ -1314,6 +1302,108 @@ public class Binder {
 
         public boolean hasLambda() {
             return lambda != null;
+        }
+    }
+
+    private static abstract class CompilationUnitMemberData {
+        public abstract void handleForwardDeclaration(Binder binder);
+        public abstract BoundCompilationUnitMemberNode bind(Binder binder);
+    }
+
+    private static class StaticFieldMemberData extends CompilationUnitMemberData {
+
+        private final StaticFieldNode field;
+        private DeclaredStaticVariable symbol;
+
+        public StaticFieldMemberData(StaticFieldNode field) {
+            this.field = field;
+        }
+
+        @Override
+        public void handleForwardDeclaration(Binder binder) {
+            BoundTypeNode type = binder.bindType(field.declaration.type);
+            String identifier = field.declaration.name.value;
+            Symbol existing = binder.context.getSymbol(identifier);
+            symbol = new DeclaredStaticVariable(field.declaration.name.value, type.type, field.declaration.getRange());
+            if (existing != null) {
+                binder.addDiagnostic(
+                        BinderErrors.SymbolAlreadyDeclared,
+                        field.declaration.name,
+                        field.declaration.name.value);
+            } else {
+                binder.context.addStaticVariable(symbol);
+            }
+        }
+
+        @Override
+        public BoundCompilationUnitMemberNode bind(Binder binder) {
+            return binder.bindStaticField(field, symbol);
+        }
+    }
+
+    private static class FunctionMemberData extends CompilationUnitMemberData {
+
+        private final FunctionNode function;
+        private BoundTypeNode returnType;
+        private CompilerContext functionContext;
+        private BoundParameterListNode parameters;
+        private Function symbol;
+
+        public FunctionMemberData(FunctionNode function) {
+            this.function = function;
+        }
+
+        @Override
+        public void handleForwardDeclaration(Binder binder) {
+            boolean isAsync = function.asyncToken != null;
+            returnType = binder.bindType(function.returnType);
+            SType actualReturnType = isAsync ? new SFuture(returnType.type) : returnType.type;
+
+            binder.pushStaticFunctionScope(returnType.type, isAsync);
+            functionContext = binder.context;
+            parameters = binder.bindParameterList(function.parameters);
+            SFunction type = new SFunction(actualReturnType, parameters.parameters.stream().map(pn -> new MethodParameter(pn.getName().value, pn.getType())).toArray(MethodParameter[]::new));
+
+            String identifier = function.name.value;
+            Symbol existing = binder.context.getSymbol(identifier);
+            if (existing != null) {
+                symbol = new Function(null, type, function.getRange());
+                binder.addDiagnostic(
+                        BinderErrors.SymbolAlreadyDeclared,
+                        function.name,
+                        function.name.value);
+            } else {
+                symbol = new Function(identifier, type, function.getRange());
+                binder.context.getParent().addFunction(symbol);
+            }
+
+            binder.popScope();
+        }
+
+        @Override
+        public BoundCompilationUnitMemberNode bind(Binder binder) {
+            CompilerContext old = binder.context;
+            binder.context = functionContext;
+
+            BoundNameExpressionNode name = new BoundNameExpressionNode(symbol, function.name.getRange());
+            BoundBlockStatementNode block = binder.bindBlockStatement(function.body);
+
+            if (returnType.type != SVoidType.instance && returnType.type != SUnknown.instance) {
+                if (!new ReturnPathsVerifier().verify(block)) {
+                    binder.addDiagnostic(BinderErrors.NotAllPathReturnValue, block);
+                }
+            }
+
+            BoundFunctionNode boundFunction = new BoundFunctionNode(
+                    function.asyncToken != null,
+                    returnType,
+                    name,
+                    parameters,
+                    block,
+                    function.getRange());
+            binder.context = old;
+
+            return boundFunction;
         }
     }
 }

@@ -6,7 +6,7 @@ import com.zergatul.scripting.parser.NodeType;
 
 import java.util.List;
 
-public class BoundFunctionNode extends BoundNode {
+public class BoundFunctionNode extends BoundCompilationUnitMemberNode {
 
     public final boolean isAsync;
     public final BoundTypeNode returnType;

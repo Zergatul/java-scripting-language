@@ -8,14 +8,12 @@ import java.util.List;
 
 public class BoundCompilationUnitNode extends BoundNode {
 
-    public final BoundStaticVariablesListNode variables;
-    public final BoundFunctionsListNode functions;
+    public final BoundCompilationUnitMembersListNode members;
     public final BoundStatementsListNode statements;
 
-    public BoundCompilationUnitNode(BoundStaticVariablesListNode variables, BoundFunctionsListNode functions, BoundStatementsListNode statements, TextRange range) {
+    public BoundCompilationUnitNode(BoundCompilationUnitMembersListNode members, BoundStatementsListNode statements, TextRange range) {
         super(NodeType.COMPILATION_UNIT, range);
-        this.variables = variables;
-        this.functions = functions;
+        this.members = members;
         this.statements = statements;
     }
 
@@ -26,13 +24,12 @@ public class BoundCompilationUnitNode extends BoundNode {
 
     @Override
     public void acceptChildren(BinderTreeVisitor visitor) {
-        variables.accept(visitor);
-        functions.accept(visitor);
+        members.accept(visitor);
         statements.accept(visitor);
     }
 
     @Override
     public List<BoundNode> getChildren() {
-        return List.of(variables, functions, statements);
+        return List.of(members, statements);
     }
 }

@@ -3,18 +3,17 @@ package com.zergatul.scripting.binding.nodes;
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
 import com.zergatul.scripting.parser.NodeType;
-import com.zergatul.scripting.parser.nodes.FunctionNode;
 
 import java.util.List;
 import java.util.Objects;
 
-public class BoundFunctionsListNode extends BoundNode {
+public class BoundCompilationUnitMembersListNode extends BoundNode {
 
-    public final List<BoundFunctionNode> functions;
+    public final List<BoundCompilationUnitMemberNode> members;
 
-    public BoundFunctionsListNode(List<BoundFunctionNode> functions, TextRange range) {
-        super(NodeType.FUNCTIONS_LIST, range);
-        this.functions = functions;
+    public BoundCompilationUnitMembersListNode(List<BoundCompilationUnitMemberNode> members, TextRange range) {
+        super(NodeType.COMPILATION_UNIT_MEMBERS, range);
+        this.members = members;
     }
 
     @Override
@@ -24,20 +23,20 @@ public class BoundFunctionsListNode extends BoundNode {
 
     @Override
     public void acceptChildren(BinderTreeVisitor visitor) {
-        for (BoundFunctionNode function : functions) {
-            function.accept(visitor);
+        for (BoundCompilationUnitMemberNode member : members) {
+            member.accept(visitor);
         }
     }
 
     @Override
     public List<BoundNode> getChildren() {
-        return List.copyOf(functions);
+        return List.copyOf(members);
     }
 
     @Override
     public boolean equals(Object obj) {
-        if (obj instanceof BoundFunctionsListNode other) {
-            return Objects.equals(other.functions, functions) && other.getRange().equals(getRange());
+        if (obj instanceof BoundCompilationUnitMembersListNode other) {
+            return Objects.equals(other.members, members);
         } else {
             return false;
         }

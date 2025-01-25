@@ -69,6 +69,11 @@ public abstract class ParserTreeVisitor {
         node.acceptChildren(this);
     }
 
+    public void explicitVisit(CompilationUnitMembersListNode node) {
+        visit(node);
+        node.acceptChildren(this);
+    }
+
     public void explicitVisit(ConditionalExpressionNode node) {
         visit(node);
         node.acceptChildren(this);
@@ -110,11 +115,6 @@ public abstract class ParserTreeVisitor {
     }
 
     public void explicitVisit(FunctionNode node) {
-        visit(node);
-        node.acceptChildren(this);
-    }
-
-    public void explicitVisit(FunctionsListNode node) {
         visit(node);
         node.acceptChildren(this);
     }
@@ -229,11 +229,6 @@ public abstract class ParserTreeVisitor {
         node.acceptChildren(this);
     }
 
-    public void explicitVisit(StaticVariablesListNode node) {
-        visit(node);
-        node.acceptChildren(this);
-    }
-
     public void explicitVisit(StringLiteralExpressionNode node) {
         visit(node);
         node.acceptChildren(this);
@@ -277,6 +272,7 @@ public abstract class ParserTreeVisitor {
     public void visit(CharLiteralExpressionNode node) {}
     public void visit(CollectionExpressionNode node) {}
     public void visit(CompilationUnitNode node) {}
+    public void visit(CompilationUnitMembersListNode node) {}
     public void visit(ConditionalExpressionNode node) {}
     public void visit(ContinueStatementNode node) {}
     public void visit(CustomTypeNode node) {}
@@ -286,7 +282,6 @@ public abstract class ParserTreeVisitor {
     public void visit(ForEachLoopStatementNode node) {}
     public void visit(ForLoopStatementNode node) {}
     public void visit(FunctionNode node) {}
-    public void visit(FunctionsListNode node) {}
     public void visit(IfStatementNode node) {}
     public void visit(IndexExpressionNode node) {}
     public void visit(IntegerLiteralExpressionNode node) {}
@@ -309,7 +304,6 @@ public abstract class ParserTreeVisitor {
     public void visit(ReturnStatementNode node) {}
     public void visit(StatementsListNode node) {}
     public void visit(StaticReferenceNode node) {}
-    public void visit(StaticVariablesListNode node) {}
     public void visit(StringLiteralExpressionNode node) {}
     public void visit(UnaryExpressionNode node) {}
     public void visit(UnaryOperatorNode node) {}

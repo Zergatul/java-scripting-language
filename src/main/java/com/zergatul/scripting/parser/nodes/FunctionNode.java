@@ -7,7 +7,7 @@ import com.zergatul.scripting.parser.ParserTreeVisitor;
 
 import java.util.Objects;
 
-public class FunctionNode extends Node {
+public class FunctionNode extends CompilationUnitMemberNode {
 
     public final Token asyncToken;
     public final TypeNode returnType;

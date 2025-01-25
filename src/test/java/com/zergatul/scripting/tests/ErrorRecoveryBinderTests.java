@@ -77,8 +77,8 @@ public class ErrorRecoveryBinderTests {
                         new DiagnosticMessage(BinderErrors.EmptyReturnStatement, new SingleLineTextRange(2, 5, 17, 8), "void")));
 
         Assertions.assertEquals(
-                result.unit().functions,
-                new BoundFunctionsListNode(
+                result.unit().members,
+                new BoundCompilationUnitMembersListNode(
                         List.of(
                                 new BoundFunctionNode(
                                         false,

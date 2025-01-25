@@ -74,6 +74,11 @@ public abstract class BinderTreeVisitor {
         node.acceptChildren(this);
     }
 
+    public void explicitVisit(BoundCompilationUnitMembersListNode node) {
+        visit(node);
+        node.acceptChildren(this);
+    }
+
     public void explicitVisit(BoundConditionalExpressionNode node) {
         visit(node);
         node.acceptChildren(this);
@@ -125,11 +130,6 @@ public abstract class BinderTreeVisitor {
     }
 
     public void explicitVisit(BoundFunctionNode node) {
-        visit(node);
-        node.acceptChildren(this);
-    }
-
-    public void explicitVisit(BoundFunctionsListNode node) {
         visit(node);
         node.acceptChildren(this);
     }
@@ -259,11 +259,6 @@ public abstract class BinderTreeVisitor {
         node.acceptChildren(this);
     }
 
-    public void explicitVisit(BoundStaticVariablesListNode node) {
-        visit(node);
-        node.acceptChildren(this);
-    }
-
     public void explicitVisit(BoundStringLiteralExpressionNode node) {
         visit(node);
         node.acceptChildren(this);
@@ -308,6 +303,7 @@ public abstract class BinderTreeVisitor {
     public void visit(BoundCharLiteralExpressionNode node) {}
     public void visit(BoundCollectionExpressionNode node) {}
     public void visit(BoundCompilationUnitNode node) {}
+    public void visit(BoundCompilationUnitMembersListNode node) {}
     public void visit(BoundConditionalExpressionNode node) {}
     public void visit(BoundContinueStatementNode node) {}
     public void visit(BoundCustomTypeNode node) {}
@@ -319,7 +315,6 @@ public abstract class BinderTreeVisitor {
     public void visit(BoundFunctionAsLambdaExpressionNode node) {}
     public void visit(BoundFunctionInvocationExpression node) {}
     public void visit(BoundFunctionNode node) {}
-    public void visit(BoundFunctionsListNode node) {}
     public void visit(BoundIfStatementNode node) {}
     public void visit(BoundImplicitCastExpressionNode node) {}
     public void visit(BoundIndexExpressionNode node) {}
@@ -345,7 +340,6 @@ public abstract class BinderTreeVisitor {
     public void visit(BoundReturnStatementNode node) {}
     public void visit(BoundStatementsListNode node) {}
     public void visit(BoundStaticReferenceExpression node) {}
-    public void visit(BoundStaticVariablesListNode node) {}
     public void visit(BoundStringLiteralExpressionNode node) {}
     public void visit(BoundUnaryExpressionNode node) {}
     public void visit(BoundUnaryOperatorNode node) {}
