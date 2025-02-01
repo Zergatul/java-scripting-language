@@ -176,7 +176,6 @@ public class CompilerContext {
         return parent;
     }
 
-    @SuppressWarnings("unused") // used from Monaco integration
     public Collection<Symbol> getStaticSymbols() {
         return staticSymbols.values();
     }
