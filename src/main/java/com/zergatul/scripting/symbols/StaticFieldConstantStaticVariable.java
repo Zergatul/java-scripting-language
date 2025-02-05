@@ -36,13 +36,4 @@ public class StaticFieldConstantStaticVariable extends ConstantStaticVariable {
                 field.getName(),
                 Type.getDescriptor(field.getType()));
     }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (obj instanceof StaticFieldConstantStaticVariable other) {
-            return other.field.equals(field) && Symbol.equals(this, other);
-        } else {
-            return false;
-        }
-    }
 }
