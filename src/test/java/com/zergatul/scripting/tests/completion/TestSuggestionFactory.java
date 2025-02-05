@@ -1,9 +1,7 @@
 package com.zergatul.scripting.tests.completion;
 
 import com.zergatul.scripting.completion.SuggestionFactory;
-import com.zergatul.scripting.symbols.Function;
-import com.zergatul.scripting.symbols.LocalVariable;
-import com.zergatul.scripting.symbols.StaticVariable;
+import com.zergatul.scripting.symbols.*;
 import com.zergatul.scripting.tests.completion.suggestions.*;
 import com.zergatul.scripting.type.MethodReference;
 import com.zergatul.scripting.type.PropertyReference;
@@ -59,12 +57,12 @@ public class TestSuggestionFactory implements SuggestionFactory<Suggestion> {
     }
 
     @Override
-    public Suggestion getStaticConstantSuggestion(StaticVariable variable) {
+    public Suggestion getStaticConstantSuggestion(StaticFieldConstantStaticVariable variable) {
         return new StaticConstantSuggestion(variable);
     }
 
     @Override
-    public Suggestion getStaticFieldSuggestion(StaticVariable variable) {
+    public Suggestion getStaticFieldSuggestion(DeclaredStaticVariable variable) {
         return new StaticFieldSuggestion(variable);
     }
 

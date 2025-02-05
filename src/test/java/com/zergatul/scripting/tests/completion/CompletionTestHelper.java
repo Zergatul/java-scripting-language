@@ -1,14 +1,34 @@
 package com.zergatul.scripting.tests.completion;
 
+import com.zergatul.scripting.binding.Binder;
+import com.zergatul.scripting.binding.BinderOutput;
+import com.zergatul.scripting.compiler.CompilationParameters;
+import com.zergatul.scripting.compiler.CompilationParametersBuilder;
+import com.zergatul.scripting.completion.CompletionProvider;
+import com.zergatul.scripting.lexer.Lexer;
+import com.zergatul.scripting.lexer.LexerInput;
+import com.zergatul.scripting.parser.Parser;
 import com.zergatul.scripting.tests.completion.suggestions.Suggestion;
 import org.junit.jupiter.api.Assertions;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Function;
 
 public class CompletionTestHelper {
 
-    public static void assertSuggestions(List<Suggestion> expected, List<Suggestion> actual) {
+    public static void assertSuggestions(Class<?> root, String code, int line, int column, Function<TestCompletionContext, List<Suggestion>> expectedFactory) {
+        CompilationParameters parameters = new CompilationParametersBuilder()
+                .setRoot(root)
+                .setInterface(Runnable.class)
+                .build();
+        BinderOutput output = new Binder(new Parser(new Lexer(new LexerInput(code)).lex()).parse(), parameters).bind();
+        CompletionProvider<Suggestion> provider = new CompletionProvider<>(new TestSuggestionFactory());
+        List<Suggestion> actual = provider.get(parameters, output, line, column);
+        CompletionTestHelper.assertSuggestions(expectedFactory.apply(new TestCompletionContext(parameters, output)), actual);
+    }
+
+    private static void assertSuggestions(List<Suggestion> expected, List<Suggestion> actual) {
         Assertions.assertEquals(expected.size(), actual.size());
 
         expected = new ArrayList<>(expected);

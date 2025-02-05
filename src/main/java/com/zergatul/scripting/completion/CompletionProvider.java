@@ -50,7 +50,7 @@ public class CompletionProvider<T> {
                     canStatement = unit.members.members.isEmpty();
                 }
                 case AFTER_LAST -> {
-                    canStatic = unit.members.members.isEmpty() && unit.statements.statements.isEmpty();
+                    canStatic = unit.statements.statements.isEmpty();
                     canVoid = canType = unit.statements.statements.isEmpty();
                     canStatement = true;
                 }
@@ -388,6 +388,7 @@ public class CompletionProvider<T> {
             switch (context.entry.node.getNodeType()) {
                 case COMPILATION_UNIT -> {
                     addStaticConstants(list, output.context());
+                    addCompilationUnitMembers(list, output.unit().members.members);
                     if (context.prev != null) {
                         if (context.prev.getNodeType() == NodeType.MEMBER_ACCESS_EXPRESSION) {
                             addCompilationUnitMembers(list, output.unit().members.members);
@@ -454,7 +455,7 @@ public class CompletionProvider<T> {
     private void addCompilationUnitMembers(List<T> suggestions, List<BoundCompilationUnitMemberNode> members) {
         for (BoundCompilationUnitMemberNode member : members) {
             if (member.getNodeType() == NodeType.STATIC_FIELD) {
-                suggestions.add(factory.getStaticFieldSuggestion((StaticVariable) ((BoundStaticFieldNode) member).declaration.name.symbol));
+                suggestions.add(factory.getStaticFieldSuggestion((DeclaredStaticVariable) ((BoundStaticFieldNode) member).declaration.name.symbol));
             } else if (member.getNodeType() == NodeType.FUNCTION) {
                 suggestions.add(factory.getFunctionSuggestion((Function) ((BoundFunctionNode) member).name.symbol));
             } else {

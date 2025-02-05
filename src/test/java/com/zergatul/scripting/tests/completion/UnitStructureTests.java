@@ -1,26 +1,18 @@
 package com.zergatul.scripting.tests.completion;
 
-import com.zergatul.scripting.binding.Binder;
-import com.zergatul.scripting.binding.BinderOutput;
-import com.zergatul.scripting.compiler.CompilationParameters;
-import com.zergatul.scripting.compiler.CompilationParametersBuilder;
-import com.zergatul.scripting.completion.CompletionProvider;
-import com.zergatul.scripting.lexer.Lexer;
-import com.zergatul.scripting.lexer.LexerInput;
-import com.zergatul.scripting.parser.Parser;
-import com.zergatul.scripting.symbols.StaticFieldConstantStaticVariable;
 import com.zergatul.scripting.tests.compiler.helpers.IntStorage;
 import com.zergatul.scripting.tests.completion.suggestions.*;
 import com.zergatul.scripting.type.*;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
+import java.util.function.Function;
 
 public class UnitStructureTests {
 
     @Test
-    public void emptyFileTest() throws NoSuchFieldException {
-        assertSuggestions("", 1, 1, List.of(
+    public void emptyFileTest() {
+        assertSuggestions("", 1, 1, context -> List.of(
                 new StaticKeywordSuggestion(),
                 new VoidKeywordSuggestion(),
                 new LetKeywordSuggestion(),
@@ -30,19 +22,83 @@ public class UnitStructureTests {
                 new TypeSuggestion(SChar.instance),
                 new TypeSuggestion(SFloat.instance),
                 new TypeSuggestion(SString.instance),
-                new StaticConstantSuggestion(new StaticFieldConstantStaticVariable("intStorage", ApiRoot.class.getField("intStorage")))
-        ));
+                new StaticConstantSuggestion(context, "intStorage")));
     }
 
-    private void assertSuggestions(String code, int line, int column, List<Suggestion> expected) {
-        CompilationParameters parameters = new CompilationParametersBuilder()
-                .setRoot(ApiRoot.class)
-                .setInterface(Runnable.class)
-                .build();
-        BinderOutput output = new Binder(new Parser(new Lexer(new LexerInput(code)).lex()).parse(), parameters).bind();
-        CompletionProvider<Suggestion> provider = new CompletionProvider<>(new TestSuggestionFactory());
-        List<Suggestion> actual = provider.get(parameters, output, line, column);
-        CompletionTestHelper.assertSuggestions(expected, actual);
+    @Test
+    public void beforeUnitMembersTest() {
+        assertSuggestions("""
+                
+                static int x = 1;
+                """, 1, 1, context -> List.of(
+                new StaticKeywordSuggestion(),
+                new VoidKeywordSuggestion(),
+                new TypeSuggestion(SBoolean.instance),
+                new TypeSuggestion(SInt.instance),
+                new TypeSuggestion(SInt64.instance),
+                new TypeSuggestion(SChar.instance),
+                new TypeSuggestion(SFloat.instance),
+                new TypeSuggestion(SString.instance)));
+    }
+
+    @Test
+    public void afterUnitMembersTest1() {
+        assertSuggestions("""
+                static int x = 1;
+                
+                """, 2, 1, context -> List.of(
+                new StaticKeywordSuggestion(),
+                new VoidKeywordSuggestion(),
+                new LetKeywordSuggestion(),
+                new TypeSuggestion(SBoolean.instance),
+                new TypeSuggestion(SInt.instance),
+                new TypeSuggestion(SInt64.instance),
+                new TypeSuggestion(SChar.instance),
+                new TypeSuggestion(SFloat.instance),
+                new TypeSuggestion(SString.instance),
+                new StaticConstantSuggestion(context, "intStorage"),
+                new StaticFieldSuggestion(context, "x")));
+    }
+
+    @Test
+    public void afterUnitMembersTest2() {
+        assertSuggestions("""
+                static int x = 1;
+                
+                int y = 3;
+                """, 2, 1, context -> List.of(
+                new StaticKeywordSuggestion(),
+                new VoidKeywordSuggestion(),
+                new LetKeywordSuggestion(),
+                new TypeSuggestion(SBoolean.instance),
+                new TypeSuggestion(SInt.instance),
+                new TypeSuggestion(SInt64.instance),
+                new TypeSuggestion(SChar.instance),
+                new TypeSuggestion(SFloat.instance),
+                new TypeSuggestion(SString.instance),
+                new StaticConstantSuggestion(context, "intStorage"),
+                new StaticFieldSuggestion(context, "x")));
+    }
+
+    @Test
+    public void afterStatementsTest() {
+        assertSuggestions("""
+                int x = 3;
+                
+                """, 2, 1, context -> List.of(
+                new LetKeywordSuggestion(),
+                new TypeSuggestion(SBoolean.instance),
+                new TypeSuggestion(SInt.instance),
+                new TypeSuggestion(SInt64.instance),
+                new TypeSuggestion(SChar.instance),
+                new TypeSuggestion(SFloat.instance),
+                new TypeSuggestion(SString.instance),
+                new StaticConstantSuggestion(context, "intStorage"),
+                new LocalVariableSuggestion(context, "x")));
+    }
+
+    private void assertSuggestions(String code, int line, int column, Function<TestCompletionContext, List<Suggestion>> expectedFactory) {
+        CompletionTestHelper.assertSuggestions(ApiRoot.class, code, line, column, expectedFactory);
     }
 
     public static class ApiRoot {
