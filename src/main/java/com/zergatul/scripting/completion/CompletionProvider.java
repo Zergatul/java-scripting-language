@@ -463,8 +463,14 @@ public class CompletionProvider<T> {
                 }
                 case FUNCTION -> {
                     BoundFunctionNode function = (BoundFunctionNode) context.entry.node;
-                    for (var x : function.parameters.parameters) {
-                        list.add(factory.getLocalVariableSuggestion((LocalVariable) x.getName().symbol));
+                    for (BoundParameterNode parameter : function.parameters.parameters) {
+                        list.add(factory.getLocalVariableSuggestion((LocalVariable) parameter.getName().symbol));
+                    }
+                }
+                case LAMBDA_EXPRESSION -> {
+                    BoundLambdaExpressionNode lambda = (BoundLambdaExpressionNode) context.entry.node;
+                    for (BoundParameterNode parameter : lambda.parameters) {
+                        list.add(factory.getLocalVariableSuggestion((LocalVariable) parameter.getName().symbol));
                     }
                 }
                 default -> {

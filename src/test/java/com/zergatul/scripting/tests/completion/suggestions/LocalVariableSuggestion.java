@@ -3,6 +3,7 @@ package com.zergatul.scripting.tests.completion.suggestions;
 import com.zergatul.scripting.binding.BinderOutput;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
 import com.zergatul.scripting.binding.nodes.BoundForEachLoopStatementNode;
+import com.zergatul.scripting.binding.nodes.BoundParameterNode;
 import com.zergatul.scripting.binding.nodes.BoundVariableDeclarationNode;
 import com.zergatul.scripting.symbols.LocalVariable;
 import com.zergatul.scripting.tests.completion.helpers.TestCompletionContext;
@@ -18,6 +19,13 @@ public class LocalVariableSuggestion extends Suggestion {
 
     public LocalVariableSuggestion(LocalVariable variable) {
         this.variable = variable;
+    }
+
+    public static LocalVariableSuggestion getParameter(TestCompletionContext context, String name) {
+        ParameterVisitor visitor = new ParameterVisitor(name);
+        context.output().unit().accept(visitor);
+        Assertions.assertNotNull(visitor.result);
+        return new LocalVariableSuggestion(visitor.result);
     }
 
     private static LocalVariable extract(BinderOutput output, String name) {
@@ -56,6 +64,23 @@ public class LocalVariableSuggestion extends Suggestion {
         public void visit(BoundForEachLoopStatementNode node) {
             if (result == null && node.name.value.equals(name)) {
                 result = (LocalVariable) node.name.symbol;
+            }
+        }
+    }
+
+    private static class ParameterVisitor extends BinderTreeVisitor {
+
+        public LocalVariable result;
+        private final String name;
+
+        public ParameterVisitor(String name) {
+            this.name = name;
+        }
+
+        @Override
+        public void visit(BoundParameterNode node) {
+            if (result == null && node.getName().value.equals(name)) {
+                result = (LocalVariable) node.getName().symbol;
             }
         }
     }
