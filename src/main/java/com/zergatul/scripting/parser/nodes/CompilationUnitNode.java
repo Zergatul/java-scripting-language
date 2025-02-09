@@ -4,16 +4,16 @@ import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.parser.NodeType;
 import com.zergatul.scripting.parser.ParserTreeVisitor;
 
+import java.util.Objects;
+
 public class CompilationUnitNode extends Node {
 
-    public final StaticVariablesListNode variables;
-    public final FunctionsListNode functions;
+    public final CompilationUnitMembersListNode members;
     public final StatementsListNode statements;
 
-    public CompilationUnitNode(StaticVariablesListNode variables, FunctionsListNode functions, StatementsListNode statements, TextRange range) {
+    public CompilationUnitNode(CompilationUnitMembersListNode members, StatementsListNode statements, TextRange range) {
         super(NodeType.COMPILATION_UNIT, range);
-        this.variables = variables;
-        this.functions = functions;
+        this.members = members;
         this.statements = statements;
     }
 
@@ -24,16 +24,14 @@ public class CompilationUnitNode extends Node {
 
     @Override
     public void acceptChildren(ParserTreeVisitor visitor) {
-        variables.accept(visitor);
-        functions.accept(visitor);
+        members.accept(visitor);
         statements.accept(visitor);
     }
 
     @Override
     public boolean equals(Object obj) {
         if (obj instanceof CompilationUnitNode other) {
-            return  other.variables.equals(variables) &&
-                    other.functions.equals(functions) &&
+            return  Objects.equals(other.members, members) &&
                     other.statements.equals(statements) &&
                     other.getRange().equals(getRange());
         } else {

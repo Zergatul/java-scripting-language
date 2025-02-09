@@ -6,13 +6,13 @@ import com.zergatul.scripting.parser.NodeType;
 
 import java.util.List;
 
-public class BoundStaticVariablesListNode extends BoundNode {
+public class BoundStaticFieldNode extends BoundCompilationUnitMemberNode {
 
-    public final List<BoundVariableDeclarationNode> variables;
+    public final BoundVariableDeclarationNode declaration;
 
-    public BoundStaticVariablesListNode(List<BoundVariableDeclarationNode> variables, TextRange range) {
-        super(NodeType.STATIC_VARIABLES_LIST, range);
-        this.variables = variables;
+    public BoundStaticFieldNode(BoundVariableDeclarationNode declaration, TextRange range) {
+        super(NodeType.STATIC_FIELD, range);
+        this.declaration = declaration;
     }
 
     @Override
@@ -22,13 +22,11 @@ public class BoundStaticVariablesListNode extends BoundNode {
 
     @Override
     public void acceptChildren(BinderTreeVisitor visitor) {
-        for (BoundVariableDeclarationNode variable : variables) {
-            variable.accept(visitor);
-        }
+        declaration.accept(visitor);
     }
 
     @Override
     public List<BoundNode> getChildren() {
-        return List.copyOf(variables);
+        return List.of(declaration);
     }
 }

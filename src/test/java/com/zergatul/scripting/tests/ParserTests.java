@@ -15,22 +15,20 @@ public class ParserTests {
 
     @Test
     public void emptyCodeTest() {
-        var result = parse("");
+        ParserOutput result = parse("");
         Assertions.assertEquals(result.diagnostics().size(), 0);
         Assertions.assertEquals(result.unit(), new CompilationUnitNode(
-                new StaticVariablesListNode(List.of(), new SingleLineTextRange(1, 1, 0, 0)),
-                new FunctionsListNode(List.of(), new SingleLineTextRange(1, 1, 0, 0)),
+                new CompilationUnitMembersListNode(List.of(), new SingleLineTextRange(1, 1, 0, 0)),
                 new StatementsListNode(List.of(), new SingleLineTextRange(1, 1, 0, 0)),
                 new SingleLineTextRange(1, 1, 0, 0)));
     }
 
     @Test
     public void emptyBlockStatementTest() {
-        var result = parse("{}");
+        ParserOutput result = parse("{}");
         Assertions.assertEquals(result.diagnostics().size(), 0);
         Assertions.assertEquals(result.unit(), new CompilationUnitNode(
-                new StaticVariablesListNode(List.of(), new SingleLineTextRange(1, 1, 0, 0)),
-                new FunctionsListNode(List.of(), new SingleLineTextRange(1, 1, 0, 0)),
+                new CompilationUnitMembersListNode(List.of(), new SingleLineTextRange(1, 1, 0, 0)),
                 new StatementsListNode(
                         List.of(new BlockStatementNode(
                                 new ArrayList<>(),
@@ -41,11 +39,10 @@ public class ParserTests {
 
     @Test
     public void simpleVariableDeclarationTest() {
-        var result = parse("int x;");
+        ParserOutput result = parse("int x;");
         Assertions.assertEquals(result.diagnostics().size(), 0);
         Assertions.assertEquals(result.unit(), new CompilationUnitNode(
-                new StaticVariablesListNode(List.of(), new SingleLineTextRange(1, 1, 0, 0)),
-                new FunctionsListNode(List.of(), new SingleLineTextRange(1, 1, 0, 0)),
+                new CompilationUnitMembersListNode(List.of(), new SingleLineTextRange(1, 1, 0, 0)),
                 new StatementsListNode(List.of(
                         new VariableDeclarationNode(
                                 new PredefinedTypeNode(PredefinedType.INT, new SingleLineTextRange(1, 1, 0, 3)),
@@ -57,11 +54,10 @@ public class ParserTests {
 
     @Test
     public void simpleVariableDeclarationWithInitializerTest() {
-        var result = parse("int x = 10;");
+        ParserOutput result = parse("int x = 10;");
         Assertions.assertEquals(result.diagnostics().size(), 0);
         Assertions.assertEquals(result.unit(), new CompilationUnitNode(
-                new StaticVariablesListNode(List.of(), new SingleLineTextRange(1, 1, 0, 0)),
-                new FunctionsListNode(List.of(), new SingleLineTextRange(1, 1, 0, 0)),
+                new CompilationUnitMembersListNode(List.of(), new SingleLineTextRange(1, 1, 0, 0)),
                 new StatementsListNode(List.of(
                         new VariableDeclarationNode(
                                 new PredefinedTypeNode(PredefinedType.INT, new SingleLineTextRange(1, 1, 0, 3)),
@@ -74,11 +70,10 @@ public class ParserTests {
 
     @Test
     public void arrayVariableDeclarationTest() {
-        var result = parse("int[][] x;");
+        ParserOutput result = parse("int[][] x;");
         Assertions.assertEquals(result.diagnostics().size(), 0);
         Assertions.assertEquals(result.unit(), new CompilationUnitNode(
-                new StaticVariablesListNode(List.of(), new SingleLineTextRange(1, 1, 0, 0)),
-                new FunctionsListNode(List.of(), new SingleLineTextRange(1, 1, 0, 0)),
+                new CompilationUnitMembersListNode(List.of(), new SingleLineTextRange(1, 1, 0, 0)),
                 new StatementsListNode(List.of(
                         new VariableDeclarationNode(
                                 new ArrayTypeNode(
@@ -94,11 +89,10 @@ public class ParserTests {
 
     @Test
     public void simpleAssignmentTest() {
-        var result = parse("a = b + c;");
+        ParserOutput result = parse("a = b + c;");
         Assertions.assertEquals(result.diagnostics().size(), 0);
         Assertions.assertEquals(result.unit(), new CompilationUnitNode(
-                new StaticVariablesListNode(List.of(), new SingleLineTextRange(1, 1, 0, 0)),
-                new FunctionsListNode(List.of(), new SingleLineTextRange(1, 1, 0, 0)),
+                new CompilationUnitMembersListNode(List.of(), new SingleLineTextRange(1, 1, 0, 0)),
                 new StatementsListNode(List.of(new AssignmentStatementNode(
                         new NameExpressionNode("a", new SingleLineTextRange(1, 1, 0, 1)),
                         new AssignmentOperatorNode(AssignmentOperator.ASSIGNMENT, new SingleLineTextRange(1, 3, 2, 1)),
@@ -114,11 +108,10 @@ public class ParserTests {
 
     @Test
     public void assignmentOperatorsTest() {
-        var result = parse("a += 10; b -= 15; c *= 2; d /= 2;");
+        ParserOutput result = parse("a += 10; b -= 15; c *= 2; d /= 2;");
         Assertions.assertEquals(result.diagnostics().size(), 0);
         Assertions.assertEquals(result.unit(), new CompilationUnitNode(
-                new StaticVariablesListNode(List.of(), new SingleLineTextRange(1, 1, 0, 0)),
-                new FunctionsListNode(List.of(), new SingleLineTextRange(1, 1, 0, 0)),
+                new CompilationUnitMembersListNode(List.of(), new SingleLineTextRange(1, 1, 0, 0)),
                 new StatementsListNode(List.of(
                 new AssignmentStatementNode(
                         new NameExpressionNode("a", new SingleLineTextRange(1, 1, 0, 1)),
@@ -146,11 +139,10 @@ public class ParserTests {
 
     @Test
     public void invokeExpressionTest() {
-        var result = parse("abc.qwe.x();");
+        ParserOutput result = parse("abc.qwe.x();");
         Assertions.assertEquals(result.diagnostics().size(), 0);
         Assertions.assertEquals(result.unit(), new CompilationUnitNode(
-                new StaticVariablesListNode(List.of(), new SingleLineTextRange(1, 1, 0, 0)),
-                new FunctionsListNode(List.of(), new SingleLineTextRange(1, 1, 0, 0)),
+                new CompilationUnitMembersListNode(List.of(), new SingleLineTextRange(1, 1, 0, 0)),
                 new StatementsListNode(List.of(new ExpressionStatementNode(
                         new InvocationExpressionNode(
                             new MemberAccessExpressionNode(
@@ -170,11 +162,10 @@ public class ParserTests {
 
     @Test
     public void unaryOperatorTest() {
-        var result = parse("a = -b;");
+        ParserOutput result = parse("a = -b;");
         Assertions.assertEquals(result.diagnostics().size(), 0);
         Assertions.assertEquals(result.unit(), new CompilationUnitNode(
-                new StaticVariablesListNode(List.of(), new SingleLineTextRange(1, 1, 0, 0)),
-                new FunctionsListNode(List.of(), new SingleLineTextRange(1, 1, 0, 0)),
+                new CompilationUnitMembersListNode(List.of(), new SingleLineTextRange(1, 1, 0, 0)),
                 new StatementsListNode(List.of(
                         new AssignmentStatementNode(
                                 new NameExpressionNode("a", new SingleLineTextRange(1, 1, 0, 1)),
@@ -191,11 +182,10 @@ public class ParserTests {
 
     @Test
     public void negativeIntegerTest() {
-        var result = parse("x = -100;");
+        ParserOutput result = parse("x = -100;");
         Assertions.assertEquals(result.diagnostics().size(), 0);
         Assertions.assertEquals(result.unit(), new CompilationUnitNode(
-                new StaticVariablesListNode(List.of(), new SingleLineTextRange(1, 1, 0, 0)),
-                new FunctionsListNode(List.of(), new SingleLineTextRange(1, 1, 0, 0)),
+                new CompilationUnitMembersListNode(List.of(), new SingleLineTextRange(1, 1, 0, 0)),
                 new StatementsListNode(List.of(
                         new AssignmentStatementNode(
                             new NameExpressionNode("x", new SingleLineTextRange(1, 1, 0, 1)),
@@ -208,11 +198,10 @@ public class ParserTests {
 
     @Test
     public void unaryMinusTest() {
-        var result = parse("x = -1 + 1;");
+        ParserOutput result = parse("x = -1 + 1;");
         Assertions.assertEquals(result.diagnostics().size(), 0);
         Assertions.assertEquals(result.unit(), new CompilationUnitNode(
-                new StaticVariablesListNode(List.of(), new SingleLineTextRange(1, 1, 0, 0)),
-                new FunctionsListNode(List.of(), new SingleLineTextRange(1, 1, 0, 0)),
+                new CompilationUnitMembersListNode(List.of(), new SingleLineTextRange(1, 1, 0, 0)),
                 new StatementsListNode(List.of(
                         new AssignmentStatementNode(
                                 new NameExpressionNode("x", new SingleLineTextRange(1, 1, 0, 1)),
@@ -229,11 +218,10 @@ public class ParserTests {
 
     @Test
     public void ifStatementTest1() {
-        var result = parse("if (a) b = 3;");
+        ParserOutput result = parse("if (a) b = 3;");
         Assertions.assertEquals(result.diagnostics().size(), 0);
         Assertions.assertEquals(result.unit(), new CompilationUnitNode(
-                new StaticVariablesListNode(List.of(), new SingleLineTextRange(1, 1, 0, 0)),
-                new FunctionsListNode(List.of(), new SingleLineTextRange(1, 1, 0, 0)),
+                new CompilationUnitMembersListNode(List.of(), new SingleLineTextRange(1, 1, 0, 0)),
                 new StatementsListNode(List.of(
                         new IfStatementNode(
                                 new Token(TokenType.LEFT_PARENTHESES, new SingleLineTextRange(1, 4, 3, 1)),
@@ -252,11 +240,10 @@ public class ParserTests {
 
     @Test
     public void ifStatementTest2() {
-        var result = parse("if (a) b = 3;else{}");
+        ParserOutput result = parse("if (a) b = 3;else{}");
         Assertions.assertEquals(result.diagnostics().size(), 0);
         Assertions.assertEquals(result.unit(), new CompilationUnitNode(
-                new StaticVariablesListNode(List.of(), new SingleLineTextRange(1, 1, 0, 0)),
-                new FunctionsListNode(List.of(), new SingleLineTextRange(1, 1, 0, 0)),
+                new CompilationUnitMembersListNode(List.of(), new SingleLineTextRange(1, 1, 0, 0)),
                 new StatementsListNode(List.of(
                         new IfStatementNode(
                                 new Token(TokenType.LEFT_PARENTHESES, new SingleLineTextRange(1, 4, 3, 1)),
@@ -275,11 +262,10 @@ public class ParserTests {
 
     @Test
     public void returnStatementTest1() {
-        var result = parse("return;");
+        ParserOutput result = parse("return;");
         Assertions.assertEquals(result.diagnostics().size(), 0);
         Assertions.assertEquals(result.unit(), new CompilationUnitNode(
-                new StaticVariablesListNode(List.of(), new SingleLineTextRange(1, 1, 0, 0)),
-                new FunctionsListNode(List.of(), new SingleLineTextRange(1, 1, 0, 0)),
+                new CompilationUnitMembersListNode(List.of(), new SingleLineTextRange(1, 1, 0, 0)),
                 new StatementsListNode(List.of(
                         new ReturnStatementNode(null, new SingleLineTextRange(1, 1, 0, 7))),
                         new SingleLineTextRange(1, 1, 0, 7)),
@@ -288,11 +274,10 @@ public class ParserTests {
 
     @Test
     public void returnStatementTest2() {
-        var result = parse("return true;");
+        ParserOutput result = parse("return true;");
         Assertions.assertEquals(result.diagnostics().size(), 0);
         Assertions.assertEquals(result.unit(), new CompilationUnitNode(
-                new StaticVariablesListNode(List.of(), new SingleLineTextRange(1, 1, 0, 0)),
-                new FunctionsListNode(List.of(), new SingleLineTextRange(1, 1, 0, 0)),
+                new CompilationUnitMembersListNode(List.of(), new SingleLineTextRange(1, 1, 0, 0)),
                 new StatementsListNode(List.of(
                         new ReturnStatementNode(
                                 new BooleanLiteralExpressionNode(true, new SingleLineTextRange(1, 8, 7, 4)),
@@ -303,11 +288,10 @@ public class ParserTests {
 
     @Test
     public void lambdaTest1() {
-        var result = parse("func(() => 1);");
+        ParserOutput result = parse("func(() => 1);");
         Assertions.assertEquals(result.diagnostics().size(), 0);
         Assertions.assertEquals(result.unit(), new CompilationUnitNode(
-                new StaticVariablesListNode(List.of(), new SingleLineTextRange(1, 1, 0, 0)),
-                new FunctionsListNode(List.of(), new SingleLineTextRange(1, 1, 0, 0)),
+                new CompilationUnitMembersListNode(List.of(), new SingleLineTextRange(1, 1, 0, 0)),
                 new StatementsListNode(List.of(
                         new ExpressionStatementNode(
                                 new InvocationExpressionNode(
@@ -328,11 +312,10 @@ public class ParserTests {
 
     @Test
     public void lambdaTest2() {
-        var result = parse("func(a => {});");
+        ParserOutput result = parse("func(a => {});");
         Assertions.assertEquals(result.diagnostics().size(), 0);
         Assertions.assertEquals(result.unit(), new CompilationUnitNode(
-                new StaticVariablesListNode(List.of(), new SingleLineTextRange(1, 1, 0, 0)),
-                new FunctionsListNode(List.of(), new SingleLineTextRange(1, 1, 0, 0)),
+                new CompilationUnitMembersListNode(List.of(), new SingleLineTextRange(1, 1, 0, 0)),
                 new StatementsListNode(List.of(
                         new ExpressionStatementNode(
                                 new InvocationExpressionNode(
@@ -355,11 +338,10 @@ public class ParserTests {
 
     @Test
     public void lambdaTest3() {
-        var result = parse("func((a, b, c) => {});");
+        ParserOutput result = parse("func((a, b, c) => {});");
         Assertions.assertEquals(result.diagnostics().size(), 0);
         Assertions.assertEquals(result.unit(), new CompilationUnitNode(
-                new StaticVariablesListNode(List.of(), new SingleLineTextRange(1, 1, 0, 0)),
-                new FunctionsListNode(List.of(), new SingleLineTextRange(1, 1, 0, 0)),
+                new CompilationUnitMembersListNode(List.of(), new SingleLineTextRange(1, 1, 0, 0)),
                 new StatementsListNode(List.of(
                         new ExpressionStatementNode(
                                 new InvocationExpressionNode(
@@ -386,11 +368,10 @@ public class ParserTests {
 
     @Test
     public void functionTest1() {
-        var result = parse("void a(){}");
+        ParserOutput result = parse("void a(){}");
         Assertions.assertEquals(result.diagnostics().size(), 0);
         Assertions.assertEquals(result.unit(), new CompilationUnitNode(
-                new StaticVariablesListNode(List.of(), new SingleLineTextRange(1, 1, 0, 0)),
-                new FunctionsListNode(List.of(
+                new CompilationUnitMembersListNode(List.of(
                         new FunctionNode(
                                 null,
                                 new VoidTypeNode(new SingleLineTextRange(1, 1, 0, 4)),
@@ -398,19 +379,18 @@ public class ParserTests {
                                         new IdentifierToken("a", new SingleLineTextRange(1, 6, 5, 1))),
                                 new ParameterListNode(List.of(), new SingleLineTextRange(1, 7, 6, 2)),
                                 new BlockStatementNode(List.of(), new SingleLineTextRange(1, 9, 8, 2)),
-                                new SingleLineTextRange(1, 1, 0, 10))),
-                        new SingleLineTextRange(1, 1, 0, 10)),
+                                new SingleLineTextRange(1, 1, 0, 10))
+                ), new SingleLineTextRange(1, 1, 0, 10)),
                 new StatementsListNode(List.of(), new SingleLineTextRange(1, 11, 10, 0)),
                 new SingleLineTextRange(1, 1, 0, 10)));
     }
 
     @Test
     public void functionTest2() {
-        var result = parse("int[][][] a(int[][][] b, string s) {}");
+        ParserOutput result = parse("int[][][] a(int[][][] b, string s) {}");
         Assertions.assertEquals(result.diagnostics().size(), 0);
         Assertions.assertEquals(result.unit(), new CompilationUnitNode(
-                new StaticVariablesListNode(List.of(), new SingleLineTextRange(1, 1, 0, 0)),
-                new FunctionsListNode(List.of(
+                new CompilationUnitMembersListNode(List.of(
                         new FunctionNode(
                                 null,
                                 new ArrayTypeNode(
@@ -450,14 +430,14 @@ public class ParserTests {
 
     @Test
     public void endOfFileDiagnosticsTest() {
-        var result = parse("a()");
+        ParserOutput result = parse("a()");
         Assertions.assertIterableEquals(result.diagnostics(), List.of(
                 new DiagnosticMessage(ParserErrors.SemicolonExpected, new SingleLineTextRange(1, 3, 2, 1))));
     }
 
     @Test
     public void functionAfterVariableTest() {
-        var result = parse("""
+        ParserOutput result = parse("""
                 int x = 0;
                 int func(){ return 1; }
                 """);
@@ -472,13 +452,12 @@ public class ParserTests {
 
     @Test
     public void leftAssociativityTest() {
-        var result = parse("""
+        ParserOutput result = parse("""
                 int x = 1 + 2 + 3;
                 """);
         Assertions.assertTrue(result.diagnostics().isEmpty());
         Assertions.assertEquals(result.unit(), new CompilationUnitNode(
-                new StaticVariablesListNode(List.of(), new SingleLineTextRange(1, 1, 0, 0)),
-                new FunctionsListNode(List.of(), new SingleLineTextRange(1, 1, 0, 0)),
+                new CompilationUnitMembersListNode(List.of(), new SingleLineTextRange(1, 1, 0, 0)),
                 new StatementsListNode(List.of(
                         new VariableDeclarationNode(
                                 new PredefinedTypeNode(PredefinedType.INT, new SingleLineTextRange(1, 1, 0, 3)),
@@ -495,6 +474,24 @@ public class ParserTests {
                                 new SingleLineTextRange(1, 1, 0, 18))),
                         new SingleLineTextRange(1, 1, 0, 18)),
                 new SingleLineTextRange(1, 1, 0, 18)));
+    }
+
+    @Test
+    public void letTest() {
+        ParserOutput result = parse("""
+                let x = 123;
+                """);
+        Assertions.assertTrue(result.diagnostics().isEmpty());
+        Assertions.assertEquals(result.unit(), new CompilationUnitNode(
+                new CompilationUnitMembersListNode(List.of(), new SingleLineTextRange(1, 1, 0, 0)),
+                new StatementsListNode(List.of(
+                        new VariableDeclarationNode(
+                                new LetTypeNode(new SingleLineTextRange(1, 1, 0, 3)),
+                                new NameExpressionNode("x", new SingleLineTextRange(1, 5, 4, 1)),
+                                new IntegerLiteralExpressionNode("123", new SingleLineTextRange(1, 9, 8, 3)),
+                                new SingleLineTextRange(1, 1, 0, 12))),
+                        new SingleLineTextRange(1, 1, 0, 12)),
+                new SingleLineTextRange(1, 1, 0, 12)));
     }
 
     private ParserOutput parse(String code) {

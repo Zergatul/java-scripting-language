@@ -40,6 +40,7 @@ public class BinderErrors {
     public static final ErrorCode TypeNotDefined = new ErrorCode("B035", "Type '%s' is not defined");
     public static final ErrorCode EmptyCollectionExpression = new ErrorCode("B036", "Empty collection expression is not supported. Please use 'new' syntax.");
     public static final ErrorCode CannotInferCollectionExpressionTypes = new ErrorCode("B037", "Cannot infer collection expression types: Type at position 0: '%s', type at position %d: '%s'.");
+    public static final ErrorCode RefTypeNotSupported = new ErrorCode("B038", "ref type for '%s' is not supported");
 
     public static final ErrorCode InternalError = new ErrorCode("B999", "Internal error: %s");
 }

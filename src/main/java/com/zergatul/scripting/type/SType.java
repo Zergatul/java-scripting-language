@@ -226,7 +226,7 @@ public abstract class SType {
     }
 
     public SReference getReferenceType() {
-        throw new InternalException();
+        return null;
     }
 
     public Class<?> getReferenceClass() {

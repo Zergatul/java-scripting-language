@@ -17,4 +17,13 @@ public class LetTypeNode extends TypeNode {
 
     @Override
     public void acceptChildren(ParserTreeVisitor visitor) {}
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj instanceof LetTypeNode other) {
+            return other.getRange().equals(getRange());
+        } else {
+            return false;
+        }
+    }
 }

@@ -7,13 +7,13 @@ import com.zergatul.scripting.parser.ParserTreeVisitor;
 import java.util.List;
 import java.util.Objects;
 
-public class StaticVariablesListNode extends Node {
+public class CompilationUnitMembersListNode extends Node {
 
-    public final List<VariableDeclarationNode> variables;
+    public final List<CompilationUnitMemberNode> members;
 
-    public StaticVariablesListNode(List<VariableDeclarationNode> variables, TextRange range) {
-        super(NodeType.STATIC_VARIABLES_LIST, range);
-        this.variables = variables;
+    public CompilationUnitMembersListNode(List<CompilationUnitMemberNode> members,  TextRange range) {
+        super(NodeType.COMPILATION_UNIT_MEMBERS, range);
+        this.members = members;
     }
 
     @Override
@@ -23,15 +23,15 @@ public class StaticVariablesListNode extends Node {
 
     @Override
     public void acceptChildren(ParserTreeVisitor visitor) {
-        for (VariableDeclarationNode variable : variables) {
-            variable.accept(visitor);
+        for (CompilationUnitMemberNode member : members) {
+            member.accept(visitor);
         }
     }
 
     @Override
     public boolean equals(Object obj) {
-        if (obj instanceof StaticVariablesListNode other) {
-            return Objects.equals(other.variables, variables) && other.getRange().equals(getRange());
+        if (obj instanceof CompilationUnitMembersListNode other) {
+            return Objects.equals(other.members, members) && other.getRange().equals(getRange());
         } else {
             return false;
         }

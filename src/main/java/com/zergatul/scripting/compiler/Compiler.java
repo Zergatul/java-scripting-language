@@ -27,9 +27,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -78,8 +76,7 @@ public class Compiler {
         CompilerContext context = parameters.getContext();
         context.setClassName(name);
 
-        buildStaticVariables(unit, writer, context);
-        buildFunctions(unit, writer, context);
+        buildCompilationUnitMembers(unit, writer, context);
         buildEmptyConstructor(writer);
         buildMainMethod(unit, writer, name);
 
@@ -111,16 +108,31 @@ public class Compiler {
         return instance;
     }
 
-    private void buildStaticVariables(BoundCompilationUnitNode unit, ClassWriter writer, CompilerContext context) {
-        if (unit.variables.variables.isEmpty()) {
+    private void buildCompilationUnitMembers(BoundCompilationUnitNode unit, ClassWriter writer, CompilerContext context) {
+        List<BoundStaticFieldNode> fields = new ArrayList<>();
+        List<BoundFunctionNode> functions = new ArrayList<>();
+        for (BoundCompilationUnitMemberNode member : unit.members.members) {
+            switch (member.getNodeType()) {
+                case STATIC_FIELD -> fields.add((BoundStaticFieldNode) member);
+                case FUNCTION -> functions.add((BoundFunctionNode) member);
+                default -> throw new InternalException();
+            }
+        }
+
+        buildStaticFields(fields, writer, context);
+        buildFunctions(functions, writer, context);
+    }
+
+    private void buildStaticFields(List<BoundStaticFieldNode> fields, ClassWriter writer, CompilerContext context) {
+        if (fields.isEmpty()) {
             return;
         }
 
-        for (BoundVariableDeclarationNode variable : unit.variables.variables) {
+        for (BoundStaticFieldNode field : fields) {
             FieldVisitor fieldVisitor = writer.visitField(
                     ACC_PUBLIC | ACC_STATIC,
-                    variable.name.value,
-                    Type.getDescriptor(variable.type.type.getJavaClass()),
+                    field.declaration.name.value,
+                    Type.getDescriptor(field.declaration.type.type.getJavaClass()),
                     null, null);
             fieldVisitor.visitEnd();
         }
@@ -128,13 +140,13 @@ public class Compiler {
         // set static variables values in static constructor
         MethodVisitor visitor = writer.visitMethod(ACC_STATIC, "<clinit>", Type.getMethodDescriptor(Type.VOID_TYPE), null, null);
         visitor.visitCode();
-        for (BoundVariableDeclarationNode variable : unit.variables.variables) {
-            StaticVariable symbol = (StaticVariable) variable.name.symbol;
+        for (BoundStaticFieldNode field : fields) {
+            StaticVariable symbol = (StaticVariable) field.declaration.name.symbol;
             context.addStaticVariable(symbol);
-            if (variable.expression != null) {
-                compileExpression(visitor, context, variable.expression);
+            if (field.declaration.expression != null) {
+                compileExpression(visitor, context, field.declaration.expression);
             } else {
-                variable.type.type.storeDefaultValue(visitor);
+                field.declaration.type.type.storeDefaultValue(visitor);
             }
             symbol.compileStore(context, visitor);
         }
@@ -143,8 +155,8 @@ public class Compiler {
         visitor.visitEnd();
     }
 
-    private void buildFunctions(BoundCompilationUnitNode unit, ClassWriter writer, CompilerContext context) {
-        for (BoundFunctionNode function : unit.functions.functions) {
+    private void buildFunctions(List<BoundFunctionNode> functions, ClassWriter writer, CompilerContext context) {
+        for (BoundFunctionNode function : functions) {
             Function symbol = (Function) function.name.symbol;
             SFunction type = symbol.getFunctionType();
 
@@ -265,12 +277,15 @@ public class Compiler {
                     unit.statements.statements,
                     unit.statements.lifted,
                     unit.statements.getRange());
-            unit = new BoundCompilationUnitNode(unit.variables, unit.functions, statements, unit.getRange());
+            unit = new BoundCompilationUnitNode(unit.members, statements, unit.getRange());
         }
 
         context.setClassName(className);
-        for (BoundVariableDeclarationNode variable : unit.variables.variables) {
-            context.addStaticVariable((DeclaredStaticVariable) variable.name.symbol);
+        for (BoundCompilationUnitMemberNode member : unit.members.members) {
+            if (member.getNodeType() == NodeType.STATIC_FIELD) {
+                BoundStaticFieldNode field = (BoundStaticFieldNode) member;
+                context.addStaticVariable((DeclaredStaticVariable) field.declaration.name.symbol);
+            }
         }
 
         if (parameters.isAsync()) {

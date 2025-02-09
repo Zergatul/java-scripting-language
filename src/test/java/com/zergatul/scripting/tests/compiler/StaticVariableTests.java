@@ -20,6 +20,7 @@ public class StaticVariableTests {
         ApiRoot.stringStorage = new StringStorage();
         ApiRoot.storage1 = new IntStorage();
         ApiRoot.storage2 = new IntStorage();
+        ApiRoot.storage3 = new IntStorage();
     }
 
     @Test
@@ -134,6 +135,29 @@ public class StaticVariableTests {
         Assertions.assertIterableEquals(ApiRoot.storage2.list, List.of(2, 2, 2, 2, 2));
     }
 
+    @Test
+    public void withFunctionsTest() {
+        String code = """
+                static int i1 = 1;
+                static int i2 = i1 + 1;
+                int square(int x) { return x * x; }
+                static int i3 = square(i3) + square(i1) + square(i2);
+                
+                i1++;
+                storage1.add(i1);
+                storage2.add(i2);
+                storage3.add(i3);
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+        program.run();
+
+        Assertions.assertIterableEquals(ApiRoot.storage1.list, List.of(2, 3));
+        Assertions.assertIterableEquals(ApiRoot.storage2.list, List.of(2, 2));
+        Assertions.assertIterableEquals(ApiRoot.storage3.list, List.of(5, 5));
+    }
+
     public static class ApiRoot {
         public static Run run;
         public static BoolStorage boolStorage;
@@ -142,5 +166,6 @@ public class StaticVariableTests {
         public static StringStorage stringStorage;
         public static IntStorage storage1;
         public static IntStorage storage2;
+        public static IntStorage storage3;
     }
 }

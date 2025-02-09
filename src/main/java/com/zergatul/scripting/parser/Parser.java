@@ -27,71 +27,44 @@ public class Parser {
     }
 
     private CompilationUnitNode parseCompilationUnit() {
-        final int parseStaticVariables = 1;
-        final int parseFunctions = 2;
-        final int parseStatements = 3;
-
-        List<VariableDeclarationNode> variables = new ArrayList<>();
-        List<FunctionNode> functions = new ArrayList<>();
-        List<StatementNode> statements = new ArrayList<>();
-
-        int state = parseStaticVariables;
+        List<CompilationUnitMemberNode> members = new ArrayList<>();
         while (current.type != TokenType.END_OF_FILE) {
-            switch (state) {
-                case parseStaticVariables -> {
-                    if (current.type == TokenType.STATIC) {
-                        Token staticToken = advance();
-                        VariableDeclarationNode declaration = parseVariableDeclaration();
-                        variables.add((VariableDeclarationNode) declaration.prepend(staticToken).append(advance(TokenType.SEMICOLON)));
-                    } else {
-                        state = parseFunctions;
-                    }
-                }
-                case parseFunctions -> {
-                    if (isPossibleFunction()) {
-                        functions.add(parseFunction());
-                    } else {
-                        state = parseStatements;
-                    }
-                }
-                case parseStatements -> {
-                    if (isPossibleStatement()) {
-                        statements.add(parseStatement());
-                    } else {
-                        addDiagnostic(ParserErrors.StatementExpected, current, current.getRawValue(code));
-                        advance();
-                    }
-                }
+            if (current.type == TokenType.STATIC) {
+                members.add(parseStaticField());
+            } else if (isPossibleFunction()) {
+                members.add(parseFunction());
+            } else {
+                break;
             }
         }
 
-        StaticVariablesListNode variablesList = new StaticVariablesListNode(
-                variables,
-                variables.isEmpty() ?
-                        new SingleLineTextRange(1, 1, 0, 0) :
-                        TextRange.combine(variables.get(0), variables.get(variables.size() - 1)));
+        List<StatementNode> statements = new ArrayList<>();
+        while (current.type != TokenType.END_OF_FILE) {
+            if (isPossibleStatement()) {
+                statements.add(parseStatement());
+            } else {
+                addDiagnostic(ParserErrors.StatementExpected, current, current.getRawValue(code));
+                advance();
+            }
+        }
 
-        FunctionsListNode functionsList = new FunctionsListNode(
-                functions,
-                functions.isEmpty() ?
-                        new SingleLineTextRange(
-                                variablesList.getRange().getLine2(),
-                                variablesList.getRange().getColumn2(),
-                                variablesList.getRange().getPosition() + variablesList.getRange().getLength(),
-                                0) :
-                        TextRange.combine(functions.get(0), functions.get(functions.size() - 1)));
+        CompilationUnitMembersListNode membersList = new CompilationUnitMembersListNode(
+                members,
+                members.isEmpty() ?
+                        new SingleLineTextRange(1, 1, 0, 0) :
+                        TextRange.combine(members.get(0), members.get(members.size() - 1)));
 
         StatementsListNode statementsList = new StatementsListNode(
                 statements,
                 statements.isEmpty() ?
                         new SingleLineTextRange(
-                                functionsList.getRange().getLine2(),
-                                functionsList.getRange().getColumn2(),
-                                functionsList.getRange().getPosition() + functionsList.getRange().getLength(),
+                                membersList.getRange().getLine2(),
+                                membersList.getRange().getColumn2(),
+                                membersList.getRange().getPosition() + membersList.getRange().getLength(),
                                 0) :
                         TextRange.combine(statements.get(0), statements.get(statements.size() - 1)));
 
-        return new CompilationUnitNode(variablesList, functionsList, statementsList, TextRange.combine(variablesList, statementsList));
+        return new CompilationUnitNode(membersList, statementsList, TextRange.combine(membersList, statementsList));
     }
 
     private BlockStatementNode parseBlockStatement() {
@@ -361,6 +334,13 @@ public class Parser {
         }
     }
 
+    private StaticFieldNode parseStaticField() {
+        Token staticToken = advance(TokenType.STATIC);
+        VariableDeclarationNode declaration = parseVariableDeclaration();
+        Token semicolon = advance(TokenType.SEMICOLON);
+        return new StaticFieldNode(declaration, TextRange.combine(staticToken, semicolon));
+    }
+
     private FunctionNode parseFunction() {
         Token asyncToken = null;
         if (current.type == TokenType.ASYNC) {
@@ -570,7 +550,7 @@ public class Parser {
             case CONTINUE -> parseContinueStatement();
             case SEMICOLON -> parseEmptyStatement();
             case BOOLEAN, INT, INT32, INT64, LONG, FLOAT, STRING, CHAR, IDENTIFIER, LEFT_PARENTHESES -> parseSimpleStatement().append(advance(TokenType.SEMICOLON));
-            case LET -> parseVariableDeclaration();
+            case LET -> parseVariableDeclaration().append(advance(TokenType.SEMICOLON));
             default -> {
                 if (isPossibleExpression()) {
                     yield parseSimpleStatement().append(advance(TokenType.SEMICOLON));

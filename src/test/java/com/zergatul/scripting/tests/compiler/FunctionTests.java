@@ -399,6 +399,20 @@ public class FunctionTests {
         Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(1111));
     }
 
+    @Test
+    public void parameterWithNameAsStaticConstantTest() {
+        String code = """
+                int f(int run) { return run * run; }
+                
+                intStorage.add(f(100));
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(10000));
+    }
+
     public static class ApiRoot {
         public static IntStorage intStorage;
         public static FloatStorage floatStorage;

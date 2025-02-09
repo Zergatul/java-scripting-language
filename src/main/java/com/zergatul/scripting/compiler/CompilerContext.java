@@ -80,8 +80,11 @@ public class CompilerContext {
     }
 
     public LocalVariable addLocalVariable(String name, SType type, TextRange definition) {
-        if (name != null && hasSymbol(name)) {
-            throw new InternalException();
+        if (name != null) {
+            Symbol symbol = getSymbol(name);
+            if (symbol instanceof LocalVariable) {
+                throw new InternalException();
+            }
         }
 
         LocalVariable variable = new LocalVariable(name, type, definition);
@@ -90,8 +93,11 @@ public class CompilerContext {
     }
 
     public void addLocalVariable(Variable variable) {
-        if (variable.getName() != null && hasSymbol(variable.getName())) {
-            throw new InternalException();
+        if (variable.getName() != null) {
+            Symbol symbol = getSymbol(variable.getName());
+            if (symbol instanceof LocalVariable) {
+                throw new InternalException();
+            }
         }
 
         insertLocalVariable(variable);
@@ -108,8 +114,11 @@ public class CompilerContext {
     }
 
     public LocalVariable addLocalParameter(String name, SType type, TextRange definition) {
-        if (name != null && hasSymbol(name)) {
-            throw new InternalException();
+        if (name != null) {
+            Symbol symbol = getSymbol(name);
+            if (symbol instanceof LocalVariable) {
+                throw new InternalException();
+            }
         }
 
         LocalVariable variable = new LocalParameter(name, type, definition);
@@ -176,17 +185,11 @@ public class CompilerContext {
         return parent;
     }
 
-    @SuppressWarnings("unused") // used from Monaco integration
     public Collection<Symbol> getStaticSymbols() {
         return staticSymbols.values();
     }
 
     public Symbol getSymbol(String name) {
-        Symbol staticSymbol = root.staticSymbols.get(name);
-        if (staticSymbol != null) {
-            return staticSymbol;
-        }
-
         List<CompilerContext> functions = List.of(); // function boundaries
         for (CompilerContext context = this; context != null; ) {
             Variable localSymbol = context.localSymbols.get(name);
@@ -222,6 +225,11 @@ public class CompilerContext {
                 functions.add(context);
             }
             context = context.parent;
+        }
+
+        Symbol staticSymbol = root.staticSymbols.get(name);
+        if (staticSymbol != null) {
+            return staticSymbol;
         }
 
         return null;

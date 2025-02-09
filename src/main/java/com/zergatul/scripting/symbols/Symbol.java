@@ -17,10 +17,6 @@ public abstract class Symbol {
     private final List<BoundNameExpressionNode> references = new ArrayList<>();
     private final TextRange definition;
 
-    protected Symbol(String name, SType type) {
-        this(name, type, null);
-    }
-
     protected Symbol(String name, SType type, TextRange definition) {
         this.name = name;
         this.type = type;
