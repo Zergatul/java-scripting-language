@@ -1,11 +1,9 @@
 package com.zergatul.scripting.tests.completion.suggestions;
 
 import com.zergatul.scripting.compiler.CompilationParameters;
-import com.zergatul.scripting.symbols.DeclaredStaticVariable;
 import com.zergatul.scripting.symbols.StaticFieldConstantStaticVariable;
-import com.zergatul.scripting.symbols.StaticVariable;
 import com.zergatul.scripting.symbols.Symbol;
-import com.zergatul.scripting.tests.completion.TestCompletionContext;
+import com.zergatul.scripting.tests.completion.helpers.TestCompletionContext;
 import org.junit.jupiter.api.Assertions;
 
 public class StaticConstantSuggestion extends Suggestion {

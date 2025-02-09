@@ -1,6 +1,7 @@
-package com.zergatul.scripting.tests.completion;
+package com.zergatul.scripting.tests.completion.helpers;
 
 import com.zergatul.scripting.completion.SuggestionFactory;
+import com.zergatul.scripting.lexer.TokenType;
 import com.zergatul.scripting.symbols.*;
 import com.zergatul.scripting.tests.completion.suggestions.*;
 import com.zergatul.scripting.type.MethodReference;
@@ -12,23 +13,8 @@ import java.util.List;
 public class TestSuggestionFactory implements SuggestionFactory<Suggestion> {
 
     @Override
-    public Suggestion getStaticKeywordSuggestion() {
-        return new StaticKeywordSuggestion();
-    }
-
-    @Override
-    public Suggestion getVoidKeywordSuggestion() {
-        return new VoidKeywordSuggestion();
-    }
-
-    @Override
-    public Suggestion getAwaitKeywordSuggestion() {
-        return new AwaitKeywordSuggestion();
-    }
-
-    @Override
-    public Suggestion getLetKeywordSuggestion() {
-        return new LetKeywordSuggestion();
+    public Suggestion getKeywordSuggestion(TokenType type) {
+        return new KeywordSuggestion(type);
     }
 
     @Override
@@ -49,11 +35,6 @@ public class TestSuggestionFactory implements SuggestionFactory<Suggestion> {
     @Override
     public Suggestion getMethodSuggestion(MethodReference method) {
         return new MethodSuggestion(method);
-    }
-
-    @Override
-    public List<Suggestion> getCommonStatementStartSuggestions() {
-        return List.of();
     }
 
     @Override

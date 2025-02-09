@@ -4,7 +4,7 @@ import com.zergatul.scripting.binding.BinderOutput;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
 import com.zergatul.scripting.binding.nodes.BoundStaticFieldNode;
 import com.zergatul.scripting.symbols.DeclaredStaticVariable;
-import com.zergatul.scripting.tests.completion.TestCompletionContext;
+import com.zergatul.scripting.tests.completion.helpers.TestCompletionContext;
 import org.junit.jupiter.api.Assertions;
 
 public class StaticFieldSuggestion extends Suggestion {

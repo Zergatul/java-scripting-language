@@ -550,7 +550,7 @@ public class Parser {
             case CONTINUE -> parseContinueStatement();
             case SEMICOLON -> parseEmptyStatement();
             case BOOLEAN, INT, INT32, INT64, LONG, FLOAT, STRING, CHAR, IDENTIFIER, LEFT_PARENTHESES -> parseSimpleStatement().append(advance(TokenType.SEMICOLON));
-            case LET -> parseVariableDeclaration();
+            case LET -> parseVariableDeclaration().append(advance(TokenType.SEMICOLON));
             default -> {
                 if (isPossibleExpression()) {
                     yield parseSimpleStatement().append(advance(TokenType.SEMICOLON));

@@ -1077,6 +1077,10 @@ public class Binder {
             holder = null;
         } else {
             type = name.type.getReferenceType();
+            if (type == null) {
+                addDiagnostic(BinderErrors.RefTypeNotSupported, expression, name.type);
+                return new BoundRefArgumentExpressionNode(name, null, SUnknown.instance, expression.getRange());
+            }
             Variable variable = (Variable) name.symbol;
             holder = context.createRefVariable(variable);
         }

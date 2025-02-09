@@ -1,4 +1,4 @@
-package com.zergatul.scripting.tests.completion;
+package com.zergatul.scripting.tests.completion.helpers;
 
 import com.zergatul.scripting.binding.Binder;
 import com.zergatul.scripting.binding.BinderOutput;
@@ -17,7 +17,31 @@ import java.util.function.Function;
 
 public class CompletionTestHelper {
 
-    public static void assertSuggestions(Class<?> root, String code, int line, int column, Function<TestCompletionContext, List<Suggestion>> expectedFactory) {
+    private static final String CURSOR = "<cursor>";
+
+    public static void assertSuggestions(Class<?> root, String code, Function<TestCompletionContext, List<Suggestion>> expectedFactory) {
+        if (!code.contains(CURSOR)) {
+            Assertions.fail();
+            return;
+        }
+
+        int line = -1, column = -1;
+        String[] lines = code.lines().toArray(String[]::new);
+        for (int i = 0; i < lines.length; i++) {
+            int index = lines[i].indexOf(CURSOR);
+            if (index >= 0) {
+                line = i + 1;
+                column = index + 1;
+                break;
+            }
+        }
+        if (line == -1) {
+            Assertions.fail();
+            return;
+        }
+
+        code = code.replace(CURSOR, "");
+
         CompilationParameters parameters = new CompilationParametersBuilder()
                 .setRoot(root)
                 .setInterface(Runnable.class)

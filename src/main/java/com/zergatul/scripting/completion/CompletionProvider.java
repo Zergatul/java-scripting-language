@@ -8,6 +8,7 @@ import com.zergatul.scripting.binding.nodes.*;
 import com.zergatul.scripting.compiler.CompilationParameters;
 import com.zergatul.scripting.compiler.CompilerContext;
 import com.zergatul.scripting.compiler.VisibilityChecker;
+import com.zergatul.scripting.lexer.TokenType;
 import com.zergatul.scripting.parser.NodeType;
 import com.zergatul.scripting.symbols.*;
 import com.zergatul.scripting.type.*;
@@ -92,10 +93,15 @@ public class CompletionProvider<T> {
                         }
                     } else {
                         BoundIfStatementNode statement = (BoundIfStatementNode) completionContext.entry.node;
-                        // if (<here>)
+                        // if (...<here>...)
                         if (TextRange.isBetween(line, column, statement.lParen.getRange(), statement.rParen.getRange())) {
-                            CompletionContext ctx = new CompletionContext(new SearchEntry(completionContext.entry.parent, completionContext.entry.parent.node), line, column);
-                            suggestions.addAll(get(parameters, output, ctx, line, column));
+                            if (statement.condition.getRange().isAfter(line, column) || statement.condition.getRange().getLength() == 0) {
+                                // if (<here> ...) or if (<here>)
+                                canExpression = true;
+                            } else {
+                                CompletionContext ctx = new CompletionContext(new SearchEntry(completionContext.entry.parent, completionContext.entry.parent.node), line, column);
+                                suggestions.addAll(get(parameters, output, ctx, line, column));
+                            }
                         }
                     }
                 }
@@ -119,6 +125,12 @@ public class CompletionProvider<T> {
                         }
                     }
                     canExpression = true;
+                }
+                case PROPERTY -> {
+                    // get back to PROPERTY_ACCESS_EXPRESSION
+                    completionContext = completionContext.up();
+                    assert completionContext != null;
+                    return get(parameters, output, completionContext, line, column);
                 }
                 case PROPERTY_ACCESS_EXPRESSION -> {
                     BoundPropertyAccessExpressionNode node = (BoundPropertyAccessExpressionNode) completionContext.entry.node;
@@ -180,7 +192,7 @@ public class CompletionProvider<T> {
                         suggestions.addAll(get(parameters, output, ctx, line, column));
                     }
                 }
-                case BINARY_EXPRESSION -> {
+                case BINARY_EXPRESSION, PARAMETER -> {
                     BoundNode unfinished = getUnfinished(completionContext.entry.node, line, column);
                     if (unfinished != null) {
                         CompletionContext ctx = new CompletionContext(new SearchEntry(completionContext.entry, unfinished), line, column);
@@ -193,8 +205,34 @@ public class CompletionProvider<T> {
                         canExpression = true;
                     }
                 }
+                case PARAMETER_LIST -> {
+                    BoundNode unfinished = getUnfinished(completionContext.entry.node, line, column);
+                    if (unfinished != null) {
+                        CompletionContext ctx = new CompletionContext(new SearchEntry(completionContext.entry, unfinished), line, column);
+                        suggestions.addAll(get(parameters, output, ctx, line, column));
+                    } else {
+                        canType = true;
+                    }
+                }
+                case METHOD -> {
+                    completionContext = completionContext.up();
+                    assert completionContext != null;
+                    return get(parameters, output, completionContext, line, column);
+                }
+                case INVALID_TYPE, PREDEFINED_TYPE -> {
+                    canType = true;
+                }
                 case STRING_LITERAL, INTEGER_LITERAL, FLOAT_LITERAL -> {
                     // do nothing
+                }
+                case NAME_EXPRESSION -> {
+                    // skip for case like this:
+                    // void func(int x<cursor>
+                    // but process case like this:
+                    // if (x<cursor>
+                    if (completionContext.entry.parent.node.getNodeType() != NodeType.PARAMETER) {
+                        canExpression = true;
+                    }
                 }
                 default -> {
                     canExpression = true; // good fallback?
@@ -207,10 +245,10 @@ public class CompletionProvider<T> {
         canType |= canStatement;
 
         if (canStatic) {
-            suggestions.add(factory.getStaticKeywordSuggestion());
+            suggestions.add(factory.getKeywordSuggestion(TokenType.STATIC));
         }
         if (canVoid) {
-            suggestions.add(factory.getVoidKeywordSuggestion());
+            suggestions.add(factory.getKeywordSuggestion(TokenType.VOID));
         }
         if (canType | canExpression) {
             for (SType type : new SType[] { SBoolean.instance, SInt.instance, SInt64.instance, SChar.instance, SFloat.instance, SString.instance }) {
@@ -220,18 +258,17 @@ public class CompletionProvider<T> {
                 suggestions.add(factory.getCustomTypeSuggestion(clazz));
             }
         }
-        if (canStatement) {
-            suggestions.add(factory.getLetKeywordSuggestion());
-        }
         if (canExpression) {
             suggestions.addAll(getSymbols(parameters, output, completionContext));
             if (parameters.isAsync()) {
-                suggestions.add(factory.getAwaitKeywordSuggestion());
+                suggestions.add(factory.getKeywordSuggestion(TokenType.AWAIT));
             }
         }
         if (canStatement) {
-            // TODO: break/continue
-            suggestions.addAll(factory.getCommonStatementStartSuggestions());
+            suggestions.addAll(getStatementStart(parameters, output, completionContext));
+        }
+        if (canStatement && completionContext.prev instanceof BoundIfStatementNode ifStatement && ifStatement.elseStatement == null) {
+            suggestions.add(factory.getKeywordSuggestion(TokenType.ELSE));
         }
 
         suggestions.removeIf(Objects::isNull);
@@ -239,6 +276,31 @@ public class CompletionProvider<T> {
     }
 
     private BoundNode getUnfinished(BoundNode node, int line, int column) {
+        if (node instanceof BoundMethodNode method) {
+            if (method.getRange().containsOrEnds(line, column)) {
+                return method;
+            }
+        }
+
+        if (node instanceof BoundParameterListNode parameters) {
+            for (BoundParameterNode parameter : parameters.parameters) {
+                if (parameter.getRange().containsOrEnds(line, column)) {
+                    return getUnfinished(parameter, line, column);
+                }
+            }
+            return null;
+        }
+
+        if (node instanceof BoundParameterNode parameter) {
+            if (parameter.getTypeNode().getRange().containsOrEnds(line, column)) {
+                return parameter.getTypeNode();
+            } else if (parameter.getName().getRange().containsOrEnds(line, column)) {
+                return parameter.getName();
+            } else {
+                return null;
+            }
+        }
+
         if (node instanceof BoundForEachLoopStatementNode loop) {
             if (loop.iterable.getRange().endsWith(line, column)) {
                 return getUnfinished(loop.iterable, line, column);
@@ -444,6 +506,43 @@ public class CompletionProvider<T> {
         return nodes;
     }
 
+    private List<T> getStatementStart(CompilationParameters parameters, BinderOutput output, CompletionContext completionContext) {
+        List<T> suggestions = new ArrayList<>();
+        suggestions.add(factory.getKeywordSuggestion(TokenType.LET));
+        suggestions.add(factory.getKeywordSuggestion(TokenType.FOR));
+        suggestions.add(factory.getKeywordSuggestion(TokenType.FOREACH));
+        suggestions.add(factory.getKeywordSuggestion(TokenType.IF));
+        suggestions.add(factory.getKeywordSuggestion(TokenType.WHILE));
+        suggestions.add(factory.getKeywordSuggestion(TokenType.RETURN));
+
+        boolean isInsideLoop = false;
+        SearchEntry entry = completionContext.entry;
+        while (entry != null) {
+            boolean isFunctionBoundary =
+                    entry.node.getNodeType() == NodeType.FUNCTION ||
+                    entry.node.getNodeType() == NodeType.LAMBDA_EXPRESSION;
+            if (isFunctionBoundary) {
+                break;
+            }
+            boolean isLoopStatement =
+                    entry.node.getNodeType() == NodeType.FOR_LOOP_STATEMENT ||
+                    entry.node.getNodeType() == NodeType.FOREACH_LOOP_STATEMENT ||
+                    entry.node.getNodeType() == NodeType.WHILE_LOOP_STATEMENT;
+            if (isLoopStatement) {
+                isInsideLoop = true;
+                break;
+            }
+            entry = entry.parent;
+        }
+
+        if (isInsideLoop) {
+            suggestions.add(factory.getKeywordSuggestion(TokenType.BREAK));
+            suggestions.add(factory.getKeywordSuggestion(TokenType.CONTINUE));
+        }
+
+        return suggestions;
+    }
+
     private void addStaticConstants(List<T> suggestions, CompilerContext context) {
         for (Symbol symbol : context.getStaticSymbols()) {
             if (symbol instanceof StaticFieldConstantStaticVariable constant) {
@@ -478,10 +577,10 @@ public class CompletionProvider<T> {
     }
 
     private SearchEntry find(SearchEntry parent, BoundNode node, int line, int column) {
-        if (node.getRange().contains(line, column)) {
+        if (node.getRange().containsOrEnds(line, column) && node.getRange().getLength() > 0) {
             SearchEntry entry = new SearchEntry(parent, node);
             for (BoundNode child : node.getChildren()) {
-                if (child.getRange().contains(line, column)) {
+                if (child.getRange().containsOrEnds(line, column) && child.getRange().getLength() > 0) {
                     return find(entry, child, line, column);
                 }
             }

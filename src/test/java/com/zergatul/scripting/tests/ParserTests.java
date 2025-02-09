@@ -476,6 +476,24 @@ public class ParserTests {
                 new SingleLineTextRange(1, 1, 0, 18)));
     }
 
+    @Test
+    public void letTest() {
+        ParserOutput result = parse("""
+                let x = 123;
+                """);
+        Assertions.assertTrue(result.diagnostics().isEmpty());
+        Assertions.assertEquals(result.unit(), new CompilationUnitNode(
+                new CompilationUnitMembersListNode(List.of(), new SingleLineTextRange(1, 1, 0, 0)),
+                new StatementsListNode(List.of(
+                        new VariableDeclarationNode(
+                                new LetTypeNode(new SingleLineTextRange(1, 1, 0, 3)),
+                                new NameExpressionNode("x", new SingleLineTextRange(1, 5, 4, 1)),
+                                new IntegerLiteralExpressionNode("123", new SingleLineTextRange(1, 9, 8, 3)),
+                                new SingleLineTextRange(1, 1, 0, 12))),
+                        new SingleLineTextRange(1, 1, 0, 12)),
+                new SingleLineTextRange(1, 1, 0, 12)));
+    }
+
     private ParserOutput parse(String code) {
         return new Parser(new Lexer(new LexerInput(code)).lex()).parse();
     }

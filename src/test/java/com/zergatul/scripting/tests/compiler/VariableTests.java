@@ -4,6 +4,7 @@ import com.zergatul.scripting.DiagnosticMessage;
 import com.zergatul.scripting.SingleLineTextRange;
 import com.zergatul.scripting.binding.BinderErrors;
 import com.zergatul.scripting.tests.compiler.helpers.IntStorage;
+import com.zergatul.scripting.tests.compiler.helpers.Run;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -116,7 +117,21 @@ public class VariableTests {
                 List.of(23, 45, 67));
     }
 
+    @Test
+    public void variableAsStaticConstantTest() {
+        String code = """
+                let run = 123;
+                """;
+
+        List<DiagnosticMessage> messages = getDiagnostics(ApiRoot.class, code);
+
+        Assertions.assertIterableEquals(
+                messages,
+                List.of(new DiagnosticMessage(BinderErrors.SymbolAlreadyDeclared, new SingleLineTextRange(1, 5, 4, 3), "run")));
+    }
+
     public static class ApiRoot {
         public static IntStorage intStorage;
+        public static Run run;
     }
 }
