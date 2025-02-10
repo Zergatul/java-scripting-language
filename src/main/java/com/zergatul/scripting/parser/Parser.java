@@ -134,7 +134,7 @@ public class Parser {
 
     private ForLoopStatementNode parseForLoopStatement() {
         Token forToken = advance(TokenType.FOR);
-        advance(TokenType.LEFT_PARENTHESES);
+        Token lParen = advance(TokenType.LEFT_PARENTHESES);
 
         StatementNode init;
         if (current.type == TokenType.SEMICOLON) {
@@ -174,7 +174,7 @@ public class Parser {
             }
         }
 
-        advance(TokenType.RIGHT_PARENTHESES);
+        Token rParen = advance(TokenType.RIGHT_PARENTHESES);
         StatementNode body;
         if (isPossibleStatement()) {
             body = parseStatement();
@@ -183,12 +183,12 @@ public class Parser {
             body = new InvalidStatementNode(createMissingTokenRange());
         }
 
-        return new ForLoopStatementNode(init, condition, update, body, TextRange.combine(forToken, body));
+        return new ForLoopStatementNode(lParen, rParen, init, condition, update, body, TextRange.combine(forToken, body));
     }
 
     private ForEachLoopStatementNode parseForEachLoopStatement() {
         Token foreachToken = advance(TokenType.FOREACH);
-        advance(TokenType.LEFT_PARENTHESES);
+        Token lParen = advance(TokenType.LEFT_PARENTHESES);
 
         TypeNode typeNode;
         if (isPossibleDeclaration()) {
@@ -216,7 +216,7 @@ public class Parser {
             iterable = new InvalidExpressionNode(createMissingTokenRange());
         }
 
-        advance(TokenType.RIGHT_PARENTHESES);
+        Token rParen = advance(TokenType.RIGHT_PARENTHESES);
 
         StatementNode body;
         if (isPossibleStatement()) {
@@ -227,6 +227,8 @@ public class Parser {
         }
 
         return new ForEachLoopStatementNode(
+                lParen,
+                rParen,
                 typeNode,
                 new NameExpressionNode(identifier),
                 iterable,

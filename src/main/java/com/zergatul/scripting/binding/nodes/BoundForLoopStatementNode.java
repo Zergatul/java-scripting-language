@@ -2,23 +2,28 @@ package com.zergatul.scripting.binding.nodes;
 
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
+import com.zergatul.scripting.lexer.Token;
 import com.zergatul.scripting.parser.NodeType;
 
 import java.util.List;
 
 public class BoundForLoopStatementNode extends BoundStatementNode {
 
+    public final Token lParen;
+    public final Token rParen;
     public final BoundStatementNode init;
     public final BoundExpressionNode condition;
     public final BoundStatementNode update;
     public final BoundStatementNode body;
 
-    public BoundForLoopStatementNode(BoundStatementNode init, BoundExpressionNode condition, BoundStatementNode update, BoundStatementNode body) {
-        this(init, condition, update, body, null);
+    public BoundForLoopStatementNode(Token lParen, Token rParen, BoundStatementNode init, BoundExpressionNode condition, BoundStatementNode update, BoundStatementNode body) {
+        this(lParen, rParen, init, condition, update, body, null);
     }
 
-    public BoundForLoopStatementNode(BoundStatementNode init, BoundExpressionNode condition, BoundStatementNode update, BoundStatementNode body, TextRange range) {
+    public BoundForLoopStatementNode(Token lParen, Token rParen, BoundStatementNode init, BoundExpressionNode condition, BoundStatementNode update, BoundStatementNode body, TextRange range) {
         super(NodeType.FOR_LOOP_STATEMENT, range);
+        this.lParen = lParen;
+        this.rParen = rParen;
         this.init = init;
         this.condition = condition;
         this.update = update;

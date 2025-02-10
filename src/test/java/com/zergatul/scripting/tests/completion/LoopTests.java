@@ -13,7 +13,7 @@ import java.util.function.Function;
 public class LoopTests {
 
     @Test
-    public void forLoopTest() {
+    public void forLoopTest1() {
         assertSuggestions("""
                 for (let i = 0; i < 3; i++) {
                     <cursor>
@@ -37,11 +37,146 @@ public class LoopTests {
     }
 
     @Test
-    public void forEachLoopTest() {
+    public void forLoopTest2() {
+        assertSuggestions("""
+                for (let i = 0; i < 3; i++) <cursor>
+                (12).toString();
+                """, context -> List.of(
+                new KeywordSuggestion(TokenType.LET),
+                new KeywordSuggestion(TokenType.FOR),
+                new KeywordSuggestion(TokenType.FOREACH),
+                new KeywordSuggestion(TokenType.IF),
+                new KeywordSuggestion(TokenType.WHILE),
+                new KeywordSuggestion(TokenType.RETURN),
+                new KeywordSuggestion(TokenType.BREAK),
+                new KeywordSuggestion(TokenType.CONTINUE),
+                new TypeSuggestion(SBoolean.instance),
+                new TypeSuggestion(SInt.instance),
+                new TypeSuggestion(SInt64.instance),
+                new TypeSuggestion(SChar.instance),
+                new TypeSuggestion(SFloat.instance),
+                new TypeSuggestion(SString.instance),
+                new LocalVariableSuggestion(context, "i")));
+    }
+
+    @Test
+    public void forLoopTest3() {
+        assertSuggestions("""
+                for (let i = 0; i < 3; i++)<cursor> (12).toString();
+                """, context -> List.of(
+                new KeywordSuggestion(TokenType.LET),
+                new KeywordSuggestion(TokenType.FOR),
+                new KeywordSuggestion(TokenType.FOREACH),
+                new KeywordSuggestion(TokenType.IF),
+                new KeywordSuggestion(TokenType.WHILE),
+                new KeywordSuggestion(TokenType.RETURN),
+                new KeywordSuggestion(TokenType.BREAK),
+                new KeywordSuggestion(TokenType.CONTINUE),
+                new TypeSuggestion(SBoolean.instance),
+                new TypeSuggestion(SInt.instance),
+                new TypeSuggestion(SInt64.instance),
+                new TypeSuggestion(SChar.instance),
+                new TypeSuggestion(SFloat.instance),
+                new TypeSuggestion(SString.instance),
+                new LocalVariableSuggestion(context, "i")));
+    }
+
+    @Test
+    public void forLoopTest4() {
+        assertSuggestions("""
+                for (let i = 0; i < 3; i++) <cursor>(12).toString();
+                """, context -> List.of(
+                new KeywordSuggestion(TokenType.LET),
+                new KeywordSuggestion(TokenType.FOR),
+                new KeywordSuggestion(TokenType.FOREACH),
+                new KeywordSuggestion(TokenType.IF),
+                new KeywordSuggestion(TokenType.WHILE),
+                new KeywordSuggestion(TokenType.RETURN),
+                new KeywordSuggestion(TokenType.BREAK),
+                new KeywordSuggestion(TokenType.CONTINUE),
+                new TypeSuggestion(SBoolean.instance),
+                new TypeSuggestion(SInt.instance),
+                new TypeSuggestion(SInt64.instance),
+                new TypeSuggestion(SChar.instance),
+                new TypeSuggestion(SFloat.instance),
+                new TypeSuggestion(SString.instance),
+                new LocalVariableSuggestion(context, "i")));
+    }
+
+    @Test
+    public void forEachLoopTest1() {
         assertSuggestions("""
                 foreach (let i in [1, 2, 3]) {
                     <cursor>
                 }
+                """, context -> List.of(
+                new KeywordSuggestion(TokenType.LET),
+                new KeywordSuggestion(TokenType.FOR),
+                new KeywordSuggestion(TokenType.FOREACH),
+                new KeywordSuggestion(TokenType.IF),
+                new KeywordSuggestion(TokenType.WHILE),
+                new KeywordSuggestion(TokenType.RETURN),
+                new KeywordSuggestion(TokenType.BREAK),
+                new KeywordSuggestion(TokenType.CONTINUE),
+                new TypeSuggestion(SBoolean.instance),
+                new TypeSuggestion(SInt.instance),
+                new TypeSuggestion(SInt64.instance),
+                new TypeSuggestion(SChar.instance),
+                new TypeSuggestion(SFloat.instance),
+                new TypeSuggestion(SString.instance),
+                new LocalVariableSuggestion(context, "i")));
+    }
+
+    @Test
+    public void forEachLoopTest2() {
+        assertSuggestions("""
+                foreach (let i in [1, 2, 3])<cursor>
+                (12).toString();
+                """, context -> List.of(
+                new KeywordSuggestion(TokenType.LET),
+                new KeywordSuggestion(TokenType.FOR),
+                new KeywordSuggestion(TokenType.FOREACH),
+                new KeywordSuggestion(TokenType.IF),
+                new KeywordSuggestion(TokenType.WHILE),
+                new KeywordSuggestion(TokenType.RETURN),
+                new KeywordSuggestion(TokenType.BREAK),
+                new KeywordSuggestion(TokenType.CONTINUE),
+                new TypeSuggestion(SBoolean.instance),
+                new TypeSuggestion(SInt.instance),
+                new TypeSuggestion(SInt64.instance),
+                new TypeSuggestion(SChar.instance),
+                new TypeSuggestion(SFloat.instance),
+                new TypeSuggestion(SString.instance),
+                new LocalVariableSuggestion(context, "i")));
+    }
+
+    @Test
+    public void forEachLoopTest3() {
+        assertSuggestions("""
+                foreach (let i in [1, 2, 3]) <cursor>
+                (12).toString();
+                """, context -> List.of(
+                new KeywordSuggestion(TokenType.LET),
+                new KeywordSuggestion(TokenType.FOR),
+                new KeywordSuggestion(TokenType.FOREACH),
+                new KeywordSuggestion(TokenType.IF),
+                new KeywordSuggestion(TokenType.WHILE),
+                new KeywordSuggestion(TokenType.RETURN),
+                new KeywordSuggestion(TokenType.BREAK),
+                new KeywordSuggestion(TokenType.CONTINUE),
+                new TypeSuggestion(SBoolean.instance),
+                new TypeSuggestion(SInt.instance),
+                new TypeSuggestion(SInt64.instance),
+                new TypeSuggestion(SChar.instance),
+                new TypeSuggestion(SFloat.instance),
+                new TypeSuggestion(SString.instance),
+                new LocalVariableSuggestion(context, "i")));
+    }
+
+    @Test
+    public void forEachLoopTest4() {
+        assertSuggestions("""
+                foreach (let i in [1, 2, 3]) <cursor>(12).toString();
                 """, context -> List.of(
                 new KeywordSuggestion(TokenType.LET),
                 new KeywordSuggestion(TokenType.FOR),

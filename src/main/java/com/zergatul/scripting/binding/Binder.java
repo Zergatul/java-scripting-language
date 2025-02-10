@@ -310,7 +310,7 @@ public class Binder {
 
         popScope();
 
-        return new BoundForLoopStatementNode(init, condition, update, body, statement.getRange());
+        return new BoundForLoopStatementNode(statement.lParen, statement.rParen, init, condition, update, body, statement.getRange());
     }
 
     private BoundForEachLoopStatementNode bindForEachLoopStatement(ForEachLoopStatementNode statement) {
@@ -360,6 +360,7 @@ public class Binder {
         popScope();
 
         return new BoundForEachLoopStatementNode(
+                statement.lParen, statement.rParen,
                 variableType, name, iterable, body,
                 index, length,
                 statement.getRange());

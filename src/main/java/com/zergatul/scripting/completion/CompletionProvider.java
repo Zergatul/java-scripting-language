@@ -185,11 +185,35 @@ public class CompletionProvider<T> {
                         }
                     }
                 }
-                case FOREACH_LOOP_STATEMENT, ASSIGNMENT_STATEMENT, AUGMENTED_ASSIGNMENT_STATEMENT -> {
+                case ASSIGNMENT_STATEMENT, AUGMENTED_ASSIGNMENT_STATEMENT -> {
                     BoundNode unfinished = getUnfinished(completionContext.entry.node, line, column);
                     if (unfinished != null) {
                         CompletionContext ctx = new CompletionContext(new SearchEntry(completionContext.entry, unfinished), line, column);
                         suggestions.addAll(get(parameters, output, ctx, line, column));
+                    }
+                }
+                case FOR_LOOP_STATEMENT -> {
+                    BoundNode unfinished = getUnfinished(completionContext.entry.node, line, column);
+                    if (unfinished != null) {
+                        CompletionContext ctx = new CompletionContext(new SearchEntry(completionContext.entry, unfinished), line, column);
+                        suggestions.addAll(get(parameters, output, ctx, line, column));
+                    } else {
+                        BoundForLoopStatementNode loop = (BoundForLoopStatementNode) completionContext.entry.node;
+                        if (loop.rParen.getRange().endsWith(line, column) || (loop.rParen.getRange().isBefore(line, column) && loop.body.getRange().isAfter(line, column))) {
+                            canStatement = true;
+                        }
+                    }
+                }
+                case FOREACH_LOOP_STATEMENT -> {
+                    BoundNode unfinished = getUnfinished(completionContext.entry.node, line, column);
+                    if (unfinished != null) {
+                        CompletionContext ctx = new CompletionContext(new SearchEntry(completionContext.entry, unfinished), line, column);
+                        suggestions.addAll(get(parameters, output, ctx, line, column));
+                    } else {
+                        BoundForEachLoopStatementNode loop = (BoundForEachLoopStatementNode) completionContext.entry.node;
+                        if (loop.rParen.getRange().endsWith(line, column) || (loop.rParen.getRange().isBefore(line, column) && loop.body.getRange().isAfter(line, column))) {
+                            canStatement = true;
+                        }
                     }
                 }
                 case BINARY_EXPRESSION, PARAMETER -> {
@@ -473,21 +497,16 @@ public class CompletionProvider<T> {
                         list.add(factory.getLocalVariableSuggestion((LocalVariable) parameter.getName().symbol));
                     }
                 }
+                case FOREACH_LOOP_STATEMENT -> {
+                    BoundForEachLoopStatementNode loop = (BoundForEachLoopStatementNode) context.entry.node;
+                    list.add(factory.getLocalVariableSuggestion((LocalVariable) loop.name.symbol));
+                }
                 default -> {
                     addLocalVariables(list, getStatementsPriorTo(context.entry.node, context.prev));
                 }
             }
 
             context = context.up();
-
-            if (context != null && context.entry != null) {
-                // ForLoop has VariableDeclaration node inside
-                // we need to handle ForEachLoop separately
-                if (Objects.requireNonNull(context.entry.node.getNodeType()) == NodeType.FOREACH_LOOP_STATEMENT) {
-                    BoundForEachLoopStatementNode node = (BoundForEachLoopStatementNode) context.entry.node;
-                    list.add(factory.getLocalVariableSuggestion((LocalVariable) node.name.symbol));
-                }
-            }
         }
 
         return list;

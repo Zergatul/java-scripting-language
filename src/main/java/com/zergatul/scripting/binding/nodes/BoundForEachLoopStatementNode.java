@@ -2,6 +2,7 @@ package com.zergatul.scripting.binding.nodes;
 
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
+import com.zergatul.scripting.lexer.Token;
 import com.zergatul.scripting.symbols.LocalVariable;
 import com.zergatul.scripting.parser.NodeType;
 
@@ -9,6 +10,8 @@ import java.util.List;
 
 public class BoundForEachLoopStatementNode extends BoundStatementNode {
 
+    public final Token lParen;
+    public final Token rParen;
     public final BoundTypeNode typeNode;
     public final BoundNameExpressionNode name;
     public final BoundExpressionNode iterable;
@@ -17,6 +20,8 @@ public class BoundForEachLoopStatementNode extends BoundStatementNode {
     public final LocalVariable length;
 
     public BoundForEachLoopStatementNode(
+            Token lParen,
+            Token rParen,
             BoundTypeNode typeNode,
             BoundNameExpressionNode name,
             BoundExpressionNode iterable,
@@ -24,10 +29,12 @@ public class BoundForEachLoopStatementNode extends BoundStatementNode {
             LocalVariable index,
             LocalVariable length
     ) {
-        this(typeNode, name, iterable, body, index, length, null);
+        this(lParen, rParen, typeNode, name, iterable, body, index, length, null);
     }
 
     public BoundForEachLoopStatementNode(
+            Token lParen,
+            Token rParen,
             BoundTypeNode typeNode,
             BoundNameExpressionNode name,
             BoundExpressionNode iterable,
@@ -37,6 +44,8 @@ public class BoundForEachLoopStatementNode extends BoundStatementNode {
             TextRange range
     ) {
         super(NodeType.FOREACH_LOOP_STATEMENT, range);
+        this.lParen = lParen;
+        this.rParen = rParen;
         this.typeNode = typeNode;
         this.name = name;
         this.iterable = iterable;

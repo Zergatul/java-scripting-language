@@ -84,6 +84,8 @@ public class BinderTreeGenerator {
 
     private BoundForLoopStatementNode rewrite(BoundForLoopStatementNode node) {
         return new BoundForLoopStatementNode(
+                node.lParen,
+                node.rParen,
                 node.init,
                 node.condition,
                 node.update,
@@ -92,6 +94,7 @@ public class BinderTreeGenerator {
 
     private BoundForEachLoopStatementNode rewrite(BoundForEachLoopStatementNode node) {
         return new BoundForEachLoopStatementNode(
+                node.lParen, node.rParen,
                 node.typeNode,
                 node.name,
                 node.iterable,
