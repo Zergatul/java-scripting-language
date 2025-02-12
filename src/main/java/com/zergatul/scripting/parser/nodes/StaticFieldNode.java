@@ -1,6 +1,5 @@
 package com.zergatul.scripting.parser.nodes;
 
-import com.zergatul.scripting.InternalException;
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.parser.NodeType;
 import com.zergatul.scripting.parser.ParserTreeVisitor;
@@ -16,11 +15,11 @@ public class StaticFieldNode extends CompilationUnitMemberNode {
 
     @Override
     public void accept(ParserTreeVisitor visitor) {
-        throw new InternalException(); // TODO
+        visitor.explicitVisit(this);
     }
 
     @Override
     public void acceptChildren(ParserTreeVisitor visitor) {
-        throw new InternalException(); // TODO
+        declaration.accept(visitor);
     }
 }

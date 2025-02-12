@@ -196,6 +196,27 @@ public class LoopTests {
     }
 
     @Test
+    public void forEachLoopTest5() {
+        assertSuggestions("""
+                foreach (let i in [1, 2, 3]) (12).toString();
+                <cursor>
+                (34).toString();
+                """, context -> List.of(
+                new KeywordSuggestion(TokenType.LET),
+                new KeywordSuggestion(TokenType.FOR),
+                new KeywordSuggestion(TokenType.FOREACH),
+                new KeywordSuggestion(TokenType.IF),
+                new KeywordSuggestion(TokenType.WHILE),
+                new KeywordSuggestion(TokenType.RETURN),
+                new TypeSuggestion(SBoolean.instance),
+                new TypeSuggestion(SInt.instance),
+                new TypeSuggestion(SInt64.instance),
+                new TypeSuggestion(SChar.instance),
+                new TypeSuggestion(SFloat.instance),
+                new TypeSuggestion(SString.instance)));
+    }
+
+    @Test
     public void whileLoopTest() {
         assertSuggestions("""
                 while (true) {
