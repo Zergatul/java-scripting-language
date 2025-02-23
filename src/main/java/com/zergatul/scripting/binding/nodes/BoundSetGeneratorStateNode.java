@@ -13,7 +13,7 @@ public class BoundSetGeneratorStateNode extends BoundStatementNode {
     public final StateBoundary boundary;
 
     public BoundSetGeneratorStateNode(StateBoundary boundary) {
-        super(NodeType.SET_GENERATOR_STATE, TextRange.EMPTY);
+        super(NodeType.SET_GENERATOR_STATE, null);
         this.boundary = boundary;
     }
 

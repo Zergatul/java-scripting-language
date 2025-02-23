@@ -6,7 +6,6 @@ import com.zergatul.scripting.binding.nodes.BoundNameExpressionNode;
 import com.zergatul.scripting.symbols.*;
 import com.zergatul.scripting.type.SReference;
 import com.zergatul.scripting.type.SType;
-import com.zergatul.scripting.type.SVoidType;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Type;
@@ -36,6 +35,7 @@ public class CompilerContext {
     private final FunctionStack stack;
     private Label generatorContinueLabel;
     private VisibilityChecker checker;
+    private int lastEmittedLine;
 
     public CompilerContext(SType returnType, boolean isAsync) {
         this(1, true, returnType, isAsync, null);
@@ -61,6 +61,7 @@ public class CompilerContext {
         }
         stack = new FunctionStack();
         stack.set(initialStackIndex);
+        lastEmittedLine = -1;
     }
 
     public void addStaticVariable(StaticVariable variable) {
@@ -393,6 +394,14 @@ public class CompilerContext {
 
     public void setChecker(VisibilityChecker checker) {
         this.checker = checker;
+    }
+
+    public int getLastEmittedLine() {
+        return getFunctionContext().lastEmittedLine;
+    }
+
+    public void setLastEmittedLine(int line) {
+        getFunctionContext().lastEmittedLine = line;
     }
 
     private void insertLocalVariable(Variable variable) {

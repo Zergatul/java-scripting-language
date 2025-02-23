@@ -1,6 +1,8 @@
 package com.zergatul.scripting.compiler;
 
 import com.zergatul.scripting.InternalException;
+import com.zergatul.scripting.Locatable;
+import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.*;
 import com.zergatul.scripting.binding.nodes.*;
 import com.zergatul.scripting.generator.BinderTreeGenerator;
@@ -64,6 +66,7 @@ public class Compiler {
 
     private <T> T compileUnit(BoundCompilationUnitNode unit) {
         ClassWriter writer = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
+        emitSourceFile(writer);
         String name = "com/zergatul/scripting/dynamic/DynamicClass_" + counter.incrementAndGet();
         writer.visit(
                 V1_5,
@@ -304,6 +307,7 @@ public class Compiler {
     }
 
     private void compileStatement(MethodVisitor visitor, CompilerContext context, BoundStatementNode statement) {
+        emitLineNumber(visitor, context, statement);
         switch (statement.getNodeType()) {
             case VARIABLE_DECLARATION -> compileVariableDeclaration(visitor, context, (BoundVariableDeclarationNode) statement);
             case ASSIGNMENT_STATEMENT -> compileAssignmentStatement(visitor, context, (BoundAssignmentStatementNode) statement);
@@ -645,6 +649,7 @@ public class Compiler {
 
     private void compileClosureClass(MethodVisitor parentVisitor, CompilerContext parentContext, List<LiftedVariable> variables) {
         ClassWriter writer = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
+        emitSourceFile(writer);
         String name = "com/zergatul/scripting/dynamic/DynamicClosure_" + counter.incrementAndGet();
         writer.visit(
                 V1_5,
@@ -751,6 +756,7 @@ public class Compiler {
         generator.generate(node.statements);
 
         ClassWriter writer = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
+        emitSourceFile(writer);
         String name = "com/zergatul/scripting/dynamic/DynamicAsyncStateMachine_" + counter.incrementAndGet();
         writer.visit(
                 V1_5,
@@ -982,6 +988,7 @@ public class Compiler {
     }
 
     private void compileExpression(MethodVisitor visitor, CompilerContext context, BoundExpressionNode expression) {
+        emitLineNumber(visitor, context, expression);
         switch (expression.getNodeType()) {
             case BOOLEAN_LITERAL -> compileBooleanLiteral(visitor, (BoundBooleanLiteralExpressionNode) expression);
             case INTEGER_LITERAL -> compileIntegerLiteral(visitor, (BoundIntegerLiteralExpressionNode) expression);
@@ -1174,6 +1181,7 @@ public class Compiler {
         Class<?> funcInterface = type.getJavaClass();
 
         ClassWriter writer = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
+        emitSourceFile(writer);
         String name = "com/zergatul/scripting/dynamic/DynamicLambdaClass_" + counter.incrementAndGet();
         writer.visit(V1_5, ACC_PUBLIC, name, null, Type.getInternalName(Object.class), new String[] { Type.getInternalName(funcInterface) });
 
@@ -1372,6 +1380,28 @@ public class Compiler {
     private void markEnd(MethodVisitor visitor, CompilerContext context) {
         if (parameters.isDebug()) {
             context.markEnd(visitor);
+        }
+    }
+
+    private void emitSourceFile(ClassWriter writer) {
+        if (parameters.getSourceFile() != null) {
+            writer.visitSource(parameters.getSourceFile(), null);
+        }
+    }
+
+    private void emitLineNumber(MethodVisitor visitor, CompilerContext context, Locatable locatable) {
+        if (parameters.shouldEmitLineNumbers()) {
+            TextRange range = locatable.getRange();
+            if (range == null) {
+                return;
+            }
+            int line = range.getLine1();
+            if (context.getLastEmittedLine() != line) {
+                Label label = new Label();
+                visitor.visitLabel(label);
+                visitor.visitLineNumber(line, label);
+                context.setLastEmittedLine(line);
+            }
         }
     }
 

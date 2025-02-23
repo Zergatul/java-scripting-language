@@ -10,7 +10,7 @@ import java.util.List;
 public class BoundGeneratorGetValueNode extends BoundExpressionNode {
 
     public BoundGeneratorGetValueNode(SType type) {
-        super(NodeType.GENERATOR_GET_VALUE, type, TextRange.EMPTY);
+        super(NodeType.GENERATOR_GET_VALUE, type, null);
     }
 
     @Override

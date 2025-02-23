@@ -12,6 +12,8 @@ public class CompilationParametersBuilder {
     private SType asyncReturnType;
     private List<Class<?>> customTypes;
     private VisibilityChecker checker;
+    private String sourceFile;
+    private boolean emitLineNumbers;
     private boolean debug;
 
     public CompilationParametersBuilder() {
@@ -47,12 +49,22 @@ public class CompilationParametersBuilder {
         return this;
     }
 
+    public CompilationParametersBuilder setSourceFile(String sourceFile) {
+        this.sourceFile = sourceFile;
+        return this;
+    }
+
+    public CompilationParametersBuilder setLineNumbers(boolean value) {
+        this.emitLineNumbers = value;
+        return this;
+    }
+
     public CompilationParametersBuilder setDebug() {
         this.debug = true;
         return this;
     }
 
     public CompilationParameters build() {
-        return new CompilationParameters(root, functionalInterface, asyncReturnType, customTypes, checker, debug);
+        return new CompilationParameters(root, functionalInterface, asyncReturnType, customTypes, checker, sourceFile, emitLineNumbers, debug);
     }
 }

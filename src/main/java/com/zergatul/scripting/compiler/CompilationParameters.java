@@ -21,6 +21,8 @@ public class CompilationParameters {
     private final SType asyncReturnType;
     private final List<Class<?>> customTypes;
     private final VisibilityChecker checker;
+    private final String sourceFile;
+    private final boolean emitLineNumbers;
     private final boolean debug;
 
     public CompilationParameters(
@@ -29,6 +31,8 @@ public class CompilationParameters {
             SType asyncReturnType,
             List<Class<?>> customTypes,
             VisibilityChecker checker,
+            String sourceFile,
+            boolean emitLineNumbers,
             boolean debug
     ) {
         if (!InterfaceHelper.isFuncInterface(functionalInterface)) {
@@ -45,11 +49,21 @@ public class CompilationParameters {
         this.asyncReturnType = asyncReturnType;
         this.customTypes = customTypes;
         this.checker = checker;
+        this.sourceFile = sourceFile;
+        this.emitLineNumbers = emitLineNumbers;
         this.debug = debug;
         Arrays.stream(root.getDeclaredFields())
                 .filter(f -> Modifier.isPublic(f.getModifiers()))
                 .filter(f -> Modifier.isStatic(f.getModifiers()))
                 .forEach(f -> addStaticVariable(new StaticFieldConstantStaticVariable(f.getName(), f)));
+    }
+
+    public String getSourceFile() {
+        return sourceFile;
+    }
+
+    public boolean shouldEmitLineNumbers() {
+        return emitLineNumbers;
     }
 
     public boolean isDebug() {
