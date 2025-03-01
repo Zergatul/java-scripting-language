@@ -67,7 +67,10 @@ public class Compiler {
     private <T> T compileUnit(BoundCompilationUnitNode unit) {
         ClassWriter writer = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
         emitSourceFile(writer);
-        String name = "com/zergatul/scripting/dynamic/DynamicClass_" + counter.incrementAndGet();
+        String name =
+                "com/zergatul/scripting/dynamic/" +
+                (parameters.getClassNamePrefix() != null ? parameters.getClassNamePrefix() : "DynamicClass_") +
+                counter.incrementAndGet();
         writer.visit(
                 V1_5,
                 ACC_PUBLIC,

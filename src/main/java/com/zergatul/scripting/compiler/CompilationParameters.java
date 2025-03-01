@@ -21,7 +21,9 @@ public class CompilationParameters {
     private final SType asyncReturnType;
     private final List<Class<?>> customTypes;
     private final VisibilityChecker checker;
+    private final String classNamePrefix;
     private final String sourceFile;
+
     private final boolean emitLineNumbers;
     private final boolean debug;
 
@@ -31,6 +33,7 @@ public class CompilationParameters {
             SType asyncReturnType,
             List<Class<?>> customTypes,
             VisibilityChecker checker,
+            String classNamePrefix,
             String sourceFile,
             boolean emitLineNumbers,
             boolean debug
@@ -49,6 +52,7 @@ public class CompilationParameters {
         this.asyncReturnType = asyncReturnType;
         this.customTypes = customTypes;
         this.checker = checker;
+        this.classNamePrefix = classNamePrefix;
         this.sourceFile = sourceFile;
         this.emitLineNumbers = emitLineNumbers;
         this.debug = debug;
@@ -56,6 +60,10 @@ public class CompilationParameters {
                 .filter(f -> Modifier.isPublic(f.getModifiers()))
                 .filter(f -> Modifier.isStatic(f.getModifiers()))
                 .forEach(f -> addStaticVariable(new StaticFieldConstantStaticVariable(f.getName(), f)));
+    }
+
+    public String getClassNamePrefix() {
+        return classNamePrefix;
     }
 
     public String getSourceFile() {
