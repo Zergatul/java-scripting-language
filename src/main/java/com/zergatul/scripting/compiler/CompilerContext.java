@@ -198,7 +198,7 @@ public class CompilerContext {
                 if (functions.isEmpty()) {
                     return localSymbol;
                 } else {
-                    if (!(localSymbol instanceof LiftedVariable)) {
+                    if (!(localSymbol instanceof LiftedVariable) && !(localSymbol instanceof CapturedVariable)) {
                         LiftedVariable lifted = new LiftedVariable((LocalVariable) localSymbol);
                         for (BoundNameExpressionNode nameExpression : localSymbol.getReferences()) {
                             nameExpression.overrideSymbol(lifted);

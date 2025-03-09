@@ -463,6 +463,29 @@ public class LambdaTests {
     }
 
     @Test
+    public void captureInt7Test() {
+        String code = """
+                int ticks = 1;
+                run.multiple(ticks, () => {
+                    run.multiple(ticks, () => {
+                        run.multiple(ticks, () => {
+                            run.multiple(ticks, () => {
+                                run.multiple(ticks, () => {
+                                    intStorage.add(ticks + ticks);
+                                });
+                            });
+                        });
+                    });
+                });
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(2));
+    }
+
+    @Test
     public void captureFloatTest() {
         String code = """
                 float x;
