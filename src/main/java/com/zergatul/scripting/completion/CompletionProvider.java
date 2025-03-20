@@ -57,6 +57,13 @@ public class CompletionProvider<T> {
                 }
             }
         } else {
+            // handle cases like this:
+            // i<cursor>
+            // here we need to propose types, symbols, expressions
+            if (isSingleWordStatementStart(completionContext.entry, line, column)) {
+                canStatement = true;
+            }
+
             switch (completionContext.entry.node.getNodeType()) {
                 case COMPILATION_UNIT -> {
                     if (completionContext.prev == null) {
@@ -95,7 +102,7 @@ public class CompletionProvider<T> {
                         BoundIfStatementNode statement = (BoundIfStatementNode) completionContext.entry.node;
                         // if (...<here>...)
                         if (TextRange.isBetween(line, column, statement.lParen.getRange(), statement.rParen.getRange())) {
-                            if (statement.condition.getRange().isAfter(line, column) || statement.condition.getRange().getLength() == 0) {
+                            if (statement.condition.getRange().isAfter(line, column) || statement.condition.getRange().isEmpty()) {
                                 // if (<here> ...) or if (<here>)
                                 canExpression = true;
                             } else {
@@ -225,7 +232,7 @@ public class CompletionProvider<T> {
                 }
                 case INVALID_EXPRESSION -> {
                     BoundInvalidExpressionNode invalid = (BoundInvalidExpressionNode) completionContext.entry.node;
-                    if (invalid.getRange().getLength() == 0) {
+                    if (invalid.getRange().isEmpty()) {
                         canExpression = true;
                     }
                 }
@@ -488,18 +495,18 @@ public class CompletionProvider<T> {
                 case FUNCTION -> {
                     BoundFunctionNode function = (BoundFunctionNode) context.entry.node;
                     for (BoundParameterNode parameter : function.parameters.parameters) {
-                        list.add(factory.getLocalVariableSuggestion((LocalVariable) parameter.getName().symbol));
+                        addLocalVariableSuggestion(list, (LocalVariable) parameter.getName().symbol);
                     }
                 }
                 case LAMBDA_EXPRESSION -> {
                     BoundLambdaExpressionNode lambda = (BoundLambdaExpressionNode) context.entry.node;
                     for (BoundParameterNode parameter : lambda.parameters) {
-                        list.add(factory.getLocalVariableSuggestion((LocalVariable) parameter.getName().symbol));
+                        addLocalVariableSuggestion(list, (LocalVariable) parameter.getName().symbol);
                     }
                 }
                 case FOREACH_LOOP_STATEMENT -> {
                     BoundForEachLoopStatementNode loop = (BoundForEachLoopStatementNode) context.entry.node;
-                    list.add(factory.getLocalVariableSuggestion((LocalVariable) loop.name.symbol));
+                    addLocalVariableSuggestion(list, (LocalVariable) loop.name.symbol);
                 }
                 default -> {
                     addLocalVariables(list, getStatementsPriorTo(context.entry.node, context.prev));
@@ -592,9 +599,7 @@ public class CompletionProvider<T> {
         for (BoundStatementNode statement : statements) {
             if (statement instanceof BoundVariableDeclarationNode declaration) {
                 if (declaration.name.symbol instanceof LocalVariable local) {
-                    if (local.getName() != null) {
-                        suggestions.add(factory.getLocalVariableSuggestion((LocalVariable) declaration.name.symbol));
-                    }
+                    addLocalVariableSuggestion(suggestions, local);
                 }
                 // can be lifted variable?
             }
@@ -613,6 +618,64 @@ public class CompletionProvider<T> {
         } else {
             return null;
         }
+    }
+
+    private boolean isSingleWordStatementStart(CompletionProvider.SearchEntry entry, int line, int column) {
+        if (entry.node.getNodeType() == NodeType.NAME_EXPRESSION) {
+            if (entry.parent.node.getNodeType() == NodeType.EXPRESSION_STATEMENT) {
+                if (entry.node.getRange().containsOrEnds(line, column)) {
+                    return true;
+                }
+            }
+        }
+        if (entry.node.getNodeType() == NodeType.PREDEFINED_TYPE) {
+            if (entry.parent.node.getNodeType() == NodeType.VARIABLE_DECLARATION) {
+                BoundVariableDeclarationNode declaration = (BoundVariableDeclarationNode) entry.parent.node;
+                return declaration.name.value.isEmpty() && declaration.expression == null;
+            }
+        }
+        if (entry.node.getNodeType() == NodeType.IF_STATEMENT) {
+            BoundIfStatementNode statement = (BoundIfStatementNode) entry.node;
+            return  statement.lParen.getRange().isEmpty() &&
+                    statement.condition.getRange().isEmpty() &&
+                    statement.rParen.getRange().isEmpty() &&
+                    statement.thenStatement.getNodeType() == NodeType.INVALID_STATEMENT &&
+                    statement.elseStatement == null;
+        }
+        if (entry.node.getNodeType() == NodeType.FOR_LOOP_STATEMENT) {
+            BoundForLoopStatementNode statement = (BoundForLoopStatementNode) entry.node;
+            return  statement.lParen.getRange().isEmpty() &&
+                    statement.init.getNodeType() == NodeType.INVALID_STATEMENT &&
+                    statement.condition.getRange().isEmpty() &&
+                    statement.update.getNodeType() == NodeType.INVALID_STATEMENT &&
+                    statement.rParen.getRange().isEmpty() &&
+                    statement.body.getNodeType() == NodeType.INVALID_STATEMENT;
+        }
+        if (entry.node.getNodeType() == NodeType.FOREACH_LOOP_STATEMENT) {
+            BoundForEachLoopStatementNode statement = (BoundForEachLoopStatementNode) entry.node;
+            return  statement.lParen.getRange().isEmpty() &&
+                    statement.typeNode.getNodeType() == NodeType.INVALID_TYPE &&
+                    statement.name.value.isEmpty() &&
+                    statement.iterable.getNodeType() == NodeType.INVALID_EXPRESSION &&
+                    statement.rParen.getRange().isEmpty() &&
+                    statement.body.getNodeType() == NodeType.INVALID_STATEMENT;
+        }
+        if (entry.node.getNodeType() == NodeType.WHILE_LOOP_STATEMENT) {
+            BoundWhileLoopStatementNode statement = (BoundWhileLoopStatementNode) entry.node;
+            return  statement.condition.getRange().isEmpty() &&
+                    statement.body.getNodeType() == NodeType.INVALID_STATEMENT;
+        }
+        /*if (entry.node.getNodeType() == NodeType.RETURN_STATEMENT) {
+            return false;
+        }*/
+        return false;
+    }
+
+    private void addLocalVariableSuggestion(List<T> suggestions, LocalVariable variable) {
+        if (variable.getName() == null || variable.getName().isEmpty()) {
+            return;
+        }
+        suggestions.add(factory.getLocalVariableSuggestion(variable));
     }
 
     private record SearchEntry(SearchEntry parent, BoundNode node) {}

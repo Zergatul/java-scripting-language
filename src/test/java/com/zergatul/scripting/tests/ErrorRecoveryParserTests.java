@@ -193,6 +193,197 @@ public class ErrorRecoveryParserTests {
                         new SingleLineTextRange(1, 1, 0, 25)));
     }
 
+    @Test
+    public void unfinishedStatement1Test() {
+        ParserOutput result = parse("""
+                f
+                freeCam.toggle();
+                """);
+
+        Assertions.assertIterableEquals(
+                result.diagnostics(),
+                List.of(
+                        new DiagnosticMessage(ParserErrors.SemicolonExpected, new SingleLineTextRange(1, 1, 0, 1))));
+
+        Assertions.assertIterableEquals(
+                result.unit().statements.statements,
+                List.of(
+                        new ExpressionStatementNode(
+                                new NameExpressionNode("f", new SingleLineTextRange(1, 1, 0, 1)),
+                                new SingleLineTextRange(1, 1, 0, 1)),
+                        new ExpressionStatementNode(
+                                new InvocationExpressionNode(
+                                        new MemberAccessExpressionNode(
+                                                new NameExpressionNode("freeCam", new SingleLineTextRange(2, 1, 2, 7)),
+                                                new NameExpressionNode("toggle", new SingleLineTextRange(2, 9, 10, 6)),
+                                                new SingleLineTextRange(2, 1, 2, 14)),
+                                        new ArgumentsListNode(List.of(), new SingleLineTextRange(2, 15, 16, 2)),
+                                        new SingleLineTextRange(2, 1, 2, 16)),
+                                new SingleLineTextRange(2, 1, 2, 17))));
+    }
+
+    @Test
+    public void unfinishedStatement2Test() {
+        ParserOutput result = parse("""
+                int
+                freeCam.toggle();
+                """);
+
+        Assertions.assertIterableEquals(
+                result.diagnostics(),
+                List.of(
+                        new DiagnosticMessage(ParserErrors.IdentifierExpected, new SingleLineTextRange(2, 1, 4, 7), "freeCam."),
+                        new DiagnosticMessage(ParserErrors.SemicolonExpected, new SingleLineTextRange(1, 1, 0, 3))));
+
+        Assertions.assertIterableEquals(
+                result.unit().statements.statements,
+                List.of(
+                        new VariableDeclarationNode(
+                                new PredefinedTypeNode(PredefinedType.INT, new SingleLineTextRange(1, 1, 0, 3)),
+                                new NameExpressionNode("", new SingleLineTextRange(2, 1, 4, 0)),
+                                new SingleLineTextRange(1, 1, 0, 3)),
+                        new ExpressionStatementNode(
+                                new InvocationExpressionNode(
+                                        new MemberAccessExpressionNode(
+                                                new NameExpressionNode("freeCam", new SingleLineTextRange(2, 1, 4, 7)),
+                                                new NameExpressionNode("toggle", new SingleLineTextRange(2, 9, 12, 6)),
+                                                new SingleLineTextRange(2, 1, 4, 14)),
+                                        new ArgumentsListNode(List.of(), new SingleLineTextRange(2, 15, 18, 2)),
+                                        new SingleLineTextRange(2, 1, 4, 16)),
+                                new SingleLineTextRange(2, 1, 4, 17))));
+    }
+
+    @Test
+    public void unfinishedStatement3Test() {
+        ParserOutput result = parse("""
+                if
+                freeCam.toggle();
+                """);
+
+        Assertions.assertIterableEquals(
+                result.diagnostics(),
+                List.of(
+                        new DiagnosticMessage(ParserErrors.LeftParenthesisExpected, new SingleLineTextRange(2, 1, 3, 7), "freeCam")));
+
+        Assertions.assertIterableEquals(
+                result.unit().statements.statements,
+                List.of(
+                        new IfStatementNode(
+                                new Token(TokenType.LEFT_PARENTHESES, new SingleLineTextRange(2, 1, 3, 0)),
+                                new Token(TokenType.RIGHT_PARENTHESES, new SingleLineTextRange(2, 1, 3, 0)),
+                                new InvalidExpressionNode(new SingleLineTextRange(2, 1, 3, 0)),
+                                new InvalidStatementNode(new SingleLineTextRange(2, 1, 3, 0)),
+                                null,
+                                new SingleLineTextRange(1, 1, 0, 2)),
+                        new ExpressionStatementNode(
+                                new InvocationExpressionNode(
+                                        new MemberAccessExpressionNode(
+                                                new NameExpressionNode("freeCam", new SingleLineTextRange(2, 1, 3, 7)),
+                                                new NameExpressionNode("toggle", new SingleLineTextRange(2, 9, 11, 6)),
+                                                new SingleLineTextRange(2, 1, 3, 14)),
+                                        new ArgumentsListNode(List.of(), new SingleLineTextRange(2, 15, 17, 2)),
+                                        new SingleLineTextRange(2, 1, 3, 16)),
+                                new SingleLineTextRange(2, 1, 3, 17))));
+    }
+
+    @Test
+    public void unfinishedStatement4Test() {
+        ParserOutput result = parse("""
+                for
+                freeCam.toggle();
+                """);
+
+        Assertions.assertIterableEquals(
+                result.diagnostics(),
+                List.of(
+                        new DiagnosticMessage(ParserErrors.LeftParenthesisExpected, new SingleLineTextRange(2, 1, 4, 7), "freeCam")));
+
+        Assertions.assertIterableEquals(
+                result.unit().statements.statements,
+                List.of(
+                        new ForLoopStatementNode(
+                                new Token(TokenType.LEFT_PARENTHESES, new SingleLineTextRange(2, 1, 4, 0)),
+                                new Token(TokenType.RIGHT_PARENTHESES, new SingleLineTextRange(2, 1, 4, 0)),
+                                new InvalidStatementNode(new SingleLineTextRange(2, 1, 4, 0)),
+                                new InvalidExpressionNode(new SingleLineTextRange(2, 1, 4, 0)),
+                                new InvalidStatementNode(new SingleLineTextRange(2, 1, 4, 0)),
+                                new InvalidStatementNode(new SingleLineTextRange(2, 1, 4, 0)),
+                                new SingleLineTextRange(1, 1, 0, 3)),
+                        new ExpressionStatementNode(
+                                new InvocationExpressionNode(
+                                        new MemberAccessExpressionNode(
+                                                new NameExpressionNode("freeCam", new SingleLineTextRange(2, 1, 4, 7)),
+                                                new NameExpressionNode("toggle", new SingleLineTextRange(2, 9, 12, 6)),
+                                                new SingleLineTextRange(2, 1, 4, 14)),
+                                        new ArgumentsListNode(List.of(), new SingleLineTextRange(2, 15, 18, 2)),
+                                        new SingleLineTextRange(2, 1, 4, 16)),
+                                new SingleLineTextRange(2, 1, 4, 17))));
+    }
+
+    @Test
+    public void unfinishedStatement5Test() {
+        ParserOutput result = parse("""
+                foreach
+                freeCam.toggle();
+                """);
+
+        Assertions.assertIterableEquals(
+                result.diagnostics(),
+                List.of(
+                        new DiagnosticMessage(ParserErrors.LeftParenthesisExpected, new SingleLineTextRange(2, 1, 8, 7), "freeCam")));
+
+        Assertions.assertIterableEquals(
+                result.unit().statements.statements,
+                List.of(
+                        new ForEachLoopStatementNode(
+                                new Token(TokenType.LEFT_PARENTHESES, new SingleLineTextRange(2, 1, 8, 0)),
+                                new Token(TokenType.RIGHT_PARENTHESES, new SingleLineTextRange(2, 1, 8, 0)),
+                                new InvalidTypeNode(new SingleLineTextRange(2, 1, 8, 0)),
+                                new NameExpressionNode("", new SingleLineTextRange(2, 1, 8, 0)),
+                                new InvalidExpressionNode(new SingleLineTextRange(2, 1, 8, 0)),
+                                new InvalidStatementNode(new SingleLineTextRange(2, 1, 8, 0)),
+                                new SingleLineTextRange(1, 1, 0, 7)),
+                        new ExpressionStatementNode(
+                                new InvocationExpressionNode(
+                                        new MemberAccessExpressionNode(
+                                                new NameExpressionNode("freeCam", new SingleLineTextRange(2, 1, 8, 7)),
+                                                new NameExpressionNode("toggle", new SingleLineTextRange(2, 9, 16, 6)),
+                                                new SingleLineTextRange(2, 1, 8, 14)),
+                                        new ArgumentsListNode(List.of(), new SingleLineTextRange(2, 15, 22, 2)),
+                                        new SingleLineTextRange(2, 1, 8, 16)),
+                                new SingleLineTextRange(2, 1, 8, 17))));
+    }
+
+    @Test
+    public void unfinishedStatement6Test() {
+        ParserOutput result = parse("""
+                while
+                freeCam.toggle();
+                """);
+
+        Assertions.assertIterableEquals(
+                result.diagnostics(),
+                List.of(
+                        new DiagnosticMessage(ParserErrors.LeftParenthesisExpected, new SingleLineTextRange(2, 1, 6, 7), "freeCam")));
+
+        Assertions.assertIterableEquals(
+                result.unit().statements.statements,
+                List.of(
+                        new WhileLoopStatementNode(
+                                new InvalidExpressionNode(new SingleLineTextRange(2, 1, 6, 0)),
+                                new InvalidStatementNode(new SingleLineTextRange(2, 1, 6, 0)),
+                                new SingleLineTextRange(1, 1, 0, 5)),
+                        new ExpressionStatementNode(
+                                new InvocationExpressionNode(
+                                        new MemberAccessExpressionNode(
+                                                new NameExpressionNode("freeCam", new SingleLineTextRange(2, 1, 6, 7)),
+                                                new NameExpressionNode("toggle", new SingleLineTextRange(2, 9, 14, 6)),
+                                                new SingleLineTextRange(2, 1, 6, 14)),
+                                        new ArgumentsListNode(List.of(), new SingleLineTextRange(2, 15, 20, 2)),
+                                        new SingleLineTextRange(2, 1, 6, 16)),
+                                new SingleLineTextRange(2, 1, 6, 17))));
+    }
+
     private ParserOutput parse(String code) {
         return new Parser(new Lexer(new LexerInput(code)).lex()).parse();
     }

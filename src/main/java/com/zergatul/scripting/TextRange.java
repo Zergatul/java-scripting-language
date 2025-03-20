@@ -9,6 +9,10 @@ public abstract class TextRange {
     public abstract int getPosition();
     public abstract int getLength();
 
+    public boolean isEmpty() {
+        return getLength() == 0;
+    }
+
     public boolean contains(int line, int column) {
         if (line < getLine1()) {
             return false;

@@ -25,4 +25,15 @@ public class WhileLoopStatementNode extends StatementNode {
         condition.accept(visitor);
         body.accept(visitor);
     }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj instanceof WhileLoopStatementNode other) {
+            return  other.condition.equals(condition) &&
+                    other.body.equals(body) &&
+                    other.getRange().equals(getRange());
+        } else {
+            return false;
+        }
+    }
 }

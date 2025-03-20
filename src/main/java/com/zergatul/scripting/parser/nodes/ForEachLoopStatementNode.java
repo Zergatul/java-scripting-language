@@ -36,4 +36,19 @@ public class ForEachLoopStatementNode extends StatementNode {
         iterable.accept(visitor);
         body.accept(visitor);
     }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj instanceof ForEachLoopStatementNode other) {
+            return  other.lParen.equals(lParen) &&
+                    other.rParen.equals(rParen) &&
+                    other.typeNode.equals(typeNode) &&
+                    other.name.equals(name) &&
+                    other.iterable.equals(iterable) &&
+                    other.body.equals(body) &&
+                    other.getRange().equals(getRange());
+        } else {
+            return false;
+        }
+    }
 }

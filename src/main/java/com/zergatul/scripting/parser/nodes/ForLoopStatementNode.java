@@ -5,6 +5,8 @@ import com.zergatul.scripting.lexer.Token;
 import com.zergatul.scripting.parser.NodeType;
 import com.zergatul.scripting.parser.ParserTreeVisitor;
 
+import java.util.Objects;
+
 public class ForLoopStatementNode extends StatementNode {
 
     public final Token lParen;
@@ -37,5 +39,20 @@ public class ForLoopStatementNode extends StatementNode {
         }
         update.accept(visitor);
         body.accept(visitor);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj instanceof ForLoopStatementNode other) {
+            return  other.lParen.equals(lParen) &&
+                    other.rParen.equals(rParen) &&
+                    other.init.equals(init) &&
+                    Objects.equals(other.condition, condition) &&
+                    other.update.equals(update) &&
+                    other.body.equals(body) &&
+                    other.getRange().equals(getRange());
+        } else {
+            return false;
+        }
     }
 }
