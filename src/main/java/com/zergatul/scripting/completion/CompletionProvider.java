@@ -486,7 +486,7 @@ public class CompletionProvider<T> {
                 case COMPILATION_UNIT -> {
                     addStaticConstants(list, output.context());
                     addCompilationUnitMembers(list, output.unit().members.members);
-                    if (context.prev != null) {
+                    /*if (context.prev != null) {
                         if (context.prev.getNodeType() == NodeType.MEMBER_ACCESS_EXPRESSION) {
                             addCompilationUnitMembers(list, output.unit().members.members);
                             addInputParameters(list, parameters);
@@ -494,13 +494,17 @@ public class CompletionProvider<T> {
                         if (context.prev.getNodeType() == NodeType.COMPILATION_UNIT_MEMBERS) {
                             addInputParameters(list, parameters);
                         }
-                    }
+                    }*/
                 }
                 case FUNCTION -> {
                     BoundFunctionNode function = (BoundFunctionNode) context.entry.node;
                     for (BoundParameterNode parameter : function.parameters.parameters) {
                         addLocalVariableSuggestion(list, (LocalVariable) parameter.getName().symbol);
                     }
+                }
+                case STATEMENTS_LIST -> {
+                    addLocalVariables(list, getStatementsPriorTo(context.entry.node, context.prev));
+                    addInputParameters(list, parameters);
                 }
                 case LAMBDA_EXPRESSION -> {
                     BoundLambdaExpressionNode lambda = (BoundLambdaExpressionNode) context.entry.node;
@@ -531,11 +535,11 @@ public class CompletionProvider<T> {
         List<BoundStatementNode> nodes = new ArrayList<>();
         List<BoundNode> children = parent.getChildren();
         for (BoundNode node : children) {
-            if (node instanceof BoundStatementNode statement) {
-                nodes.add(statement);
-            }
             if (node == prev) {
                 break;
+            }
+            if (node instanceof BoundStatementNode statement) {
+                nodes.add(statement);
             }
         }
 

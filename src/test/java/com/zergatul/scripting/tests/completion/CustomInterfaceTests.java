@@ -140,6 +140,24 @@ public class CustomInterfaceTests {
                         new FunctionSuggestion(context, "func")));
     }
 
+    @Test
+    public void externalParametersTest7() {
+        assertSuggestions("""
+                int x = a<cursor>
+                """,
+                Interface2.class,
+                context -> List.of(
+                        new TypeSuggestion(SBoolean.instance),
+                        new TypeSuggestion(SInt.instance),
+                        new TypeSuggestion(SInt64.instance),
+                        new TypeSuggestion(SChar.instance),
+                        new TypeSuggestion(SFloat.instance),
+                        new TypeSuggestion(SString.instance),
+                        new StaticConstantSuggestion(context, "intStorage"),
+                        new InputParameterSuggestion("message", SString.instance),
+                        new LocalVariableSuggestion(context, "x")));
+    }
+
     /*@Test
     public void externalParametersTest6() {
         assertSuggestions("""
@@ -161,6 +179,23 @@ public class CustomInterfaceTests {
                         new StaticFieldSuggestion(context, "x")));
     }*/
 
+    @Test
+    public void externalParameterTest7() {
+        assertSuggestions("""
+                return a<cursor>
+                """,
+                Interface3.class,
+                context -> List.of(
+                        new TypeSuggestion(SBoolean.instance),
+                        new TypeSuggestion(SInt.instance),
+                        new TypeSuggestion(SInt64.instance),
+                        new TypeSuggestion(SChar.instance),
+                        new TypeSuggestion(SFloat.instance),
+                        new TypeSuggestion(SString.instance),
+                        new StaticConstantSuggestion(context, "intStorage"),
+                        new InputParameterSuggestion("input", SInt.instance)));
+    }
+
     private void assertSuggestions(String code, Class<?> functionalInterface, Function<TestCompletionContext, List<Suggestion>> expectedFactory) {
         CompletionTestHelper.assertSuggestions(ApiRoot.class, code, functionalInterface, expectedFactory);
     }
@@ -177,5 +212,10 @@ public class CustomInterfaceTests {
     @FunctionalInterface
     public interface Interface2 {
         void run(String message);
+    }
+
+    @FunctionalInterface
+    public interface Interface3 {
+        int run(int input);
     }
 }
