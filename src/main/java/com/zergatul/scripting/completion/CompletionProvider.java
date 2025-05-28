@@ -470,6 +470,10 @@ public class CompletionProvider<T> {
             if (context.type == ContextType.AFTER_LAST) {
                 addCompilationUnitMembers(list, output.unit().members.members);
                 addLocalVariables(list, output.unit().statements.statements);
+                addInputParameters(list, parameters);
+            }
+            if (context.type == ContextType.NO_CODE) {
+                addInputParameters(list, parameters);
             }
             return list;
         }
@@ -485,10 +489,10 @@ public class CompletionProvider<T> {
                     if (context.prev != null) {
                         if (context.prev.getNodeType() == NodeType.MEMBER_ACCESS_EXPRESSION) {
                             addCompilationUnitMembers(list, output.unit().members.members);
-
-                            for (Parameter parameter : InterfaceHelper.getFuncInterfaceMethod(parameters.getFunctionalInterface()).getParameters()) {
-                                list.add(factory.getInputParameterSuggestion(parameter.getName(), SType.fromJavaType(parameter.getType())));
-                            }
+                            addInputParameters(list, parameters);
+                        }
+                        if (context.prev.getNodeType() == NodeType.COMPILATION_UNIT_MEMBERS) {
+                            addInputParameters(list, parameters);
                         }
                     }
                 }
@@ -603,6 +607,12 @@ public class CompletionProvider<T> {
                 }
                 // can be lifted variable?
             }
+        }
+    }
+
+    private void addInputParameters(List<T> suggestions, CompilationParameters parameters) {
+        for (Parameter parameter : InterfaceHelper.getFuncInterfaceMethod(parameters.getFunctionalInterface()).getParameters()) {
+            suggestions.add(factory.getInputParameterSuggestion(parameter.getName(), SType.fromJavaType(parameter.getType())));
         }
     }
 

@@ -20,6 +20,16 @@ public class CompletionTestHelper {
     private static final String CURSOR = "<cursor>";
 
     public static void assertSuggestions(Class<?> root, String code, Function<TestCompletionContext, List<Suggestion>> expectedFactory) {
+        assertSuggestions(root, code, Runnable.class, expectedFactory);
+    }
+
+    public static void assertSuggestions(
+            Class<?> root,
+            String code,
+            Class<?> functionalInterface,
+            Function<TestCompletionContext,
+            List<Suggestion>> expectedFactory
+    ) {
         if (!code.contains(CURSOR)) {
             Assertions.fail();
             return;
@@ -44,7 +54,7 @@ public class CompletionTestHelper {
 
         CompilationParameters parameters = new CompilationParametersBuilder()
                 .setRoot(root)
-                .setInterface(Runnable.class)
+                .setInterface(functionalInterface)
                 .build();
         BinderOutput output = new Binder(new Parser(new Lexer(new LexerInput(code)).lex()).parse(), parameters).bind();
         CompletionProvider<Suggestion> provider = new CompletionProvider<>(new TestSuggestionFactory());
