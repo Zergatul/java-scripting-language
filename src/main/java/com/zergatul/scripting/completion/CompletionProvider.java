@@ -470,6 +470,10 @@ public class CompletionProvider<T> {
             if (context.type == ContextType.AFTER_LAST) {
                 addCompilationUnitMembers(list, output.unit().members.members);
                 addLocalVariables(list, output.unit().statements.statements);
+                addInputParameters(list, parameters);
+            }
+            if (context.type == ContextType.NO_CODE) {
+                addInputParameters(list, parameters);
             }
             return list;
         }
@@ -482,21 +486,25 @@ public class CompletionProvider<T> {
                 case COMPILATION_UNIT -> {
                     addStaticConstants(list, output.context());
                     addCompilationUnitMembers(list, output.unit().members.members);
-                    if (context.prev != null) {
+                    /*if (context.prev != null) {
                         if (context.prev.getNodeType() == NodeType.MEMBER_ACCESS_EXPRESSION) {
                             addCompilationUnitMembers(list, output.unit().members.members);
-
-                            for (Parameter parameter : InterfaceHelper.getFuncInterfaceMethod(parameters.getFunctionalInterface()).getParameters()) {
-                                list.add(factory.getInputParameterSuggestion(parameter.getName(), SType.fromJavaType(parameter.getType())));
-                            }
+                            addInputParameters(list, parameters);
                         }
-                    }
+                        if (context.prev.getNodeType() == NodeType.COMPILATION_UNIT_MEMBERS) {
+                            addInputParameters(list, parameters);
+                        }
+                    }*/
                 }
                 case FUNCTION -> {
                     BoundFunctionNode function = (BoundFunctionNode) context.entry.node;
                     for (BoundParameterNode parameter : function.parameters.parameters) {
                         addLocalVariableSuggestion(list, (LocalVariable) parameter.getName().symbol);
                     }
+                }
+                case STATEMENTS_LIST -> {
+                    addLocalVariables(list, getStatementsPriorTo(context));
+                    addInputParameters(list, parameters);
                 }
                 case LAMBDA_EXPRESSION -> {
                     BoundLambdaExpressionNode lambda = (BoundLambdaExpressionNode) context.entry.node;
@@ -509,7 +517,7 @@ public class CompletionProvider<T> {
                     addLocalVariableSuggestion(list, (LocalVariable) loop.name.symbol);
                 }
                 default -> {
-                    addLocalVariables(list, getStatementsPriorTo(context.entry.node, context.prev));
+                    addLocalVariables(list, getStatementsPriorTo(context));
                 }
             }
 
@@ -519,18 +527,26 @@ public class CompletionProvider<T> {
         return list;
     }
 
-    private List<BoundStatementNode> getStatementsPriorTo(BoundNode parent, BoundNode prev) {
+    private List<BoundStatementNode> getStatementsPriorTo(CompletionContext context) {
+        BoundNode parent = context.entry.node;
+        BoundNode prev = context.prev;
         if (prev == null) {
             return List.of();
         }
 
+        boolean unfinished = getUnfinished(prev, context.line, context.column) != null;
+
         List<BoundStatementNode> nodes = new ArrayList<>();
         List<BoundNode> children = parent.getChildren();
         for (BoundNode node : children) {
+            if (unfinished && (node == prev)) {
+                // when we have unfinished node, prev == current
+                break;
+            }
             if (node instanceof BoundStatementNode statement) {
                 nodes.add(statement);
             }
-            if (node == prev) {
+            if (!unfinished && (node == prev)) {
                 break;
             }
         }
@@ -603,6 +619,12 @@ public class CompletionProvider<T> {
                 }
                 // can be lifted variable?
             }
+        }
+    }
+
+    private void addInputParameters(List<T> suggestions, CompilationParameters parameters) {
+        for (Parameter parameter : InterfaceHelper.getFuncInterfaceMethod(parameters.getFunctionalInterface()).getParameters()) {
+            suggestions.add(factory.getInputParameterSuggestion(parameter.getName(), SType.fromJavaType(parameter.getType())));
         }
     }
 

@@ -44,6 +44,11 @@ public class LocalVariableSuggestion extends Suggestion {
         }
     }
 
+    @Override
+    public String toString() {
+        return String.format("LocalVar[%s %s]", variable.getType(), variable.getName());
+    }
+
     private static class LocalVariableVisitor extends BinderTreeVisitor {
 
         public LocalVariable result;

@@ -20,6 +20,16 @@ public class CompletionTestHelper {
     private static final String CURSOR = "<cursor>";
 
     public static void assertSuggestions(Class<?> root, String code, Function<TestCompletionContext, List<Suggestion>> expectedFactory) {
+        assertSuggestions(root, code, Runnable.class, expectedFactory);
+    }
+
+    public static void assertSuggestions(
+            Class<?> root,
+            String code,
+            Class<?> functionalInterface,
+            Function<TestCompletionContext,
+            List<Suggestion>> expectedFactory
+    ) {
         if (!code.contains(CURSOR)) {
             Assertions.fail();
             return;
@@ -44,7 +54,7 @@ public class CompletionTestHelper {
 
         CompilationParameters parameters = new CompilationParametersBuilder()
                 .setRoot(root)
-                .setInterface(Runnable.class)
+                .setInterface(functionalInterface)
                 .build();
         BinderOutput output = new Binder(new Parser(new Lexer(new LexerInput(code)).lex()).parse(), parameters).bind();
         CompletionProvider<Suggestion> provider = new CompletionProvider<>(new TestSuggestionFactory());
@@ -53,23 +63,38 @@ public class CompletionTestHelper {
     }
 
     private static void assertSuggestions(List<Suggestion> expected, List<Suggestion> actual) {
-        Assertions.assertEquals(expected.size(), actual.size());
-
         expected = new ArrayList<>(expected);
         actual = new ArrayList<>(actual);
         while (!expected.isEmpty()) {
             int index = -1;
-            for (int i = 0; i < expected.size(); i++) {
+            for (int i = 0; i < actual.size(); i++) {
                 if (expected.get(0).equals(actual.get(i))) {
                     index = i;
                     break;
                 }
             }
             if (index == -1) {
-                Assertions.fail();
+                Assertions.fail(String.format("Missing suggestion %s", expected.get(0)));
             }
             expected.remove(0);
             actual.remove(index);
+        }
+
+        expected = new ArrayList<>(expected);
+        actual = new ArrayList<>(actual);
+        while (!actual.isEmpty()) {
+            int index = -1;
+            for (int i = 0; i < expected.size(); i++) {
+                if (actual.get(0).equals(expected.get(i))) {
+                    index = i;
+                    break;
+                }
+            }
+            if (index == -1) {
+                Assertions.fail(String.format("Redundant suggestion %s", actual.get(0)));
+            }
+            actual.remove(0);
+            expected.remove(index);
         }
     }
 }
