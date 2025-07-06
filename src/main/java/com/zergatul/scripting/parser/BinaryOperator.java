@@ -15,7 +15,8 @@ public enum BinaryOperator {
     LESS_EQUALS("<="),
     GREATER_EQUALS(">="),
     BITWISE_AND("&"),
-    BITWISE_OR("|");
+    BITWISE_OR("|"),
+    IS("is");
 
     private final String value;
 

@@ -687,6 +687,7 @@ public class Parser {
                 case GREATER -> BinaryOperator.GREATER;
                 case LESS_EQUAL -> BinaryOperator.LESS_EQUALS;
                 case GREATER_EQUAL -> BinaryOperator.GREATER_EQUALS;
+                case IS -> BinaryOperator.IS;
                 default -> null;
             };
             if (binary == null) {
@@ -701,7 +702,10 @@ public class Parser {
 
             Token binaryToken = advance();
 
-            if (isPossibleExpression()) {
+            if (binaryToken.type == TokenType.IS) {
+                TypeNode typeNode = parseTypeNode();
+                left = new TypeTestExpressionNode(left, typeNode, TextRange.combine(left.getRange(), typeNode.getRange()));
+            } else if (isPossibleExpression()) {
                 ExpressionNode right = parseExpressionCore(newPrecedence);
                 left = new BinaryExpressionNode(
                         left,

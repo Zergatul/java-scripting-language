@@ -126,6 +126,16 @@ public class SBoolean extends SPredefinedType {
     }
 
     @Override
+    public void compileBoxing(MethodVisitor visitor) {
+        visitor.visitMethodInsn(
+                INVOKESTATIC,
+                Type.getInternalName(Boolean.class),
+                "valueOf",
+                Type.getMethodDescriptor(Type.getType(Boolean.class), Type.BOOLEAN_TYPE),
+                false);
+    }
+
+    @Override
     public void compileUnboxing(MethodVisitor visitor) {
         visitor.visitMethodInsn(
                 INVOKEVIRTUAL,

@@ -535,6 +535,7 @@ public class Lexer {
             case "async" -> TokenType.ASYNC;
             case "await" -> TokenType.AWAIT;
             case "let" -> TokenType.LET;
+            case "is" -> TokenType.IS;
             default -> null;
         };
         TextRange range = getCurrentTokenRange();

@@ -123,6 +123,7 @@ public abstract class SType {
             case GREATER -> greaterThan(other);
             case LESS_EQUALS -> lessEquals(other);
             case GREATER_EQUALS -> greaterEquals(other);
+            case IS -> throw new InternalException();
         };
     }
 

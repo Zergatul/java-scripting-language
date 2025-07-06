@@ -4,6 +4,7 @@ import com.zergatul.scripting.Lazy;
 import com.zergatul.scripting.type.operation.BinaryOperation;
 import com.zergatul.scripting.type.operation.CastOperation;
 import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.Type;
 
 import java.util.List;
 
@@ -56,6 +57,31 @@ public class SChar extends SPredefinedType {
     @Override
     public int getReturnInst() {
         return IRETURN;
+    }
+
+    @Override
+    public Class<?> getBoxedVersion() {
+        return Character.class;
+    }
+
+    @Override
+    public void compileBoxing(MethodVisitor visitor) {
+        visitor.visitMethodInsn(
+                INVOKESTATIC,
+                Type.getInternalName(Character.class),
+                "valueOf",
+                Type.getMethodDescriptor(Type.getType(Character.class), Type.CHAR_TYPE),
+                false);
+    }
+
+    @Override
+    public void compileUnboxing(MethodVisitor visitor) {
+        visitor.visitMethodInsn(
+                INVOKEVIRTUAL,
+                Type.getInternalName(Character.class),
+                "charValue",
+                Type.getMethodDescriptor(Type.CHAR_TYPE),
+                false);
     }
 
     @Override

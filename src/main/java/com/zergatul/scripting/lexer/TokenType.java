@@ -76,5 +76,6 @@ public enum TokenType {
     REF,
     ASYNC,
     AWAIT,
-    LET
+    LET,
+    IS
 }

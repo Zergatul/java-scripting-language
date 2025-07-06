@@ -1001,6 +1001,7 @@ public class Compiler {
             case CHAR_LITERAL -> compileCharLiteral(visitor, (BoundCharLiteralExpressionNode) expression);
             case UNARY_EXPRESSION -> compileUnaryExpression(visitor, context, (BoundUnaryExpressionNode) expression);
             case BINARY_EXPRESSION -> compileBinaryExpression(visitor, context, (BoundBinaryExpressionNode) expression);
+            case TYPE_TEST_EXPRESSION -> compileTypeTestExpression(visitor, context, (BoundTypeTestExpressionNode) expression);
             case CONDITIONAL_EXPRESSION -> compileConditionalExpression(visitor, context, (BoundConditionalExpressionNode) expression);
             case IMPLICIT_CAST -> compileImplicitCastExpression(visitor, context, (BoundImplicitCastExpressionNode) expression);
             case NAME_EXPRESSION -> compileNameExpression(visitor, context, (BoundNameExpressionNode) expression);
@@ -1054,6 +1055,19 @@ public class Compiler {
         compileExpression(visitor, context, expression.left);
         compileExpression(buffer, context, expression.right);
         expression.operator.operation.apply(visitor, buffer);
+    }
+
+    private void compileTypeTestExpression(MethodVisitor visitor, CompilerContext context, BoundTypeTestExpressionNode test) {
+        compileExpression(visitor, context, test.expression);
+        if (!test.expression.type.isReference()) {
+            test.expression.type.compileBoxing(visitor);
+        }
+
+        if (test.type.type.isReference()) {
+            visitor.visitTypeInsn(INSTANCEOF, Type.getInternalName(test.type.type.getJavaClass()));
+        } else {
+            visitor.visitTypeInsn(INSTANCEOF, Type.getInternalName(test.type.type.getBoxedVersion()));
+        }
     }
 
     private void compileConditionalExpression(MethodVisitor visitor, CompilerContext context, BoundConditionalExpressionNode expression) {
