@@ -1,5 +1,7 @@
 package com.zergatul.scripting.tests.compiler;
 
+import com.zergatul.scripting.DiagnosticMessage;
+import com.zergatul.scripting.binding.BinderErrors;
 import com.zergatul.scripting.tests.compiler.helpers.BoolStorage;
 import com.zergatul.scripting.type.CustomType;
 import org.junit.jupiter.api.Assertions;
@@ -8,8 +10,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
-import static com.zergatul.scripting.tests.compiler.helpers.CompilerHelper.compile;
-import static com.zergatul.scripting.tests.compiler.helpers.CompilerHelper.compileWithCustomType;
+import static com.zergatul.scripting.tests.compiler.helpers.CompilerHelper.*;
 
 public class TypeTestExpressionTests {
 
@@ -105,6 +106,18 @@ public class TypeTestExpressionTests {
         program.run();
 
         Assertions.assertIterableEquals(ApiRoot.boolStorage.list, List.of(true, false, false, true, true, false));
+    }
+
+    @Test
+    public void variableDeclarationTest1() {
+        String code = """
+                let x = 1;
+                if (x is int a || x is float a) {}
+                """;
+
+        List<DiagnosticMessage> messages = getDiagnostics(ApiRoot.class, code);
+        Assertions.assertEquals(1, messages.size());
+        Assertions.assertEquals(messages.get(0).code, BinderErrors.SymbolAlreadyDeclared.code());
     }
 
     public static class ApiRoot {

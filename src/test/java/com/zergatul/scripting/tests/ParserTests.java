@@ -509,7 +509,9 @@ public class ParserTests {
                                 new BinaryExpressionNode(
                                         new TypeTestExpressionNode(
                                                 new NameExpressionNode("a", new SingleLineTextRange(1, 9, 8, 1)),
-                                                new PredefinedTypeNode(PredefinedType.STRING, new SingleLineTextRange(1, 14, 13, 6)),
+                                                new TypePatternNode(
+                                                        new PredefinedTypeNode(PredefinedType.STRING, new SingleLineTextRange(1, 14, 13, 6)),
+                                                        new SingleLineTextRange(1, 14, 13, 6)),
                                                 new SingleLineTextRange(1, 9, 8, 11)),
                                         new BinaryOperatorNode(BinaryOperator.BOOLEAN_OR, new SingleLineTextRange(1, 21, 20, 2)),
                                         new NameExpressionNode("b", new SingleLineTextRange(1, 24, 23, 1)),
@@ -536,12 +538,42 @@ public class ParserTests {
                                         new BinaryOperatorNode(BinaryOperator.EQUALS, new SingleLineTextRange(1, 11, 10, 2)),
                                         new TypeTestExpressionNode(
                                                 new NameExpressionNode("b", new SingleLineTextRange(1, 14, 13, 1)),
-                                                new PredefinedTypeNode(PredefinedType.STRING, new SingleLineTextRange(1, 19, 18, 6)),
+                                                new TypePatternNode(
+                                                        new PredefinedTypeNode(PredefinedType.STRING, new SingleLineTextRange(1, 19, 18, 6)),
+                                                        new SingleLineTextRange(1, 19, 18, 6)),
                                                 new SingleLineTextRange(1, 14, 13, 11)),
                                         new SingleLineTextRange(1, 9, 8, 16)),
                                 new SingleLineTextRange(1, 1, 0, 25))),
                         new SingleLineTextRange(1, 1, 0, 25)),
                 new SingleLineTextRange(1, 1, 0, 25)));
+    }
+
+    @Test
+    public void typeTestExpressionTest3() {
+        ParserOutput result = parse("""
+                if (o is TypeA a) {}
+                """);
+        Assertions.assertTrue(result.diagnostics().isEmpty());
+        Assertions.assertEquals(result.unit(), new CompilationUnitNode(
+                new CompilationUnitMembersListNode(List.of(), new SingleLineTextRange(1, 1, 0, 0)),
+                new StatementsListNode(List.of(
+                        new IfStatementNode(
+                                new Token(TokenType.LEFT_PARENTHESES, new SingleLineTextRange(1, 4, 3, 1)),
+                                new Token(TokenType.RIGHT_PARENTHESES, new SingleLineTextRange(1, 17, 16, 1)),
+                                new TypeTestExpressionNode(
+                                        new NameExpressionNode("o", new SingleLineTextRange(1, 5, 4, 1)),
+                                        new DeclarationPatternNode(
+                                                new VariableDeclarationNode(
+                                                        new CustomTypeNode("TypeA", new SingleLineTextRange(1, 10, 9, 5)),
+                                                        new NameExpressionNode("a", new SingleLineTextRange(1, 16, 15, 1)),
+                                                        new SingleLineTextRange(1, 10, 9, 7)),
+                                                new SingleLineTextRange(1, 10, 9, 7)),
+                                        new SingleLineTextRange(1, 5, 4, 12)),
+                                new BlockStatementNode(List.of(), new SingleLineTextRange(1, 19, 18, 2)),
+                                null,
+                                new SingleLineTextRange(1, 1, 0, 20))
+                ), new SingleLineTextRange(1, 1, 0 ,20)),
+                new SingleLineTextRange(1, 1, 0, 20)));
     }
 
     private ParserOutput parse(String code) {

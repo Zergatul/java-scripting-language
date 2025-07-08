@@ -10,12 +10,12 @@ import java.util.List;
 public class BoundTypeTestExpressionNode extends BoundExpressionNode {
 
     public final BoundExpressionNode expression;
-    public final BoundTypeNode type;
+    public final BoundPatternNode pattern;
 
-    public BoundTypeTestExpressionNode(BoundExpressionNode expression, BoundTypeNode type, TextRange range) {
+    public BoundTypeTestExpressionNode(BoundExpressionNode expression, BoundPatternNode pattern, TextRange range) {
         super(NodeType.TYPE_TEST_EXPRESSION, SBoolean.instance, range);
         this.expression = expression;
-        this.type = type;
+        this.pattern = pattern;
     }
 
     @Override
@@ -26,11 +26,11 @@ public class BoundTypeTestExpressionNode extends BoundExpressionNode {
     @Override
     public void acceptChildren(BinderTreeVisitor visitor) {
         expression.accept(visitor);
-        type.accept(visitor);
+        pattern.accept(visitor);
     }
 
     @Override
     public List<BoundNode> getChildren() {
-        return List.of(expression, type);
+        return List.of(expression, pattern);
     }
 }

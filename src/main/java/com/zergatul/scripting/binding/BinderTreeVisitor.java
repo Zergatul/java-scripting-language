@@ -94,6 +94,11 @@ public abstract class BinderTreeVisitor {
         node.acceptChildren(this);
     }
 
+    public void explicitVisit(BoundDeclarationPatternNode node) {
+        visit(node);
+        node.acceptChildren(this);
+    }
+
     public void explicitVisit(BoundEmptyStatementNode node) {
         visit(node);
         node.acceptChildren(this);
@@ -269,6 +274,11 @@ public abstract class BinderTreeVisitor {
         node.acceptChildren(this);
     }
 
+    public void explicitVisit(BoundTypePatternNode node) {
+        visit(node);
+        node.acceptChildren(this);
+    }
+
     public void explicitVisit(BoundTypeTestExpressionNode node) {
         visit(node);
         node.acceptChildren(this);
@@ -317,6 +327,7 @@ public abstract class BinderTreeVisitor {
     public void visit(BoundConditionalExpressionNode node) {}
     public void visit(BoundContinueStatementNode node) {}
     public void visit(BoundCustomTypeNode node) {}
+    public void visit(BoundDeclarationPatternNode node) {}
     public void visit(BoundEmptyStatementNode node) {}
     public void visit(BoundExpressionStatementNode node) {}
     public void visit(BoundFloatLiteralExpressionNode node) {}
@@ -352,6 +363,7 @@ public abstract class BinderTreeVisitor {
     public void visit(BoundStaticFieldNode node) {}
     public void visit(BoundStaticReferenceExpression node) {}
     public void visit(BoundStringLiteralExpressionNode node) {}
+    public void visit(BoundTypePatternNode node) {}
     public void visit(BoundTypeTestExpressionNode node) {}
     public void visit(BoundUnaryExpressionNode node) {}
     public void visit(BoundUnaryOperatorNode node) {}

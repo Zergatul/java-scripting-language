@@ -4,13 +4,13 @@ import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.parser.NodeType;
 import com.zergatul.scripting.parser.ParserTreeVisitor;
 
-public class CustomTypeNode extends TypeNode {
+public class TypePatternNode extends PatternNode {
 
-    public final String value;
+    public final TypeNode type;
 
-    public CustomTypeNode(String value, TextRange range) {
-        super(NodeType.CUSTOM_TYPE, range);
-        this.value = value;
+    public TypePatternNode(TypeNode type, TextRange range) {
+        super(NodeType.TYPE_PATTERN, range);
+        this.type = type;
     }
 
     @Override
@@ -19,12 +19,14 @@ public class CustomTypeNode extends TypeNode {
     }
 
     @Override
-    public void acceptChildren(ParserTreeVisitor visitor) {}
+    public void acceptChildren(ParserTreeVisitor visitor) {
+        type.accept(visitor);
+    }
 
     @Override
     public boolean equals(Object obj) {
-        if (obj instanceof CustomTypeNode other) {
-            return other.value.equals(value) && other.getRange().equals(getRange());
+        if (obj instanceof TypePatternNode other) {
+            return other.type.equals(type) && other.getRange().equals(getRange());
         } else {
             return false;
         }

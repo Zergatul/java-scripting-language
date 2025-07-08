@@ -703,8 +703,8 @@ public class Parser {
             Token binaryToken = advance();
 
             if (binaryToken.type == TokenType.IS) {
-                TypeNode typeNode = parseTypeNode();
-                left = new TypeTestExpressionNode(left, typeNode, TextRange.combine(left.getRange(), typeNode.getRange()));
+                PatternNode pattern = parsePattern();
+                left = new TypeTestExpressionNode(left, pattern, TextRange.combine(left.getRange(), pattern.getRange()));
             } else if (isPossibleExpression()) {
                 ExpressionNode right = parseExpressionCore(newPrecedence);
                 left = new BinaryExpressionNode(
@@ -1096,6 +1096,18 @@ public class Parser {
         }
 
         return false;
+    }
+
+    private PatternNode parsePattern() {
+        TypeNode type = parseTypeNode();
+        if (current.type == TokenType.IDENTIFIER) {
+            NameExpressionNode name = new NameExpressionNode((IdentifierToken) current);
+            advance();
+            VariableDeclarationNode declaration = new VariableDeclarationNode(type, name, TextRange.combine(type, name));
+            return new DeclarationPatternNode(declaration, declaration.getRange());
+        } else {
+            return new TypePatternNode(type, type.getRange());
+        }
     }
 
     private boolean isPredefinedType() {

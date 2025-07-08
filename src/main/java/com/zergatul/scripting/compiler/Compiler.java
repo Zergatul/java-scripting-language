@@ -1063,10 +1063,19 @@ public class Compiler {
             test.expression.type.compileBoxing(visitor);
         }
 
-        if (test.type.type.isReference()) {
-            visitor.visitTypeInsn(INSTANCEOF, Type.getInternalName(test.type.type.getJavaClass()));
-        } else {
-            visitor.visitTypeInsn(INSTANCEOF, Type.getInternalName(test.type.type.getBoxedVersion()));
+        switch (test.pattern.getNodeType()) {
+            case TYPE_PATTERN -> {
+                BoundTypePatternNode pattern = (BoundTypePatternNode) test.pattern;
+                if (pattern.type.type.isReference()) {
+                    visitor.visitTypeInsn(INSTANCEOF, Type.getInternalName(pattern.type.type.getJavaClass()));
+                } else {
+                    visitor.visitTypeInsn(INSTANCEOF, Type.getInternalName(pattern.type.type.getBoxedVersion()));
+                }
+            }
+            case DECLARATION_PATTERN -> {
+                throw new InternalException(); // TODO
+            }
+            default -> throw new InternalException();
         }
     }
 

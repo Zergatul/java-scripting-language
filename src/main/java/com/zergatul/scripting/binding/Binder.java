@@ -10,6 +10,7 @@ import com.zergatul.scripting.parser.nodes.*;
 import com.zergatul.scripting.symbols.*;
 import com.zergatul.scripting.type.*;
 import com.zergatul.scripting.type.operation.*;
+import com.zergatul.scripting.visitors.PatternVariablesVisitor;
 
 import java.util.*;
 
@@ -252,10 +253,28 @@ public class Binder {
     }
 
     private BoundIfStatementNode bindIfStatement(IfStatementNode statement) {
-        BoundExpressionNode condition = tryCastTo(bindExpression(statement.condition), SBoolean.instance);
-        BoundStatementNode thenStatement = bindStatement(statement.thenStatement);
-        BoundStatementNode elseStatement = statement.elseStatement == null ? null : bindStatement(statement.elseStatement);
-        return new BoundIfStatementNode(statement.lParen, statement.rParen, condition, thenStatement, elseStatement, statement.getRange());
+        PatternVariablesVisitor visitor = new PatternVariablesVisitor();
+        statement.condition.accept(visitor);
+
+        if (visitor.hasDeclarationPattern()) {
+            pushScope();
+            BoundExpressionNode condition = tryCastTo(bindExpression(statement.condition), SBoolean.instance);
+            DefinitionAnalyzer.AssignedVariables patternVars = extractPatternVariables(condition);
+            BoundStatementNode thenStatement = bindStatement(statement.thenStatement);
+            BoundStatementNode elseStatement = statement.elseStatement == null ? null : bindStatement(statement.elseStatement);
+            popScope();
+            return new BoundIfStatementNode(statement.lParen, statement.rParen, condition, thenStatement, elseStatement, statement.getRange());
+        } else {
+            BoundExpressionNode condition = tryCastTo(bindExpression(statement.condition), SBoolean.instance);
+            BoundStatementNode thenStatement = bindStatement(statement.thenStatement);
+            BoundStatementNode elseStatement = statement.elseStatement == null ? null : bindStatement(statement.elseStatement);
+            return new BoundIfStatementNode(statement.lParen, statement.rParen, condition, thenStatement, elseStatement, statement.getRange());
+        }
+    }
+
+    private DefinitionAnalyzer.AssignedVariables extractPatternVariables(BoundExpressionNode expression) {
+        DefinitionAnalyzer analyzer = new DefinitionAnalyzer();
+        return analyzer.analyze(expression);
     }
 
     private BoundReturnStatementNode bindReturnStatement(ReturnStatementNode statement) {
@@ -514,8 +533,8 @@ public class Binder {
 
     private BoundTypeTestExpressionNode bindTypeTestExpression(TypeTestExpressionNode test) {
         BoundExpressionNode expression = bindExpression(test.expression);
-        BoundTypeNode type = bindType(test.type);
-        return new BoundTypeTestExpressionNode(expression, type, test.getRange());
+        BoundPatternNode pattern = bindPattern(test.pattern);
+        return new BoundTypeTestExpressionNode(expression, pattern, test.getRange());
     }
 
     private BoundBooleanLiteralExpressionNode bindBooleanLiteralExpression(BooleanLiteralExpressionNode bool) {
@@ -1189,6 +1208,22 @@ public class Binder {
         expression1 = new BoundImplicitCastExpressionNode(expression1, UndefinedCastOperation.instance, expression1.getRange());
         expression2 = new BoundImplicitCastExpressionNode(expression2, UndefinedCastOperation.instance, expression2.getRange());
         return new ExpressionPair(false, expression1, expression2);
+    }
+
+    private BoundPatternNode bindPattern(PatternNode pattern) {
+        return switch (pattern.getNodeType()) {
+            case TYPE_PATTERN -> bindTypePattern((TypePatternNode) pattern);
+            case DECLARATION_PATTERN -> bindDeclarationPattern((DeclarationPatternNode) pattern);
+            default -> throw new InternalException();
+        };
+    }
+
+    private BoundTypePatternNode bindTypePattern(TypePatternNode pattern) {
+        return new BoundTypePatternNode(bindType(pattern.type), pattern.getRange());
+    }
+
+    private BoundDeclarationPatternNode bindDeclarationPattern(DeclarationPatternNode pattern) {
+        return new BoundDeclarationPatternNode(bindVariableDeclaration(pattern.declaration), pattern.getRange());
     }
 
     private BoundTypeNode bindType(TypeNode type) {
