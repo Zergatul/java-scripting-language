@@ -1002,6 +1002,7 @@ public class Compiler {
             case UNARY_EXPRESSION -> compileUnaryExpression(visitor, context, (BoundUnaryExpressionNode) expression);
             case BINARY_EXPRESSION -> compileBinaryExpression(visitor, context, (BoundBinaryExpressionNode) expression);
             case TYPE_TEST_EXPRESSION -> compileTypeTestExpression(visitor, context, (BoundTypeTestExpressionNode) expression);
+            case TYPE_CAST_EXPRESSION -> compileTypeCastExpression(visitor, context, (BoundTypeCastExpressionNode) expression);
             case CONDITIONAL_EXPRESSION -> compileConditionalExpression(visitor, context, (BoundConditionalExpressionNode) expression);
             case IMPLICIT_CAST -> compileImplicitCastExpression(visitor, context, (BoundImplicitCastExpressionNode) expression);
             case NAME_EXPRESSION -> compileNameExpression(visitor, context, (BoundNameExpressionNode) expression);
@@ -1067,6 +1068,23 @@ public class Compiler {
             visitor.visitTypeInsn(INSTANCEOF, Type.getInternalName(test.type.type.getJavaClass()));
         } else {
             visitor.visitTypeInsn(INSTANCEOF, Type.getInternalName(test.type.type.getBoxedVersion()));
+        }
+    }
+
+    private void compileTypeCastExpression(MethodVisitor visitor, CompilerContext context, BoundTypeCastExpressionNode test) {
+        compileExpression(visitor, context, test.expression);
+        if (!test.expression.type.isReference()) {
+            test.expression.type.compileBoxing(visitor);
+        }
+
+        if (test.type.type.isReference()) {
+            visitor.visitTypeInsn(CHECKCAST, Type.getInternalName(test.type.type.getJavaClass()));
+        } else {
+            visitor.visitTypeInsn(CHECKCAST, Type.getInternalName(test.type.type.getBoxedVersion()));
+        }
+
+        if (!test.expression.type.isReference()) {
+            test.type.type.compileUnboxing(visitor);
         }
     }
 

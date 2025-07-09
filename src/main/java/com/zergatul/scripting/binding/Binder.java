@@ -437,6 +437,7 @@ public class Binder {
             case UNARY_EXPRESSION -> bindUnaryExpression((UnaryExpressionNode) expression);
             case BINARY_EXPRESSION -> bindBinaryExpression((BinaryExpressionNode) expression);
             case TYPE_TEST_EXPRESSION -> bindTypeTestExpression((TypeTestExpressionNode) expression);
+            case TYPE_CAST_EXPRESSION -> bindTypeCastExpression((TypeCastExpressionNode) expression);
             case CONDITIONAL_EXPRESSION -> bindConditionalExpression((ConditionalExpressionNode) expression);
             case INDEX_EXPRESSION -> bindIndexExpression((IndexExpressionNode) expression);
             case INVOCATION_EXPRESSION -> bindInvocationExpression((InvocationExpressionNode) expression);
@@ -516,6 +517,12 @@ public class Binder {
         BoundExpressionNode expression = bindExpression(test.expression);
         BoundTypeNode type = bindType(test.type);
         return new BoundTypeTestExpressionNode(expression, type, test.getRange());
+    }
+
+    private BoundTypeCastExpressionNode bindTypeCastExpression(TypeCastExpressionNode test) {
+        BoundExpressionNode expression = bindExpression(test.expression);
+        BoundTypeNode type = bindType(test.type);
+        return new BoundTypeCastExpressionNode(expression, type, test.getRange());
     }
 
     private BoundBooleanLiteralExpressionNode bindBooleanLiteralExpression(BooleanLiteralExpressionNode bool) {

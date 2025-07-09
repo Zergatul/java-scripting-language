@@ -3,6 +3,7 @@ package com.zergatul.scripting.compiler;
 import com.zergatul.scripting.type.SType;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 public class CompilationParametersBuilder {
@@ -42,6 +43,14 @@ public class CompilationParametersBuilder {
             this.customTypes = new ArrayList<>();
         }
         this.customTypes.add(clazz);
+        return this;
+    }
+
+    public CompilationParametersBuilder addCustomTypes(Collection<Class<?>> clazz) {
+        if (this.customTypes.isEmpty()) {
+            this.customTypes = new ArrayList<>();
+        }
+        this.customTypes.addAll(clazz);
         return this;
     }
 

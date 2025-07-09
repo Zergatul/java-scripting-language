@@ -51,4 +51,15 @@ public class CompilerHelper {
         Assertions.assertNull(result.getDiagnostics());
         return result.getProgram();
     }
+
+    public static Runnable compileWithCustomTypes(Class<?> api, String code, Class<?>... customTypes) {
+        Compiler compiler = new Compiler(new CompilationParametersBuilder()
+                .setRoot(api)
+                .addCustomTypes(List.of(customTypes))
+                //.setDebug()
+                .build());
+        CompilationResult result = compiler.compile(code);
+        Assertions.assertNull(result.getDiagnostics());
+        return result.getProgram();
+    }
 }
