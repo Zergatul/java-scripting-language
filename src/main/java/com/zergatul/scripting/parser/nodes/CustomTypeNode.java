@@ -19,7 +19,14 @@ public class CustomTypeNode extends TypeNode {
     }
 
     @Override
-    public void acceptChildren(ParserTreeVisitor visitor) {
+    public void acceptChildren(ParserTreeVisitor visitor) {}
 
+    @Override
+    public boolean equals(Object obj) {
+        if (obj instanceof CustomTypeNode other) {
+            return other.value.equals(value) && other.getRange().equals(getRange());
+        } else {
+            return false;
+        }
     }
 }

@@ -688,6 +688,7 @@ public class Parser {
                 case LESS_EQUAL -> BinaryOperator.LESS_EQUALS;
                 case GREATER_EQUAL -> BinaryOperator.GREATER_EQUALS;
                 case IS -> BinaryOperator.IS;
+                case AS -> BinaryOperator.AS;
                 default -> null;
             };
             if (binary == null) {
@@ -704,7 +705,10 @@ public class Parser {
 
             if (binaryToken.type == TokenType.IS) {
                 TypeNode typeNode = parseTypeNode();
-                left = new TypeTestExpressionNode(left, typeNode, TextRange.combine(left.getRange(), typeNode.getRange()));
+                left = new TypeTestExpressionNode(left, typeNode, TextRange.combine(left, typeNode));
+            } else if (binaryToken.type == TokenType.AS) {
+                TypeNode typeNode = parseTypeNode();
+                left = new TypeCastExpressionNode(left, typeNode, TextRange.combine(left, typeNode));
             } else if (isPossibleExpression()) {
                 ExpressionNode right = parseExpressionCore(newPrecedence);
                 left = new BinaryExpressionNode(

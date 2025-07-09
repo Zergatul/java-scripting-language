@@ -16,7 +16,7 @@ public class Precedences {
         return switch (operator) {
             case MULTIPLY, DIVIDE, MODULO -> 80;
             case PLUS, MINUS -> 70;
-            case LESS, GREATER, LESS_EQUALS, GREATER_EQUALS, IS -> 60;
+            case LESS, GREATER, LESS_EQUALS, GREATER_EQUALS, IS, AS -> 60;
             case EQUALS, NOT_EQUALS -> 50;
             case BITWISE_AND -> 40;
             case BITWISE_OR -> 30;
