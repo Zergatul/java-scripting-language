@@ -2,16 +2,17 @@ package com.zergatul.scripting.compiler;
 
 import com.zergatul.scripting.InterfaceHelper;
 import com.zergatul.scripting.InternalException;
+import com.zergatul.scripting.runtime.RuntimeType;
 import com.zergatul.scripting.symbols.StaticFieldConstantStaticVariable;
 import com.zergatul.scripting.symbols.StaticVariable;
 import com.zergatul.scripting.type.CustomType;
 import com.zergatul.scripting.type.SType;
 
-import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Parameter;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 public class CompilationParameters {
@@ -50,7 +51,7 @@ public class CompilationParameters {
 
         this.functionalInterface = functionalInterface;
         this.asyncReturnType = asyncReturnType;
-        this.customTypes = customTypes;
+        this.customTypes = addPredefinedTypes(customTypes);
         this.checker = checker;
         this.classNamePrefix = classNamePrefix;
         this.sourceFile = sourceFile;
@@ -127,14 +128,10 @@ public class CompilationParameters {
         staticVariables.add(variable);
     }
 
-    private Method getMethod(Class<?> functionalInterface) {
-        if (!functionalInterface.isInterface()) {
-            throw new InternalException();
-        }
-        List<Method> methods = Arrays.stream(functionalInterface.getMethods()).filter(m -> !m.isDefault()).toList();
-        if (methods.size() != 1) {
-            throw new InternalException();
-        }
-        return methods.get(0);
+    private static List<Class<?>> addPredefinedTypes(List<Class<?>> customTypes) {
+        List<Class<?>> list = new ArrayList<>(customTypes.size() + 1);
+        list.add(RuntimeType.class);
+        list.addAll(customTypes);
+        return Collections.unmodifiableList(list);
     }
 }
