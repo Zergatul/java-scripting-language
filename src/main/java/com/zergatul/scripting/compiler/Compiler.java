@@ -16,6 +16,8 @@ import com.zergatul.scripting.parser.Parser;
 import com.zergatul.scripting.parser.ParserOutput;
 import com.zergatul.scripting.runtime.AsyncStateMachine;
 import com.zergatul.scripting.runtime.AsyncStateMachineException;
+import com.zergatul.scripting.runtime.RuntimeType;
+import com.zergatul.scripting.runtime.RuntimeTypes;
 import com.zergatul.scripting.symbols.*;
 import com.zergatul.scripting.type.*;
 import com.zergatul.scripting.visitors.ExternalParameterVisitor;
@@ -1018,6 +1020,8 @@ public class Compiler {
             case GENERATOR_GET_VALUE -> compileGeneratorGetValue(visitor, context, (BoundGeneratorGetValueNode) expression);
             case STACK_LOAD -> compileStackLoad(visitor, (BoundStackLoadNode) expression);
             case FUNCTION_AS_LAMBDA -> compileFunctionAsLambda(visitor, context, (BoundFunctionAsLambdaExpressionNode) expression);
+            case META_TYPE_EXPRESSION -> compileMetaTypeExpression(visitor, (BoundMetaTypeExpressionNode) expression);
+            case META_TYPE_OF_EXPRESSION -> compileMetaTypeOfExpression(visitor, context, (BoundMetaTypeOfExpressionNode) expression);
             default -> throw new InternalException();
         }
     }
@@ -1395,6 +1399,37 @@ public class Compiler {
                 parameters,
                 statement);
         compileLambdaExpression(visitor, context, lambda);
+    }
+
+    private void compileMetaTypeExpression(MethodVisitor visitor, BoundMetaTypeExpressionNode node) {
+        node.type.type.loadClassObject(visitor);
+        visitor.visitMethodInsn(
+                INVOKESTATIC,
+                Type.getInternalName(RuntimeTypes.class),
+                "get",
+                Type.getMethodDescriptor(Type.getType(RuntimeType.class), Type.getType(Class.class)),
+                false);
+    }
+
+    private void compileMetaTypeOfExpression(MethodVisitor visitor, CompilerContext context, BoundMetaTypeOfExpressionNode node) {
+        if (node.expression.type.isReference()) {
+            compileExpression(visitor, context, node.expression);
+            visitor.visitMethodInsn(
+                    INVOKEVIRTUAL,
+                    Type.getInternalName(Object.class),
+                    "getClass",
+                    Type.getMethodDescriptor(Type.getType(Class.class)),
+                    false);
+        } else {
+            node.expression.type.loadClassObject(visitor);
+        }
+
+        visitor.visitMethodInsn(
+                INVOKESTATIC,
+                Type.getInternalName(RuntimeTypes.class),
+                "get",
+                Type.getMethodDescriptor(Type.getType(RuntimeType.class), Type.getType(Class.class)),
+                false);
     }
 
     private void releaseRefVariables(MethodVisitor visitor, CompilerContext context, List<RefHolder> refs) {

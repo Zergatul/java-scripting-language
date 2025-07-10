@@ -3,13 +3,15 @@ package com.zergatul.scripting.tests.completion;
 import com.zergatul.scripting.lexer.TokenType;
 import com.zergatul.scripting.tests.compiler.helpers.IntStorage;
 import com.zergatul.scripting.tests.completion.helpers.CompletionTestHelper;
+import com.zergatul.scripting.tests.completion.helpers.Lists;
 import com.zergatul.scripting.tests.completion.helpers.TestCompletionContext;
 import com.zergatul.scripting.tests.completion.suggestions.*;
-import com.zergatul.scripting.type.*;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
 import java.util.function.Function;
+
+import static com.zergatul.scripting.tests.completion.helpers.CommonSuggestions.*;
 
 public class IfStatementTests {
 
@@ -19,15 +21,11 @@ public class IfStatementTests {
                 let x = 123;
                 if (<cursor>
                 x.toString();
-                """, context -> List.of(
-                new TypeSuggestion(SBoolean.instance),
-                new TypeSuggestion(SInt.instance),
-                new TypeSuggestion(SInt64.instance),
-                new TypeSuggestion(SChar.instance),
-                new TypeSuggestion(SFloat.instance),
-                new TypeSuggestion(SString.instance),
-                new StaticConstantSuggestion(context, "intStorage"),
-                new LocalVariableSuggestion(context, "x")));
+                """,
+                context -> Lists.of(
+                        expressions,
+                        new StaticConstantSuggestion(context, "intStorage"),
+                        new LocalVariableSuggestion(context, "x")));
     }
 
     @Test
@@ -36,15 +34,11 @@ public class IfStatementTests {
                 let x = 123;
                 if (a<cursor>
                 x.toString();
-                """, context -> List.of(
-                new TypeSuggestion(SBoolean.instance),
-                new TypeSuggestion(SInt.instance),
-                new TypeSuggestion(SInt64.instance),
-                new TypeSuggestion(SChar.instance),
-                new TypeSuggestion(SFloat.instance),
-                new TypeSuggestion(SString.instance),
-                new StaticConstantSuggestion(context, "intStorage"),
-                new LocalVariableSuggestion(context, "x")));
+                """,
+                context -> Lists.of(
+                        expressions,
+                        new StaticConstantSuggestion(context, "intStorage"),
+                        new LocalVariableSuggestion(context, "x")));
     }
 
     @Test
@@ -53,15 +47,11 @@ public class IfStatementTests {
                 let x = 123;
                 if (<cursor>)
                 x.toString();
-                """, context -> List.of(
-                new TypeSuggestion(SBoolean.instance),
-                new TypeSuggestion(SInt.instance),
-                new TypeSuggestion(SInt64.instance),
-                new TypeSuggestion(SChar.instance),
-                new TypeSuggestion(SFloat.instance),
-                new TypeSuggestion(SString.instance),
-                new StaticConstantSuggestion(context, "intStorage"),
-                new LocalVariableSuggestion(context, "x")));
+                """,
+                context -> Lists.of(
+                        expressions,
+                        new StaticConstantSuggestion(context, "intStorage"),
+                        new LocalVariableSuggestion(context, "x")));
     }
 
     @Test
@@ -71,16 +61,12 @@ public class IfStatementTests {
                 let y = 456;
                 if ( <cursor> )
                 x.toString();
-                """, context -> List.of(
-                new TypeSuggestion(SBoolean.instance),
-                new TypeSuggestion(SInt.instance),
-                new TypeSuggestion(SInt64.instance),
-                new TypeSuggestion(SChar.instance),
-                new TypeSuggestion(SFloat.instance),
-                new TypeSuggestion(SString.instance),
-                new StaticConstantSuggestion(context, "intStorage"),
-                new LocalVariableSuggestion(context, "x"),
-                new LocalVariableSuggestion(context, "y")));
+                """,
+                context -> Lists.of(
+                        expressions,
+                        new StaticConstantSuggestion(context, "intStorage"),
+                        new LocalVariableSuggestion(context, "x"),
+                        new LocalVariableSuggestion(context, "y")));
     }
 
     @Test
@@ -91,23 +77,13 @@ public class IfStatementTests {
                 if (x > y) intStorage.add(x + y);
                 <cursor>
                 x.toString();
-                """, context -> List.of(
-                new KeywordSuggestion(TokenType.LET),
-                new KeywordSuggestion(TokenType.FOR),
-                new KeywordSuggestion(TokenType.FOREACH),
-                new KeywordSuggestion(TokenType.IF),
-                new KeywordSuggestion(TokenType.WHILE),
-                new KeywordSuggestion(TokenType.RETURN),
-                new KeywordSuggestion(TokenType.ELSE),
-                new TypeSuggestion(SBoolean.instance),
-                new TypeSuggestion(SInt.instance),
-                new TypeSuggestion(SInt64.instance),
-                new TypeSuggestion(SChar.instance),
-                new TypeSuggestion(SFloat.instance),
-                new TypeSuggestion(SString.instance),
-                new StaticConstantSuggestion(context, "intStorage"),
-                new LocalVariableSuggestion(context, "x"),
-                new LocalVariableSuggestion(context, "y")));
+                """,
+                context -> Lists.of(
+                        statements,
+                        new KeywordSuggestion(TokenType.ELSE),
+                        new StaticConstantSuggestion(context, "intStorage"),
+                        new LocalVariableSuggestion(context, "x"),
+                        new LocalVariableSuggestion(context, "y")));
     }
 
     @Test
@@ -117,23 +93,13 @@ public class IfStatementTests {
                 let y = 456;
                 if (x > y) {} <cursor>
                 x.toString();
-                """, context -> List.of(
-                new KeywordSuggestion(TokenType.LET),
-                new KeywordSuggestion(TokenType.FOR),
-                new KeywordSuggestion(TokenType.FOREACH),
-                new KeywordSuggestion(TokenType.IF),
-                new KeywordSuggestion(TokenType.WHILE),
-                new KeywordSuggestion(TokenType.RETURN),
-                new KeywordSuggestion(TokenType.ELSE),
-                new TypeSuggestion(SBoolean.instance),
-                new TypeSuggestion(SInt.instance),
-                new TypeSuggestion(SInt64.instance),
-                new TypeSuggestion(SChar.instance),
-                new TypeSuggestion(SFloat.instance),
-                new TypeSuggestion(SString.instance),
-                new StaticConstantSuggestion(context, "intStorage"),
-                new LocalVariableSuggestion(context, "x"),
-                new LocalVariableSuggestion(context, "y")));
+                """,
+                context -> Lists.of(
+                        statements,
+                        new KeywordSuggestion(TokenType.ELSE),
+                        new StaticConstantSuggestion(context, "intStorage"),
+                        new LocalVariableSuggestion(context, "x"),
+                        new LocalVariableSuggestion(context, "y")));
     }
 
     private void assertSuggestions(String code, Function<TestCompletionContext, List<Suggestion>> expectedFactory) {

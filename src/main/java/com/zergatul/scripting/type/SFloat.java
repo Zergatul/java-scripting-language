@@ -165,6 +165,11 @@ public class SFloat extends SPredefinedType {
     }
 
     @Override
+    public void loadClassObject(MethodVisitor visitor) {
+        visitor.visitFieldInsn(GETSTATIC, "java/lang/Double", "TYPE", "Ljava/lang/Class;");
+    }
+
+    @Override
     public List<MethodReference> getInstanceMethods() {
         return List.of(METHOD_TO_STRING.value(), METHOD_TO_STANDARD_STRING.value());
     }
@@ -260,7 +265,7 @@ public class SFloat extends SPredefinedType {
         private final int opcode;
 
         protected FloatComparisonOperation(BinaryOperator operator, int opcode) {
-            super(operator, SBoolean.instance, SFloat.instance);
+            super(operator, SBoolean.instance);
             this.opcode = opcode;
         }
 

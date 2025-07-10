@@ -1,6 +1,5 @@
 package com.zergatul.scripting.tests.completion;
 
-import com.zergatul.scripting.tests.compiler.helpers.IntStorage;
 import com.zergatul.scripting.tests.completion.helpers.CompletionTestHelper;
 import com.zergatul.scripting.tests.completion.helpers.TestCompletionContext;
 import com.zergatul.scripting.tests.completion.suggestions.MethodSuggestion;
@@ -21,9 +20,10 @@ public class ObjectMemberTests {
                 int x = 123;
                 x.<cursor>
                 x.toString();
-                """, context -> List.of(
-                MethodSuggestion.getInstance(SInt.instance, "toString"),
-                MethodSuggestion.getInstance(SInt.instance, "toStandardString")));
+                """,
+                context -> List.of(
+                        MethodSuggestion.getInstance(SInt.instance, "toString"),
+                        MethodSuggestion.getInstance(SInt.instance, "toStandardString")));
     }
 
     @Test
@@ -32,9 +32,10 @@ public class ObjectMemberTests {
                 int x = 123;
                 x.<cursor>a
                 x.toString();
-                """, context -> List.of(
-                MethodSuggestion.getInstance(SInt.instance, "toString"),
-                MethodSuggestion.getInstance(SInt.instance, "toStandardString")));
+                """,
+                context -> List.of(
+                        MethodSuggestion.getInstance(SInt.instance, "toString"),
+                        MethodSuggestion.getInstance(SInt.instance, "toStandardString")));
     }
 
     @Test
@@ -43,10 +44,11 @@ public class ObjectMemberTests {
                 int x = 123;
                 int.<cursor>
                 x.toString();
-                """, context -> List.of(
-                MethodSuggestion.getStatic(SInt.instance, "tryParse"),
-                PropertySuggestion.getStatic(SInt.instance, "MIN_VALUE"),
-                PropertySuggestion.getStatic(SInt.instance, "MAX_VALUE")));
+                """,
+                context -> List.of(
+                        MethodSuggestion.getStatic(SInt.instance, "tryParse"),
+                        PropertySuggestion.getStatic(SInt.instance, "MIN_VALUE"),
+                        PropertySuggestion.getStatic(SInt.instance, "MAX_VALUE")));
     }
 
     @Test
@@ -56,42 +58,47 @@ public class ObjectMemberTests {
                 int y = 456;
                 int.abc<cursor>
                 x.toString();
-                """, context -> List.of(
-                MethodSuggestion.getStatic(SInt.instance, "tryParse"),
-                PropertySuggestion.getStatic(SInt.instance, "MIN_VALUE"),
-                PropertySuggestion.getStatic(SInt.instance, "MAX_VALUE")));
+                """,
+                context -> List.of(
+                        MethodSuggestion.getStatic(SInt.instance, "tryParse"),
+                        PropertySuggestion.getStatic(SInt.instance, "MIN_VALUE"),
+                        PropertySuggestion.getStatic(SInt.instance, "MAX_VALUE")));
     }
 
     @Test
     public void staticConstantSimpleTest1() {
         assertSuggestions("""
                 api.<cursor>
-                """, context -> List.of(
-                MethodSuggestion.getInstance(SType.fromJavaType(SomeApi.class), "doSomething")));
+                """,
+                context -> List.of(
+                        MethodSuggestion.getInstance(SType.fromJavaType(SomeApi.class), "doSomething")));
     }
 
     @Test
     public void staticConstantSimpleTest2() {
         assertSuggestions("""
                 api.abc<cursor>
-                """, context -> List.of(
-                MethodSuggestion.getInstance(SType.fromJavaType(SomeApi.class), "doSomething")));
+                """,
+                context -> List.of(
+                        MethodSuggestion.getInstance(SType.fromJavaType(SomeApi.class), "doSomething")));
     }
 
     @Test
     public void staticConstantSimpleTest3() {
         assertSuggestions("""
                 api.<cursor>();
-                """, context -> List.of(
-                MethodSuggestion.getInstance(SType.fromJavaType(SomeApi.class), "doSomething")));
+                """,
+                context -> List.of(
+                        MethodSuggestion.getInstance(SType.fromJavaType(SomeApi.class), "doSomething")));
     }
 
     @Test
     public void staticConstantSimpleTest4() {
         assertSuggestions("""
                 api.abc<cursor>();
-                """, context -> List.of(
-                MethodSuggestion.getInstance(SType.fromJavaType(SomeApi.class), "doSomething")));
+                """,
+                context -> List.of(
+                        MethodSuggestion.getInstance(SType.fromJavaType(SomeApi.class), "doSomething")));
     }
 
     @Test
@@ -100,8 +107,9 @@ public class ObjectMemberTests {
                 let x = 1;
                 api.<cursor>
                 x.toString();
-                """, context -> List.of(
-                MethodSuggestion.getInstance(SType.fromJavaType(SomeApi.class), "doSomething")));
+                """,
+                context -> List.of(
+                        MethodSuggestion.getInstance(SType.fromJavaType(SomeApi.class), "doSomething")));
     }
 
     @Test
@@ -110,8 +118,9 @@ public class ObjectMemberTests {
                 let x = 1;
                 api.abc<cursor>
                 x.toString();
-                """, context -> List.of(
-                MethodSuggestion.getInstance(SType.fromJavaType(SomeApi.class), "doSomething")));
+                """,
+                context -> List.of(
+                        MethodSuggestion.getInstance(SType.fromJavaType(SomeApi.class), "doSomething")));
     }
 
     @Test
@@ -120,8 +129,9 @@ public class ObjectMemberTests {
                 let x = 1;
                 api.<cursor>()
                 x.toString();
-                """, context -> List.of(
-                MethodSuggestion.getInstance(SType.fromJavaType(SomeApi.class), "doSomething")));
+                """,
+                context -> List.of(
+                        MethodSuggestion.getInstance(SType.fromJavaType(SomeApi.class), "doSomething")));
     }
 
     @Test
@@ -130,8 +140,9 @@ public class ObjectMemberTests {
                 let x = 1;
                 api.abc<cursor>()
                 x.toString();
-                """, context -> List.of(
-                MethodSuggestion.getInstance(SType.fromJavaType(SomeApi.class), "doSomething")));
+                """,
+                context -> List.of(
+                        MethodSuggestion.getInstance(SType.fromJavaType(SomeApi.class), "doSomething")));
     }
 
     private void assertSuggestions(String code, Function<TestCompletionContext, List<Suggestion>> expectedFactory) {

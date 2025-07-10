@@ -78,5 +78,8 @@ public enum TokenType {
     AWAIT,
     LET,
     IS,
-    AS
+    AS,
+    META_UNKNOWN,
+    META_TYPE,
+    META_TYPE_OF
 }

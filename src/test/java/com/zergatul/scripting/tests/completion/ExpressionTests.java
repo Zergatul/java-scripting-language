@@ -17,9 +17,10 @@ public class ExpressionTests {
         assertSuggestions("""
                 let x = 123;
                 x.<cursor>//
-                """, context -> List.of(
-                MethodSuggestion.getInstance(SInt.instance, "toString"),
-                MethodSuggestion.getInstance(SInt.instance, "toStandardString")));
+                """,
+                context -> List.of(
+                        MethodSuggestion.getInstance(SInt.instance, "toString"),
+                        MethodSuggestion.getInstance(SInt.instance, "toStandardString")));
     }
 
     private void assertSuggestions(String code, Function<TestCompletionContext, List<Suggestion>> expectedFactory) {

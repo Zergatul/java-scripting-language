@@ -449,6 +449,9 @@ public class Binder {
             case COLLECTION_EXPRESSION -> bindCollectionExpression((CollectionExpressionNode) expression);
             case LAMBDA_EXPRESSION -> bindLambdaExpression((LambdaExpressionNode) expression);
             case AWAIT_EXPRESSION -> bindAwaitExpression((AwaitExpressionNode) expression);
+            case META_INVALID_EXPRESSION -> bindInvalidMetaExpression((InvalidMetaExpressionNode) expression);
+            case META_TYPE_EXPRESSION -> bindMetaTypeExpression((MetaTypeExpressionNode) expression);
+            case META_TYPE_OF_EXPRESSION -> bindMetaTypeOfExpression((MetaTypeOfExpressionNode) expression);
             case INVALID_EXPRESSION -> bindInvalidExpression((InvalidExpressionNode) expression);
             default -> throw new InternalException();
         };
@@ -1153,6 +1156,20 @@ public class Binder {
             addDiagnostic(BinderErrors.CannotAwaitNonFuture, expression);
             return new BoundAwaitExpressionNode(expression, SUnknown.instance, node.getRange());
         }
+    }
+
+    private BoundInvalidMetaExpressionNode bindInvalidMetaExpression(InvalidMetaExpressionNode expression) {
+        return new BoundInvalidMetaExpressionNode(expression.getRange());
+    }
+
+    private BoundMetaTypeExpressionNode bindMetaTypeExpression(MetaTypeExpressionNode meta) {
+        BoundTypeNode type = bindType(meta.type);
+        return new BoundMetaTypeExpressionNode(type, meta.getRange());
+    }
+
+    private BoundMetaTypeOfExpressionNode bindMetaTypeOfExpression(MetaTypeOfExpressionNode meta) {
+        BoundExpressionNode expression = bindExpression(meta.expression);
+        return new BoundMetaTypeOfExpressionNode(expression, expression.getRange());
     }
 
     private BoundInvalidExpressionNode bindInvalidExpression(InvalidExpressionNode expression) {

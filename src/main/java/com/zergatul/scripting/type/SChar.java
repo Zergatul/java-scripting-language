@@ -85,6 +85,11 @@ public class SChar extends SPredefinedType {
     }
 
     @Override
+    public void loadClassObject(MethodVisitor visitor) {
+        visitor.visitFieldInsn(GETSTATIC, "java/lang/Character", "TYPE", "Ljava/lang/Class;");
+    }
+
+    @Override
     public List<MethodReference> getInstanceMethods() {
         return List.of(METHOD_TO_STRING.value());
     }

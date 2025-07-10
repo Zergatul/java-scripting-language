@@ -853,6 +853,9 @@ public class Parser {
             case LEFT_PARENTHESES -> isPossibleLambdaExpression() ? parseLambdaExpression() : parseParenthesizedExpression();
             case LEFT_SQUARE_BRACKET -> parseCollectionExpression();
             case BOOLEAN, INT, INT32, INT64, LONG, CHAR, FLOAT, STRING -> parseStaticReference();
+            case META_UNKNOWN -> new InvalidMetaExpressionNode(advance().getRange());
+            case META_TYPE -> parseMetaTypeExpression();
+            case META_TYPE_OF -> parseMetaTypeOfExpression();
             default -> null;
         };
 
@@ -1021,6 +1024,22 @@ public class Parser {
         }, token.getRange());
     }
 
+    private MetaTypeExpressionNode parseMetaTypeExpression() {
+        Token first = advance(TokenType.META_TYPE);
+        advance(TokenType.LEFT_PARENTHESES);
+        TypeNode type = parseTypeNode();
+        Token last = advance(TokenType.RIGHT_PARENTHESES);
+        return new MetaTypeExpressionNode(type, TextRange.combine(first, last));
+    }
+
+    private MetaTypeOfExpressionNode parseMetaTypeOfExpression() {
+        Token first = advance(TokenType.META_TYPE_OF);
+        advance(TokenType.LEFT_PARENTHESES);
+        ExpressionNode expression = parseExpression();
+        Token last = advance(TokenType.RIGHT_PARENTHESES);
+        return new MetaTypeOfExpressionNode(expression, TextRange.combine(first, last));
+    }
+
     private boolean isPossibleExpression() {
         switch (current.type) {
             case FALSE:
@@ -1046,6 +1065,9 @@ public class Parser {
             case MINUS:
             case EXCLAMATION:
             case AWAIT:
+            case META_UNKNOWN:
+            case META_TYPE:
+            case META_TYPE_OF:
                 return true;
 
             default:

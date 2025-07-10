@@ -14,8 +14,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
-import static org.objectweb.asm.Opcodes.CHECKCAST;
-
 public abstract class SType {
 
     public abstract Class<?> getJavaClass();
@@ -208,22 +206,8 @@ public abstract class SType {
         throw new InternalException();
     }
 
-    public CastOperation castFrom(SType type) {
-        if (type.getJavaClass() == Object.class) {
-            return new CastOperation(this) {
-                @Override
-                public void apply(MethodVisitor visitor) {
-                    Class<?> boxed = getBoxedVersion();
-                    if (boxed != null) {
-                        visitor.visitTypeInsn(CHECKCAST, Type.getInternalName(boxed));
-                        compileUnboxing(visitor);
-                    } else {
-                        visitor.visitTypeInsn(CHECKCAST, Type.getInternalName(getJavaClass()));
-                    }
-                }
-            };
-        }
-        throw new InternalException();
+    public void loadClassObject(MethodVisitor visitor) {
+        visitor.visitLdcInsn(Type.getType(getJavaClass()));
     }
 
     public SReference getReferenceType() {

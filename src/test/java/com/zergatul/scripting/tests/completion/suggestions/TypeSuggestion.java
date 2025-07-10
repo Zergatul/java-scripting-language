@@ -18,4 +18,9 @@ public class TypeSuggestion extends Suggestion {
             return false;
         }
     }
+
+    @Override
+    public String toString() {
+        return String.format("Type[%s]", type);
+    }
 }

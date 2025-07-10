@@ -153,7 +153,7 @@ public class SArrayType extends SType {
     private static class AddElementOperation extends BinaryOperation {
 
         public AddElementOperation(SArrayType array) {
-            super(BinaryOperator.PLUS, array, array, array.underlying);
+            super(BinaryOperator.PLUS, array);
         }
 
         @Override

@@ -544,6 +544,32 @@ public class ParserTests {
                 new SingleLineTextRange(1, 1, 0, 25)));
     }
 
+    @Test
+    public void metaTest() {
+        ParserOutput result = parse("""
+                let x = #typeof(1) == #type(int);
+                """);
+        Assertions.assertTrue(result.diagnostics().isEmpty());
+        Assertions.assertEquals(result.unit(), new CompilationUnitNode(
+                new CompilationUnitMembersListNode(List.of(), new SingleLineTextRange(1, 1, 0, 0)),
+                new StatementsListNode(List.of(
+                        new VariableDeclarationNode(
+                                new LetTypeNode(new SingleLineTextRange(1, 1, 0, 3)),
+                                new NameExpressionNode("x", new SingleLineTextRange(1, 5, 4, 1)),
+                                new BinaryExpressionNode(
+                                        new MetaTypeOfExpressionNode(
+                                                new IntegerLiteralExpressionNode("1", new SingleLineTextRange(1, 17, 16, 1)),
+                                                new SingleLineTextRange(1, 9, 8, 10)),
+                                        new BinaryOperatorNode(BinaryOperator.EQUALS, new SingleLineTextRange(1, 20, 19, 2)),
+                                        new MetaTypeExpressionNode(
+                                                new PredefinedTypeNode(PredefinedType.INT, new SingleLineTextRange(1, 29, 28, 3)),
+                                                new SingleLineTextRange(1, 23, 22, 10)),
+                                        new SingleLineTextRange(1, 9, 8, 24)),
+                                new SingleLineTextRange(1, 1, 0, 33))),
+                        new SingleLineTextRange(1, 1, 0, 33)),
+                new SingleLineTextRange(1, 1, 0, 33)));
+    }
+
     private ParserOutput parse(String code) {
         return new Parser(new Lexer(new LexerInput(code)).lex()).parse();
     }

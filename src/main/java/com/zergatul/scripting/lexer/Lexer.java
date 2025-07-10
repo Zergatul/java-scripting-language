@@ -322,6 +322,23 @@ public class Lexer {
                         }
                     }
                 }
+                case '#' -> {
+                    trackBeginToken();
+                    advance();
+                    while (isIdentifier(current)) {
+                        advance();
+                    }
+                    String value = getCurrentTokenValue();
+                    switch (value) {
+                        case "#type" -> list.add(new Token(TokenType.META_TYPE, getCurrentTokenRange()));
+                        case "#typeof" -> list.add(new Token(TokenType.META_TYPE_OF, getCurrentTokenRange()));
+                        default -> {
+                            Token token = new Token(TokenType.META_UNKNOWN, getCurrentTokenRange());
+                            list.add(token);
+                            addDiagnostic(LexerErrors.UnknownMetaFunction, token, value.substring(1));
+                        }
+                    }
+                }
                 case '\n' -> {
                     appendToken(TokenType.LINE_BREAK);
                     advance();
