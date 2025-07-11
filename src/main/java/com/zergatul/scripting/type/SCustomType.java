@@ -1,7 +1,9 @@
 package com.zergatul.scripting.type;
 
 import com.zergatul.scripting.*;
+import com.zergatul.scripting.type.operation.BinaryOperation;
 import com.zergatul.scripting.type.operation.IndexOperation;
+import com.zergatul.scripting.type.operation.ReferenceTypeOperations;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Type;
 
@@ -72,6 +74,24 @@ public class SCustomType extends SType {
     @Override
     public int getArrayStoreInst() {
         return AASTORE;
+    }
+
+    @Override
+    public BinaryOperation equalsOp(SType other) {
+        if (other instanceof SCustomType) {
+            return ReferenceTypeOperations.EQUALS.value();
+        } else {
+            return null;
+        }
+    }
+
+    @Override
+    public BinaryOperation notEqualsOp(SType other) {
+        if (other instanceof SCustomType) {
+            return ReferenceTypeOperations.NOT_EQUALS.value();
+        } else {
+            return null;
+        }
     }
 
     @Override

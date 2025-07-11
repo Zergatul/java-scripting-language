@@ -9,7 +9,7 @@ public class MetaTypeExpressionNode extends ExpressionNode {
     public final TypeNode type;
 
     public MetaTypeExpressionNode(TypeNode type, TextRange range) {
-        super(NodeType.META_TYPE_OF_EXPRESSION, range);
+        super(NodeType.META_TYPE_EXPRESSION, range);
         this.type = type;
     }
 

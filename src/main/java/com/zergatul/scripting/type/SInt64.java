@@ -190,6 +190,11 @@ public class SInt64 extends SPredefinedType {
     }
 
     @Override
+    public void loadClassObject(MethodVisitor visitor) {
+        visitor.visitFieldInsn(GETSTATIC, "java/lang/Long", "TYPE", "Ljava/lang/Class;");
+    }
+
+    @Override
     public List<MethodReference> getInstanceMethods() {
         return List.of(METHOD_TO_STRING.value(), METHOD_TO_STANDARD_STRING.value());
     }
@@ -331,7 +336,7 @@ public class SInt64 extends SPredefinedType {
         private final int opcode;
 
         public Int64ComparisonOperation(BinaryOperator operator, int opcode) {
-            super(operator, SBoolean.instance, SInt64.instance);
+            super(operator, SBoolean.instance);
             this.opcode = opcode;
         }
 
