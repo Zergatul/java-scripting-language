@@ -1,5 +1,9 @@
 package com.zergatul.scripting.tests.compiler;
 
+import com.zergatul.scripting.DiagnosticMessage;
+import com.zergatul.scripting.SingleLineTextRange;
+import com.zergatul.scripting.binding.BinderErrors;
+import com.zergatul.scripting.parser.ParserErrors;
 import com.zergatul.scripting.tests.compiler.helpers.BoolStorage;
 import com.zergatul.scripting.tests.compiler.helpers.FloatStorage;
 import com.zergatul.scripting.tests.compiler.helpers.IntStorage;
@@ -11,7 +15,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
-import static com.zergatul.scripting.tests.compiler.helpers.CompilerHelper.compileWithCustomTypes;
+import static com.zergatul.scripting.tests.compiler.helpers.CompilerHelper.*;
 
 public class MetaExpressionTests {
 
@@ -76,6 +80,19 @@ public class MetaExpressionTests {
                 "string", "string",
                 "TypeA", "TypeB", "TypeC",
                 "Java<com.zergatul.scripting.tests.compiler.MetaExpressionTests$Api>"));
+    }
+
+    @Test
+    public void errorTest() {
+        String code = """
+                let x = #type(1);
+                """;
+
+        List<DiagnosticMessage> messages = getDiagnostics(ApiRoot.class, code);
+        Assertions.assertIterableEquals(
+                messages,
+                List.of(
+                        new DiagnosticMessage(ParserErrors.TypeExpected, new SingleLineTextRange(1, 15, 14, 1), "1")));
     }
 
     public static class ApiRoot {

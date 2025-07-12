@@ -24,4 +24,5 @@ public class ParserErrors {
     public static final ErrorCode CannotUseLet = new ErrorCode("C019", "Cannot use 'let' without initialization");
     public static final ErrorCode CommaOrCloseCurlyBracketExpected = new ErrorCode("C020", "'}' or ',' expected");
     public static final ErrorCode CommaOrCloseSquareBracketExpected = new ErrorCode("C021", "']' or ',' expected");
+    public static final ErrorCode TypeExpected = new ErrorCode("C022", "Type expected, found '%s'");
 }
