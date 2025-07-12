@@ -190,7 +190,7 @@ public class SBoolean extends SPredefinedType {
         }
     });
 
-    private static final Lazy<BinaryOperation> BOOLEAN_OR = new Lazy<>(() -> new BinaryOperation(BinaryOperator.BOOLEAN_OR, SBoolean.instance) {
+    private static final Lazy<BinaryOperation> BOOLEAN_OR = new Lazy<>(() -> new BinaryOperation(BinaryOperator.BOOLEAN_OR, SBoolean.instance, SBoolean.instance, SBoolean.instance) {
         @Override
         public void apply(MethodVisitor left, BufferedMethodVisitor right) {
             Label returnTrue = new Label();
@@ -204,7 +204,7 @@ public class SBoolean extends SPredefinedType {
         }
     });
 
-    private static final Lazy<BinaryOperation> BOOLEAN_AND = new Lazy<>(() -> new BinaryOperation(BinaryOperator.BOOLEAN_AND, SBoolean.instance) {
+    private static final Lazy<BinaryOperation> BOOLEAN_AND = new Lazy<>(() -> new BinaryOperation(BinaryOperator.BOOLEAN_AND, SBoolean.instance, SBoolean.instance, SBoolean.instance) {
         @Override
         public void apply(MethodVisitor left, BufferedMethodVisitor right) {
             Label returnFalse = new Label();

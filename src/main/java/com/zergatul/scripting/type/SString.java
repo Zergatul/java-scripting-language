@@ -140,7 +140,7 @@ public class SString extends SPredefinedType {
 
     public Optional<BinaryOperation> genericRightAdd(SType other) {
         Optional<MethodReference> toString = other.getToStringMethod();
-        return toString.map(methodReference -> new BinaryOperation(BinaryOperator.PLUS, SString.instance) {
+        return toString.map(methodReference -> new BinaryOperation(BinaryOperator.PLUS, SString.instance, SString.instance, SUnknown.instance) {
             @Override
             public void apply(MethodVisitor left, BufferedMethodVisitor right) {
                 methodReference.compileInvoke(right);
@@ -151,7 +151,7 @@ public class SString extends SPredefinedType {
 
     public Optional<BinaryOperation> genericLeftAdd(SType other) {
         Optional<MethodReference> toString = other.getToStringMethod();
-        return toString.map(methodReference -> new BinaryOperation(BinaryOperator.PLUS, SString.instance) {
+        return toString.map(methodReference -> new BinaryOperation(BinaryOperator.PLUS, SString.instance, SUnknown.instance, SString.instance) {
             @Override
             public void apply(MethodVisitor left, BufferedMethodVisitor right) {
                 methodReference.compileInvoke(left);
@@ -162,7 +162,7 @@ public class SString extends SPredefinedType {
 
     private static final PropertyReference PROP_LENGTH = new MethodBasedPropertyReference("length", String.class, "length");
 
-    private static final BinaryOperation ADD_STRING = new BinaryOperation(BinaryOperator.PLUS, SString.instance) {
+    private static final BinaryOperation ADD_STRING = new BinaryOperation(BinaryOperator.PLUS, SString.instance, SString.instance, SString.instance) {
         @Override
         public void apply(MethodVisitor left, BufferedMethodVisitor right) {
             // stack = ..., left
@@ -204,7 +204,7 @@ public class SString extends SPredefinedType {
         }
     };
 
-    private static final BinaryOperation ADD_CHAR = new BinaryOperation(BinaryOperator.PLUS, SString.instance) {
+    private static final BinaryOperation ADD_CHAR = new BinaryOperation(BinaryOperator.PLUS, SString.instance, SString.instance, SChar.instance) {
         @Override
         public void apply(MethodVisitor left, BufferedMethodVisitor right) {
             // stack = ..., left
@@ -246,7 +246,7 @@ public class SString extends SPredefinedType {
         }
     };
 
-    private static final BinaryOperation EQUALS_STRING = new BinaryOperation(BinaryOperator.EQUALS, SBoolean.instance) {
+    private static final BinaryOperation EQUALS_STRING = new BinaryOperation(BinaryOperator.EQUALS, SBoolean.instance, SString.instance, SString.instance) {
         @Override
         public void apply(MethodVisitor left, BufferedMethodVisitor right) {
             right.release(left);
@@ -259,7 +259,7 @@ public class SString extends SPredefinedType {
         }
     };
 
-    private static final BinaryOperation NOT_EQUALS_STRING = new BinaryOperation(BinaryOperator.NOT_EQUALS, SBoolean.instance) {
+    private static final BinaryOperation NOT_EQUALS_STRING = new BinaryOperation(BinaryOperator.NOT_EQUALS, SBoolean.instance, SString.instance, SString.instance) {
         @Override
         public void apply(MethodVisitor left, BufferedMethodVisitor right) {
             SString.EQUALS_STRING.apply(left, right);

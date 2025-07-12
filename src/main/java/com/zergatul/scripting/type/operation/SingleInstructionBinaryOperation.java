@@ -10,7 +10,7 @@ public class SingleInstructionBinaryOperation extends BinaryOperation {
     private final int opcode;
 
     public SingleInstructionBinaryOperation(BinaryOperator operator, SType type, int opcode) {
-        super(operator, type);
+        super(operator, type, type, type);
         this.opcode = opcode;
     }
 

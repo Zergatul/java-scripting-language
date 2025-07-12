@@ -345,7 +345,7 @@ public class SInt extends SPredefinedType {
         private final int opcode;
 
         public IntComparisonOperation(BinaryOperator operator, int opcode) {
-            super(operator, SBoolean.instance);
+            super(operator, SBoolean.instance, SInt.instance, SInt.instance);
             this.opcode = opcode;
         }
 

@@ -7,7 +7,7 @@ import com.zergatul.scripting.type.SType;
 @CustomType(name = "Type")
 public class RuntimeType {
 
-    public final Class<?> clazz;
+    private final Class<?> clazz;
 
     RuntimeType(Class<?> clazz) {
         this.clazz = clazz;

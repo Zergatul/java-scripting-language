@@ -11,7 +11,7 @@ public class UndefinedBinaryOperation extends BinaryOperation {
     public static final BinaryOperation instance = new UndefinedBinaryOperation();
 
     private UndefinedBinaryOperation() {
-        super(BinaryOperator.PLUS, SUnknown.instance);
+        super(BinaryOperator.PLUS, SUnknown.instance, SUnknown.instance, SUnknown.instance);
     }
 
     @Override

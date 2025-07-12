@@ -7,6 +7,12 @@ repositories {
     mavenCentral()
 }
 
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+}
+
 dependencies {
     implementation("org.ow2.asm:asm:9.6")
     testImplementation("org.junit.jupiter:junit-jupiter:5.7.1")

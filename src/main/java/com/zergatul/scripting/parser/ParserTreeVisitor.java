@@ -144,6 +144,11 @@ public abstract class ParserTreeVisitor {
         node.acceptChildren(this);
     }
 
+    public void explicitVisit(InvalidMetaExpressionNode node) {
+        visit(node);
+        node.acceptChildren(this);
+    }
+
     public void explicitVisit(InvalidStatementNode node) {
         visit(node);
         node.acceptChildren(this);
@@ -170,6 +175,16 @@ public abstract class ParserTreeVisitor {
     }
 
     public void explicitVisit(MemberAccessExpressionNode node) {
+        visit(node);
+        node.acceptChildren(this);
+    }
+
+    public void explicitVisit(MetaTypeExpressionNode node) {
+        visit(node);
+        node.acceptChildren(this);
+    }
+
+    public void explicitVisit(MetaTypeOfExpressionNode node) {
         visit(node);
         node.acceptChildren(this);
     }
@@ -301,6 +316,7 @@ public abstract class ParserTreeVisitor {
     public void visit(IndexExpressionNode node) {}
     public void visit(IntegerLiteralExpressionNode node) {}
     public void visit(Integer64LiteralExpressionNode node) {}
+    public void visit(InvalidMetaExpressionNode node) {}
     public void visit(InvalidExpressionNode node) {}
     public void visit(InvalidStatementNode node) {}
     public void visit(InvalidTypeNode node) {}
@@ -308,6 +324,8 @@ public abstract class ParserTreeVisitor {
     public void visit(LambdaExpressionNode node) {}
     public void visit(LetTypeNode node) {}
     public void visit(MemberAccessExpressionNode node) {}
+    public void visit(MetaTypeExpressionNode node) {}
+    public void visit(MetaTypeOfExpressionNode node) {}
     public void visit(NameExpressionNode node) {}
     public void visit(NewExpressionNode node) {}
     public void visit(ParameterListNode node) {}

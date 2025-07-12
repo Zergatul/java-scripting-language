@@ -265,7 +265,7 @@ public class SFloat extends SPredefinedType {
         private final int opcode;
 
         protected FloatComparisonOperation(BinaryOperator operator, int opcode) {
-            super(operator, SBoolean.instance);
+            super(operator, SBoolean.instance, SFloat.instance, SFloat.instance);
             this.opcode = opcode;
         }
 

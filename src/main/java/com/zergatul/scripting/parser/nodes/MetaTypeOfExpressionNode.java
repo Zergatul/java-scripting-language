@@ -15,12 +15,12 @@ public class MetaTypeOfExpressionNode extends ExpressionNode {
 
     @Override
     public void accept(ParserTreeVisitor visitor) {
-        throw new RuntimeException();
+        visitor.explicitVisit(this);
     }
 
     @Override
     public void acceptChildren(ParserTreeVisitor visitor) {
-        throw new RuntimeException();
+        expression.accept(visitor);
     }
 
     @Override

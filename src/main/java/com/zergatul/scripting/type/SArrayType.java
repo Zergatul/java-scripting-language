@@ -152,8 +152,8 @@ public class SArrayType extends SType {
 
     private static class AddElementOperation extends BinaryOperation {
 
-        public AddElementOperation(SArrayType array) {
-            super(BinaryOperator.PLUS, array);
+        public AddElementOperation(SArrayType arrayType) {
+            super(BinaryOperator.PLUS, arrayType, arrayType, arrayType.underlying);
         }
 
         @Override
@@ -176,8 +176,8 @@ public class SArrayType extends SType {
 
     private static class AddArrayOperation extends BinaryOperation {
 
-        public AddArrayOperation(SArrayType type) {
-            super(BinaryOperator.PLUS, type);
+        public AddArrayOperation(SArrayType arrayType) {
+            super(BinaryOperator.PLUS, arrayType, arrayType, arrayType);
         }
 
         @Override

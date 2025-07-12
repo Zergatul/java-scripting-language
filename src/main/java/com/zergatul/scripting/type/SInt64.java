@@ -336,7 +336,7 @@ public class SInt64 extends SPredefinedType {
         private final int opcode;
 
         public Int64ComparisonOperation(BinaryOperator operator, int opcode) {
-            super(operator, SBoolean.instance);
+            super(operator, SBoolean.instance, SInt64.instance, SInt64.instance);
             this.opcode = opcode;
         }
 

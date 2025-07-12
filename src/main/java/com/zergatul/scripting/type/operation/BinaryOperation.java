@@ -10,9 +10,22 @@ public abstract class BinaryOperation {
     public final BinaryOperator operator;
     public final SType type;
 
-    protected BinaryOperation(BinaryOperator operator, SType type) {
+    private final SType left;
+    private final SType right;
+
+    protected BinaryOperation(BinaryOperator operator, SType type, SType left, SType right) {
         this.operator = operator;
         this.type = type;
+        this.left = left;
+        this.right = right;
+    }
+
+    public SType getLeft() {
+        return left;
+    }
+
+    public SType getRight() {
+        return right;
     }
 
     public abstract void apply(MethodVisitor left, BufferedMethodVisitor right);
