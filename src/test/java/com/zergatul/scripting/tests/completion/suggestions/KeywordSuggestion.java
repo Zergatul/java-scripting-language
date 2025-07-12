@@ -18,4 +18,9 @@ public class KeywordSuggestion extends Suggestion {
             return false;
         }
     }
+
+    @Override
+    public String toString() {
+        return String.format("Keyword[%s]", type);
+    }
 }

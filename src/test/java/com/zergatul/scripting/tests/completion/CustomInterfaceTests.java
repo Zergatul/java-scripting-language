@@ -3,6 +3,7 @@ package com.zergatul.scripting.tests.completion;
 import com.zergatul.scripting.lexer.TokenType;
 import com.zergatul.scripting.tests.compiler.helpers.IntStorage;
 import com.zergatul.scripting.tests.completion.helpers.CompletionTestHelper;
+import com.zergatul.scripting.tests.completion.helpers.Lists;
 import com.zergatul.scripting.tests.completion.helpers.TestCompletionContext;
 import com.zergatul.scripting.tests.completion.suggestions.*;
 import com.zergatul.scripting.type.*;
@@ -10,6 +11,8 @@ import org.junit.jupiter.api.Test;
 
 import java.util.List;
 import java.util.function.Function;
+
+import static com.zergatul.scripting.tests.completion.helpers.CommonSuggestions.*;
 
 public class CustomInterfaceTests {
 
@@ -19,21 +22,10 @@ public class CustomInterfaceTests {
                 <cursor>
                 """,
                 Interface1.class,
-                context -> List.of(
+                context -> Lists.of(
+                        statements,
                         new KeywordSuggestion(TokenType.STATIC),
                         new KeywordSuggestion(TokenType.VOID),
-                        new KeywordSuggestion(TokenType.LET),
-                        new KeywordSuggestion(TokenType.FOR),
-                        new KeywordSuggestion(TokenType.FOREACH),
-                        new KeywordSuggestion(TokenType.IF),
-                        new KeywordSuggestion(TokenType.WHILE),
-                        new KeywordSuggestion(TokenType.RETURN),
-                        new TypeSuggestion(SBoolean.instance),
-                        new TypeSuggestion(SInt.instance),
-                        new TypeSuggestion(SInt64.instance),
-                        new TypeSuggestion(SChar.instance),
-                        new TypeSuggestion(SFloat.instance),
-                        new TypeSuggestion(SString.instance),
                         new StaticConstantSuggestion(context, "intStorage"),
                         new InputParameterSuggestion("value1", SInt.instance),
                         new InputParameterSuggestion("text", SString.instance)));
@@ -46,19 +38,8 @@ public class CustomInterfaceTests {
                 <cursor>
                 """,
                 Interface1.class,
-                context -> List.of(
-                        new KeywordSuggestion(TokenType.LET),
-                        new KeywordSuggestion(TokenType.FOR),
-                        new KeywordSuggestion(TokenType.FOREACH),
-                        new KeywordSuggestion(TokenType.IF),
-                        new KeywordSuggestion(TokenType.WHILE),
-                        new KeywordSuggestion(TokenType.RETURN),
-                        new TypeSuggestion(SBoolean.instance),
-                        new TypeSuggestion(SInt.instance),
-                        new TypeSuggestion(SInt64.instance),
-                        new TypeSuggestion(SChar.instance),
-                        new TypeSuggestion(SFloat.instance),
-                        new TypeSuggestion(SString.instance),
+                context -> Lists.of(
+                        statements,
                         new StaticConstantSuggestion(context, "intStorage"),
                         new LocalVariableSuggestion(context, "a"),
                         new InputParameterSuggestion("value1", SInt.instance),
@@ -73,19 +54,8 @@ public class CustomInterfaceTests {
                 int c = 5;
                 """,
                 Interface1.class,
-                context -> List.of(
-                        new KeywordSuggestion(TokenType.LET),
-                        new KeywordSuggestion(TokenType.FOR),
-                        new KeywordSuggestion(TokenType.FOREACH),
-                        new KeywordSuggestion(TokenType.IF),
-                        new KeywordSuggestion(TokenType.WHILE),
-                        new KeywordSuggestion(TokenType.RETURN),
-                        new TypeSuggestion(SBoolean.instance),
-                        new TypeSuggestion(SInt.instance),
-                        new TypeSuggestion(SInt64.instance),
-                        new TypeSuggestion(SChar.instance),
-                        new TypeSuggestion(SFloat.instance),
-                        new TypeSuggestion(SString.instance),
+                context -> Lists.of(
+                        statements,
                         new StaticConstantSuggestion(context, "intStorage"),
                         new LocalVariableSuggestion(context, "a"),
                         new InputParameterSuggestion("value1", SInt.instance),
@@ -100,13 +70,8 @@ public class CustomInterfaceTests {
                 }
                 """,
                 Interface2.class,
-                context -> List.of(
-                        new TypeSuggestion(SBoolean.instance),
-                        new TypeSuggestion(SInt.instance),
-                        new TypeSuggestion(SInt64.instance),
-                        new TypeSuggestion(SChar.instance),
-                        new TypeSuggestion(SFloat.instance),
-                        new TypeSuggestion(SString.instance),
+                context -> Lists.of(
+                        expressions,
                         new StaticConstantSuggestion(context, "intStorage"),
                         new InputParameterSuggestion("message", SString.instance)));
     }
@@ -123,19 +88,8 @@ public class CustomInterfaceTests {
                 }
                 """,
                 Interface2.class,
-                context -> List.of(
-                        new KeywordSuggestion(TokenType.LET),
-                        new KeywordSuggestion(TokenType.FOR),
-                        new KeywordSuggestion(TokenType.FOREACH),
-                        new KeywordSuggestion(TokenType.IF),
-                        new KeywordSuggestion(TokenType.WHILE),
-                        new KeywordSuggestion(TokenType.RETURN),
-                        new TypeSuggestion(SBoolean.instance),
-                        new TypeSuggestion(SInt.instance),
-                        new TypeSuggestion(SInt64.instance),
-                        new TypeSuggestion(SChar.instance),
-                        new TypeSuggestion(SFloat.instance),
-                        new TypeSuggestion(SString.instance),
+                context -> Lists.of(
+                        statements,
                         new StaticConstantSuggestion(context, "intStorage"),
                         new FunctionSuggestion(context, "func")));
     }
@@ -146,13 +100,8 @@ public class CustomInterfaceTests {
                 int x = a<cursor>
                 """,
                 Interface2.class,
-                context -> List.of(
-                        new TypeSuggestion(SBoolean.instance),
-                        new TypeSuggestion(SInt.instance),
-                        new TypeSuggestion(SInt64.instance),
-                        new TypeSuggestion(SChar.instance),
-                        new TypeSuggestion(SFloat.instance),
-                        new TypeSuggestion(SString.instance),
+                context -> Lists.of(
+                        expressions,
                         new StaticConstantSuggestion(context, "intStorage"),
                         new InputParameterSuggestion("message", SString.instance)));
     }
@@ -167,13 +116,8 @@ public class CustomInterfaceTests {
                 }
                 """,
                 Interface2.class,
-                context -> List.of(
-                        new TypeSuggestion(SBoolean.instance),
-                        new TypeSuggestion(SInt.instance),
-                        new TypeSuggestion(SInt64.instance),
-                        new TypeSuggestion(SChar.instance),
-                        new TypeSuggestion(SFloat.instance),
-                        new TypeSuggestion(SString.instance),
+                context -> Lists.of(
+                        expressions,
                         new StaticConstantSuggestion(context, "intStorage"),
                         new StaticFieldSuggestion(context, "x")));
     }
@@ -184,13 +128,8 @@ public class CustomInterfaceTests {
                 return a<cursor>
                 """,
                 Interface3.class,
-                context -> List.of(
-                        new TypeSuggestion(SBoolean.instance),
-                        new TypeSuggestion(SInt.instance),
-                        new TypeSuggestion(SInt64.instance),
-                        new TypeSuggestion(SChar.instance),
-                        new TypeSuggestion(SFloat.instance),
-                        new TypeSuggestion(SString.instance),
+                context -> Lists.of(
+                        expressions,
                         new StaticConstantSuggestion(context, "intStorage"),
                         new InputParameterSuggestion("input", SInt.instance)));
     }

@@ -265,6 +265,10 @@ public class CompletionProvider<T> {
                         canExpression = true;
                     }
                 }
+                case META_INVALID_EXPRESSION, META_TYPE_EXPRESSION, META_TYPE_OF_EXPRESSION -> {
+                    suggestions.add(factory.getKeywordSuggestion(TokenType.META_TYPE));
+                    suggestions.add(factory.getKeywordSuggestion(TokenType.META_TYPE_OF));
+                }
                 default -> {
                     canExpression = true; // good fallback?
                     //throw new InternalException();
@@ -291,6 +295,8 @@ public class CompletionProvider<T> {
         }
         if (canExpression) {
             suggestions.addAll(getSymbols(parameters, output, completionContext));
+            suggestions.add(factory.getKeywordSuggestion(TokenType.META_TYPE));
+            suggestions.add(factory.getKeywordSuggestion(TokenType.META_TYPE_OF));
             if (parameters.isAsync()) {
                 suggestions.add(factory.getKeywordSuggestion(TokenType.AWAIT));
             }
