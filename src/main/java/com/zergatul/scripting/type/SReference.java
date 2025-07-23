@@ -10,6 +10,7 @@ public class SReference extends SType {
     public static final SReference BOOLEAN = new SReference(SBoolean.instance);
     public static final SReference INT = new SReference(SInt.instance);
     public static final SReference INT64 = new SReference(SInt64.instance);
+    public static final SReference FLOAT32 = new SReference(SFloat32.instance);
     public static final SReference FLOAT = new SReference(SFloat.instance);
 
     private final SType underlying;
@@ -56,6 +57,11 @@ public class SReference extends SType {
     @Override
     public int getReturnInst() {
         throw new InternalException();
+    }
+
+    @Override
+    public boolean isSyntheticType() {
+        return true;
     }
 
     @Override

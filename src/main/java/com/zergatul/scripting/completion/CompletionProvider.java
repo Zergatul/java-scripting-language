@@ -2,12 +2,13 @@ package com.zergatul.scripting.completion;
 
 import com.zergatul.scripting.InterfaceHelper;
 import com.zergatul.scripting.InternalException;
+import com.zergatul.scripting.SingleLineTextRange;
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.BinderOutput;
 import com.zergatul.scripting.binding.nodes.*;
 import com.zergatul.scripting.compiler.CompilationParameters;
 import com.zergatul.scripting.compiler.CompilerContext;
-import com.zergatul.scripting.compiler.VisibilityChecker;
+import com.zergatul.scripting.compiler.JavaInteropPolicy;
 import com.zergatul.scripting.lexer.TokenType;
 import com.zergatul.scripting.parser.NodeType;
 import com.zergatul.scripting.symbols.*;
@@ -156,9 +157,9 @@ public class CompletionProvider<T> {
                             .filter(m -> m.getName().toLowerCase().startsWith(partial.toLowerCase()))
                             .filter(m -> {
                                 if (m instanceof NativeMethodReference nativeRef) {
-                                    VisibilityChecker checker = parameters.getChecker();
+                                    JavaInteropPolicy checker = parameters.getPolicy();
                                     if (checker != null) {
-                                        return checker.isVisible(nativeRef.getUnderlying());
+                                        return checker.isMethodVisible(nativeRef.getUnderlying());
                                     } else {
                                         return true;
                                     }
@@ -249,6 +250,21 @@ public class CompletionProvider<T> {
                     completionContext = completionContext.up();
                     assert completionContext != null;
                     return get(parameters, output, completionContext, line, column);
+                }
+                case JAVA_TYPE -> {
+                    BoundJavaTypeNode javaType = (BoundJavaTypeNode) completionContext.entry.node;
+                    TextRange nameRange = javaType.name.getRange();
+                    if (nameRange instanceof SingleLineTextRange singleLineNameRange && nameRange.containsOrEnds(line, column)) {
+//                        SingleLineTextRange prefixRange = new SingleLineTextRange(
+//                                singleLineNameRange.getLine1(),
+//                                singleLineNameRange.getColumn1(),
+//                                singleLineNameRange.getPosition(),
+//                                singleLineNameRange.getLength() - (column - singleLineNameRange.getColumn2()));
+//                        String prefix = prefixRange.extract(output.code());
+//                        getClassesSuggestion(prefix);
+                    } else {
+                        canType = true;
+                    }
                 }
                 case INVALID_TYPE, PREDEFINED_TYPE -> {
                     canType = true;
@@ -705,6 +721,23 @@ public class CompletionProvider<T> {
         }
         suggestions.add(factory.getLocalVariableSuggestion(variable));
     }
+
+//    private String[] getClassesSuggestion(String prefix) {
+//        getLoadedClasses();
+//        return new String[0];
+//    }
+
+//    @SuppressWarnings("unchecked")
+//    private List<Class<?>> getLoadedClasses() {
+//        try {
+//            ClassLoader loader = ClassLoader.getSystemClassLoader();
+//            Field field = loader.getClass().getDeclaredField("classes");
+//            field.setAccessible(true);
+//            return List.copyOf((List<Class<?>>) field.get(loader));
+//        } catch (Throwable e) {
+//            return List.of();
+//        }
+//    }
 
     private record SearchEntry(SearchEntry parent, BoundNode node) {}
 

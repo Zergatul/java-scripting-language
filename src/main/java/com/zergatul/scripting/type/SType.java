@@ -10,6 +10,7 @@ import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Type;
 
 import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.TypeVariable;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -35,6 +36,25 @@ public abstract class SType {
 
     public String getDescriptor() {
         return Type.getDescriptor(getJavaClass());
+    }
+
+    // returns true is type doesn't have corresponding Java type
+    public boolean isSyntheticType() {
+        return false;
+    }
+
+    public boolean isInstanceOf(SType other) {
+        if (equals(other)) {
+            return true;
+        }
+        if (isSyntheticType() || other.isSyntheticType()) {
+            return false;
+        }
+        if (isReference() && other.isReference()) {
+            return other.getJavaClass().isAssignableFrom(getJavaClass());
+        } else {
+            return false;
+        }
     }
 
     public BinaryOperation add(SType other) {
@@ -165,6 +185,10 @@ public abstract class SType {
         return null;
     }
 
+    public List<ConstructorReference> getConstructors() {
+        return List.of();
+    }
+
     public List<MethodReference> getInstanceMethods() {
         return List.of();
     }
@@ -173,7 +197,6 @@ public abstract class SType {
         return List.of();
     }
 
-    @SuppressWarnings("unused") // monaco integration
     public List<PropertyReference> getInstanceProperties() {
         return List.of();
     }
@@ -219,6 +242,10 @@ public abstract class SType {
     }
 
     public static SType fromJavaType(java.lang.reflect.Type type) {
+        if (type instanceof TypeVariable<?> typeVariable) {
+            return fromJavaType(typeVariable.getBounds()[0]);
+        }
+
         if (type instanceof ParameterizedType parameterized) {
             java.lang.reflect.Type raw = parameterized.getRawType();
             if (raw instanceof Class<?> clazz) {
@@ -232,7 +259,7 @@ public abstract class SType {
                 return new SFuture(fromJavaType(arguments[0]));
             }
 
-            throw new InternalException("Unsupported parametrized type.");
+            return new SClassType((Class<?>) parameterized.getRawType());
         }
 
         if (type instanceof Class<?> clazz) {
@@ -250,6 +277,9 @@ public abstract class SType {
             }
             if (clazz == long.class || clazz == Long.class) {
                 return SInt64.instance;
+            }
+            if (clazz == float.class || clazz == Float.class) {
+                return SFloat32.instance;
             }
             if (clazz == double.class || clazz == Double.class) {
                 return SFloat.instance;
@@ -275,11 +305,7 @@ public abstract class SType {
             if (clazz.isAnnotationPresent(CustomType.class)) {
                 return new SCustomType(clazz);
             }
-            if (clazz.getSuperclass() != null || clazz == Object.class) {
-                return new SClassType(clazz);
-            } else {
-                return null;
-            }
+            return new SClassType(clazz);
         }
 
         return null;

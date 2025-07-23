@@ -19,7 +19,6 @@ import static org.objectweb.asm.Opcodes.*;
 public class SString extends SPredefinedType {
 
     public static final SString instance = new SString();
-    public static final SStaticTypeReference staticRef = new SStaticTypeReference(instance);
 
     private SString() {
         super(String.class);

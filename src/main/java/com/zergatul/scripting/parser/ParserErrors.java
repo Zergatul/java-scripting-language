@@ -25,4 +25,7 @@ public class ParserErrors {
     public static final ErrorCode CommaOrCloseCurlyBracketExpected = new ErrorCode("C020", "'}' or ',' expected");
     public static final ErrorCode CommaOrCloseSquareBracketExpected = new ErrorCode("C021", "']' or ',' expected");
     public static final ErrorCode TypeExpected = new ErrorCode("C022", "Type expected, found '%s'");
+    public static final ErrorCode OpenTriangleBracketExpected = new ErrorCode("C023", "< expected, found %s");
+    public static final ErrorCode CloseTriangleBracketExpected = new ErrorCode("C024", "> expected, found %s");
+    public static final ErrorCode InvalidNewExpression = new ErrorCode("C025", "A new expression requires '[' or '('");
 }

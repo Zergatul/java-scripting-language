@@ -105,6 +105,13 @@ public class SCustomType extends SType {
     }
 
     @Override
+    public List<ConstructorReference> getConstructors() {
+        return Arrays.stream(clazz.getConstructors())
+                .map(ConstructorReference::new)
+                .toList();
+    }
+
+    @Override
     public List<PropertyReference> getInstanceProperties() {
         return properties.value();
     }

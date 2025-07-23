@@ -7,11 +7,11 @@ import com.zergatul.scripting.parser.PredefinedType;
 
 public class StaticReferenceNode extends ExpressionNode {
 
-    public final PredefinedType typeReference;
+    public final TypeNode typeNode;
 
-    public StaticReferenceNode(PredefinedType typeReference, TextRange range) {
+    public StaticReferenceNode(TypeNode typeNode, TextRange range) {
         super(NodeType.STATIC_REFERENCE, range);
-        this.typeReference = typeReference;
+        this.typeNode = typeNode;
     }
 
     @Override
@@ -20,5 +20,7 @@ public class StaticReferenceNode extends ExpressionNode {
     }
 
     @Override
-    public void acceptChildren(ParserTreeVisitor visitor) {}
+    public void acceptChildren(ParserTreeVisitor visitor) {
+        typeNode.accept(visitor);
+    }
 }

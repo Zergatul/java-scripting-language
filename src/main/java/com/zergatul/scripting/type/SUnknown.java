@@ -46,6 +46,11 @@ public class SUnknown extends SType {
     }
 
     @Override
+    public boolean isSyntheticType() {
+        return true;
+    }
+
+    @Override
     public boolean isReference() {
         throw new InternalException();
     }
@@ -53,6 +58,11 @@ public class SUnknown extends SType {
     @Override
     public int getReturnInst() {
         throw new InternalException();
+    }
+
+    @Override
+    public List<ConstructorReference> getConstructors() {
+        return List.of(UnknownConstructorReference.instance);
     }
 
     @Override

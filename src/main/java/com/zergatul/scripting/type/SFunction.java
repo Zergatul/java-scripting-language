@@ -37,6 +37,11 @@ public class SFunction extends SType {
     }
 
     @Override
+    public boolean isSyntheticType() {
+        return true;
+    }
+
+    @Override
     public Class<?> getJavaClass() {
         throw new InternalException();
     }

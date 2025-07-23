@@ -13,7 +13,6 @@ import static org.objectweb.asm.Opcodes.*;
 public class SChar extends SPredefinedType {
 
     public static final SChar instance = new SChar();
-    public static final SStaticTypeReference staticRef = new SStaticTypeReference(instance);
 
     private SChar() {
         super(char.class);
@@ -96,7 +95,13 @@ public class SChar extends SPredefinedType {
 
     @Override
     public CastOperation implicitCastTo(SType other) {
-        return other == SInt.instance ? CHAR_TO_INT.value() : null;
+        if (other == SInt.instance) {
+            return CHAR_TO_INT.value();
+        }
+        if (other instanceof SClassType && other.getJavaClass() == Object.class) {
+            return TO_OBJECT.value();
+        }
+        return null;
     }
 
     @Override
@@ -137,6 +142,13 @@ public class SChar extends SPredefinedType {
     private static final Lazy<CastOperation> CHAR_TO_INT = new Lazy<>(() -> new CastOperation(SInt.instance) {
         @Override
         public void apply(MethodVisitor visitor) {}
+    });
+
+    private static final Lazy<CastOperation> TO_OBJECT = new Lazy<>(() -> new CastOperation(SType.fromJavaType(Object.class)) {
+        @Override
+        public void apply(MethodVisitor visitor) {
+            SChar.instance.compileBoxing(visitor);
+        }
     });
 
     private static final Lazy<MethodReference> METHOD_TO_STRING = new Lazy<>(() -> new StaticAsInstanceMethodReference(

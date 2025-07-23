@@ -20,6 +20,7 @@ public class ArrayTests {
         ApiRoot.boolStorage = new BoolStorage();
         ApiRoot.intStorage = new IntStorage();
         ApiRoot.int64Storage = new Int64Storage();
+        ApiRoot.float32Storage = new Float32Storage();
         ApiRoot.floatStorage = new FloatStorage();
         ApiRoot.stringStorage = new StringStorage();
         ApiRoot.test = new TestApi();
@@ -199,6 +200,30 @@ public class ArrayTests {
     }
 
     @Test
+    public void concatFloat32Test() {
+        String code = """
+                float32 parse(string s) {
+                    float32 f;
+                    float32.tryParse(s, ref f);
+                    return f;
+                }
+                
+                float32[] a1 = new float32[] { parse("0.5"), 2, 3 };
+                float32[] a2 = new float32[] { 7, 8, parse("9.5") };
+                float32[] a3 = a1 + a2 + parse("10.0");
+                
+                intStorage.add(a3.length);
+                for (int i = 0; i < a3.length; i++) float32Storage.add(a3[i]);
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(7));
+        Assertions.assertIterableEquals(ApiRoot.float32Storage.list, List.of(0.5f, 2.0f, 3.0f, 7.0f, 8.0f, 9.5f, 10.0f));
+    }
+
+    @Test
     public void concatFloatTest() {
         String code = """
                 float[] a1 = new float[] { 0.5, 2, 3 };
@@ -372,6 +397,7 @@ public class ArrayTests {
         public static BoolStorage boolStorage;
         public static IntStorage intStorage;
         public static Int64Storage int64Storage;
+        public static Float32Storage float32Storage;
         public static FloatStorage floatStorage;
         public static StringStorage stringStorage;
         public static TestApi test;

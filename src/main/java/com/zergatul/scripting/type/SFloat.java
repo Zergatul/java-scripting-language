@@ -18,7 +18,6 @@ import static org.objectweb.asm.Opcodes.*;
 public class SFloat extends SPredefinedType {
 
     public static final SFloat instance = new SFloat();
-    public static final SStaticTypeReference staticRef = new SStaticTypeReference(instance);
 
     private SFloat() {
         super(double.class);
@@ -135,6 +134,14 @@ public class SFloat extends SPredefinedType {
     }
 
     @Override
+    public CastOperation implicitCastTo(SType other) {
+        if (other instanceof SClassType && other.getJavaClass() == Object.class) {
+            return TO_OBJECT.value();
+        }
+        return null;
+    }
+
+    @Override
     public int getReturnInst() {
         return DRETURN;
     }
@@ -226,6 +233,13 @@ public class SFloat extends SPredefinedType {
 
     private static final Lazy<BinaryOperation> NOT_EQUALS = new Lazy<>(() ->
             new FloatComparisonOperation(BinaryOperator.NOT_EQUALS, IF_ICMPNE));
+
+    private static final Lazy<CastOperation> TO_OBJECT = new Lazy<>(() -> new CastOperation(SType.fromJavaType(Object.class)) {
+        @Override
+        public void apply(MethodVisitor visitor) {
+            SFloat.instance.compileBoxing(visitor);
+        }
+    });
 
     private static final Lazy<UnaryOperation> PLUS = new Lazy<>(() -> new UnaryOperation(UnaryOperator.PLUS, SFloat.instance) {
         @Override

@@ -1012,7 +1012,9 @@ public class Compiler {
             case REF_ARGUMENT_EXPRESSION -> compileRefArgumentExpression(visitor, context, (BoundRefArgumentExpressionNode) expression);
             case METHOD_INVOCATION_EXPRESSION -> compileMethodInvocationExpression(visitor, context, (BoundMethodInvocationExpressionNode) expression);
             case PROPERTY_ACCESS_EXPRESSION -> compilePropertyAccessExpression(visitor, context, (BoundPropertyAccessExpressionNode) expression);
-            case NEW_EXPRESSION -> compileNewExpression(visitor, context, (BoundNewExpressionNode) expression);
+            case ARRAY_CREATION_EXPRESSION -> compileArrayCreationExpression(visitor, context, (BoundArrayCreationExpressionNode) expression);
+            case ARRAY_INITIALIZER_EXPRESSION -> compileArrayInitializerExpression(visitor, context, (BoundArrayInitializerExpressionNode) expression);
+            case OBJECT_CREATION_EXPRESSION -> compileObjectCreationExpression(visitor, context, (BoundObjectCreationExpressionNode) expression);
             case COLLECTION_EXPRESSION -> compileCollectionExpression(visitor, context, (BoundCollectionExpressionNode) expression);
             case INDEX_EXPRESSION -> compileIndexExpression(visitor, context, (BoundIndexExpressionNode) expression);
             case LAMBDA_EXPRESSION -> compileLambdaExpression(visitor, context, (BoundLambdaExpressionNode) expression);
@@ -1087,7 +1089,7 @@ public class Compiler {
             visitor.visitTypeInsn(CHECKCAST, Type.getInternalName(test.type.type.getBoxedVersion()));
         }
 
-        if (!test.expression.type.isReference()) {
+        if (!test.type.type.isReference()) {
             test.type.type.compileUnboxing(visitor);
         }
     }
@@ -1165,12 +1167,20 @@ public class Compiler {
         propertyAccess.property.property.compileGet(visitor);
     }
 
-    private void compileNewExpression(MethodVisitor visitor, CompilerContext context, BoundNewExpressionNode expression) {
-        if (expression.lengthExpression != null) {
-            compileExpression(visitor, context, expression.lengthExpression);
+    private void compileArrayCreationExpression(MethodVisitor visitor, CompilerContext context, BoundArrayCreationExpressionNode expression) {
+        compileExpression(visitor, context, expression.lengthExpression);
+
+        SArrayType arrayType = (SArrayType) expression.type;
+        SType elementsType = arrayType.getElementsType();
+        if (elementsType.isReference()) {
+            visitor.visitTypeInsn(ANEWARRAY, Type.getInternalName(elementsType.getJavaClass()));
         } else {
-            visitor.visitLdcInsn(expression.items.size());
+            visitor.visitIntInsn(NEWARRAY, ((SPredefinedType) elementsType).getArrayTypeInst());
         }
+    }
+
+    private void compileArrayInitializerExpression(MethodVisitor visitor, CompilerContext context, BoundArrayInitializerExpressionNode expression) {
+        visitor.visitLdcInsn(expression.items.size());
 
         SArrayType arrayType = (SArrayType) expression.type;
         SType elementsType = arrayType.getElementsType();
@@ -1180,14 +1190,21 @@ public class Compiler {
             visitor.visitIntInsn(NEWARRAY, ((SPredefinedType) elementsType).getArrayTypeInst());
         }
 
-        if (expression.items != null) {
-            for (int i = 0; i < expression.items.size(); i++) {
-                visitor.visitInsn(DUP);
-                visitor.visitLdcInsn(i);
-                compileExpression(visitor, context, expression.items.get(i));
-                visitor.visitInsn(elementsType.getArrayStoreInst());
-            }
+        for (int i = 0; i < expression.items.size(); i++) {
+            visitor.visitInsn(DUP);
+            visitor.visitLdcInsn(i);
+            compileExpression(visitor, context, expression.items.get(i));
+            visitor.visitInsn(elementsType.getArrayStoreInst());
         }
+    }
+
+    private void compileObjectCreationExpression(MethodVisitor visitor, CompilerContext context, BoundObjectCreationExpressionNode creation) {
+        visitor.visitTypeInsn(NEW, Type.getInternalName(creation.typeNode.type.getJavaClass()));
+        visitor.visitInsn(DUP);
+        for (BoundExpressionNode expression : creation.arguments.arguments) {
+            compileExpression(visitor, context, expression);
+        }
+        creation.constructor.compileInvoke(visitor);
     }
 
     private void compileCollectionExpression(MethodVisitor visitor, CompilerContext context, BoundCollectionExpressionNode expression) {

@@ -1,6 +1,8 @@
 package com.zergatul.scripting.tests.compiler;
 
+import com.zergatul.scripting.AsyncRunnable;
 import com.zergatul.scripting.DiagnosticMessage;
+import com.zergatul.scripting.Getter;
 import com.zergatul.scripting.SingleLineTextRange;
 import com.zergatul.scripting.binding.Binder;
 import com.zergatul.scripting.binding.BinderErrors;
@@ -13,6 +15,7 @@ import com.zergatul.scripting.lexer.LexerOutput;
 import com.zergatul.scripting.parser.Parser;
 import com.zergatul.scripting.parser.ParserOutput;
 import com.zergatul.scripting.tests.compiler.helpers.*;
+import com.zergatul.scripting.type.CustomType;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -20,8 +23,7 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 import java.util.function.Consumer;
 
-import static com.zergatul.scripting.tests.compiler.helpers.CompilerHelper.compile;
-import static com.zergatul.scripting.tests.compiler.helpers.CompilerHelper.getDiagnostics;
+import static com.zergatul.scripting.tests.compiler.helpers.CompilerHelper.*;
 
 public class LambdaTests {
 
@@ -615,6 +617,18 @@ public class LambdaTests {
     }
 
     @Test
+    public void predicateAsyncTest() {
+        String code = """
+                custom.testSomething(10, instance => instance.value == 15);
+                """;
+
+        AsyncRunnable program = compileAsyncWithCustomTypes(ApiRoot.class, code, ClassA.class);
+        program.run();
+
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(0, 1, 2, 3, 4, 5));
+    }
+
+    @Test
     public void failedArguments1Test() {
         String code = """
                 run.once(10, () => {});
@@ -736,6 +750,30 @@ public class LambdaTests {
         public void testPredicate(StringPredicate predicate) {
             ApiRoot.boolStorage.add(predicate.test("qwerty"));
         }
+
+        public void testSomething(int value, CustomTypePredicate predicate) {
+            for (int i = 0; i < 16; i++) {
+                ApiRoot.intStorage.add(i);
+                if (predicate.test(new ClassA(value + i))) {
+                    return;
+                }
+            }
+        }
+    }
+
+    @CustomType(name = "ClassA")
+    public static class ClassA {
+
+        private final int value;
+
+        public ClassA(int value) {
+            this.value = value;
+        }
+
+        @Getter(name = "value")
+        public int getValue() {
+            return value;
+        }
     }
 
     @FunctionalInterface
@@ -751,5 +789,10 @@ public class LambdaTests {
     @FunctionalInterface
     public interface StringPredicate {
         boolean test(String value);
+    }
+
+    @FunctionalInterface
+    public interface CustomTypePredicate {
+        boolean test(ClassA a);
     }
 }

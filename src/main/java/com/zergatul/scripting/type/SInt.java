@@ -19,7 +19,6 @@ import static org.objectweb.asm.Opcodes.*;
 public class SInt extends SPredefinedType {
 
     public static final SInt instance = new SInt();
-    public static final SStaticTypeReference staticRef = new SStaticTypeReference(instance);
 
     private SInt() {
         super(int.class);
@@ -155,8 +154,14 @@ public class SInt extends SPredefinedType {
         if (other == SInt64.instance) {
             return TO_INT64.value();
         }
+        if (other == SFloat32.instance) {
+            return TO_FLOAT32.value();
+        }
         if (other == SFloat.instance) {
             return TO_FLOAT.value();
+        }
+        if (other instanceof SClassType && other.getJavaClass() == Object.class) {
+            return TO_OBJECT.value();
         }
         return null;
     }
@@ -293,6 +298,13 @@ public class SInt extends SPredefinedType {
         }
     });
 
+    private static final Lazy<CastOperation> TO_FLOAT32 = new Lazy<>(() -> new CastOperation(SFloat32.instance) {
+        @Override
+        public void apply(MethodVisitor visitor) {
+            visitor.visitInsn(I2F);
+        }
+    });
+
     private static final Lazy<CastOperation> TO_FLOAT = new Lazy<>(() -> new CastOperation(SFloat.instance) {
         @Override
         public void apply(MethodVisitor visitor) {
@@ -304,6 +316,13 @@ public class SInt extends SPredefinedType {
         @Override
         public void apply(MethodVisitor visitor) {
             visitor.visitInsn(I2L);
+        }
+    });
+
+    private static final Lazy<CastOperation> TO_OBJECT = new Lazy<>(() -> new CastOperation(SType.fromJavaType(Object.class)) {
+        @Override
+        public void apply(MethodVisitor visitor) {
+            SInt.instance.compileBoxing(visitor);
         }
     });
 

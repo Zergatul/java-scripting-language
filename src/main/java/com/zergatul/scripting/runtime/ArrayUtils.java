@@ -41,6 +41,18 @@ public class ArrayUtils {
         return result;
     }
 
+    public static float[] concat(float[] a1, float element) {
+        float[] result = Arrays.copyOf(a1, a1.length + 1);
+        result[a1.length] = element;
+        return result;
+    }
+
+    public static float[] concat(float[] a1, float[] a2) {
+        float[] result = Arrays.copyOf(a1, a1.length + a2.length);
+        System.arraycopy(a2, 0, result, a1.length, a2.length);
+        return result;
+    }
+
     public static double[] concat(double[] a1, double element) {
         double[] result = Arrays.copyOf(a1, a1.length + 1);
         result[a1.length] = element;

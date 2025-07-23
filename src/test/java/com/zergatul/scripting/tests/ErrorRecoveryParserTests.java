@@ -181,14 +181,13 @@ public class ErrorRecoveryParserTests {
                                                 new PredefinedTypeNode(PredefinedType.INT, new SingleLineTextRange(1, 1, 0, 3)),
                                                 new SingleLineTextRange(1, 1, 0, 5)),
                                         new NameExpressionNode("x", new SingleLineTextRange(1, 7, 6, 1)),
-                                        new NewExpressionNode(
+                                        new ArrayInitializerExpressionNode(
                                                 new ArrayTypeNode(
                                                         new PredefinedTypeNode(PredefinedType.INT, new SingleLineTextRange(1, 15, 14, 3)),
                                                         new SingleLineTextRange(1, 15, 14, 5)),
-                                                null,
                                                 List.of(
                                                         new IntegerLiteralExpressionNode("1", new SingleLineTextRange(1, 23, 22, 1))),
-                                                new SingleLineTextRange(1, 11, 10, 9)),
+                                                new SingleLineTextRange(1, 11, 10, 13)),
                                         new SingleLineTextRange(1, 1, 0, 25))),
                         new SingleLineTextRange(1, 1, 0, 25)));
     }

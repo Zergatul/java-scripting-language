@@ -12,7 +12,7 @@ public class CompilationParametersBuilder {
     private Class<?> functionalInterface;
     private SType asyncReturnType;
     private List<Class<?>> customTypes;
-    private VisibilityChecker checker;
+    private JavaInteropPolicy policy;
     private String classNamePrefix;
     private String sourceFile;
     private boolean emitLineNumbers;
@@ -54,8 +54,8 @@ public class CompilationParametersBuilder {
         return this;
     }
 
-    public CompilationParametersBuilder setVisibilityChecker(VisibilityChecker checker) {
-        this.checker = checker;
+    public CompilationParametersBuilder setPolicy(JavaInteropPolicy policy) {
+        this.policy = policy;
         return this;
     }
 
@@ -80,6 +80,6 @@ public class CompilationParametersBuilder {
     }
 
     public CompilationParameters build() {
-        return new CompilationParameters(root, functionalInterface, asyncReturnType, customTypes, checker, classNamePrefix, sourceFile, emitLineNumbers, debug);
+        return new CompilationParameters(root, functionalInterface, asyncReturnType, customTypes, policy, classNamePrefix, sourceFile, emitLineNumbers, debug);
     }
 }

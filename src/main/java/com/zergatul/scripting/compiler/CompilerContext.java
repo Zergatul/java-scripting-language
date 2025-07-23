@@ -34,7 +34,7 @@ public class CompilerContext {
     private final List<CapturedVariable> captured;
     private final FunctionStack stack;
     private Label generatorContinueLabel;
-    private VisibilityChecker checker;
+    private JavaInteropPolicy policy;
     private int lastEmittedLine;
 
     public CompilerContext(SType returnType, boolean isAsync) {
@@ -389,11 +389,19 @@ public class CompilerContext {
     }
 
     public boolean isMethodVisible(Method method) {
-        return root.checker == null || root.checker.isVisible(method);
+        return root.policy == null || root.policy.isMethodVisible(method);
     }
 
-    public void setChecker(VisibilityChecker checker) {
-        this.checker = checker;
+    public boolean isJavaTypeUsageAllowed() {
+        return root.policy == null || root.policy.isJavaTypeUsageAllowed();
+    }
+
+    public String getJavaTypeUsageError() {
+        return root.policy.getJavaTypeUsageError();
+    }
+
+    public void setPolicy(JavaInteropPolicy policy) {
+        this.policy = policy;
     }
 
     public int getLastEmittedLine() {
