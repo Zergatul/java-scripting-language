@@ -11,6 +11,7 @@ public enum TokenType {
     LEFT_CURLY_BRACKET,
     RIGHT_CURLY_BRACKET,
     DOT,
+    DOLLAR,
     COMMA,
     COLON,
     SEMICOLON,

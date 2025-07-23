@@ -59,6 +59,13 @@ public class SClassType extends SType {
     }
 
     @Override
+    public List<ConstructorReference> getConstructors() {
+        return Arrays.stream(clazz.getConstructors())
+                .map(ConstructorReference::new)
+                .toList();
+    }
+
+    @Override
     public List<PropertyReference> getInstanceProperties() {
         return Arrays.stream(clazz.getDeclaredFields())
                 .filter(f -> !Modifier.isStatic(f.getModifiers()))
@@ -89,7 +96,8 @@ public class SClassType extends SType {
         return Arrays.stream(this.clazz.getMethods())
                 .filter(m -> Modifier.isPublic(m.getModifiers()))
                 .filter(m -> !Modifier.isStatic(m.getModifiers()))
-                .filter(m -> m.getDeclaringClass() != Object.class)
+                // return Object members only for Object class
+                .filter(m -> clazz == Object.class || m.getDeclaringClass() != Object.class)
                 .map(NativeInstanceMethodReference::new)
                 .map(r -> (MethodReference) r)
                 .toList();

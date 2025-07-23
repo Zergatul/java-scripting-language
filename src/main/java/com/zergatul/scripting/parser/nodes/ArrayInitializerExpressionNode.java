@@ -7,16 +7,14 @@ import com.zergatul.scripting.parser.ParserTreeVisitor;
 import java.util.List;
 import java.util.Objects;
 
-public class NewExpressionNode extends ExpressionNode {
+public class ArrayInitializerExpressionNode extends ExpressionNode {
 
     public final TypeNode typeNode;
-    public final ExpressionNode lengthExpression;
     public final List<ExpressionNode> items;
 
-    public NewExpressionNode(TypeNode typeNode, ExpressionNode lengthExpression, List<ExpressionNode> items, TextRange range) {
-        super(NodeType.NEW_EXPRESSION, range);
+    public ArrayInitializerExpressionNode(TypeNode typeNode, List<ExpressionNode> items, TextRange range) {
+        super(NodeType.ARRAY_INITIALIZER_EXPRESSION, range);
         this.typeNode = typeNode;
-        this.lengthExpression = lengthExpression;
         this.items = items;
     }
 
@@ -27,22 +25,15 @@ public class NewExpressionNode extends ExpressionNode {
 
     @Override
     public void acceptChildren(ParserTreeVisitor visitor) {
-        typeNode.accept(visitor);
-        if (lengthExpression != null) {
-            lengthExpression.accept(visitor);
-        }
-        if (items != null) {
-            for (ExpressionNode expression : items) {
-                expression.accept(visitor);
-            }
+        for (ExpressionNode expression : items) {
+            expression.accept(visitor);
         }
     }
 
     @Override
     public boolean equals(Object obj) {
-        if (obj instanceof NewExpressionNode other) {
+        if (obj instanceof ArrayInitializerExpressionNode other) {
             return  other.typeNode.equals(typeNode) &&
-                    Objects.equals(other.lengthExpression, lengthExpression) &&
                     Objects.equals(other.items, items) &&
                     other.getRange().equals(getRange());
         } else {

@@ -16,6 +16,7 @@ public class BinderErrors {
     public static final ErrorCode FunctionExpected = new ErrorCode("B011", "Function expected");
     public static final ErrorCode NonInvocableMember = new ErrorCode("B012", "Non-invocable member '%s.%s' cannot be used like a method");
     public static final ErrorCode NoOverloadedMethods = new ErrorCode("B013", "No overload for method '%s' takes %d arguments");
+    public static final ErrorCode NoOverloadedConstructors = new ErrorCode("B013", "No overload for constructor '%s' takes %d arguments");
     public static final ErrorCode ArgumentCountMismatch = new ErrorCode("B014", "Function '%s' expects %d arguments");
     public static final ErrorCode CannotCastArguments = new ErrorCode("B015", "Invalid arguments");
     public static final ErrorCode InvalidFloatConstant = new ErrorCode("B016", "Cannot parse float constant");
@@ -41,6 +42,7 @@ public class BinderErrors {
     public static final ErrorCode EmptyCollectionExpression = new ErrorCode("B036", "Empty collection expression is not supported. Please use 'new' syntax.");
     public static final ErrorCode CannotInferCollectionExpressionTypes = new ErrorCode("B037", "Cannot infer collection expression types: Type at position 0: '%s', type at position %d: '%s'.");
     public static final ErrorCode RefTypeNotSupported = new ErrorCode("B038", "ref type for '%s' is not supported");
+    public static final ErrorCode JavaTypeDoesNotExist = new ErrorCode("B039", "Java type '%s' does not exist");
 
     public static final ErrorCode InternalError = new ErrorCode("B999", "Internal error: %s");
 }

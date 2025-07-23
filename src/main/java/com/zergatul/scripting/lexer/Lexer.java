@@ -74,6 +74,10 @@ public class Lexer {
                         advance();
                     }
                 }
+                case '$' -> {
+                    appendToken(TokenType.DOLLAR);
+                    advance();
+                }
                 case ',' -> {
                     appendToken(TokenType.COMMA);
                     advance();

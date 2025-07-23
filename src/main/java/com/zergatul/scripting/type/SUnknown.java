@@ -56,6 +56,11 @@ public class SUnknown extends SType {
     }
 
     @Override
+    public List<ConstructorReference> getConstructors() {
+        return List.of(UnknownConstructorReference.instance);
+    }
+
+    @Override
     public CastOperation implicitCastTo(SType other) {
         // allow SUnknown to be cast to anything
         // in this way any compilation error will not spread

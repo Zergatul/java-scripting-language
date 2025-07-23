@@ -9,6 +9,16 @@ public abstract class ParserTreeVisitor {
         node.acceptChildren(this);
     }
 
+    public void explicitVisit(ArrayCreationExpressionNode node) {
+        visit(node);
+        node.acceptChildren(this);
+    }
+
+    public void explicitVisit(ArrayInitializerExpressionNode node) {
+        visit(node);
+        node.acceptChildren(this);
+    }
+
     public void explicitVisit(ArrayTypeNode node) {
         visit(node);
         node.acceptChildren(this);
@@ -119,6 +129,11 @@ public abstract class ParserTreeVisitor {
         node.acceptChildren(this);
     }
 
+    public void explicitVisit(JavaTypeNode node) {
+        visit(node);
+        node.acceptChildren(this);
+    }
+
     public void explicitVisit(IfStatementNode node) {
         visit(node);
         node.acceptChildren(this);
@@ -194,7 +209,7 @@ public abstract class ParserTreeVisitor {
         node.acceptChildren(this);
     }
 
-    public void explicitVisit(NewExpressionNode node) {
+    public void explicitVisit(ObjectCreationExpressionNode node) {
         visit(node);
         node.acceptChildren(this);
     }
@@ -290,6 +305,8 @@ public abstract class ParserTreeVisitor {
     }
 
     public void visit(ArgumentsListNode node) {}
+    public void visit(ArrayCreationExpressionNode node) {}
+    public void visit(ArrayInitializerExpressionNode node) {}
     public void visit(ArrayTypeNode node) {}
     public void visit(AssignmentOperatorNode node) {}
     public void visit(AssignmentStatementNode node) {}
@@ -312,6 +329,7 @@ public abstract class ParserTreeVisitor {
     public void visit(ForEachLoopStatementNode node) {}
     public void visit(ForLoopStatementNode node) {}
     public void visit(FunctionNode node) {}
+    public void visit(JavaTypeNode node) {}
     public void visit(IfStatementNode node) {}
     public void visit(IndexExpressionNode node) {}
     public void visit(IntegerLiteralExpressionNode node) {}
@@ -326,8 +344,8 @@ public abstract class ParserTreeVisitor {
     public void visit(MemberAccessExpressionNode node) {}
     public void visit(MetaTypeExpressionNode node) {}
     public void visit(MetaTypeOfExpressionNode node) {}
+    public void visit(ObjectCreationExpressionNode node) {}
     public void visit(NameExpressionNode node) {}
-    public void visit(NewExpressionNode node) {}
     public void visit(ParameterListNode node) {}
     public void visit(ParameterNode node) {}
     public void visit(PostfixStatementNode node) {}

@@ -445,7 +445,9 @@ public class Binder {
             case STATIC_REFERENCE -> bindStaticReferenceExpression((StaticReferenceNode) expression);
             case MEMBER_ACCESS_EXPRESSION -> bindMemberAccessExpression((MemberAccessExpressionNode) expression);
             case REF_ARGUMENT_EXPRESSION -> bindRefArgumentExpression((RefArgumentExpressionNode) expression);
-            case NEW_EXPRESSION -> bindNewExpression((NewExpressionNode) expression);
+            case ARRAY_CREATION_EXPRESSION -> bindArrayCreationExpression((ArrayCreationExpressionNode) expression);
+            case ARRAY_INITIALIZER_EXPRESSION -> bindArrayInitializerExpression((ArrayInitializerExpressionNode) expression);
+            case OBJECT_CREATION_EXPRESSION -> bindObjectCreationExpressionNode((ObjectCreationExpressionNode) expression);
             case COLLECTION_EXPRESSION -> bindCollectionExpression((CollectionExpressionNode) expression);
             case LAMBDA_EXPRESSION -> bindLambdaExpression((LambdaExpressionNode) expression);
             case AWAIT_EXPRESSION -> bindAwaitExpression((AwaitExpressionNode) expression);
@@ -998,39 +1000,136 @@ public class Binder {
         }, node.getRange());
     }
 
-    private BoundNewExpressionNode bindNewExpression(NewExpressionNode expression) {
+    private BoundArrayCreationExpressionNode bindArrayCreationExpression(ArrayCreationExpressionNode expression) {
+        if (expression.typeNode.getNodeType() != NodeType.ARRAY_TYPE) {
+            throw new InternalException();
+        }
+
+        BoundTypeNode typeNode = bindType(expression.typeNode);
+        BoundExpressionNode lengthExpression = tryCastTo(bindExpression(expression.lengthExpression), SInt.instance);
+        return new BoundArrayCreationExpressionNode(typeNode, lengthExpression, expression.getRange());
+    }
+
+    private BoundArrayInitializerExpressionNode bindArrayInitializerExpression(ArrayInitializerExpressionNode expression) {
+        if (expression.typeNode.getNodeType() != NodeType.ARRAY_TYPE) {
+            throw new InternalException();
+        }
+
+        BoundTypeNode typeNode = bindType(expression.typeNode);
+        SArrayType type = (SArrayType) typeNode.type;
+        List<BoundExpressionNode> items = new ArrayList<>(expression.items.size());
+        for (ExpressionNode e : expression.items) {
+            items.add(tryCastTo(bindExpression(e), type.getElementsType()));
+        }
+
+        return new BoundArrayInitializerExpressionNode(typeNode, items, expression.getRange());
+    }
+
+    private BoundObjectCreationExpressionNode bindObjectCreationExpressionNode(ObjectCreationExpressionNode expression) {
         BoundTypeNode typeNode = bindType(expression.typeNode);
 
-        BoundExpressionNode lengthExpression = null;
-        if (expression.lengthExpression != null) {
-            lengthExpression = tryCastTo(bindExpression(expression.lengthExpression), SInt.instance);
-        }
-
-        List<BoundExpressionNode> items = null;
-        if (expression.items != null) {
-            items = new ArrayList<>(expression.items.size());
-            for (ExpressionNode e : expression.items) {
-                items.add(bindExpression(e));
+        int argumentsSize = expression.arguments.arguments.size();
+        List<PreBoundArgument> arguments = new ArrayList<>(argumentsSize);
+        for (ExpressionNode node : expression.arguments.arguments) {
+            if (node.getNodeType() == NodeType.LAMBDA_EXPRESSION) {
+                arguments.add(new PreBoundArgument((LambdaExpressionNode) node));
+            } else {
+                arguments.add(new PreBoundArgument(bindExpression(node)));
             }
         }
 
-        if (typeNode.getNodeType() == NodeType.ARRAY_TYPE) {
-            if (lengthExpression == null ^ items == null) {
-                SArrayType arrayType = (SArrayType) typeNode.type;
-                SType underlying = arrayType.getElementsType();
-                if (items != null) {
-                    for (int i = 0; i < items.size(); i++) {
-                        items.set(i, tryCastTo(items.get(i), underlying));
+        ConstructorReference matchedConstructor = null;
+        boolean invalidArguments = false;
+
+        List<ConstructorReference> constructors = typeNode.type.getConstructors().stream()
+                .filter(c -> c == UnknownConstructorReference.instance || c.getParameters().size() == argumentsSize)
+                .toList();
+        if (constructors.isEmpty()) {
+            invalidArguments = true;
+            addDiagnostic(
+                    BinderErrors.NoOverloadedConstructors,
+                    expression,
+                    typeNode.type.toString(), argumentsSize);
+        } else {
+            List<ArgumentsCast2> possibleArgumentsWithCasting = constructors
+                    .stream()
+                    .map(c -> {
+                        if (c == UnknownConstructorReference.instance) {
+                            return new ArgumentsCast2(UnknownConstructorReference.instance, Collections.nCopies(argumentsSize, null), 0);
+                        }
+
+                        List<SType> parameterTypes = c.getParameterTypes();
+                        List<CastOperation> casts = new ArrayList<>();
+                        int count = 0;
+                        for (int i = 0; i < parameterTypes.size(); i++) {
+                            SType expected = parameterTypes.get(i);
+                            PreBoundArgument argument = arguments.get(i);
+                            if (argument.canMatch(expected)) {
+                                casts.add(null);
+                            } else if (argument.hasExpression()) {
+                                CastOperation cast = argument.expression.type.implicitCastTo(expected);
+                                if (cast != null) {
+                                    casts.add(cast);
+                                    count++;
+                                } else {
+                                    return null;
+                                }
+                            } else {
+                                return null;
+                            }
+                        }
+                        return new ArgumentsCast2(c, casts, count);
+                    })
+                    .filter(Objects::nonNull)
+                    .sorted(Comparator.comparingInt(ac -> ac.count))
+                    .toList();
+
+            if (possibleArgumentsWithCasting.isEmpty()) {
+                invalidArguments = true;
+                addDiagnostic(BinderErrors.CannotCastArguments, expression.arguments);
+            } else {
+                ArgumentsCast2 overload = possibleArgumentsWithCasting.getFirst();
+                for (int i = 0; i < argumentsSize; i++) {
+                    PreBoundArgument argument = arguments.get(i);
+                    if (argument.hasLambda()) {
+                        arguments.set(i, new PreBoundArgument(bindLambdaExpression(
+                                argument.lambda,
+                                (SFunctionalInterface) overload.constructor.getParameterTypes().get(i))));
+                    } else {
+                        CastOperation cast = overload.casts.get(i);
+                        if (cast != null) {
+                            if (cast instanceof SFunction.FunctionToLambdaOperation) {
+                                if (!(argument.expression instanceof BoundNameExpressionNode name)) {
+                                    throw new InternalException();
+                                }
+                                arguments.set(i, new PreBoundArgument(new BoundFunctionAsLambdaExpressionNode(
+                                        overload.constructor.getParameterTypes().get(i),
+                                        name,
+                                        name.getRange())));
+                            } else {
+                                arguments.set(i, new PreBoundArgument(new BoundImplicitCastExpressionNode(
+                                        argument.expression,
+                                        cast,
+                                        argument.expression.getRange())));
+                            }
+                        }
                     }
                 }
-            } else {
-                addDiagnostic(BinderErrors.InvalidArrayCreation, expression);
+
+                matchedConstructor = overload.constructor;
             }
-        } else {
-            addDiagnostic(BinderErrors.NewSupportArraysOnly, expression);
         }
 
-        return new BoundNewExpressionNode(typeNode, lengthExpression, items, expression.getRange());
+        if (!invalidArguments && arguments.stream().anyMatch(PreBoundArgument::hasLambda)) {
+            throw new InternalException();
+        }
+
+        BoundArgumentsListNode argumentsNode = new BoundArgumentsListNode(
+                arguments.stream().map(a -> {
+                    return a.expression == null ? new BoundInvalidExpressionNode(a.lambda.getRange()) : a.expression;
+                }).toList(),
+                expression.arguments.getRange());
+        return new BoundObjectCreationExpressionNode(typeNode, matchedConstructor, argumentsNode, expression.getRange());
     }
 
     private BoundCollectionExpressionNode bindCollectionExpression(CollectionExpressionNode collection) {
@@ -1252,6 +1351,20 @@ public class Binder {
             BoundTypeNode underlying = bindType(ref.underlying);
             return new BoundRefTypeNode(underlying, underlying.type.getReferenceType(), ref.getRange());
         }
+        if (type instanceof JavaTypeNode java) {
+            Class<?> clazz;
+            try {
+                clazz = Class.forName(java.type, false, ClassLoader.getSystemClassLoader());
+            } catch (ClassNotFoundException e) {
+                clazz = null;
+            }
+            if (clazz != null) {
+                return new BoundJavaTypeNode(new SClassType(clazz), java.getRange());
+            } else {
+                addDiagnostic(BinderErrors.JavaTypeDoesNotExist, java, java.type);
+                return new BoundInvalidTypeNode(type.getRange());
+            }
+        }
 
         throw new InternalException();
     }
@@ -1296,6 +1409,8 @@ public class Binder {
     }
 
     private record ArgumentsCast(MethodReference method, List<CastOperation> casts, int count) {}
+
+    private record ArgumentsCast2(ConstructorReference constructor, List<CastOperation> casts, int count) {}
 
     private record PreBoundArgument(BoundExpressionNode expression, LambdaExpressionNode lambda) {
 
