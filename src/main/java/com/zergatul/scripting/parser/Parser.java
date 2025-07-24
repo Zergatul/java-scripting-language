@@ -844,7 +844,12 @@ public class Parser {
 
     private ExpressionNode parseTermWithoutPostfix(int precedence) {
         ExpressionNode expression = switch (current.type) {
-            case IDENTIFIER -> isPossibleLambdaExpression() ? parseLambdaExpression() : new NameExpressionNode((IdentifierToken) advance());
+            case IDENTIFIER -> {
+                if (((IdentifierToken) current).value.equals("Java")) {
+                    yield parseStaticReference();
+                }
+                yield isPossibleLambdaExpression() ? parseLambdaExpression() : new NameExpressionNode((IdentifierToken) advance());
+            }
             case FALSE -> new BooleanLiteralExpressionNode(false, advance().getRange());
             case TRUE -> new BooleanLiteralExpressionNode(true, advance().getRange());
             case INTEGER_LITERAL -> new IntegerLiteralExpressionNode((IntegerToken) advance());
@@ -1043,16 +1048,8 @@ public class Parser {
     }
 
     private StaticReferenceNode parseStaticReference() {
-        Token token = advance();
-        return new StaticReferenceNode(switch (token.type) {
-            case BOOLEAN -> PredefinedType.BOOLEAN;
-            case INT, INT32 -> PredefinedType.INT;
-            case INT64, LONG -> PredefinedType.INT64;
-            case CHAR -> PredefinedType.CHAR;
-            case FLOAT -> PredefinedType.FLOAT;
-            case STRING -> PredefinedType.STRING;
-            default -> throw new InternalException();
-        }, token.getRange());
+        TypeNode typeNode = parseTypeNode();
+        return new StaticReferenceNode(typeNode, typeNode.getRange());
     }
 
     private MetaTypeExpressionNode parseMetaTypeExpression() {

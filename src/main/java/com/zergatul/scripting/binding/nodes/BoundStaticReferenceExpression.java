@@ -4,13 +4,17 @@ import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
 import com.zergatul.scripting.parser.NodeType;
 import com.zergatul.scripting.type.SStaticTypeReference;
+import com.zergatul.scripting.type.SType;
 
 import java.util.List;
 
 public class BoundStaticReferenceExpression extends BoundExpressionNode {
 
-    public BoundStaticReferenceExpression(SStaticTypeReference type, TextRange range) {
+    public final BoundTypeNode typeNode;
+
+    public BoundStaticReferenceExpression(BoundTypeNode typeNode, SType type, TextRange range) {
         super(NodeType.STATIC_REFERENCE, type, range);
+        this.typeNode = typeNode;
     }
 
     @Override
@@ -19,7 +23,9 @@ public class BoundStaticReferenceExpression extends BoundExpressionNode {
     }
 
     @Override
-    public void acceptChildren(BinderTreeVisitor visitor) {}
+    public void acceptChildren(BinderTreeVisitor visitor) {
+        typeNode.accept(visitor);
+    }
 
     @Override
     public List<BoundNode> getChildren() {

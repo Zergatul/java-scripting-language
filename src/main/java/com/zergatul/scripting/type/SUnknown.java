@@ -46,6 +46,11 @@ public class SUnknown extends SType {
     }
 
     @Override
+    public boolean isSyntheticType() {
+        return true;
+    }
+
+    @Override
     public boolean isReference() {
         throw new InternalException();
     }

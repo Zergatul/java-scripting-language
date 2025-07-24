@@ -1,6 +1,13 @@
 package com.zergatul.scripting.type;
 
+import com.zergatul.scripting.Getter;
 import com.zergatul.scripting.InternalException;
+import com.zergatul.scripting.Lazy;
+import com.zergatul.scripting.Setter;
+import com.zergatul.scripting.compiler.BufferedMethodVisitor;
+import com.zergatul.scripting.parser.BinaryOperator;
+import com.zergatul.scripting.type.operation.BinaryOperation;
+import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 
 import java.lang.reflect.Field;
@@ -59,6 +66,24 @@ public class SClassType extends SType {
     }
 
     @Override
+    public BinaryOperation equalsOp(SType other) {
+        if (other.isReference()) {
+            return EQUALS.value();
+        } else {
+            return super.equalsOp(other);
+        }
+    }
+
+    @Override
+    public BinaryOperation notEqualsOp(SType other) {
+        if (other.isReference()) {
+            return NOT_EQUALS.value();
+        } else {
+            return super.equalsOp(other);
+        }
+    }
+
+    @Override
     public List<ConstructorReference> getConstructors() {
         return Arrays.stream(clazz.getConstructors())
                 .map(ConstructorReference::new)
@@ -104,6 +129,29 @@ public class SClassType extends SType {
     }
 
     @Override
+    public List<MethodReference> getStaticMethods() {
+        return Arrays.stream(this.clazz.getMethods())
+                .filter(m -> Modifier.isPublic(m.getModifiers()))
+                .filter(m -> Modifier.isStatic(m.getModifiers()))
+                .filter(m -> m.getDeclaringClass() != Object.class)
+                .filter(m -> !m.isAnnotationPresent(Getter.class))
+                .filter(m -> !m.isAnnotationPresent(Setter.class))
+                .map(NativeStaticMethodReference::new)
+                .map(r -> (MethodReference) r)
+                .toList();
+    }
+
+    @Override
+    public List<PropertyReference> getStaticProperties() {
+        return Arrays.stream(clazz.getDeclaredFields())
+                .filter(m -> Modifier.isPublic(m.getModifiers()))
+                .filter(m -> Modifier.isStatic(m.getModifiers()))
+                .map(StaticFieldPropertyReference::new)
+                .map(r -> (PropertyReference) r)
+                .toList();
+    }
+
+    @Override
     public boolean equals(Object obj) {
         if (obj instanceof SClassType other) {
             return other.clazz == clazz;
@@ -115,5 +163,34 @@ public class SClassType extends SType {
     @Override
     public String toString() {
         return String.format("Java<%s>", clazz.getName());
+    }
+
+    private static final Lazy<BinaryOperation> EQUALS = new Lazy<>(() ->
+            new ObjectComparisonOperation(BinaryOperator.EQUALS, IF_ACMPEQ));
+
+    private static final Lazy<BinaryOperation> NOT_EQUALS = new Lazy<>(() ->
+            new ObjectComparisonOperation(BinaryOperator.NOT_EQUALS, IF_ACMPNE));
+
+    private static class ObjectComparisonOperation extends BinaryOperation {
+
+        private final int opcode;
+
+        public ObjectComparisonOperation(BinaryOperator operator, int opcode) {
+            super(operator, SBoolean.instance, SInt.instance, SInt.instance);
+            this.opcode = opcode;
+        }
+
+        @Override
+        public void apply(MethodVisitor left, BufferedMethodVisitor right) {
+            right.release(left);
+            Label elseLabel = new Label();
+            Label endLabel = new Label();
+            left.visitJumpInsn(opcode, elseLabel);
+            left.visitInsn(ICONST_0);
+            left.visitJumpInsn(GOTO, endLabel);
+            left.visitLabel(elseLabel);
+            left.visitInsn(ICONST_1);
+            left.visitLabel(endLabel);
+        }
     }
 }

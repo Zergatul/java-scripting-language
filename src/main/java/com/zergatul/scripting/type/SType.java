@@ -37,6 +37,25 @@ public abstract class SType {
         return Type.getDescriptor(getJavaClass());
     }
 
+    // returns true is type doesn't have corresponding Java type
+    public boolean isSyntheticType() {
+        return false;
+    }
+
+    public boolean isInstanceOf(SType other) {
+        if (equals(other)) {
+            return true;
+        }
+        if (isSyntheticType() || other.isSyntheticType()) {
+            return false;
+        }
+        if (isReference() && other.isReference()) {
+            return other.getJavaClass().isAssignableFrom(getJavaClass());
+        } else {
+            return false;
+        }
+    }
+
     public BinaryOperation add(SType other) {
         if (other == SString.instance) {
             Optional<BinaryOperation> operation = SString.instance.genericLeftAdd(this);
@@ -177,7 +196,6 @@ public abstract class SType {
         return List.of();
     }
 
-    @SuppressWarnings("unused") // monaco integration
     public List<PropertyReference> getInstanceProperties() {
         return List.of();
     }

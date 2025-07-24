@@ -974,7 +974,9 @@ public class Binder {
                 return c.getAnnotation(CustomType.class).name().equals(name.value);
             }).findFirst();
             if (optional.isPresent()) {
-                return new BoundStaticReferenceExpression(new SStaticTypeReference(SType.fromJavaType(optional.get())), name.getRange());
+                SType type = SType.fromJavaType(optional.get());
+                BoundCustomTypeNode typeNode = new BoundCustomTypeNode(type, name.getRange());
+                return new BoundStaticReferenceExpression(typeNode, new SStaticTypeReference(type), name.getRange());
             }
         }
 
@@ -990,14 +992,8 @@ public class Binder {
     }
 
     private BoundStaticReferenceExpression bindStaticReferenceExpression(StaticReferenceNode node) {
-        return new BoundStaticReferenceExpression(switch (node.typeReference) {
-            case BOOLEAN -> SBoolean.staticRef;
-            case INT -> SInt.staticRef;
-            case INT64 -> SInt64.staticRef;
-            case CHAR -> SChar.staticRef;
-            case FLOAT -> SFloat.staticRef;
-            case STRING -> SString.staticRef;
-        }, node.getRange());
+        BoundTypeNode typeNode = bindType(node.typeNode);
+        return new BoundStaticReferenceExpression(typeNode, new SStaticTypeReference(typeNode.type), node.getRange());
     }
 
     private BoundArrayCreationExpressionNode bindArrayCreationExpression(ArrayCreationExpressionNode expression) {
@@ -1424,7 +1420,7 @@ public class Binder {
 
         public boolean canMatch(SType expected) {
             if (expression != null) {
-                return expression.type.equals(expected);
+                return expression.type.isInstanceOf(expected);
             } else {
                 if (expected instanceof SFunctionalInterface abstractFunction) {
                     LambdaAnalyzer analyzer = new LambdaAnalyzer();
