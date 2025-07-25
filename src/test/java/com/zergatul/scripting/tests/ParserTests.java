@@ -581,7 +581,11 @@ public class ParserTests {
                 new CompilationUnitMembersListNode(List.of(), new SingleLineTextRange(1, 1, 0, 0)),
                 new StatementsListNode(List.of(
                         new VariableDeclarationNode(
-                                new JavaTypeNode("com.example.ClassA", new SingleLineTextRange(1, 1, 0, 24)),
+                                new JavaTypeNode(
+                                        new Token(TokenType.LESS, new SingleLineTextRange(1, 5, 4, 1)),
+                                        new JavaQualifiedTypeNameNode("com.example.ClassA", new SingleLineTextRange(1, 6, 5, 18)),
+                                        new Token(TokenType.GREATER, new SingleLineTextRange(1, 24, 23, 1)),
+                                        new SingleLineTextRange(1, 1, 0, 24)),
                                 new NameExpressionNode("a", new SingleLineTextRange(1, 26, 25, 1)),
                                 new SingleLineTextRange(1, 1, 0, 27))),
                         new SingleLineTextRange(1, 1, 0, 27)),

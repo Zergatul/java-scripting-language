@@ -1350,15 +1350,15 @@ public class Binder {
         if (type instanceof JavaTypeNode java) {
             Class<?> clazz;
             try {
-                clazz = Class.forName(java.type, false, ClassLoader.getSystemClassLoader());
+                clazz = Class.forName(java.name.value, false, ClassLoader.getSystemClassLoader());
             } catch (ClassNotFoundException e) {
                 clazz = null;
             }
             if (clazz != null) {
-                return new BoundJavaTypeNode(new SClassType(clazz), java.getRange());
+                return new BoundJavaTypeNode(java.lBracket, java.rBracket, new SClassType(clazz), java.getRange());
             } else {
-                addDiagnostic(BinderErrors.JavaTypeDoesNotExist, java, java.type);
-                return new BoundInvalidTypeNode(type.getRange());
+                addDiagnostic(BinderErrors.JavaTypeDoesNotExist, java, java.name.value);
+                return new BoundJavaTypeNode(java.lBracket, java.rBracket, SUnknown.instance, java.getRange());
             }
         }
 

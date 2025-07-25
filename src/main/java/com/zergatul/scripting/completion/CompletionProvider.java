@@ -250,6 +250,18 @@ public class CompletionProvider<T> {
                     assert completionContext != null;
                     return get(parameters, output, completionContext, line, column);
                 }
+                case JAVA_TYPE -> {
+                    BoundJavaTypeNode javaType = (BoundJavaTypeNode) completionContext.entry.node;
+                    if (TextRange.isBetween(line, column, javaType.lBracket.getRange(), javaType.rBracket.getRange())) {
+                        TextRange inner = TextRange.inner(javaType.lBracket, javaType.rBracket);
+                        String text = inner.extract(output.code());
+                        //canType = true;
+                        //output.code().substring(javaType.lBracket.getRange().getPosition() + javaType.lBracket.getRange().getLength())
+                        //TextRange.combine(javaType.lBracket, javaType.rBracket).extract(output.code());
+                    } else {
+                        canType = true;
+                    }
+                }
                 case INVALID_TYPE, PREDEFINED_TYPE -> {
                     canType = true;
                 }

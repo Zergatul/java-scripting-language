@@ -1228,47 +1228,75 @@ public class Parser {
         Token begin = advance(TokenType.IDENTIFIER);
         Token open = advance(TokenType.LESS);
         Token close = null;
-        StringBuilder sb = new StringBuilder();
-        if (!open.getRange().isEmpty()) {
-            final int STATE_START = 1;
-            final int STATE_IDENTIFIER_READ = 2;
-            final int STATE_SEPARATOR_READ = 3;
-            final int STATE_END = 10;
 
-            int state = STATE_START;
-            while (state != STATE_END) {
-                switch (state) {
-                    case STATE_START, STATE_SEPARATOR_READ -> {
-                        if (current.type == TokenType.IDENTIFIER) {
-                            sb.append(((IdentifierToken) advance()).value);
-                            state = STATE_IDENTIFIER_READ;
+        JavaQualifiedTypeNameNode qualifiedTypeName;
+        if (!open.getRange().isEmpty()) {
+            qualifiedTypeName = parseQualifiedTypeName();
+            close = advance(TokenType.GREATER);
+        } else {
+            qualifiedTypeName = new JavaQualifiedTypeNameNode("", createMissingTokenRange());
+        }
+
+        if (close == null) {
+            close = createMissingToken(TokenType.GREATER);
+        }
+
+        return new JavaTypeNode(open, qualifiedTypeName, close, TextRange.combine(begin, last));
+    }
+
+    private JavaQualifiedTypeNameNode parseQualifiedTypeName() {
+        final int STATE_START = 1;
+        final int STATE_IDENTIFIER_READ = 2;
+        final int STATE_SEPARATOR_READ = 3;
+        final int STATE_END = 10;
+
+        StringBuilder sb = new StringBuilder();
+        TextRange nameRange = null;
+
+        int state = STATE_START;
+        while (state != STATE_END) {
+            switch (state) {
+                case STATE_START, STATE_SEPARATOR_READ -> {
+                    if (current.type == TokenType.IDENTIFIER) {
+                        if (state == STATE_START) {
+                            nameRange = current.getRange();
                         } else {
-                            addDiagnostic(ParserErrors.IdentifierExpected, current, current.getRawValue(code));
-                            state = STATE_END;
+                            nameRange = TextRange.combine(nameRange, current.getRange());
                         }
+
+                        sb.append(((IdentifierToken) advance()).value);
+                        state = STATE_IDENTIFIER_READ;
+                    } else {
+                        addDiagnostic(ParserErrors.IdentifierExpected, current, current.getRawValue(code));
+                        state = STATE_END;
                     }
-                    case STATE_IDENTIFIER_READ -> {
-                        if (current.type == TokenType.GREATER) {
-                            state = STATE_END;
-                        } else if (current.type == TokenType.DOT) {
-                            advance();
-                            sb.append('.');
-                            state = STATE_SEPARATOR_READ;
-                        } else if (current.type == TokenType.DOLLAR) {
-                            advance();
-                            sb.append('$');
-                            state = STATE_SEPARATOR_READ;
-                        } else {
-                            // error will be added later
-                            state = STATE_END;
-                        }
+                }
+                case STATE_IDENTIFIER_READ -> {
+                    if (current.type == TokenType.GREATER) {
+                        state = STATE_END;
+                    } else if (current.type == TokenType.DOT) {
+                        nameRange = TextRange.combine(nameRange, current.getRange());
+                        advance();
+                        sb.append('.');
+                        state = STATE_SEPARATOR_READ;
+                    } else if (current.type == TokenType.DOLLAR) {
+                        nameRange = TextRange.combine(nameRange, current.getRange());
+                        advance();
+                        sb.append('$');
+                        state = STATE_SEPARATOR_READ;
+                    } else {
+                        // error will be added later
+                        state = STATE_END;
                     }
                 }
             }
-            close = advance(TokenType.GREATER);
         }
 
-        return new JavaTypeNode(sb.toString(), TextRange.combine(begin, close != null ? close : open));
+        if (nameRange != null) {
+            return new JavaQualifiedTypeNameNode(sb.toString(), nameRange);
+        } else {
+            return new JavaQualifiedTypeNameNode("", createMissingTokenRange());
+        }
     }
 
     private Token advance() {
@@ -1308,7 +1336,7 @@ public class Parser {
             }
 
             return switch (type) {
-                case SEMICOLON -> createMissingTokenAfterLast(type);
+                case SEMICOLON, GREATER -> createMissingTokenAfterLast(type);
                 default -> createMissingToken(type);
             };
         }

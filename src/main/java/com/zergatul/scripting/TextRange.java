@@ -69,6 +69,29 @@ public abstract class TextRange {
         return getColumn1() > column;
     }
 
+    public static TextRange inner(Locatable locatable1, Locatable locatable2) {
+        return inner(locatable1.getRange(), locatable2.getRange());
+    }
+
+    public static TextRange inner(TextRange range1, TextRange range2) {
+        TextRange begin = range1.subRange(range1.getLength());
+        if (begin.getLine1() == range2.getLine1()) {
+            return new SingleLineTextRange(
+                    begin.getLine1(),
+                    begin.getColumn1(),
+                    begin.getPosition(),
+                    range2.getPosition() - begin.getPosition());
+        } else {
+            return new MultiLineTextRange(
+                    begin.getLine1(),
+                    begin.getColumn1(),
+                    range2.getLine1(),
+                    range2.getColumn1(),
+                    begin.getPosition(),
+                    range2.getPosition() - begin.getPosition());
+        }
+    }
+
     public static boolean isBetween(int line, int column, TextRange range1, TextRange range2) {
         if (line < range1.getLine1()) {
             return false;
