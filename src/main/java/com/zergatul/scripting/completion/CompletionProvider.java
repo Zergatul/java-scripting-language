@@ -2,6 +2,7 @@ package com.zergatul.scripting.completion;
 
 import com.zergatul.scripting.InterfaceHelper;
 import com.zergatul.scripting.InternalException;
+import com.zergatul.scripting.SingleLineTextRange;
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.BinderOutput;
 import com.zergatul.scripting.binding.nodes.*;
@@ -252,12 +253,15 @@ public class CompletionProvider<T> {
                 }
                 case JAVA_TYPE -> {
                     BoundJavaTypeNode javaType = (BoundJavaTypeNode) completionContext.entry.node;
-                    if (TextRange.isBetween(line, column, javaType.lBracket.getRange(), javaType.rBracket.getRange())) {
-                        TextRange inner = TextRange.inner(javaType.lBracket, javaType.rBracket);
-                        String text = inner.extract(output.code());
-                        //canType = true;
-                        //output.code().substring(javaType.lBracket.getRange().getPosition() + javaType.lBracket.getRange().getLength())
-                        //TextRange.combine(javaType.lBracket, javaType.rBracket).extract(output.code());
+                    TextRange nameRange = javaType.name.getRange();
+                    if (nameRange instanceof SingleLineTextRange singleLineNameRange && nameRange.containsOrEnds(line, column)) {
+//                        SingleLineTextRange prefixRange = new SingleLineTextRange(
+//                                singleLineNameRange.getLine1(),
+//                                singleLineNameRange.getColumn1(),
+//                                singleLineNameRange.getPosition(),
+//                                singleLineNameRange.getLength() - (column - singleLineNameRange.getColumn2()));
+//                        String prefix = prefixRange.extract(output.code());
+//                        getClassesSuggestion(prefix);
                     } else {
                         canType = true;
                     }
@@ -717,6 +721,23 @@ public class CompletionProvider<T> {
         }
         suggestions.add(factory.getLocalVariableSuggestion(variable));
     }
+
+//    private String[] getClassesSuggestion(String prefix) {
+//        getLoadedClasses();
+//        return new String[0];
+//    }
+
+//    @SuppressWarnings("unchecked")
+//    private List<Class<?>> getLoadedClasses() {
+//        try {
+//            ClassLoader loader = ClassLoader.getSystemClassLoader();
+//            Field field = loader.getClass().getDeclaredField("classes");
+//            field.setAccessible(true);
+//            return List.copyOf((List<Class<?>>) field.get(loader));
+//        } catch (Throwable e) {
+//            return List.of();
+//        }
+//    }
 
     private record SearchEntry(SearchEntry parent, BoundNode node) {}
 

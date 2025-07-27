@@ -1295,7 +1295,7 @@ public class Parser {
         if (nameRange != null) {
             return new JavaQualifiedTypeNameNode(sb.toString(), nameRange);
         } else {
-            return new JavaQualifiedTypeNameNode("", createMissingTokenRange());
+            return new JavaQualifiedTypeNameNode("", createMissingTokenRangeAfterLast());
         }
     }
 

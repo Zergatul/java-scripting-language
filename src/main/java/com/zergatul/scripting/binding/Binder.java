@@ -1355,10 +1355,10 @@ public class Binder {
                 clazz = null;
             }
             if (clazz != null) {
-                return new BoundJavaTypeNode(java.lBracket, java.rBracket, new SClassType(clazz), java.getRange());
+                return new BoundJavaTypeNode(java.lBracket, java.name, java.rBracket, new SClassType(clazz), java.getRange());
             } else {
                 addDiagnostic(BinderErrors.JavaTypeDoesNotExist, java, java.name.value);
-                return new BoundJavaTypeNode(java.lBracket, java.rBracket, SUnknown.instance, java.getRange());
+                return new BoundJavaTypeNode(java.lBracket, java.name, java.rBracket, SUnknown.instance, java.getRange());
             }
         }
 

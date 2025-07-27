@@ -9,8 +9,6 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 import java.util.function.Function;
 
-import static com.zergatul.scripting.tests.completion.helpers.CommonSuggestions.types;
-
 public class JavaTypeTests {
 
     @Test
@@ -18,7 +16,7 @@ public class JavaTypeTests {
         assertSuggestions("""
                 Java<<cursor>
                 """,
-                context -> types);
+                context -> List.of());
     }
 
     private void assertSuggestions(String code, Function<TestCompletionContext, List<Suggestion>> expectedFactory) {
