@@ -413,6 +413,12 @@ public class BinderTreeGenerator {
 
     private void liftCrossBoundaryVariables(BoundNode node) {
         node.accept(new BinderTreeVisitor() {
+
+            @Override
+            public void explicitVisit(BoundLambdaExpressionNode node) {
+                // don't jump inside
+            }
+
             @Override
             public void visit(BoundNameExpressionNode node) {
                 if (node.symbol instanceof LocalVariable local) {

@@ -62,4 +62,17 @@ public class CompilerHelper {
         Assertions.assertNull(result.getDiagnostics());
         return result.getProgram();
     }
+
+    public static AsyncRunnable compileAsyncWithCustomTypes(Class<?> api, String code, Class<?>... customTypes) {
+        Compiler compiler = new Compiler(new CompilationParametersBuilder()
+                .setRoot(api)
+                .addCustomTypes(List.of(customTypes))
+                .setInterface(AsyncRunnable.class)
+                .setAsyncReturnType(SVoidType.instance)
+                //.setDebug()
+                .build());
+        CompilationResult result = compiler.compile(code);
+        Assertions.assertNull(result.getDiagnostics());
+        return result.getProgram();
+    }
 }
