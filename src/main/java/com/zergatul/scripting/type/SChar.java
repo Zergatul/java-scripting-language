@@ -13,7 +13,6 @@ import static org.objectweb.asm.Opcodes.*;
 public class SChar extends SPredefinedType {
 
     public static final SChar instance = new SChar();
-    public static final SStaticTypeReference staticRef = new SStaticTypeReference(instance);
 
     private SChar() {
         super(char.class);

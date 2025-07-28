@@ -18,7 +18,6 @@ import static org.objectweb.asm.Opcodes.*;
 public class SFloat extends SPredefinedType {
 
     public static final SFloat instance = new SFloat();
-    public static final SStaticTypeReference staticRef = new SStaticTypeReference(instance);
 
     private SFloat() {
         super(double.class);

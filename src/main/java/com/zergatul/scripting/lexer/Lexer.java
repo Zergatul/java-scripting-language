@@ -535,7 +535,9 @@ public class Lexer {
             case "int32" -> TokenType.INT32;
             case "int64" -> TokenType.INT64;
             case "long" -> TokenType.LONG;
+            case "float32" -> TokenType.FLOAT32;
             case "float" -> TokenType.FLOAT;
+            case "float64" -> TokenType.FLOAT64;
             case "string" -> TokenType.STRING;
             case "char" -> TokenType.CHAR;
             case "false" -> TokenType.FALSE;

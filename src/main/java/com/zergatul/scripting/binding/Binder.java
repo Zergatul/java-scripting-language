@@ -1322,6 +1322,7 @@ public class Binder {
                 case BOOLEAN -> SBoolean.instance;
                 case INT -> SInt.instance;
                 case INT64 -> SInt64.instance;
+                case FLOAT32 -> SFloat32.instance;
                 case FLOAT -> SFloat.instance;
                 case STRING -> SString.instance;
                 case CHAR -> SChar.instance;

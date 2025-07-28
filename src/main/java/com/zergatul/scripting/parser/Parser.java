@@ -588,7 +588,9 @@ public class Parser {
             case INT32:
             case INT64:
             case LONG:
+            case FLOAT32:
             case FLOAT:
+            case FLOAT64:
             case STRING:
             case CHAR:
             case IDENTIFIER:
@@ -618,7 +620,7 @@ public class Parser {
             case BREAK -> parseBreakStatement();
             case CONTINUE -> parseContinueStatement();
             case SEMICOLON -> parseEmptyStatement();
-            case BOOLEAN, INT, INT32, INT64, LONG, FLOAT, STRING, CHAR, IDENTIFIER, LEFT_PARENTHESES -> parseSimpleStatement().append(advance(TokenType.SEMICOLON));
+            case BOOLEAN, INT, INT32, INT64, LONG, FLOAT32, FLOAT, FLOAT64, STRING, CHAR, IDENTIFIER, LEFT_PARENTHESES -> parseSimpleStatement().append(advance(TokenType.SEMICOLON));
             case LET -> parseVariableDeclaration().append(advance(TokenType.SEMICOLON));
             default -> {
                 if (isPossibleExpression()) {
@@ -860,7 +862,7 @@ public class Parser {
             case NEW -> parseNewExpression();
             case LEFT_PARENTHESES -> isPossibleLambdaExpression() ? parseLambdaExpression() : parseParenthesizedExpression();
             case LEFT_SQUARE_BRACKET -> parseCollectionExpression();
-            case BOOLEAN, INT, INT32, INT64, LONG, CHAR, FLOAT, STRING -> parseStaticReference();
+            case BOOLEAN, INT, INT32, INT64, LONG, CHAR, FLOAT32, FLOAT, FLOAT64, STRING -> parseStaticReference();
             case META_UNKNOWN -> new InvalidMetaExpressionNode(advance().getRange());
             case META_TYPE -> parseMetaTypeExpression();
             case META_TYPE_OF -> parseMetaTypeOfExpression();
@@ -1086,7 +1088,9 @@ public class Parser {
             case INT32:
             case INT64:
             case LONG:
+            case FLOAT32:
             case FLOAT:
+            case FLOAT64:
             case STRING:
             case CHAR:
             case PLUS:
@@ -1159,7 +1163,9 @@ public class Parser {
             case INT32:
             case INT64:
             case LONG:
+            case FLOAT32:
             case FLOAT:
+            case FLOAT64:
             case STRING:
             case CHAR:
                 return true;
@@ -1193,7 +1199,8 @@ public class Parser {
             case BOOLEAN -> new PredefinedTypeNode(PredefinedType.BOOLEAN, advance().getRange());
             case INT, INT32 -> new PredefinedTypeNode(PredefinedType.INT, advance().getRange());
             case INT64, LONG -> new PredefinedTypeNode(PredefinedType.INT64, advance().getRange());
-            case FLOAT -> new PredefinedTypeNode(PredefinedType.FLOAT, advance().getRange());
+            case FLOAT32 -> new PredefinedTypeNode(PredefinedType.FLOAT32, advance().getRange());
+            case FLOAT, FLOAT64 -> new PredefinedTypeNode(PredefinedType.FLOAT, advance().getRange());
             case STRING -> new PredefinedTypeNode(PredefinedType.STRING, advance().getRange());
             case CHAR -> new PredefinedTypeNode(PredefinedType.CHAR, advance().getRange());
             case IDENTIFIER -> {

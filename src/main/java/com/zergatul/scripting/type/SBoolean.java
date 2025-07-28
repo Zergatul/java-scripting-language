@@ -19,7 +19,6 @@ import static org.objectweb.asm.Opcodes.*;
 public class SBoolean extends SPredefinedType {
 
     public static final SBoolean instance = new SBoolean();
-    public static final SStaticTypeReference staticRef = new SStaticTypeReference(instance);
 
     private SBoolean() {
         super(boolean.class);

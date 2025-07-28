@@ -19,7 +19,6 @@ import static org.objectweb.asm.Opcodes.*;
 public class SInt64 extends SPredefinedType {
 
     public static final SInt64 instance = new SInt64();
-    public static final SStaticTypeReference staticRef = new SStaticTypeReference(instance);
 
     private SInt64() {
         super(long.class);
