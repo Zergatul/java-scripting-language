@@ -254,7 +254,7 @@ public abstract class SType {
                 return new SFuture(fromJavaType(arguments[0]));
             }
 
-            throw new InternalException("Unsupported parametrized type.");
+            return new SClassType((Class<?>) parameterized.getRawType());
         }
 
         if (type instanceof Class<?> clazz) {
@@ -300,11 +300,7 @@ public abstract class SType {
             if (clazz.isAnnotationPresent(CustomType.class)) {
                 return new SCustomType(clazz);
             }
-            if (clazz.getSuperclass() != null || clazz == Object.class) {
-                return new SClassType(clazz);
-            } else {
-                return null;
-            }
+            return new SClassType(clazz);
         }
 
         return null;
