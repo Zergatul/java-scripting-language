@@ -6,6 +6,7 @@ import com.zergatul.scripting.parser.BinaryOperator;
 import com.zergatul.scripting.parser.UnaryOperator;
 import com.zergatul.scripting.runtime.BooleanReference;
 import com.zergatul.scripting.type.operation.BinaryOperation;
+import com.zergatul.scripting.type.operation.CastOperation;
 import com.zergatul.scripting.type.operation.SingleInstructionBinaryOperation;
 import com.zergatul.scripting.type.operation.UnaryOperation;
 import org.objectweb.asm.Label;
@@ -115,6 +116,14 @@ public class SBoolean extends SPredefinedType {
     }
 
     @Override
+    public CastOperation implicitCastTo(SType other) {
+        if (other instanceof SClassType && other.getJavaClass() == Object.class) {
+            return TO_OBJECT.value();
+        }
+        return null;
+    }
+
+    @Override
     public int getReturnInst() {
         return IRETURN;
     }
@@ -168,6 +177,13 @@ public class SBoolean extends SPredefinedType {
     public String toString() {
         return "boolean";
     }
+
+    private static final Lazy<CastOperation> TO_OBJECT = new Lazy<>(() -> new CastOperation(SType.fromJavaType(Object.class)) {
+        @Override
+        public void apply(MethodVisitor visitor) {
+            SBoolean.instance.compileBoxing(visitor);
+        }
+    });
 
     private static final Lazy<BinaryOperation> BITWISE_OR = new Lazy<>(() ->
             new SingleInstructionBinaryOperation(BinaryOperator.BITWISE_OR, SBoolean.instance, IOR));

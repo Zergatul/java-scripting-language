@@ -1089,7 +1089,7 @@ public class Compiler {
             visitor.visitTypeInsn(CHECKCAST, Type.getInternalName(test.type.type.getBoxedVersion()));
         }
 
-        if (!test.expression.type.isReference()) {
+        if (!test.type.type.isReference()) {
             test.type.type.compileUnboxing(visitor);
         }
     }

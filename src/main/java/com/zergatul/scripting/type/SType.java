@@ -10,6 +10,7 @@ import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Type;
 
 import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.TypeVariable;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -241,6 +242,10 @@ public abstract class SType {
     }
 
     public static SType fromJavaType(java.lang.reflect.Type type) {
+        if (type instanceof TypeVariable<?> typeVariable) {
+            return fromJavaType(typeVariable.getBounds()[0]);
+        }
+
         if (type instanceof ParameterizedType parameterized) {
             java.lang.reflect.Type raw = parameterized.getRawType();
             if (raw instanceof Class<?> clazz) {

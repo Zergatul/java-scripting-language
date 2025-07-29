@@ -48,14 +48,15 @@ public class Float32Tests {
 
                 float f = parse("1.5");
                 floatStorage.add(f);
+                
+                float32Storage.add(4000000000L);
                 """;
 
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
-        Assertions.assertIterableEquals(
-                ApiRoot.floatStorage.list,
-                List.of(1.5));
+        Assertions.assertIterableEquals(ApiRoot.floatStorage.list, List.of(1.5));
+        Assertions.assertIterableEquals(ApiRoot.float32Storage.list, List.of(4e9f));
     }
 
     @Test

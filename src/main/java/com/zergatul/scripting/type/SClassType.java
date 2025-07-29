@@ -125,11 +125,6 @@ public class SClassType extends SType {
                 .filter(m -> !Modifier.isStatic(m.getModifiers()))
                 // return Object members only for Object class
                 .filter(m -> clazz == Object.class || m.getDeclaringClass() != Object.class)
-                .filter(m -> {
-                    Type[] types = m.getGenericParameterTypes();
-                    // parametrized methods not supported
-                    return Arrays.stream(types).noneMatch(t -> t instanceof TypeVariable<?>);
-                })
                 .map(NativeInstanceMethodReference::new)
                 .map(r -> (MethodReference) r)
                 .toList();

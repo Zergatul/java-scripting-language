@@ -160,6 +160,9 @@ public class SInt extends SPredefinedType {
         if (other == SFloat.instance) {
             return TO_FLOAT.value();
         }
+        if (other instanceof SClassType && other.getJavaClass() == Object.class) {
+            return TO_OBJECT.value();
+        }
         return null;
     }
 
@@ -313,6 +316,13 @@ public class SInt extends SPredefinedType {
         @Override
         public void apply(MethodVisitor visitor) {
             visitor.visitInsn(I2L);
+        }
+    });
+
+    private static final Lazy<CastOperation> TO_OBJECT = new Lazy<>(() -> new CastOperation(SType.fromJavaType(Object.class)) {
+        @Override
+        public void apply(MethodVisitor visitor) {
+            SInt.instance.compileBoxing(visitor);
         }
     });
 
