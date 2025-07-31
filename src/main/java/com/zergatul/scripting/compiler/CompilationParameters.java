@@ -21,7 +21,7 @@ public class CompilationParameters {
     private final Class<?> functionalInterface;
     private final SType asyncReturnType;
     private final List<Class<?>> customTypes;
-    private final VisibilityChecker checker;
+    private final JavaInteropPolicy policy;
     private final String classNamePrefix;
     private final String sourceFile;
 
@@ -33,7 +33,7 @@ public class CompilationParameters {
             Class<?> functionalInterface,
             SType asyncReturnType,
             List<Class<?>> customTypes,
-            VisibilityChecker checker,
+            JavaInteropPolicy policy,
             String classNamePrefix,
             String sourceFile,
             boolean emitLineNumbers,
@@ -52,7 +52,7 @@ public class CompilationParameters {
         this.functionalInterface = functionalInterface;
         this.asyncReturnType = asyncReturnType;
         this.customTypes = addPredefinedTypes(customTypes);
-        this.checker = checker;
+        this.policy = policy;
         this.classNamePrefix = classNamePrefix;
         this.sourceFile = sourceFile;
         this.emitLineNumbers = emitLineNumbers;
@@ -85,7 +85,7 @@ public class CompilationParameters {
 
     public CompilerContext getContext() {
         CompilerContext context = new CompilerContext(getReturnType(), isAsync());
-        context.setChecker(checker);
+        context.setPolicy(policy);
         for (StaticVariable variable : staticVariables) {
             context.addStaticVariable(variable);
         }
@@ -116,8 +116,8 @@ public class CompilationParameters {
     }
 
     @SuppressWarnings("unused")
-    public VisibilityChecker getChecker() {
-        return checker;
+    public JavaInteropPolicy getPolicy() {
+        return policy;
     }
 
     protected void addStaticVariable(StaticVariable variable) {

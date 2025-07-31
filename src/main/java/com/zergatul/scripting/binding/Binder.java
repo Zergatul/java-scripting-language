@@ -1281,16 +1281,21 @@ public class Binder {
             return new BoundRefTypeNode(underlying, underlying.type.getReferenceType(), ref.getRange());
         }
         if (type instanceof JavaTypeNode java) {
-            Class<?> clazz;
-            try {
-                clazz = Class.forName(java.name.value, false, ClassLoader.getSystemClassLoader());
-            } catch (ClassNotFoundException e) {
-                clazz = null;
-            }
-            if (clazz != null) {
-                return new BoundJavaTypeNode(java.lBracket, java.name, java.rBracket, new SClassType(clazz), java.getRange());
+            if (context.isJavaTypeUsageAllowed()) {
+                Class<?> clazz;
+                try {
+                    clazz = Class.forName(java.name.value, false, ClassLoader.getSystemClassLoader());
+                } catch (ClassNotFoundException e) {
+                    clazz = null;
+                }
+                if (clazz != null) {
+                    return new BoundJavaTypeNode(java.lBracket, java.name, java.rBracket, new SClassType(clazz), java.getRange());
+                } else {
+                    addDiagnostic(BinderErrors.JavaTypeDoesNotExist, java, java.name.value);
+                    return new BoundJavaTypeNode(java.lBracket, java.name, java.rBracket, SUnknown.instance, java.getRange());
+                }
             } else {
-                addDiagnostic(BinderErrors.JavaTypeDoesNotExist, java, java.name.value);
+                addDiagnostic(BinderErrors.JavaTypeNotAllowed, java, context.getJavaTypeUsageError());
                 return new BoundJavaTypeNode(java.lBracket, java.name, java.rBracket, SUnknown.instance, java.getRange());
             }
         }

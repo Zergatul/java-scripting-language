@@ -8,7 +8,7 @@ import com.zergatul.scripting.binding.BinderOutput;
 import com.zergatul.scripting.binding.nodes.*;
 import com.zergatul.scripting.compiler.CompilationParameters;
 import com.zergatul.scripting.compiler.CompilerContext;
-import com.zergatul.scripting.compiler.VisibilityChecker;
+import com.zergatul.scripting.compiler.JavaInteropPolicy;
 import com.zergatul.scripting.lexer.TokenType;
 import com.zergatul.scripting.parser.NodeType;
 import com.zergatul.scripting.symbols.*;
@@ -157,9 +157,9 @@ public class CompletionProvider<T> {
                             .filter(m -> m.getName().toLowerCase().startsWith(partial.toLowerCase()))
                             .filter(m -> {
                                 if (m instanceof NativeMethodReference nativeRef) {
-                                    VisibilityChecker checker = parameters.getChecker();
+                                    JavaInteropPolicy checker = parameters.getPolicy();
                                     if (checker != null) {
-                                        return checker.isVisible(nativeRef.getUnderlying());
+                                        return checker.isMethodVisible(nativeRef.getUnderlying());
                                     } else {
                                         return true;
                                     }
