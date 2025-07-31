@@ -31,8 +31,6 @@ public class BinderErrors {
     public static final ErrorCode NotFunction = new ErrorCode("B025", "'%s' is not a function");
     public static final ErrorCode CannotCastArgument = new ErrorCode("B026", "Argument '%d' cannot convert from '%s' to '%s'");
     public static final ErrorCode EmptyReturnStatement = new ErrorCode("B027", "Cannot return void");
-    public static final ErrorCode EmptyCharLiteral = new ErrorCode("B028", "Empty character literal");
-    public static final ErrorCode TooManyCharsInCharLiteral = new ErrorCode("B029", "Too many characters in character literal");
     public static final ErrorCode AugmentedAssignmentInvalidType = new ErrorCode("B030", "'%s' operator on types '%s' and '%s' returns '%s', and it does not match with left side");
     public static final ErrorCode NotAllPathReturnValue = new ErrorCode("B031", "Not all code paths return a value");
     public static final ErrorCode CannotAwaitNonFuture = new ErrorCode("B032", "Only expressions with type Future<?> can be awaited");

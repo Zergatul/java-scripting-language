@@ -288,41 +288,61 @@ public class Lexer {
                 }
                 case '"' -> {
                     trackBeginToken();
+                    StringBuilder builder = new StringBuilder();
                     while (true) {
                         advance();
                         if (current == -1) {
-                            Token token = new StringToken(getCurrentTokenValue(), getCurrentTokenRange());
+                            Token token = new StringToken(builder.toString(), getCurrentTokenRange());
                             list.add(token);
                             addDiagnostic(LexerErrors.UnfinishedString, token);
                             break;
-                        }
-                        if (current == '\r' || current == '\n') {
-                            Token token = new StringToken(getCurrentTokenValue(), getCurrentTokenRange());
+                        } else if (current == '\\') {
+                            builder.append(processEscapedChar());
+                        } else if (current == '\r' || current == '\n') {
+                            Token token = new StringToken(builder.toString(), getCurrentTokenRange());
                             list.add(token);
                             addDiagnostic(LexerErrors.NewlineInString, token);
                             break;
-                        }
-                        if (previous != '\\' && current == '"') {
+                        } else if (current == '"') {
                             advance();
-                            list.add(new StringToken(getCurrentTokenValue(), getCurrentTokenRange()));
+                            list.add(new StringToken(builder.toString(), getCurrentTokenRange()));
                             break;
+                        } else {
+                            builder.append((char) current);
                         }
                     }
                 }
                 case '\'' -> {
                     trackBeginToken();
+                    char value = (char) 0;
+                    boolean hasValue = false;
+                    boolean tooMany = false;
                     while (true) {
                         advance();
-                        if (current == '\r' || current == '\n') {
-                            Token token = new CharToken(getCurrentTokenValue(), getCurrentTokenRange());
+                        if (current == -1 || current == '\r' || current == '\n') {
+                            Token token = new CharToken(value, getCurrentTokenRange());
                             list.add(token);
                             addDiagnostic(LexerErrors.NewlineInCharacter, token);
                             break;
-                        }
-                        if (previous != '\\' && current == '\'') {
+                        } else if (current == '\\') {
+                            tooMany = hasValue;
+                            value = processEscapedChar();
+                            hasValue = true;
+                        } else if (current == '\'') {
                             advance();
-                            list.add(new CharToken(getCurrentTokenValue(), getCurrentTokenRange()));
+                            CharToken token = new CharToken(value, getCurrentTokenRange());
+                            list.add(token);
+                            if (token.getRange().getLength() <= 2) {
+                                addDiagnostic(LexerErrors.EmptyCharacterLiteral, token);
+                            }
+                            if (tooMany) {
+                                addDiagnostic(LexerErrors.TooManyCharsInCharLiteral, token);
+                            }
                             break;
+                        } else {
+                            tooMany = hasValue;
+                            value = (char) current;
+                            hasValue = true;
                         }
                     }
                 }
@@ -568,6 +588,45 @@ public class Lexer {
         } else {
             list.add(new IdentifierToken(value, range));
         }
+    }
+
+    private char processEscapedChar() {
+        int beginLine = line;
+        int beginColumn = column;
+        int beginPosition = position;
+        advance();
+        return switch (current) {
+            case 'n' -> '\n';
+            case 't' -> '\t';
+            case 'b' -> '\b';
+            case 'r' -> '\r';
+            case 'f' -> '\f';
+            case '\'' -> '\'';
+            case '\"' -> '\"';
+            case '\\' -> '\\';
+            case 'u' -> {
+                StringBuilder builder = new StringBuilder(4);
+                while (builder.length() < 4) {
+                    if (isHexNumber(next)) {
+                        advance();
+                        builder.append((char) current);
+                    } else {
+                        diagnostics.add(
+                                new DiagnosticMessage(LexerErrors.InvalidEscapeSequence,
+                                new SingleLineTextRange(beginLine, beginColumn, beginPosition, 2 + builder.length())));
+                        yield (char) 0;
+                    }
+                }
+                yield (char) Integer.parseInt(builder.toString(), 16);
+            }
+            case -1 -> 0;
+            default -> {
+                diagnostics.add(
+                        new DiagnosticMessage(LexerErrors.InvalidEscapeSequence,
+                        new SingleLineTextRange(beginLine, beginColumn, beginPosition, 2)));
+                yield (char) current;
+            }
+        };
     }
 
     private String getCurrentTokenValue() {

@@ -592,79 +592,11 @@ public class Binder {
     }
 
     private BoundStringLiteralExpressionNode bindStringLiteralExpression(StringLiteralExpressionNode literal) {
-        String value = literal.value;
-        int begin = 0;
-        int end = value.length();
-        if (value.charAt(0) == '"') {
-            begin++;
-        }
-        if (value.charAt(value.length() - 1) == '"') {
-            end--;
-        }
-
-        StringBuilder builder = new StringBuilder(value.length());
-        int index = begin;
-        while (index < end) {
-            if (value.charAt(index) == '\\') {
-                index++;
-                if (index < end) {
-                    builder.append(switch (value.charAt(index)) {
-                        case 'n' -> '\n';
-                        case 't' -> '\t';
-                        case 'b' -> '\b';
-                        case 'r' -> '\r';
-                        case 'f' -> '\f';
-                        default -> value.charAt(index);
-                    });
-                }
-            } else {
-                builder.append(value.charAt(index));
-            }
-            index++;
-        }
-
-        return new BoundStringLiteralExpressionNode(builder.toString(), literal.getRange());
+        return new BoundStringLiteralExpressionNode(literal.value, literal.getRange());
     }
 
     private BoundCharLiteralExpressionNode bindCharLiteralExpression(CharLiteralExpressionNode literal) {
-        String value = literal.value;
-        int begin = 0;
-        int end = value.length();
-        if (value.charAt(0) == '\'') {
-            begin++;
-        }
-        if (value.charAt(value.length() - 1) == '\'') {
-            end--;
-        }
-
-        value = value.substring(begin, end);
-
-        return new BoundCharLiteralExpressionNode(switch (value.length()) {
-            case 0 -> {
-                addDiagnostic(BinderErrors.EmptyCharLiteral, literal);
-                yield (char) 0;
-            }
-            case 1 -> value.charAt(0);
-            case 2 -> {
-                if (value.charAt(0) == '\\') {
-                    yield switch (value.charAt(1)) {
-                        case 'n' -> '\n';
-                        case 't' -> '\t';
-                        case 'b' -> '\b';
-                        case 'r' -> '\r';
-                        case 'f' -> '\f';
-                        default -> value.charAt(1);
-                    };
-                } else {
-                    addDiagnostic(BinderErrors.TooManyCharsInCharLiteral, literal);
-                    yield (char) 0;
-                }
-            }
-            default -> {
-                addDiagnostic(BinderErrors.TooManyCharsInCharLiteral, literal);
-                yield (char) 0;
-            }
-        }, literal.getRange());
+        return new BoundCharLiteralExpressionNode(literal.value, literal.getRange());
     }
 
     private BoundConditionalExpressionNode bindConditionalExpression(ConditionalExpressionNode expression) {

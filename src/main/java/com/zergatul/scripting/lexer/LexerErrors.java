@@ -9,4 +9,7 @@ public class LexerErrors {
     public static final ErrorCode NewlineInCharacter = new ErrorCode("L004", "Newline in character");
     public static final ErrorCode UnfinishedString = new ErrorCode("L005", "Unfinished string");
     public static final ErrorCode UnknownMetaFunction = new ErrorCode("L006", "Expected a known meta function after '#', but got '%s'");
+    public static final ErrorCode InvalidEscapeSequence = new ErrorCode("L007", "Invalid escape sequence");
+    public static final ErrorCode EmptyCharacterLiteral = new ErrorCode("L008", "Empty character literal");
+    public static final ErrorCode TooManyCharsInCharLiteral = new ErrorCode("L009", "Too many characters in character literal");
 }
