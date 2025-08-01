@@ -5,7 +5,7 @@ import org.objectweb.asm.Type;
 
 import java.lang.reflect.Method;
 
-import static org.objectweb.asm.Opcodes.INVOKEVIRTUAL;
+import static org.objectweb.asm.Opcodes.*;
 
 public class NativeInstanceMethodReference extends NativeMethodReference {
 
@@ -16,10 +16,10 @@ public class NativeInstanceMethodReference extends NativeMethodReference {
     @Override
     public void compileInvoke(MethodVisitor visitor) {
         visitor.visitMethodInsn(
-                INVOKEVIRTUAL,
+                method.getDeclaringClass().isInterface() ? INVOKEINTERFACE : INVOKEVIRTUAL,
                 Type.getInternalName(method.getDeclaringClass()),
                 method.getName(),
                 Type.getMethodDescriptor(method),
-                false);
+                method.getDeclaringClass().isInterface());
     }
 }

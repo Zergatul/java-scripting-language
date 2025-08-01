@@ -1204,7 +1204,7 @@ public class Binder {
     }
 
     private BoundExpressionNode tryCastTo(BoundExpressionNode expression, SType type) {
-        if (expression.type.equals(type)) {
+        if (expression.type.isInstanceOf(type)) {
             return expression;
         }
 

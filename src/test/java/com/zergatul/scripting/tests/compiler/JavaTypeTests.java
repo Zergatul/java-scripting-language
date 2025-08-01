@@ -135,7 +135,7 @@ public class JavaTypeTests {
     }
 
     @Test
-    public void boxingText() {
+    public void boxingTest() {
         String code = """
                 let vector = new Java<java.util.Vector>();
                 for (let i = 0; i < 10; i++) {
@@ -157,6 +157,27 @@ public class JavaTypeTests {
         program.run();
 
         Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(45));
+    }
+
+    @Test
+    public void interfaceMethodTest() {
+        String code = """
+                Java<java.util.List> list = new Java<java.util.Vector>();
+                for (let i = 10; i < 16; i++) {
+                    list.add(i.toString());
+                }
+                
+                list.addFirst("Q"); // default method
+                
+                for (let i = 0; i < list.size(); i++) {
+                    stringStorage.add(list.get(i) as string);
+                }
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(ApiRoot.stringStorage.list, List.of("Q", "10", "11", "12", "13", "14", "15"));
     }
 
     public static class ApiRoot {
