@@ -367,21 +367,21 @@ public class Parser {
             return true;
         }
 
-        // "int." definitely not a function
-        if (isPredefinedType() && peek(1).type == TokenType.DOT) {
-            return false;
-        }
-
-        int cursor = 1;
-        if (isPredefinedType() || current.type == TokenType.IDENTIFIER) {
-            // process possible []
-            while (peek(cursor).type == TokenType.LEFT_SQUARE_BRACKET && peek(cursor + 1).type == TokenType.RIGHT_SQUARE_BRACKET) {
-                cursor += 2;
+        LookAhead ahead = new LookAhead();
+        try {
+            if (!tryAdvanceType()) {
+                return false;
             }
 
-            return peek(cursor).type == TokenType.IDENTIFIER && peek(cursor + 1).type == TokenType.LEFT_PARENTHESES;
-        } else {
-            return false;
+            // <type>. - definitely not a function
+            if (current.type == TokenType.DOT) {
+                return false;
+            }
+
+            // <type> <identifier> "("
+            return current.type == TokenType.IDENTIFIER && peek(1).type == TokenType.LEFT_PARENTHESES;
+        } finally {
+            ahead.rollback();
         }
     }
 
@@ -1306,6 +1306,74 @@ public class Parser {
         }
     }
 
+    private boolean tryAdvanceType() {
+        if (isPredefinedType()) {
+            advance();
+            advanceArrayMarkers();
+            return true;
+        } else if (current.type == TokenType.IDENTIFIER) {
+            IdentifierToken identifier = (IdentifierToken) advance();
+            if (identifier.value.equals("Java")) {
+                if (current.type == TokenType.LESS) {
+                    advance();
+                    advanceQualifiedTypeName();
+                    if (current.type == TokenType.GREATER) {
+                        advance();
+                    }
+                }
+            }
+            advanceArrayMarkers();
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    private void advanceQualifiedTypeName() {
+        final int STATE_START = 1;
+        final int STATE_IDENTIFIER_READ = 2;
+        final int STATE_SEPARATOR_READ = 3;
+        final int STATE_END = 10;
+
+        int state = STATE_START;
+        while (state != STATE_END) {
+            switch (state) {
+                case STATE_START, STATE_SEPARATOR_READ -> {
+                    if (current.type == TokenType.IDENTIFIER) {
+                        advance();
+                        state = STATE_IDENTIFIER_READ;
+                    } else {
+                        state = STATE_END;
+                    }
+                }
+                case STATE_IDENTIFIER_READ -> {
+                    if (current.type == TokenType.GREATER) {
+                        state = STATE_END;
+                    } else if (current.type == TokenType.DOT) {
+                        advance();
+                        state = STATE_SEPARATOR_READ;
+                    } else if (current.type == TokenType.DOLLAR) {
+                        advance();
+                        state = STATE_SEPARATOR_READ;
+                    } else {
+                        state = STATE_END;
+                    }
+                }
+            }
+        }
+    }
+
+    private void advanceArrayMarkers() {
+        while (true) {
+            if (current.type == TokenType.LEFT_SQUARE_BRACKET && peek(1).type == TokenType.RIGHT_SQUARE_BRACKET) {
+                advance();
+                advance();
+            } else {
+                break;
+            }
+        }
+    }
+
     private Token advance() {
         last = current;
 
@@ -1415,6 +1483,25 @@ public class Parser {
                     1);
         } else {
             return locatable;
+        }
+    }
+
+    private class LookAhead {
+
+        private final Token current;
+        private final Token last;
+        private final int position;
+
+        public LookAhead() {
+            current = Parser.this.current;
+            last = Parser.this.last;
+            position = Parser.this.tokens.position();
+        }
+
+        public void rollback() {
+            Parser.this.current = current;
+            Parser.this.last = last;
+            Parser.this.tokens.rollback(position);
         }
     }
 }

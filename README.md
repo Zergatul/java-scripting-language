@@ -35,6 +35,33 @@ int[] a2 = [7, 8, 9];
 int[] a3 = a1 + a2 + 10; // a3=[1,2,3,7,8,9,10]
 ```
 
+### if/else statements
+```c#
+if (api.getCount() > 10) {
+    debug.write("OK");
+} else {
+    debug.write("NOT OK");
+}
+```
+
+### Loops
+```c#
+let array = [1, 2, 3];
+for (let i = 0; i < array.length; i++) {
+    debug.write(i.toString());
+}
+```
+
+`foreach` loop works only with arrays.
+```c#
+let array = [1, 2, 3];
+foreach (let x in array) {
+    debug.write(i.toString());
+}
+```
+
+`continue`, `break` statements are supported. `do/while` loops are not supported.
+
 ### Parsing Strings
 ```c#
 int x;
@@ -116,6 +143,14 @@ inventory.findAndMoveToHotbar(1, (stack) => {
 // or
 inventory.findAndMoveToHotbar(1, stack => stack.item.id == "minecraft:wooden_sword");
 ```
+
+Lambda functions with explicit types are not supported:
+```c#
+// not supported
+inventory.findAndMoveToHotbar(1, (ItemStack stack) => stack.item.id == "minecraft:wooden_sword");
+```
+
+And thus lambda functions can exists only as parameters to functions/methods.
 
 ### Function as Values
 ```c#

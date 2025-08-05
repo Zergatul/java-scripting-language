@@ -180,6 +180,29 @@ public class JavaTypeTests {
         Assertions.assertIterableEquals(ApiRoot.stringStorage.list, List.of("Q", "10", "11", "12", "13", "14", "15"));
     }
 
+    @Test
+    public void functionReturnTypeTest() {
+        String code = """
+                Java<java.util.Vector>[] func() {
+                    let list = new Java<java.util.Vector>();
+                    for (let i = 1; i <= 5; i++) {
+                        list.add(i);
+                    }
+                    return [list];
+                }
+
+                let list = func()[0];
+                for (let i = 0; i < list.size(); i++) {
+                    intStorage.add(list.get(i) as int);
+                }
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(1, 2, 3, 4, 5));
+    }
+
     public static class ApiRoot {
         public static BoolStorage boolStorage;
         public static IntStorage intStorage;
