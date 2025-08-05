@@ -3,6 +3,7 @@ package com.zergatul.scripting.compiler;
 import com.zergatul.scripting.InterfaceHelper;
 import com.zergatul.scripting.InternalException;
 import com.zergatul.scripting.runtime.RuntimeType;
+import com.zergatul.scripting.symbols.ImmutableSymbolRef;
 import com.zergatul.scripting.symbols.StaticFieldConstantStaticVariable;
 import com.zergatul.scripting.symbols.StaticVariable;
 import com.zergatul.scripting.type.CustomType;
@@ -84,10 +85,10 @@ public class CompilationParameters {
     }
 
     public CompilerContext getContext() {
-        CompilerContext context = new CompilerContext(getReturnType(), isAsync());
+        CompilerContext context = CompilerContext.create(getReturnType(), isAsync());
         context.setPolicy(policy);
         for (StaticVariable variable : staticVariables) {
-            context.addStaticVariable(variable);
+            context.addStaticSymbol(variable.getName(), new ImmutableSymbolRef(variable));
         }
         return context;
     }

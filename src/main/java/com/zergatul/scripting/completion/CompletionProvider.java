@@ -11,6 +11,7 @@ import com.zergatul.scripting.compiler.CompilerContext;
 import com.zergatul.scripting.compiler.JavaInteropPolicy;
 import com.zergatul.scripting.lexer.TokenType;
 import com.zergatul.scripting.parser.NodeType;
+import com.zergatul.scripting.parser.nodes.ClassNode;
 import com.zergatul.scripting.symbols.*;
 import com.zergatul.scripting.type.*;
 
@@ -20,6 +21,18 @@ import java.util.List;
 import java.util.Objects;
 
 public class CompletionProvider<T> {
+
+    private static final SType[] PREDEFINED_TYPES = new SType[] {
+            SBoolean.instance,
+            SInt8.instance,
+            SInt16.instance,
+            SInt.instance,
+            SInt64.instance,
+            SChar.instance,
+            SFloat32.instance,
+            SFloat.instance,
+            SString.instance
+    };
 
     private final SuggestionFactory<T> factory;
 
@@ -37,22 +50,24 @@ public class CompletionProvider<T> {
         BoundCompilationUnitNode unit = output.unit();
         List<T> suggestions = new ArrayList<>();
 
+        boolean canClass = false;
         boolean canStatic = false;
         boolean canVoid = false;
         boolean canType = false;
         boolean canStatement = false;
         boolean canExpression = false;
+        boolean canConstructor = false;
         if (completionContext.entry == null) {
             switch (completionContext.type) {
                 case NO_CODE -> {
-                    canStatic = canVoid = canType = canStatement = true;
+                    canClass = canStatic = canVoid = canType = canStatement = true;
                 }
                 case BEFORE_FIRST -> {
-                    canStatic = canVoid = canType = true;
+                    canClass = canStatic = canVoid = canType = true;
                     canStatement = unit.members.members.isEmpty();
                 }
                 case AFTER_LAST -> {
-                    canStatic = unit.statements.statements.isEmpty();
+                    canClass = canStatic = unit.statements.statements.isEmpty();
                     canVoid = canType = unit.statements.statements.isEmpty();
                     canStatement = true;
                 }
@@ -68,17 +83,20 @@ public class CompletionProvider<T> {
             switch (completionContext.entry.node.getNodeType()) {
                 case COMPILATION_UNIT -> {
                     if (completionContext.prev == null) {
-                        canStatic = true;
+                        canClass = canStatic = true;
                         canVoid = canType = true;
                         if (completionContext.next == null || completionContext.next.getNodeType() == NodeType.STATEMENTS_LIST) {
                             canStatement = true;
                         }
                     } else if (completionContext.prev.getNodeType() == NodeType.COMPILATION_UNIT_MEMBERS) {
-                        canStatic = canVoid = canType = true;
+                        canClass = canStatic = canVoid = canType = true;
                         if (completionContext.next == null || completionContext.next.getNodeType() == NodeType.STATEMENTS_LIST) {
                             canStatement = true;
                         }
                     }
+                }
+                case CLASS -> {
+                    canVoid = canType = canConstructor = true;
                 }
                 case STATEMENTS_LIST, BLOCK_STATEMENT -> {
                     // check if we are at the end of unfinished statement
@@ -295,18 +313,32 @@ public class CompletionProvider<T> {
         canExpression |= canStatement;
         canType |= canStatement;
 
+        if (canClass) {
+            suggestions.add(factory.getKeywordSuggestion(TokenType.CLASS));
+        }
         if (canStatic) {
             suggestions.add(factory.getKeywordSuggestion(TokenType.STATIC));
+        }
+        if (canConstructor) {
+            suggestions.add(factory.getKeywordSuggestion(TokenType.CONSTRUCTOR));
         }
         if (canVoid) {
             suggestions.add(factory.getKeywordSuggestion(TokenType.VOID));
         }
         if (canType | canExpression) {
-            for (SType type : new SType[] { SBoolean.instance, SInt.instance, SInt64.instance, SChar.instance, SFloat.instance, SString.instance }) {
+            for (SType type : PREDEFINED_TYPES) {
                 suggestions.addAll(factory.getTypeSuggestion(type));
             }
             for (Class<?> clazz : parameters.getCustomTypes()) {
                 suggestions.add(factory.getCustomTypeSuggestion(clazz));
+            }
+            for (BoundCompilationUnitMemberNode memberNode : unit.members.members) {
+                if (memberNode.getNodeType() == NodeType.CLASS) {
+                    BoundClassNode classNode = (BoundClassNode) memberNode;
+                    if (!classNode.name.value.isEmpty()) {
+                        suggestions.add(factory.getClassSuggestion((ClassSymbol) classNode.name.getSymbol()));
+                    }
+                }
             }
         }
         if (canExpression) {
@@ -354,13 +386,13 @@ public class CompletionProvider<T> {
             }
         }
 
-        if (node instanceof BoundForEachLoopStatementNode loop) {
+        /*if (node instanceof BoundForEachLoopStatementNode loop) {
             if (loop.iterable.getRange().endsWith(line, column)) {
                 return getUnfinished(loop.iterable, line, column);
             } else {
                 return null;
             }
-        }
+        }*/
         if (node instanceof BoundAssignmentStatementNode assignment) {
             if (assignment.right.getRange().endsWith(line, column)) {
                 return getUnfinished(assignment.right, line, column);
@@ -521,8 +553,24 @@ public class CompletionProvider<T> {
                 case FUNCTION -> {
                     BoundFunctionNode function = (BoundFunctionNode) context.entry.node;
                     for (BoundParameterNode parameter : function.parameters.parameters) {
-                        addLocalVariableSuggestion(list, (LocalVariable) parameter.getName().symbol);
+                        addLocalVariableSuggestion(list, parameter.getName().symbolRef.asLocalVariable());
                     }
+                }
+                case CLASS_CONSTRUCTOR -> {
+                    BoundClassConstructorNode constructorNode = (BoundClassConstructorNode) context.entry.node;
+                    for (BoundParameterNode parameter : constructorNode.parameters.parameters) {
+                        addLocalVariableSuggestion(list, parameter.getName().symbolRef.asLocalVariable());
+                    }
+                    BoundClassNode classNode = (BoundClassNode) context.entry.parent.node;
+                    list.add(factory.getThisSuggestion((SDeclaredType) classNode.name.getSymbol().getType()));
+                }
+                case CLASS_METHOD -> {
+                    BoundClassMethodNode methodNode = (BoundClassMethodNode) context.entry.node;
+                    for (BoundParameterNode parameter : methodNode.parameters.parameters) {
+                        addLocalVariableSuggestion(list, parameter.getName().symbolRef.asLocalVariable());
+                    }
+                    BoundClassNode classNode = (BoundClassNode) context.entry.parent.node;
+                    list.add(factory.getThisSuggestion((SDeclaredType) classNode.name.getSymbol().getType()));
                 }
                 case STATEMENTS_LIST -> {
                     addLocalVariables(list, getStatementsPriorTo(context));
@@ -531,12 +579,12 @@ public class CompletionProvider<T> {
                 case LAMBDA_EXPRESSION -> {
                     BoundLambdaExpressionNode lambda = (BoundLambdaExpressionNode) context.entry.node;
                     for (BoundParameterNode parameter : lambda.parameters) {
-                        addLocalVariableSuggestion(list, (LocalVariable) parameter.getName().symbol);
+                        addLocalVariableSuggestion(list, parameter.getName().symbolRef.asLocalVariable());
                     }
                 }
                 case FOREACH_LOOP_STATEMENT -> {
                     BoundForEachLoopStatementNode loop = (BoundForEachLoopStatementNode) context.entry.node;
-                    addLocalVariableSuggestion(list, (LocalVariable) loop.name.symbol);
+                    addLocalVariableSuggestion(list, loop.name.symbolRef.asLocalVariable());
                 }
                 default -> {
                     addLocalVariables(list, getStatementsPriorTo(context));
@@ -614,8 +662,8 @@ public class CompletionProvider<T> {
     }
 
     private void addStaticConstants(List<T> suggestions, CompilerContext context) {
-        for (Symbol symbol : context.getStaticSymbols()) {
-            if (symbol instanceof StaticFieldConstantStaticVariable constant) {
+        for (SymbolRef ref : context.getStaticSymbols()) {
+            if (ref.get() instanceof StaticFieldConstantStaticVariable constant) {
                 suggestions.add(factory.getStaticConstantSuggestion(constant));
             }
         }
@@ -623,10 +671,12 @@ public class CompletionProvider<T> {
 
     private void addCompilationUnitMembers(List<T> suggestions, List<BoundCompilationUnitMemberNode> members) {
         for (BoundCompilationUnitMemberNode member : members) {
-            if (member.getNodeType() == NodeType.STATIC_FIELD) {
-                suggestions.add(factory.getStaticFieldSuggestion((DeclaredStaticVariable) ((BoundStaticFieldNode) member).declaration.name.symbol));
+            if (member.getNodeType() == NodeType.STATIC_VARIABLE) {
+                suggestions.add(factory.getStaticFieldSuggestion((DeclaredStaticVariable) ((BoundStaticVariableNode) member).name.getSymbol()));
             } else if (member.getNodeType() == NodeType.FUNCTION) {
-                suggestions.add(factory.getFunctionSuggestion((Function) ((BoundFunctionNode) member).name.symbol));
+                suggestions.add(factory.getFunctionSuggestion((Function) ((BoundFunctionNode) member).name.getSymbol()));
+            } else if (member.getNodeType() == NodeType.CLASS) {
+                continue;
             } else {
                 throw new InternalException();
             }
@@ -636,7 +686,7 @@ public class CompletionProvider<T> {
     private void addLocalVariables(List<T> suggestions, List<BoundStatementNode> statements) {
         for (BoundStatementNode statement : statements) {
             if (statement instanceof BoundVariableDeclarationNode declaration) {
-                if (declaration.name.symbol instanceof LocalVariable local) {
+                if (declaration.name.getSymbol() instanceof LocalVariable local) {
                     addLocalVariableSuggestion(suggestions, local);
                 }
                 // can be lifted variable?

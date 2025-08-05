@@ -1,5 +1,7 @@
 package com.zergatul.scripting.tests.completion.suggestions;
 
+import com.zergatul.scripting.tests.completion.helpers.SuggestionHelper;
+import com.zergatul.scripting.tests.completion.helpers.TestCompletionContext;
 import com.zergatul.scripting.type.MethodReference;
 import com.zergatul.scripting.type.SType;
 import org.junit.jupiter.api.Assertions;
@@ -12,6 +14,10 @@ public class MethodSuggestion extends Suggestion {
 
     public MethodSuggestion(MethodReference method) {
         this.method = method;
+    }
+
+    public static MethodSuggestion getInstance(TestCompletionContext context, String className, String methodName) {
+        return getInstance(SuggestionHelper.extractClassType(context, className), methodName);
     }
 
     public static MethodSuggestion getInstance(SType type, String name) {

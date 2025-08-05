@@ -7,6 +7,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 
 import static org.objectweb.asm.Opcodes.GETFIELD;
+import static org.objectweb.asm.Opcodes.PUTFIELD;
 
 public class FieldPropertyReference extends PropertyReference {
 
@@ -40,6 +41,15 @@ public class FieldPropertyReference extends PropertyReference {
     public void compileGet(MethodVisitor visitor) {
         visitor.visitFieldInsn(
                 GETFIELD,
+                Type.getInternalName(field.getDeclaringClass()),
+                field.getName(),
+                Type.getDescriptor(field.getType()));
+    }
+
+    @Override
+    public void compileSet(MethodVisitor visitor) {
+        visitor.visitFieldInsn(
+                PUTFIELD,
                 Type.getInternalName(field.getDeclaringClass()),
                 field.getName(),
                 Type.getDescriptor(field.getType()));

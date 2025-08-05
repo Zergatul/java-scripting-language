@@ -17,7 +17,7 @@ public class ExternalParameterVisitor extends BinderTreeVisitor {
 
     @Override
     public void visit(BoundNameExpressionNode node) {
-        if (node.symbol instanceof Variable local) {
+        if (node.getSymbol() instanceof Variable local) {
             Variable variable = local;
             while (variable instanceof CapturedVariable captured) {
                 variable = captured.getUnderlying();

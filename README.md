@@ -6,10 +6,12 @@ To see full list of supported feature you can check test cases here:
 ### Basic Types
 - `boolean`
 - `char`
+- `int8` (only use it for Java interop)
+- `int16` (only use it for Java interop)
 - `int` (synonym: `int32`)
 - `long` (synonym: `int64`)
-- `float32` (correspongs to `float` in Java, only use it for Java interop)
-- `float` (correspongs to `double` in Java, synonym: `float64`)
+- `float32` (corresponds to `float` in Java, only use it for Java interop)
+- `float` (corresponds to `double` in Java, synonym: `float64`)
 - `string`
 
 User-defined types are not supported
@@ -42,6 +44,12 @@ if (api.getCount() > 10) {
 } else {
     debug.write("NOT OK");
 }
+```
+
+### Conditional Expressions
+```c#
+int x = 123;
+int y = x > 100 ? x - 100 : x + 100;
 ```
 
 ### Loops
@@ -192,3 +200,42 @@ debug.write(table.get("qq").toString());  // ww
 debug.write(table.get(200).toString());   // true
 debug.write(table.get(false).toString()); // 100
 ```
+
+### Classes
+Classes should be defined in the beginning of the script, before all script statements.
+Class can have fields, constructors, methods. Class without constructors receive implicit parameterless constructor:
+```c#
+class MyClass {
+    int x;
+    int y;
+}
+
+let c = new MyClass();
+c.x = 1;
+c.y = 2;
+debug.write((c.x + c.y).toString());
+```
+
+You can only access class members by using `this` keyword:
+```c#
+class MyClass {
+    int x;
+
+    constructor(int value) {
+        this.x = value;
+        // x = value will not work
+    }
+
+    int getX() {
+        return this.x;
+    }
+}
+```
+
+Async methods supported.
+
+Access modifiers (private/public/etc) are not supported.
+
+Static members are not supported.
+
+Inheritance is not supported.

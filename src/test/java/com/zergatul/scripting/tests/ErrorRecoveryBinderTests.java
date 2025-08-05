@@ -14,6 +14,7 @@ import com.zergatul.scripting.lexer.LexerInput;
 import com.zergatul.scripting.parser.*;
 import com.zergatul.scripting.parser.nodes.*;
 import com.zergatul.scripting.symbols.Function;
+import com.zergatul.scripting.symbols.ImmutableSymbolRef;
 import com.zergatul.scripting.symbols.LocalVariable;
 import com.zergatul.scripting.symbols.StaticFieldConstantStaticVariable;
 import com.zergatul.scripting.tests.compiler.helpers.FutureHelper;
@@ -124,7 +125,7 @@ public class ErrorRecoveryBinderTests {
                                 new BoundExpressionStatementNode(
                                         new BoundMethodInvocationExpressionNode(
                                                 new BoundNameExpressionNode(
-                                                        new StaticFieldConstantStaticVariable("run", ApiRoot.class.getField("run")),
+                                                        new ImmutableSymbolRef(new StaticFieldConstantStaticVariable("run", ApiRoot.class.getField("run"))),
                                                         SType.fromJavaType(Run.class),
                                                         "run",
                                                         new SingleLineTextRange(1, 1, 0, 3)),

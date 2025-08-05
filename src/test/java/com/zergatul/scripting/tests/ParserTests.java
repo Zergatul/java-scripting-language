@@ -374,11 +374,15 @@ public class ParserTests {
         Assertions.assertEquals(result.unit(), new CompilationUnitNode(
                 new CompilationUnitMembersListNode(List.of(
                         new FunctionNode(
-                                null,
+                                new ModifiersNode(List.of(), new SingleLineTextRange(1, 1, 0, 0)),
                                 new VoidTypeNode(new SingleLineTextRange(1, 1, 0, 4)),
                                 new NameExpressionNode(
                                         new IdentifierToken("a", new SingleLineTextRange(1, 6, 5, 1))),
-                                new ParameterListNode(List.of(), new SingleLineTextRange(1, 7, 6, 2)),
+                                new ParameterListNode(
+                                        new Token(TokenType.LEFT_PARENTHESES, new SingleLineTextRange(1, 7, 6, 1)),
+                                        List.of(),
+                                        new Token(TokenType.RIGHT_PARENTHESES, new SingleLineTextRange(1, 8, 7, 1)),
+                                        new SingleLineTextRange(1, 7, 6, 2)),
                                 new BlockStatementNode(List.of(), new SingleLineTextRange(1, 9, 8, 2)),
                                 new SingleLineTextRange(1, 1, 0, 10))
                 ), new SingleLineTextRange(1, 1, 0, 10)),
@@ -393,7 +397,7 @@ public class ParserTests {
         Assertions.assertEquals(result.unit(), new CompilationUnitNode(
                 new CompilationUnitMembersListNode(List.of(
                         new FunctionNode(
-                                null,
+                                new ModifiersNode(List.of(), new SingleLineTextRange(1, 1, 0, 0)),
                                 new ArrayTypeNode(
                                         new ArrayTypeNode(
                                                 new ArrayTypeNode(
@@ -404,6 +408,7 @@ public class ParserTests {
                                 new NameExpressionNode(
                                         new IdentifierToken("a", new SingleLineTextRange(1, 11, 10, 1))),
                                 new ParameterListNode(
+                                        new Token(TokenType.LEFT_PARENTHESES, new SingleLineTextRange(1, 12, 11, 1)),
                                         List.of(
                                                 new ParameterNode(
                                                         new ArrayTypeNode(
@@ -421,6 +426,7 @@ public class ParserTests {
                                                         new NameExpressionNode(
                                                             new IdentifierToken("s", new SingleLineTextRange(1, 33, 32, 1))),
                                                         new SingleLineTextRange(1, 26, 25, 8))),
+                                        new Token(TokenType.RIGHT_PARENTHESES, new SingleLineTextRange(1, 34, 33, 1)),
                                         new SingleLineTextRange(1, 12, 11, 23)),
                                 new BlockStatementNode(List.of(), new SingleLineTextRange(1, 36, 35, 2)),
                                 new SingleLineTextRange(1, 1, 0, 37))),

@@ -20,9 +20,9 @@ public class BinderTreeGenerator {
 
     private StateBoundary currentBoundary;
 
-    public void generate(List<BoundStatementNode> statements) {
+    public void generate(BoundStatementsListNode node) {
         currentBoundary = newBoundary();
-        for (BoundStatementNode statement : statements) {
+        for (BoundStatementNode statement : node.statements) {
             rewriteStatement(statement);
         }
 
@@ -100,7 +100,8 @@ public class BinderTreeGenerator {
                 node.iterable,
                 rewriteStatementSync(node.body),
                 node.index,
-                node.length);
+                node.length,
+                node.getRange());
     }
 
     private BoundWhileLoopStatementNode rewrite(BoundWhileLoopStatementNode node) {
@@ -205,16 +206,14 @@ public class BinderTreeGenerator {
     private void rewriteAsync(BoundForEachLoopStatementNode node) {
         BoundExpressionNode iterableExpression = rewriteExpression(node.iterable);
         LiftedVariable iterable = new LiftedVariable(new LocalVariable(null, node.iterable.type, null));
-        LiftedVariable index = new LiftedVariable(node.index);
-        LiftedVariable length = new LiftedVariable(node.length);
+        LiftedVariable index = new LiftedVariable(node.index.asLocalVariable());
+        LiftedVariable length = new LiftedVariable(node.length.asLocalVariable());
         LiftedVariable item;
-        if (node.name.symbol instanceof LiftedVariable lifted) {
+        if (node.name.getSymbol() instanceof LiftedVariable lifted) {
             item = lifted;
         } else {
-            item = new LiftedVariable((LocalVariable) node.name.symbol);
-            for (BoundNameExpressionNode nameExpression : node.name.symbol.getReferences()) {
-                nameExpression.overrideSymbol(item);
-            }
+            item = new LiftedVariable((LocalVariable) node.name.getSymbol());
+            node.name.symbolRef.set(item);
         }
 
         add(new BoundVariableDeclarationNode(new BoundNameExpressionNode(iterable), iterableExpression));
@@ -395,16 +394,22 @@ public class BinderTreeGenerator {
 
     private void markVariableDeclarations(BoundNode node) {
         node.accept(new BinderTreeVisitor() {
+
+            @Override
+            public void explicitVisit(BoundLambdaExpressionNode node) {
+                // don't jump inside
+            }
+
             @Override
             public void visit(BoundVariableDeclarationNode node) {
-                if (node.name.symbol instanceof LocalVariable local) {
+                if (node.name.getSymbol() instanceof LocalVariable local) {
                     local.setGeneratorState(currentBoundary);
                 }
             }
 
             @Override
             public void visit(BoundForEachLoopStatementNode node) {
-                if (node.name.symbol instanceof LocalVariable local) {
+                if (node.name.getSymbol() instanceof LocalVariable local) {
                     local.setGeneratorState(currentBoundary);
                 }
             }
@@ -421,12 +426,10 @@ public class BinderTreeGenerator {
 
             @Override
             public void visit(BoundNameExpressionNode node) {
-                if (node.symbol instanceof LocalVariable local) {
+                if (node.getSymbol() instanceof LocalVariable local) {
                     if (local.getGeneratorState() != currentBoundary) {
                         LiftedVariable lifted = new LiftedVariable(local);
-                        for (BoundNameExpressionNode nameExpression : local.getReferences()) {
-                            nameExpression.overrideSymbol(lifted);
-                        }
+                        node.symbolRef.set(lifted);
                     }
                 }
             }

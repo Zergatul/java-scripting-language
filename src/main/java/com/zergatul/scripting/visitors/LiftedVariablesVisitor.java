@@ -23,7 +23,7 @@ public class LiftedVariablesVisitor extends BinderTreeVisitor {
 
     @Override
     public void visit(BoundVariableDeclarationNode node) {
-        if (node.name.symbol instanceof LiftedVariable lifted) {
+        if (node.name.getSymbol() instanceof LiftedVariable lifted) {
             variables.add(lifted);
         }
     }

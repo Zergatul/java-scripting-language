@@ -11,11 +11,12 @@ import static org.objectweb.asm.Opcodes.PUTFIELD;
 public class CapturedVariable extends Variable {
 
     private final Variable variable;
-    private Variable closure;
+    private final SymbolRef closure;
 
     public CapturedVariable(Variable variable) {
         super(variable.getName(), variable.getType(), variable.getDefinition());
         this.variable = variable;
+        this.closure = new ForwardSymbolRef();
     }
 
     public Variable getUnderlying() {
@@ -34,23 +35,19 @@ public class CapturedVariable extends Variable {
 
     @Override
     public void compileStore(CompilerContext context, MethodVisitor visitor) {
-        closure.compileLoad(context, visitor);
-        StackHelper.swap(visitor, context, variable.getType(), closure.getType());
+        closure.get().compileLoad(context, visitor);
+        StackHelper.swap(visitor, context, variable.getType(), closure.get().getType());
         visitor.visitFieldInsn(PUTFIELD, getClosureClassName(), getClosureFieldName(), Type.getDescriptor(variable.getType().getJavaClass()));
     }
 
     @Override
     public void compileLoad(CompilerContext context, MethodVisitor visitor) {
-        closure.compileLoad(context, visitor);
+        closure.get().compileLoad(context, visitor);
         visitor.visitFieldInsn(GETFIELD, getClosureClassName(), getClosureFieldName(), Type.getDescriptor(variable.getType().getJavaClass()));
     }
 
-    public Variable getClosure() {
+    public SymbolRef getClosure() {
         return closure;
-    }
-
-    public void setClosure(Variable closure) {
-        this.closure = closure;
     }
 
     public String getClosureClassName() {

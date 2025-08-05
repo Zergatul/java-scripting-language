@@ -50,6 +50,9 @@ public abstract class SType {
         if (isSyntheticType() || other.isSyntheticType()) {
             return false;
         }
+        if (this == SVoidType.instance || other == SVoidType.instance) {
+            return false;
+        }
         if (isReference() && other.isReference()) {
             return other.getJavaClass().isAssignableFrom(getJavaClass());
         } else {
@@ -173,8 +176,15 @@ public abstract class SType {
         return null;
     }
 
-    public CastOperation implicitCastTo(SType other) {
+    protected CastOperation implicitCastTo(SType other) {
         return null;
+    }
+
+    public static CastOperation implicitCastTo(SType src, SType dst) {
+        if (src == SUnknown.instance || dst == SUnknown.instance) {
+            return EmptyCastOperation.instance;
+        }
+        return src.implicitCastTo(dst);
     }
 
     public List<SType> supportedIndexers() {
@@ -271,6 +281,12 @@ public abstract class SType {
             }
             if (clazz == boolean.class || clazz == Boolean.class) {
                 return SBoolean.instance;
+            }
+            if (clazz == byte.class || clazz == Byte.class) {
+                return SInt8.instance;
+            }
+            if (clazz == short.class || clazz == Short.class) {
+                return SInt16.instance;
             }
             if (clazz == int.class || clazz == Integer.class) {
                 return SInt.instance;

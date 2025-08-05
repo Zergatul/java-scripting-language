@@ -1,7 +1,7 @@
 package com.zergatul.scripting.tests.completion.suggestions;
 
-import com.zergatul.scripting.runtime.AsyncStateMachineException;
-import com.zergatul.scripting.type.MethodReference;
+import com.zergatul.scripting.tests.completion.helpers.SuggestionHelper;
+import com.zergatul.scripting.tests.completion.helpers.TestCompletionContext;
 import com.zergatul.scripting.type.PropertyReference;
 import com.zergatul.scripting.type.SType;
 import org.junit.jupiter.api.Assertions;
@@ -16,8 +16,8 @@ public class PropertySuggestion extends Suggestion {
         this.property = property;
     }
 
-    public static PropertySuggestion getInstance() {
-        throw new AssertionError();
+    public static PropertySuggestion getInstance(TestCompletionContext context, String className, String propertyName) {
+        return new PropertySuggestion(SuggestionHelper.extractClassType(context, className).getInstanceProperty(propertyName));
     }
 
     public static PropertySuggestion getStatic(SType type, String name) {

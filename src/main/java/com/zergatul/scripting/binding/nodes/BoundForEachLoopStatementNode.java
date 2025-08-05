@@ -3,8 +3,8 @@ package com.zergatul.scripting.binding.nodes;
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
 import com.zergatul.scripting.lexer.Token;
-import com.zergatul.scripting.symbols.LocalVariable;
 import com.zergatul.scripting.parser.NodeType;
+import com.zergatul.scripting.symbols.SymbolRef;
 
 import java.util.List;
 
@@ -16,8 +16,8 @@ public class BoundForEachLoopStatementNode extends BoundStatementNode {
     public final BoundNameExpressionNode name;
     public final BoundExpressionNode iterable;
     public final BoundStatementNode body;
-    public final LocalVariable index;
-    public final LocalVariable length;
+    public final SymbolRef index;
+    public final SymbolRef length;
 
     public BoundForEachLoopStatementNode(
             Token lParen,
@@ -26,21 +26,8 @@ public class BoundForEachLoopStatementNode extends BoundStatementNode {
             BoundNameExpressionNode name,
             BoundExpressionNode iterable,
             BoundStatementNode body,
-            LocalVariable index,
-            LocalVariable length
-    ) {
-        this(lParen, rParen, typeNode, name, iterable, body, index, length, null);
-    }
-
-    public BoundForEachLoopStatementNode(
-            Token lParen,
-            Token rParen,
-            BoundTypeNode typeNode,
-            BoundNameExpressionNode name,
-            BoundExpressionNode iterable,
-            BoundStatementNode body,
-            LocalVariable index,
-            LocalVariable length,
+            SymbolRef index,
+            SymbolRef length,
             TextRange range
     ) {
         super(NodeType.FOREACH_LOOP_STATEMENT, range);

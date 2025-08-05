@@ -31,7 +31,7 @@ public class CompilationUnitNode extends Node {
     @Override
     public boolean equals(Object obj) {
         if (obj instanceof CompilationUnitNode other) {
-            return  Objects.equals(other.members, members) &&
+            return  other.members.equals(members) &&
                     other.statements.equals(statements) &&
                     other.getRange().equals(getRange());
         } else {

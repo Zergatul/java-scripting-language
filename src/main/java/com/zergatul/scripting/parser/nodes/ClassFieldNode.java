@@ -4,13 +4,15 @@ import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.parser.NodeType;
 import com.zergatul.scripting.parser.ParserTreeVisitor;
 
-public class StaticFieldNode extends CompilationUnitMemberNode {
+public class ClassFieldNode extends ClassMemberNode {
 
-    public final VariableDeclarationNode declaration;
+    public final TypeNode type;
+    public final NameExpressionNode name;
 
-    public StaticFieldNode(VariableDeclarationNode declaration, TextRange range) {
-        super(NodeType.STATIC_FIELD, range);
-        this.declaration = declaration;
+    public ClassFieldNode(TypeNode type, NameExpressionNode name, TextRange range) {
+        super(NodeType.CLASS_FIELD, range);
+        this.type = type;
+        this.name = name;
     }
 
     @Override
@@ -20,6 +22,7 @@ public class StaticFieldNode extends CompilationUnitMemberNode {
 
     @Override
     public void acceptChildren(ParserTreeVisitor visitor) {
-        declaration.accept(visitor);
+        type.accept(visitor);
+        name.accept(visitor);
     }
 }

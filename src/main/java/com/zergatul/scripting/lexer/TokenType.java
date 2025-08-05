@@ -40,6 +40,8 @@ public enum TokenType {
     EQUAL,
     QUESTION,
     BOOLEAN,
+    INT8,
+    INT16,
     INT,
     INT32,
     INT64,
@@ -84,5 +86,8 @@ public enum TokenType {
     AS,
     META_UNKNOWN,
     META_TYPE,
-    META_TYPE_OF
+    META_TYPE_OF,
+    CLASS,
+    CONSTRUCTOR,
+    THIS
 }

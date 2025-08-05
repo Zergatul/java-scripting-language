@@ -203,7 +203,7 @@ public class SInt extends SPredefinedType {
 
     @Override
     public List<MethodReference> getInstanceMethods() {
-        return List.of(METHOD_TO_STRING.value(), METHOD_TO_STANDARD_STRING.value());
+        return List.of(METHOD_TO_INT8.value(), METHOD_TO_INT16.value(), METHOD_TO_STRING.value(), METHOD_TO_STANDARD_STRING.value());
     }
 
     @Override
@@ -323,6 +323,20 @@ public class SInt extends SPredefinedType {
         @Override
         public void apply(MethodVisitor visitor) {
             SInt.instance.compileBoxing(visitor);
+        }
+    });
+
+    private static final Lazy<MethodReference> METHOD_TO_INT8 = new Lazy<>(() -> new NoArgsByteCodeMethodReference(instance, SInt8.instance, "toInt8") {
+        @Override
+        public void compileInvoke(MethodVisitor visitor) {
+            visitor.visitInsn(I2B);
+        }
+    });
+
+    private static final Lazy<MethodReference> METHOD_TO_INT16 = new Lazy<>(() -> new NoArgsByteCodeMethodReference(instance, SInt16.instance, "toInt16") {
+        @Override
+        public void compileInvoke(MethodVisitor visitor) {
+            visitor.visitInsn(I2S);
         }
     });
 

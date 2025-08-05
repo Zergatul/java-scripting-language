@@ -28,4 +28,6 @@ public class ParserErrors {
     public static final ErrorCode OpenTriangleBracketExpected = new ErrorCode("C023", "< expected, found %s");
     public static final ErrorCode CloseTriangleBracketExpected = new ErrorCode("C024", "> expected, found %s");
     public static final ErrorCode InvalidNewExpression = new ErrorCode("C025", "A new expression requires '[' or '('");
+    public static final ErrorCode SemicolonOrParenthesisExpected = new ErrorCode("C026", "; or ( expected, found %s");
+    public static final ErrorCode FieldInitializersNotSupported = new ErrorCode("C027", "Field initializers not supported");
 }

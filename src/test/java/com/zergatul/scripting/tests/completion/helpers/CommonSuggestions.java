@@ -12,11 +12,19 @@ import java.util.List;
 
 public class CommonSuggestions {
 
+    public static final List<Suggestion> unitMembers = List.of(
+            new KeywordSuggestion(TokenType.STATIC),
+            new KeywordSuggestion(TokenType.VOID),
+            new KeywordSuggestion(TokenType.CLASS));
+
     public static final List<Suggestion> types = List.of(
             new TypeSuggestion(SBoolean.instance),
+            new TypeSuggestion(SInt8.instance),
+            new TypeSuggestion(SInt16.instance),
             new TypeSuggestion(SInt.instance),
             new TypeSuggestion(SInt64.instance),
             new TypeSuggestion(SChar.instance),
+            new TypeSuggestion(SFloat32.instance),
             new TypeSuggestion(SFloat.instance),
             new TypeSuggestion(SString.instance),
             new CustomTypeSuggestion(RuntimeType.class));

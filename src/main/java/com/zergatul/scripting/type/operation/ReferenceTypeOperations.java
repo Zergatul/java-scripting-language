@@ -4,7 +4,6 @@ import com.zergatul.scripting.Lazy;
 import com.zergatul.scripting.compiler.BufferedMethodVisitor;
 import com.zergatul.scripting.parser.BinaryOperator;
 import com.zergatul.scripting.type.SBoolean;
-import com.zergatul.scripting.type.SType;
 import com.zergatul.scripting.type.SUnknown;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;

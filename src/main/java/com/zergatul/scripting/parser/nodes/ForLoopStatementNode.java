@@ -9,20 +9,20 @@ import java.util.Objects;
 
 public class ForLoopStatementNode extends StatementNode {
 
-    public final Token lParen;
-    public final Token rParen;
+    public final Token openParenthesis;
     public final StatementNode init;
     public final ExpressionNode condition;
     public final StatementNode update;
+    public final Token closeParenthesis;
     public final StatementNode body;
 
-    public ForLoopStatementNode(Token lParen, Token rParen, StatementNode init, ExpressionNode condition, StatementNode update, StatementNode body, TextRange range) {
+    public ForLoopStatementNode(Token openParenthesis, StatementNode init, ExpressionNode condition, StatementNode update, Token closeParenthesis, StatementNode body, TextRange range) {
         super(NodeType.FOR_LOOP_STATEMENT, range);
-        this.lParen = lParen;
-        this.rParen = rParen;
+        this.openParenthesis = openParenthesis;
         this.init = init;
         this.condition = condition;
         this.update = update;
+        this.closeParenthesis = closeParenthesis;
         this.body = body;
     }
 
@@ -44,11 +44,11 @@ public class ForLoopStatementNode extends StatementNode {
     @Override
     public boolean equals(Object obj) {
         if (obj instanceof ForLoopStatementNode other) {
-            return  other.lParen.equals(lParen) &&
-                    other.rParen.equals(rParen) &&
+            return  other.openParenthesis.equals(openParenthesis) &&
                     other.init.equals(init) &&
                     Objects.equals(other.condition, condition) &&
                     other.update.equals(update) &&
+                    other.closeParenthesis.equals(closeParenthesis) &&
                     other.body.equals(body) &&
                     other.getRange().equals(getRange());
         } else {

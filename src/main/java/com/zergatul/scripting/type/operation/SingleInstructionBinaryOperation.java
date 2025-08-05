@@ -14,6 +14,11 @@ public class SingleInstructionBinaryOperation extends BinaryOperation {
         this.opcode = opcode;
     }
 
+    public SingleInstructionBinaryOperation(BinaryOperator operator, SType type, SType resultType, int opcode) {
+        super(operator, resultType, type, type);
+        this.opcode = opcode;
+    }
+
     @Override
     public void apply(MethodVisitor left, BufferedMethodVisitor right) {
         right.release(left);

@@ -2,8 +2,8 @@ package com.zergatul.scripting.compiler;
 
 import com.zergatul.scripting.InternalException;
 import com.zergatul.scripting.TextRange;
-import com.zergatul.scripting.binding.nodes.BoundNameExpressionNode;
 import com.zergatul.scripting.symbols.*;
+import com.zergatul.scripting.type.SDeclaredType;
 import com.zergatul.scripting.type.SReference;
 import com.zergatul.scripting.type.SType;
 import org.objectweb.asm.Label;
@@ -18,9 +18,12 @@ public class CompilerContext {
 
     private final CompilerContext root;
     private final CompilerContext parent;
-    private final Map<String, Symbol> staticSymbols = new HashMap<>();
-    private final Map<String, Variable> localSymbols = new HashMap<>();
-    private final List<Variable> anonymousLocalSymbols = new ArrayList<>();
+    private final Map<String, SymbolRef> staticSymbols = new HashMap<>();
+    private final Map<String, SymbolRef> localSymbols = new HashMap<>();
+    private final List<SymbolRef> anonymousLocalSymbols = new ArrayList<>();
+    private final boolean isClassRoot;
+    private final SDeclaredType classType;
+    private final boolean isClassMethod;
     private final boolean isFunctionRoot;
     private final boolean isGenericFunction;
     private final SType returnType;
@@ -30,6 +33,7 @@ public class CompilerContext {
     private Consumer<MethodVisitor> continueConsumer;
     private final List<RefHolder> refVariables = new ArrayList<>();
     private String asyncStateMachineClassName;
+    private String thisFieldName;
     private final List<LiftedVariable> lifted;
     private final List<CapturedVariable> captured;
     private final FunctionStack stack;
@@ -37,21 +41,26 @@ public class CompilerContext {
     private JavaInteropPolicy policy;
     private int lastEmittedLine;
 
-    public CompilerContext(SType returnType, boolean isAsync) {
-        this(1, true, returnType, isAsync, null);
-    }
-
-    public CompilerContext(int initialStackIndex, boolean isFunctionRoot, SType returnType, boolean isAsync, CompilerContext parent) {
-        this(initialStackIndex, isFunctionRoot, false, returnType, isAsync, parent);
-    }
-
-    public CompilerContext(int initialStackIndex, boolean isFunctionRoot, boolean isGenericFunction, SType returnType, boolean isAsync, CompilerContext parent) {
+    private CompilerContext(
+            CompilerContext parent,
+            int initialStackIndex,
+            boolean isFunctionRoot,
+            boolean isGenericFunction,
+            SType returnType,
+            boolean isAsync,
+            boolean isClassRoot,
+            SDeclaredType classType,
+            boolean isClassMethod
+    ) {
         this.root = parent == null ? this : parent.root;
         this.parent = parent;
+        this.isClassRoot = isClassRoot;
+        this.classType = classType;
         this.isFunctionRoot = isFunctionRoot;
         this.isGenericFunction = isGenericFunction;
         this.returnType = returnType;
         this.isAsync = isAsync;
+        this.isClassMethod = isClassMethod;
         if (isFunctionRoot) {
             lifted = new ArrayList<>();
             captured = new ArrayList<>();
@@ -59,49 +68,48 @@ public class CompilerContext {
             lifted = null;
             captured = null;
         }
-        stack = new FunctionStack();
-        stack.set(initialStackIndex);
+        if (isClassRoot) {
+            stack = null;
+        } else {
+            stack = new FunctionStack();
+            stack.set(initialStackIndex);
+        }
         lastEmittedLine = -1;
     }
 
-    public void addStaticVariable(StaticVariable variable) {
-        if (hasSymbol(variable.getName())) {
+    public static CompilerContext create(SType returnType, boolean isAsync) {
+        return new Builder()
+                .setFunctionRoot(true)
+                .setInitialStackIndex(1)
+                .setReturnType(returnType)
+                .setAsync(isAsync)
+                .build();
+    }
+
+    public void addStaticSymbol(String name, SymbolRef symbolRef) {
+        if (hasSymbol(name)) {
             throw new InternalException();
         }
 
-        staticSymbols.put(variable.getName(), variable);
+        staticSymbols.put(name, symbolRef);
     }
 
-    public void addFunction(Function function) {
-        if (hasSymbol(function.getName())) {
-            throw new InternalException();
-        }
-
-        staticSymbols.put(function.getName(), function);
-    }
-
-    public LocalVariable addLocalVariable(String name, SType type, TextRange definition) {
-        if (name != null) {
-            Symbol symbol = getSymbol(name);
-            if (symbol instanceof LocalVariable) {
-                throw new InternalException();
-            }
-        }
-
+    public SymbolRef addLocalVariable(String name, SType type, TextRange definition) {
         LocalVariable variable = new LocalVariable(name, type, definition);
-        addLocalVariable(variable);
-        return variable;
+        SymbolRef symbolRef = new MutableSymbolRef(variable);
+        addLocalVariable(symbolRef);
+        return symbolRef;
     }
 
-    public void addLocalVariable(Variable variable) {
-        if (variable.getName() != null) {
-            Symbol symbol = getSymbol(variable.getName());
-            if (symbol instanceof LocalVariable) {
+    public void addLocalVariable(SymbolRef variableRef) {
+        if (variableRef.get().getName() != null) {
+            SymbolRef symbolRef = getSymbol(variableRef.get().getName());
+            if (symbolRef != null && symbolRef.get() instanceof LocalVariable) {
                 throw new InternalException();
             }
         }
 
-        insertLocalVariable(variable);
+        insertLocalVariable(variableRef);
     }
 
     public ExternalParameter addExternalParameter(String name, SType type, int index) {
@@ -110,20 +118,20 @@ public class CompilerContext {
         }
 
         ExternalParameter parameter = new ExternalParameter(name, type, index);
-        addLocalVariable(parameter);
+        addLocalVariable(new MutableSymbolRef(parameter));
         return parameter;
     }
 
     public LocalVariable addLocalParameter(String name, SType type, TextRange definition) {
         if (name != null) {
-            Symbol symbol = getSymbol(name);
-            if (symbol instanceof LocalVariable) {
+            SymbolRef symbolRef = getSymbol(name);
+            if (symbolRef != null && symbolRef.get() instanceof LocalVariable) {
                 throw new InternalException();
             }
         }
 
         LocalVariable variable = new LocalParameter(name, type, definition);
-        addLocalVariable(variable);
+        addLocalVariable(new MutableSymbolRef(variable));
         return variable;
     }
 
@@ -133,7 +141,7 @@ public class CompilerContext {
         }
 
         LocalVariable variable = new LocalRefParameter(name, refType, underlying, definition);
-        addLocalVariable(variable);
+        addLocalVariable(new MutableSymbolRef(variable));
         return variable;
     }
 
@@ -147,7 +155,8 @@ public class CompilerContext {
     }
 
     public LocalVariable createRefVariable(Variable variable) {
-        LocalVariable holder = addLocalVariable(null, variable.getType().getReferenceType(), null);
+        SymbolRef symbolRef = addLocalVariable(null, variable.getType().getReferenceType(), null);
+        LocalVariable holder = symbolRef.asLocalVariable();
         refVariables.add(new RefHolder(holder, variable));
         return holder;
     }
@@ -159,11 +168,24 @@ public class CompilerContext {
     }
 
     public CompilerContext createChild() {
-        return new CompilerContext(stack.get(), false, isGenericFunction, returnType, isAsync, this);
+        return new Builder()
+                .setParent(this)
+                .setClassType(this.classType)
+                .setClassMethod(this.isClassMethod)
+                .setInitialStackIndex(stack.get())
+                .setGenericFunction(isGenericFunction)
+                .setReturnType(returnType)
+                .setAsync(isAsync)
+                .build();
     }
 
     public CompilerContext createStaticFunction(SType returnType, boolean isAsync) {
-        return new CompilerContext(0, true, returnType, isAsync, this);
+        return new CompilerContext.Builder()
+                .setParent(this)
+                .setFunctionRoot(true)
+                .setReturnType(returnType)
+                .setAsync(isAsync)
+                .build();
     }
 
     public CompilerContext createFunction(SType returnType, boolean isAsync) {
@@ -171,7 +193,34 @@ public class CompilerContext {
     }
 
     public CompilerContext createFunction(SType returnType, boolean isAsync, boolean generic) {
-        return new CompilerContext(1, true, generic, returnType, isAsync, this);
+        return new Builder()
+                .setParent(this)
+                .setInitialStackIndex(1)
+                .setFunctionRoot(true)
+                .setGenericFunction(generic)
+                .setReturnType(returnType)
+                .setAsync(isAsync)
+                .build();
+    }
+
+    public CompilerContext createClass(SDeclaredType type) {
+        return new Builder()
+                .setParent(this)
+                .setClassRoot(true)
+                .setClassType(type)
+                .build();
+    }
+
+    public CompilerContext createClassMethod(SType returnType, boolean isAsync) {
+        return new Builder()
+                .setParent(this)
+                .setClassType(classType)
+                .setClassMethod(true)
+                .setFunctionRoot(true)
+                .setReturnType(returnType)
+                .setInitialStackIndex(1)
+                .setAsync(isAsync)
+                .build();
     }
 
     public SType getReturnType() {
@@ -186,33 +235,49 @@ public class CompilerContext {
         return parent;
     }
 
-    public Collection<Symbol> getStaticSymbols() {
+    public boolean isClassMethod() {
+        return isClassMethod;
+    }
+
+    public SType getClassType() {
+        if (classType == null) {
+            throw new InternalException();
+        }
+
+        return classType;
+    }
+
+    public Collection<SymbolRef> getStaticSymbols() {
         return staticSymbols.values();
     }
 
-    public Symbol getSymbol(String name) {
+    public SymbolRef getSymbol(String name) {
         List<CompilerContext> functions = List.of(); // function boundaries
         for (CompilerContext context = this; context != null; ) {
-            Variable localSymbol = context.localSymbols.get(name);
-            if (localSymbol != null) {
+            SymbolRef localSymbolRef = context.localSymbols.get(name);
+            if (localSymbolRef != null) {
                 if (functions.isEmpty()) {
-                    return localSymbol;
+                    return localSymbolRef;
                 } else {
-                    if (!(localSymbol instanceof LiftedVariable) && !(localSymbol instanceof CapturedVariable)) {
-                        LiftedVariable lifted = new LiftedVariable((LocalVariable) localSymbol);
-                        for (BoundNameExpressionNode nameExpression : localSymbol.getReferences()) {
-                            nameExpression.overrideSymbol(lifted);
-                        }
-                        localSymbol = lifted;
+                    Variable original = localSymbolRef.asVariable();
+                    if (!(localSymbolRef.get() instanceof LiftedVariable) && !(localSymbolRef.get() instanceof CapturedVariable)) {
+                        LiftedVariable lifted = new LiftedVariable(localSymbolRef.asLocalVariable());
+                        localSymbolRef.set(lifted); // updates all references
+                        original = lifted;
+                        /*for (BoundNameExpressionNode nameExpression : localSymbolRef.getReferences()) {
+                            nameExpression.symbolRef.set(lifted);
+                        }*/
                         context.getFunctionContext().lifted.add(lifted);
-                        context.insertLocalVariable(localSymbol); // replace local variable with lifted
+                        // no need???
+                        //context.insertLocalVariable(localSymbol); // replace local variable with lifted
                     }
 
-                    Variable prev = localSymbol;
+                    Variable prev = original;
                     for (int i = functions.size() - 1; i >= 0; i--) {
                         CapturedVariable current = new CapturedVariable(prev);
+                        MutableSymbolRef currentSymbolRef = new MutableSymbolRef(current);
                         functions.get(i).captured.add(current);
-                        functions.get(i).insertLocalVariable(current);
+                        functions.get(i).insertLocalVariable(currentSymbolRef);
                         prev = current;
                     }
 
@@ -228,32 +293,25 @@ public class CompilerContext {
             context = context.parent;
         }
 
-        Symbol staticSymbol = root.staticSymbols.get(name);
-        if (staticSymbol != null) {
-            return staticSymbol;
+        SymbolRef staticSymbolRef = root.staticSymbols.get(name);
+        if (staticSymbolRef != null) {
+            return staticSymbolRef;
         }
 
         return null;
     }
 
-    public List<ExternalParameter> getExternalParameters() {
-        return localSymbols.values().stream()
-                .filter(v -> v instanceof ExternalParameter)
-                .map(v -> (ExternalParameter) v)
-                .toList();
-    }
-
     public Variable getVariableOfType(String type) {
         CompilerContext current = this;
         while (true) {
-            for (Variable variable : current.anonymousLocalSymbols) {
-                if (variable.getType().getInternalName().equals(type)) {
-                    return variable;
+            for (SymbolRef ref : current.anonymousLocalSymbols) {
+                if (ref.get().getType().getInternalName().equals(type)) {
+                    return ref.asVariable();
                 }
             }
-            for (Variable variable : current.localSymbols.values()) {
-                if (variable.getType().getInternalName().equals(type)) {
-                    return variable;
+            for (SymbolRef ref : current.localSymbols.values()) {
+                if (ref.get().getType().getInternalName().equals(type)) {
+                    return ref.asVariable();
                 }
             }
             if (current.isFunctionRoot) {
@@ -360,6 +418,24 @@ public class CompilerContext {
         }
     }
 
+    public void setAsyncThisFieldName(String thisFieldName) {
+        if (isFunctionRoot) {
+            this.thisFieldName = thisFieldName;
+        } else {
+            throw new InternalException("This is not a function root.");
+        }
+    }
+
+    public String getAsyncThisFieldName() {
+        CompilerContext current = this;
+        while (true) {
+            if (current.parent == null || current.isFunctionRoot) {
+                return current.thisFieldName;
+            }
+            current = current.parent;
+        }
+    }
+
     public Label getGeneratorContinueLabel() {
         return getFunctionContext().generatorContinueLabel;
     }
@@ -375,8 +451,8 @@ public class CompilerContext {
     public void markEnd(MethodVisitor visitor) {
         Label label = new Label();
         visitor.visitLabel(label);
-        for (Variable variable : localSymbols.values()) {
-            if (variable instanceof LocalVariable local) {
+        for (SymbolRef ref : localSymbols.values()) {
+            if (ref.get() instanceof LocalVariable local) {
                 visitor.visitLocalVariable(
                         local.getName(),
                         Type.getDescriptor(local.getType().getJavaClass()),
@@ -412,12 +488,20 @@ public class CompilerContext {
         getFunctionContext().lastEmittedLine = line;
     }
 
-    private void insertLocalVariable(Variable variable) {
-        if (variable.getName() == null) {
-            anonymousLocalSymbols.add(variable);
+    private void insertLocalVariable(SymbolRef variableRef) {
+        if (variableRef.get().getName() == null) {
+            anonymousLocalSymbols.add(variableRef);
         } else {
-            localSymbols.put(variable.getName(), variable);
+            localSymbols.put(variableRef.get().getName(), variableRef);
         }
+    }
+
+    private CompilerContext getClassRootContext() {
+        CompilerContext current = this;
+        while (!current.isClassRoot) {
+            current = current.parent;
+        }
+        return current;
     }
 
     private CompilerContext getFunctionContext() {
@@ -430,5 +514,76 @@ public class CompilerContext {
 
     private int getStackSize(SType type) {
         return type.isJvmCategoryOneComputationalType() ? 1 : 2;
+    }
+
+    private static class Builder {
+
+        private CompilerContext parent;
+        private boolean isClassRoot;
+        private SDeclaredType classType;
+        private boolean isClassMethod;
+        public SType returnType;
+        public boolean isAsync;
+        public int initialStackIndex;
+        public boolean isFunctionRoot;
+        public boolean isGenericFunction;
+
+        public Builder setParent(CompilerContext value) {
+            this.parent = value;
+            return this;
+        }
+
+        public Builder setClassRoot(boolean value) {
+            this.isClassRoot = value;
+            return this;
+        }
+
+        public Builder setClassType(SDeclaredType value) {
+            this.classType = value;
+            return this;
+        }
+
+        public Builder setClassMethod(boolean value) {
+            this.isClassMethod = value;
+            return this;
+        }
+
+        public Builder setReturnType(SType value) {
+            this.returnType = value;
+            return this;
+        }
+
+        public Builder setAsync(boolean value) {
+            this.isAsync = value;
+            return this;
+        }
+
+        public Builder setInitialStackIndex(int value) {
+            this.initialStackIndex = value;
+            return this;
+        }
+
+        public Builder setFunctionRoot(boolean value) {
+            this.isFunctionRoot = value;
+            return this;
+        }
+
+        public Builder setGenericFunction(boolean value) {
+            this.isGenericFunction = value;
+            return this;
+        }
+
+        public CompilerContext build() {
+            return new CompilerContext(
+                    parent,
+                    initialStackIndex,
+                    isFunctionRoot,
+                    isGenericFunction,
+                    returnType,
+                    isAsync,
+                    isClassRoot,
+                    classType,
+                    isClassMethod);
+        }
     }
 }
