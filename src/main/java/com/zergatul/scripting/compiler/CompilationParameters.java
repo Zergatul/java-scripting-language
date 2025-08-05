@@ -84,7 +84,7 @@ public class CompilationParameters {
     }
 
     public CompilerContext getContext() {
-        CompilerContext context = new CompilerContext(getReturnType(), isAsync());
+        CompilerContext context = CompilerContext.create(getReturnType(), isAsync());
         context.setPolicy(policy);
         for (StaticVariable variable : staticVariables) {
             context.addStaticVariable(variable);

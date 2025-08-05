@@ -76,5 +76,7 @@ public enum NodeType {
     META_TYPE_EXPRESSION,
     META_TYPE_OF_EXPRESSION,
     JAVA_TYPE,
-    JAVA_TYPE_NAME
+    JAVA_TYPE_NAME,
+    CLASS,
+    CLASS_FIELD
 }

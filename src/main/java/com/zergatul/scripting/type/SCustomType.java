@@ -107,7 +107,8 @@ public class SCustomType extends SType {
     @Override
     public List<ConstructorReference> getConstructors() {
         return Arrays.stream(clazz.getConstructors())
-                .map(ConstructorReference::new)
+                .map(NativeConstructorReference::new)
+                .map(c -> (ConstructorReference) c)
                 .toList();
     }
 

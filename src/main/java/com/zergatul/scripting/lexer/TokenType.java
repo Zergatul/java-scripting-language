@@ -84,5 +84,6 @@ public enum TokenType {
     AS,
     META_UNKNOWN,
     META_TYPE,
-    META_TYPE_OF
+    META_TYPE_OF,
+    CLASS
 }

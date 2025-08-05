@@ -31,6 +31,8 @@ public class Parser {
         while (current.type != TokenType.END_OF_FILE) {
             if (current.type == TokenType.STATIC) {
                 members.add(parseStaticField());
+            } else if (current.type == TokenType.CLASS) {
+                members.add(parseClass());
             } else if (isPossibleFunction()) {
                 members.add(parseFunction());
             } else {
@@ -390,6 +392,49 @@ public class Parser {
         VariableDeclarationNode declaration = parseVariableDeclaration();
         Token semicolon = advance(TokenType.SEMICOLON);
         return new StaticFieldNode(declaration, TextRange.combine(staticToken, semicolon));
+    }
+
+    private ClassNode parseClass() {
+        Token classToken = advance(TokenType.CLASS);
+
+        if (current.type != TokenType.IDENTIFIER) {
+            addDiagnostic(ParserErrors.IdentifierExpected, current, current.getRawValue(code));
+            IdentifierToken identifier = new IdentifierToken("", createMissingTokenRange());
+            return new ClassNode(identifier, TextRange.combine(classToken, identifier));
+        }
+
+        IdentifierToken identifier = (IdentifierToken) advance();
+        Token openBracket = advance(TokenType.LEFT_CURLY_BRACKET);
+        if (openBracket.getRange().getLength() == 0) {
+            return new ClassNode(identifier, TextRange.combine(classToken, openBracket));
+        }
+
+        List<ClassMemberNode> members = new ArrayList<>();
+        while (true) {
+            if (current.type == TokenType.END_OF_FILE) {
+                break;
+            }
+            if (current.type == TokenType.RIGHT_CURLY_BRACKET) {
+                break;
+            }
+            members.add(parseClassMemberNode());
+        }
+
+        Token closeBracket = advance(TokenType.RIGHT_CURLY_BRACKET);
+        return new ClassNode(identifier, members, TextRange.combine(classToken, closeBracket));
+    }
+
+    private ClassMemberNode parseClassMemberNode() {
+        TypeNode typeNode = parseTypeNode();
+        if (current.type == TokenType.IDENTIFIER) {
+            IdentifierToken identifier = (IdentifierToken) advance();
+            Token semicolon = advance(TokenType.SEMICOLON);
+            return new FieldClassMemberNode(typeNode, new NameExpressionNode(identifier), TextRange.combine(typeNode, semicolon));
+        } else {
+            addDiagnostic(ParserErrors.IdentifierExpected, current, current.getRawValue(code));
+            IdentifierToken identifier = new IdentifierToken("", createMissingTokenRange());
+            return new FieldClassMemberNode(typeNode, new NameExpressionNode(identifier), TextRange.combine(typeNode, identifier));
+        }
     }
 
     private FunctionNode parseFunction() {

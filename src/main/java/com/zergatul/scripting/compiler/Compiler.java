@@ -119,16 +119,83 @@ public class Compiler {
     private void buildCompilationUnitMembers(BoundCompilationUnitNode unit, ClassWriter writer, CompilerContext context) {
         List<BoundStaticFieldNode> fields = new ArrayList<>();
         List<BoundFunctionNode> functions = new ArrayList<>();
+        List<BoundClassNode> classes = new ArrayList<>();
         for (BoundCompilationUnitMemberNode member : unit.members.members) {
             switch (member.getNodeType()) {
                 case STATIC_FIELD -> fields.add((BoundStaticFieldNode) member);
                 case FUNCTION -> functions.add((BoundFunctionNode) member);
+                case CLASS -> classes.add((BoundClassNode) member);
                 default -> throw new InternalException();
             }
         }
 
+        buildClasses(classes, writer, context);
         buildStaticFields(fields, writer, context);
         buildFunctions(functions, writer, context);
+    }
+
+    private void buildClasses(List<BoundClassNode> classNodes, ClassWriter writer, CompilerContext context) {
+        for (BoundClassNode classNode : classNodes) {
+            String name = context.getClassName() + "$" + classNode.name.value;
+
+            writer.visitInnerClass(
+                    name,
+                    context.getClassName(),
+                    classNode.name.value,
+                    ACC_PUBLIC | ACC_STATIC);
+
+            ClassWriter innerWriter = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
+            innerWriter.visit(
+                    V1_5,
+                    ACC_PUBLIC,
+                    name,
+                    null,
+                    Type.getInternalName(Object.class),
+                    null);
+
+            AnnotationVisitor annotationVisitor = innerWriter.visitAnnotation(Type.getDescriptor(CustomType.class), true);
+            annotationVisitor.visit("name", classNode.name.value);
+            annotationVisitor.visitEnd();
+
+            innerWriter.visitInnerClass(
+                    name,
+                    context.getClassName(),
+                    classNode.name.value,
+                    ACC_PUBLIC | ACC_STATIC);
+
+            for (BoundClassMemberNode member : classNode.members) {
+                buildClassMember(innerWriter, member);
+            }
+
+            MethodVisitor constructorVisitor = innerWriter.visitMethod(ACC_PUBLIC, "<init>", Type.getMethodDescriptor(Type.VOID_TYPE), null, null);
+            constructorVisitor.visitCode();
+            constructorVisitor.visitVarInsn(ALOAD, 0);
+            constructorVisitor.visitMethodInsn(INVOKESPECIAL, Type.getInternalName(Object.class), "<init>", Type.getMethodDescriptor(Type.VOID_TYPE), false);
+            constructorVisitor.visitInsn(RETURN);
+            constructorVisitor.visitMaxs(0, 0);
+            constructorVisitor.visitEnd();
+
+            innerWriter.visitEnd();
+
+            byte[] bytecode = innerWriter.toByteArray();
+            saveClassFile(name, bytecode);
+
+            Class<?> innerClass = classLoader.defineClass(name.replace('/', '.'), bytecode);
+            ((SDeclaredType) classNode.name.symbol.getType()).setJavaClass(innerClass);
+        }
+    }
+
+    private void buildClassMember(ClassWriter writer, BoundClassMemberNode member) {
+        if (member.getNodeType() == NodeType.CLASS_FIELD) {
+            BoundFieldClassMemberNode field = (BoundFieldClassMemberNode) member;
+            writer.visitField(
+                    ACC_PUBLIC,
+                    field.name.value,
+                    Type.getDescriptor(field.typeNode.type.getJavaClass()),
+                    null, null);
+        } else {
+            throw new InternalException();
+        }
     }
 
     private void buildStaticFields(List<BoundStaticFieldNode> fields, ClassWriter writer, CompilerContext context) {
@@ -624,6 +691,14 @@ public class Compiler {
                 indexExpression.operation.compileGet(visitor);
                 statement.operation.apply(visitor);
                 indexExpression.operation.compileSet(visitor);
+            }
+            case PROPERTY_ACCESS_EXPRESSION -> {
+                BoundPropertyAccessExpressionNode propertyExpression = (BoundPropertyAccessExpressionNode) statement.expression;
+                compileExpression(visitor, context, propertyExpression.callee);
+                visitor.visitInsn(DUP);
+                propertyExpression.property.property.compileGet(visitor);
+                statement.operation.apply(visitor);
+                propertyExpression.property.property.compileSet(visitor);
             }
             default -> throw new InternalException();
         }

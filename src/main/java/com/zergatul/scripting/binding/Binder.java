@@ -49,19 +49,20 @@ public class Binder {
     private List<BoundCompilationUnitMemberNode> bindCompilationUnitMembers(List<CompilationUnitMemberNode> nodes) {
         List<CompilationUnitMemberData> membersData = new ArrayList<>();
 
-        // handle forward declarations
         for (CompilationUnitMemberNode member : nodes) {
-            CompilationUnitMemberData data;
-            if (member.getNodeType() == NodeType.STATIC_FIELD) {
-                data = new StaticFieldMemberData((StaticFieldNode) member);
-            } else if (member.getNodeType() == NodeType.FUNCTION) {
-                data = new FunctionMemberData((FunctionNode) member);
-            } else {
-                throw new InternalException();
-            }
+            membersData.add(switch (member.getNodeType()) {
+                case STATIC_FIELD -> new StaticFieldMemberData((StaticFieldNode) member);
+                case FUNCTION -> new FunctionMemberData((FunctionNode) member);
+                case CLASS -> new ClassMemberData((ClassNode) member);
+                default -> throw new InternalException();
+            });
+        }
 
-            data.handleForwardDeclaration(this);
-            membersData.add(data);
+        // handle forward declarations
+        var sorted = new ArrayList<>(membersData);
+        sorted.sort(Comparator.comparingInt(CompilationUnitMemberData::getForwardDeclarationPriority));
+        for (CompilationUnitMemberData member : sorted) {
+            member.handleForwardDeclaration(this);
         }
 
         // bind members
@@ -121,6 +122,47 @@ public class Binder {
         return new BoundStaticFieldNode(
                 new BoundVariableDeclarationNode(variableType, name, expression, node.declaration.getRange()),
                 node.getRange());
+    }
+
+    private BoundClassNode bindClass(ClassNode classNode, ClassSymbol symbol) {
+        BoundNameExpressionNode name = new BoundNameExpressionNode(symbol, classNode.name.getRange());
+        List<BoundClassMemberNode> members = new ArrayList<>();
+        pushClassScope();
+        for (ClassMemberNode member : classNode.members) {
+            members.add(bindClassMember((SDeclaredType) symbol.getType(), member));
+        }
+        popScope();
+        return new BoundClassNode(name, members, classNode.getRange());
+    }
+
+    private BoundClassMemberNode bindClassMember(SDeclaredType declaredType, ClassMemberNode classMemberNode) {
+        if (classMemberNode.getNodeType() == NodeType.CLASS_FIELD) {
+            FieldClassMemberNode field = (FieldClassMemberNode) classMemberNode;
+            BoundTypeNode type = bindType(field.type);
+
+            ClassPropertySymbol symbol;
+            Symbol existing = context.getClassSymbol(field.name.value);
+            if (existing != null) {
+                addDiagnostic(
+                        BinderErrors.MemberAlreadyDeclared,
+                        field.name,
+                        field.name.value);
+                symbol = null;
+            } else {
+                symbol = new ClassPropertySymbol(field.name.value, type.type, field.name.getRange());
+                context.addClassMember(symbol);
+                declaredType.addField(type.type, field.name.value);
+            }
+
+            BoundNameExpressionNode name = new BoundNameExpressionNode(
+                    symbol,
+                    type.type,
+                    field.name.value,
+                    field.name.getRange());
+            return new BoundFieldClassMemberNode(type, name, field.getRange());
+        } else {
+            throw new InternalException();
+        }
     }
 
     private BoundStatementNode bindStatement(StatementNode statement) {
@@ -1262,6 +1304,16 @@ public class Binder {
             return new BoundPredefinedTypeNode(bound, predefined.getRange());
         }
         if (type instanceof CustomTypeNode custom) {
+            Symbol symbol = context.getSymbol(custom.value);
+            if (symbol != null) {
+                if (symbol instanceof ClassSymbol) {
+                    return new BoundCustomTypeNode(symbol.getType(), custom.getRange());
+                } else {
+                    addDiagnostic(BinderErrors.IdentifierIsNotType, type, custom.value);
+                    return new BoundInvalidTypeNode(type.getRange());
+                }
+            }
+
             Optional<Class<?>> optional = parameters.getCustomTypes().stream().filter(c -> {
                 return c.getAnnotation(CustomType.class).name().equals(custom.value);
             }).findFirst();
@@ -1313,6 +1365,10 @@ public class Binder {
 
     private void pushStaticFunctionScope(SType returnType, boolean isAsync) {
         context = context.createStaticFunction(returnType, isAsync);
+    }
+
+    private void pushClassScope() {
+        context = context.createClass();
     }
 
     private void popScope() {
@@ -1393,6 +1449,7 @@ public class Binder {
     private static abstract class CompilationUnitMemberData {
         public abstract void handleForwardDeclaration(Binder binder);
         public abstract BoundCompilationUnitMemberNode bind(Binder binder);
+        public abstract int getForwardDeclarationPriority();
     }
 
     private static class StaticFieldMemberData extends CompilationUnitMemberData {
@@ -1402,6 +1459,11 @@ public class Binder {
 
         public StaticFieldMemberData(StaticFieldNode field) {
             this.field = field;
+        }
+
+        @Override
+        public int getForwardDeclarationPriority() {
+            return 2;
         }
 
         @Override
@@ -1436,6 +1498,11 @@ public class Binder {
 
         public FunctionMemberData(FunctionNode function) {
             this.function = function;
+        }
+
+        @Override
+        public int getForwardDeclarationPriority() {
+            return 2;
         }
 
         @Override
@@ -1489,6 +1556,35 @@ public class Binder {
             binder.context = old;
 
             return boundFunction;
+        }
+    }
+
+    private static class ClassMemberData extends CompilationUnitMemberData {
+
+        private final ClassNode classNode;
+        private ClassSymbol symbol;
+
+        public ClassMemberData(ClassNode classNode) {
+            this.classNode = classNode;
+        }
+
+        @Override
+        public int getForwardDeclarationPriority() {
+            return 1;
+        }
+
+        @Override
+        public void handleForwardDeclaration(Binder binder) {
+            symbol = new ClassSymbol(
+                    classNode.name.value,
+                    new SDeclaredType(classNode.name.value),
+                    classNode.name.getRange());
+            binder.context.addClass(symbol);
+        }
+
+        @Override
+        public BoundCompilationUnitMemberNode bind(Binder binder) {
+            return binder.bindClass(classNode, symbol);
         }
     }
 }

@@ -9,9 +9,7 @@ public class UnknownConstructorReference extends ConstructorReference {
 
     public static final UnknownConstructorReference instance = new UnknownConstructorReference();
 
-    private UnknownConstructorReference() {
-        super(null);
-    }
+    private UnknownConstructorReference() {}
 
     @Override
     public void compileInvoke(MethodVisitor visitor) {
