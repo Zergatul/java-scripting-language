@@ -2,6 +2,7 @@ package com.zergatul.scripting.type;
 
 import com.zergatul.scripting.InternalException;
 import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.Type;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -12,10 +13,15 @@ public class SDeclaredType extends SType {
 
     private final String name;
     private final List<Field> fields = new ArrayList<>();
+    private String internalName;
     private Class<?> clazz;
 
     public SDeclaredType(String name) {
         this.name = name;
+    }
+
+    public void setInternalName(String internalName) {
+        this.internalName = internalName;
     }
 
     public void setJavaClass(Class<?> clazz) {
@@ -32,6 +38,15 @@ public class SDeclaredType extends SType {
             throw new InternalException();
         } else {
             return clazz;
+        }
+    }
+
+    @Override
+    public String getDescriptor() {
+        if (internalName == null) {
+            throw new InternalException();
+        } else {
+            return Type.getObjectType(internalName).getDescriptor();
         }
     }
 

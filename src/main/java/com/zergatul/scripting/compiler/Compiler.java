@@ -137,6 +137,7 @@ public class Compiler {
     private void buildClasses(List<BoundClassNode> classNodes, ClassWriter writer, CompilerContext context) {
         for (BoundClassNode classNode : classNodes) {
             String name = context.getClassName() + "$" + classNode.name.value;
+            ((SDeclaredType) classNode.name.symbol.getType()).setInternalName(name);
 
             writer.visitInnerClass(
                     name,
@@ -191,7 +192,7 @@ public class Compiler {
             writer.visitField(
                     ACC_PUBLIC,
                     field.name.value,
-                    Type.getDescriptor(field.typeNode.type.getJavaClass()),
+                    field.typeNode.type.getDescriptor(),
                     null, null);
         } else {
             throw new InternalException();

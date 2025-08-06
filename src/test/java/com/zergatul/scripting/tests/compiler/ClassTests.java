@@ -83,6 +83,42 @@ public class ClassTests {
         Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(126));
     }
 
+    @Test
+    public void selfReferenceTest() {
+        String code = """
+                class ListItem {
+                    ListItem next;
+                }
+                
+                int len(ListItem item) {
+                    if (item.next is ListItem) {
+                        return len(item.next) + 1;
+                    } else {
+                        return 1;
+                    }
+                }
+                
+                let items = new ListItem[10];
+                for (let i = 0; i < items.length; i++) {
+                    items[i] = new ListItem();
+                }
+                
+                for (let i = 0; i < items.length - 1; i++) {
+                    items[i].next = items[i + 1];
+                }
+                
+                intStorage.add(len(items[0]));
+                intStorage.add(len(items[1]));
+                intStorage.add(len(items[5]));
+                intStorage.add(len(items[9]));
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(10, 9, 5, 1));
+    }
+
     public static class ApiRoot {
         public static IntStorage intStorage;
         public static StringStorage stringStorage;
