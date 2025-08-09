@@ -13,6 +13,7 @@ public class SDeclaredType extends SType {
 
     private final String name;
     private final List<Field> fields = new ArrayList<>();
+    private final List<SFunction> constructors = new ArrayList<>();
     private String internalName;
     private Class<?> clazz;
 
@@ -30,6 +31,15 @@ public class SDeclaredType extends SType {
 
     public void addField(SType type, String name) {
         fields.add(new Field(type, name));
+    }
+
+    public void addConstructor(SFunction function) {
+        constructors.add(function);
+    }
+
+    @Override
+    public String getInternalName() {
+        return internalName;
     }
 
     @Override
@@ -87,7 +97,14 @@ public class SDeclaredType extends SType {
 
     @Override
     public List<ConstructorReference> getConstructors() {
-        return List.of(new DeclaredConstructorReference(this));
+        if (constructors.isEmpty()) {
+            return List.of(new DeclaredConstructorReference(this));
+        } else {
+            return constructors.stream()
+                    .map(f -> new DeclaredConstructorReference(this, f))
+                    .map(c -> (ConstructorReference) c)
+                    .toList();
+        }
     }
 
     @Override

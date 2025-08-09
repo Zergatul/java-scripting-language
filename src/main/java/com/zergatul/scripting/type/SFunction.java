@@ -33,7 +33,7 @@ public class SFunction extends SType {
     public String getDescriptor() {
         return Type.getMethodDescriptor(
                 Type.getType(returnType.getJavaClass()),
-                getParameterTypes().stream().map(SType::getJavaClass).map(Type::getType).toArray(Type[]::new));
+                getParameterTypes().stream().map(SType::getDescriptor).map(Type::getType).toArray(Type[]::new));
     }
 
     @Override

@@ -40,11 +40,11 @@ public class DeclaredFieldReference extends PropertyReference {
 
     @Override
     public void compileGet(MethodVisitor visitor) {
-        visitor.visitFieldInsn(GETFIELD, Type.getInternalName(owner.getJavaClass()), name, Type.getDescriptor(type.getJavaClass()));
+        visitor.visitFieldInsn(GETFIELD, owner.getInternalName(), name, type.getDescriptor());
     }
 
     @Override
     public void compileSet(MethodVisitor visitor) {
-        visitor.visitFieldInsn(PUTFIELD, Type.getInternalName(owner.getJavaClass()), name, Type.getDescriptor(type.getJavaClass()));
+        visitor.visitFieldInsn(PUTFIELD, owner.getInternalName(), name, type.getDescriptor());
     }
 }

@@ -78,5 +78,7 @@ public enum NodeType {
     JAVA_TYPE,
     JAVA_TYPE_NAME,
     CLASS,
-    CLASS_FIELD
+    CLASS_FIELD,
+    CLASS_CONSTRUCTOR,
+    THIS_EXPRESSION
 }

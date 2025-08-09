@@ -164,17 +164,21 @@ public class Compiler {
                     classNode.name.value,
                     ACC_PUBLIC | ACC_STATIC);
 
+            CompilerContext classContext = context.createClass((SDeclaredType) classNode.name.type);
             for (BoundClassMemberNode member : classNode.members) {
-                buildClassMember(innerWriter, member);
+                buildClassMember(innerWriter, member, classContext);
             }
 
-            MethodVisitor constructorVisitor = innerWriter.visitMethod(ACC_PUBLIC, "<init>", Type.getMethodDescriptor(Type.VOID_TYPE), null, null);
-            constructorVisitor.visitCode();
-            constructorVisitor.visitVarInsn(ALOAD, 0);
-            constructorVisitor.visitMethodInsn(INVOKESPECIAL, Type.getInternalName(Object.class), "<init>", Type.getMethodDescriptor(Type.VOID_TYPE), false);
-            constructorVisitor.visitInsn(RETURN);
-            constructorVisitor.visitMaxs(0, 0);
-            constructorVisitor.visitEnd();
+            // add default constructor if we have zero constructors defined
+            if (classNode.members.stream().noneMatch(m -> m.getNodeType() == NodeType.CLASS_CONSTRUCTOR)) {
+                MethodVisitor constructorVisitor = innerWriter.visitMethod(ACC_PUBLIC, "<init>", Type.getMethodDescriptor(Type.VOID_TYPE), null, null);
+                constructorVisitor.visitCode();
+                constructorVisitor.visitVarInsn(ALOAD, 0);
+                constructorVisitor.visitMethodInsn(INVOKESPECIAL, Type.getInternalName(Object.class), "<init>", Type.getMethodDescriptor(Type.VOID_TYPE), false);
+                constructorVisitor.visitInsn(RETURN);
+                constructorVisitor.visitMaxs(0, 0);
+                constructorVisitor.visitEnd();
+            }
 
             innerWriter.visitEnd();
 
@@ -186,17 +190,38 @@ public class Compiler {
         }
     }
 
-    private void buildClassMember(ClassWriter writer, BoundClassMemberNode member) {
-        if (member.getNodeType() == NodeType.CLASS_FIELD) {
-            BoundFieldClassMemberNode field = (BoundFieldClassMemberNode) member;
-            writer.visitField(
-                    ACC_PUBLIC,
-                    field.name.value,
-                    field.typeNode.type.getDescriptor(),
-                    null, null);
-        } else {
-            throw new InternalException();
+    private void buildClassMember(ClassWriter writer, BoundClassMemberNode member, CompilerContext context) {
+        switch (member.getNodeType()) {
+            case CLASS_FIELD -> compileClassField(writer, (BoundClassFieldNode) member);
+            case CLASS_CONSTRUCTOR -> compileClassConstructor(writer, (BoundClassConstructorNode) member, context);
+            default -> throw new InternalException();
         }
+    }
+
+    private void compileClassField(ClassWriter writer, BoundClassFieldNode field) {
+        writer.visitField(
+                ACC_PUBLIC,
+                field.name.value,
+                field.typeNode.type.getDescriptor(),
+                null, null);
+    }
+
+    private void compileClassConstructor(ClassWriter writer, BoundClassConstructorNode constructor, CompilerContext context) {
+        MethodVisitor constructorVisitor = writer.visitMethod(ACC_PUBLIC, "<init>", constructor.type.getDescriptor(), null, null);
+        constructorVisitor.visitCode();
+        constructorVisitor.visitVarInsn(ALOAD, 0);
+        constructorVisitor.visitMethodInsn(INVOKESPECIAL, Type.getInternalName(Object.class), "<init>", Type.getMethodDescriptor(Type.VOID_TYPE), false);
+
+        context = context.createClassMethod(SVoidType.instance);
+        for (BoundParameterNode parameter : constructor.parameters.parameters) {
+            context.setStackIndex((LocalVariable) parameter.getName().symbol);
+        }
+
+        compileBlockStatement(constructorVisitor, context, constructor.body);
+
+        constructorVisitor.visitInsn(RETURN);
+        constructorVisitor.visitMaxs(0, 0);
+        constructorVisitor.visitEnd();
     }
 
     private void buildStaticFields(List<BoundStaticFieldNode> fields, ClassWriter writer, CompilerContext context) {
@@ -1084,6 +1109,7 @@ public class Compiler {
             case CONDITIONAL_EXPRESSION -> compileConditionalExpression(visitor, context, (BoundConditionalExpressionNode) expression);
             case IMPLICIT_CAST -> compileImplicitCastExpression(visitor, context, (BoundImplicitCastExpressionNode) expression);
             case NAME_EXPRESSION -> compileNameExpression(visitor, context, (BoundNameExpressionNode) expression);
+            case THIS_EXPRESSION -> compileThisExpression(visitor);
             case STATIC_REFERENCE -> compileStaticReferenceExpression();
             case REF_ARGUMENT_EXPRESSION -> compileRefArgumentExpression(visitor, context, (BoundRefArgumentExpressionNode) expression);
             case METHOD_INVOCATION_EXPRESSION -> compileMethodInvocationExpression(visitor, context, (BoundMethodInvocationExpressionNode) expression);
@@ -1200,6 +1226,10 @@ public class Compiler {
         }
     }
 
+    private void compileThisExpression(MethodVisitor visitor) {
+        visitor.visitVarInsn(ALOAD, 0);
+    }
+
     private void compileRefArgumentExpression(MethodVisitor visitor, CompilerContext context, BoundRefArgumentExpressionNode expression) {
         Variable variable = (Variable) expression.name.symbol;
         LocalVariable holder = expression.holder;
@@ -1275,7 +1305,7 @@ public class Compiler {
     }
 
     private void compileObjectCreationExpression(MethodVisitor visitor, CompilerContext context, BoundObjectCreationExpressionNode creation) {
-        visitor.visitTypeInsn(NEW, Type.getInternalName(creation.typeNode.type.getJavaClass()));
+        visitor.visitTypeInsn(NEW, creation.typeNode.type.getInternalName());
         visitor.visitInsn(DUP);
         for (BoundExpressionNode expression : creation.arguments.arguments) {
             compileExpression(visitor, context, expression);

@@ -3,20 +3,13 @@ package com.zergatul.scripting.symbols;
 import com.zergatul.scripting.InternalException;
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.compiler.CompilerContext;
-import com.zergatul.scripting.type.SDeclaredType;
+import com.zergatul.scripting.type.SFunction;
 import org.objectweb.asm.MethodVisitor;
 
-public class ClassSymbol extends Symbol {
+public class Constructor extends Symbol {
 
-    private final SDeclaredType type;
-
-    public ClassSymbol(String name, SDeclaredType type, TextRange definition) {
-        super(name, type, definition);
-        this.type = type;
-    }
-
-    public SDeclaredType getDeclaredType() {
-        return type;
+    public Constructor(SFunction type, TextRange definition) {
+        super("", type, definition);
     }
 
     @Override

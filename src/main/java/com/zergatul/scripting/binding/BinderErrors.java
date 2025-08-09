@@ -44,6 +44,8 @@ public class BinderErrors {
     public static final ErrorCode JavaTypeNotAllowed = new ErrorCode("B040", "%s");
     public static final ErrorCode IdentifierIsNotType = new ErrorCode("B041", "'%s' is not type");
     public static final ErrorCode MemberAlreadyDeclared = new ErrorCode("B042", "Member named '%s' already exists");
+    public static final ErrorCode ConstructorAlreadyDeclared = new ErrorCode("B043", "Constructor with the same parameters already declared");
+    public static final ErrorCode ThisInvalidContext = new ErrorCode("B044", "'this' is invalid in this context");
 
     public static final ErrorCode InternalError = new ErrorCode("B999", "Internal error: %s");
 }

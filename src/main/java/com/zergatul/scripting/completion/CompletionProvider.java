@@ -354,13 +354,13 @@ public class CompletionProvider<T> {
             }
         }
 
-        if (node instanceof BoundForEachLoopStatementNode loop) {
+        /*if (node instanceof BoundForEachLoopStatementNode loop) {
             if (loop.iterable.getRange().endsWith(line, column)) {
                 return getUnfinished(loop.iterable, line, column);
             } else {
                 return null;
             }
-        }
+        }*/
         if (node instanceof BoundAssignmentStatementNode assignment) {
             if (assignment.right.getRange().endsWith(line, column)) {
                 return getUnfinished(assignment.right, line, column);

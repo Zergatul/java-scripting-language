@@ -1,6 +1,5 @@
 package com.zergatul.scripting.type;
 
-import com.zergatul.scripting.InternalException;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Type;
 
@@ -10,24 +9,30 @@ import static org.objectweb.asm.Opcodes.INVOKESPECIAL;
 
 public class DeclaredConstructorReference extends ConstructorReference {
 
-    private final SDeclaredType type;
+    private final SDeclaredType classType;
+    private final SFunction constructorType;
 
-    public DeclaredConstructorReference(SDeclaredType type) {
-        this.type = type;
+    public DeclaredConstructorReference(SDeclaredType classType) {
+        this(classType, new SFunction(SVoidType.instance, new MethodParameter[0]));
+    }
+
+    public DeclaredConstructorReference(SDeclaredType classType, SFunction constructorType) {
+        this.classType = classType;
+        this.constructorType = constructorType;
     }
 
     @Override
     public void compileInvoke(MethodVisitor visitor) {
         visitor.visitMethodInsn(
                 INVOKESPECIAL,
-                Type.getInternalName(type.getJavaClass()),
+                classType.getInternalName(),
                 "<init>",
-                Type.getMethodDescriptor(Type.VOID_TYPE),
+                constructorType.getDescriptor(),
                 false);
     }
 
     @Override
     public List<MethodParameter> getParameters() {
-        return List.of();
+        return constructorType.getParameters();
     }
 }

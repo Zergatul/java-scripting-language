@@ -4,6 +4,7 @@ import com.zergatul.scripting.InternalException;
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.nodes.BoundNameExpressionNode;
 import com.zergatul.scripting.symbols.*;
+import com.zergatul.scripting.type.SDeclaredType;
 import com.zergatul.scripting.type.SReference;
 import com.zergatul.scripting.type.SType;
 import org.objectweb.asm.Label;
@@ -21,8 +22,11 @@ public class CompilerContext {
     private final Map<String, Symbol> staticSymbols = new HashMap<>();
     private final Map<String, Variable> localSymbols = new HashMap<>();
     private final Map<String, Symbol> classSymbols;
+    private final List<Constructor> classConstructors;
     private final List<Variable> anonymousLocalSymbols = new ArrayList<>();
     private final boolean isClassRoot;
+    private final SDeclaredType classType;
+    private final boolean isClassMethod;
     private final boolean isFunctionRoot;
     private final boolean isGenericFunction;
     private final SType returnType;
@@ -39,14 +43,26 @@ public class CompilerContext {
     private JavaInteropPolicy policy;
     private int lastEmittedLine;
 
-    private CompilerContext(CompilerContext parent, int initialStackIndex, boolean isFunctionRoot, boolean isGenericFunction, SType returnType, boolean isAsync, boolean isClassRoot) {
+    private CompilerContext(
+            CompilerContext parent,
+            int initialStackIndex,
+            boolean isFunctionRoot,
+            boolean isGenericFunction,
+            SType returnType,
+            boolean isAsync,
+            boolean isClassRoot,
+            SDeclaredType classType,
+            boolean isClassMethod
+    ) {
         this.root = parent == null ? this : parent.root;
         this.parent = parent;
+        this.isClassRoot = isClassRoot;
+        this.classType = classType;
         this.isFunctionRoot = isFunctionRoot;
         this.isGenericFunction = isGenericFunction;
         this.returnType = returnType;
         this.isAsync = isAsync;
-        this.isClassRoot = isClassRoot;
+        this.isClassMethod = isClassMethod;
         if (isFunctionRoot) {
             lifted = new ArrayList<>();
             captured = new ArrayList<>();
@@ -56,9 +72,11 @@ public class CompilerContext {
         }
         if (isClassRoot) {
             classSymbols = new HashMap<>();
+            classConstructors = new ArrayList<>();
             stack = null;
         } else {
             classSymbols = null;
+            classConstructors = null;
             stack = new FunctionStack();
             stack.set(initialStackIndex);
         }
@@ -99,11 +117,19 @@ public class CompilerContext {
     }
 
     public void addClassMember(Symbol symbol) {
-        if (!isClassRoot) {
+        if (classType == null) {
             throw new InternalException();
         }
 
         classSymbols.put(symbol.getName(), symbol);
+    }
+
+    public void addClassConstructor(Constructor constructor) {
+        if (classType == null) {
+            throw new InternalException();
+        }
+
+        classConstructors.add(constructor);
     }
 
     public LocalVariable addLocalVariable(String name, SType type, TextRange definition) {
@@ -187,6 +213,8 @@ public class CompilerContext {
     public CompilerContext createChild() {
         return new Builder()
                 .setParent(this)
+                .setClassType(this.classType)
+                .setClassMethod(this.isClassMethod)
                 .setInitialStackIndex(stack.get())
                 .setGenericFunction(isGenericFunction)
                 .setReturnType(returnType)
@@ -218,10 +246,22 @@ public class CompilerContext {
                 .build();
     }
 
-    public CompilerContext createClass() {
+    public CompilerContext createClass(SDeclaredType type) {
         return new Builder()
                 .setParent(this)
                 .setClassRoot(true)
+                .setClassType(type)
+                .build();
+    }
+
+    public CompilerContext createClassMethod(SType returnType) {
+        return new Builder()
+                .setParent(this)
+                .setClassType(classType)
+                .setClassMethod(true)
+                .setFunctionRoot(true)
+                .setReturnType(returnType)
+                .setInitialStackIndex(1)
                 .build();
     }
 
@@ -235,6 +275,18 @@ public class CompilerContext {
 
     public CompilerContext getParent() {
         return parent;
+    }
+
+    public boolean isClassMethod() {
+        return isClassMethod;
+    }
+
+    public SType getClassType() {
+        if (classType == null) {
+            throw new InternalException();
+        }
+
+        return classType;
     }
 
     public Collection<Symbol> getStaticSymbols() {
@@ -288,7 +340,12 @@ public class CompilerContext {
     }
 
     public Symbol getClassSymbol(String name) {
-        return classSymbols.get(name);
+        // TODO: add field reference to class root???
+        return getClassRootContext().classSymbols.get(name);
+    }
+
+    public Collection<Constructor> getConstructors() {
+        return classConstructors;
     }
 
     public List<ExternalParameter> getExternalParameters() {
@@ -475,6 +532,14 @@ public class CompilerContext {
         }
     }
 
+    private CompilerContext getClassRootContext() {
+        CompilerContext current = this;
+        while (!current.isClassRoot) {
+            current = current.parent;
+        }
+        return current;
+    }
+
     private CompilerContext getFunctionContext() {
         CompilerContext current = this;
         while (!current.isFunctionRoot) {
@@ -491,6 +556,8 @@ public class CompilerContext {
 
         private CompilerContext parent;
         private boolean isClassRoot;
+        private SDeclaredType classType;
+        private boolean isClassMethod;
         public SType returnType;
         public boolean isAsync;
         public int initialStackIndex;
@@ -504,6 +571,16 @@ public class CompilerContext {
 
         public Builder setClassRoot(boolean value) {
             this.isClassRoot = value;
+            return this;
+        }
+
+        public Builder setClassType(SDeclaredType value) {
+            this.classType = value;
+            return this;
+        }
+
+        public Builder setClassMethod(boolean value) {
+            this.isClassMethod = value;
             return this;
         }
 
@@ -540,7 +617,9 @@ public class CompilerContext {
                     isGenericFunction,
                     returnType,
                     isAsync,
-                    isClassRoot);
+                    isClassRoot,
+                    classType,
+                    isClassMethod);
         }
     }
 }

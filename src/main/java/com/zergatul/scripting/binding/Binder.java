@@ -67,7 +67,7 @@ public class Binder {
 
         // bind members
         List<BoundCompilationUnitMemberNode> members = new ArrayList<>();
-        for (CompilationUnitMemberData data : membersData) {
+        for (CompilationUnitMemberData data : sorted) {
             members.add(data.bind(this));
         }
 
@@ -127,9 +127,18 @@ public class Binder {
     private BoundClassNode bindClass(ClassNode classNode, ClassSymbol symbol) {
         BoundNameExpressionNode name = new BoundNameExpressionNode(symbol, classNode.name.getRange());
         List<BoundClassMemberNode> members = new ArrayList<>();
-        pushClassScope();
+        pushClassScope(symbol.getDeclaredType());
         for (ClassMemberNode member : classNode.members) {
-            members.add(bindClassMember((SDeclaredType) symbol.getType(), member));
+            // bind fields first
+            if (member.getNodeType() == NodeType.CLASS_FIELD) {
+                members.add(bindClassMember(symbol.getDeclaredType(), member));
+            }
+        }
+        for (ClassMemberNode member : classNode.members) {
+            // bind methods second
+            if (member.getNodeType() == NodeType.CLASS_CONSTRUCTOR) {
+                members.add(bindClassMember(symbol.getDeclaredType(), member));
+            }
         }
         popScope();
         return new BoundClassNode(name, members, classNode.getRange());
@@ -137,7 +146,7 @@ public class Binder {
 
     private BoundClassMemberNode bindClassMember(SDeclaredType declaredType, ClassMemberNode classMemberNode) {
         if (classMemberNode.getNodeType() == NodeType.CLASS_FIELD) {
-            FieldClassMemberNode field = (FieldClassMemberNode) classMemberNode;
+            ClassFieldNode field = (ClassFieldNode) classMemberNode;
             BoundTypeNode type = bindType(field.type);
 
             ClassPropertySymbol symbol;
@@ -159,7 +168,30 @@ public class Binder {
                     type.type,
                     field.name.value,
                     field.name.getRange());
-            return new BoundFieldClassMemberNode(type, name, field.getRange());
+            return new BoundClassFieldNode(type, name, field.getRange());
+        } else if (classMemberNode.getNodeType() == NodeType.CLASS_CONSTRUCTOR) {
+            ClassConstructorNode constructorNode = (ClassConstructorNode) classMemberNode;
+
+            pushConstructorScope();
+
+            BoundParameterListNode parameters = bindParameterList(constructorNode.parameters);
+            SFunction type = new SFunction(SVoidType.instance, parameters.parameters.stream().map(pn -> new MethodParameter(pn.getName().value, pn.getType())).toArray(MethodParameter[]::new));
+            Constructor constructor = new Constructor(type, constructorNode.keyword.getRange());
+
+            for (var existingConstructor : context.getParent().getConstructors()) {
+                if (existingConstructor.getType().equals(type)) {
+                    addDiagnostic(BinderErrors.ConstructorAlreadyDeclared, constructorNode.keyword);
+                    break;
+                }
+            }
+
+            declaredType.addConstructor(type);
+            context.getParent().addClassConstructor(constructor);
+            BoundBlockStatementNode body = bindBlockStatement(constructorNode.body);
+
+            popScope();
+
+            return new BoundClassConstructorNode(type, parameters, body, constructorNode.getRange());
         } else {
             throw new InternalException();
         }
@@ -352,7 +384,7 @@ public class Binder {
 
         popScope();
 
-        return new BoundForLoopStatementNode(statement.lParen, statement.rParen, init, condition, update, body, statement.getRange());
+        return new BoundForLoopStatementNode(statement.openParenthesis, statement.closeParenthesis, init, condition, update, body, statement.getRange());
     }
 
     private BoundForEachLoopStatementNode bindForEachLoopStatement(ForEachLoopStatementNode statement) {
@@ -402,7 +434,7 @@ public class Binder {
         popScope();
 
         return new BoundForEachLoopStatementNode(
-                statement.lParen, statement.rParen,
+                statement.openParenthesis, statement.closeParenthesis,
                 variableType, name, iterable, body,
                 index, length,
                 statement.getRange());
@@ -484,6 +516,7 @@ public class Binder {
             case INDEX_EXPRESSION -> bindIndexExpression((IndexExpressionNode) expression);
             case INVOCATION_EXPRESSION -> bindInvocationExpression((InvocationExpressionNode) expression);
             case NAME_EXPRESSION -> bindNameExpressionPossiblyTypeReference((NameExpressionNode) expression);
+            case THIS_EXPRESSION -> bindThisExpression((ThisExpressionNode) expression);
             case STATIC_REFERENCE -> bindStaticReferenceExpression((StaticReferenceNode) expression);
             case MEMBER_ACCESS_EXPRESSION -> bindMemberAccessExpression((MemberAccessExpressionNode) expression);
             case REF_ARGUMENT_EXPRESSION -> bindRefArgumentExpression((RefArgumentExpressionNode) expression);
@@ -965,6 +998,15 @@ public class Binder {
         }
     }
 
+    private BoundThisExpressionNode bindThisExpression(ThisExpressionNode expression) {
+        if (context.isClassMethod()) {
+            return new BoundThisExpressionNode(context.getClassType(), expression.getRange());
+        } else {
+            addDiagnostic(BinderErrors.ThisInvalidContext, expression);
+            return new BoundThisExpressionNode(SUnknown.instance, expression.getRange());
+        }
+    }
+
     private BoundStaticReferenceExpression bindStaticReferenceExpression(StaticReferenceNode node) {
         BoundTypeNode typeNode = bindType(node.typeNode);
         return new BoundStaticReferenceExpression(typeNode, new SStaticTypeReference(typeNode.type), node.getRange());
@@ -1367,8 +1409,12 @@ public class Binder {
         context = context.createStaticFunction(returnType, isAsync);
     }
 
-    private void pushClassScope() {
-        context = context.createClass();
+    private void pushClassScope(SDeclaredType type) {
+        context = context.createClass(type);
+    }
+
+    private void pushConstructorScope() {
+        context = context.createClassMethod(SVoidType.instance);
     }
 
     private void popScope() {

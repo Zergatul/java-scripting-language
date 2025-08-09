@@ -1,6 +1,7 @@
 package com.zergatul.scripting.tests;
 
 import com.zergatul.scripting.DiagnosticMessage;
+import com.zergatul.scripting.MultiLineTextRange;
 import com.zergatul.scripting.SingleLineTextRange;
 import com.zergatul.scripting.lexer.Lexer;
 import com.zergatul.scripting.lexer.LexerInput;
@@ -297,26 +298,30 @@ public class ErrorRecoveryParserTests {
                 List.of(
                         new DiagnosticMessage(ParserErrors.LeftParenthesisExpected, new SingleLineTextRange(2, 1, 4, 7), "freeCam")));
 
-        Assertions.assertIterableEquals(
-                result.unit().statements.statements,
-                List.of(
-                        new ForLoopStatementNode(
-                                new Token(TokenType.LEFT_PARENTHESES, new SingleLineTextRange(2, 1, 4, 0)),
-                                new Token(TokenType.RIGHT_PARENTHESES, new SingleLineTextRange(2, 1, 4, 0)),
-                                new InvalidStatementNode(new SingleLineTextRange(2, 1, 4, 0)),
-                                new InvalidExpressionNode(new SingleLineTextRange(2, 1, 4, 0)),
-                                new InvalidStatementNode(new SingleLineTextRange(2, 1, 4, 0)),
-                                new InvalidStatementNode(new SingleLineTextRange(2, 1, 4, 0)),
-                                new SingleLineTextRange(1, 1, 0, 3)),
-                        new ExpressionStatementNode(
-                                new InvocationExpressionNode(
-                                        new MemberAccessExpressionNode(
-                                                new NameExpressionNode("freeCam", new SingleLineTextRange(2, 1, 4, 7)),
-                                                new NameExpressionNode("toggle", new SingleLineTextRange(2, 9, 12, 6)),
-                                                new SingleLineTextRange(2, 1, 4, 14)),
-                                        new ArgumentsListNode(List.of(), new SingleLineTextRange(2, 15, 18, 2)),
-                                        new SingleLineTextRange(2, 1, 4, 16)),
-                                new SingleLineTextRange(2, 1, 4, 17))));
+        Assertions.assertEquals(
+                result.unit(),
+                new CompilationUnitNode(
+                        new CompilationUnitMembersListNode(List.of(), new SingleLineTextRange(1, 1, 0, 0)),
+                        new StatementsListNode(List.of(
+                                new ForLoopStatementNode(
+                                        new Token(TokenType.LEFT_PARENTHESES, new SingleLineTextRange(1, 4, 3, 0)),
+                                        new InvalidStatementNode(new SingleLineTextRange(1, 4, 3, 0)),
+                                        new InvalidExpressionNode(new SingleLineTextRange(1, 4, 3, 0)),
+                                        new InvalidStatementNode(new SingleLineTextRange(1, 4, 3, 0)),
+                                        new Token(TokenType.RIGHT_PARENTHESES, new SingleLineTextRange(1, 4, 3, 0)),
+                                        new InvalidStatementNode(new SingleLineTextRange(1, 4, 3, 0)),
+                                        new SingleLineTextRange(1, 1, 0, 3)),
+                                new ExpressionStatementNode(
+                                        new InvocationExpressionNode(
+                                                new MemberAccessExpressionNode(
+                                                        new NameExpressionNode("freeCam", new SingleLineTextRange(2, 1, 4, 7)),
+                                                        new NameExpressionNode("toggle", new SingleLineTextRange(2, 9, 12, 6)),
+                                                        new SingleLineTextRange(2, 1, 4, 14)),
+                                                new ArgumentsListNode(List.of(), new SingleLineTextRange(2, 15, 18, 2)),
+                                                new SingleLineTextRange(2, 1, 4, 16)),
+                                        new SingleLineTextRange(2, 1, 4, 17))),
+                                new MultiLineTextRange(1, 1, 2, 18, 0, 21)),
+                        new MultiLineTextRange(1, 1, 2, 18, 0, 21)));
     }
 
     @Test
@@ -331,26 +336,30 @@ public class ErrorRecoveryParserTests {
                 List.of(
                         new DiagnosticMessage(ParserErrors.LeftParenthesisExpected, new SingleLineTextRange(2, 1, 8, 7), "freeCam")));
 
-        Assertions.assertIterableEquals(
-                result.unit().statements.statements,
-                List.of(
-                        new ForEachLoopStatementNode(
-                                new Token(TokenType.LEFT_PARENTHESES, new SingleLineTextRange(2, 1, 8, 0)),
-                                new Token(TokenType.RIGHT_PARENTHESES, new SingleLineTextRange(2, 1, 8, 0)),
-                                new InvalidTypeNode(new SingleLineTextRange(2, 1, 8, 0)),
-                                new NameExpressionNode("", new SingleLineTextRange(2, 1, 8, 0)),
-                                new InvalidExpressionNode(new SingleLineTextRange(2, 1, 8, 0)),
-                                new InvalidStatementNode(new SingleLineTextRange(2, 1, 8, 0)),
-                                new SingleLineTextRange(1, 1, 0, 7)),
-                        new ExpressionStatementNode(
-                                new InvocationExpressionNode(
-                                        new MemberAccessExpressionNode(
-                                                new NameExpressionNode("freeCam", new SingleLineTextRange(2, 1, 8, 7)),
-                                                new NameExpressionNode("toggle", new SingleLineTextRange(2, 9, 16, 6)),
-                                                new SingleLineTextRange(2, 1, 8, 14)),
-                                        new ArgumentsListNode(List.of(), new SingleLineTextRange(2, 15, 22, 2)),
-                                        new SingleLineTextRange(2, 1, 8, 16)),
-                                new SingleLineTextRange(2, 1, 8, 17))));
+        Assertions.assertEquals(
+                result.unit(),
+                new CompilationUnitNode(
+                        new CompilationUnitMembersListNode(List.of(),new SingleLineTextRange(1, 1, 0, 0)),
+                        new StatementsListNode(List.of(
+                                new ForEachLoopStatementNode(
+                                        new Token(TokenType.LEFT_PARENTHESES, new SingleLineTextRange(1, 8, 7, 0)),
+                                        new InvalidTypeNode(new SingleLineTextRange(1, 8, 7, 0)),
+                                        new NameExpressionNode("", new SingleLineTextRange(1, 8, 7, 0)),
+                                        new InvalidExpressionNode(new SingleLineTextRange(1, 8, 7, 0)),
+                                        new Token(TokenType.RIGHT_PARENTHESES, new SingleLineTextRange(1, 8, 7, 0)),
+                                        new InvalidStatementNode(new SingleLineTextRange(1, 8, 7, 0)),
+                                        new SingleLineTextRange(1, 1, 0, 7)),
+                                new ExpressionStatementNode(
+                                        new InvocationExpressionNode(
+                                                new MemberAccessExpressionNode(
+                                                        new NameExpressionNode("freeCam", new SingleLineTextRange(2, 1, 8, 7)),
+                                                        new NameExpressionNode("toggle", new SingleLineTextRange(2, 9, 16, 6)),
+                                                        new SingleLineTextRange(2, 1, 8, 14)),
+                                                new ArgumentsListNode(List.of(), new SingleLineTextRange(2, 15, 22, 2)),
+                                                new SingleLineTextRange(2, 1, 8, 16)),
+                                        new SingleLineTextRange(2, 1, 8, 17))),
+                                new MultiLineTextRange(1, 1, 2, 18, 0, 25)),
+                        new MultiLineTextRange(1, 1, 2, 18, 0, 25)));
     }
 
     @Test
@@ -381,6 +390,50 @@ public class ErrorRecoveryParserTests {
                                         new ArgumentsListNode(List.of(), new SingleLineTextRange(2, 15, 20, 2)),
                                         new SingleLineTextRange(2, 1, 6, 16)),
                                 new SingleLineTextRange(2, 1, 6, 17))));
+    }
+
+    @Test
+    public void unfinishedFunctionTest() {
+        ParserOutput result = parse("""
+                void abc
+                freeCam.toggle();
+                """);
+
+        Assertions.assertIterableEquals(
+                result.diagnostics(),
+                List.of(
+                        new DiagnosticMessage(ParserErrors.LeftParenthesisExpected, new SingleLineTextRange(2, 1, 9, 7), "freeCam")));
+
+        Assertions.assertEquals(
+                result.unit(),
+                new CompilationUnitNode(
+                        new CompilationUnitMembersListNode(
+                                List.of(
+                                        new FunctionNode(
+                                                null,
+                                                new VoidTypeNode(new SingleLineTextRange(1, 1, 0, 4)),
+                                                new NameExpressionNode("abc", new SingleLineTextRange(1, 6, 5, 3)),
+                                                new ParameterListNode(
+                                                        new Token(TokenType.LEFT_PARENTHESES, new SingleLineTextRange(1, 9, 8, 0)),
+                                                        List.of(),
+                                                        new Token(TokenType.RIGHT_PARENTHESES, new SingleLineTextRange(1, 9, 8, 0)),
+                                                        new SingleLineTextRange(1, 9, 8, 0)),
+                                                new BlockStatementNode(List.of(), new SingleLineTextRange(1, 9, 8, 0)),
+                                                new SingleLineTextRange(1, 1, 0, 8))),
+                                new SingleLineTextRange(1, 1, 0, 8)),
+                        new StatementsListNode(
+                                List.of(
+                                        new ExpressionStatementNode(
+                                                new InvocationExpressionNode(
+                                                        new MemberAccessExpressionNode(
+                                                                new NameExpressionNode("freeCam", new SingleLineTextRange(2, 1, 9, 7)),
+                                                                new NameExpressionNode("toggle", new SingleLineTextRange(2, 9, 17, 6)),
+                                                                new SingleLineTextRange(2, 1, 9, 14)),
+                                                        new ArgumentsListNode(List.of(), new SingleLineTextRange(2, 15, 23, 2)),
+                                                        new SingleLineTextRange(2, 1, 9, 16)),
+                                                new SingleLineTextRange(2, 1, 9, 17))),
+                                new SingleLineTextRange(2, 1, 9, 17)),
+                        new MultiLineTextRange(1, 1, 2, 18, 0, 26)));
     }
 
     private ParserOutput parse(String code) {
