@@ -13,6 +13,10 @@ public class RuntimeType {
         this.clazz = clazz;
     }
 
+    public Class<?> getJavaType() {
+        return clazz;
+    }
+
     @Getter(name = "name")
     public String getName() {
         return SType.fromJavaType(clazz).toString();
