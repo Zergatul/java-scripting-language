@@ -4,6 +4,7 @@ import com.zergatul.scripting.DiagnosticMessage;
 import com.zergatul.scripting.SingleLineTextRange;
 import com.zergatul.scripting.binding.BinderErrors;
 import com.zergatul.scripting.tests.compiler.helpers.IntStorage;
+import com.zergatul.scripting.tests.compiler.helpers.ObjectStorage;
 import com.zergatul.scripting.tests.compiler.helpers.StringStorage;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -20,6 +21,7 @@ public class ClassTests {
     public void clean() {
         ApiRoot.intStorage = new IntStorage();
         ApiRoot.stringStorage = new StringStorage();
+        ApiRoot.objectStorage = new ObjectStorage();
     }
 
     @Test
@@ -141,6 +143,21 @@ public class ClassTests {
     }
 
     @Test
+    public void castToObjectTest() {
+        String code = """
+                class Class {}
+                
+                objectStorage.add(new Class());
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertEquals(ApiRoot.objectStorage.list.size(), 1);
+        Assertions.assertEquals(ApiRoot.objectStorage.list.get(0).getClass().getSimpleName(), "Class");
+    }
+
+    @Test
     public void constructorTest1() {
         String code = """
                 class Class {
@@ -253,5 +270,6 @@ public class ClassTests {
     public static class ApiRoot {
         public static IntStorage intStorage;
         public static StringStorage stringStorage;
+        public static ObjectStorage objectStorage;
     }
 }
