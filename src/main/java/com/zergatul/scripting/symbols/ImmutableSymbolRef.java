@@ -2,11 +2,11 @@ package com.zergatul.scripting.symbols;
 
 import com.zergatul.scripting.InternalException;
 
-public class DefinedSymbolHolder extends SymbolHolder {
+public class ImmutableSymbolRef extends SymbolRef {
 
     private final Symbol symbol;
 
-    public DefinedSymbolHolder(Symbol symbol) {
+    public ImmutableSymbolRef(Symbol symbol) {
         this.symbol = symbol;
     }
 

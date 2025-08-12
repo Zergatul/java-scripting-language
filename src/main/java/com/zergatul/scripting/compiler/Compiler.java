@@ -137,7 +137,7 @@ public class Compiler {
     private void buildClasses(List<BoundClassNode> classNodes, ClassWriter writer, CompilerContext context) {
         for (BoundClassNode classNode : classNodes) {
             String name = context.getClassName() + "$" + classNode.name.value;
-            ((SDeclaredType) classNode.name.symbol.getType()).setInternalName(name);
+            ((SDeclaredType) classNode.name.getSymbol().getType()).setInternalName(name);
 
             writer.visitInnerClass(
                     name,
@@ -186,7 +186,7 @@ public class Compiler {
             saveClassFile(name, bytecode);
 
             Class<?> innerClass = classLoader.defineClass(name.replace('/', '.'), bytecode);
-            ((SDeclaredType) classNode.name.symbol.getType()).setJavaClass(innerClass);
+            ((SDeclaredType) classNode.name.getSymbol().getType()).setJavaClass(innerClass);
         }
     }
 
@@ -214,7 +214,7 @@ public class Compiler {
 
         context = context.createClassMethod(SVoidType.instance);
         for (BoundParameterNode parameter : constructor.parameters.parameters) {
-            context.setStackIndex((LocalVariable) parameter.getName().symbol);
+            context.setStackIndex((LocalVariable) parameter.getName().getSymbol());
         }
 
         compileBlockStatement(constructorVisitor, context, constructor.body);
@@ -242,8 +242,8 @@ public class Compiler {
         MethodVisitor visitor = writer.visitMethod(ACC_STATIC, "<clinit>", Type.getMethodDescriptor(Type.VOID_TYPE), null, null);
         visitor.visitCode();
         for (BoundStaticFieldNode field : fields) {
-            StaticVariable symbol = (StaticVariable) field.declaration.name.symbol;
-            context.addStaticVariable(symbol);
+            StaticVariable symbol = (StaticVariable) field.declaration.name.getSymbol();
+            context.addStaticSymbol(field.declaration.name.value, field.declaration.name.symbolRef);
             if (field.declaration.expression != null) {
                 compileExpression(visitor, context, field.declaration.expression);
             } else {
@@ -258,7 +258,7 @@ public class Compiler {
 
     private void buildFunctions(List<BoundFunctionNode> functions, ClassWriter writer, CompilerContext context) {
         for (BoundFunctionNode function : functions) {
-            Function symbol = (Function) function.name.symbol;
+            Function symbol = (Function) function.name.getSymbol();
             SFunction type = symbol.getFunctionType();
 
             MethodVisitor visitor = writer.visitMethod(
@@ -272,7 +272,7 @@ public class Compiler {
             context = context.createStaticFunction(type.getReturnType(), function.isAsync);
 
             for (BoundParameterNode parameter : function.parameters.parameters) {
-                context.setStackIndex((LocalVariable) parameter.getName().symbol);
+                context.setStackIndex((LocalVariable) parameter.getName().getSymbol());
             }
 
             if (function.isAsync) {
@@ -354,11 +354,11 @@ public class Compiler {
         ExternalParameterVisitor treeVisitor = new ExternalParameterVisitor();
         unit.statements.accept(treeVisitor);
         List<BoundVariableDeclarationNode> prepend = new ArrayList<>();
-        for (Variable parameter : treeVisitor.getParameters()) {
+        for (SymbolRef symbolRef : treeVisitor.getParameters()) {
             int parameterStackIndex;
-            if (parameter instanceof LiftedVariable lifted) {
+            if (symbolRef.get() instanceof LiftedVariable lifted) {
                 parameterStackIndex = 1 + ((ExternalParameter) lifted.getUnderlying()).getIndex();
-            } else if (parameter instanceof ExternalParameter external) {
+            } else if (symbolRef.get() instanceof ExternalParameter external) {
                 parameterStackIndex = 1 + external.getIndex();
                 external.setStackIndex(parameterStackIndex);
             } else {
@@ -366,8 +366,8 @@ public class Compiler {
             }
 
             BoundVariableDeclarationNode declaration = new BoundVariableDeclarationNode(
-                    new BoundNameExpressionNode(parameter),
-                    new BoundStackLoadNode(parameterStackIndex, parameter.getType()));
+                    new BoundNameExpressionNode(symbolRef),
+                    new BoundStackLoadNode(parameterStackIndex, symbolRef.get().getType()));
 
             prepend.add(declaration);
         }
@@ -385,7 +385,7 @@ public class Compiler {
         for (BoundCompilationUnitMemberNode member : unit.members.members) {
             if (member.getNodeType() == NodeType.STATIC_FIELD) {
                 BoundStaticFieldNode field = (BoundStaticFieldNode) member;
-                context.addStaticVariable((DeclaredStaticVariable) field.declaration.name.symbol);
+                context.addStaticSymbol(field.declaration.name.value, field.declaration.name.symbolRef);
             }
         }
 
@@ -441,8 +441,8 @@ public class Compiler {
             }
         }
 
-        Variable variable = (Variable) declaration.name.symbol;
-        context.addLocalVariable(variable);
+        Variable variable = declaration.name.symbolRef.asVariable();
+        context.addLocalVariable(declaration.name.symbolRef);
 
         if (variable instanceof LocalVariable local) {
             context.setStackIndex(local);
@@ -462,7 +462,7 @@ public class Compiler {
                 case NAME_EXPRESSION -> {
                     compileExpression(visitor, context, assignment.right);
                     BoundNameExpressionNode name = (BoundNameExpressionNode) assignment.left;
-                    Variable variable = (Variable) name.symbol;
+                    Variable variable = name.symbolRef.asVariable();
                     variable.compileStore(context, visitor);
                 }
                 case INDEX_EXPRESSION -> {
@@ -494,7 +494,7 @@ public class Compiler {
                 assignment.operator.operation.apply(visitor, buffer);
 
                 BoundNameExpressionNode name = (BoundNameExpressionNode) assignment.left;
-                Variable variable = (Variable) name.symbol;
+                Variable variable = name.symbolRef.asVariable();
                 variable.compileStore(context, visitor);
             }
             case INDEX_EXPRESSION -> {
@@ -615,8 +615,8 @@ public class Compiler {
 
         compileExpression(visitor, context, statement.iterable);
 
-        LocalVariable variable = (LocalVariable) statement.name.symbol;
-        context.addLocalVariable(variable);
+        LocalVariable variable = statement.name.symbolRef.asLocalVariable();
+        context.addLocalVariable(statement.name.symbolRef);
         if (parameters.isDebug()) {
             variable.setDeclarationLabel(begin);
         }
@@ -624,26 +624,26 @@ public class Compiler {
         context.addLocalVariable(statement.length);
 
         context.setStackIndex(variable);
-        context.setStackIndex(statement.index);
-        context.setStackIndex(statement.length);
+        context.setStackIndex(statement.index.asLocalVariable());
+        context.setStackIndex(statement.length.asLocalVariable());
 
         visitor.visitInsn(ICONST_0);
-        statement.index.compileStore(context, visitor);
+        statement.index.asLocalVariable().compileStore(context, visitor);
 
         visitor.visitInsn(DUP);
         visitor.visitInsn(ARRAYLENGTH);
-        statement.length.compileStore(context, visitor);
+        statement.length.asLocalVariable().compileStore(context, visitor);
 
         visitor.visitLabel(begin);
 
         // index >= length -- GOTO end
-        statement.index.compileLoad(context, visitor);
-        statement.length.compileLoad(context, visitor);
+        statement.index.asLocalVariable().compileLoad(context, visitor);
+        statement.length.asLocalVariable().compileLoad(context, visitor);
         visitor.visitJumpInsn(IF_ICMPGE, end);
 
         // variable = array[index]
         visitor.visitInsn(DUP);
-        statement.index.compileLoad(context, visitor);
+        statement.index.asLocalVariable().compileLoad(context, visitor);
         visitor.visitInsn(variable.getType().getArrayLoadInst());
         variable.compileStore(context, visitor);
 
@@ -654,7 +654,7 @@ public class Compiler {
 
         // index++
         visitor.visitLabel(continueLabel);
-        visitor.visitIincInsn(statement.index.getStackIndex(), 1);
+        visitor.visitIincInsn(statement.index.asLocalVariable().getStackIndex(), 1);
 
         visitor.visitJumpInsn(GOTO, begin);
         visitor.visitLabel(end);
@@ -706,7 +706,7 @@ public class Compiler {
                 BoundNameExpressionNode name = (BoundNameExpressionNode) statement.expression;
                 compileExpression(visitor, context, statement.expression);
                 statement.operation.apply(visitor);
-                Variable variable = (Variable) name.symbol;
+                Variable variable = name.symbolRef.asVariable();
                 variable.compileStore(context, visitor);
             }
             case INDEX_EXPRESSION -> {
@@ -799,12 +799,12 @@ public class Compiler {
                 Type.getMethodDescriptor(Type.VOID_TYPE),
                 false);
 
-        LocalVariable closure = parentContext.addLocalVariable(null, SType.fromJavaType(closureClass), null);
-        parentContext.setStackIndex(closure);
-        closure.compileStore(parentContext, parentVisitor);
+        SymbolRef closureRef = parentContext.addLocalVariable(null, SType.fromJavaType(closureClass), null);
+        parentContext.setStackIndex(closureRef.asLocalVariable());
+        closureRef.asVariable().compileStore(parentContext, parentVisitor);
 
         for (LiftedVariable lifted : variables) {
-            lifted.setClosure(closure);
+            lifted.setClosure(closureRef.asLocalVariable());
         }
     }
 
@@ -850,11 +850,9 @@ public class Compiler {
 
     private void compileAsyncBoundStatementList(MethodVisitor parentVisitor, CompilerContext context, BoundStatementsListNode node) {
         for (BoundVariableDeclarationNode declaration : node.prepend) {
-            if (declaration.name.symbol instanceof ExternalParameter parameter) {
+            if (declaration.name.getSymbol() instanceof ExternalParameter parameter) {
                 LiftedVariable lifted = new LiftedVariable(parameter);
-                for (BoundNameExpressionNode name : parameter.getReferences()) {
-                    name.overrideSymbol(lifted);
-                }
+                declaration.name.symbolRef.set(lifted);
             }
         }
 
@@ -940,10 +938,10 @@ public class Compiler {
         nextMethodContext.setStackIndex(parameter);
 
         // closure reference
-        LocalVariable closure = nextMethodContext.addLocalVariable(null, new SLazyClassType(name), null);
-        closure.setStackIndex(0);
+        SymbolRef closureRef = nextMethodContext.addLocalVariable(null, new SLazyClassType(name), null);
+        closureRef.asLocalVariable().setStackIndex(0);
         for (LiftedVariable lifted : variables) {
-            lifted.setClosure(closure);
+            lifted.setClosure(closureRef.asLocalVariable());
         }
 
         Label loop = new Label();
@@ -1013,7 +1011,7 @@ public class Compiler {
 
         for (BoundVariableDeclarationNode declaration : node.prepend) {
             if (declaration.expression instanceof BoundStackLoadNode load) {
-                if (declaration.name.symbol instanceof LiftedVariable lifted) {
+                if (declaration.name.getSymbol() instanceof LiftedVariable lifted) {
                     int index = variables.indexOf(lifted);
                     if (index < 0) {
                         throw new InternalException();
@@ -1219,7 +1217,7 @@ public class Compiler {
     }
 
     private void compileNameExpression(MethodVisitor visitor, CompilerContext context, BoundNameExpressionNode expression) {
-        if (expression.symbol instanceof Variable variable) {
+        if (expression.getSymbol() instanceof Variable variable) {
             variable.compileLoad(context, visitor);
         } else {
             throw new InternalException("Not implemented.");
@@ -1231,7 +1229,7 @@ public class Compiler {
     }
 
     private void compileRefArgumentExpression(MethodVisitor visitor, CompilerContext context, BoundRefArgumentExpressionNode expression) {
-        Variable variable = (Variable) expression.name.symbol;
+        Variable variable = expression.name.symbolRef.asVariable();
         LocalVariable holder = expression.holder;
         context.setStackIndex(holder);
 
@@ -1389,13 +1387,14 @@ public class Compiler {
                     throw new InternalException();
                 }
 
-                captured.setClosure(closureFieldVariables[index]);
+                captured.getClosure().set(closureFieldVariables[index]);
             }
         }
 
         LocalVariable[] arguments = new LocalVariable[expression.parameters.size()];
         for (int i = 0; i < expression.parameters.size(); i++) {
-            arguments[i] = lambdaContext.addLocalVariable(null, SType.fromJavaType(Object.class), null);
+            SymbolRef symbolRef = lambdaContext.addLocalVariable(null, SType.fromJavaType(Object.class), null);
+            arguments[i] = symbolRef.asLocalVariable();
             lambdaContext.setStackIndex(arguments[i]);
         }
         for (int i = 0; i < expression.parameters.size(); i++) {
@@ -1403,8 +1402,8 @@ public class Compiler {
             SType actual = type.getActualParameters()[i];
             if (!raw.equals(actual)) {
                 BoundParameterNode parameter = expression.parameters.get(i);
-                LocalVariable unboxed = (LocalVariable) parameter.getName().symbol;
-                lambdaContext.addLocalVariable(unboxed);
+                LocalVariable unboxed = parameter.getName().symbolRef.asLocalVariable();
+                lambdaContext.addLocalVariable(parameter.getName().symbolRef);
                 lambdaContext.setStackIndex(unboxed);
                 Class<?> boxedType = parameter.getType().getBoxedVersion();
 
@@ -1417,8 +1416,8 @@ public class Compiler {
                 }
                 unboxed.compileStore(context, invokeVisitor);
             } else {
-                LocalVariable variable = (LocalVariable) expression.parameters.get(i).getName().symbol;
-                lambdaContext.addLocalVariable(variable);
+                LocalVariable variable = expression.parameters.get(i).getName().symbolRef.asLocalVariable();
+                lambdaContext.addLocalVariable(expression.parameters.get(i).getName().symbolRef);
                 variable.setStackIndex(type.getParameterStackIndex(i));
             }
         }
@@ -1453,7 +1452,7 @@ public class Compiler {
     }
 
     private void compileFunctionInvocationExpression(MethodVisitor visitor, CompilerContext context, BoundFunctionInvocationExpression expression) {
-        Function symbol = (Function) expression.name.symbol;
+        Function symbol = (Function) expression.name.getSymbol();
         SFunction type = symbol.getFunctionType();
 
         for (BoundExpressionNode argument : expression.arguments.arguments) {
@@ -1475,8 +1474,8 @@ public class Compiler {
             return;
         }
 
-        Symbol parameter = context.getSymbol("@result");
-        parameter.compileLoad(context, visitor);
+        SymbolRef parameter = context.getSymbol("@result");
+        parameter.get().compileLoad(context, visitor);
 
         if (node.type.getBoxedVersion() != null) {
             visitor.visitTypeInsn(CHECKCAST, Type.getInternalName(node.type.getBoxedVersion()));
@@ -1491,13 +1490,14 @@ public class Compiler {
     }
 
     private void compileFunctionAsLambda(MethodVisitor visitor, CompilerContext context, BoundFunctionAsLambdaExpressionNode node) {
-        Function function = (Function) node.name.symbol;
+        Function function = (Function) node.name.getSymbol();
         SFunction type = function.getFunctionType();
         List<BoundParameterNode> parameters = new ArrayList<>(type.getParameters().size());
         List<LocalVariable> variables = new ArrayList<>(type.getParameters().size());
         CompilerContext lambdaContext = context.createFunction(type.getReturnType(), false, true);
         for (SType parameterType : type.getParameterTypes()) {
-            LocalVariable variable = lambdaContext.addLocalVariable("p" + variables.size(), parameterType, null);
+            SymbolRef symbolRef = lambdaContext.addLocalVariable("p" + variables.size(), parameterType, null);;
+            LocalVariable variable = symbolRef.asLocalVariable();
             lambdaContext.setStackIndex(variable);
             variables.add(variable);
             parameters.add(new BoundParameterNode(

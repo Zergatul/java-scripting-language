@@ -25,7 +25,7 @@ public class FunctionSuggestion extends Suggestion {
             if (node.getNodeType() == NodeType.FUNCTION) {
                 BoundFunctionNode function = (BoundFunctionNode) node;
                 if (function.name.value.equals(name)) {
-                    return (Function) function.name.symbol;
+                    return (Function) function.name.getSymbol();
                 }
             }
         }

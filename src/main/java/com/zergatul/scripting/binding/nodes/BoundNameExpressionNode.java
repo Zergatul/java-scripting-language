@@ -2,8 +2,10 @@ package com.zergatul.scripting.binding.nodes;
 
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
+import com.zergatul.scripting.symbols.MutableSymbolRef;
 import com.zergatul.scripting.symbols.Symbol;
 import com.zergatul.scripting.parser.NodeType;
+import com.zergatul.scripting.symbols.SymbolRef;
 import com.zergatul.scripting.type.SType;
 
 import java.util.List;
@@ -11,7 +13,7 @@ import java.util.List;
 public class BoundNameExpressionNode extends BoundExpressionNode {
 
     public final String value;
-    public Symbol symbol;
+    public final SymbolRef symbolRef;
 
     public BoundNameExpressionNode(Symbol symbol) {
         this(symbol, null);
@@ -22,13 +24,29 @@ public class BoundNameExpressionNode extends BoundExpressionNode {
     }
 
     public BoundNameExpressionNode(Symbol symbol, SType type, String value, TextRange range) {
+        this(new MutableSymbolRef(symbol), type, value, range);
+    }
+
+    public BoundNameExpressionNode(SymbolRef symbolRef) {
+        this(symbolRef, null);
+    }
+
+    public BoundNameExpressionNode(SymbolRef symbolRef, TextRange range) {
+        this(symbolRef, symbolRef.get().getType(), symbolRef.get().getName(), range);
+    }
+
+    public BoundNameExpressionNode(SymbolRef symbolRef, SType type, String value, TextRange range) {
         super(NodeType.NAME_EXPRESSION, type, range);
-        this.symbol = symbol;
+        this.symbolRef = symbolRef;
         this.value = value;
 
-        if (symbol != null) {
-            symbol.addReference(this);
+        if (symbolRef != null) {
+            symbolRef.addReference(this);
         }
+    }
+
+    public Symbol getSymbol() {
+        return symbolRef.get();
     }
 
     @Override
@@ -39,13 +57,9 @@ public class BoundNameExpressionNode extends BoundExpressionNode {
     @Override
     public void acceptChildren(BinderTreeVisitor visitor) {}
 
-    public void overrideSymbol(Symbol symbol) {
-        this.symbol = symbol;
-    }
-
     @Override
     public boolean canSet() {
-        return symbol != null && symbol.canSet();
+        return getSymbol() != null && getSymbol().canSet();
     }
 
     @Override
@@ -56,7 +70,7 @@ public class BoundNameExpressionNode extends BoundExpressionNode {
     @Override
     public boolean equals(Object obj) {
         if (obj instanceof BoundNameExpressionNode other) {
-            return Symbol.equals(other.symbol, symbol) && other.getRange().equals(getRange());
+            return other.value.equals(value) && other.symbolRef.equals(symbolRef) && equals(other, this);
         } else {
             return false;
         }

@@ -19,11 +19,11 @@ public class CompilerContext {
 
     private final CompilerContext root;
     private final CompilerContext parent;
-    private final Map<String, Symbol> staticSymbols = new HashMap<>();
-    private final Map<String, Variable> localSymbols = new HashMap<>();
+    private final Map<String, SymbolRef> staticSymbols = new HashMap<>();
+    private final Map<String, SymbolRef> localSymbols = new HashMap<>();
     private final Map<String, Symbol> classSymbols;
     private final List<Constructor> classConstructors;
-    private final List<Variable> anonymousLocalSymbols = new ArrayList<>();
+    private final List<SymbolRef> anonymousLocalSymbols = new ArrayList<>();
     private final boolean isClassRoot;
     private final SDeclaredType classType;
     private final boolean isClassMethod;
@@ -92,28 +92,12 @@ public class CompilerContext {
                 .build();
     }
 
-    public void addStaticVariable(StaticVariable variable) {
-        if (hasSymbol(variable.getName())) {
+    public void addStaticSymbol(String name, SymbolRef symbolRef) {
+        if (hasSymbol(name)) {
             throw new InternalException();
         }
 
-        staticSymbols.put(variable.getName(), variable);
-    }
-
-    public void addFunction(Function function) {
-        if (hasSymbol(function.getName())) {
-            throw new InternalException();
-        }
-
-        staticSymbols.put(function.getName(), function);
-    }
-
-    public void addClass(ClassSymbol classSymbol) {
-        if (hasSymbol(classSymbol.getName())) {
-            throw new InternalException();
-        }
-
-        staticSymbols.put(classSymbol.getName(), classSymbol);
+        staticSymbols.put(name, symbolRef);
     }
 
     public void addClassMember(Symbol symbol) {
@@ -132,28 +116,22 @@ public class CompilerContext {
         classConstructors.add(constructor);
     }
 
-    public LocalVariable addLocalVariable(String name, SType type, TextRange definition) {
-        if (name != null) {
-            Symbol symbol = getSymbol(name);
-            if (symbol instanceof LocalVariable) {
-                throw new InternalException();
-            }
-        }
-
+    public SymbolRef addLocalVariable(String name, SType type, TextRange definition) {
         LocalVariable variable = new LocalVariable(name, type, definition);
-        addLocalVariable(variable);
-        return variable;
+        SymbolRef symbolRef = new MutableSymbolRef(variable);
+        addLocalVariable(symbolRef);
+        return symbolRef;
     }
 
-    public void addLocalVariable(Variable variable) {
-        if (variable.getName() != null) {
-            Symbol symbol = getSymbol(variable.getName());
-            if (symbol instanceof LocalVariable) {
+    public void addLocalVariable(SymbolRef variableRef) {
+        if (variableRef.get().getName() != null) {
+            SymbolRef symbolRef = getSymbol(variableRef.get().getName());
+            if (symbolRef != null && symbolRef.get() instanceof LocalVariable) {
                 throw new InternalException();
             }
         }
 
-        insertLocalVariable(variable);
+        insertLocalVariable(variableRef);
     }
 
     public ExternalParameter addExternalParameter(String name, SType type, int index) {
@@ -162,20 +140,20 @@ public class CompilerContext {
         }
 
         ExternalParameter parameter = new ExternalParameter(name, type, index);
-        addLocalVariable(parameter);
+        addLocalVariable(new MutableSymbolRef(parameter));
         return parameter;
     }
 
     public LocalVariable addLocalParameter(String name, SType type, TextRange definition) {
         if (name != null) {
-            Symbol symbol = getSymbol(name);
-            if (symbol instanceof LocalVariable) {
+            SymbolRef symbolRef = getSymbol(name);
+            if (symbolRef != null && symbolRef.get() instanceof LocalVariable) {
                 throw new InternalException();
             }
         }
 
         LocalVariable variable = new LocalParameter(name, type, definition);
-        addLocalVariable(variable);
+        addLocalVariable(new MutableSymbolRef(variable));
         return variable;
     }
 
@@ -185,7 +163,7 @@ public class CompilerContext {
         }
 
         LocalVariable variable = new LocalRefParameter(name, refType, underlying, definition);
-        addLocalVariable(variable);
+        addLocalVariable(new MutableSymbolRef(variable));
         return variable;
     }
 
@@ -199,7 +177,8 @@ public class CompilerContext {
     }
 
     public LocalVariable createRefVariable(Variable variable) {
-        LocalVariable holder = addLocalVariable(null, variable.getType().getReferenceType(), null);
+        SymbolRef symbolRef = addLocalVariable(null, variable.getType().getReferenceType(), null);
+        LocalVariable holder = symbolRef.asLocalVariable();
         refVariables.add(new RefHolder(holder, variable));
         return holder;
     }
@@ -289,33 +268,36 @@ public class CompilerContext {
         return classType;
     }
 
-    public Collection<Symbol> getStaticSymbols() {
+    public Collection<SymbolRef> getStaticSymbols() {
         return staticSymbols.values();
     }
 
-    public Symbol getSymbol(String name) {
+    public SymbolRef getSymbol(String name) {
         List<CompilerContext> functions = List.of(); // function boundaries
         for (CompilerContext context = this; context != null; ) {
-            Variable localSymbol = context.localSymbols.get(name);
-            if (localSymbol != null) {
+            SymbolRef localSymbolRef = context.localSymbols.get(name);
+            if (localSymbolRef != null) {
                 if (functions.isEmpty()) {
-                    return localSymbol;
+                    return localSymbolRef;
                 } else {
-                    if (!(localSymbol instanceof LiftedVariable) && !(localSymbol instanceof CapturedVariable)) {
-                        LiftedVariable lifted = new LiftedVariable((LocalVariable) localSymbol);
-                        for (BoundNameExpressionNode nameExpression : localSymbol.getReferences()) {
-                            nameExpression.overrideSymbol(lifted);
-                        }
-                        localSymbol = lifted;
+                    Variable original = localSymbolRef.asVariable();
+                    if (!(localSymbolRef.get() instanceof LiftedVariable) && !(localSymbolRef.get() instanceof CapturedVariable)) {
+                        LiftedVariable lifted = new LiftedVariable(localSymbolRef.asLocalVariable());
+                        localSymbolRef.set(lifted); // updates all references
+                        /*for (BoundNameExpressionNode nameExpression : localSymbolRef.getReferences()) {
+                            nameExpression.symbolRef.set(lifted);
+                        }*/
                         context.getFunctionContext().lifted.add(lifted);
-                        context.insertLocalVariable(localSymbol); // replace local variable with lifted
+                        // no need???
+                        //context.insertLocalVariable(localSymbol); // replace local variable with lifted
                     }
 
-                    Variable prev = localSymbol;
+                    Variable prev = original;
                     for (int i = functions.size() - 1; i >= 0; i--) {
                         CapturedVariable current = new CapturedVariable(prev);
+                        MutableSymbolRef currentSymbolRef = new MutableSymbolRef(current);
                         functions.get(i).captured.add(current);
-                        functions.get(i).insertLocalVariable(current);
+                        functions.get(i).insertLocalVariable(currentSymbolRef);
                         prev = current;
                     }
 
@@ -331,9 +313,9 @@ public class CompilerContext {
             context = context.parent;
         }
 
-        Symbol staticSymbol = root.staticSymbols.get(name);
-        if (staticSymbol != null) {
-            return staticSymbol;
+        SymbolRef staticSymbolRef = root.staticSymbols.get(name);
+        if (staticSymbolRef != null) {
+            return staticSymbolRef;
         }
 
         return null;
@@ -348,24 +330,17 @@ public class CompilerContext {
         return classConstructors;
     }
 
-    public List<ExternalParameter> getExternalParameters() {
-        return localSymbols.values().stream()
-                .filter(v -> v instanceof ExternalParameter)
-                .map(v -> (ExternalParameter) v)
-                .toList();
-    }
-
     public Variable getVariableOfType(String type) {
         CompilerContext current = this;
         while (true) {
-            for (Variable variable : current.anonymousLocalSymbols) {
-                if (variable.getType().getInternalName().equals(type)) {
-                    return variable;
+            for (SymbolRef ref : current.anonymousLocalSymbols) {
+                if (ref.get().getType().getInternalName().equals(type)) {
+                    return ref.asVariable();
                 }
             }
-            for (Variable variable : current.localSymbols.values()) {
-                if (variable.getType().getInternalName().equals(type)) {
-                    return variable;
+            for (SymbolRef ref : current.localSymbols.values()) {
+                if (ref.get().getType().getInternalName().equals(type)) {
+                    return ref.asVariable();
                 }
             }
             if (current.isFunctionRoot) {
@@ -487,8 +462,8 @@ public class CompilerContext {
     public void markEnd(MethodVisitor visitor) {
         Label label = new Label();
         visitor.visitLabel(label);
-        for (Variable variable : localSymbols.values()) {
-            if (variable instanceof LocalVariable local) {
+        for (SymbolRef ref : localSymbols.values()) {
+            if (ref.get() instanceof LocalVariable local) {
                 visitor.visitLocalVariable(
                         local.getName(),
                         Type.getDescriptor(local.getType().getJavaClass()),
@@ -524,11 +499,11 @@ public class CompilerContext {
         getFunctionContext().lastEmittedLine = line;
     }
 
-    private void insertLocalVariable(Variable variable) {
-        if (variable.getName() == null) {
-            anonymousLocalSymbols.add(variable);
+    private void insertLocalVariable(SymbolRef variableRef) {
+        if (variableRef.get().getName() == null) {
+            anonymousLocalSymbols.add(variableRef);
         } else {
-            localSymbols.put(variable.getName(), variable);
+            localSymbols.put(variableRef.get().getName(), variableRef);
         }
     }
 

@@ -1,15 +1,9 @@
 package com.zergatul.scripting.binding;
 
-import com.zergatul.scripting.binding.nodes.BoundParameterListNode;
-import com.zergatul.scripting.binding.nodes.BoundTypeNode;
 import com.zergatul.scripting.parser.nodes.*;
-import com.zergatul.scripting.type.SDeclaredType;
-import com.zergatul.scripting.type.SFunction;
-import com.zergatul.scripting.type.SType;
+import com.zergatul.scripting.symbols.SymbolRef;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 public class DeclarationTable {
@@ -23,7 +17,7 @@ public class DeclarationTable {
     private final Map<ClassNode, ClassDeclaration> classNodeMap = new HashMap<>();
 
     public void addStaticVariable(StaticFieldNode fieldNode, StaticVariableDeclaration declaration) {
-        String name = declaration.name;
+        String name = declaration.name();
         if (!name.isEmpty() && !staticVariables.containsKey(name)) {
             staticVariables.put(name, declaration);
         }
@@ -31,7 +25,7 @@ public class DeclarationTable {
     }
 
     public void addFunction(FunctionNode functionNode, FunctionDeclaration declaration) {
-        String name = declaration.name;
+        String name = declaration.getName();
         if (!name.isEmpty() && !functions.containsKey(name)) {
             functions.put(name, declaration);
         }
@@ -61,51 +55,14 @@ public class DeclarationTable {
         return classNodeMap.get(classNode);
     }
 
+    public SymbolRef getSymbol(String name) {
+        if (functions.containsKey(name)) {
+            return functions.get(name).getSymbolRef();
+        }
+        return null;
+    }
+
     public boolean hasSymbol(String name) {
         return staticVariables.containsKey(name) || functions.containsKey(name) || classes.containsKey(name);
     }
-
-    public record StaticVariableDeclaration(String name, BoundTypeNode typeNode, boolean hasError) {}
-
-    public record FunctionDeclaration(
-            String name,
-            boolean isAsync,
-            BoundTypeNode returnTypeNode,
-            BoundParameterListNode parameters,
-            SFunction functionType,
-            boolean hasError
-    ) {
-        public SType getReturnType() {
-            return returnTypeNode.type;
-        }
-    }
-
-    public static class ClassDeclaration {
-
-        private final SDeclaredType classType;
-        private final List<ClassFieldDeclaration> fields = new ArrayList<>();
-        private final List<ClassConstructorDeclaration> constructors = new ArrayList<>();
-        private final List<ClassMethodDeclaration> methods = new ArrayList<>();
-
-        public ClassDeclaration(SDeclaredType classType) {
-            this.classType = classType;
-        }
-
-        public void addField(ClassFieldDeclaration declaration) {
-            fields.add(declaration);
-        }
-
-        public SDeclaredType classType() {
-            return this.classType;
-        }
-
-        public boolean hasMember(String name) {
-            return fields.stream().anyMatch(f -> f.name.equals(name)) || methods.stream().anyMatch(m -> m.name.equals(name));
-        }
-    }
-
-    public record ClassFieldDeclaration(String name, ClassFieldNode classFieldNode, BoundTypeNode typeNode) {}
-
-    public record ClassConstructorDeclaration() {}
-    public record ClassMethodDeclaration(String name) {}
 }

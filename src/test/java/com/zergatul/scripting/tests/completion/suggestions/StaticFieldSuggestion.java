@@ -47,7 +47,7 @@ public class StaticFieldSuggestion extends Suggestion {
         @Override
         public void visit(BoundStaticFieldNode node) {
             if (result == null && node.declaration.name.value.equals(name)) {
-                result = (DeclaredStaticVariable) node.declaration.name.symbol;
+                result = (DeclaredStaticVariable) node.declaration.name.getSymbol();
             }
         }
     }

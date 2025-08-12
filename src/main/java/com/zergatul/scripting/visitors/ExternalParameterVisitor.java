@@ -9,29 +9,29 @@ import java.util.List;
 
 public class ExternalParameterVisitor extends BinderTreeVisitor {
 
-    private final List<Variable> parameters = new ArrayList<>();
+    private final List<SymbolRef> parameters = new ArrayList<>();
 
-    public List<Variable> getParameters() {
+    public List<SymbolRef> getParameters() {
         return parameters;
     }
 
     @Override
     public void visit(BoundNameExpressionNode node) {
-        if (node.symbol instanceof Variable local) {
+        if (node.getSymbol() instanceof Variable local) {
             Variable variable = local;
             while (variable instanceof CapturedVariable captured) {
                 variable = captured.getUnderlying();
             }
             if (variable instanceof LiftedVariable lifted) {
                 if (lifted.getUnderlying() instanceof ExternalParameter) {
-                    if (!parameters.contains(lifted)) {
-                        parameters.add(lifted);
+                    if (!parameters.contains(node.symbolRef)) {
+                        parameters.add(node.symbolRef);
                     }
                 }
             }
             if (variable instanceof ExternalParameter parameter) {
-                if (!parameters.contains(parameter)) {
-                    parameters.add(parameter);
+                if (!parameters.contains(node.symbolRef)) {
+                    parameters.add(node.symbolRef);
                 }
             }
         }

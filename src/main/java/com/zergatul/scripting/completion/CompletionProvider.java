@@ -521,7 +521,7 @@ public class CompletionProvider<T> {
                 case FUNCTION -> {
                     BoundFunctionNode function = (BoundFunctionNode) context.entry.node;
                     for (BoundParameterNode parameter : function.parameters.parameters) {
-                        addLocalVariableSuggestion(list, (LocalVariable) parameter.getName().symbol);
+                        addLocalVariableSuggestion(list, parameter.getName().symbolRef.asLocalVariable());
                     }
                 }
                 case STATEMENTS_LIST -> {
@@ -531,12 +531,12 @@ public class CompletionProvider<T> {
                 case LAMBDA_EXPRESSION -> {
                     BoundLambdaExpressionNode lambda = (BoundLambdaExpressionNode) context.entry.node;
                     for (BoundParameterNode parameter : lambda.parameters) {
-                        addLocalVariableSuggestion(list, (LocalVariable) parameter.getName().symbol);
+                        addLocalVariableSuggestion(list, parameter.getName().symbolRef.asLocalVariable());
                     }
                 }
                 case FOREACH_LOOP_STATEMENT -> {
                     BoundForEachLoopStatementNode loop = (BoundForEachLoopStatementNode) context.entry.node;
-                    addLocalVariableSuggestion(list, (LocalVariable) loop.name.symbol);
+                    addLocalVariableSuggestion(list, loop.name.symbolRef.asLocalVariable());
                 }
                 default -> {
                     addLocalVariables(list, getStatementsPriorTo(context));
@@ -614,8 +614,8 @@ public class CompletionProvider<T> {
     }
 
     private void addStaticConstants(List<T> suggestions, CompilerContext context) {
-        for (Symbol symbol : context.getStaticSymbols()) {
-            if (symbol instanceof StaticFieldConstantStaticVariable constant) {
+        for (SymbolRef ref : context.getStaticSymbols()) {
+            if (ref.get() instanceof StaticFieldConstantStaticVariable constant) {
                 suggestions.add(factory.getStaticConstantSuggestion(constant));
             }
         }
@@ -624,9 +624,9 @@ public class CompletionProvider<T> {
     private void addCompilationUnitMembers(List<T> suggestions, List<BoundCompilationUnitMemberNode> members) {
         for (BoundCompilationUnitMemberNode member : members) {
             if (member.getNodeType() == NodeType.STATIC_FIELD) {
-                suggestions.add(factory.getStaticFieldSuggestion((DeclaredStaticVariable) ((BoundStaticFieldNode) member).declaration.name.symbol));
+                suggestions.add(factory.getStaticFieldSuggestion((DeclaredStaticVariable) ((BoundStaticFieldNode) member).declaration.name.getSymbol()));
             } else if (member.getNodeType() == NodeType.FUNCTION) {
-                suggestions.add(factory.getFunctionSuggestion((Function) ((BoundFunctionNode) member).name.symbol));
+                suggestions.add(factory.getFunctionSuggestion((Function) ((BoundFunctionNode) member).name.getSymbol()));
             } else {
                 throw new InternalException();
             }
@@ -636,7 +636,7 @@ public class CompletionProvider<T> {
     private void addLocalVariables(List<T> suggestions, List<BoundStatementNode> statements) {
         for (BoundStatementNode statement : statements) {
             if (statement instanceof BoundVariableDeclarationNode declaration) {
-                if (declaration.name.symbol instanceof LocalVariable local) {
+                if (declaration.name.getSymbol() instanceof LocalVariable local) {
                     addLocalVariableSuggestion(suggestions, local);
                 }
                 // can be lifted variable?

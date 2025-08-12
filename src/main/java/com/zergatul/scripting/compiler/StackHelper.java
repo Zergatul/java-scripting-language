@@ -2,6 +2,7 @@ package com.zergatul.scripting.compiler;
 
 import com.zergatul.scripting.InternalException;
 import com.zergatul.scripting.symbols.LocalVariable;
+import com.zergatul.scripting.symbols.SymbolRef;
 import com.zergatul.scripting.type.SType;
 import org.objectweb.asm.MethodVisitor;
 
@@ -31,14 +32,14 @@ public class StackHelper {
             visitor.visitInsn(SWAP);
         } else {
             context = context.createChild();
-            LocalVariable var1 = context.addLocalVariable(null, type1, null);
-            LocalVariable var2 = context.addLocalVariable(null, type2, null);
-            context.setStackIndex(var1);
-            context.setStackIndex(var2);
-            var2.compileStore(context, visitor);
-            var1.compileStore(context, visitor);
-            var2.compileLoad(context, visitor);
-            var1.compileLoad(context, visitor);
+            SymbolRef var1 = context.addLocalVariable(null, type1, null);
+            SymbolRef var2 = context.addLocalVariable(null, type2, null);
+            context.setStackIndex(var1.asLocalVariable());
+            context.setStackIndex(var2.asLocalVariable());
+            var2.asVariable().compileStore(context, visitor);
+            var1.asVariable().compileStore(context, visitor);
+            var2.asVariable().compileLoad(context, visitor);
+            var1.asVariable().compileLoad(context, visitor);
         }
     }
 }

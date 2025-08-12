@@ -68,25 +68,25 @@ public class HoverProvider {
             }
             case NAME_EXPRESSION -> {
                 BoundNameExpressionNode name = (BoundNameExpressionNode) node;
-                if (name.symbol instanceof ExternalParameter external) {
+                if (name.getSymbol() instanceof ExternalParameter external) {
                     String line = description("(external parameter)") + " " + type(external.getType()) + " " + description(external.getName());
                     yield new HoverResponse(line, range);
-                } else if (name.symbol instanceof LocalParameter local) {
+                } else if (name.getSymbol() instanceof LocalParameter local) {
                     String line = description("(parameter)") + " " + type(local.getType()) + " " + description(local.getName());
                     yield new HoverResponse(line, range);
-                } else if (name.symbol instanceof LocalRefParameter local) {
+                } else if (name.getSymbol() instanceof LocalRefParameter local) {
                     String line = description("(parameter)") + " " + predefinedType("ref") + " " + type(local.getType()) + " " + description(local.getName());
                     yield new HoverResponse(line, range);
-                } else if (name.symbol instanceof LocalVariable local) {
+                } else if (name.getSymbol() instanceof LocalVariable local) {
                     String line = description("(local variable)") + " " + type(local.getType()) + " " + description(local.getName());
                     yield new HoverResponse(line, range);
-                } else if (name.symbol instanceof StaticFieldConstantStaticVariable field) {
+                } else if (name.getSymbol() instanceof StaticFieldConstantStaticVariable field) {
                     String line = description("(external static constant)") + " " + type(field.getType()) + " " + description(field.getName());
                     yield new HoverResponse(line, range);
-                } else if (name.symbol instanceof StaticVariable staticVariable) {
+                } else if (name.getSymbol() instanceof StaticVariable staticVariable) {
                     String line = description("(static variable)") + " " + type(staticVariable.getType()) + " " + description(staticVariable.getName());
                     yield new HoverResponse(line, range);
-                } else if (name.symbol instanceof Function function) {
+                } else if (name.getSymbol() instanceof Function function) {
                     SFunction type = function.getFunctionType();
                     StringBuilder sb = new StringBuilder();
                     sb.append(type(type.getReturnType())).append(' ');

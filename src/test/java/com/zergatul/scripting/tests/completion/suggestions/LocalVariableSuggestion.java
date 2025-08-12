@@ -61,14 +61,14 @@ public class LocalVariableSuggestion extends Suggestion {
         @Override
         public void visit(BoundVariableDeclarationNode node) {
             if (result == null && node.name.value.equals(name)) {
-                result = (LocalVariable) node.name.symbol;
+                result = (LocalVariable) node.name.getSymbol();
             }
         }
 
         @Override
         public void visit(BoundForEachLoopStatementNode node) {
             if (result == null && node.name.value.equals(name)) {
-                result = (LocalVariable) node.name.symbol;
+                result = (LocalVariable) node.name.getSymbol();
             }
         }
     }
@@ -85,7 +85,7 @@ public class LocalVariableSuggestion extends Suggestion {
         @Override
         public void visit(BoundParameterNode node) {
             if (result == null && node.getName().value.equals(name)) {
-                result = (LocalVariable) node.getName().symbol;
+                result = (LocalVariable) node.getName().getSymbol();
             }
         }
     }
