@@ -80,5 +80,6 @@ public enum NodeType {
     CLASS,
     CLASS_FIELD,
     CLASS_CONSTRUCTOR,
+    CLASS_METHOD,
     THIS_EXPRESSION
 }

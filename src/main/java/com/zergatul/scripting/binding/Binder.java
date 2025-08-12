@@ -20,6 +20,7 @@ public class Binder {
     private final List<DiagnosticMessage> diagnostics;
     private final CompilationParameters parameters;
     private CompilerContext context;
+    private DeclarationTable declarationTable;
 
     public Binder(ParserOutput input, CompilationParameters parameters) {
         this.code = input.code();
@@ -35,6 +36,7 @@ public class Binder {
     }
 
     private BoundCompilationUnitNode bindCompilationUnit(CompilationUnitNode node) {
+        buildDeclarationTable(node);
         List<BoundCompilationUnitMemberNode> members = bindCompilationUnitMembers(node.members.members);
         pushFunctionScope(parameters.getReturnType(), parameters.isAsync());
         parameters.addFunctionalInterfaceParameters(context);
@@ -47,7 +49,18 @@ public class Binder {
     }
 
     private List<BoundCompilationUnitMemberNode> bindCompilationUnitMembers(List<CompilationUnitMemberNode> nodes) {
-        List<CompilationUnitMemberData> membersData = new ArrayList<>();
+        List<BoundCompilationUnitMemberNode> boundMembers = new ArrayList<>();
+        for (CompilationUnitMemberNode member : nodes) {
+            boundMembers.add(switch (member.getNodeType()) {
+                case STATIC_FIELD -> bindStaticField((StaticFieldNode) member);
+                case FUNCTION -> bindFunction((FunctionNode) member);
+                case CLASS -> bindClass((ClassNode) member);
+                default -> throw new InternalException();
+            });
+        }
+        return boundMembers;
+
+        /*List<CompilationUnitMemberData> membersData = new ArrayList<>();
 
         for (CompilationUnitMemberNode member : nodes) {
             membersData.add(switch (member.getNodeType()) {
@@ -71,7 +84,77 @@ public class Binder {
             members.add(data.bind(this));
         }
 
-        return members;
+        return members;*/
+    }
+
+    private BoundStaticFieldNode bindStaticField(StaticFieldNode staticFieldNode) {
+        DeclarationTable.StaticVariableDeclaration declaration = declarationTable.getStaticVariableDeclaration(staticFieldNode);
+        if (declaration == null) {
+            throw new InternalException();
+        }
+
+        BoundTypeNode typeNode = declaration.typeNode();
+        DeclaredStaticVariable variable = new DeclaredStaticVariable(declaration.name(), typeNode.type, staticFieldNode.declaration.getRange());
+        if (!declaration.hasError()) {
+            context.addStaticVariable(variable);
+        }
+
+        BoundExpressionNode expression;
+        if (staticFieldNode.declaration.expression != null) {
+            expression = tryCastTo(bindExpression(staticFieldNode.declaration.expression), typeNode.type);
+        } else {
+            expression = null;
+        }
+
+        BoundNameExpressionNode name = new BoundNameExpressionNode(
+                variable,
+                typeNode.type,
+                declaration.name(),
+                staticFieldNode.declaration.name.getRange());
+
+        return new BoundStaticFieldNode(
+                new BoundVariableDeclarationNode(typeNode, name, expression, staticFieldNode.declaration.getRange()),
+                staticFieldNode.getRange());
+    }
+
+    private BoundFunctionNode bindFunction(FunctionNode functionNode) {
+        DeclarationTable.FunctionDeclaration declaration = declarationTable.getFunctionDeclaration(functionNode);
+        if (declaration == null) {
+            throw new InternalException();
+        }
+
+        pushStaticFunctionScope(declaration.getReturnType(), declaration.isAsync());
+        addParametersToContext(declaration.parameters());
+
+        Function symbol = new Function(declaration.name(), declaration.functionType(), functionNode.getRange());
+        if (!declaration.hasError()) {
+            context.getParent().addFunction(symbol);
+        }
+
+        BoundNameExpressionNode name = new BoundNameExpressionNode(symbol, functionNode.name.getRange());
+        BoundBlockStatementNode block = bindBlockStatement(functionNode.body);
+
+        if (declaration.getReturnType() != SVoidType.instance && declaration.getReturnType() != SUnknown.instance) {
+            if (!new ReturnPathsVerifier().verify(block)) {
+                addDiagnostic(BinderErrors.NotAllPathReturnValue, block);
+            }
+        }
+
+        BoundFunctionNode boundFunction = new BoundFunctionNode(
+                declaration.isAsync(),
+                declaration.returnTypeNode(),
+                name,
+                declaration.parameters(),
+                block,
+                functionNode.getRange());
+
+        popScope();
+
+        return boundFunction;
+    }
+
+    private BoundClassNode bindClass(ClassNode classNode) {
+        throw new InternalException();
     }
 
     private BoundParameterListNode bindParameterList(ParameterListNode node) {
@@ -82,6 +165,17 @@ public class Binder {
                     context.addLocalRefParameter(parameter.getName().value, (SReference) ref.type, ref.underlying.type, parameter.getRange()) :
                     context.addLocalParameter(parameter.getName().value, type.type, parameter.getRange());
             BoundNameExpressionNode name = new BoundNameExpressionNode(variable, parameter.getName().getRange());
+            parameters.add(new BoundParameterNode(name, type, parameter.getRange()));
+        }
+        return new BoundParameterListNode(parameters, node.getRange());
+    }
+
+    private BoundParameterListNode bindParameterList2(ParameterListNode node) {
+        // TODO: check for duplicate names
+        List<BoundParameterNode> parameters = new ArrayList<>(node.parameters.size());
+        for (ParameterNode parameter : node.parameters) {
+            BoundTypeNode type = bindType(parameter.getType());
+            BoundNameExpressionNode name = new BoundNameExpressionNode(null, type.type, parameter.getName().value, parameter.getName().getRange());
             parameters.add(new BoundParameterNode(name, type, parameter.getRange()));
         }
         return new BoundParameterListNode(parameters, node.getRange());
@@ -1397,6 +1491,106 @@ public class Binder {
         throw new InternalException();
     }
 
+    private void buildDeclarationTable(CompilationUnitNode unit) {
+        declarationTable = new DeclarationTable();
+
+        // process classes first
+        for (CompilationUnitMemberNode member : unit.members.members) {
+            if (member.getNodeType() != NodeType.CLASS) {
+                continue;
+            }
+
+            ClassNode classNode = (ClassNode) member;
+            String name = classNode.name.value;
+            if (!name.isEmpty() && declarationTable.hasSymbol(name)) {
+                addDiagnostic(BinderErrors.SymbolAlreadyDeclared, classNode.name, name);
+            }
+
+            declarationTable.addClass(name, classNode, new DeclarationTable.ClassDeclaration(new SDeclaredType(name)));
+        }
+
+        // process static variables and functions second
+        for (CompilationUnitMemberNode member : unit.members.members) {
+            if (member.getNodeType() == NodeType.CLASS) {
+                continue;
+            }
+
+            if (member.getNodeType() == NodeType.STATIC_FIELD) {
+                StaticFieldNode fieldNode = (StaticFieldNode) member;
+                String name = fieldNode.declaration.name.value;
+                boolean hasError = false;
+                if (!name.isEmpty() && declarationTable.hasSymbol(name)) {
+                    hasError = true;
+                    addDiagnostic(BinderErrors.SymbolAlreadyDeclared, fieldNode.declaration.name, name);
+                }
+
+                BoundTypeNode boundTypeNode = bindType(fieldNode.declaration.type);
+                declarationTable.addStaticVariable(
+                        fieldNode,
+                        new DeclarationTable.StaticVariableDeclaration(name, boundTypeNode, hasError));
+            } else if (member.getNodeType() == NodeType.FUNCTION) {
+                FunctionNode functionNode = (FunctionNode) member;
+                String name = functionNode.name.value;
+                boolean hasError = false;
+                if (!name.isEmpty() && declarationTable.hasSymbol(name)) {
+                    hasError = true;
+                    addDiagnostic(BinderErrors.SymbolAlreadyDeclared, functionNode.name, name);
+                }
+
+                boolean isAsync = functionNode.asyncToken != null;
+                BoundTypeNode returnTypeNode = bindType(functionNode.returnType);
+                SType actualReturnType = isAsync ? new SFuture(returnTypeNode.type) : returnTypeNode.type;
+                BoundParameterListNode parameters = bindParameterList2(functionNode.parameters);
+                SFunction functionType = new SFunction(
+                        actualReturnType,
+                        parameters.parameters.stream().map(pn -> new MethodParameter(pn.getName().value, pn.getType())).toArray(MethodParameter[]::new));
+                declarationTable.addFunction(functionNode, new DeclarationTable.FunctionDeclaration(
+                        name,
+                        isAsync,
+                        returnTypeNode,
+                        parameters,
+                        functionType,
+                        hasError));
+            } else {
+                throw new InternalException();
+            }
+        }
+
+        // process class members
+        for (CompilationUnitMemberNode member : unit.members.members) {
+            if (member.getNodeType() != NodeType.CLASS) {
+                continue;
+            }
+
+            ClassNode classNode = (ClassNode) member;
+            DeclarationTable.ClassDeclaration classDeclaration = declarationTable.getClassDeclaration(classNode);
+            if (classDeclaration == null) {
+                throw new InternalException();
+            }
+
+            for (ClassMemberNode classMember : classNode.members) {
+                switch (classMember.getNodeType()) {
+                    case CLASS_FIELD -> {
+                        ClassFieldNode classFieldNode = (ClassFieldNode) classMember;
+                        String fieldName = classFieldNode.name.value;
+                        BoundTypeNode typeNode = bindType(classFieldNode.type);
+
+                        if (classDeclaration.hasMember(fieldName)) {
+                            addDiagnostic(BinderErrors.MemberAlreadyDeclared, classFieldNode.name, fieldName);
+                        } else {
+                            classDeclaration.classType().addField(typeNode.type, fieldName);
+                        }
+
+                        classDeclaration.addField(new DeclarationTable.ClassFieldDeclaration(fieldName, classFieldNode, typeNode));
+                    }
+                    case CLASS_CONSTRUCTOR -> { throw new InternalException(); }
+                    case CLASS_METHOD -> { throw new InternalException(); }
+                    default -> throw new InternalException();
+                }
+            }
+        }
+    }
+
     private void pushScope() {
         context = context.createChild();
     }
@@ -1419,6 +1613,15 @@ public class Binder {
 
     private void popScope() {
         context = context.getParent();
+    }
+
+    private void addParametersToContext(BoundParameterListNode parameterListNode) {
+        for (BoundParameterNode parameter : parameterListNode.parameters) {
+            BoundTypeNode typeNode = parameter.getTypeNode();
+            parameter.getName().symbol = typeNode instanceof BoundRefTypeNode ref ?
+                    context.addLocalRefParameter(parameter.getName().value, (SReference) ref.type, ref.underlying.type, parameter.getRange()) :
+                    context.addLocalParameter(parameter.getName().value, typeNode.type, parameter.getRange());
+        }
     }
 
     private void addDiagnostic(ErrorCode code, Locatable locatable, Object... parameters) {
@@ -1621,15 +1824,74 @@ public class Binder {
 
         @Override
         public void handleForwardDeclaration(Binder binder) {
-            symbol = new ClassSymbol(
-                    classNode.name.value,
-                    new SDeclaredType(classNode.name.value),
-                    classNode.name.getRange());
+            // bind lightly all fields/ctors/methods
+            SDeclaredType declaredType = new SDeclaredType(classNode.name.value);
+            symbol = new ClassSymbol(classNode.name.value, declaredType, classNode.name.getRange());
             binder.context.addClass(symbol);
+
+            for (var member : classNode.members) {
+                switch (member.getNodeType()) {
+                    case CLASS_FIELD -> {}
+                    case CLASS_CONSTRUCTOR -> {}
+                    case CLASS_METHOD -> {}
+                    default -> throw new InternalException();
+                }
+            }
+//            if (classMemberNode.getNodeType() == NodeType.CLASS_FIELD) {
+//                ClassFieldNode field = (ClassFieldNode) classMemberNode;
+//                BoundTypeNode type = bindType(field.type);
+//
+//                ClassPropertySymbol symbol;
+//                Symbol existing = context.getClassSymbol(field.name.value);
+//                if (existing != null) {
+//                    addDiagnostic(
+//                            BinderErrors.MemberAlreadyDeclared,
+//                            field.name,
+//                            field.name.value);
+//                    symbol = null;
+//                } else {
+//                    symbol = new ClassPropertySymbol(field.name.value, type.type, field.name.getRange());
+//                    context.addClassMember(symbol);
+//                    declaredType.addField(type.type, field.name.value);
+//                }
+//
+//                BoundNameExpressionNode name = new BoundNameExpressionNode(
+//                        symbol,
+//                        type.type,
+//                        field.name.value,
+//                        field.name.getRange());
+//                return new BoundClassFieldNode(type, name, field.getRange());
+//            } else if (classMemberNode.getNodeType() == NodeType.CLASS_CONSTRUCTOR) {
+//                ClassConstructorNode constructorNode = (ClassConstructorNode) classMemberNode;
+//
+//                pushConstructorScope();
+//
+//                BoundParameterListNode parameters = bindParameterList(constructorNode.parameters);
+//                SFunction type = new SFunction(SVoidType.instance, parameters.parameters.stream().map(pn -> new MethodParameter(pn.getName().value, pn.getType())).toArray(MethodParameter[]::new));
+//                Constructor constructor = new Constructor(type, constructorNode.keyword.getRange());
+//
+//                for (var existingConstructor : context.getParent().getConstructors()) {
+//                    if (existingConstructor.getType().equals(type)) {
+//                        addDiagnostic(BinderErrors.ConstructorAlreadyDeclared, constructorNode.keyword);
+//                        break;
+//                    }
+//                }
+//
+//                declaredType.addConstructor(type);
+//                context.getParent().addClassConstructor(constructor);
+//                BoundBlockStatementNode body = bindBlockStatement(constructorNode.body);
+//
+//                popScope();
+//
+//                return new BoundClassConstructorNode(type, parameters, body, constructorNode.getRange());
+//            } else {
+//                throw new InternalException();
+//            }
         }
 
         @Override
         public BoundCompilationUnitMemberNode bind(Binder binder) {
+            // bind full
             return binder.bindClass(classNode, symbol);
         }
     }

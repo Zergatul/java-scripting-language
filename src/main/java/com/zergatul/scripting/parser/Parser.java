@@ -436,8 +436,21 @@ public class Parser {
         TypeNode typeNode = parseTypeNode();
         if (current.type == TokenType.IDENTIFIER) {
             IdentifierToken identifier = (IdentifierToken) advance();
-            Token semicolon = advance(TokenType.SEMICOLON);
-            return new ClassFieldNode(typeNode, new NameExpressionNode(identifier), TextRange.combine(typeNode, semicolon));
+            if (current.type == TokenType.SEMICOLON) {
+                Token semicolon = advance(TokenType.SEMICOLON);
+                return new ClassFieldNode(typeNode, new NameExpressionNode(identifier), TextRange.combine(typeNode, semicolon));
+            } else if (current.type == TokenType.LEFT_PARENTHESES) {
+                ParameterListNode parameters = parseParameterList();
+                BlockStatementNode body = parameters.hasParentheses() ? parseBlockStatement() : createMissingBlockStatement();
+                return new ClassMethodNode(typeNode, new NameExpressionNode(identifier), parameters, body, TextRange.combine(typeNode, body));
+            } else {
+                if (current.type == TokenType.EQUAL) {
+                    addDiagnostic(ParserErrors.FieldInitializersNotSupported, current);
+                } else {
+                    addDiagnostic(ParserErrors.SemicolonOrParenthesisExpected, current, current.getRawValue(code));
+                }
+                return new ClassFieldNode(typeNode, new NameExpressionNode(identifier), TextRange.combine(typeNode, identifier));
+            }
         } else {
             addDiagnostic(ParserErrors.IdentifierExpected, current, current.getRawValue(code));
             IdentifierToken identifier = new IdentifierToken("", createMissingTokenRange());

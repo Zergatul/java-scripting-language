@@ -70,6 +70,21 @@ public class ClassTests {
     }
 
     @Test
+    public void classRedefineTest() {
+        String code = """
+                class Class {}
+                class Class {}
+                
+                Class c = new Class();
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(126));
+    }
+
+    @Test
     public void fieldTest() {
         String code = """
                 class Class {
@@ -141,6 +156,8 @@ public class ClassTests {
                 List.of(
                         new DiagnosticMessage(BinderErrors.MemberAlreadyDeclared, new SingleLineTextRange(3, 9, 34, 3), "val")));
     }
+
+    // TODO: method + field redefine
 
     @Test
     public void castToObjectTest() {
