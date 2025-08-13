@@ -354,11 +354,11 @@ public class Compiler {
         ExternalParameterVisitor treeVisitor = new ExternalParameterVisitor();
         unit.statements.accept(treeVisitor);
         List<BoundVariableDeclarationNode> prepend = new ArrayList<>();
-        for (SymbolRef symbolRef : treeVisitor.getParameters()) {
+        for (Variable variable : treeVisitor.getParameters()) {
             int parameterStackIndex;
-            if (symbolRef.get() instanceof LiftedVariable lifted) {
+            if (variable instanceof LiftedVariable lifted) {
                 parameterStackIndex = 1 + ((ExternalParameter) lifted.getUnderlying()).getIndex();
-            } else if (symbolRef.get() instanceof ExternalParameter external) {
+            } else if (variable instanceof ExternalParameter external) {
                 parameterStackIndex = 1 + external.getIndex();
                 external.setStackIndex(parameterStackIndex);
             } else {
@@ -366,8 +366,8 @@ public class Compiler {
             }
 
             BoundVariableDeclarationNode declaration = new BoundVariableDeclarationNode(
-                    new BoundNameExpressionNode(symbolRef),
-                    new BoundStackLoadNode(parameterStackIndex, symbolRef.get().getType()));
+                    new BoundNameExpressionNode(new ImmutableSymbolRef(variable)),
+                    new BoundStackLoadNode(parameterStackIndex, variable.getType()));
 
             prepend.add(declaration);
         }

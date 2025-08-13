@@ -9,9 +9,9 @@ import java.util.List;
 
 public class ExternalParameterVisitor extends BinderTreeVisitor {
 
-    private final List<SymbolRef> parameters = new ArrayList<>();
+    private final List<Variable> parameters = new ArrayList<>();
 
-    public List<SymbolRef> getParameters() {
+    public List<Variable> getParameters() {
         return parameters;
     }
 
@@ -24,14 +24,14 @@ public class ExternalParameterVisitor extends BinderTreeVisitor {
             }
             if (variable instanceof LiftedVariable lifted) {
                 if (lifted.getUnderlying() instanceof ExternalParameter) {
-                    if (!parameters.contains(node.symbolRef)) {
-                        parameters.add(node.symbolRef);
+                    if (!parameters.contains(lifted)) {
+                        parameters.add(lifted);
                     }
                 }
             }
             if (variable instanceof ExternalParameter parameter) {
-                if (!parameters.contains(node.symbolRef)) {
-                    parameters.add(node.symbolRef);
+                if (!parameters.contains(parameter)) {
+                    parameters.add(parameter);
                 }
             }
         }
