@@ -78,10 +78,10 @@ public class ClassTests {
                 Class c = new Class();
                 """;
 
-        Runnable program = compile(ApiRoot.class, code);
-        program.run();
+        List<DiagnosticMessage> diagnostics = getDiagnostics(ApiRoot.class, code);
 
-        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(126));
+        Assertions.assertIterableEquals(diagnostics, List.of(
+                new DiagnosticMessage(BinderErrors.SymbolAlreadyDeclared, new SingleLineTextRange(2, 7, 21, 5), "Class")));
     }
 
     @Test
@@ -157,7 +157,7 @@ public class ClassTests {
                         new DiagnosticMessage(BinderErrors.MemberAlreadyDeclared, new SingleLineTextRange(3, 9, 34, 3), "val")));
     }
 
-    // TODO: method + field redefine
+    // TODO: method  redefine
 
     @Test
     public void castToObjectTest() {
@@ -282,6 +282,44 @@ public class ClassTests {
         program.run();
 
         Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(21));
+    }
+
+    @Test
+    public void constructorRedefineTest() {
+        String code = """
+                class Test {
+                    constructor(Test s1, Test s2) {}
+                    constructor(Test t1, Test t2) {}
+                }
+                """;
+
+        List<DiagnosticMessage> messages = getDiagnostics(ApiRoot.class, code);
+
+        Assertions.assertIterableEquals(
+                messages,
+                List.of(
+                        new DiagnosticMessage(BinderErrors.ConstructorAlreadyDeclared, new SingleLineTextRange(3, 5, 54, 11))));
+    }
+
+    @Test
+    public void methodTest1() {
+        String code = """
+                class Class {
+                    void add(int x) {
+                        intStorage.add(x);
+                    }
+                }
+                
+                let c = new Class();
+                c.add(5);
+                c.add(3);
+                c.add(1);
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(5, 3, 1));
     }
 
     public static class ApiRoot {

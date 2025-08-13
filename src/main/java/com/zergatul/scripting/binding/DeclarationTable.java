@@ -3,8 +3,10 @@ package com.zergatul.scripting.binding;
 import com.zergatul.scripting.parser.nodes.*;
 import com.zergatul.scripting.symbols.SymbolRef;
 
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.BiConsumer;
 
 public class DeclarationTable {
 
@@ -47,15 +49,18 @@ public class DeclarationTable {
         return functionNodeMap.get(functionNode);
     }
 
-    public ClassDeclaration getClassDeclaration(String name) {
-        return classes.get(name);
-    }
-
     public ClassDeclaration getClassDeclaration(ClassNode classNode) {
         return classNodeMap.get(classNode);
     }
 
+    public void forEachClassDeclaration(BiConsumer<ClassNode, ClassDeclaration> consumer) {
+        classNodeMap.forEach(consumer);
+    }
+
     public SymbolRef getSymbol(String name) {
+        if (classes.containsKey(name)) {
+            return classes.get(name).getSymbolRef();
+        }
         if (functions.containsKey(name)) {
             return functions.get(name).getSymbolRef();
         }

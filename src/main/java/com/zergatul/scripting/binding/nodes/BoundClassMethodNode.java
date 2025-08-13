@@ -7,15 +7,19 @@ import com.zergatul.scripting.type.SFunction;
 
 import java.util.List;
 
-public class BoundClassConstructorNode extends BoundClassMemberNode {
+public class BoundClassMethodNode extends BoundClassMemberNode {
 
     public final SFunction functionType;
+    public final BoundTypeNode typeNode;
+    public final BoundNameExpressionNode name;
     public final BoundParameterListNode parameters;
     public final BoundBlockStatementNode body;
 
-    public BoundClassConstructorNode(SFunction functionType, BoundParameterListNode parameters, BoundBlockStatementNode body, TextRange range) {
-        super(NodeType.CLASS_CONSTRUCTOR, range);
+    public BoundClassMethodNode(SFunction functionType, BoundTypeNode typeNode, BoundNameExpressionNode name, BoundParameterListNode parameters, BoundBlockStatementNode body, TextRange range) {
+        super(NodeType.CLASS_METHOD, range);
         this.functionType = functionType;
+        this.typeNode = typeNode;
+        this.name = name;
         this.parameters = parameters;
         this.body = body;
     }
@@ -27,12 +31,14 @@ public class BoundClassConstructorNode extends BoundClassMemberNode {
 
     @Override
     public void acceptChildren(BinderTreeVisitor visitor) {
+        typeNode.accept(visitor);
+        name.accept(visitor);
         parameters.accept(visitor);
         body.accept(visitor);
     }
 
     @Override
     public List<BoundNode> getChildren() {
-        return List.of(parameters, body);
+        return List.of(typeNode, name, parameters, body);
     }
 }

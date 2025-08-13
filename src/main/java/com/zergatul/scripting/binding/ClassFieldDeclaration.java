@@ -1,7 +1,20 @@
 package com.zergatul.scripting.binding;
 
 import com.zergatul.scripting.binding.nodes.BoundTypeNode;
-import com.zergatul.scripting.parser.nodes.ClassFieldNode;
+import com.zergatul.scripting.symbols.SymbolRef;
 
-public record ClassFieldDeclaration(String name, ClassFieldNode classFieldNode, BoundTypeNode typeNode) {
+public class ClassFieldDeclaration extends Declaration {
+
+    private final BoundTypeNode typeNode;
+    private final boolean hasError;
+
+    public ClassFieldDeclaration(String name, SymbolRef symbolRef, BoundTypeNode typeNode, boolean hasError) {
+        super(name, symbolRef);
+        this.typeNode = typeNode;
+        this.hasError = hasError;
+    }
+
+    public BoundTypeNode getTypeNode() {
+        return typeNode;
+    }
 }

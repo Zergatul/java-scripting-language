@@ -207,7 +207,7 @@ public class Compiler {
     }
 
     private void compileClassConstructor(ClassWriter writer, BoundClassConstructorNode constructor, CompilerContext context) {
-        MethodVisitor constructorVisitor = writer.visitMethod(ACC_PUBLIC, "<init>", constructor.type.getDescriptor(), null, null);
+        MethodVisitor constructorVisitor = writer.visitMethod(ACC_PUBLIC, "<init>", constructor.functionType.getDescriptor(), null, null);
         constructorVisitor.visitCode();
         constructorVisitor.visitVarInsn(ALOAD, 0);
         constructorVisitor.visitMethodInsn(INVOKESPECIAL, Type.getInternalName(Object.class), "<init>", Type.getMethodDescriptor(Type.VOID_TYPE), false);
@@ -366,7 +366,7 @@ public class Compiler {
             }
 
             BoundVariableDeclarationNode declaration = new BoundVariableDeclarationNode(
-                    new BoundNameExpressionNode(new ImmutableSymbolRef(variable)),
+                    new BoundNameExpressionNode(new MutableSymbolRef(variable)),
                     new BoundStackLoadNode(parameterStackIndex, variable.getType()));
 
             prepend.add(declaration);

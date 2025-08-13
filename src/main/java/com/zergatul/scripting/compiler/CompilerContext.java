@@ -2,7 +2,6 @@ package com.zergatul.scripting.compiler;
 
 import com.zergatul.scripting.InternalException;
 import com.zergatul.scripting.TextRange;
-import com.zergatul.scripting.binding.nodes.BoundNameExpressionNode;
 import com.zergatul.scripting.symbols.*;
 import com.zergatul.scripting.type.SDeclaredType;
 import com.zergatul.scripting.type.SReference;
@@ -21,8 +20,6 @@ public class CompilerContext {
     private final CompilerContext parent;
     private final Map<String, SymbolRef> staticSymbols = new HashMap<>();
     private final Map<String, SymbolRef> localSymbols = new HashMap<>();
-    private final Map<String, Symbol> classSymbols;
-    private final List<Constructor> classConstructors;
     private final List<SymbolRef> anonymousLocalSymbols = new ArrayList<>();
     private final boolean isClassRoot;
     private final SDeclaredType classType;
@@ -71,12 +68,8 @@ public class CompilerContext {
             captured = null;
         }
         if (isClassRoot) {
-            classSymbols = new HashMap<>();
-            classConstructors = new ArrayList<>();
             stack = null;
         } else {
-            classSymbols = null;
-            classConstructors = null;
             stack = new FunctionStack();
             stack.set(initialStackIndex);
         }
@@ -98,22 +91,6 @@ public class CompilerContext {
         }
 
         staticSymbols.put(name, symbolRef);
-    }
-
-    public void addClassMember(Symbol symbol) {
-        if (classType == null) {
-            throw new InternalException();
-        }
-
-        classSymbols.put(symbol.getName(), symbol);
-    }
-
-    public void addClassConstructor(Constructor constructor) {
-        if (classType == null) {
-            throw new InternalException();
-        }
-
-        classConstructors.add(constructor);
     }
 
     public SymbolRef addLocalVariable(String name, SType type, TextRange definition) {
@@ -284,6 +261,7 @@ public class CompilerContext {
                     if (!(localSymbolRef.get() instanceof LiftedVariable) && !(localSymbolRef.get() instanceof CapturedVariable)) {
                         LiftedVariable lifted = new LiftedVariable(localSymbolRef.asLocalVariable());
                         localSymbolRef.set(lifted); // updates all references
+                        original = lifted;
                         /*for (BoundNameExpressionNode nameExpression : localSymbolRef.getReferences()) {
                             nameExpression.symbolRef.set(lifted);
                         }*/
@@ -319,15 +297,6 @@ public class CompilerContext {
         }
 
         return null;
-    }
-
-    public Symbol getClassSymbol(String name) {
-        // TODO: add field reference to class root???
-        return getClassRootContext().classSymbols.get(name);
-    }
-
-    public Collection<Constructor> getConstructors() {
-        return classConstructors;
     }
 
     public Variable getVariableOfType(String type) {

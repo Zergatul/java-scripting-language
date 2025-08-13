@@ -433,6 +433,14 @@ public class Parser {
             return new ClassConstructorNode(keyword, parameters, body, TextRange.combine(keyword, body));
         }
 
+        if (current.type == TokenType.VOID) {
+            TypeNode typeNode = new VoidTypeNode(advance().getRange());
+            IdentifierToken identifier = (IdentifierToken) advance();
+            ParameterListNode parameters = parseParameterList();
+            BlockStatementNode body = parameters.hasParentheses() ? parseBlockStatement() : createMissingBlockStatement();
+            return new ClassMethodNode(typeNode, new NameExpressionNode(identifier), parameters, body, TextRange.combine(typeNode, body));
+        }
+
         TypeNode typeNode = parseTypeNode();
         if (current.type == TokenType.IDENTIFIER) {
             IdentifierToken identifier = (IdentifierToken) advance();

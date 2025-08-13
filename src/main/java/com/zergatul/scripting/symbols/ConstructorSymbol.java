@@ -6,9 +6,9 @@ import com.zergatul.scripting.compiler.CompilerContext;
 import com.zergatul.scripting.type.SFunction;
 import org.objectweb.asm.MethodVisitor;
 
-public class Constructor extends Symbol {
+public class ConstructorSymbol extends Symbol {
 
-    public Constructor(SFunction type, TextRange definition) {
+    public ConstructorSymbol(SFunction type, TextRange definition) {
         super("", type, definition);
     }
 

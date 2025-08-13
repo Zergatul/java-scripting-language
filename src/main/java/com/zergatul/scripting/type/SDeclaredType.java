@@ -14,6 +14,7 @@ public class SDeclaredType extends SType {
     private final String name;
     private final List<Field> fields = new ArrayList<>();
     private final List<SFunction> constructors = new ArrayList<>();
+    private final List<Method> methods = new ArrayList<>();
     private String internalName;
     private Class<?> clazz;
 
@@ -35,6 +36,10 @@ public class SDeclaredType extends SType {
 
     public void addConstructor(SFunction function) {
         constructors.add(function);
+    }
+
+    public void addMethod(SFunction function, String name) {
+        methods.add(new Method(function, name));
     }
 
     @Override
@@ -134,9 +139,17 @@ public class SDeclaredType extends SType {
     }
 
     @Override
+    public List<MethodReference> getInstanceMethods() {
+        return methods.stream()
+                .map(m -> new DeclaredMethodReference(this, m.name, m.type));
+    }
+
+    @Override
     public String toString() {
         return name;
     }
 
     private record Field(SType type, String name) {}
+
+    private record Method(SFunction type, String name) {}
 }
