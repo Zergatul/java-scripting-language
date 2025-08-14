@@ -210,12 +210,20 @@ public class Binder {
             throw new InternalException();
         }
 
-        pushMethodScope(methodDeclaration.getTypeNode().type);
+        SType returnType = methodDeclaration.getTypeNode().type;
+
+        pushMethodScope(returnType);
         addParametersToContext(methodDeclaration.getParameters());
         BoundBlockStatementNode body = bindBlockStatement(methodNode.body);
         popScope();
 
-        BoundNameExpressionNode name = new BoundNameExpressionNode(classDeclaration.getSymbolRef(), methodNode.name.getRange());
+        if (returnType != SVoidType.instance && returnType != SUnknown.instance) {
+            if (!new ReturnPathsVerifier().verify(body)) {
+                addDiagnostic(BinderErrors.NotAllPathReturnValue, body);
+            }
+        }
+
+        BoundNameExpressionNode name = new BoundNameExpressionNode(methodDeclaration.getSymbolRef(), methodNode.name.getRange());
         return new BoundClassMethodNode(
                 (SFunction) methodDeclaration.getSymbolRef().get().getType(),
                 methodDeclaration.getTypeNode(),

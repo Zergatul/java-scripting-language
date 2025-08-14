@@ -1,6 +1,7 @@
 package com.zergatul.scripting.tests.compiler;
 
 import com.zergatul.scripting.DiagnosticMessage;
+import com.zergatul.scripting.MultiLineTextRange;
 import com.zergatul.scripting.SingleLineTextRange;
 import com.zergatul.scripting.binding.BinderErrors;
 import com.zergatul.scripting.tests.compiler.helpers.IntStorage;
@@ -320,6 +321,136 @@ public class ClassTests {
         program.run();
 
         Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(5, 3, 1));
+    }
+
+    @Test
+    public void methodTest2() {
+        String code = """
+                class Class {
+                    void add(int x) {
+                        intStorage.add(x);
+                    }
+                    void add(int x, int y) {
+                        intStorage.add(x + y);
+                    }
+                    void add(int x, int y, int z) {
+                        intStorage.add(x + y + z);
+                    }
+                    void add(string s) {
+                        stringStorage.add(s);
+                    }
+                }
+                
+                let c = new Class();
+                c.add(5);
+                c.add(3, 5);
+                c.add(1, 3, 5);
+                c.add("qq");
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(5, 8, 9));
+        Assertions.assertIterableEquals(ApiRoot.stringStorage.list, List.of("qq"));
+    }
+
+    @Test
+    public void methodTest3() {
+        String code = """
+                class Class {
+                    int inc(int x) {
+                        return x + 1;
+                    }
+                }
+                
+                intStorage.add(new Class().inc(5));
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(6));
+    }
+
+    @Test
+    public void methodTest4() {
+        String code = """
+                class Class {
+                    int factorial1(int x) {
+                        return x > 1 ? x * this.factorial2(x - 1) : 1;
+                    }
+                    int factorial2(int x) {
+                        return x > 1 ? x * this.factorial3(x - 1) : 1;
+                    }
+                    int factorial3(int x) {
+                        return x > 1 ? x * this.factorial1(x - 1) : 1;
+                    }
+                }
+                
+                intStorage.add(new Class().factorial1(10));
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(3628800));
+    }
+
+    @Test
+    public void methodTest5() {
+        String code = """
+                class Calculator {
+                    int factorial(int x) {
+                        let c1 = new Class1();
+                        let c2 = new Class2();
+                        if (x % 2 == 0) {
+                            return c1.factorial(x, c2);
+                        } else {
+                            return c2.factorial(x, c1);
+                        }
+                    }
+                }
+                class Class1 {
+                    int factorial(int x, Class2 c) {
+                        return x > 1 ? x * c.factorial(x - 1, this) : 1;
+                    }
+                }
+                class Class2 {
+                    int factorial(int x, Class1 c) {
+                        return x > 1 ? x * c.factorial(x - 1, this) : 1;
+                    }
+                }
+                
+                intStorage.add(new Calculator().factorial(10));
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(3628800));
+    }
+
+    @Test
+    public void methodReturnPathTest() {
+        String code = """
+                class Class {
+                    int inc(int x) {
+                        if (x > 0) {
+                            return x + 1;
+                        }
+                    }
+                }
+                
+                intStorage.add(new Class().inc(5));
+                """;
+
+        List<DiagnosticMessage> messages = getDiagnostics(ApiRoot.class, code);
+
+        Assertions.assertIterableEquals(
+                messages,
+                List.of(
+                        new DiagnosticMessage(BinderErrors.NotAllPathReturnValue, new MultiLineTextRange(2, 20, 6, 6, 33, 64))));
     }
 
     public static class ApiRoot {

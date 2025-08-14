@@ -135,9 +135,14 @@ public class Compiler {
     }
 
     private void buildClasses(List<BoundClassNode> classNodes, ClassWriter writer, CompilerContext context) {
+        // setup class names in advance for forward references
         for (BoundClassNode classNode : classNodes) {
             String name = context.getClassName() + "$" + classNode.name.value;
             ((SDeclaredType) classNode.name.getSymbol().getType()).setInternalName(name);
+        }
+
+        for (BoundClassNode classNode : classNodes) {
+            String name = classNode.name.getSymbol().getType().getInternalName();
 
             writer.visitInnerClass(
                     name,
@@ -194,6 +199,7 @@ public class Compiler {
         switch (member.getNodeType()) {
             case CLASS_FIELD -> compileClassField(writer, (BoundClassFieldNode) member);
             case CLASS_CONSTRUCTOR -> compileClassConstructor(writer, (BoundClassConstructorNode) member, context);
+            case CLASS_METHOD -> compileClassMethod(writer, (BoundClassMethodNode) member, context);
             default -> throw new InternalException();
         }
     }
@@ -222,6 +228,24 @@ public class Compiler {
         constructorVisitor.visitInsn(RETURN);
         constructorVisitor.visitMaxs(0, 0);
         constructorVisitor.visitEnd();
+    }
+
+    private void compileClassMethod(ClassWriter writer, BoundClassMethodNode methodNode, CompilerContext context) {
+        MethodVisitor methodVisitor = writer.visitMethod(ACC_PUBLIC, methodNode.name.value, methodNode.functionType.getDescriptor(), null, null);
+        methodVisitor.visitCode();
+
+        context = context.createClassMethod(methodNode.functionType.getReturnType());
+        for (BoundParameterNode parameter : methodNode.parameters.parameters) {
+            context.setStackIndex((LocalVariable) parameter.getName().getSymbol());
+        }
+
+        compileBlockStatement(methodVisitor, context, methodNode.body);
+        if (methodNode.functionType.getReturnType() == SVoidType.instance) {
+            methodVisitor.visitInsn(RETURN);
+        }
+
+        methodVisitor.visitMaxs(0, 0);
+        methodVisitor.visitEnd();
     }
 
     private void buildStaticFields(List<BoundStaticFieldNode> fields, ClassWriter writer, CompilerContext context) {

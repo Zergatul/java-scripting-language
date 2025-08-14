@@ -141,7 +141,9 @@ public class SDeclaredType extends SType {
     @Override
     public List<MethodReference> getInstanceMethods() {
         return methods.stream()
-                .map(m -> new DeclaredMethodReference(this, m.name, m.type));
+                .map(m -> new DeclaredMethodReference(this, m.name, m.type))
+                .map(m -> (MethodReference) m)
+                .toList();
     }
 
     @Override
