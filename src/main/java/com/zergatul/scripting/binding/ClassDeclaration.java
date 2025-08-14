@@ -94,10 +94,6 @@ public class ClassDeclaration extends Declaration {
                 continue;
             }
 
-            if (!typeNode.type.equals(declaration.getTypeNode().type)) {
-                continue;
-            }
-
             boolean sameParameters = true;
             for (int i = 0; i < parameters.size(); i++) {
                 if (!parameters.get(i).getType().equals(declaration.getParameters().parameters.get(i).getType())) {

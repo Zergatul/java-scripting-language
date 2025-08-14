@@ -173,8 +173,15 @@ public abstract class SType {
         return null;
     }
 
-    public CastOperation implicitCastTo(SType other) {
+    protected CastOperation implicitCastTo(SType other) {
         return null;
+    }
+
+    public static CastOperation implicitCastTo(SType src, SType dst) {
+        if (src == SUnknown.instance || dst == SUnknown.instance) {
+            return EmptyCastOperation.instance;
+        }
+        return src.implicitCastTo(dst);
     }
 
     public List<SType> supportedIndexers() {

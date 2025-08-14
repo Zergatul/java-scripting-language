@@ -47,6 +47,7 @@ public class BinderErrors {
     public static final ErrorCode ConstructorAlreadyDeclared = new ErrorCode("B043", "Constructor with the same parameters already declared");
     public static final ErrorCode MethodAlreadyDeclared = new ErrorCode("B044", "Method with the same signature already declared");
     public static final ErrorCode ThisInvalidContext = new ErrorCode("B045", "'this' is invalid in this context");
+    public static final ErrorCode LetInvalidContext = new ErrorCode("B046", "'let' is invalid in this context");
 
     public static final ErrorCode InternalError = new ErrorCode("B999", "Internal error: %s");
 }

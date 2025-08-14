@@ -1,5 +1,9 @@
 package com.zergatul.scripting.tests.compiler;
 
+import com.zergatul.scripting.DiagnosticMessage;
+import com.zergatul.scripting.SingleLineTextRange;
+import com.zergatul.scripting.binding.BinderErrors;
+import com.zergatul.scripting.parser.ParserErrors;
 import com.zergatul.scripting.tests.compiler.helpers.FloatStorage;
 import com.zergatul.scripting.tests.compiler.helpers.IntStorage;
 import com.zergatul.scripting.tests.compiler.helpers.Run;
@@ -11,6 +15,7 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 
 import static com.zergatul.scripting.tests.compiler.helpers.CompilerHelper.compile;
+import static com.zergatul.scripting.tests.compiler.helpers.CompilerHelper.getDiagnostics;
 
 public class FunctionTests {
 
@@ -411,6 +416,38 @@ public class FunctionTests {
         program.run();
 
         Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(10000));
+    }
+
+    @Test
+    public void duplicateParameterTest() {
+        String code = """
+                void f(int x, string x) {}
+                """;
+
+        List<DiagnosticMessage> messages = getDiagnostics(ApiRoot.class, code);
+
+        Assertions.assertIterableEquals(
+                messages,
+                List.of(new DiagnosticMessage(
+                        BinderErrors.SymbolAlreadyDeclared,
+                        new SingleLineTextRange(1, 22, 21, 1),
+                        "x")));
+    }
+
+    @Test
+    public void letParameterTest() {
+        String code = """
+                void f(let x) {}
+                """;
+
+        List<DiagnosticMessage> messages = getDiagnostics(ApiRoot.class, code);
+
+        Assertions.assertIterableEquals(
+                messages,
+                List.of(new DiagnosticMessage(
+                        ParserErrors.TypeExpected,
+                        new SingleLineTextRange(1, 8, 7, 3),
+                        "let")));
     }
 
     public static class ApiRoot {

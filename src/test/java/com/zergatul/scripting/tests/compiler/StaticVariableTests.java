@@ -1,5 +1,9 @@
 package com.zergatul.scripting.tests.compiler;
 
+import com.zergatul.scripting.DiagnosticMessage;
+import com.zergatul.scripting.MultiLineTextRange;
+import com.zergatul.scripting.SingleLineTextRange;
+import com.zergatul.scripting.binding.BinderErrors;
 import com.zergatul.scripting.tests.compiler.helpers.*;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -8,6 +12,7 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 
 import static com.zergatul.scripting.tests.compiler.helpers.CompilerHelper.compile;
+import static com.zergatul.scripting.tests.compiler.helpers.CompilerHelper.getDiagnostics;
 
 public class StaticVariableTests {
 
@@ -156,6 +161,20 @@ public class StaticVariableTests {
         Assertions.assertIterableEquals(ApiRoot.storage1.list, List.of(2, 3));
         Assertions.assertIterableEquals(ApiRoot.storage2.list, List.of(2, 2));
         Assertions.assertIterableEquals(ApiRoot.storage3.list, List.of(5, 5));
+    }
+
+    @Test
+    public void letTest() {
+        String code = """
+                static let x = 1;
+                """;
+
+        List<DiagnosticMessage> messages = getDiagnostics(ApiRoot.class, code);
+
+        Assertions.assertIterableEquals(
+                messages,
+                List.of(
+                        new DiagnosticMessage(BinderErrors.LetInvalidContext, new SingleLineTextRange(1, 8, 7, 3))));
     }
 
     public static class ApiRoot {

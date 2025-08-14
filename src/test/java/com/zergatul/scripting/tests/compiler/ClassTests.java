@@ -158,8 +158,6 @@ public class ClassTests {
                         new DiagnosticMessage(BinderErrors.MemberAlreadyDeclared, new SingleLineTextRange(3, 9, 34, 3), "val")));
     }
 
-    // TODO: method  redefine
-
     @Test
     public void castToObjectTest() {
         String code = """
@@ -429,6 +427,23 @@ public class ClassTests {
         program.run();
 
         Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(3628800));
+    }
+
+    @Test
+    public void methodRedefineTest() {
+        String code = """
+                class Test {
+                    void method(int x, Test t) {}
+                    int method(int a, Test b) { return 0; }
+                }
+                """;
+
+        List<DiagnosticMessage> messages = getDiagnostics(ApiRoot.class, code);
+
+        Assertions.assertIterableEquals(
+                messages,
+                List.of(
+                        new DiagnosticMessage(BinderErrors.MethodAlreadyDeclared, new SingleLineTextRange(3, 9, 55, 6))));
     }
 
     @Test

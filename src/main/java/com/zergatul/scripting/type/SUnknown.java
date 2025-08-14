@@ -11,9 +11,7 @@ public class SUnknown extends SType {
 
     public static final SUnknown instance = new SUnknown();
 
-    private SUnknown() {
-
-    }
+    private SUnknown() {}
 
     @Override
     public Class<?> getJavaClass() {
@@ -66,14 +64,12 @@ public class SUnknown extends SType {
     }
 
     @Override
-    public CastOperation implicitCastTo(SType other) {
-        // allow SUnknown to be cast to anything
-        // in this way any compilation error will not spread
-        return EmptyCastOperation.instance;
+    public List<MethodReference> getInstanceMethods() {
+        return List.of(UnknownMethodReference.instance);
     }
 
     @Override
-    public List<MethodReference> getInstanceMethods() {
-        return List.of(UnknownMethodReference.instance);
+    public String toString() {
+        return "<Unknown>";
     }
 }
