@@ -11,6 +11,7 @@ import com.zergatul.scripting.compiler.CompilerContext;
 import com.zergatul.scripting.compiler.JavaInteropPolicy;
 import com.zergatul.scripting.lexer.TokenType;
 import com.zergatul.scripting.parser.NodeType;
+import com.zergatul.scripting.parser.nodes.ClassNode;
 import com.zergatul.scripting.symbols.*;
 import com.zergatul.scripting.type.*;
 
@@ -37,22 +38,24 @@ public class CompletionProvider<T> {
         BoundCompilationUnitNode unit = output.unit();
         List<T> suggestions = new ArrayList<>();
 
+        boolean canClass = false;
         boolean canStatic = false;
         boolean canVoid = false;
         boolean canType = false;
         boolean canStatement = false;
         boolean canExpression = false;
+        boolean canConstructor = false;
         if (completionContext.entry == null) {
             switch (completionContext.type) {
                 case NO_CODE -> {
-                    canStatic = canVoid = canType = canStatement = true;
+                    canClass = canStatic = canVoid = canType = canStatement = true;
                 }
                 case BEFORE_FIRST -> {
-                    canStatic = canVoid = canType = true;
+                    canClass = canStatic = canVoid = canType = true;
                     canStatement = unit.members.members.isEmpty();
                 }
                 case AFTER_LAST -> {
-                    canStatic = unit.statements.statements.isEmpty();
+                    canClass = canStatic = unit.statements.statements.isEmpty();
                     canVoid = canType = unit.statements.statements.isEmpty();
                     canStatement = true;
                 }
@@ -68,17 +71,20 @@ public class CompletionProvider<T> {
             switch (completionContext.entry.node.getNodeType()) {
                 case COMPILATION_UNIT -> {
                     if (completionContext.prev == null) {
-                        canStatic = true;
+                        canClass = canStatic = true;
                         canVoid = canType = true;
                         if (completionContext.next == null || completionContext.next.getNodeType() == NodeType.STATEMENTS_LIST) {
                             canStatement = true;
                         }
                     } else if (completionContext.prev.getNodeType() == NodeType.COMPILATION_UNIT_MEMBERS) {
-                        canStatic = canVoid = canType = true;
+                        canClass = canStatic = canVoid = canType = true;
                         if (completionContext.next == null || completionContext.next.getNodeType() == NodeType.STATEMENTS_LIST) {
                             canStatement = true;
                         }
                     }
+                }
+                case CLASS -> {
+                    canVoid = canType = canConstructor = true;
                 }
                 case STATEMENTS_LIST, BLOCK_STATEMENT -> {
                     // check if we are at the end of unfinished statement
@@ -295,8 +301,14 @@ public class CompletionProvider<T> {
         canExpression |= canStatement;
         canType |= canStatement;
 
+        if (canClass) {
+            suggestions.add(factory.getKeywordSuggestion(TokenType.CLASS));
+        }
         if (canStatic) {
             suggestions.add(factory.getKeywordSuggestion(TokenType.STATIC));
+        }
+        if (canConstructor) {
+            suggestions.add(factory.getKeywordSuggestion(TokenType.CONSTRUCTOR));
         }
         if (canVoid) {
             suggestions.add(factory.getKeywordSuggestion(TokenType.VOID));
@@ -307,6 +319,14 @@ public class CompletionProvider<T> {
             }
             for (Class<?> clazz : parameters.getCustomTypes()) {
                 suggestions.add(factory.getCustomTypeSuggestion(clazz));
+            }
+            for (BoundCompilationUnitMemberNode memberNode : unit.members.members) {
+                if (memberNode.getNodeType() == NodeType.CLASS) {
+                    BoundClassNode classNode = (BoundClassNode) memberNode;
+                    if (!classNode.name.value.isEmpty()) {
+                        suggestions.add(factory.getClassSuggestion((ClassSymbol) classNode.name.getSymbol()));
+                    }
+                }
             }
         }
         if (canExpression) {
@@ -524,6 +544,22 @@ public class CompletionProvider<T> {
                         addLocalVariableSuggestion(list, parameter.getName().symbolRef.asLocalVariable());
                     }
                 }
+                case CLASS_CONSTRUCTOR -> {
+                    BoundClassConstructorNode constructorNode = (BoundClassConstructorNode) context.entry.node;
+                    for (BoundParameterNode parameter : constructorNode.parameters.parameters) {
+                        addLocalVariableSuggestion(list, parameter.getName().symbolRef.asLocalVariable());
+                    }
+                    BoundClassNode classNode = (BoundClassNode) context.entry.parent.node;
+                    list.add(factory.getThisSuggestion((SDeclaredType) classNode.name.getSymbol().getType()));
+                }
+                case CLASS_METHOD -> {
+                    BoundClassMethodNode methodNode = (BoundClassMethodNode) context.entry.node;
+                    for (BoundParameterNode parameter : methodNode.parameters.parameters) {
+                        addLocalVariableSuggestion(list, parameter.getName().symbolRef.asLocalVariable());
+                    }
+                    BoundClassNode classNode = (BoundClassNode) context.entry.parent.node;
+                    list.add(factory.getThisSuggestion((SDeclaredType) classNode.name.getSymbol().getType()));
+                }
                 case STATEMENTS_LIST -> {
                     addLocalVariables(list, getStatementsPriorTo(context));
                     addInputParameters(list, parameters);
@@ -627,6 +663,8 @@ public class CompletionProvider<T> {
                 suggestions.add(factory.getStaticFieldSuggestion((DeclaredStaticVariable) ((BoundStaticVariableNode) member).name.getSymbol()));
             } else if (member.getNodeType() == NodeType.FUNCTION) {
                 suggestions.add(factory.getFunctionSuggestion((Function) ((BoundFunctionNode) member).name.getSymbol()));
+            } else if (member.getNodeType() == NodeType.CLASS) {
+                continue;
             } else {
                 throw new InternalException();
             }

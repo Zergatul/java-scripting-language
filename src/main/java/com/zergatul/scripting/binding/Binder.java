@@ -1228,13 +1228,15 @@ public class Binder {
                     expression.getRange());
 
         } else {
-            PropertyReference property = callee.type.getInstanceProperty(expression.name.value);
+            PropertyReference property = expression.name.value.isEmpty() ?
+                    UnknownPropertyReference.instance :
+                    callee.type.getInstanceProperty(expression.name.value);
             if (property == null) {
+                property = UnknownPropertyReference.instance;
                 addDiagnostic(
                         BinderErrors.MemberDoesNotExist,
                         expression.name,
                         callee.type.toString(), expression.name.value);
-                property = UnknownPropertyReference.instance;
             }
 
             return new BoundPropertyAccessExpressionNode(

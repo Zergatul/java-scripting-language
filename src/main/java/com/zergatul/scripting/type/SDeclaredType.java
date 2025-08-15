@@ -12,14 +12,17 @@ import static org.objectweb.asm.Opcodes.*;
 public class SDeclaredType extends SType {
 
     private final String name;
-    private final List<Field> fields = new ArrayList<>();
-    private final List<SFunction> constructors = new ArrayList<>();
-    private final List<Method> methods = new ArrayList<>();
+    private final List<PropertyReference> properties = new ArrayList<>();
+    private final List<ConstructorReference> constructors = new ArrayList<>();
+    private final List<MethodReference> methods = new ArrayList<>();
+    private boolean hasDefaultConstructor;
     private String internalName;
     private Class<?> clazz;
 
     public SDeclaredType(String name) {
         this.name = name;
+        this.hasDefaultConstructor = true;
+        this.constructors.add(new DeclaredConstructorReference(this));
     }
 
     public void setInternalName(String internalName) {
@@ -31,15 +34,19 @@ public class SDeclaredType extends SType {
     }
 
     public void addField(SType type, String name) {
-        fields.add(new Field(type, name));
+        properties.add(new DeclaredFieldReference(this, type, name));
     }
 
     public void addConstructor(SFunction function) {
-        constructors.add(function);
+        if (hasDefaultConstructor) {
+            constructors.clear();
+            hasDefaultConstructor = false;
+        }
+        constructors.add(new DeclaredConstructorReference(this, function));
     }
 
-    public void addMethod(SFunction function, String name) {
-        methods.add(new Method(function, name));
+    public void addMethod(SFunction functionType, String name) {
+        methods.add(new DeclaredMethodReference(this, name, functionType));
     }
 
     @Override
@@ -115,22 +122,12 @@ public class SDeclaredType extends SType {
 
     @Override
     public List<ConstructorReference> getConstructors() {
-        if (constructors.isEmpty()) {
-            return List.of(new DeclaredConstructorReference(this));
-        } else {
-            return constructors.stream()
-                    .map(f -> new DeclaredConstructorReference(this, f))
-                    .map(c -> (ConstructorReference) c)
-                    .toList();
-        }
+        return constructors;
     }
 
     @Override
     public List<PropertyReference> getInstanceProperties() {
-        return fields.stream()
-                .map(f -> new DeclaredFieldReference(this, f.type, f.name))
-                .map(f -> (PropertyReference) f)
-                .toList();
+        return properties;
     }
 
     @Override
@@ -140,18 +137,11 @@ public class SDeclaredType extends SType {
 
     @Override
     public List<MethodReference> getInstanceMethods() {
-        return methods.stream()
-                .map(m -> new DeclaredMethodReference(this, m.name, m.type))
-                .map(m -> (MethodReference) m)
-                .toList();
+        return methods;
     }
 
     @Override
     public String toString() {
         return name;
     }
-
-    private record Field(SType type, String name) {}
-
-    private record Method(SFunction type, String name) {}
 }

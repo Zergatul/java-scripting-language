@@ -23,9 +23,8 @@ public class CustomInterfaceTests {
                 """,
                 Interface1.class,
                 context -> Lists.of(
+                        unitMembers,
                         statements,
-                        new KeywordSuggestion(TokenType.STATIC),
-                        new KeywordSuggestion(TokenType.VOID),
                         new StaticConstantSuggestion(context, "intStorage"),
                         new InputParameterSuggestion("value1", SInt.instance),
                         new InputParameterSuggestion("text", SString.instance)));

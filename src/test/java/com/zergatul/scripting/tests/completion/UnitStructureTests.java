@@ -20,9 +20,8 @@ public class UnitStructureTests {
         assertSuggestions(
                 "<cursor>",
                 context -> Lists.of(
+                        unitMembers,
                         statements,
-                        new KeywordSuggestion(TokenType.STATIC),
-                        new KeywordSuggestion(TokenType.VOID),
                         new StaticConstantSuggestion(context, "intStorage")));
     }
 
@@ -33,9 +32,8 @@ public class UnitStructureTests {
                 static int x = 1;
                 """,
                 context -> Lists.of(
-                        types,
-                        new KeywordSuggestion(TokenType.STATIC),
-                        new KeywordSuggestion(TokenType.VOID)));
+                        unitMembers,
+                        types));
     }
 
     @Test
@@ -45,9 +43,8 @@ public class UnitStructureTests {
                 <cursor>
                 """,
                 context -> Lists.of(
+                        unitMembers,
                         statements,
-                        new KeywordSuggestion(TokenType.STATIC),
-                        new KeywordSuggestion(TokenType.VOID),
                         new StaticConstantSuggestion(context, "intStorage"),
                         new StaticFieldSuggestion(context, "x")));
     }
@@ -60,9 +57,8 @@ public class UnitStructureTests {
                 int y = 3;
                 """,
                 context -> Lists.of(
+                        unitMembers,
                         statements,
-                        new KeywordSuggestion(TokenType.STATIC),
-                        new KeywordSuggestion(TokenType.VOID),
                         new StaticConstantSuggestion(context, "intStorage"),
                         new StaticFieldSuggestion(context, "x")));
     }
