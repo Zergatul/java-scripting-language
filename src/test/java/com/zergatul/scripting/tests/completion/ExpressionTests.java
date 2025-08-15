@@ -19,6 +19,7 @@ public class ExpressionTests {
                 x.<cursor>//
                 """,
                 context -> List.of(
+                        MethodSuggestion.getInstance(SInt.instance, "toInt16"),
                         MethodSuggestion.getInstance(SInt.instance, "toString"),
                         MethodSuggestion.getInstance(SInt.instance, "toStandardString")));
     }

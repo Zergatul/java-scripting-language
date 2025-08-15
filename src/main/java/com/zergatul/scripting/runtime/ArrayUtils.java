@@ -17,6 +17,18 @@ public class ArrayUtils {
         return result;
     }
 
+    public static short[] concat(short[] a1, short element) {
+        short[] result = Arrays.copyOf(a1, a1.length + 1);
+        result[a1.length] = element;
+        return result;
+    }
+
+    public static short[] concat(short[] a1, short[] a2) {
+        short[] result = Arrays.copyOf(a1, a1.length + a2.length);
+        System.arraycopy(a2, 0, result, a1.length, a2.length);
+        return result;
+    }
+
     public static int[] concat(int[] a1, int element) {
         int[] result = Arrays.copyOf(a1, a1.length + 1);
         result[a1.length] = element;

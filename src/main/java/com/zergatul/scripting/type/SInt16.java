@@ -5,7 +5,8 @@ import com.zergatul.scripting.compiler.BufferedMethodVisitor;
 import com.zergatul.scripting.parser.BinaryOperator;
 import com.zergatul.scripting.parser.PostfixOperator;
 import com.zergatul.scripting.parser.UnaryOperator;
-import com.zergatul.scripting.runtime.IntReference;
+import com.zergatul.scripting.runtime.Int16Reference;
+import com.zergatul.scripting.runtime.Int16Utils;
 import com.zergatul.scripting.runtime.IntUtils;
 import com.zergatul.scripting.type.operation.*;
 import org.objectweb.asm.Label;
@@ -15,13 +16,14 @@ import org.objectweb.asm.Type;
 import java.util.List;
 
 import static org.objectweb.asm.Opcodes.*;
+import static org.objectweb.asm.Opcodes.ICONST_1;
 
-public class SInt extends SPredefinedType {
+public class SInt16 extends SPredefinedType {
 
-    public static final SInt instance = new SInt();
+    public static final SInt16 instance = new SInt16();
 
-    private SInt() {
-        super(int.class);
+    private SInt16() {
+        super(short.class);
     }
 
     @Override
@@ -46,17 +48,17 @@ public class SInt extends SPredefinedType {
 
     @Override
     public int getArrayTypeInst() {
-        return T_INT;
+        return T_SHORT;
     }
 
     @Override
     public int getArrayLoadInst() {
-        return IALOAD;
+        return SALOAD;
     }
 
     @Override
     public int getArrayStoreInst() {
-        return IASTORE;
+        return SASTORE;
     }
 
     @Override
@@ -140,19 +142,12 @@ public class SInt extends SPredefinedType {
     }
 
     @Override
-    public PostfixOperation increment() {
-        return INC.value();
-    }
-
-    @Override
-    public PostfixOperation decrement() {
-        return DEC.value();
-    }
-
-    @Override
     public CastOperation implicitCastTo(SType other) {
         if (other == SInt64.instance) {
             return TO_INT64.value();
+        }
+        if (other == SInt.instance) {
+            return TO_INT32.value();
         }
         if (other == SFloat32.instance) {
             return TO_FLOAT32.value();
@@ -173,16 +168,16 @@ public class SInt extends SPredefinedType {
 
     @Override
     public Class<?> getBoxedVersion() {
-        return Integer.class;
+        return Short.class;
     }
 
     @Override
     public void compileBoxing(MethodVisitor visitor) {
         visitor.visitMethodInsn(
                 INVOKESTATIC,
-                Type.getInternalName(Integer.class),
+                Type.getInternalName(Short.class),
                 "valueOf",
-                Type.getMethodDescriptor(Type.getType(Integer.class), Type.INT_TYPE),
+                Type.getMethodDescriptor(Type.getType(Short.class), Type.SHORT_TYPE),
                 false);
     }
 
@@ -190,20 +185,20 @@ public class SInt extends SPredefinedType {
     public void compileUnboxing(MethodVisitor visitor) {
         visitor.visitMethodInsn(
                 INVOKEVIRTUAL,
-                Type.getInternalName(Integer.class),
-                "intValue",
-                Type.getMethodDescriptor(Type.INT_TYPE),
+                Type.getInternalName(Short.class),
+                "shortValue",
+                Type.getMethodDescriptor(Type.SHORT_TYPE),
                 false);
     }
 
     @Override
     public void loadClassObject(MethodVisitor visitor) {
-        visitor.visitFieldInsn(GETSTATIC, "java/lang/Integer", "TYPE", "Ljava/lang/Class;");
+        visitor.visitFieldInsn(GETSTATIC, "java/lang/Short", "TYPE", "Ljava/lang/Class;");
     }
 
     @Override
     public List<MethodReference> getInstanceMethods() {
-        return List.of(METHOD_TO_INT16.value(), METHOD_TO_STRING.value(), METHOD_TO_STANDARD_STRING.value());
+        return List.of(METHOD_TO_STRING.value(), METHOD_TO_STANDARD_STRING.value());
     }
 
     @Override
@@ -218,57 +213,57 @@ public class SInt extends SPredefinedType {
 
     @Override
     public SReference getReferenceType() {
-        return SReference.INT;
+        return SReference.INT16;
     }
 
     @Override
     public Class<?> getReferenceClass() {
-        return IntReference.class;
+        return Int16Reference.class;
     }
 
     @Override
     public String toString() {
-        return "int";
+        return "int16";
     }
 
     private static final Lazy<BinaryOperation> ADD = new Lazy<>(() ->
-            new SingleInstructionBinaryOperation(BinaryOperator.PLUS, SInt.instance, IADD));
+            new SingleInstructionBinaryOperation(BinaryOperator.PLUS, SInt16.instance, SInt.instance, IADD));
 
     private static final Lazy<BinaryOperation> SUB = new Lazy<>(() ->
-            new SingleInstructionBinaryOperation(BinaryOperator.MINUS, SInt.instance, ISUB));
+            new SingleInstructionBinaryOperation(BinaryOperator.MINUS, SInt16.instance, SInt.instance, ISUB));
 
     private static final Lazy<BinaryOperation> MUL = new Lazy<>(() ->
-            new SingleInstructionBinaryOperation(BinaryOperator.MULTIPLY, SInt.instance, IMUL));
+            new SingleInstructionBinaryOperation(BinaryOperator.MULTIPLY, SInt16.instance, SInt.instance, IMUL));
 
     private static final Lazy<BinaryOperation> DIV = new Lazy<>(() ->
-            new SingleInstructionBinaryOperation(BinaryOperator.DIVIDE, SInt.instance, IDIV));
+            new SingleInstructionBinaryOperation(BinaryOperator.DIVIDE, SInt16.instance, SInt.instance, IDIV));
 
     private static final Lazy<BinaryOperation> MOD = new Lazy<>(() ->
-            new SingleInstructionBinaryOperation(BinaryOperator.MODULO, SInt.instance, IREM));
+            new SingleInstructionBinaryOperation(BinaryOperator.MODULO, SInt16.instance, SInt.instance, IREM));
 
     private static final Lazy<BinaryOperation> BITWISE_AND = new Lazy<>(() ->
-            new SingleInstructionBinaryOperation(BinaryOperator.BITWISE_AND, SInt.instance, IAND));
+            new SingleInstructionBinaryOperation(BinaryOperator.BITWISE_AND, SInt16.instance, SInt.instance, IAND));
 
     private static final Lazy<BinaryOperation> BITWISE_OR = new Lazy<>(() ->
-            new SingleInstructionBinaryOperation(BinaryOperator.BITWISE_OR, SInt.instance, IOR));
+            new SingleInstructionBinaryOperation(BinaryOperator.BITWISE_OR, SInt16.instance, SInt.instance, IOR));
 
     private static final Lazy<BinaryOperation> LESS_THAN = new Lazy<>(() ->
-            new IntComparisonOperation(BinaryOperator.LESS, IF_ICMPLT));
+            new Int16ComparisonOperation(BinaryOperator.LESS, IF_ICMPLT));
 
     private static final Lazy<BinaryOperation> GREATER_THAN = new Lazy<>(() ->
-            new IntComparisonOperation(BinaryOperator.GREATER, IF_ICMPGT));
+            new Int16ComparisonOperation(BinaryOperator.GREATER, IF_ICMPGT));
 
     private static final Lazy<BinaryOperation> LESS_THAN_EQUALS = new Lazy<>(() ->
-            new IntComparisonOperation(BinaryOperator.LESS_EQUALS, IF_ICMPLE));
+            new Int16ComparisonOperation(BinaryOperator.LESS_EQUALS, IF_ICMPLE));
 
     private static final Lazy<BinaryOperation> GREATER_THAN_EQUALS = new Lazy<>(() ->
-            new IntComparisonOperation(BinaryOperator.GREATER_EQUALS, IF_ICMPGE));
+            new Int16ComparisonOperation(BinaryOperator.GREATER_EQUALS, IF_ICMPGE));
 
     private static final Lazy<BinaryOperation> EQUALS = new Lazy<>(() ->
-            new IntComparisonOperation(BinaryOperator.EQUALS, IF_ICMPEQ));
+            new Int16ComparisonOperation(BinaryOperator.EQUALS, IF_ICMPEQ));
 
     private static final Lazy<BinaryOperation> NOT_EQUALS = new Lazy<>(() ->
-            new IntComparisonOperation(BinaryOperator.NOT_EQUALS, IF_ICMPNE));
+            new Int16ComparisonOperation(BinaryOperator.NOT_EQUALS, IF_ICMPNE));
 
     private static final Lazy<UnaryOperation> PLUS = new Lazy<>(() -> new UnaryOperation(UnaryOperator.PLUS, SInt.instance) {
         @Override
@@ -279,22 +274,6 @@ public class SInt extends SPredefinedType {
         @Override
         public void apply(MethodVisitor visitor) {
             visitor.visitInsn(INEG);
-        }
-    });
-
-    private static final Lazy<PostfixOperation> INC = new Lazy<>(() -> new PostfixOperation(PostfixOperator.PLUS_PLUS, SInt.instance) {
-        @Override
-        public void apply(MethodVisitor visitor) {
-            visitor.visitInsn(ICONST_1);
-            visitor.visitInsn(IADD);
-        }
-    });
-
-    private static final Lazy<PostfixOperation> DEC = new Lazy<>(() -> new PostfixOperation(PostfixOperator.MINUS_MINUS, SInt.instance) {
-        @Override
-        public void apply(MethodVisitor visitor) {
-            visitor.visitInsn(ICONST_1);
-            visitor.visitInsn(ISUB);
         }
     });
 
@@ -319,17 +298,15 @@ public class SInt extends SPredefinedType {
         }
     });
 
+    private static final Lazy<CastOperation> TO_INT32 = new Lazy<>(() -> new CastOperation(SInt.instance) {
+        @Override
+        public void apply(MethodVisitor visitor) {}
+    });
+
     private static final Lazy<CastOperation> TO_OBJECT = new Lazy<>(() -> new CastOperation(SType.fromJavaType(Object.class)) {
         @Override
         public void apply(MethodVisitor visitor) {
-            SInt.instance.compileBoxing(visitor);
-        }
-    });
-
-    private static final Lazy<MethodReference> METHOD_TO_INT16 = new Lazy<>(() -> new NoArgsByteCodeMethodReference(instance, SInt16.instance, "toInt16") {
-        @Override
-        public void compileInvoke(MethodVisitor visitor) {
-            visitor.visitInsn(I2S);
+            SInt16.instance.compileBoxing(visitor);
         }
     });
 
@@ -337,41 +314,41 @@ public class SInt extends SPredefinedType {
             """
                     Returns a string representation of an integer
                     """,
-            Integer.class,
-            SInt.instance,
+            Short.class,
+            SInt16.instance,
             "toString",
             SString.instance));
 
     private static final Lazy<MethodReference> METHOD_TO_STANDARD_STRING = new Lazy<>(() -> new StaticAsInstanceMethodReference(
-            IntUtils.class,
-            SInt.instance,
+            Int16Utils.class,
+            SInt16.instance,
             "toStandardString",
             SString.instance));
 
     private static final Lazy<MethodReference> METHOD_TRY_PARSE = new Lazy<>(() -> new StaticMethodReference(
-            IntUtils.class,
-            SInt.instance,
+            Int16Utils.class,
+            SInt16.instance,
             "tryParse",
             SBoolean.instance,
             new MethodParameter("str", SString.instance),
-            new MethodParameter("result", SReference.INT)));
+            new MethodParameter("result", SReference.INT16)));
 
     private static final Lazy<PropertyReference> PROPERTY_MIN_VALUE = new Lazy<>(() -> new GetterPropertyReference(
-            SInt.instance,
+            SInt16.instance,
             "MIN_VALUE",
-            visitor -> visitor.visitLdcInsn(Integer.MIN_VALUE)));
+            visitor -> visitor.visitLdcInsn(Short.MIN_VALUE)));
 
     private static final Lazy<PropertyReference> PROPERTY_MAX_VALUE = new Lazy<>(() -> new GetterPropertyReference(
-            SInt.instance,
+            SInt16.instance,
             "MAX_VALUE",
-            visitor -> visitor.visitLdcInsn(Integer.MAX_VALUE)));
+            visitor -> visitor.visitLdcInsn(Short.MAX_VALUE)));
 
-    private static class IntComparisonOperation extends BinaryOperation {
+    private static class Int16ComparisonOperation extends BinaryOperation {
 
         private final int opcode;
 
-        public IntComparisonOperation(BinaryOperator operator, int opcode) {
-            super(operator, SBoolean.instance, SInt.instance, SInt.instance);
+        public Int16ComparisonOperation(BinaryOperator operator, int opcode) {
+            super(operator, SBoolean.instance, SInt16.instance, SInt16.instance);
             this.opcode = opcode;
         }
 

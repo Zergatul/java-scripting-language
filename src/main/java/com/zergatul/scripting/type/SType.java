@@ -279,6 +279,9 @@ public abstract class SType {
             if (clazz == boolean.class || clazz == Boolean.class) {
                 return SBoolean.instance;
             }
+            if (clazz == short.class || clazz == Short.class) {
+                return SInt16.instance;
+            }
             if (clazz == int.class || clazz == Integer.class) {
                 return SInt.instance;
             }

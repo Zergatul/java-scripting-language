@@ -40,6 +40,7 @@ public enum TokenType {
     EQUAL,
     QUESTION,
     BOOLEAN,
+    INT16,
     INT,
     INT32,
     INT64,

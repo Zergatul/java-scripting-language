@@ -693,6 +693,7 @@ public class Parser {
     private boolean isPossibleSimpleStatement() {
         switch (current.type) {
             case BOOLEAN:
+            case INT16:
             case INT:
             case INT32:
             case INT64:
@@ -729,7 +730,7 @@ public class Parser {
             case BREAK -> parseBreakStatement();
             case CONTINUE -> parseContinueStatement();
             case SEMICOLON -> parseEmptyStatement();
-            case BOOLEAN, INT, INT32, INT64, LONG, FLOAT32, FLOAT, FLOAT64, STRING, CHAR, IDENTIFIER, LEFT_PARENTHESES -> parseSimpleStatement().append(advance(TokenType.SEMICOLON));
+            case BOOLEAN, INT16, INT, INT32, INT64, LONG, FLOAT32, FLOAT, FLOAT64, STRING, CHAR, IDENTIFIER, LEFT_PARENTHESES -> parseSimpleStatement().append(advance(TokenType.SEMICOLON));
             case LET -> parseVariableDeclaration().append(advance(TokenType.SEMICOLON));
             default -> {
                 if (isPossibleExpression()) {
@@ -974,7 +975,7 @@ public class Parser {
             case NEW -> parseNewExpression();
             case LEFT_PARENTHESES -> isPossibleLambdaExpression() ? parseLambdaExpression() : parseParenthesizedExpression();
             case LEFT_SQUARE_BRACKET -> parseCollectionExpression();
-            case BOOLEAN, INT, INT32, INT64, LONG, CHAR, FLOAT32, FLOAT, FLOAT64, STRING -> parseStaticReference();
+            case BOOLEAN, INT16, INT, INT32, INT64, LONG, CHAR, FLOAT32, FLOAT, FLOAT64, STRING -> parseStaticReference();
             case META_UNKNOWN -> new InvalidMetaExpressionNode(advance().getRange());
             case META_TYPE -> parseMetaTypeExpression();
             case META_TYPE_OF -> parseMetaTypeOfExpression();
@@ -1197,6 +1198,7 @@ public class Parser {
             case NEW:
             case IDENTIFIER:
             case BOOLEAN:
+            case INT16:
             case INT:
             case INT32:
             case INT64:
@@ -1273,6 +1275,7 @@ public class Parser {
     private boolean isPredefinedType() {
         switch (current.type) {
             case BOOLEAN:
+            case INT16:
             case INT:
             case INT32:
             case INT64:
@@ -1311,6 +1314,7 @@ public class Parser {
     private TypeNode parseTypeNode() {
         TypeNode type = switch (current.type) {
             case BOOLEAN -> new PredefinedTypeNode(PredefinedType.BOOLEAN, advance().getRange());
+            case INT16 -> new PredefinedTypeNode(PredefinedType.INT16, advance().getRange());
             case INT, INT32 -> new PredefinedTypeNode(PredefinedType.INT, advance().getRange());
             case INT64, LONG -> new PredefinedTypeNode(PredefinedType.INT64, advance().getRange());
             case FLOAT32 -> new PredefinedTypeNode(PredefinedType.FLOAT32, advance().getRange());

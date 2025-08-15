@@ -19,9 +19,11 @@ public class CommonSuggestions {
 
     public static final List<Suggestion> types = List.of(
             new TypeSuggestion(SBoolean.instance),
+            new TypeSuggestion(SInt16.instance),
             new TypeSuggestion(SInt.instance),
             new TypeSuggestion(SInt64.instance),
             new TypeSuggestion(SChar.instance),
+            new TypeSuggestion(SFloat32.instance),
             new TypeSuggestion(SFloat.instance),
             new TypeSuggestion(SString.instance),
             new CustomTypeSuggestion(RuntimeType.class));

@@ -22,6 +22,17 @@ import java.util.Objects;
 
 public class CompletionProvider<T> {
 
+    private static final SType[] PREDEFINED_TYPES = new SType[] {
+            SBoolean.instance,
+            SInt16.instance,
+            SInt.instance,
+            SInt64.instance,
+            SChar.instance,
+            SFloat32.instance,
+            SFloat.instance,
+            SString.instance
+    };
+
     private final SuggestionFactory<T> factory;
 
     public CompletionProvider(SuggestionFactory<T> factory) {
@@ -314,7 +325,7 @@ public class CompletionProvider<T> {
             suggestions.add(factory.getKeywordSuggestion(TokenType.VOID));
         }
         if (canType | canExpression) {
-            for (SType type : new SType[] { SBoolean.instance, SInt.instance, SInt64.instance, SChar.instance, SFloat.instance, SString.instance }) {
+            for (SType type : PREDEFINED_TYPES) {
                 suggestions.addAll(factory.getTypeSuggestion(type));
             }
             for (Class<?> clazz : parameters.getCustomTypes()) {

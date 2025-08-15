@@ -6,10 +6,11 @@ To see full list of supported feature you can check test cases here:
 ### Basic Types
 - `boolean`
 - `char`
+- `int16` (only use it for Java interop)
 - `int` (synonym: `int32`)
 - `long` (synonym: `int64`)
-- `float32` (correspongs to `float` in Java, only use it for Java interop)
-- `float` (correspongs to `double` in Java, synonym: `float64`)
+- `float32` (corresponds to `float` in Java, only use it for Java interop)
+- `float` (corresponds to `double` in Java, synonym: `float64`)
 - `string`
 
 User-defined types are not supported
