@@ -30,7 +30,7 @@ public class Parser {
         List<CompilationUnitMemberNode> members = new ArrayList<>();
         while (current.type != TokenType.END_OF_FILE) {
             if (current.type == TokenType.STATIC) {
-                members.add(parseStaticField());
+                members.add(parseStaticVariable());
             } else if (current.type == TokenType.CLASS) {
                 members.add(parseClass());
             } else if (isPossibleFunction()) {
@@ -388,11 +388,37 @@ public class Parser {
         }
     }
 
-    private StaticFieldNode parseStaticField() {
-        Token staticToken = advance(TokenType.STATIC);
-        VariableDeclarationNode declaration = parseVariableDeclaration();
-        Token semicolon = advance(TokenType.SEMICOLON);
-        return new StaticFieldNode(declaration, TextRange.combine(staticToken, semicolon));
+    private StaticVariableNode parseStaticVariable() {
+        Token keyword = advance(TokenType.STATIC);
+        TypeNode type = parseTypeNode();
+        if (current.type != TokenType.IDENTIFIER) {
+            IdentifierToken identifier = new IdentifierToken("", createMissingTokenRangeAfterLast());
+            return new StaticVariableNode(keyword, type, new NameExpressionNode(identifier), null, TextRange.combine(keyword, identifier));
+        }
+
+        NameExpressionNode name = new NameExpressionNode((IdentifierToken) advance());
+        switch (current.type) {
+            case SEMICOLON -> {
+                Token semicolon = advance();
+                return new StaticVariableNode(keyword, type, name, null, TextRange.combine(keyword, semicolon));
+            }
+            case EQUAL -> {
+                advance();
+                if (isPossibleExpression()) {
+                    ExpressionNode expression = parseExpression();
+                    Token semicolon = advance();
+                    return new StaticVariableNode(keyword, type, name, expression, TextRange.combine(keyword, semicolon));
+                } else {
+                    addDiagnostic(ParserErrors.ExpressionExpected, current, current.getRawValue(code));
+                    ExpressionNode invalid = new InvalidExpressionNode(createMissingTokenRange());
+                    return new StaticVariableNode(keyword, type, name, invalid, TextRange.combine(keyword, invalid));
+                }
+            }
+            default -> {
+                addDiagnostic(ParserErrors.SemicolonOrEqualExpected, current, current.getRawValue(code));
+                return new StaticVariableNode(keyword, type, name, null, TextRange.combine(type, name));
+            }
+        }
     }
 
     private ClassNode parseClass() {

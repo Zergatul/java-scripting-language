@@ -52,7 +52,7 @@ public class Binder {
         List<BoundCompilationUnitMemberNode> boundMembers = new ArrayList<>();
         for (CompilationUnitMemberNode member : nodes) {
             boundMembers.add(switch (member.getNodeType()) {
-                case STATIC_FIELD -> bindStaticField((StaticFieldNode) member);
+                case STATIC_VARIABLE -> bindStaticVariable((StaticVariableNode) member);
                 case FUNCTION -> bindFunction((FunctionNode) member);
                 case CLASS -> bindClass((ClassNode) member);
                 default -> throw new InternalException();
@@ -61,22 +61,22 @@ public class Binder {
         return boundMembers;
     }
 
-    private BoundStaticFieldNode bindStaticField(StaticFieldNode staticFieldNode) {
-        StaticVariableDeclaration declaration = declarationTable.getStaticVariableDeclaration(staticFieldNode);
+    private BoundStaticVariableNode bindStaticVariable(StaticVariableNode staticVariableNode) {
+        StaticVariableDeclaration declaration = declarationTable.getStaticVariableDeclaration(staticVariableNode);
         if (declaration == null) {
             throw new InternalException();
         }
 
         BoundTypeNode typeNode = declaration.typeNode();
-        DeclaredStaticVariable variable = new DeclaredStaticVariable(declaration.name(), typeNode.type, staticFieldNode.declaration.getRange());
+        DeclaredStaticVariable variable = new DeclaredStaticVariable(declaration.name(), typeNode.type, staticVariableNode.name.getRange());
         SymbolRef symbolRef = new ImmutableSymbolRef(variable);
         if (!declaration.hasError()) {
             context.addStaticSymbol(declaration.name(), symbolRef);
         }
 
         BoundExpressionNode expression;
-        if (staticFieldNode.declaration.expression != null) {
-            expression = tryCastTo(bindExpression(staticFieldNode.declaration.expression), typeNode.type);
+        if (staticVariableNode.expression != null) {
+            expression = tryCastTo(bindExpression(staticVariableNode.expression), typeNode.type);
         } else {
             expression = null;
         }
@@ -85,11 +85,14 @@ public class Binder {
                 symbolRef,
                 typeNode.type,
                 declaration.name(),
-                staticFieldNode.declaration.name.getRange());
+                staticVariableNode.name.getRange());
 
-        return new BoundStaticFieldNode(
-                new BoundVariableDeclarationNode(typeNode, name, expression, staticFieldNode.declaration.getRange()),
-                staticFieldNode.getRange());
+        return new BoundStaticVariableNode(
+                staticVariableNode.keyword,
+                typeNode,
+                name,
+                expression,
+                staticVariableNode.getRange());
     }
 
     private BoundFunctionNode bindFunction(FunctionNode functionNode) {
@@ -1459,7 +1462,7 @@ public class Binder {
         for (CompilationUnitMemberNode member : unit.members.members) {
             switch (member.getNodeType()) {
                 case CLASS -> {}
-                case STATIC_FIELD -> buildStaticFieldDeclaration((StaticFieldNode) member);
+                case STATIC_VARIABLE -> buildStaticFieldDeclaration((StaticVariableNode) member);
                 case FUNCTION -> buildFunctionDeclaration((FunctionNode) member);
                 default -> throw new InternalException();
             }
@@ -1489,15 +1492,15 @@ public class Binder {
         declarationTable.addClass(name, classNode, new ClassDeclaration(name, new ImmutableSymbolRef(classSymbol)));
     }
 
-    private void buildStaticFieldDeclaration(StaticFieldNode fieldNode) {
-        String name = fieldNode.declaration.name.value;
+    private void buildStaticFieldDeclaration(StaticVariableNode fieldNode) {
+        String name = fieldNode.name.value;
         boolean hasError = false;
         if (!name.isEmpty() && declarationTable.hasSymbol(name)) {
             hasError = true;
-            addDiagnostic(BinderErrors.SymbolAlreadyDeclared, fieldNode.declaration.name, name);
+            addDiagnostic(BinderErrors.SymbolAlreadyDeclared, fieldNode.name, name);
         }
 
-        BoundTypeNode boundTypeNode = bindType(fieldNode.declaration.type);
+        BoundTypeNode boundTypeNode = bindType(fieldNode.type);
         declarationTable.addStaticVariable(
                 fieldNode,
                 new StaticVariableDeclaration(name, boundTypeNode, hasError));

@@ -623,8 +623,8 @@ public class CompletionProvider<T> {
 
     private void addCompilationUnitMembers(List<T> suggestions, List<BoundCompilationUnitMemberNode> members) {
         for (BoundCompilationUnitMemberNode member : members) {
-            if (member.getNodeType() == NodeType.STATIC_FIELD) {
-                suggestions.add(factory.getStaticFieldSuggestion((DeclaredStaticVariable) ((BoundStaticFieldNode) member).declaration.name.getSymbol()));
+            if (member.getNodeType() == NodeType.STATIC_VARIABLE) {
+                suggestions.add(factory.getStaticFieldSuggestion((DeclaredStaticVariable) ((BoundStaticVariableNode) member).name.getSymbol()));
             } else if (member.getNodeType() == NodeType.FUNCTION) {
                 suggestions.add(factory.getFunctionSuggestion((Function) ((BoundFunctionNode) member).name.getSymbol()));
             } else {

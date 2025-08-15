@@ -3,7 +3,6 @@ package com.zergatul.scripting.binding;
 import com.zergatul.scripting.parser.nodes.*;
 import com.zergatul.scripting.symbols.SymbolRef;
 
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.BiConsumer;
@@ -14,11 +13,11 @@ public class DeclarationTable {
     private final Map<String, FunctionDeclaration> functions = new HashMap<>();
     private final Map<String, ClassDeclaration> classes = new HashMap<>();
 
-    private final Map<StaticFieldNode, StaticVariableDeclaration> staticVariableNodeMap = new HashMap<>();
+    private final Map<StaticVariableNode, StaticVariableDeclaration> staticVariableNodeMap = new HashMap<>();
     private final Map<FunctionNode, FunctionDeclaration> functionNodeMap = new HashMap<>();
     private final Map<ClassNode, ClassDeclaration> classNodeMap = new HashMap<>();
 
-    public void addStaticVariable(StaticFieldNode fieldNode, StaticVariableDeclaration declaration) {
+    public void addStaticVariable(StaticVariableNode fieldNode, StaticVariableDeclaration declaration) {
         String name = declaration.name();
         if (!name.isEmpty() && !staticVariables.containsKey(name)) {
             staticVariables.put(name, declaration);
@@ -41,7 +40,7 @@ public class DeclarationTable {
         classNodeMap.put(classNode, declaration);
     }
 
-    public StaticVariableDeclaration getStaticVariableDeclaration(StaticFieldNode fieldNode) {
+    public StaticVariableDeclaration getStaticVariableDeclaration(StaticVariableNode fieldNode) {
         return staticVariableNodeMap.get(fieldNode);
     }
 

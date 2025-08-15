@@ -1,9 +1,8 @@
 package com.zergatul.scripting.tests.compiler;
 
 import com.zergatul.scripting.DiagnosticMessage;
-import com.zergatul.scripting.MultiLineTextRange;
 import com.zergatul.scripting.SingleLineTextRange;
-import com.zergatul.scripting.binding.BinderErrors;
+import com.zergatul.scripting.parser.ParserErrors;
 import com.zergatul.scripting.tests.compiler.helpers.*;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -174,7 +173,7 @@ public class StaticVariableTests {
         Assertions.assertIterableEquals(
                 messages,
                 List.of(
-                        new DiagnosticMessage(BinderErrors.LetInvalidContext, new SingleLineTextRange(1, 8, 7, 3))));
+                        new DiagnosticMessage(ParserErrors.TypeExpected, new SingleLineTextRange(1, 8, 7, 3), "let")));
     }
 
     public static class ApiRoot {

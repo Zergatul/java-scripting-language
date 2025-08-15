@@ -84,7 +84,7 @@ public class Compiler {
         CompilerContext context = parameters.getContext();
         context.setClassName(name);
 
-        buildCompilationUnitMembers(unit, writer, context);
+        compileCompilationUnitMembers(unit, writer, context);
         buildEmptyConstructor(writer);
         buildMainMethod(unit, writer, name);
 
@@ -116,25 +116,25 @@ public class Compiler {
         return instance;
     }
 
-    private void buildCompilationUnitMembers(BoundCompilationUnitNode unit, ClassWriter writer, CompilerContext context) {
-        List<BoundStaticFieldNode> fields = new ArrayList<>();
+    private void compileCompilationUnitMembers(BoundCompilationUnitNode unit, ClassWriter writer, CompilerContext context) {
+        List<BoundStaticVariableNode> fields = new ArrayList<>();
         List<BoundFunctionNode> functions = new ArrayList<>();
         List<BoundClassNode> classes = new ArrayList<>();
         for (BoundCompilationUnitMemberNode member : unit.members.members) {
             switch (member.getNodeType()) {
-                case STATIC_FIELD -> fields.add((BoundStaticFieldNode) member);
+                case STATIC_VARIABLE -> fields.add((BoundStaticVariableNode) member);
                 case FUNCTION -> functions.add((BoundFunctionNode) member);
                 case CLASS -> classes.add((BoundClassNode) member);
                 default -> throw new InternalException();
             }
         }
 
-        buildClasses(classes, writer, context);
-        buildStaticFields(fields, writer, context);
+        compileClasses(classes, writer, context);
+        compileStaticVariables(fields, writer, context);
         buildFunctions(functions, writer, context);
     }
 
-    private void buildClasses(List<BoundClassNode> classNodes, ClassWriter writer, CompilerContext context) {
+    private void compileClasses(List<BoundClassNode> classNodes, ClassWriter writer, CompilerContext context) {
         // setup class names in advance for forward references
         for (BoundClassNode classNode : classNodes) {
             String name = context.getClassName() + "$" + classNode.name.value;
@@ -171,7 +171,7 @@ public class Compiler {
 
             CompilerContext classContext = context.createClass((SDeclaredType) classNode.name.type);
             for (BoundClassMemberNode member : classNode.members) {
-                buildClassMember(innerWriter, member, classContext);
+                compileClassMember(innerWriter, member, classContext);
             }
 
             // add default constructor if we have zero constructors defined
@@ -195,7 +195,7 @@ public class Compiler {
         }
     }
 
-    private void buildClassMember(ClassWriter writer, BoundClassMemberNode member, CompilerContext context) {
+    private void compileClassMember(ClassWriter writer, BoundClassMemberNode member, CompilerContext context) {
         switch (member.getNodeType()) {
             case CLASS_FIELD -> compileClassField(writer, (BoundClassFieldNode) member);
             case CLASS_CONSTRUCTOR -> compileClassConstructor(writer, (BoundClassConstructorNode) member, context);
@@ -248,16 +248,16 @@ public class Compiler {
         methodVisitor.visitEnd();
     }
 
-    private void buildStaticFields(List<BoundStaticFieldNode> fields, ClassWriter writer, CompilerContext context) {
-        if (fields.isEmpty()) {
+    private void compileStaticVariables(List<BoundStaticVariableNode> staticVariableNodes, ClassWriter writer, CompilerContext context) {
+        if (staticVariableNodes.isEmpty()) {
             return;
         }
 
-        for (BoundStaticFieldNode field : fields) {
+        for (BoundStaticVariableNode staticVariableNode : staticVariableNodes) {
             FieldVisitor fieldVisitor = writer.visitField(
                     ACC_PUBLIC | ACC_STATIC,
-                    field.declaration.name.value,
-                    Type.getDescriptor(field.declaration.type.type.getJavaClass()),
+                    staticVariableNode.name.value,
+                    Type.getDescriptor(staticVariableNode.type.type.getJavaClass()),
                     null, null);
             fieldVisitor.visitEnd();
         }
@@ -265,13 +265,13 @@ public class Compiler {
         // set static variables values in static constructor
         MethodVisitor visitor = writer.visitMethod(ACC_STATIC, "<clinit>", Type.getMethodDescriptor(Type.VOID_TYPE), null, null);
         visitor.visitCode();
-        for (BoundStaticFieldNode field : fields) {
-            StaticVariable symbol = (StaticVariable) field.declaration.name.getSymbol();
-            context.addStaticSymbol(field.declaration.name.value, field.declaration.name.symbolRef);
-            if (field.declaration.expression != null) {
-                compileExpression(visitor, context, field.declaration.expression);
+        for (BoundStaticVariableNode staticVariableNode : staticVariableNodes) {
+            StaticVariable symbol = (StaticVariable) staticVariableNode.name.getSymbol();
+            context.addStaticSymbol(staticVariableNode.name.value, staticVariableNode.name.symbolRef);
+            if (staticVariableNode.expression != null) {
+                compileExpression(visitor, context, staticVariableNode.expression);
             } else {
-                field.declaration.type.type.storeDefaultValue(visitor);
+                staticVariableNode.type.type.storeDefaultValue(visitor);
             }
             symbol.compileStore(context, visitor);
         }
@@ -407,9 +407,9 @@ public class Compiler {
 
         context.setClassName(className);
         for (BoundCompilationUnitMemberNode member : unit.members.members) {
-            if (member.getNodeType() == NodeType.STATIC_FIELD) {
-                BoundStaticFieldNode field = (BoundStaticFieldNode) member;
-                context.addStaticSymbol(field.declaration.name.value, field.declaration.name.symbolRef);
+            if (member.getNodeType() == NodeType.STATIC_VARIABLE) {
+                BoundStaticVariableNode field = (BoundStaticVariableNode) member;
+                context.addStaticSymbol(field.name.value, field.name.symbolRef);
             }
         }
 

@@ -289,7 +289,7 @@ public abstract class BinderTreeVisitor {
         node.acceptChildren(this);
     }
 
-    public void explicitVisit(BoundStaticFieldNode node) {
+    public void explicitVisit(BoundStaticVariableNode node) {
         visit(node);
         node.acceptChildren(this);
     }
@@ -401,7 +401,7 @@ public abstract class BinderTreeVisitor {
     public void visit(BoundRefTypeNode node) {}
     public void visit(BoundReturnStatementNode node) {}
     public void visit(BoundStatementsListNode node) {}
-    public void visit(BoundStaticFieldNode node) {}
+    public void visit(BoundStaticVariableNode node) {}
     public void visit(BoundStaticReferenceExpression node) {}
     public void visit(BoundStringLiteralExpressionNode node) {}
     public void visit(BoundThisExpressionNode node) {}
