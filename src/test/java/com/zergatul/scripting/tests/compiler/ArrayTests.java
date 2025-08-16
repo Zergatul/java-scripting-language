@@ -165,6 +165,23 @@ public class ArrayTests {
     }
 
     @Test
+    public void concatInt8Test() {
+        String code = """
+                int8[] a1 = new int8[] { (1).toInt8(), (2).toInt8(), (3).toInt8() };
+                int8[] a2 = new int8[] { (7).toInt8(), (8).toInt8(), (9).toInt8() };
+                int8[] a3 = a1 + a2 + (10).toInt8();
+                
+                intStorage.add(a3.length);
+                for (int i = 0; i < a3.length; i++) intStorage.add(a3[i]);
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(7, 1, 2, 3, 7, 8, 9, 10));
+    }
+
+    @Test
     public void concatInt16Test() {
         String code = """
                 int16[] a1 = new int16[] { (1).toInt16(), (2).toInt16(), (3).toInt16() };

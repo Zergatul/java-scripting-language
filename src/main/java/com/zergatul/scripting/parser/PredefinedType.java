@@ -2,6 +2,7 @@ package com.zergatul.scripting.parser;
 
 public enum PredefinedType {
     BOOLEAN,
+    INT8,
     INT16,
     INT,
     INT64,

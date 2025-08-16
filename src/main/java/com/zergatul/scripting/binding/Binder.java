@@ -1385,6 +1385,7 @@ public class Binder {
         if (type instanceof PredefinedTypeNode predefined) {
             SType bound = switch (predefined.type) {
                 case BOOLEAN -> SBoolean.instance;
+                case INT8 -> SInt8.instance;
                 case INT16 -> SInt16.instance;
                 case INT -> SInt.instance;
                 case INT64 -> SInt64.instance;

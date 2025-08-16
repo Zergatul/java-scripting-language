@@ -8,6 +8,7 @@ import static org.objectweb.asm.Opcodes.*;
 public class SReference extends SType {
 
     public static final SReference BOOLEAN = new SReference(SBoolean.instance);
+    public static final SReference INT8 = new SReference(SInt8.instance);
     public static final SReference INT16 = new SReference(SInt16.instance);
     public static final SReference INT = new SReference(SInt.instance);
     public static final SReference INT64 = new SReference(SInt64.instance);

@@ -6,6 +6,7 @@ To see full list of supported feature you can check test cases here:
 ### Basic Types
 - `boolean`
 - `char`
+- `int8` (only use it for Java interop)
 - `int16` (only use it for Java interop)
 - `int` (synonym: `int32`)
 - `long` (synonym: `int64`)

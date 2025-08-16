@@ -19,6 +19,7 @@ public class CommonSuggestions {
 
     public static final List<Suggestion> types = List.of(
             new TypeSuggestion(SBoolean.instance),
+            new TypeSuggestion(SInt8.instance),
             new TypeSuggestion(SInt16.instance),
             new TypeSuggestion(SInt.instance),
             new TypeSuggestion(SInt64.instance),

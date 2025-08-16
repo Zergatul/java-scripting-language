@@ -24,6 +24,7 @@ public class CompletionProvider<T> {
 
     private static final SType[] PREDEFINED_TYPES = new SType[] {
             SBoolean.instance,
+            SInt8.instance,
             SInt16.instance,
             SInt.instance,
             SInt64.instance,

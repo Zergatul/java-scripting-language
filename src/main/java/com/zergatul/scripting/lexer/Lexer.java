@@ -551,6 +551,7 @@ public class Lexer {
         String value = getCurrentTokenValue();
         TokenType reservedWord = switch (value) {
             case "boolean" -> TokenType.BOOLEAN;
+            case "int8" -> TokenType.INT8;
             case "int16" -> TokenType.INT16;
             case "int" -> TokenType.INT;
             case "int32" -> TokenType.INT32;

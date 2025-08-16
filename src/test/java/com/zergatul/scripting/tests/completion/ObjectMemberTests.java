@@ -22,6 +22,7 @@ public class ObjectMemberTests {
                 x.toString();
                 """,
                 context -> List.of(
+                        MethodSuggestion.getInstance(SInt.instance, "toInt8"),
                         MethodSuggestion.getInstance(SInt.instance, "toInt16"),
                         MethodSuggestion.getInstance(SInt.instance, "toString"),
                         MethodSuggestion.getInstance(SInt.instance, "toStandardString")));
@@ -35,6 +36,7 @@ public class ObjectMemberTests {
                 x.toString();
                 """,
                 context -> List.of(
+                        MethodSuggestion.getInstance(SInt.instance, "toInt8"),
                         MethodSuggestion.getInstance(SInt.instance, "toInt16"),
                         MethodSuggestion.getInstance(SInt.instance, "toString"),
                         MethodSuggestion.getInstance(SInt.instance, "toStandardString")));
