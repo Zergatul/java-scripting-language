@@ -20,9 +20,9 @@ public class BinderTreeGenerator {
 
     private StateBoundary currentBoundary;
 
-    public void generate(List<BoundStatementNode> statements) {
+    public void generate(BoundStatementsListNode node) {
         currentBoundary = newBoundary();
-        for (BoundStatementNode statement : statements) {
+        for (BoundStatementNode statement : node.statements) {
             rewriteStatement(statement);
         }
 
@@ -394,6 +394,12 @@ public class BinderTreeGenerator {
 
     private void markVariableDeclarations(BoundNode node) {
         node.accept(new BinderTreeVisitor() {
+
+            @Override
+            public void explicitVisit(BoundLambdaExpressionNode node) {
+                // don't jump inside
+            }
+
             @Override
             public void visit(BoundVariableDeclarationNode node) {
                 if (node.name.getSymbol() instanceof LocalVariable local) {

@@ -24,6 +24,7 @@ public class ParserDumper {
         switch (node.getNodeType()) {
             case COMPILATION_UNIT -> dump((CompilationUnitNode) node);
             case FUNCTION -> dump((FunctionNode) node);
+            case MODIFIERS -> dump((ModifiersNode) node);
             case PARAMETER_LIST -> dump((ParameterListNode) node);
             case VARIABLE_DECLARATION -> dump((VariableDeclarationNode) node);
             case BLOCK_STATEMENT -> dump((BlockStatementNode) node);
@@ -78,7 +79,7 @@ public class ParserDumper {
 
     private void dump(FunctionNode node) {
         sb.append("new FunctionNode(");
-        dump(node.asyncToken);
+        dump(node.modifiers);
         sb.append(", ");
         dump(node.returnType);
         sb.append(", ");
@@ -87,6 +88,14 @@ public class ParserDumper {
         dump(node.parameters);
         sb.append(", ");
         dump(node.body);
+        sb.append(", ");
+        dump(node.getRange());
+        sb.append(")");
+    }
+
+    private void dump(ModifiersNode node) {
+        sb.append("new ModifiersNode(");
+        dumpTokens(node.tokens);
         sb.append(", ");
         dump(node.getRange());
         sb.append(")");
@@ -340,6 +349,17 @@ public class ParserDumper {
         } else {
             throw new InternalException();
         }
+    }
+
+    private void dumpTokens(List<Token> tokens) {
+        sb.append("List.of(");
+        for (int i = 0; i < tokens.size(); i++) {
+            dump(tokens.get(i));
+            if (i < tokens.size() - 1) {
+                sb.append(", ");
+            }
+        }
+        sb.append(")");
     }
 
     private <T extends Node> void dumpList(List<T> nodes) {

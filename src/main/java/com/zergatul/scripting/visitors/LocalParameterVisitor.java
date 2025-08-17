@@ -1,7 +1,9 @@
 package com.zergatul.scripting.visitors;
 
 import com.zergatul.scripting.binding.BinderTreeVisitor;
+import com.zergatul.scripting.binding.nodes.BoundLambdaExpressionNode;
 import com.zergatul.scripting.binding.nodes.BoundNameExpressionNode;
+import com.zergatul.scripting.binding.nodes.BoundThisExpressionNode;
 import com.zergatul.scripting.symbols.*;
 
 import java.util.ArrayList;
@@ -13,6 +15,15 @@ public class LocalParameterVisitor extends BinderTreeVisitor {
 
     public List<LiftedVariable> getParameters() {
         return parameters;
+    }
+
+    public boolean hasThisLocalVariable() {
+        return !parameters.isEmpty() && parameters.getFirst().getUnderlying() instanceof ThisLocalVariable;
+    }
+
+    @Override
+    public void explicitVisit(BoundLambdaExpressionNode node) {
+        // don't go inside lambdas
     }
 
     @Override
@@ -30,5 +41,14 @@ public class LocalParameterVisitor extends BinderTreeVisitor {
                 }
             }
         }
+    }
+
+    @Override
+    public void explicitVisit(BoundThisExpressionNode node) {
+        if (hasThisLocalVariable()) {
+            return;
+        }
+
+        parameters.addFirst(new LiftedVariable(new ThisLocalVariable(node.type)));
     }
 }

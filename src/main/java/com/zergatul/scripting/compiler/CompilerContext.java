@@ -33,6 +33,7 @@ public class CompilerContext {
     private Consumer<MethodVisitor> continueConsumer;
     private final List<RefHolder> refVariables = new ArrayList<>();
     private String asyncStateMachineClassName;
+    private String thisFieldName;
     private final List<LiftedVariable> lifted;
     private final List<CapturedVariable> captured;
     private final FunctionStack stack;
@@ -210,7 +211,7 @@ public class CompilerContext {
                 .build();
     }
 
-    public CompilerContext createClassMethod(SType returnType) {
+    public CompilerContext createClassMethod(SType returnType, boolean isAsync) {
         return new Builder()
                 .setParent(this)
                 .setClassType(classType)
@@ -218,6 +219,7 @@ public class CompilerContext {
                 .setFunctionRoot(true)
                 .setReturnType(returnType)
                 .setInitialStackIndex(1)
+                .setAsync(isAsync)
                 .build();
     }
 
@@ -411,6 +413,24 @@ public class CompilerContext {
         while (true) {
             if (current.parent == null || current.isFunctionRoot) {
                 return current.asyncStateMachineClassName;
+            }
+            current = current.parent;
+        }
+    }
+
+    public void setAsyncThisFieldName(String thisFieldName) {
+        if (isFunctionRoot) {
+            this.thisFieldName = thisFieldName;
+        } else {
+            throw new InternalException("This is not a function root.");
+        }
+    }
+
+    public String getAsyncThisFieldName() {
+        CompilerContext current = this;
+        while (true) {
+            if (current.parent == null || current.isFunctionRoot) {
+                return current.thisFieldName;
             }
             current = current.parent;
         }
