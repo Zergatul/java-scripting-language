@@ -50,6 +50,9 @@ public abstract class SType {
         if (isSyntheticType() || other.isSyntheticType()) {
             return false;
         }
+        if (this == SVoidType.instance || other == SVoidType.instance) {
+            return false;
+        }
         if (isReference() && other.isReference()) {
             return other.getJavaClass().isAssignableFrom(getJavaClass());
         } else {

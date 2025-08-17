@@ -232,6 +232,10 @@ class MyClass {
 }
 ```
 
+Async methods supported.
+
 Access modifiers (private/public/etc) are not supported.
+
 Static members are not supported.
+
 Inheritance is not supported.

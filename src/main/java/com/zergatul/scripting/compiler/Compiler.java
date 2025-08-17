@@ -131,7 +131,7 @@ public class Compiler {
 
         compileClasses(classes, writer, context);
         compileStaticVariables(fields, writer, context);
-        buildFunctions(functions, writer, context);
+        compileFunctions(functions, writer, context);
     }
 
     private void compileClasses(List<BoundClassNode> classNodes, ClassWriter writer, CompilerContext context) {
@@ -218,7 +218,7 @@ public class Compiler {
         constructorVisitor.visitVarInsn(ALOAD, 0);
         constructorVisitor.visitMethodInsn(INVOKESPECIAL, Type.getInternalName(Object.class), "<init>", Type.getMethodDescriptor(Type.VOID_TYPE), false);
 
-        context = context.createClassMethod(SVoidType.instance);
+        context = context.createClassMethod(SVoidType.instance, false);
         for (BoundParameterNode parameter : constructor.parameters.parameters) {
             context.setStackIndex((LocalVariable) parameter.getName().getSymbol());
         }
@@ -234,14 +234,18 @@ public class Compiler {
         MethodVisitor methodVisitor = writer.visitMethod(ACC_PUBLIC, methodNode.name.value, methodNode.functionType.getDescriptor(), null, null);
         methodVisitor.visitCode();
 
-        context = context.createClassMethod(methodNode.functionType.getReturnType());
+        context = context.createClassMethod(methodNode.functionType.getReturnType(), methodNode.isAsync);
         for (BoundParameterNode parameter : methodNode.parameters.parameters) {
             context.setStackIndex((LocalVariable) parameter.getName().getSymbol());
         }
 
-        compileBlockStatement(methodVisitor, context, methodNode.body);
-        if (methodNode.functionType.getReturnType() == SVoidType.instance) {
-            methodVisitor.visitInsn(RETURN);
+        if (methodNode.isAsync) {
+            compileAsyncBoundStatementList(methodVisitor, context, new BoundStatementsListNode(methodNode.body.statements));
+        } else {
+            compileBlockStatement(methodVisitor, context, methodNode.body);
+            if (methodNode.functionType.getReturnType() == SVoidType.instance) {
+                methodVisitor.visitInsn(RETURN);
+            }
         }
 
         methodVisitor.visitMaxs(0, 0);
@@ -280,7 +284,7 @@ public class Compiler {
         visitor.visitEnd();
     }
 
-    private void buildFunctions(List<BoundFunctionNode> functions, ClassWriter writer, CompilerContext context) {
+    private void compileFunctions(List<BoundFunctionNode> functions, ClassWriter writer, CompilerContext context) {
         for (BoundFunctionNode function : functions) {
             Function symbol = (Function) function.name.getSymbol();
             SFunction type = symbol.getFunctionType();
@@ -306,10 +310,6 @@ public class Compiler {
                 if (type.getReturnType() == SVoidType.instance) {
                     visitor.visitInsn(RETURN);
                 }
-            }
-
-            if (!function.isAsync && type.getReturnType() == SVoidType.instance) {
-                visitor.visitInsn(RETURN);
             }
 
             visitor.visitMaxs(0, 0);
@@ -881,7 +881,7 @@ public class Compiler {
         }
 
         BinderTreeGenerator generator = new BinderTreeGenerator();
-        generator.generate(node.statements);
+        generator.generate(node);
 
         ClassWriter writer = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
         emitSourceFile(writer);
@@ -910,8 +910,10 @@ public class Compiler {
             }
         }
 
-        List<LiftedVariable> variables = treeVisitor.getVariables();
+        List<LiftedVariable> variables = new ArrayList<>();
+        variables.addAll(treeVisitor.getVariables());
         variables.addAll(parameterVisitor.getParameters());
+
         String[] fieldNames = new String[variables.size()];
         for (int i = 0; i < fieldNames.length; i++) {
             String varName = variables.get(i).getName();
@@ -921,7 +923,7 @@ public class Compiler {
         for (int i = 0; i < variables.size(); i++) {
             LiftedVariable variable = variables.get(i);
             variable.setField(name, fieldNames[i]);
-            writer.visitField(ACC_PUBLIC, fieldNames[i], Type.getDescriptor(variable.getType().getJavaClass()), null, null);
+            writer.visitField(ACC_PUBLIC, fieldNames[i], variable.getType().getDescriptor(), null, null);
         }
 
         // build constructor
@@ -929,7 +931,7 @@ public class Compiler {
         Type[] ctorParameters2 = new Type[parameterVisitor.getParameters().size()];
         for (int i = 0; i < ctorParameters1.length; i++) {
             ctorParameters1[i] = parameterVisitor.getParameters().get(i).getType();
-            ctorParameters2[i] = Type.getType(ctorParameters1[i].getJavaClass());
+            ctorParameters2[i] = Type.getType(ctorParameters1[i].getDescriptor());
         }
         int[] indexes = StackHelper.buildStackIndexes(ctorParameters1);
         MethodVisitor constructorVisitor = writer.visitMethod(ACC_PUBLIC, "<init>", Type.getMethodDescriptor(Type.VOID_TYPE, ctorParameters2), null, null);
@@ -941,7 +943,7 @@ public class Compiler {
             constructorVisitor.visitVarInsn(ALOAD, 0); // this
             constructorVisitor.visitVarInsn(ctorParameters1[i].getLoadInst(), indexes[i]);
             LiftedVariable lifted = parameterVisitor.getParameters().get(i);
-            constructorVisitor.visitFieldInsn(PUTFIELD, lifted.getClassName(), lifted.getFieldName(), Type.getDescriptor(lifted.getType().getJavaClass()));
+            constructorVisitor.visitFieldInsn(PUTFIELD, lifted.getClassName(), lifted.getFieldName(), lifted.getType().getDescriptor());
         }
         //
         constructorVisitor.visitInsn(RETURN);
@@ -958,6 +960,9 @@ public class Compiler {
 
         CompilerContext nextMethodContext = context.createFunction(SType.fromJavaType(CompletableFuture.class), false);
         nextMethodContext.setAsyncStateMachineClassName(name);
+        if (parameterVisitor.hasThisLocalVariable()) {
+            nextMethodContext.setAsyncThisFieldName(parameterVisitor.getParameters().getFirst().getFieldName());
+        }
         LocalVariable parameter = nextMethodContext.addLocalParameter("@result", SType.fromJavaType(Object.class), null);
         nextMethodContext.setStackIndex(parameter);
 
@@ -1131,7 +1136,7 @@ public class Compiler {
             case CONDITIONAL_EXPRESSION -> compileConditionalExpression(visitor, context, (BoundConditionalExpressionNode) expression);
             case IMPLICIT_CAST -> compileImplicitCastExpression(visitor, context, (BoundImplicitCastExpressionNode) expression);
             case NAME_EXPRESSION -> compileNameExpression(visitor, context, (BoundNameExpressionNode) expression);
-            case THIS_EXPRESSION -> compileThisExpression(visitor);
+            case THIS_EXPRESSION -> compileThisExpression(visitor, context, (BoundThisExpressionNode) expression);
             case STATIC_REFERENCE -> compileStaticReferenceExpression();
             case REF_ARGUMENT_EXPRESSION -> compileRefArgumentExpression(visitor, context, (BoundRefArgumentExpressionNode) expression);
             case METHOD_INVOCATION_EXPRESSION -> compileMethodInvocationExpression(visitor, context, (BoundMethodInvocationExpressionNode) expression);
@@ -1248,8 +1253,14 @@ public class Compiler {
         }
     }
 
-    private void compileThisExpression(MethodVisitor visitor) {
-        visitor.visitVarInsn(ALOAD, 0);
+    private void compileThisExpression(MethodVisitor visitor, CompilerContext context, BoundThisExpressionNode expression) {
+        String fieldName = context.getAsyncThisFieldName();
+        if (fieldName == null) {
+            visitor.visitVarInsn(ALOAD, 0);
+        } else {
+            visitor.visitVarInsn(ALOAD, 0);
+            visitor.visitFieldInsn(GETFIELD, context.getAsyncStateMachineClassName(), fieldName, expression.type.getDescriptor());
+        }
     }
 
     private void compileRefArgumentExpression(MethodVisitor visitor, CompilerContext context, BoundRefArgumentExpressionNode expression) {

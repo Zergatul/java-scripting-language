@@ -1,23 +1,20 @@
 package com.zergatul.scripting.parser.nodes;
 
 import com.zergatul.scripting.TextRange;
-import com.zergatul.scripting.lexer.Token;
 import com.zergatul.scripting.parser.NodeType;
 import com.zergatul.scripting.parser.ParserTreeVisitor;
 
-import java.util.Objects;
-
 public class FunctionNode extends CompilationUnitMemberNode {
 
-    public final Token asyncToken;
+    public final ModifiersNode modifiers;
     public final TypeNode returnType;
     public final NameExpressionNode name;
     public final ParameterListNode parameters;
     public final BlockStatementNode body;
 
-    public FunctionNode(Token asyncToken, TypeNode returnType, NameExpressionNode name, ParameterListNode parameters, BlockStatementNode body, TextRange range) {
+    public FunctionNode(ModifiersNode modifiers, TypeNode returnType, NameExpressionNode name, ParameterListNode parameters, BlockStatementNode body, TextRange range) {
         super(NodeType.FUNCTION, range);
-        this.asyncToken = asyncToken;
+        this.modifiers = modifiers;
         this.returnType = returnType;
         this.name = name;
         this.parameters = parameters;
@@ -31,6 +28,7 @@ public class FunctionNode extends CompilationUnitMemberNode {
 
     @Override
     public void acceptChildren(ParserTreeVisitor visitor) {
+        modifiers.accept(visitor);
         returnType.accept(visitor);
         name.accept(visitor);
         parameters.accept(visitor);
@@ -40,7 +38,7 @@ public class FunctionNode extends CompilationUnitMemberNode {
     @Override
     public boolean equals(Object obj) {
         if (obj instanceof FunctionNode other) {
-            return  Objects.equals(other.asyncToken, asyncToken) &&
+            return  other.modifiers.equals(modifiers) &&
                     other.returnType.equals(returnType) &&
                     other.name.equals(name) &&
                     other.parameters.equals(parameters) &&

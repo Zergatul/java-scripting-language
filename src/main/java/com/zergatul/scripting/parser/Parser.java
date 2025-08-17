@@ -453,18 +453,16 @@ public class Parser {
 
     private ClassMemberNode parseClassMemberNode() {
         if (current.type == TokenType.CONSTRUCTOR) {
-            Token keyword = advance();
-            ParameterListNode parameters = parseParameterList();
-            BlockStatementNode body = parameters.hasParentheses() ? parseBlockStatement() : createMissingBlockStatement();
-            return new ClassConstructorNode(keyword, parameters, body, TextRange.combine(keyword, body));
+            return parseClassConstructor();
         }
 
-        if (current.type == TokenType.VOID) {
-            TypeNode typeNode = new VoidTypeNode(advance().getRange());
-            IdentifierToken identifier = (IdentifierToken) advance();
-            ParameterListNode parameters = parseParameterList();
-            BlockStatementNode body = parameters.hasParentheses() ? parseBlockStatement() : createMissingBlockStatement();
-            return new ClassMethodNode(typeNode, new NameExpressionNode(identifier), parameters, body, TextRange.combine(typeNode, body));
+        if (current.type == TokenType.ASYNC || current.type == TokenType.VOID) {
+            return parseClassMethod();
+        }
+
+        ModifiersNode modifiersNode = parseModifiers();
+        if (modifiersNode.getRange().getLength() != 0) {
+            throw new InternalException();
         }
 
         TypeNode typeNode = parseTypeNode();
@@ -474,9 +472,7 @@ public class Parser {
                 Token semicolon = advance(TokenType.SEMICOLON);
                 return new ClassFieldNode(typeNode, new NameExpressionNode(identifier), TextRange.combine(typeNode, semicolon));
             } else if (current.type == TokenType.LEFT_PARENTHESES) {
-                ParameterListNode parameters = parseParameterList();
-                BlockStatementNode body = parameters.hasParentheses() ? parseBlockStatement() : createMissingBlockStatement();
-                return new ClassMethodNode(typeNode, new NameExpressionNode(identifier), parameters, body, TextRange.combine(typeNode, body));
+                return parseClassMethod(modifiersNode, typeNode, identifier);
             } else {
                 if (current.type == TokenType.EQUAL) {
                     addDiagnostic(ParserErrors.FieldInitializersNotSupported, current);
@@ -492,18 +488,39 @@ public class Parser {
         }
     }
 
-    private FunctionNode parseFunction() {
-        Token asyncToken = null;
-        if (current.type == TokenType.ASYNC) {
-            asyncToken = advance();
+    private ClassConstructorNode parseClassConstructor() {
+        if (current.type != TokenType.CONSTRUCTOR) {
+            throw new InternalException();
         }
 
-        TypeNode returnType;
-        if (current.type == TokenType.VOID) {
-            returnType = new VoidTypeNode(advance().getRange());
-        } else {
-            returnType = parseTypeNode();
-        }
+        Token keyword = advance();
+        ParameterListNode parameters = parseParameterList();
+        BlockStatementNode body = parameters.hasParentheses() ? parseBlockStatement() : createMissingBlockStatement();
+        return new ClassConstructorNode(keyword, parameters, body, TextRange.combine(keyword, body));
+    }
+
+    private ClassMethodNode parseClassMethod() {
+        ModifiersNode modifiersNode = parseModifiers();
+        TypeNode typeNode = parseTypeOrVoidNode();
+        IdentifierToken identifier = (IdentifierToken) advance();
+        return parseClassMethod(modifiersNode, typeNode, identifier);
+    }
+
+    private ClassMethodNode parseClassMethod(ModifiersNode modifiersNode, TypeNode typeNode, IdentifierToken identifier) {
+        ParameterListNode parameters = parseParameterList();
+        BlockStatementNode body = parameters.hasParentheses() ? parseBlockStatement() : createMissingBlockStatement();
+        return new ClassMethodNode(
+                modifiersNode,
+                typeNode,
+                new NameExpressionNode(identifier),
+                parameters,
+                body,
+                TextRange.combine(modifiersNode, body));
+    }
+
+    private FunctionNode parseFunction() {
+        ModifiersNode modifiers = parseModifiers();
+        TypeNode returnType = parseTypeOrVoidNode();
 
         IdentifierToken identifier;
         if (current.type == TokenType.IDENTIFIER) {
@@ -517,8 +534,16 @@ public class Parser {
         ParameterListNode parameters = parseParameterList();
         BlockStatementNode body = parameters.hasParentheses() ? parseBlockStatement() : createMissingBlockStatement();
 
-        TextRange range = TextRange.combine(asyncToken != null ? asyncToken : returnType, body);
-        return new FunctionNode(asyncToken, returnType, name, parameters, body, range);
+        return new FunctionNode(modifiers, returnType, name, parameters, body, TextRange.combine(modifiers, body));
+    }
+
+    private ModifiersNode parseModifiers() {
+        if (current.type == TokenType.ASYNC) {
+            Token token = advance();
+            return new ModifiersNode(List.of(token), token.getRange());
+        } else {
+            return new ModifiersNode(List.of(), createMissingTokenRange());
+        }
     }
 
     private ParameterListNode parseParameterList() {
@@ -1309,6 +1334,14 @@ public class Parser {
         if (current.type == TokenType.LET) {
             Token token = advance();
             return new LetTypeNode(token.getRange());
+        } else {
+            return parseTypeNode();
+        }
+    }
+
+    private TypeNode parseTypeOrVoidNode() {
+        if (current.type == TokenType.VOID) {
+            return new VoidTypeNode(advance().getRange());
         } else {
             return parseTypeNode();
         }

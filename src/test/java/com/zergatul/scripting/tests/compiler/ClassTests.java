@@ -1,9 +1,11 @@
 package com.zergatul.scripting.tests.compiler;
 
+import com.zergatul.scripting.AsyncRunnable;
 import com.zergatul.scripting.DiagnosticMessage;
 import com.zergatul.scripting.MultiLineTextRange;
 import com.zergatul.scripting.SingleLineTextRange;
 import com.zergatul.scripting.binding.BinderErrors;
+import com.zergatul.scripting.tests.compiler.helpers.FutureHelper;
 import com.zergatul.scripting.tests.compiler.helpers.IntStorage;
 import com.zergatul.scripting.tests.compiler.helpers.ObjectStorage;
 import com.zergatul.scripting.tests.compiler.helpers.StringStorage;
@@ -12,9 +14,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
-import static com.zergatul.scripting.tests.compiler.helpers.CompilerHelper.compile;
-import static com.zergatul.scripting.tests.compiler.helpers.CompilerHelper.getDiagnostics;
+import static com.zergatul.scripting.tests.compiler.helpers.CompilerHelper.*;
 
 public class ClassTests {
 
@@ -23,6 +25,7 @@ public class ClassTests {
         ApiRoot.intStorage = new IntStorage();
         ApiRoot.stringStorage = new StringStorage();
         ApiRoot.objectStorage = new ObjectStorage();
+        ApiRoot.futures = new FutureHelper();
     }
 
     @Test
@@ -468,9 +471,103 @@ public class ClassTests {
                         new DiagnosticMessage(BinderErrors.NotAllPathReturnValue, new MultiLineTextRange(2, 20, 6, 6, 33, 64))));
     }
 
+    @Test
+    public void awaitInConstructorTest() {
+        String code = """
+                class Class {
+                    constructor() {
+                        await futures.create();
+                    }
+                }
+                """;
+
+        List<DiagnosticMessage> messages = getDiagnostics(ApiRoot.class, code);
+
+        Assertions.assertIterableEquals(
+                messages,
+                List.of(
+                        new DiagnosticMessage(BinderErrors.AwaitInNonAsyncContext, new SingleLineTextRange(3, 9, 42, 5))));
+    }
+
+    @Test
+    public void awaitInMethodTest() {
+        String code = """
+                class Class {
+                    void method() {
+                        await futures.create();
+                    }
+                }
+                """;
+
+        List<DiagnosticMessage> messages = getDiagnostics(ApiRoot.class, code);
+
+        Assertions.assertIterableEquals(
+                messages,
+                List.of(
+                        new DiagnosticMessage(BinderErrors.AwaitInNonAsyncContext, new SingleLineTextRange(3, 9, 42, 5))));
+    }
+
+    @Test
+    public void asyncMethodTest1() {
+        String code = """
+                class Class {
+                    async int sum2() {
+                        return await futures.createInt() + await futures.createInt();
+                    }
+                }
+                
+                intStorage.add(await new Class().sum2());
+                """;
+
+        AsyncRunnable program = compileAsync(ApiRoot.class, code);
+        CompletableFuture<?> future = program.run();
+
+        Assertions.assertFalse(future.isDone());
+        ApiRoot.futures.getInt(0).complete(123);
+        Assertions.assertFalse(future.isDone());
+        ApiRoot.futures.getInt(1).complete(456);
+        Assertions.assertTrue(future.isDone());
+
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(579));
+    }
+
+    @Test
+    public void asyncMethodTest2() {
+        String code = """
+                class Class {
+                    int f1;
+                    int f2;
+                    async int calc(int p1, int p2) {
+                        let m1 = await futures.createInt();
+                        let a1 = p1 * this.f1 * m1;
+                        let m2 = await futures.createInt();
+                        let a2 = p2 * this.f2 * m2;
+                        return a1 + a2;
+                    }
+                }
+                
+                let c = new Class();
+                c.f1 = 4;
+                c.f2 = 5;
+                intStorage.add(await c.calc(6, 7));
+                """;
+
+        AsyncRunnable program = compileAsync(ApiRoot.class, code);
+        CompletableFuture<?> future = program.run();
+
+        Assertions.assertFalse(future.isDone());
+        ApiRoot.futures.getInt(0).complete(8);
+        Assertions.assertFalse(future.isDone());
+        ApiRoot.futures.getInt(1).complete(9);
+        Assertions.assertTrue(future.isDone());
+
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(4 * 6 * 8 + 5 * 7 * 9));
+    }
+
     public static class ApiRoot {
         public static IntStorage intStorage;
         public static StringStorage stringStorage;
         public static ObjectStorage objectStorage;
+        public static FutureHelper futures;
     }
 }

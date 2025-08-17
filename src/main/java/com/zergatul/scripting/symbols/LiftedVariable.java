@@ -3,7 +3,6 @@ package com.zergatul.scripting.symbols;
 import com.zergatul.scripting.compiler.CompilerContext;
 import com.zergatul.scripting.compiler.StackHelper;
 import org.objectweb.asm.MethodVisitor;
-import org.objectweb.asm.Type;
 
 import static org.objectweb.asm.Opcodes.GETFIELD;
 import static org.objectweb.asm.Opcodes.PUTFIELD;
@@ -38,13 +37,13 @@ public class LiftedVariable extends Variable {
     public void compileStore(CompilerContext context, MethodVisitor visitor) {
         closure.compileLoad(context, visitor);
         StackHelper.swap(visitor, context, variable.getType(), closure.getType());
-        visitor.visitFieldInsn(PUTFIELD, className, fieldName, Type.getDescriptor(variable.getType().getJavaClass()));
+        visitor.visitFieldInsn(PUTFIELD, className, fieldName, variable.getType().getDescriptor());
     }
 
     @Override
     public void compileLoad(CompilerContext context, MethodVisitor visitor) {
         closure.compileLoad(context, visitor);
-        visitor.visitFieldInsn(GETFIELD, className, fieldName, Type.getDescriptor(variable.getType().getJavaClass()));
+        visitor.visitFieldInsn(GETFIELD, className, fieldName, variable.getType().getDescriptor());
     }
 
     public void setField(String className, String fieldName) {

@@ -374,7 +374,7 @@ public class ParserTests {
         Assertions.assertEquals(result.unit(), new CompilationUnitNode(
                 new CompilationUnitMembersListNode(List.of(
                         new FunctionNode(
-                                null,
+                                new ModifiersNode(List.of(), new SingleLineTextRange(1, 1, 0, 0)),
                                 new VoidTypeNode(new SingleLineTextRange(1, 1, 0, 4)),
                                 new NameExpressionNode(
                                         new IdentifierToken("a", new SingleLineTextRange(1, 6, 5, 1))),
@@ -397,7 +397,7 @@ public class ParserTests {
         Assertions.assertEquals(result.unit(), new CompilationUnitNode(
                 new CompilationUnitMembersListNode(List.of(
                         new FunctionNode(
-                                null,
+                                new ModifiersNode(List.of(), new SingleLineTextRange(1, 1, 0, 0)),
                                 new ArrayTypeNode(
                                         new ArrayTypeNode(
                                                 new ArrayTypeNode(

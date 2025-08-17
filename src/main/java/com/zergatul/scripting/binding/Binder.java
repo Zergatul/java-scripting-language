@@ -189,7 +189,7 @@ public class Binder {
 
         SType returnType = methodDeclaration.getTypeNode().type;
 
-        pushMethodScope(returnType);
+        pushMethodScope(returnType, methodDeclaration.isAsync());
         addParametersToContext(methodDeclaration.getParameters());
         BoundBlockStatementNode body = bindBlockStatement(methodNode.body);
         popScope();
@@ -202,6 +202,7 @@ public class Binder {
 
         BoundNameExpressionNode name = new BoundNameExpressionNode(methodDeclaration.getSymbolRef(), methodNode.name.getRange());
         return new BoundClassMethodNode(
+                methodDeclaration.isAsync(),
                 (SFunction) methodDeclaration.getSymbolRef().get().getType(),
                 methodDeclaration.getTypeNode(),
                 name,
@@ -1518,7 +1519,7 @@ public class Binder {
             addDiagnostic(BinderErrors.SymbolAlreadyDeclared, functionNode.name, name);
         }
 
-        boolean isAsync = functionNode.asyncToken != null;
+        boolean isAsync = functionNode.modifiers.isAsync();
         BoundTypeNode returnTypeNode = bindType(functionNode.returnType);
         SType actualReturnType = isAsync ? new SFuture(returnTypeNode.type) : returnTypeNode.type;
         BoundParameterListNode parameters = bindParameterList(functionNode.parameters);
@@ -1569,10 +1570,12 @@ public class Binder {
     }
 
     private void buildClassMethodDeclaration(ClassDeclaration classDeclaration, ClassMethodNode methodNode) {
+        boolean isAsync = methodNode.modifiers.isAsync();
         BoundTypeNode typeNode = bindType(methodNode.type);
+        SType actualReturnType = isAsync ? new SFuture(typeNode.type) : typeNode.type;
         String methodName = methodNode.name.value;
         BoundParameterListNode parameters = bindParameterList(methodNode.parameters);
-        SFunction functionType = new SFunction(typeNode.type, parameters.parameters.stream().map(pn -> new MethodParameter(pn.getName().value, pn.getType())).toArray(MethodParameter[]::new));
+        SFunction functionType = new SFunction(actualReturnType, parameters.parameters.stream().map(pn -> new MethodParameter(pn.getName().value, pn.getType())).toArray(MethodParameter[]::new));
 
         boolean hasError = false;
         if (classDeclaration.hasField(methodName)) {
@@ -1586,7 +1589,7 @@ public class Binder {
         }
 
         SymbolRef symbolRef = new ImmutableSymbolRef(new MethodSymbol(methodName, functionType, methodNode.name.getRange()));
-        classDeclaration.addMethod(methodNode, new ClassMethodDeclaration(methodName, symbolRef, typeNode, parameters, hasError));
+        classDeclaration.addMethod(methodNode, new ClassMethodDeclaration(methodName, symbolRef, isAsync, typeNode, parameters, hasError));
     }
 
     private SymbolRef getSymbol(String name) {
@@ -1615,11 +1618,11 @@ public class Binder {
     }
 
     private void pushConstructorScope() {
-        context = context.createClassMethod(SVoidType.instance);
+        context = context.createClassMethod(SVoidType.instance, false);
     }
 
-    private void pushMethodScope(SType returnType) {
-        context = context.createClassMethod(returnType);
+    private void pushMethodScope(SType returnType, boolean isAsync) {
+        context = context.createClassMethod(returnType, isAsync);
     }
 
     private void popScope() {

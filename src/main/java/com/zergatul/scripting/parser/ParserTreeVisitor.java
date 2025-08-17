@@ -229,6 +229,11 @@ public abstract class ParserTreeVisitor {
         node.acceptChildren(this);
     }
 
+    public void explicitVisit(ModifiersNode node) {
+        visit(node);
+        node.acceptChildren(this);
+    }
+
     public void explicitVisit(NameExpressionNode node) {
         visit(node);
         node.acceptChildren(this);
@@ -379,6 +384,7 @@ public abstract class ParserTreeVisitor {
     public void visit(MemberAccessExpressionNode node) {}
     public void visit(MetaTypeExpressionNode node) {}
     public void visit(MetaTypeOfExpressionNode node) {}
+    public void visit(ModifiersNode node) {}
     public void visit(ObjectCreationExpressionNode node) {}
     public void visit(NameExpressionNode node) {}
     public void visit(ParameterListNode node) {}
