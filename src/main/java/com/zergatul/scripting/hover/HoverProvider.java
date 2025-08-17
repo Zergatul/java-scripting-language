@@ -219,6 +219,8 @@ public class HoverProvider {
             } else {
                 return span(theme.getTypeColor(), clazz.getName());
             }
+        } else if (type instanceof SDeclaredType) {
+            return span(theme.getTypeColor(), type.toString());
         } else {
             return "TODO";
         }

@@ -1364,7 +1364,7 @@ public class Parser {
                     yield parseJavaType();
                 } else {
                     advance();
-                    yield new CustomTypeNode(identifier.value, current.getRange());
+                    yield new CustomTypeNode(identifier.value, identifier.getRange());
                 }
             }
             default -> {

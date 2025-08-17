@@ -659,12 +659,32 @@ public class ParserTests {
                         new VariableDeclarationNode(new LetTypeNode(new SingleLineTextRange(1, 1, 0, 3)),
                                 new NameExpressionNode("x", new SingleLineTextRange(1, 5, 4, 1)),
                                 new ObjectCreationExpressionNode(
-                                        new CustomTypeNode("ClassA", new SingleLineTextRange(1, 19, 18, 1)),
+                                        new CustomTypeNode("ClassA", new SingleLineTextRange(1, 13, 12, 6)),
                                         new ArgumentsListNode(List.of(), new SingleLineTextRange(1, 19, 18, 2)),
                                         new SingleLineTextRange(1, 9, 8, 12)),
                                 new SingleLineTextRange(1, 1, 0, 21))),
                         new SingleLineTextRange(1, 1, 0, 21)),
                 new SingleLineTextRange(1, 1, 0, 21)));
+    }
+
+    @Test
+    public void customTypeTest() {
+        ParserOutput result = parse("""
+                CustomType a;
+                """);
+        Assertions.assertTrue(result.diagnostics().isEmpty());
+        Assertions.assertEquals(result.unit(), new CompilationUnitNode(
+                new CompilationUnitMembersListNode(
+                        List.of(),
+                        new SingleLineTextRange(1, 1, 0, 0)),
+                new StatementsListNode(
+                        List.of(
+                                new VariableDeclarationNode(
+                                        new CustomTypeNode("CustomType", new SingleLineTextRange(1, 1, 0, 10)),
+                                        new NameExpressionNode("a", new SingleLineTextRange(1, 12, 11, 1)),
+                                        new SingleLineTextRange(1, 1, 0, 13))),
+                        new SingleLineTextRange(1, 1, 0, 13)),
+                new SingleLineTextRange(1, 1, 0, 13)));
     }
 
     private ParserOutput parse(String code) {

@@ -150,6 +150,17 @@ public class HoverTests {
         ), new SingleLineTextRange(1, 19, 18, 1)));
     }
 
+    @Test
+    public void classTest() {
+        HoverProvider.HoverResponse hover = getHover("""
+                class MyType {}
+                MyType x;
+                """, 2, 8);
+        Assertions.assertEquals(hover, new HoverProvider.HoverResponse(List.of(
+                String.format("<span style=\"color:#555;\">(local variable)</span> <span style=\"color:#333;\">MyType</span> <span style=\"color:#555;\">x</span>")
+        ), new SingleLineTextRange(2, 8, 23, 1)));
+    }
+
     private static HoverProvider.HoverResponse getHover(String code, int line, int column) {
         return getHover(code, ApiRoot.class, Runnable.class, line, column);
     }
