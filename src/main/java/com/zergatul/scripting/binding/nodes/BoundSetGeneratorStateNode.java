@@ -2,6 +2,7 @@ package com.zergatul.scripting.binding.nodes;
 
 import com.zergatul.scripting.InternalException;
 import com.zergatul.scripting.TextRange;
+import com.zergatul.scripting.binding.BinderTreeRewriter;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
 import com.zergatul.scripting.generator.StateBoundary;
 import com.zergatul.scripting.parser.NodeType;
@@ -18,14 +19,15 @@ public class BoundSetGeneratorStateNode extends BoundStatementNode {
     }
 
     @Override
-    public void accept(BinderTreeVisitor visitor) {
+    public void accept(BinderTreeVisitor visitor) {}
 
+    @Override
+    public BoundNode accept(BinderTreeRewriter rewriter) {
+        return this;
     }
 
     @Override
-    public void acceptChildren(BinderTreeVisitor visitor) {
-
-    }
+    public void acceptChildren(BinderTreeVisitor visitor) {}
 
     @Override
     public List<BoundNode> getChildren() {

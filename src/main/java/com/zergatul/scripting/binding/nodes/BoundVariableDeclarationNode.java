@@ -1,6 +1,7 @@
 package com.zergatul.scripting.binding.nodes;
 
 import com.zergatul.scripting.TextRange;
+import com.zergatul.scripting.binding.BinderTreeRewriter;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
 import com.zergatul.scripting.parser.NodeType;
 
@@ -33,6 +34,11 @@ public class BoundVariableDeclarationNode extends BoundStatementNode {
     }
 
     @Override
+    public BoundNode accept(BinderTreeRewriter rewriter) {
+        return rewriter.visit(this);
+    }
+
+    @Override
     public void acceptChildren(BinderTreeVisitor visitor) {
         // type can be null for generator tree
         if (type != null) {
@@ -50,6 +56,14 @@ public class BoundVariableDeclarationNode extends BoundStatementNode {
             return List.of(type, name, expression);
         } else {
             return List.of(type, name);
+        }
+    }
+
+    public BoundVariableDeclarationNode update(BoundExpressionNode expression) {
+        if (this.expression != expression) {
+            return new BoundVariableDeclarationNode(type, name, expression, getRange());
+        } else {
+            return this;
         }
     }
 }

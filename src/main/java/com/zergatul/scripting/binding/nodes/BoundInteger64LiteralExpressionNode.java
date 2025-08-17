@@ -1,6 +1,7 @@
 package com.zergatul.scripting.binding.nodes;
 
 import com.zergatul.scripting.TextRange;
+import com.zergatul.scripting.binding.BinderTreeRewriter;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
 import com.zergatul.scripting.parser.NodeType;
 import com.zergatul.scripting.type.SInt64;
@@ -11,10 +12,6 @@ public class BoundInteger64LiteralExpressionNode extends BoundExpressionNode {
 
     public final long value;
 
-    public BoundInteger64LiteralExpressionNode(long value) {
-        this(value, null);
-    }
-
     public BoundInteger64LiteralExpressionNode(long value, TextRange range) {
         super(NodeType.INTEGER64_LITERAL, SInt64.instance, range);
         this.value = value;
@@ -23,6 +20,11 @@ public class BoundInteger64LiteralExpressionNode extends BoundExpressionNode {
     @Override
     public void accept(BinderTreeVisitor visitor) {
         visitor.explicitVisit(this);
+    }
+
+    @Override
+    public BoundNode accept(BinderTreeRewriter rewriter) {
+        return rewriter.visit(this);
     }
 
     @Override

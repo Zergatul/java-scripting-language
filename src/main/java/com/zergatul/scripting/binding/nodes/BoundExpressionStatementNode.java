@@ -1,6 +1,7 @@
 package com.zergatul.scripting.binding.nodes;
 
 import com.zergatul.scripting.TextRange;
+import com.zergatul.scripting.binding.BinderTreeRewriter;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
 import com.zergatul.scripting.parser.NodeType;
 
@@ -25,6 +26,11 @@ public class BoundExpressionStatementNode extends BoundStatementNode {
     }
 
     @Override
+    public BoundNode accept(BinderTreeRewriter rewriter) {
+        return rewriter.visit(this);
+    }
+
+    @Override
     public void acceptChildren(BinderTreeVisitor visitor) {
         expression.accept(visitor);
     }
@@ -40,6 +46,14 @@ public class BoundExpressionStatementNode extends BoundStatementNode {
             return other.expression.equals(expression) && other.getRange().equals(getRange());
         } else {
             return false;
+        }
+    }
+
+    public BoundExpressionStatementNode update(BoundExpressionNode expression) {
+        if (this.expression != expression) {
+            return new BoundExpressionStatementNode(expression, getRange());
+        } else {
+            return this;
         }
     }
 }
