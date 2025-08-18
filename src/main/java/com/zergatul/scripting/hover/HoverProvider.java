@@ -15,8 +15,8 @@ import java.util.Optional;
 
 public class HoverProvider {
 
-    private final Theme theme;
-    private final DocumentationProvider documentationProvider;
+    protected final Theme theme;
+    protected final DocumentationProvider documentationProvider;
 
     public HoverProvider(Theme theme) {
         this.theme = theme;
@@ -156,31 +156,31 @@ public class HoverProvider {
         };
     }
 
-    private HoverResponse getBoolean(TextRange range) {
+    protected HoverResponse getBoolean(TextRange range) {
         return new HoverResponse(List.of(predefinedType("boolean"), description(documentationProvider.getTypeDocs(SBoolean.instance))), range);
     }
 
-    private HoverResponse getInt(TextRange range) {
+    protected HoverResponse getInt(TextRange range) {
         return new HoverResponse(List.of(predefinedType("int"), description(documentationProvider.getTypeDocs(SInt.instance))), range);
     }
 
-    private HoverResponse getInt64(TextRange range) {
+    protected HoverResponse getInt64(TextRange range) {
         return new HoverResponse(List.of(predefinedType("long"), description(documentationProvider.getTypeDocs(SInt64.instance))), range);
     }
 
-    private HoverResponse getChar(TextRange range) {
+    protected HoverResponse getChar(TextRange range) {
         return new HoverResponse(List.of(predefinedType("char"), description(documentationProvider.getTypeDocs(SChar.instance))), range);
     }
 
-    private HoverResponse getFloat(TextRange range) {
+    protected HoverResponse getFloat(TextRange range) {
         return new HoverResponse(List.of(predefinedType("float"), description(documentationProvider.getTypeDocs(SFloat.instance))), range);
     }
 
-    private HoverResponse getString(TextRange range) {
+    protected HoverResponse getString(TextRange range) {
         return new HoverResponse(List.of(predefinedType("string"), description(documentationProvider.getTypeDocs(SString.instance))), range);
     }
 
-    private String type(SType type) {
+    protected String type(SType type) {
         if (type instanceof SPredefinedType) {
             return predefinedType(type.toString());
         } else if (type instanceof SArrayType array) {
@@ -214,11 +214,7 @@ public class HoverProvider {
             return span(theme.getTypeColor(), type.toString());
         } else if (type instanceof SClassType) {
             Class<?> clazz = type.getJavaClass();
-            if (clazz.getName().startsWith("com.zergatul.cheatutils.scripting.modules")) {
-                return span(theme.getTypeColor(), clazz.getSimpleName());
-            } else {
-                return span(theme.getTypeColor(), clazz.getName());
-            }
+            return span(theme.getTypeColor(), clazz.getName());
         } else if (type instanceof SDeclaredType) {
             return span(theme.getTypeColor(), type.toString());
         } else {
@@ -226,19 +222,19 @@ public class HoverProvider {
         }
     }
 
-    private String predefinedType(String text) {
+    protected String predefinedType(String text) {
         return span(theme.getPredefinedTypeColor(), text);
     }
 
-    private String description(String text) {
+    protected String description(String text) {
         return span(theme.getDescriptionColor(), text);
     }
 
-    private String parameter(String text) {
+    protected String parameter(String text) {
         return span(theme.getParameterColor(), text);
     }
 
-    private String span(String color, String text) {
+    protected String span(String color, String text) {
         return String.format("<span style=\"color:#%s;\">%s</span>", color, escapeHtml(text));
     }
 
