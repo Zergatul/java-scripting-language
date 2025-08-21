@@ -5,7 +5,7 @@ import org.objectweb.asm.MethodVisitor;
 import java.util.List;
 import java.util.Optional;
 
-public abstract class MethodReference extends MemberReference {
+public abstract class MethodReference extends MemberReference implements Invocable {
 
     @SuppressWarnings("unused") // for monaco integration
     public abstract SType getOwner();

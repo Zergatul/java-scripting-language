@@ -5,19 +5,19 @@ import org.objectweb.asm.MethodVisitor;
 
 import static org.objectweb.asm.Opcodes.*;
 
-public class SReference extends SType {
+public class SByReference extends SType {
 
-    public static final SReference BOOLEAN = new SReference(SBoolean.instance);
-    public static final SReference INT8 = new SReference(SInt8.instance);
-    public static final SReference INT16 = new SReference(SInt16.instance);
-    public static final SReference INT = new SReference(SInt.instance);
-    public static final SReference INT64 = new SReference(SInt64.instance);
-    public static final SReference FLOAT32 = new SReference(SFloat32.instance);
-    public static final SReference FLOAT = new SReference(SFloat.instance);
+    public static final SByReference BOOLEAN = new SByReference(SBoolean.instance);
+    public static final SByReference INT8 = new SByReference(SInt8.instance);
+    public static final SByReference INT16 = new SByReference(SInt16.instance);
+    public static final SByReference INT = new SByReference(SInt.instance);
+    public static final SByReference INT64 = new SByReference(SInt64.instance);
+    public static final SByReference FLOAT32 = new SByReference(SFloat32.instance);
+    public static final SByReference FLOAT = new SByReference(SFloat.instance);
 
     private final SType underlying;
 
-    private SReference(SType underlying) {
+    private SByReference(SType underlying) {
         this.underlying = underlying;
     }
 

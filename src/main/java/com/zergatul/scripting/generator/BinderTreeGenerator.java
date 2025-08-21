@@ -311,6 +311,7 @@ public class BinderTreeGenerator {
                 case METHOD_INVOCATION_EXPRESSION -> rewriteAsync((BoundMethodInvocationExpressionNode) node);
                 case UNARY_EXPRESSION -> rewriteAsync((BoundUnaryExpressionNode) node);
                 case IMPLICIT_CAST -> rewriteAsync((BoundImplicitCastExpressionNode) node);
+                case CONVERSION -> rewriteAsync((BoundConversionNode) node);
                 default -> throw new InternalException(String.format("Async %s not supported yet.", node.getNodeType()));
             };
         } else {
@@ -375,6 +376,17 @@ public class BinderTreeGenerator {
         return new BoundImplicitCastExpressionNode(
                 new BoundNameExpressionNode(variable),
                 node.operation);
+    }
+
+    private BoundExpressionNode rewriteAsync(BoundConversionNode node) {
+        LiftedVariable variable = new LiftedVariable(new LocalVariable(null, node.expression.type, null));
+        storeExpressionValue(variable, node.expression);
+        return new BoundConversionNode(
+                new BoundNameExpressionNode(variable),
+                node.conversionType,
+                node.operation,
+                node.type,
+                node.getRange());
     }
 
     private void storeExpressionValue(LiftedVariable variable, BoundExpressionNode expression) {

@@ -4,7 +4,8 @@ import com.zergatul.scripting.InternalException;
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.symbols.*;
 import com.zergatul.scripting.type.SDeclaredType;
-import com.zergatul.scripting.type.SReference;
+import com.zergatul.scripting.type.SByReference;
+import com.zergatul.scripting.type.SGenericFunction;
 import com.zergatul.scripting.type.SType;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
@@ -40,6 +41,7 @@ public class CompilerContext {
     private Label generatorContinueLabel;
     private JavaInteropPolicy policy;
     private int lastEmittedLine;
+    private final List<SGenericFunction> genericFunctions;
 
     private CompilerContext(
             CompilerContext parent,
@@ -75,6 +77,12 @@ public class CompilerContext {
             stack.set(initialStackIndex);
         }
         lastEmittedLine = -1;
+
+        if (parent == null) {
+            genericFunctions = new ArrayList<>();
+        } else {
+            genericFunctions = null;
+        }
     }
 
     public static CompilerContext create(SType returnType, boolean isAsync) {
@@ -135,7 +143,7 @@ public class CompilerContext {
         return variable;
     }
 
-    public LocalVariable addLocalRefParameter(String name, SReference refType, SType underlying, TextRange definition) {
+    public LocalVariable addLocalRefParameter(String name, SByReference refType, SType underlying, TextRange definition) {
         if (name == null || name.isEmpty()) {
             throw new InternalException();
         }
@@ -322,6 +330,26 @@ public class CompilerContext {
         return null;
     }
 
+    public List<SGenericFunction> getGenericFunctions() {
+        return genericFunctions;
+    }
+
+    public SGenericFunction getGenericFunction(SType returnType, SType[] parameters) {
+        for (SGenericFunction func : root.genericFunctions) {
+            if (func.matches(returnType, parameters)) {
+                return func;
+            }
+        }
+
+        SGenericFunction genericFunction = new SGenericFunction(returnType, parameters);
+        root.genericFunctions.add(genericFunction);
+        return genericFunction;
+    }
+
+    public void copyGenericFunctionsFrom(CompilerContext other) {
+        genericFunctions.addAll(other.getGenericFunctions());
+    }
+
     public boolean hasSymbol(String name) {
         return getSymbol(name) != null;
     }
@@ -455,7 +483,7 @@ public class CompilerContext {
             if (ref.get() instanceof LocalVariable local) {
                 visitor.visitLocalVariable(
                         local.getName(),
-                        Type.getDescriptor(local.getType().getJavaClass()),
+                        local.getType().getDescriptor(),
                         null,
                         local.getDeclarationLabel(),
                         label,

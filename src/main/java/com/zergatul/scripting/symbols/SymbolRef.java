@@ -18,6 +18,10 @@ public abstract class SymbolRef {
         return references;
     }
 
+    public Function asFunction() {
+        return (Function) get();
+    }
+
     public Variable asVariable() {
         return (Variable) get();
     }

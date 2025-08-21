@@ -454,6 +454,9 @@ public class CompletionProvider<T> {
             if (node instanceof BoundImplicitCastExpressionNode implicitCast) {
                 return getUnfinished(implicitCast.operand, line, column);
             }
+            if (node instanceof BoundConversionNode conversionNode) {
+                return getUnfinished(conversionNode.expression, line, column);
+            }
             if (node instanceof BoundAwaitExpressionNode awaitExpression) {
                 return getUnfinished(awaitExpression.expression, line, column);
             }

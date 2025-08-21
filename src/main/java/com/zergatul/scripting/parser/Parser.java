@@ -1367,6 +1367,7 @@ public class Parser {
                     yield new CustomTypeNode(identifier.value, identifier.getRange());
                 }
             }
+            case LEFT_PARENTHESES -> parseFunctionType();
             default -> {
                 addDiagnostic(ParserErrors.TypeExpected, current, current.getRawValue(code));
                 yield new InvalidTypeNode(advance().getRange());
@@ -1461,6 +1462,94 @@ public class Parser {
         }
     }
 
+    private FunctionTypeNode parseFunctionType() {
+        if (current.type != TokenType.LEFT_PARENTHESES) {
+            throw new InternalException();
+        }
+
+        Token leftParenthesis = advance(TokenType.LEFT_PARENTHESES);
+
+        List<TypeNode> parameters = new ArrayList<>();
+
+        final int STATE_BEGIN = 1;
+        final int STATE_READ_TYPE = 2;
+        final int STATE_READ_COMMA = 3;
+        final int STATE_END = 4;
+        int state = STATE_BEGIN;
+        while (state != STATE_END) {
+            switch (state) {
+                case STATE_BEGIN -> {
+                    if (current.type == TokenType.RIGHT_PARENTHESES) {
+                        state = STATE_END;
+                        break;
+                    }
+
+                    LookAhead ahead = new LookAhead();
+                    try {
+                        if (!tryAdvanceType()) {
+                            state = STATE_END;
+                        }
+                    } finally {
+                        ahead.rollback();
+                    }
+
+                    if (state == STATE_END) {
+                        addDiagnostic(ParserErrors.TypeExpected, current, current.getRawValue(code));
+                    } else {
+                        parameters.add(parseTypeNode());
+                        state = STATE_READ_TYPE;
+                    }
+                }
+                case STATE_READ_TYPE -> {
+                    if (current.type == TokenType.COMMA) {
+                        advance();
+                        state = STATE_READ_COMMA;
+                        break;
+                    }
+                    if (current.type == TokenType.RIGHT_PARENTHESES) {
+                        state = STATE_END;
+                        break;
+                    }
+                    addDiagnostic(ParserErrors.CommaOrCloseParenthesesExpected, current, current.getRawValue(code));
+                    state = STATE_END;
+                }
+                case STATE_READ_COMMA -> {
+                    LookAhead ahead = new LookAhead();
+                    try {
+                        if (!tryAdvanceType()) {
+                            state = STATE_END;
+                        }
+                    } finally {
+                        ahead.rollback();
+                    }
+
+                    if (state == STATE_END) {
+                        addDiagnostic(ParserErrors.TypeExpected, current, current.getRawValue(code));
+                    } else {
+                        parameters.add(parseTypeNode());
+                        state = STATE_READ_TYPE;
+                    }
+                }
+            }
+        }
+
+        Token rightParenthesis = advance(TokenType.RIGHT_PARENTHESES);
+
+        if (rightParenthesis.getRange().isEmpty()) {
+            TypeNode returnTypeNode = new InvalidTypeNode(createMissingTokenRangeAfterLast());
+            return new FunctionTypeNode(leftParenthesis, parameters, rightParenthesis, returnTypeNode, TextRange.combine(leftParenthesis, returnTypeNode));
+        }
+
+        Token arrow = advance(TokenType.MINUS_GREATER);
+        if (arrow.getRange().isEmpty()) {
+            TypeNode returnTypeNode = new InvalidTypeNode(createMissingTokenRangeAfterLast());
+            return new FunctionTypeNode(leftParenthesis, parameters, rightParenthesis, returnTypeNode, TextRange.combine(leftParenthesis, returnTypeNode));
+        }
+
+        TypeNode returnTypeNode = parseTypeOrVoidNode();
+        return new FunctionTypeNode(leftParenthesis, parameters, rightParenthesis, returnTypeNode, TextRange.combine(leftParenthesis, returnTypeNode));
+    }
+
     private boolean tryAdvanceType() {
         if (isPredefinedType()) {
             advance();
@@ -1478,6 +1567,18 @@ public class Parser {
                 }
             }
             advanceArrayMarkers();
+            return true;
+        } else if (current.type == TokenType.LEFT_PARENTHESES) {
+            advance();
+            if (current.type != TokenType.RIGHT_PARENTHESES) {
+                return false;
+            }
+            advance();
+            if (current.type != TokenType.MINUS_GREATER) {
+                return false;
+            }
+            advance();
+            tryAdvanceType();
             return true;
         } else {
             return false;

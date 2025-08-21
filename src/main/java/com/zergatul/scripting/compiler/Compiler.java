@@ -26,6 +26,7 @@ import com.zergatul.scripting.visitors.LocalParameterVisitor;
 import org.objectweb.asm.*;
 
 import java.io.IOException;
+import java.lang.invoke.LambdaMetafactory;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -60,13 +61,15 @@ public class Compiler {
         BinderOutput binderOutput = binder.bind();
 
         if (binderOutput.diagnostics().isEmpty()) {
-            return CompilationResult.success(compileUnit(binderOutput.unit()));
+            return CompilationResult.success(compileUnit(binderOutput));
         } else {
             return CompilationResult.failed(binderOutput.diagnostics());
         }
     }
 
-    private <T> T compileUnit(BoundCompilationUnitNode unit) {
+    private <T> T compileUnit(BinderOutput output) {
+        BoundCompilationUnitNode unit = output.unit();
+
         ClassWriter writer = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
         emitSourceFile(writer);
         String name =
@@ -74,7 +77,7 @@ public class Compiler {
                 (parameters.getClassNamePrefix() != null ? parameters.getClassNamePrefix() : "DynamicClass_") +
                 counter.incrementAndGet();
         writer.visit(
-                V1_5,
+                V1_8,
                 ACC_PUBLIC,
                 name,
                 null,
@@ -83,6 +86,8 @@ public class Compiler {
 
         CompilerContext context = parameters.getContext();
         context.setClassName(name);
+
+        context.copyGenericFunctionsFrom(output.context());
 
         compileCompilationUnitMembers(unit, writer, context);
         buildEmptyConstructor(writer);
@@ -130,6 +135,7 @@ public class Compiler {
         }
 
         compileClasses(classes, writer, context);
+        compileGenericFunctions(context.getGenericFunctions());
         compileStaticVariables(fields, writer, context);
         compileFunctions(functions, writer, context);
     }
@@ -140,6 +146,9 @@ public class Compiler {
             String name = context.getClassName() + "$" + classNode.name.value;
             ((SDeclaredType) classNode.name.getSymbol().getType()).setInternalName(name);
         }
+
+        // setup generic functions in advance for the same reason
+        setupGenericFunctions(context.getGenericFunctions());
 
         for (BoundClassNode classNode : classNodes) {
             String name = classNode.name.getSymbol().getType().getInternalName();
@@ -152,7 +161,7 @@ public class Compiler {
 
             ClassWriter innerWriter = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
             innerWriter.visit(
-                    V1_5,
+                    V1_8,
                     ACC_PUBLIC,
                     name,
                     null,
@@ -213,7 +222,7 @@ public class Compiler {
     }
 
     private void compileClassConstructor(ClassWriter writer, BoundClassConstructorNode constructor, CompilerContext context) {
-        MethodVisitor constructorVisitor = writer.visitMethod(ACC_PUBLIC, "<init>", constructor.functionType.getDescriptor(), null, null);
+        MethodVisitor constructorVisitor = writer.visitMethod(ACC_PUBLIC, "<init>", constructor.functionType.getMethodDescriptor(), null, null);
         constructorVisitor.visitCode();
         constructorVisitor.visitVarInsn(ALOAD, 0);
         constructorVisitor.visitMethodInsn(INVOKESPECIAL, Type.getInternalName(Object.class), "<init>", Type.getMethodDescriptor(Type.VOID_TYPE), false);
@@ -231,7 +240,7 @@ public class Compiler {
     }
 
     private void compileClassMethod(ClassWriter writer, BoundClassMethodNode methodNode, CompilerContext context) {
-        MethodVisitor methodVisitor = writer.visitMethod(ACC_PUBLIC, methodNode.name.value, methodNode.functionType.getDescriptor(), null, null);
+        MethodVisitor methodVisitor = writer.visitMethod(ACC_PUBLIC, methodNode.name.value, methodNode.functionType.getMethodDescriptor(), null, null);
         methodVisitor.visitCode();
 
         context = context.createClassMethod(methodNode.functionType.getReturnType(), methodNode.isAsync);
@@ -250,6 +259,43 @@ public class Compiler {
 
         methodVisitor.visitMaxs(0, 0);
         methodVisitor.visitEnd();
+    }
+
+    private void setupGenericFunctions(List<SGenericFunction> functions) {
+        for (SGenericFunction function : functions) {
+            String name = "com/zergatul/scripting/dynamic/GenericFunction_" + counter.incrementAndGet();
+            function.setInternalName(name);
+        }
+    }
+
+    private void compileGenericFunctions(List<SGenericFunction> functions) {
+        for (SGenericFunction function : functions) {
+            ClassWriter writer = new ClassWriter(0);
+            writer.visit(
+                    V1_8,
+                    ACC_PUBLIC | ACC_ABSTRACT | ACC_INTERFACE,
+                    function.getInternalName(),
+                    null,
+                    Type.getInternalName(Object.class),
+                    null);
+
+            MethodVisitor visitor = writer.visitMethod(
+                    ACC_PUBLIC | ACC_ABSTRACT,
+                    function.getMethodName(),
+                    function.getMethodDescriptor(),
+                    null,
+                    null);
+            visitor.visitEnd();
+
+            writer.visitEnd();
+
+            String shortName = function.getShortClassName();
+            byte[] bytecode = writer.toByteArray();
+            saveClassFile(shortName, bytecode);
+
+            Class<?> interfaceClass = classLoader.defineClass(function.getInternalName().replace('/', '.'), bytecode);
+            function.setJavaClass(interfaceClass);
+        }
     }
 
     private void compileStaticVariables(List<BoundStaticVariableNode> staticVariableNodes, ClassWriter writer, CompilerContext context) {
@@ -287,12 +333,12 @@ public class Compiler {
     private void compileFunctions(List<BoundFunctionNode> functions, ClassWriter writer, CompilerContext context) {
         for (BoundFunctionNode function : functions) {
             Function symbol = (Function) function.name.getSymbol();
-            SFunction type = symbol.getFunctionType();
+            SStaticFunction type = symbol.getFunctionType();
 
             MethodVisitor visitor = writer.visitMethod(
                     ACC_PUBLIC | ACC_STATIC,
                     function.name.value,
-                    type.getDescriptor(),
+                    type.getMethodDescriptor(),
                     null,
                     null);
             visitor.visitCode();
@@ -782,7 +828,7 @@ public class Compiler {
         emitSourceFile(writer);
         String name = "com/zergatul/scripting/dynamic/DynamicClosure_" + counter.incrementAndGet();
         writer.visit(
-                V1_5,
+                V1_8,
                 ACC_PUBLIC,
                 name,
                 null,
@@ -887,7 +933,7 @@ public class Compiler {
         emitSourceFile(writer);
         String name = "com/zergatul/scripting/dynamic/DynamicAsyncStateMachine_" + counter.incrementAndGet();
         writer.visit(
-                V1_5,
+                V1_8,
                 ACC_PUBLIC,
                 name,
                 null,
@@ -1135,6 +1181,7 @@ public class Compiler {
             case TYPE_CAST_EXPRESSION -> compileTypeCastExpression(visitor, context, (BoundTypeCastExpressionNode) expression);
             case CONDITIONAL_EXPRESSION -> compileConditionalExpression(visitor, context, (BoundConditionalExpressionNode) expression);
             case IMPLICIT_CAST -> compileImplicitCastExpression(visitor, context, (BoundImplicitCastExpressionNode) expression);
+            case CONVERSION -> compileConversionExpression(visitor, context, (BoundConversionNode) expression);
             case NAME_EXPRESSION -> compileNameExpression(visitor, context, (BoundNameExpressionNode) expression);
             case THIS_EXPRESSION -> compileThisExpression(visitor, context, (BoundThisExpressionNode) expression);
             case STATIC_REFERENCE -> compileStaticReferenceExpression();
@@ -1148,6 +1195,7 @@ public class Compiler {
             case INDEX_EXPRESSION -> compileIndexExpression(visitor, context, (BoundIndexExpressionNode) expression);
             case LAMBDA_EXPRESSION -> compileLambdaExpression(visitor, context, (BoundLambdaExpressionNode) expression);
             case FUNCTION_INVOCATION -> compileFunctionInvocationExpression(visitor, context, (BoundFunctionInvocationExpression) expression);
+            case VARIABLE_INVOCATION -> compileVariableInvocation(visitor, context, (BoundVariableInvocationExpression) expression);
             case GENERATOR_GET_VALUE -> compileGeneratorGetValue(visitor, context, (BoundGeneratorGetValueNode) expression);
             case STACK_LOAD -> compileStackLoad(visitor, (BoundStackLoadNode) expression);
             case FUNCTION_AS_LAMBDA -> compileFunctionAsLambda(visitor, context, (BoundFunctionAsLambdaExpressionNode) expression);
@@ -1239,6 +1287,93 @@ public class Compiler {
     private void compileImplicitCastExpression(MethodVisitor visitor, CompilerContext context, BoundImplicitCastExpressionNode expression) {
         compileExpression(visitor, context, expression.operand);
         expression.operation.apply(visitor);
+    }
+
+    private void compileConversionExpression(MethodVisitor visitor, CompilerContext context, BoundConversionNode expression) {
+        switch (expression.conversionType) {
+            case IDENTITY -> compileExpression(visitor, context, expression.expression);
+
+            case IMPLICIT_CAST -> compileImplicitCastConversion(visitor, context, expression);
+
+            case FUNCTION_TO_INTERFACE -> compileFunctionToInterfaceConversion(
+                    visitor,
+                    context,
+                    (BoundFunctionReferenceNode) expression.expression,
+                    (SFunctionalInterface) expression.type);
+
+            case FUNCTION_TO_GENERIC -> compileFunctionToGeneric(
+                    visitor,
+                    context,
+                    (BoundFunctionReferenceNode) expression.expression,
+                    (SGenericFunction) expression.type);
+
+            default -> throw new InternalException();
+        }
+    }
+
+    private void compileImplicitCastConversion(MethodVisitor visitor, CompilerContext context, BoundConversionNode expression) {
+        compileExpression(visitor, context, expression.expression);
+        expression.operation.apply(visitor);
+    }
+
+    private void compileFunctionToInterfaceConversion(MethodVisitor visitor, CompilerContext context, BoundFunctionReferenceNode functionReferenceNode, SFunctionalInterface functionalInterface) {
+        Handle bsm = new Handle(
+                H_INVOKESTATIC,
+                Type.getInternalName(LambdaMetafactory.class),
+                "metafactory",
+                "(Ljava/lang/invoke/MethodHandles$Lookup;"
+                        + "Ljava/lang/String;"
+                        + "Ljava/lang/invoke/MethodType;"
+                        + "Ljava/lang/invoke/MethodType;"
+                        + "Ljava/lang/invoke/MethodHandle;"
+                        + "Ljava/lang/invoke/MethodType;)"
+                        + "Ljava/lang/invoke/CallSite;",
+                false);
+
+        Handle impl = new Handle(
+                H_INVOKESTATIC,
+                context.getClassName(),
+                functionReferenceNode.getFunction().getName(),
+                functionalInterface.getActualMethodDescriptor(),
+                false);
+
+        visitor.visitInvokeDynamicInsn(
+                functionalInterface.getMethodName(),
+                Type.getMethodDescriptor(Type.getType(functionalInterface.getJavaClass())),
+                bsm,
+                Type.getType(functionalInterface.getRawMethodDescriptor()),
+                impl,
+                Type.getType(functionalInterface.getIntermediateMethodDescriptor()));
+    }
+
+    private void compileFunctionToGeneric(MethodVisitor visitor, CompilerContext context, BoundFunctionReferenceNode functionReferenceNode, SGenericFunction genericFunction) {
+        Handle bsm = new Handle(
+                H_INVOKESTATIC,
+                Type.getInternalName(LambdaMetafactory.class),
+                "metafactory",
+                "(Ljava/lang/invoke/MethodHandles$Lookup;"
+                        + "Ljava/lang/String;"
+                        + "Ljava/lang/invoke/MethodType;"
+                        + "Ljava/lang/invoke/MethodType;"
+                        + "Ljava/lang/invoke/MethodHandle;"
+                        + "Ljava/lang/invoke/MethodType;)"
+                        + "Ljava/lang/invoke/CallSite;",
+                false);
+
+        Handle impl = new Handle(
+                H_INVOKESTATIC,
+                context.getClassName(),
+                functionReferenceNode.getFunction().getName(),
+                genericFunction.getMethodDescriptor(),
+                false);
+
+        visitor.visitInvokeDynamicInsn(
+                genericFunction.getMethodName(),
+                Type.getMethodDescriptor(Type.getObjectType(genericFunction.getInternalName())),
+                bsm,
+                Type.getType(genericFunction.getMethodDescriptor()),
+                impl,
+                Type.getType(genericFunction.getMethodDescriptor()));
     }
 
     private void compileStaticReferenceExpression() {
@@ -1378,7 +1513,7 @@ public class Compiler {
         ClassWriter writer = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
         emitSourceFile(writer);
         String name = "com/zergatul/scripting/dynamic/DynamicLambdaClass_" + counter.incrementAndGet();
-        writer.visit(V1_5, ACC_PUBLIC, name, null, Type.getInternalName(Object.class), new String[] { Type.getInternalName(funcInterface) });
+        writer.visit(V1_8, ACC_PUBLIC, name, null, Type.getInternalName(Object.class), new String[] { Type.getInternalName(funcInterface) });
 
         List<Variable> closures = new ArrayList<>();
         for (CapturedVariable captured : expression.captured) {
@@ -1400,7 +1535,7 @@ public class Compiler {
         MethodVisitor invokeVisitor = writer.visitMethod(
                 ACC_PUBLIC,
                 type.getMethodName(),
-                type.getMethodDescriptor(),
+                type.getRawMethodDescriptor(),
                 null,
                 null);
         invokeVisitor.visitCode();
@@ -1487,8 +1622,8 @@ public class Compiler {
     }
 
     private void compileFunctionInvocationExpression(MethodVisitor visitor, CompilerContext context, BoundFunctionInvocationExpression expression) {
-        Function symbol = (Function) expression.name.getSymbol();
-        SFunction type = symbol.getFunctionType();
+        Function symbol = expression.functionReferenceNode.getFunction();
+        SStaticFunction type = symbol.getFunctionType();
 
         for (BoundExpressionNode argument : expression.arguments.arguments) {
             compileExpression(visitor, context, argument);
@@ -1498,10 +1633,22 @@ public class Compiler {
                 INVOKESTATIC,
                 context.getClassName(),
                 symbol.getName(),
-                type.getDescriptor(),
+                type.getMethodDescriptor(),
                 false);
 
         releaseRefVariables(visitor, context, expression.refVariables);
+    }
+
+    private void compileVariableInvocation(MethodVisitor visitor, CompilerContext context, BoundVariableInvocationExpression expression) {
+        expression.name.getSymbol().compileLoad(context, visitor);
+
+        SGenericFunction genericFunction = (SGenericFunction) expression.name.type;
+        visitor.visitMethodInsn(
+                INVOKEINTERFACE,
+                genericFunction.getInternalName(),
+                genericFunction.getMethodName(),
+                genericFunction.getMethodDescriptor(),
+                true);
     }
 
     private void compileGeneratorGetValue(MethodVisitor visitor, CompilerContext context, BoundGeneratorGetValueNode node) {
@@ -1526,7 +1673,7 @@ public class Compiler {
 
     private void compileFunctionAsLambda(MethodVisitor visitor, CompilerContext context, BoundFunctionAsLambdaExpressionNode node) {
         Function function = (Function) node.name.getSymbol();
-        SFunction type = function.getFunctionType();
+        SStaticFunction type = function.getFunctionType();
         List<BoundParameterNode> parameters = new ArrayList<>(type.getParameters().size());
         List<LocalVariable> variables = new ArrayList<>(type.getParameters().size());
         CompilerContext lambdaContext = context.createFunction(type.getReturnType(), false, true);
@@ -1546,7 +1693,7 @@ public class Compiler {
         }
 
         BoundFunctionInvocationExpression invocation = new BoundFunctionInvocationExpression(
-                new BoundNameExpressionNode(function),
+                new BoundFunctionReferenceNode(node.name.symbolRef, node.name.getRange()),
                 type.getReturnType(),
                 new BoundArgumentsListNode(arguments));
         BoundStatementNode statement = type.getReturnType() == SVoidType.instance ?

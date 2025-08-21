@@ -164,8 +164,8 @@ public class SBoolean extends SPredefinedType {
     }
 
     @Override
-    public SReference getReferenceType() {
-        return SReference.BOOLEAN;
+    public SByReference getReferenceType() {
+        return SByReference.BOOLEAN;
     }
 
     @Override

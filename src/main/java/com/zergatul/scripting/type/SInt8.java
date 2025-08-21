@@ -215,8 +215,8 @@ public class SInt8 extends SPredefinedType {
     }
 
     @Override
-    public SReference getReferenceType() {
-        return SReference.INT8;
+    public SByReference getReferenceType() {
+        return SByReference.INT8;
     }
 
     @Override
@@ -333,7 +333,7 @@ public class SInt8 extends SPredefinedType {
             "tryParse",
             SBoolean.instance,
             new MethodParameter("str", SString.instance),
-            new MethodParameter("result", SReference.INT8)));
+            new MethodParameter("result", SByReference.INT8)));
 
     private static final Lazy<PropertyReference> PROPERTY_MIN_VALUE = new Lazy<>(() -> new GetterPropertyReference(
             SInt8.instance,

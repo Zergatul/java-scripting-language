@@ -3,7 +3,7 @@ package com.zergatul.scripting.binding;
 import com.zergatul.scripting.binding.nodes.BoundParameterListNode;
 import com.zergatul.scripting.binding.nodes.BoundTypeNode;
 import com.zergatul.scripting.symbols.SymbolRef;
-import com.zergatul.scripting.type.SFunction;
+import com.zergatul.scripting.type.SStaticFunction;
 import com.zergatul.scripting.type.SType;
 
 public class FunctionDeclaration extends Declaration {
@@ -11,7 +11,7 @@ public class FunctionDeclaration extends Declaration {
     private final boolean isAsync;
     private final BoundTypeNode returnTypeNode;
     private final BoundParameterListNode parameters;
-    private final SFunction functionType;
+    private final SStaticFunction functionType;
     private final boolean hasError;
 
     public FunctionDeclaration(
@@ -20,7 +20,7 @@ public class FunctionDeclaration extends Declaration {
             boolean isAsync,
             BoundTypeNode returnTypeNode,
             BoundParameterListNode parameters,
-            SFunction functionType,
+            SStaticFunction functionType,
             boolean hasError
     ) {
         super(name, symbolRef);

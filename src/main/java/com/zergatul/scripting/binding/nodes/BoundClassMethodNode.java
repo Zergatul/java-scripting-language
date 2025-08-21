@@ -1,23 +1,22 @@
 package com.zergatul.scripting.binding.nodes;
 
 import com.zergatul.scripting.TextRange;
-import com.zergatul.scripting.binding.BinderTreeRewriter;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
 import com.zergatul.scripting.parser.NodeType;
-import com.zergatul.scripting.type.SFunction;
+import com.zergatul.scripting.type.SMethodFunction;
 
 import java.util.List;
 
 public class BoundClassMethodNode extends BoundClassMemberNode {
 
     public final boolean isAsync;
-    public final SFunction functionType;
+    public final SMethodFunction functionType;
     public final BoundTypeNode typeNode;
     public final BoundNameExpressionNode name;
     public final BoundParameterListNode parameters;
     public final BoundBlockStatementNode body;
 
-    public BoundClassMethodNode(boolean isAsync, SFunction functionType, BoundTypeNode typeNode, BoundNameExpressionNode name, BoundParameterListNode parameters, BoundBlockStatementNode body, TextRange range) {
+    public BoundClassMethodNode(boolean isAsync, SMethodFunction functionType, BoundTypeNode typeNode, BoundNameExpressionNode name, BoundParameterListNode parameters, BoundBlockStatementNode body, TextRange range) {
         super(NodeType.CLASS_METHOD, range);
         this.isAsync = isAsync;
         this.functionType = functionType;

@@ -3,12 +3,16 @@ package com.zergatul.scripting.symbols;
 import com.zergatul.scripting.InternalException;
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.compiler.CompilerContext;
-import com.zergatul.scripting.type.SFunction;
+import com.zergatul.scripting.type.Invocable;
+import com.zergatul.scripting.type.MethodParameter;
+import com.zergatul.scripting.type.SStaticFunction;
 import org.objectweb.asm.MethodVisitor;
 
-public class Function extends Symbol {
+import java.util.List;
 
-    public Function(String name, SFunction type, TextRange definition) {
+public class Function extends Symbol implements Invocable {
+
+    public Function(String name, SStaticFunction type, TextRange definition) {
         super(name, type, definition);
     }
 
@@ -17,7 +21,12 @@ public class Function extends Symbol {
         throw new InternalException();
     }
 
-    public SFunction getFunctionType() {
-        return (SFunction) getType();
+    public SStaticFunction getFunctionType() {
+        return (SStaticFunction) getType();
+    }
+
+    @Override
+    public List<MethodParameter> getParameters() {
+        return getFunctionType().getParameters();
     }
 }

@@ -12,7 +12,6 @@ import com.zergatul.scripting.compiler.CompilationParametersBuilder;
 import com.zergatul.scripting.lexer.Lexer;
 import com.zergatul.scripting.lexer.LexerInput;
 import com.zergatul.scripting.parser.*;
-import com.zergatul.scripting.parser.nodes.*;
 import com.zergatul.scripting.symbols.Function;
 import com.zergatul.scripting.symbols.ImmutableSymbolRef;
 import com.zergatul.scripting.symbols.LocalVariable;
@@ -23,7 +22,6 @@ import com.zergatul.scripting.type.*;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-import java.lang.reflect.Field;
 import java.lang.reflect.ParameterizedType;
 import java.util.List;
 
@@ -85,7 +83,7 @@ public class ErrorRecoveryBinderTests {
                                         false,
                                         new BoundPredefinedTypeNode(SInt.instance, new SingleLineTextRange(1, 1, 0, 3)),
                                         new BoundNameExpressionNode(
-                                                new Function("func", new SFunction(SInt.instance, new MethodParameter[0]), new MultiLineTextRange(1, 1, 3, 2, 0, 27)),
+                                                new Function("func", new SStaticFunction(SInt.instance, new MethodParameter[0]), new MultiLineTextRange(1, 1, 3, 2, 0, 27)),
                                                 new SingleLineTextRange(1, 5, 4, 4)),
                                         new BoundParameterListNode(List.of(), new SingleLineTextRange(1, 9, 8, 2)),
                                         new BoundBlockStatementNode(
@@ -135,7 +133,7 @@ public class ErrorRecoveryBinderTests {
                                                         new SingleLineTextRange(1, 5, 4, 8)),
                                                 new BoundArgumentsListNode(List.of(
                                                         new BoundLambdaExpressionNode(
-                                                                new SFunctionalInterface((ParameterizedType) Run.class.getMethod("onString", Run.Action1.class).getGenericParameterTypes()[0]),
+                                                                SFunctionalInterface.from((ParameterizedType) Run.class.getMethod("onString", Run.Action1.class).getGenericParameterTypes()[0]),
                                                                 List.of(new BoundParameterNode(
                                                                         new BoundNameExpressionNode(
                                                                                 new LocalVariable("str", SString.instance, new SingleLineTextRange(1, 14, 13, 3)),

@@ -87,7 +87,7 @@ public class HoverProvider {
                     String line = description("(static variable)") + " " + type(staticVariable.getType()) + " " + description(staticVariable.getName());
                     yield new HoverResponse(line, range);
                 } else if (name.getSymbol() instanceof Function function) {
-                    SFunction type = function.getFunctionType();
+                    SStaticFunction type = function.getFunctionType();
                     StringBuilder sb = new StringBuilder();
                     sb.append(type(type.getReturnType())).append(' ');
                     sb.append(span(theme.getMethodColor(), function.getName()));

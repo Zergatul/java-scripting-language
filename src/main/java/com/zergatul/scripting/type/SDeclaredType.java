@@ -37,7 +37,7 @@ public class SDeclaredType extends SType {
         properties.add(new DeclaredFieldReference(this, type, name));
     }
 
-    public void addConstructor(SFunction function) {
+    public void addConstructor(SStaticFunction function) {
         if (hasDefaultConstructor) {
             constructors.clear();
             hasDefaultConstructor = false;
@@ -45,7 +45,7 @@ public class SDeclaredType extends SType {
         constructors.add(new DeclaredConstructorReference(this, function));
     }
 
-    public void addMethod(SFunction functionType, String name) {
+    public void addMethod(SMethodFunction functionType, String name) {
         methods.add(new DeclaredMethodReference(this, name, functionType));
     }
 

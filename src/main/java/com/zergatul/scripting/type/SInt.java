@@ -217,8 +217,8 @@ public class SInt extends SPredefinedType {
     }
 
     @Override
-    public SReference getReferenceType() {
-        return SReference.INT;
+    public SByReference getReferenceType() {
+        return SByReference.INT;
     }
 
     @Override
@@ -361,7 +361,7 @@ public class SInt extends SPredefinedType {
             "tryParse",
             SBoolean.instance,
             new MethodParameter("str", SString.instance),
-            new MethodParameter("result", SReference.INT)));
+            new MethodParameter("result", SByReference.INT)));
 
     private static final Lazy<PropertyReference> PROPERTY_MIN_VALUE = new Lazy<>(() -> new GetterPropertyReference(
             SInt.instance,

@@ -48,6 +48,8 @@ public class BinderErrors {
     public static final ErrorCode MethodAlreadyDeclared = new ErrorCode("B044", "Method with the same signature already declared");
     public static final ErrorCode ThisInvalidContext = new ErrorCode("B045", "'this' is invalid in this context");
     public static final ErrorCode LetInvalidContext = new ErrorCode("B046", "'let' is invalid in this context");
+    public static final ErrorCode CastOperationNotAllowed = new ErrorCode("B047", "Implicit casting is not allowed for node of type %s");
+    public static final ErrorCode InvalidRefExpression = new ErrorCode("B048", "Invalid ref expression");
 
     public static final ErrorCode InternalError = new ErrorCode("B999", "Internal error: %s");
 }
