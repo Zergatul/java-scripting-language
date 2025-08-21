@@ -12,21 +12,32 @@ public class VariableDeclarationNode extends StatementNode {
     public final TypeNode type;
     public final NameExpressionNode name;
     public final ExpressionNode expression;
+    public final Token semicolon;
 
     public VariableDeclarationNode(TypeNode type, NameExpressionNode name, TextRange range) {
-        this(type, name, null, range);
+        this(type, name, null, null, range);
     }
 
     public VariableDeclarationNode(TypeNode type, NameExpressionNode name, ExpressionNode expression, TextRange range) {
+        this(type, name, expression, null, range);
+    }
+
+    public VariableDeclarationNode(TypeNode type, NameExpressionNode name, ExpressionNode expression, Token semicolon, TextRange range) {
         super(NodeType.VARIABLE_DECLARATION, range);
         this.type = type;
         this.name = name;
         this.expression = expression;
+        this.semicolon = semicolon;
     }
 
     @Override
     public void accept(ParserTreeVisitor visitor) {
         visitor.explicitVisit(this);
+    }
+
+    @Override
+    public boolean isOpen() {
+        return (semicolon != null && semicolon.isMissing()) || (expression != null && expression.isMissing()) || name.isMissing();
     }
 
     @Override
@@ -44,6 +55,7 @@ public class VariableDeclarationNode extends StatementNode {
             return  other.type.equals(type) &&
                     other.name.equals(name) &&
                     Objects.equals(other.expression, expression) &&
+                    Objects.equals(other.semicolon, semicolon) &&
                     other.getRange().equals(getRange());
         } else {
             return false;
@@ -51,12 +63,7 @@ public class VariableDeclarationNode extends StatementNode {
     }
 
     @Override
-    public StatementNode prepend(Token token) {
-        return new VariableDeclarationNode(type, name, expression, TextRange.combine(token.getRange(), getRange()));
-    }
-
-    @Override
-    public StatementNode append(Token token) {
-        return new VariableDeclarationNode(type, name, expression, TextRange.combine(getRange(), token.getRange()));
+    public StatementNode updateWithSemicolon(Token semicolon) {
+        return new VariableDeclarationNode(type, name, expression, semicolon, TextRange.combine(getRange(), semicolon.getRange()));
     }
 }

@@ -450,6 +450,40 @@ public class FunctionTests {
                         "let")));
     }
 
+    @Test
+    public void arrowFunctionTest1() {
+        String code = """
+                int sum(int i1, int i2) => i1 + i2;
+                void f1() => sum(1, 2);
+                void f2() => intStorage.add(120);
+                
+                intStorage.add(sum(100, 10));
+                f1();
+                f2();
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(110, 120));
+    }
+
+    @Test
+    public void arrowFunctionTest2() {
+        String code = """
+                int sum(int i1, int i2) => intStorage.add(i1 + i2);
+                """;
+
+        List<DiagnosticMessage> messages = getDiagnostics(ApiRoot.class, code);
+
+        Assertions.assertIterableEquals(
+                messages,
+                List.of(new DiagnosticMessage(
+                        BinderErrors.CannotImplicitlyConvert,
+                        new SingleLineTextRange(1, 28, 27, 23),
+                        "void", "int")));
+    }
+
     public static class ApiRoot {
         public static IntStorage intStorage;
         public static FloatStorage floatStorage;

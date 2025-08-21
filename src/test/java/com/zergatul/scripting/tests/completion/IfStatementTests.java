@@ -70,6 +70,16 @@ public class IfStatementTests {
     }
 
     @Test
+    public void thenTest1() {
+        assertSuggestions("""
+                if (true) <cursor>
+                """,
+                context -> Lists.of(
+                        statements,
+                        new StaticConstantSuggestion(context, "intStorage")));
+    }
+
+    @Test
     public void elseTest1() {
         assertSuggestions("""
                 let x = 123;
@@ -100,6 +110,16 @@ public class IfStatementTests {
                         new StaticConstantSuggestion(context, "intStorage"),
                         new LocalVariableSuggestion(context, "x"),
                         new LocalVariableSuggestion(context, "y")));
+    }
+
+    @Test
+    public void elseTest3() {
+        assertSuggestions("""
+                if (false) {} else <cursor>
+                """,
+                context -> Lists.of(
+                        statements,
+                        new StaticConstantSuggestion(context, "intStorage")));
     }
 
     private void assertSuggestions(String code, Function<TestCompletionContext, List<Suggestion>> expectedFactory) {

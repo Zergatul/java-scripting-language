@@ -18,12 +18,24 @@ public abstract class SymbolRef {
         return references;
     }
 
+    public Function asFunction() {
+        return (Function) get();
+    }
+
     public Variable asVariable() {
         return (Variable) get();
     }
 
     public LocalVariable asLocalVariable() {
         return (LocalVariable) get();
+    }
+
+    public DeclaredStaticVariable asStaticVariable() {
+        return (DeclaredStaticVariable) get();
+    }
+
+    public ClassSymbol asClass() {
+        return (ClassSymbol) get();
     }
 
     @Override

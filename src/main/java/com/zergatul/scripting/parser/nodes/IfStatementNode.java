@@ -9,18 +9,31 @@ import java.util.Objects;
 
 public class IfStatementNode extends StatementNode {
 
-    public final Token lParen;
-    public final Token rParen;
+    public final Token ifToken;
+    public final Token openParen;
+    public final Token closeParen;
     public final ExpressionNode condition;
     public final StatementNode thenStatement;
+    public final Token elseToken;
     public final StatementNode elseStatement;
 
-    public IfStatementNode(Token lParen, Token rParen, ExpressionNode condition, StatementNode thenStatement, StatementNode elseStatement, TextRange range) {
+    public IfStatementNode(
+            Token ifToken,
+            Token openParen,
+            Token closeParen,
+            ExpressionNode condition,
+            StatementNode thenStatement,
+            Token elseToken,
+            StatementNode elseStatement,
+            TextRange range
+    ) {
         super(NodeType.IF_STATEMENT, range);
-        this.lParen = lParen;
-        this.rParen = rParen;
+        this.ifToken = ifToken;
+        this.openParen = openParen;
+        this.closeParen = closeParen;
         this.condition = condition;
         this.thenStatement = thenStatement;
+        this.elseToken = elseToken;
         this.elseStatement = elseStatement;
     }
 
@@ -41,8 +54,12 @@ public class IfStatementNode extends StatementNode {
     @Override
     public boolean equals(Object obj) {
         if (obj instanceof IfStatementNode other) {
-            return  other.condition.equals(condition) &&
+            return  other.ifToken.equals(ifToken) &&
+                    other.openParen.equals(openParen) &&
+                    other.condition.equals(condition) &&
+                    other.closeParen.equals(closeParen) &&
                     other.thenStatement.equals(thenStatement) &&
+                    Objects.equals(other.elseToken, elseToken) &&
                     Objects.equals(other.elseStatement, elseStatement) &&
                     other.getRange().equals(getRange());
         } else {

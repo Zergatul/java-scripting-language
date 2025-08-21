@@ -61,7 +61,7 @@ public class StatementTests {
                 intStorage.add(123);
                 """,
                 context -> Lists.of(
-                        loopStatements,
+                        statements,
                         new LocalVariableSuggestion(context, "i"),
                         new StaticConstantSuggestion(context, "intStorage")));
     }
@@ -74,7 +74,7 @@ public class StatementTests {
                 intStorage.add(123);
                 """,
                 context -> Lists.of(
-                        loopStatements,
+                        statements,
                         new LocalVariableSuggestion(context, "i"),
                         new StaticConstantSuggestion(context, "intStorage")));
     }
@@ -87,33 +87,21 @@ public class StatementTests {
                 intStorage.add(123);
                 """,
                 context -> Lists.of(
-                        loopStatements,
+                        statements,
                         new LocalVariableSuggestion(context, "i"),
                         new StaticConstantSuggestion(context, "intStorage")));
     }
 
-    /*@Test
+    @Test
     public void unfinishedStatementBeforeObjectMember7Test() {
         assertSuggestions("""
                 let i = 0;
                 return<cursor>
-                intStorage.add(123);
-                """, context -> List.of(
-                new KeywordSuggestion(TokenType.LET),
-                new KeywordSuggestion(TokenType.FOR),
-                new KeywordSuggestion(TokenType.FOREACH),
-                new KeywordSuggestion(TokenType.IF),
-                new KeywordSuggestion(TokenType.WHILE),
-                new KeywordSuggestion(TokenType.RETURN),
-                new TypeSuggestion(SBoolean.instance),
-                new TypeSuggestion(SInt.instance),
-                new TypeSuggestion(SInt64.instance),
-                new TypeSuggestion(SChar.instance),
-                new TypeSuggestion(SFloat.instance),
-                new TypeSuggestion(SString.instance),
-                new LocalVariableSuggestion(context, "i"),
-                new StaticConstantSuggestion(context, "intStorage")));
-    }*/
+                """, context -> Lists.of(
+                    statements,
+                    new LocalVariableSuggestion(context, "i"),
+                    new StaticConstantSuggestion(context, "intStorage")));
+    }
 
     private void assertSuggestions(String code, Function<TestCompletionContext, List<Suggestion>> expectedFactory) {
         CompletionTestHelper.assertSuggestions(ApiRoot.class, code, expectedFactory);

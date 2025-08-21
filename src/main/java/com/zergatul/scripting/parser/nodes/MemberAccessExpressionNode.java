@@ -1,17 +1,20 @@
 package com.zergatul.scripting.parser.nodes;
 
 import com.zergatul.scripting.TextRange;
+import com.zergatul.scripting.lexer.Token;
 import com.zergatul.scripting.parser.NodeType;
 import com.zergatul.scripting.parser.ParserTreeVisitor;
 
 public class MemberAccessExpressionNode extends ExpressionNode {
 
     public final ExpressionNode callee;
+    public final Token dot;
     public final NameExpressionNode name;
 
-    public MemberAccessExpressionNode(ExpressionNode callee, NameExpressionNode name, TextRange range) {
+    public MemberAccessExpressionNode(ExpressionNode callee, Token dot, NameExpressionNode name, TextRange range) {
         super(NodeType.MEMBER_ACCESS_EXPRESSION, range);
         this.callee = callee;
+        this.dot = dot;
         this.name = name;
     }
 
@@ -30,6 +33,7 @@ public class MemberAccessExpressionNode extends ExpressionNode {
     public boolean equals(Object obj) {
         if (obj instanceof MemberAccessExpressionNode other) {
             return  other.callee.equals(callee) &&
+                    other.dot.equals(dot) &&
                     other.name.equals(name) &&
                     other.getRange().equals(getRange());
         } else {

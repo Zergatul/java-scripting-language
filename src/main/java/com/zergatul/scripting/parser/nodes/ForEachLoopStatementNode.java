@@ -7,20 +7,20 @@ import com.zergatul.scripting.parser.ParserTreeVisitor;
 
 public class ForEachLoopStatementNode extends StatementNode {
 
-    public final Token openParenthesis;
+    public final Token openParen;
     public final TypeNode typeNode;
     public final NameExpressionNode name;
     public final ExpressionNode iterable;
-    public final Token closeParenthesis;
+    public final Token closeParen;
     public final StatementNode body;
 
-    public ForEachLoopStatementNode(Token openParenthesis, TypeNode typeNode, NameExpressionNode name, ExpressionNode iterable, Token closeParenthesis, StatementNode body, TextRange range) {
+    public ForEachLoopStatementNode(Token openParen, TypeNode typeNode, NameExpressionNode name, ExpressionNode iterable, Token closeParen, StatementNode body, TextRange range) {
         super(NodeType.FOREACH_LOOP_STATEMENT, range);
-        this.openParenthesis = openParenthesis;
+        this.openParen = openParen;
         this.typeNode = typeNode;
         this.name = name;
         this.iterable = iterable;
-        this.closeParenthesis = closeParenthesis;
+        this.closeParen = closeParen;
         this.body = body;
     }
 
@@ -40,11 +40,11 @@ public class ForEachLoopStatementNode extends StatementNode {
     @Override
     public boolean equals(Object obj) {
         if (obj instanceof ForEachLoopStatementNode other) {
-            return  other.openParenthesis.equals(openParenthesis) &&
+            return  other.openParen.equals(openParen) &&
                     other.typeNode.equals(typeNode) &&
                     other.name.equals(name) &&
                     other.iterable.equals(iterable) &&
-                    other.closeParenthesis.equals(closeParenthesis) &&
+                    other.closeParen.equals(closeParen) &&
                     other.body.equals(body) &&
                     other.getRange().equals(getRange());
         } else {

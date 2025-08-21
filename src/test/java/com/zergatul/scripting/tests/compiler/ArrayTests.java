@@ -427,6 +427,19 @@ public class ArrayTests {
                 new DiagnosticMessage(BinderErrors.CannotInferCollectionExpressionTypes, new SingleLineTextRange(1, 14, 13, 3), "int", 1, "float")));
     }
 
+    @Test
+    public void mixedTypeConcatTest() {
+        String code = """
+                let a1 = [1, 2, 3];
+                let a2 = a1 + "s";
+                """;
+
+        List<DiagnosticMessage> messages = getDiagnostics(ApiRoot.class, code);
+
+        Assertions.assertIterableEquals(messages, List.of(
+                new DiagnosticMessage(BinderErrors.BinaryOperatorNotDefined, new SingleLineTextRange(2, 10, 29, 8), "+", "int[]", "string")));
+    }
+
     public static class ApiRoot {
         public static BoolStorage boolStorage;
         public static IntStorage intStorage;

@@ -24,6 +24,7 @@ public class ClassTests {
                 context -> Lists.of(
                         unitMembers,
                         statements,
+                        new KeywordSuggestion(TokenType.ASYNC),
                         new ClassSuggestion(context, "Class"),
                         new StaticConstantSuggestion(context, "intStorage")));
     }
@@ -38,6 +39,7 @@ public class ClassTests {
                 context -> Lists.of(
                         types,
                         new KeywordSuggestion(TokenType.VOID),
+                        new KeywordSuggestion(TokenType.ASYNC),
                         new ClassSuggestion(context, "Class"),
                         new KeywordSuggestion(TokenType.CONSTRUCTOR)));
     }
@@ -53,6 +55,7 @@ public class ClassTests {
                 context -> Lists.of(
                         types,
                         new KeywordSuggestion(TokenType.VOID),
+                        new KeywordSuggestion(TokenType.ASYNC),
                         new ClassSuggestion(context, "Class"),
                         new KeywordSuggestion(TokenType.CONSTRUCTOR)));
     }
@@ -69,6 +72,7 @@ public class ClassTests {
                 context -> Lists.of(
                         types,
                         new KeywordSuggestion(TokenType.VOID),
+                        new KeywordSuggestion(TokenType.ASYNC),
                         new ClassSuggestion(context, "Class"),
                         new KeywordSuggestion(TokenType.CONSTRUCTOR)));
     }

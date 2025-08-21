@@ -50,6 +50,85 @@ public class VariableDeclarationTests {
                         new LocalVariableSuggestion(context, "b")));
     }
 
+    @Test
+    public void nestedScopesTest() {
+        assertSuggestions("""
+                int a = 0;
+                while (true) {
+                    int b = 1;
+                    while (true) {
+                        int c = 1;
+                        while (true) {
+                            int d = 1;
+                            <cursor>
+                        }
+                    }
+                }
+                """,
+                context -> Lists.of(
+                        loopStatements,
+                        new StaticConstantSuggestion(context, "intStorage"),
+                        new LocalVariableSuggestion(context, "a"),
+                        new LocalVariableSuggestion(context, "b"),
+                        new LocalVariableSuggestion(context, "c"),
+                        new LocalVariableSuggestion(context, "d")));
+    }
+
+    @Test
+    public void nestedLambdaTest() {
+        assertSuggestions("""
+                int a = 123;
+                fn<int => int> b = c => <cursor>
+                """,
+                context -> Lists.of(
+                        expressions,
+                        new StaticConstantSuggestion(context, "intStorage"),
+                        new LocalVariableSuggestion(context, "a"),
+                        LocalVariableSuggestion.getParameter(context, "c")));
+    }
+
+    @Test
+    public void variableNameTest1() {
+        assertSuggestions("""
+                let <cursor>
+                """,
+                context -> List.of());
+    }
+
+    @Test
+    public void variableNameTest2() {
+        assertSuggestions("""
+                while (true) {
+                    let <cursor>
+                }
+                """,
+                context -> List.of());
+    }
+
+    @Test
+    public void variableNameTest3() {
+        assertSuggestions("""
+                while (true) {
+                    let i<cursor>
+                }
+                """,
+                context -> List.of());
+    }
+
+    @Test
+    public void variableNameTest4() {
+        assertSuggestions("""
+                while (true) {
+                    let a = 123;
+                    let x = a<cursor>
+                }
+                """,
+                context -> Lists.of(
+                        expressions,
+                        new LocalVariableSuggestion(context, "a"),
+                        new StaticConstantSuggestion(context, "intStorage")));
+    }
+
     private void assertSuggestions(String code, Function<TestCompletionContext, List<Suggestion>> expectedFactory) {
         CompletionTestHelper.assertSuggestions(ApiRoot.class, code, expectedFactory);
     }

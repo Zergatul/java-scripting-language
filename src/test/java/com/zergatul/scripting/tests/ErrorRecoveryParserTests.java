@@ -26,6 +26,7 @@ public class ErrorRecoveryParserTests {
         Assertions.assertIterableEquals(
                 result.diagnostics(),
                 List.of(
+                        new DiagnosticMessage(ParserErrors.NotAStatement, new SingleLineTextRange(1, 1, 0, 9)),
                         new DiagnosticMessage(ParserErrors.SemicolonExpected, new SingleLineTextRange(1, 9, 8, 1))));
 
         Assertions.assertIterableEquals(
@@ -34,6 +35,7 @@ public class ErrorRecoveryParserTests {
                         new ExpressionStatementNode(
                                 new MemberAccessExpressionNode(
                                         new NameExpressionNode("freeCam", new SingleLineTextRange(1, 1, 0, 7)),
+                                        new Token(TokenType.DOT, new SingleLineTextRange(1, 8, 7, 1)),
                                         new NameExpressionNode("t", new SingleLineTextRange(1, 9, 8, 1)),
                                         new SingleLineTextRange(1, 1, 0, 9)),
                                 new SingleLineTextRange(1, 1, 0, 9)),
@@ -41,6 +43,7 @@ public class ErrorRecoveryParserTests {
                                 new InvocationExpressionNode(
                                         new MemberAccessExpressionNode(
                                             new NameExpressionNode("freeCam", new SingleLineTextRange(2, 1, 10, 7)),
+                                            new Token(TokenType.DOT, new SingleLineTextRange(2, 8, 17, 1)),
                                             new NameExpressionNode("toggle", new SingleLineTextRange(2, 9, 18, 6)),
                                             new SingleLineTextRange(2, 1, 10, 14)),
                                         new ArgumentsListNode(List.of(), new SingleLineTextRange(2, 15, 24, 2)),
@@ -59,6 +62,7 @@ public class ErrorRecoveryParserTests {
                 result.diagnostics(),
                 List.of(
                         new DiagnosticMessage(ParserErrors.IdentifierExpected, new SingleLineTextRange(2, 1, 5, 7), "boolean"),
+                        new DiagnosticMessage(ParserErrors.NotAStatement, new SingleLineTextRange(1, 1, 0, 4)),
                         new DiagnosticMessage(ParserErrors.SemicolonExpected, new SingleLineTextRange(1, 4, 3, 1))));
 
         Assertions.assertIterableEquals(
@@ -67,6 +71,7 @@ public class ErrorRecoveryParserTests {
                         new ExpressionStatementNode(
                                 new MemberAccessExpressionNode(
                                         new NameExpressionNode("obj", new SingleLineTextRange(1, 1, 0, 3)),
+                                        new Token(TokenType.DOT, new SingleLineTextRange(1, 4, 3, 1)),
                                         new NameExpressionNode("", new SingleLineTextRange(1, 5, 4, 0)),
                                         new SingleLineTextRange(1, 1, 0, 4)),
                                 new SingleLineTextRange(1, 1, 0, 4)),
@@ -74,6 +79,7 @@ public class ErrorRecoveryParserTests {
                                 new PredefinedTypeNode(PredefinedType.BOOLEAN, new SingleLineTextRange(2, 1, 5, 7)),
                                 new NameExpressionNode("bbb", new SingleLineTextRange(2, 9, 13, 3)),
                                 new BooleanLiteralExpressionNode(true, new SingleLineTextRange(2, 15, 19, 4)),
+                                new Token(TokenType.SEMICOLON, new SingleLineTextRange(2, 19, 23, 1)),
                                 new SingleLineTextRange(2, 1, 5, 19))));
     }
 
@@ -121,13 +127,16 @@ public class ErrorRecoveryParserTests {
                 new StatementsListNode(
                         List.of(
                                 new IfStatementNode(
+                                        new Token(TokenType.IF, new SingleLineTextRange(1, 1, 0, 2)),
                                         new Token(TokenType.LEFT_PARENTHESES, new SingleLineTextRange(1, 4, 3, 1)),
                                         new Token(TokenType.RIGHT_PARENTHESES, new SingleLineTextRange(1, 10, 9, 1)),
                                         new MemberAccessExpressionNode(
                                                 new NameExpressionNode("game", new SingleLineTextRange(1, 5, 4, 4)),
+                                                new Token(TokenType.DOT, new SingleLineTextRange(1, 9, 8, 1)),
                                                 new NameExpressionNode("", new SingleLineTextRange(1, 10, 9, 0)),
                                                 new SingleLineTextRange(1, 5, 4, 5)),
                                         new InvalidStatementNode(new SingleLineTextRange(1, 12, 11, 0)),
+                                        null,
                                         null,
                                         new SingleLineTextRange(1, 1, 0, 11))),
                         new SingleLineTextRange(1, 1, 0, 11)));
@@ -149,6 +158,7 @@ public class ErrorRecoveryParserTests {
                 new StatementsListNode(
                         List.of(
                                 new ReturnStatementNode(
+                                        new Token(TokenType.RETURN, new SingleLineTextRange(1, 1, 0, 6)),
                                         new BinaryExpressionNode(
                                                 new BinaryExpressionNode(
                                                         new NameExpressionNode("a", new SingleLineTextRange(1, 8, 7, 1)),
@@ -189,6 +199,7 @@ public class ErrorRecoveryParserTests {
                                                 List.of(
                                                         new IntegerLiteralExpressionNode("1", new SingleLineTextRange(1, 23, 22, 1))),
                                                 new SingleLineTextRange(1, 11, 10, 13)),
+                                        new Token(TokenType.SEMICOLON, new SingleLineTextRange(1, 25, 24, 1)),
                                         new SingleLineTextRange(1, 1, 0, 25))),
                         new SingleLineTextRange(1, 1, 0, 25)));
     }
@@ -203,6 +214,7 @@ public class ErrorRecoveryParserTests {
         Assertions.assertIterableEquals(
                 result.diagnostics(),
                 List.of(
+                        new DiagnosticMessage(ParserErrors.NotAStatement, new SingleLineTextRange(1, 1, 0, 1)),
                         new DiagnosticMessage(ParserErrors.SemicolonExpected, new SingleLineTextRange(1, 1, 0, 1))));
 
         Assertions.assertIterableEquals(
@@ -215,6 +227,7 @@ public class ErrorRecoveryParserTests {
                                 new InvocationExpressionNode(
                                         new MemberAccessExpressionNode(
                                                 new NameExpressionNode("freeCam", new SingleLineTextRange(2, 1, 2, 7)),
+                                                new Token(TokenType.DOT, new SingleLineTextRange(2, 8, 9, 1)),
                                                 new NameExpressionNode("toggle", new SingleLineTextRange(2, 9, 10, 6)),
                                                 new SingleLineTextRange(2, 1, 2, 14)),
                                         new ArgumentsListNode(List.of(), new SingleLineTextRange(2, 15, 16, 2)),
@@ -232,8 +245,7 @@ public class ErrorRecoveryParserTests {
         Assertions.assertIterableEquals(
                 result.diagnostics(),
                 List.of(
-                        new DiagnosticMessage(ParserErrors.IdentifierExpected, new SingleLineTextRange(2, 1, 4, 7), "freeCam."),
-                        new DiagnosticMessage(ParserErrors.SemicolonExpected, new SingleLineTextRange(1, 1, 0, 3))));
+                        new DiagnosticMessage(ParserErrors.IdentifierExpected, new SingleLineTextRange(2, 1, 4, 7), "freeCam.")));
 
         Assertions.assertIterableEquals(
                 result.unit().statements.statements,
@@ -241,11 +253,14 @@ public class ErrorRecoveryParserTests {
                         new VariableDeclarationNode(
                                 new PredefinedTypeNode(PredefinedType.INT, new SingleLineTextRange(1, 1, 0, 3)),
                                 new NameExpressionNode("", new SingleLineTextRange(2, 1, 4, 0)),
-                                new SingleLineTextRange(1, 1, 0, 3)),
+                                null,
+                                null,
+                                new MultiLineTextRange(1, 1, 2, 1, 0, 4)),
                         new ExpressionStatementNode(
                                 new InvocationExpressionNode(
                                         new MemberAccessExpressionNode(
                                                 new NameExpressionNode("freeCam", new SingleLineTextRange(2, 1, 4, 7)),
+                                                new Token(TokenType.DOT, new SingleLineTextRange(2, 8, 11, 1)),
                                                 new NameExpressionNode("toggle", new SingleLineTextRange(2, 9, 12, 6)),
                                                 new SingleLineTextRange(2, 1, 4, 14)),
                                         new ArgumentsListNode(List.of(), new SingleLineTextRange(2, 15, 18, 2)),
@@ -269,16 +284,19 @@ public class ErrorRecoveryParserTests {
                 result.unit().statements.statements,
                 List.of(
                         new IfStatementNode(
-                                new Token(TokenType.LEFT_PARENTHESES, new SingleLineTextRange(2, 1, 3, 0)),
+                                new Token(TokenType.IF, new SingleLineTextRange(1, 1, 0, 2)),
+                                new Token(TokenType.LEFT_PARENTHESES, new SingleLineTextRange(1, 3, 2, 0)),
                                 new Token(TokenType.RIGHT_PARENTHESES, new SingleLineTextRange(2, 1, 3, 0)),
                                 new InvalidExpressionNode(new SingleLineTextRange(2, 1, 3, 0)),
                                 new InvalidStatementNode(new SingleLineTextRange(2, 1, 3, 0)),
+                                null,
                                 null,
                                 new SingleLineTextRange(1, 1, 0, 2)),
                         new ExpressionStatementNode(
                                 new InvocationExpressionNode(
                                         new MemberAccessExpressionNode(
                                                 new NameExpressionNode("freeCam", new SingleLineTextRange(2, 1, 3, 7)),
+                                                new Token(TokenType.DOT, new SingleLineTextRange(2, 8, 10, 1)),
                                                 new NameExpressionNode("toggle", new SingleLineTextRange(2, 9, 11, 6)),
                                                 new SingleLineTextRange(2, 1, 3, 14)),
                                         new ArgumentsListNode(List.of(), new SingleLineTextRange(2, 15, 17, 2)),
@@ -315,6 +333,7 @@ public class ErrorRecoveryParserTests {
                                         new InvocationExpressionNode(
                                                 new MemberAccessExpressionNode(
                                                         new NameExpressionNode("freeCam", new SingleLineTextRange(2, 1, 4, 7)),
+                                                        new Token(TokenType.DOT, new SingleLineTextRange(2, 8, 11, 1)),
                                                         new NameExpressionNode("toggle", new SingleLineTextRange(2, 9, 12, 6)),
                                                         new SingleLineTextRange(2, 1, 4, 14)),
                                                 new ArgumentsListNode(List.of(), new SingleLineTextRange(2, 15, 18, 2)),
@@ -353,6 +372,7 @@ public class ErrorRecoveryParserTests {
                                         new InvocationExpressionNode(
                                                 new MemberAccessExpressionNode(
                                                         new NameExpressionNode("freeCam", new SingleLineTextRange(2, 1, 8, 7)),
+                                                        new Token(TokenType.DOT, new SingleLineTextRange(2, 8, 15, 1)),
                                                         new NameExpressionNode("toggle", new SingleLineTextRange(2, 9, 16, 6)),
                                                         new SingleLineTextRange(2, 1, 8, 14)),
                                                 new ArgumentsListNode(List.of(), new SingleLineTextRange(2, 15, 22, 2)),
@@ -378,13 +398,17 @@ public class ErrorRecoveryParserTests {
                 result.unit().statements.statements,
                 List.of(
                         new WhileLoopStatementNode(
+                                new Token(TokenType.WHILE, new SingleLineTextRange(1, 1, 0, 5)),
+                                new Token(TokenType.LEFT_PARENTHESES, new SingleLineTextRange(1, 6, 5, 0)),
                                 new InvalidExpressionNode(new SingleLineTextRange(2, 1, 6, 0)),
+                                new Token(TokenType.RIGHT_PARENTHESES, new SingleLineTextRange(2, 1, 6, 0)),
                                 new InvalidStatementNode(new SingleLineTextRange(2, 1, 6, 0)),
                                 new SingleLineTextRange(1, 1, 0, 5)),
                         new ExpressionStatementNode(
                                 new InvocationExpressionNode(
                                         new MemberAccessExpressionNode(
                                                 new NameExpressionNode("freeCam", new SingleLineTextRange(2, 1, 6, 7)),
+                                                new Token(TokenType.DOT, new SingleLineTextRange(2, 8, 13, 1)),
                                                 new NameExpressionNode("toggle", new SingleLineTextRange(2, 9, 14, 6)),
                                                 new SingleLineTextRange(2, 1, 6, 14)),
                                         new ArgumentsListNode(List.of(), new SingleLineTextRange(2, 15, 20, 2)),
@@ -427,6 +451,7 @@ public class ErrorRecoveryParserTests {
                                                 new InvocationExpressionNode(
                                                         new MemberAccessExpressionNode(
                                                                 new NameExpressionNode("freeCam", new SingleLineTextRange(2, 1, 9, 7)),
+                                                                new Token(TokenType.DOT, new SingleLineTextRange(2, 8, 16, 1)),
                                                                 new NameExpressionNode("toggle", new SingleLineTextRange(2, 9, 17, 6)),
                                                                 new SingleLineTextRange(2, 1, 9, 14)),
                                                         new ArgumentsListNode(List.of(), new SingleLineTextRange(2, 15, 23, 2)),
@@ -434,6 +459,39 @@ public class ErrorRecoveryParserTests {
                                                 new SingleLineTextRange(2, 1, 9, 17))),
                                 new SingleLineTextRange(2, 1, 9, 17)),
                         new MultiLineTextRange(1, 1, 2, 18, 0, 26)));
+    }
+
+    @Test
+    public void unfinishedParametersTest() {
+        ParserOutput result = parse("""
+                obj.method(100,)
+                """);
+
+        Assertions.assertIterableEquals(
+                result.diagnostics(),
+                List.of(
+                        new DiagnosticMessage(ParserErrors.ExpressionExpected, new SingleLineTextRange(1, 16, 15, 1), ")"),
+                        new DiagnosticMessage(ParserErrors.SemicolonExpected, new SingleLineTextRange(1,16, 15, 1))));
+
+        Assertions.assertEquals(
+                result.unit(),
+                new CompilationUnitNode(
+                        new CompilationUnitMembersListNode(List.of(), new SingleLineTextRange(1, 1, 0, 0)),
+                        new StatementsListNode(List.of(
+                                new ExpressionStatementNode(
+                                        new InvocationExpressionNode(
+                                                new MemberAccessExpressionNode(
+                                                        new NameExpressionNode("obj", new SingleLineTextRange(1, 1, 0, 3)),
+                                                        new Token(TokenType.DOT, new SingleLineTextRange(1, 4, 3, 1)),
+                                                        new NameExpressionNode("method", new SingleLineTextRange(1, 5, 4, 6)),
+                                                        new SingleLineTextRange(1, 1, 0, 10)),
+                                                new ArgumentsListNode(List.of(
+                                                        new IntegerLiteralExpressionNode("100", new SingleLineTextRange(1, 12, 11, 3))),
+                                                        new SingleLineTextRange(1, 11, 10, 6)),
+                                                new SingleLineTextRange(1, 1, 0, 16)),
+                                        new SingleLineTextRange(1, 1, 0, 16))),
+                                new SingleLineTextRange(1, 1, 0, 16)),
+                        new SingleLineTextRange(1, 1, 0, 16)));
     }
 
     private ParserOutput parse(String code) {

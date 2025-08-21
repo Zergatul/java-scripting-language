@@ -1,6 +1,7 @@
 package com.zergatul.scripting.parser.nodes;
 
 import com.zergatul.scripting.TextRange;
+import com.zergatul.scripting.lexer.Token;
 import com.zergatul.scripting.parser.NodeType;
 import com.zergatul.scripting.parser.ParserTreeVisitor;
 
@@ -8,10 +9,12 @@ import java.util.Objects;
 
 public class ReturnStatementNode extends StatementNode {
 
+    public final Token keyword;
     public final ExpressionNode expression;
 
-    public ReturnStatementNode(ExpressionNode expression, TextRange range) {
+    public ReturnStatementNode(Token keyword, ExpressionNode expression, TextRange range) {
         super(NodeType.RETURN_STATEMENT, range);
+        this.keyword = keyword;
         this.expression = expression;
     }
 
@@ -30,7 +33,9 @@ public class ReturnStatementNode extends StatementNode {
     @Override
     public boolean equals(Object obj) {
         if (obj instanceof ReturnStatementNode other) {
-            return Objects.equals(other.expression, expression) && other.getRange().equals(getRange());
+            return  other.keyword.equals(keyword) &&
+                    Objects.equals(other.expression, expression) &&
+                    other.getRange().equals(getRange());
         } else {
             return false;
         }

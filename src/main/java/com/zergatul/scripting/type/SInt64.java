@@ -218,8 +218,8 @@ public class SInt64 extends SPredefinedType {
     }
 
     @Override
-    public SReference getReferenceType() {
-        return SReference.INT64;
+    public SByReference getReferenceType() {
+        return SByReference.INT64;
     }
 
     @Override
@@ -341,7 +341,7 @@ public class SInt64 extends SPredefinedType {
             "tryParse",
             SBoolean.instance,
             new MethodParameter("str", SString.instance),
-            new MethodParameter("result", SReference.INT64)));
+            new MethodParameter("result", SByReference.INT64)));
 
     private static final Lazy<PropertyReference> PROPERTY_MIN_VALUE = new Lazy<>(() -> new GetterPropertyReference(
             SInt64.instance,

@@ -37,7 +37,7 @@ public class ParameterNode extends Node {
     @Override
     public boolean equals(Object obj) {
         if (obj instanceof ParameterNode other) {
-            return other.type.equals(type) && other.name.equals(name);
+            return other.type.equals(type) && other.name.equals(name) && other.getRange().equals(getRange());
         } else {
             return false;
         }

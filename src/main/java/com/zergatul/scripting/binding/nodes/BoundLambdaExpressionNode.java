@@ -2,6 +2,7 @@ package com.zergatul.scripting.binding.nodes;
 
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
+import com.zergatul.scripting.lexer.Token;
 import com.zergatul.scripting.parser.NodeType;
 import com.zergatul.scripting.symbols.CapturedVariable;
 import com.zergatul.scripting.symbols.LiftedVariable;
@@ -14,6 +15,7 @@ import java.util.stream.Stream;
 public class BoundLambdaExpressionNode extends BoundExpressionNode {
 
     public final List<BoundParameterNode> parameters;
+    public final Token arrow;
     public final BoundStatementNode body;
     public final List<LiftedVariable> lifted;
     public final List<CapturedVariable> captured;
@@ -23,12 +25,13 @@ public class BoundLambdaExpressionNode extends BoundExpressionNode {
             List<BoundParameterNode> parameters,
             BoundStatementNode body
     ) {
-        this(type, parameters, body, List.of(), List.of(), null);
+        this(type, parameters, null, body, List.of(), List.of(), null);
     }
 
     public BoundLambdaExpressionNode(
             SType type,
             List<BoundParameterNode> parameters,
+            Token arrow,
             BoundStatementNode body,
             List<LiftedVariable> lifted,
             List<CapturedVariable> captured,
@@ -36,6 +39,7 @@ public class BoundLambdaExpressionNode extends BoundExpressionNode {
     ) {
         super(NodeType.LAMBDA_EXPRESSION, type, range);
         this.parameters = parameters;
+        this.arrow = arrow;
         this.body = body;
         this.lifted = lifted;
         this.captured = captured;
@@ -55,6 +59,11 @@ public class BoundLambdaExpressionNode extends BoundExpressionNode {
     }
 
     @Override
+    public boolean isOpen() {
+        return body.isOpen();
+    }
+
+    @Override
     public List<BoundNode> getChildren() {
         return Stream.concat(List.copyOf(parameters).stream(), Stream.of(body)).toList();
     }
@@ -63,6 +72,7 @@ public class BoundLambdaExpressionNode extends BoundExpressionNode {
     public boolean equals(Object obj) {
         if (obj instanceof BoundLambdaExpressionNode other) {
             return  Objects.equals(other.parameters, parameters) &&
+                    other.arrow.equals(arrow) &&
                     other.body.equals(body) &&
                     Objects.equals(other.lifted, lifted) &&
                     Objects.equals(other.captured, captured) &&

@@ -1,19 +1,18 @@
 package com.zergatul.scripting.type;
 
 import com.zergatul.scripting.InternalException;
-import com.zergatul.scripting.type.operation.CastOperation;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Type;
 
 import java.util.Arrays;
 import java.util.List;
 
-public class SFunction extends SType {
+public abstract class SFunction extends SReferenceType {
 
     private final SType returnType;
     private final MethodParameter[] parameters;
 
-    public SFunction(SType returnType, MethodParameter[] parameters) {
+    protected SFunction(SType returnType, MethodParameter[] parameters) {
         this.returnType = returnType;
         this.parameters = parameters;
     }
@@ -30,20 +29,44 @@ public class SFunction extends SType {
         return returnType;
     }
 
-    public String getDescriptor() {
+    public boolean isFunction() {
+        return returnType != SVoidType.instance;
+    }
+
+    public String getMethodDescriptor() {
         return Type.getMethodDescriptor(
                 Type.getType(returnType.getJavaClass()),
                 getParameterTypes().stream().map(SType::getDescriptor).map(Type::getType).toArray(Type[]::new));
     }
 
-    @Override
-    public boolean isSyntheticType() {
+    public boolean matches(SFunction other) {
+        if (this.parameters.length != other.parameters.length) {
+            return false;
+        }
+        if (!this.returnType.equals(other.returnType)) {
+            return false;
+        }
+        for (int i = 0; i < this.parameters.length; i++) {
+            if (!this.parameters[i].type().equals(other.parameters[i].type())) {
+                return false;
+            }
+        }
         return true;
     }
 
-    @Override
-    public Class<?> getJavaClass() {
-        throw new InternalException();
+    public boolean matches(SType returnType, SType[] parameters) {
+        if (this.parameters.length != parameters.length) {
+            return false;
+        }
+        if (!this.returnType.equals(returnType)) {
+            return false;
+        }
+        for (int i = 0; i < this.parameters.length; i++) {
+            if (!this.parameters[i].type().equals(parameters[i])) {
+                return false;
+            }
+        }
+        return true;
     }
 
     @Override
@@ -52,92 +75,25 @@ public class SFunction extends SType {
     }
 
     @Override
-    public int getLoadInst() {
-        throw new InternalException();
-    }
-
-    @Override
-    public int getStoreInst() {
-        throw new InternalException();
-    }
-
-    @Override
-    public int getArrayLoadInst() {
-        throw new InternalException();
-    }
-
-    @Override
-    public int getArrayStoreInst() {
-        throw new InternalException();
-    }
-
-    @Override
-    public boolean isReference() {
-        throw new InternalException();
-    }
-
-    @Override
-    public int getReturnInst() {
-        throw new InternalException();
-    }
-
-    @Override
-    public CastOperation implicitCastTo(SType other) {
-        if (other instanceof SFunctionalInterface lambdaType) {
-            if (parametersMatch(lambdaType)) {
-                return new FunctionToLambdaOperation(other);
-            }
-        }
-
-        return null;
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (obj instanceof SFunction other) {
-            return other.returnType.equals(returnType) && Arrays.equals(other.parameters, parameters);
-        } else {
-            return false;
-        }
-    }
-
-    @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        sb.append('(');
-        for (SType type : getParameterTypes()) {
-            sb.append(type.toString()).append(", ");
+        sb.append("fn<");
+        List<SType> parameters = getParameterTypes();
+        if (parameters.size() != 1) {
+            sb.append('(');
         }
-        if (parameters.length > 0) {
-            sb.delete(sb.length() - 2, sb.length());
-        }
-        sb.append(") => ");
-        sb.append(returnType.toString());
-        return sb.toString();
-    }
-
-    private boolean parametersMatch(SFunctionalInterface lambda) {
-        if (!returnType.equals(lambda.getActualReturnType())) {
-            return false;
-        }
-        if (parameters.length != lambda.getActualParameters().length) {
-            return false;
-        }
-        for (int i = 0; i < parameters.length; i++) {
-            if (!parameters[i].type().equals(lambda.getActualParameters()[i])) {
-                return false;
+        for (int i = 0; i < parameters.size(); i++) {
+            sb.append(parameters.get(i));
+            if (i < parameters.size() - 1) {
+                sb.append(", ");
             }
         }
-        return true;
-    }
-
-    public static class FunctionToLambdaOperation extends CastOperation {
-
-        private FunctionToLambdaOperation(SType type) {
-            super(type);
+        if (parameters.size() != 1) {
+            sb.append(')');
         }
-
-        @Override
-        public void apply(MethodVisitor visitor) {}
+        sb.append(" => ");
+        sb.append(returnType.toString());
+        sb.append('>');
+        return sb.toString();
     }
 }

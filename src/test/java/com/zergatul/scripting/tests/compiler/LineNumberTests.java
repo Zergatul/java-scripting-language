@@ -205,7 +205,7 @@ public class LineNumberTests {
         Compiler compiler = new Compiler(new CompilationParametersBuilder()
                 .setRoot(ApiRoot.class)
                 .setSourceFile("<TestScript>")
-                .setLineNumbers(true)
+                .emitLineNumbers(true)
                 //.setDebug()
                 .build());
         CompilationResult result = compiler.compile(code);
@@ -219,7 +219,7 @@ public class LineNumberTests {
                 .setInterface(AsyncRunnable.class)
                 .setAsyncReturnType(SVoidType.instance)
                 .setSourceFile("<TestScript>")
-                .setLineNumbers(true)
+                .emitLineNumbers(true)
                 //.setDebug()
                 .build());
         CompilationResult result = compiler.compile(code);

@@ -11,11 +11,7 @@ public abstract class StatementNode extends Node {
         super(nodeType, range);
     }
 
-    public StatementNode prepend(Token token) {
-        throw new InternalException("Not supported.");
-    }
-
-    public StatementNode append(Token token) {
+    public StatementNode updateWithSemicolon(Token semicolon) {
         throw new InternalException("Not supported.");
     }
 }

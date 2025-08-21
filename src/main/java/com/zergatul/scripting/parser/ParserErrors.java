@@ -30,4 +30,7 @@ public class ParserErrors {
     public static final ErrorCode InvalidNewExpression = new ErrorCode("C025", "A new expression requires '[' or '('");
     public static final ErrorCode SemicolonOrParenthesisExpected = new ErrorCode("C026", "; or ( expected, found %s");
     public static final ErrorCode FieldInitializersNotSupported = new ErrorCode("C027", "Field initializers not supported");
+    public static final ErrorCode CurlyBracketOrArrowExpected = new ErrorCode("C028", "{ or => expected, found %s");
+    public static final ErrorCode ArrowExpected = new ErrorCode("C029", "=> expected");
+    public static final ErrorCode NotAStatement = new ErrorCode("C030", "Not a statement");
 }

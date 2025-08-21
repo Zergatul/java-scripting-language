@@ -34,6 +34,10 @@ public abstract class SType {
         return Type.getInternalName(getJavaClass());
     }
 
+    public Type getAsmType() {
+        return Type.getType(getJavaClass());
+    }
+
     public String getDescriptor() {
         return Type.getDescriptor(getJavaClass());
     }
@@ -243,7 +247,7 @@ public abstract class SType {
         visitor.visitLdcInsn(Type.getType(getJavaClass()));
     }
 
-    public SReference getReferenceType() {
+    public SByReference getReferenceType() {
         return null;
     }
 
@@ -260,7 +264,7 @@ public abstract class SType {
             java.lang.reflect.Type raw = parameterized.getRawType();
             if (raw instanceof Class<?> clazz) {
                 if (InterfaceHelper.isFuncInterface(clazz)) {
-                    return new SFunctionalInterface(parameterized);
+                    return SFunctionalInterface.from(parameterized);
                 }
             }
 
@@ -304,19 +308,19 @@ public abstract class SType {
                 return SString.instance;
             }
             if (clazz == IntReference.class) {
-                return SReference.INT;
+                return SByReference.INT;
             }
             if (clazz == Int64Reference.class) {
-                return SReference.INT64;
+                return SByReference.INT64;
             }
             if (clazz == FloatReference.class) {
-                return SReference.FLOAT;
+                return SByReference.FLOAT;
             }
             if (clazz.isArray()) {
                 return new SArrayType(fromJavaType(clazz.getComponentType()));
             }
             if (InterfaceHelper.isFuncInterface(clazz)) {
-                return new SFunctionalInterface(clazz);
+                return SFunctionalInterface.from(clazz);
             }
             if (clazz.isAnnotationPresent(CustomType.class)) {
                 return new SCustomType(clazz);

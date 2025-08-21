@@ -9,8 +9,13 @@ import java.util.List;
 
 public class BoundInvalidExpressionNode extends BoundExpressionNode {
 
-    public BoundInvalidExpressionNode(TextRange range) {
+    public final List<BoundExpressionNode> children;
+    // LookupResultKind resultKind;
+    // List<Symbol> candidateSymbols;
+
+    public BoundInvalidExpressionNode(List<BoundExpressionNode> children, TextRange range) {
         super(NodeType.INVALID_EXPRESSION, SUnknown.instance, range);
+        this.children = children;
     }
 
     @Override
@@ -22,8 +27,13 @@ public class BoundInvalidExpressionNode extends BoundExpressionNode {
     public void acceptChildren(BinderTreeVisitor visitor) {}
 
     @Override
+    public boolean isOpen() {
+        return true;
+    }
+
+    @Override
     public List<BoundNode> getChildren() {
-        return List.of();
+        return List.of(children.toArray(BoundNode[]::new));
     }
 
     @Override

@@ -29,6 +29,14 @@ public abstract class BoundNode implements Locatable {
         return this.range;
     }
 
+    public boolean isMissing() {
+        return this.range.isEmpty();
+    }
+
+    public boolean isOpen() {
+        return false;
+    }
+
     public abstract List<BoundNode> getChildren();
 
     @Override

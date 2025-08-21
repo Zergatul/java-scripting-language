@@ -629,6 +629,23 @@ public class LambdaTests {
     }
 
     @Test
+    public void localVariableShadowTest() {
+        String code = """
+                int x = 100;
+                fn<int => int> add = a => {
+                    int x = 7;
+                    return a + x;
+                };
+                intStorage.add(add(5));
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(12));
+    }
+
+    @Test
     public void failedArguments1Test() {
         String code = """
                 run.once(10, () => {});
@@ -640,7 +657,7 @@ public class LambdaTests {
                 List.of(
                         new DiagnosticMessage(
                                 BinderErrors.NoOverloadedMethods,
-                                new SingleLineTextRange(1, 1, 0, 8),
+                                new SingleLineTextRange(1, 5, 4, 4),
                                 "once",
                                 2)));
     }
@@ -702,8 +719,10 @@ public class LambdaTests {
         Assertions.assertEquals(arguments.get(0),
                 new BoundIntegerLiteralExpressionNode(10, new SingleLineTextRange(1, 14, 13, 2)));
 
-        Assertions.assertEquals(arguments.get(1),
-                new BoundInvalidExpressionNode(new SingleLineTextRange(1, 18, 17, 9)));
+        Assertions.assertTrue(arguments.get(1) instanceof BoundUnconvertedLambdaExpressionNode);
+
+        BoundUnconvertedLambdaExpressionNode lambda = (BoundUnconvertedLambdaExpressionNode) arguments.get(1);
+        Assertions.assertEquals(lambda.getRange(), new SingleLineTextRange(1, 18, 17, 9));
     }
 
     // TODO: capture function parameters?

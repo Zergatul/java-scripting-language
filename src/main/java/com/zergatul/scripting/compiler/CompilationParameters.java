@@ -27,6 +27,7 @@ public class CompilationParameters {
     private final String sourceFile;
 
     private final boolean emitLineNumbers;
+    private final boolean emitVariableNames;
     private final boolean debug;
 
     public CompilationParameters(
@@ -38,6 +39,7 @@ public class CompilationParameters {
             String classNamePrefix,
             String sourceFile,
             boolean emitLineNumbers,
+            boolean emitVariableNames,
             boolean debug
     ) {
         if (!InterfaceHelper.isFuncInterface(functionalInterface)) {
@@ -57,6 +59,7 @@ public class CompilationParameters {
         this.classNamePrefix = classNamePrefix;
         this.sourceFile = sourceFile;
         this.emitLineNumbers = emitLineNumbers;
+        this.emitVariableNames = emitVariableNames;
         this.debug = debug;
         Arrays.stream(root.getDeclaredFields())
                 .filter(f -> Modifier.isPublic(f.getModifiers()))
@@ -74,6 +77,10 @@ public class CompilationParameters {
 
     public boolean shouldEmitLineNumbers() {
         return emitLineNumbers;
+    }
+
+    public boolean shouldEmitVariableNames() {
+        return emitVariableNames;
     }
 
     public boolean isDebug() {

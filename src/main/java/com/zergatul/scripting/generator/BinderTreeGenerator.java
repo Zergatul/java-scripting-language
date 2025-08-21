@@ -94,10 +94,7 @@ public class BinderTreeGenerator {
 
     private BoundForEachLoopStatementNode rewrite(BoundForEachLoopStatementNode node) {
         return new BoundForEachLoopStatementNode(
-                node.lParen, node.rParen,
-                node.typeNode,
-                node.name,
-                node.iterable,
+                node.openParen, node.typeNode, node.name, node.iterable, node.closeParen,
                 rewriteStatementSync(node.body),
                 node.index,
                 node.length,
@@ -307,10 +304,12 @@ public class BinderTreeGenerator {
         if (isAsync(node)) {
             return switch (node.getNodeType()) {
                 case AWAIT_EXPRESSION -> rewriteAsync((BoundAwaitExpressionNode) node);
+                case PARENTHESIZED_EXPRESSION -> rewriteAsync((BoundParenthesizedExpressionNode) node);
                 case BINARY_EXPRESSION -> rewriteAsync((BoundBinaryExpressionNode) node);
                 case METHOD_INVOCATION_EXPRESSION -> rewriteAsync((BoundMethodInvocationExpressionNode) node);
                 case UNARY_EXPRESSION -> rewriteAsync((BoundUnaryExpressionNode) node);
                 case IMPLICIT_CAST -> rewriteAsync((BoundImplicitCastExpressionNode) node);
+                case CONVERSION -> rewriteAsync((BoundConversionNode) node);
                 default -> throw new InternalException(String.format("Async %s not supported yet.", node.getNodeType()));
             };
         } else {
@@ -326,6 +325,10 @@ public class BinderTreeGenerator {
         currentBoundary = boundary;
 
         return new BoundGeneratorGetValueNode(node.type);
+    }
+
+    public BoundExpressionNode rewriteAsync(BoundParenthesizedExpressionNode node) {
+        return rewriteExpression(node.inner);
     }
 
     private BoundExpressionNode rewriteAsync(BoundBinaryExpressionNode node) {
@@ -354,6 +357,7 @@ public class BinderTreeGenerator {
 
         return new BoundMethodInvocationExpressionNode(
                 node.objectReference,
+                node.dot,
                 node.method,
                 new BoundArgumentsListNode(Arrays.stream(variables).map(v -> (BoundExpressionNode) new BoundNameExpressionNode(v)).toList()),
                 node.refVariables,
@@ -375,6 +379,16 @@ public class BinderTreeGenerator {
         return new BoundImplicitCastExpressionNode(
                 new BoundNameExpressionNode(variable),
                 node.operation);
+    }
+
+    private BoundExpressionNode rewriteAsync(BoundConversionNode node) {
+        LiftedVariable variable = new LiftedVariable(new LocalVariable(null, node.expression.type, null));
+        storeExpressionValue(variable, node.expression);
+        return new BoundConversionNode(
+                new BoundNameExpressionNode(variable),
+                node.conversionInfo,
+                node.type,
+                node.getRange());
     }
 
     private void storeExpressionValue(LiftedVariable variable, BoundExpressionNode expression) {

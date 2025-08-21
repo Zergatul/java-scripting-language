@@ -17,6 +17,10 @@ public class Token implements Locatable {
         return this.range;
     }
 
+    public boolean isMissing() {
+        return this.range.isEmpty();
+    }
+
     public String getRawValue(String code) {
         return range.extract(code);
     }

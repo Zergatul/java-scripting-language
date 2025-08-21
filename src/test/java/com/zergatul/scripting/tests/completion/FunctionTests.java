@@ -1,5 +1,6 @@
 package com.zergatul.scripting.tests.completion;
 
+import com.zergatul.scripting.lexer.TokenType;
 import com.zergatul.scripting.tests.compiler.helpers.IntStorage;
 import com.zergatul.scripting.tests.completion.helpers.CompletionTestHelper;
 import com.zergatul.scripting.tests.completion.helpers.Lists;
@@ -74,6 +75,24 @@ public class FunctionTests {
                         new StaticConstantSuggestion(context, "intStorage"),
                         new FunctionSuggestion(context, "func"),
                         new LocalVariableSuggestion(context, "x")));
+    }
+
+    @Test
+    public void asyncFunctionTest1() {
+        assertSuggestions("""
+                async <cursor>
+                """,
+                context -> Lists.of(
+                        types,
+                        new KeywordSuggestion(TokenType.VOID)));
+    }
+
+    @Test
+    public void asyncFunctionTest2() {
+        assertSuggestions("""
+                async void <cursor>
+                """,
+                context -> List.of());
     }
 
     private void assertSuggestions(String code, Function<TestCompletionContext, List<Suggestion>> expectedFactory) {

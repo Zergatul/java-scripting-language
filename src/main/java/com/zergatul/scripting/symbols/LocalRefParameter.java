@@ -3,7 +3,7 @@ package com.zergatul.scripting.symbols;
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.compiler.CompilerContext;
 import com.zergatul.scripting.compiler.StackHelper;
-import com.zergatul.scripting.type.SReference;
+import com.zergatul.scripting.type.SByReference;
 import com.zergatul.scripting.type.SType;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Type;
@@ -12,9 +12,9 @@ import static org.objectweb.asm.Opcodes.INVOKEVIRTUAL;
 
 public class LocalRefParameter extends LocalVariable {
 
-    private final SReference refType;
+    private final SByReference refType;
 
-    public LocalRefParameter(String name, SReference refType, SType underlying, TextRange definition) {
+    public LocalRefParameter(String name, SByReference refType, SType underlying, TextRange definition) {
         super(name, underlying, definition);
         this.refType = refType;
     }

@@ -11,7 +11,6 @@ import com.zergatul.scripting.compiler.CompilerContext;
 import com.zergatul.scripting.compiler.JavaInteropPolicy;
 import com.zergatul.scripting.lexer.TokenType;
 import com.zergatul.scripting.parser.NodeType;
-import com.zergatul.scripting.parser.nodes.ClassNode;
 import com.zergatul.scripting.symbols.*;
 import com.zergatul.scripting.type.*;
 
@@ -120,7 +119,7 @@ public class CompletionProvider<T> {
                     } else {
                         BoundIfStatementNode statement = (BoundIfStatementNode) completionContext.entry.node;
                         // if (...<here>...)
-                        if (TextRange.isBetween(line, column, statement.lParen.getRange(), statement.rParen.getRange())) {
+                        if (TextRange.isBetween(line, column, statement.openParen.getRange(), statement.closeParen.getRange())) {
                             if (statement.condition.getRange().isAfter(line, column) || statement.condition.getRange().isEmpty()) {
                                 // if (<here> ...) or if (<here>)
                                 canExpression = true;
@@ -237,7 +236,7 @@ public class CompletionProvider<T> {
                         suggestions.addAll(get(parameters, output, ctx, line, column));
                     } else {
                         BoundForEachLoopStatementNode loop = (BoundForEachLoopStatementNode) completionContext.entry.node;
-                        if (loop.rParen.getRange().endsWith(line, column) || (loop.rParen.getRange().isBefore(line, column) && loop.body.getRange().isAfter(line, column))) {
+                        if (loop.closeParen.getRange().endsWith(line, column) || (loop.closeParen.getRange().isBefore(line, column) && loop.body.getRange().isAfter(line, column))) {
                             canStatement = true;
                         }
                     }
@@ -453,6 +452,9 @@ public class CompletionProvider<T> {
             }
             if (node instanceof BoundImplicitCastExpressionNode implicitCast) {
                 return getUnfinished(implicitCast.operand, line, column);
+            }
+            if (node instanceof BoundConversionNode conversionNode) {
+                return getUnfinished(conversionNode.expression, line, column);
             }
             if (node instanceof BoundAwaitExpressionNode awaitExpression) {
                 return getUnfinished(awaitExpression.expression, line, column);
@@ -714,7 +716,7 @@ public class CompletionProvider<T> {
         }
     }
 
-    private boolean isSingleWordStatementStart(CompletionProvider.SearchEntry entry, int line, int column) {
+    private boolean isSingleWordStatementStart(SearchEntry entry, int line, int column) {
         if (entry.node.getNodeType() == NodeType.NAME_EXPRESSION) {
             if (entry.parent.node.getNodeType() == NodeType.EXPRESSION_STATEMENT) {
                 if (entry.node.getRange().containsOrEnds(line, column)) {
@@ -730,9 +732,9 @@ public class CompletionProvider<T> {
         }
         if (entry.node.getNodeType() == NodeType.IF_STATEMENT) {
             BoundIfStatementNode statement = (BoundIfStatementNode) entry.node;
-            return  statement.lParen.getRange().isEmpty() &&
+            return  statement.openParen.getRange().isEmpty() &&
                     statement.condition.getRange().isEmpty() &&
-                    statement.rParen.getRange().isEmpty() &&
+                    statement.closeParen.getRange().isEmpty() &&
                     statement.thenStatement.getNodeType() == NodeType.INVALID_STATEMENT &&
                     statement.elseStatement == null;
         }
@@ -747,11 +749,11 @@ public class CompletionProvider<T> {
         }
         if (entry.node.getNodeType() == NodeType.FOREACH_LOOP_STATEMENT) {
             BoundForEachLoopStatementNode statement = (BoundForEachLoopStatementNode) entry.node;
-            return  statement.lParen.getRange().isEmpty() &&
+            return  statement.openParen.getRange().isEmpty() &&
                     statement.typeNode.getNodeType() == NodeType.INVALID_TYPE &&
                     statement.name.value.isEmpty() &&
                     statement.iterable.getNodeType() == NodeType.INVALID_EXPRESSION &&
-                    statement.rParen.getRange().isEmpty() &&
+                    statement.closeParen.getRange().isEmpty() &&
                     statement.body.getNodeType() == NodeType.INVALID_STATEMENT;
         }
         if (entry.node.getNodeType() == NodeType.WHILE_LOOP_STATEMENT) {
@@ -770,88 +772,5 @@ public class CompletionProvider<T> {
             return;
         }
         suggestions.add(factory.getLocalVariableSuggestion(variable));
-    }
-
-//    private String[] getClassesSuggestion(String prefix) {
-//        getLoadedClasses();
-//        return new String[0];
-//    }
-
-//    @SuppressWarnings("unchecked")
-//    private List<Class<?>> getLoadedClasses() {
-//        try {
-//            ClassLoader loader = ClassLoader.getSystemClassLoader();
-//            Field field = loader.getClass().getDeclaredField("classes");
-//            field.setAccessible(true);
-//            return List.copyOf((List<Class<?>>) field.get(loader));
-//        } catch (Throwable e) {
-//            return List.of();
-//        }
-//    }
-
-    private record SearchEntry(SearchEntry parent, BoundNode node) {}
-
-    private static class CompletionContext {
-
-        public final ContextType type;
-        public final SearchEntry entry;
-        public final BoundNode prev;
-        public final BoundNode next;
-        public final int line;
-        public final int column;
-
-        public CompletionContext(ContextType type, int line, int column) {
-            this.type = type;
-            this.entry = null;
-            this.prev = null;
-            this.next = null;
-            this.line = line;
-            this.column = column;
-        }
-
-        public CompletionContext(SearchEntry entry, int line, int column) {
-            this.type = ContextType.WITHIN;
-            this.entry = entry;
-
-            BoundNode prev = null;
-            BoundNode next = null;
-            List<BoundNode> children = entry.node.getChildren();
-            for (int i = -1; i < children.size(); i++) {
-                if (i < 0 || children.get(i).getRange().isBefore(line, column)) {
-                    if (i + 1 >= children.size() || children.get(i + 1).getRange().isAfter(line, column)) {
-                        prev = i >= 0 ? children.get(i) : null;
-                        next = i < children.size() - 1 ? children.get(i + 1) : null;
-                        break;
-                    }
-                    if (i + 1 >= children.size() || children.get(i + 1).getRange().contains(line, column)) {
-                        prev = i >= 0 ? children.get(i) : null;
-                        next = i < children.size() - 2 ? children.get(i + 2) : null;
-                        break;
-                    }
-                }
-            }
-
-            this.prev = prev;
-            this.next = next;
-            this.line = line;
-            this.column = column;
-        }
-
-        public CompletionContext up() {
-            if (this.type != ContextType.WITHIN) {
-                return null;
-            }
-            if (this.entry == null || this.entry.parent == null) {
-                return null;
-            }
-            return new CompletionContext(this.entry.parent, line, column);
-        }
-    }
-
-    private enum ContextType {
-        NO_CODE,
-        BEFORE_FIRST,
-        AFTER_LAST,
-        WITHIN
     }
 }

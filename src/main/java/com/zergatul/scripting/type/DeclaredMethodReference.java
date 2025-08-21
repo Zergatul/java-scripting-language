@@ -10,9 +10,9 @@ public class DeclaredMethodReference extends MethodReference {
 
     private final SDeclaredType owner;
     private final String name;
-    private final SFunction functionType;
+    private final SMethodFunction functionType;
 
-    public DeclaredMethodReference(SDeclaredType owner, String name, SFunction functionType) {
+    public DeclaredMethodReference(SDeclaredType owner, String name, SMethodFunction functionType) {
         this.owner = owner;
         this.name = name;
         this.functionType = functionType;
@@ -39,7 +39,7 @@ public class DeclaredMethodReference extends MethodReference {
                 INVOKEVIRTUAL,
                 owner.getInternalName(),
                 name,
-                functionType.getDescriptor(),
+                functionType.getMethodDescriptor(),
                 false);
     }
 

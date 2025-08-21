@@ -11,7 +11,6 @@ public class LocalVariable extends Variable {
 
     private int stackIndex;
     private StateBoundary state;
-    private Label declarationLabel;
 
     public LocalVariable(String name, SType type, TextRange definition) {
         super(name, type, definition);
@@ -32,14 +31,6 @@ public class LocalVariable extends Variable {
 
     public void setGeneratorState(StateBoundary state) {
         this.state = state;
-    }
-
-    public Label getDeclarationLabel() {
-        return declarationLabel;
-    }
-
-    public void setDeclarationLabel(Label label) {
-        declarationLabel = label;
     }
 
     @Override

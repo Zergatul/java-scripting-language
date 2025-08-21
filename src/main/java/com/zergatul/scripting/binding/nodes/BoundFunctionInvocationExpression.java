@@ -10,17 +10,17 @@ import java.util.List;
 
 public class BoundFunctionInvocationExpression extends BoundExpressionNode {
 
-    public final BoundNameExpressionNode name;
+    public final BoundFunctionReferenceNode functionReferenceNode;
     public final BoundArgumentsListNode arguments;
     public final List<RefHolder> refVariables;
 
-    public BoundFunctionInvocationExpression(BoundNameExpressionNode name, SType type, BoundArgumentsListNode arguments) {
-        this(name, type, arguments, List.of(), null);
+    public BoundFunctionInvocationExpression(BoundFunctionReferenceNode functionReferenceNode, SType type, BoundArgumentsListNode arguments) {
+        this(functionReferenceNode, type, arguments, List.of(), null);
     }
 
-    public BoundFunctionInvocationExpression(BoundNameExpressionNode name, SType type, BoundArgumentsListNode arguments, List<RefHolder> refVariables, TextRange range) {
+    public BoundFunctionInvocationExpression(BoundFunctionReferenceNode functionReferenceNode, SType type, BoundArgumentsListNode arguments, List<RefHolder> refVariables, TextRange range) {
         super(NodeType.FUNCTION_INVOCATION, type, range);
-        this.name = name;
+        this.functionReferenceNode = functionReferenceNode;
         this.arguments = arguments;
         this.refVariables = refVariables;
     }
@@ -32,12 +32,12 @@ public class BoundFunctionInvocationExpression extends BoundExpressionNode {
 
     @Override
     public void acceptChildren(BinderTreeVisitor visitor) {
-        name.accept(visitor);
+        functionReferenceNode.accept(visitor);
         arguments.accept(visitor);
     }
 
     @Override
     public List<BoundNode> getChildren() {
-        return List.of(name, arguments);
+        return List.of(functionReferenceNode, arguments);
     }
 }

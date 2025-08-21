@@ -34,7 +34,7 @@ public class PostfixStatementNode extends StatementNode {
     }
 
     @Override
-    public StatementNode append(Token token) {
-        return new PostfixStatementNode(getNodeType(), expression, TextRange.combine(getRange(), token.getRange()));
+    public StatementNode updateWithSemicolon(Token semicolon) {
+        return new PostfixStatementNode(getNodeType(), expression, TextRange.combine(getRange(), semicolon.getRange()));
     }
 }

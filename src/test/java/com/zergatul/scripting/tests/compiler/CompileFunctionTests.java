@@ -54,6 +54,7 @@ public class CompileFunctionTests {
         Compiler compiler = new Compiler(new CompilationParametersBuilder()
                 .setRoot(ApiRoot.class)
                 .setInterface(clazz)
+                .emitVariableNames(true)
                 //.setDebug()
                 .build());
         CompilationResult result = compiler.compile(code);

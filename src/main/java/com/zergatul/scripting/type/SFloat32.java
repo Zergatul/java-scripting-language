@@ -188,8 +188,8 @@ public class SFloat32 extends SPredefinedType {
     }
 
     @Override
-    public SReference getReferenceType() {
-        return SReference.FLOAT32;
+    public SByReference getReferenceType() {
+        return SByReference.FLOAT32;
     }
 
     @Override
@@ -280,7 +280,7 @@ public class SFloat32 extends SPredefinedType {
             "tryParse",
             SBoolean.instance,
             new MethodParameter("str", SString.instance),
-            new MethodParameter("result", SReference.FLOAT32)));
+            new MethodParameter("result", SByReference.FLOAT32)));
 
     private static class Float32ComparisonOperation extends BinaryOperation {
 

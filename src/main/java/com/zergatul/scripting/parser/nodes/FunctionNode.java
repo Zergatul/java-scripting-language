@@ -10,9 +10,9 @@ public class FunctionNode extends CompilationUnitMemberNode {
     public final TypeNode returnType;
     public final NameExpressionNode name;
     public final ParameterListNode parameters;
-    public final BlockStatementNode body;
+    public final StatementNode body;
 
-    public FunctionNode(ModifiersNode modifiers, TypeNode returnType, NameExpressionNode name, ParameterListNode parameters, BlockStatementNode body, TextRange range) {
+    public FunctionNode(ModifiersNode modifiers, TypeNode returnType, NameExpressionNode name, ParameterListNode parameters, StatementNode body, TextRange range) {
         super(NodeType.FUNCTION, range);
         this.modifiers = modifiers;
         this.returnType = returnType;

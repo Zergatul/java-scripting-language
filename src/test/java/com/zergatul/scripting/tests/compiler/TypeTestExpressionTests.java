@@ -107,6 +107,21 @@ public class TypeTestExpressionTests {
         Assertions.assertIterableEquals(ApiRoot.boolStorage.list, List.of(true, false, false, true, true, false));
     }
 
+    @Test
+    public void nullTest() {
+        String code = """
+                let instance = api.getNull();
+                boolStorage.add(instance is MyType);
+                instance = api.getSomething();
+                boolStorage.add(instance is MyType);
+                """;
+
+        Runnable program = compileWithCustomType(ApiRoot.class, MyType.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(ApiRoot.boolStorage.list, List.of(false, true));
+    }
+
     public static class ApiRoot {
         public static BoolStorage boolStorage;
         public static Api api;
@@ -116,6 +131,9 @@ public class TypeTestExpressionTests {
     public static class Api {
         public MyType getSomething() {
             return new MyType();
+        }
+        public MyType getNull() {
+            return null;
         }
     }
 

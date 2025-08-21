@@ -22,6 +22,7 @@ public class UnitStructureTests {
                 context -> Lists.of(
                         unitMembers,
                         statements,
+                        new KeywordSuggestion(TokenType.ASYNC),
                         new StaticConstantSuggestion(context, "intStorage")));
     }
 
@@ -33,7 +34,8 @@ public class UnitStructureTests {
                 """,
                 context -> Lists.of(
                         unitMembers,
-                        types));
+                        types,
+                        new KeywordSuggestion(TokenType.ASYNC)));
     }
 
     @Test
@@ -45,6 +47,7 @@ public class UnitStructureTests {
                 context -> Lists.of(
                         unitMembers,
                         statements,
+                        new KeywordSuggestion(TokenType.ASYNC),
                         new StaticConstantSuggestion(context, "intStorage"),
                         new StaticFieldSuggestion(context, "x")));
     }
@@ -59,6 +62,7 @@ public class UnitStructureTests {
                 context -> Lists.of(
                         unitMembers,
                         statements,
+                        new KeywordSuggestion(TokenType.ASYNC),
                         new StaticConstantSuggestion(context, "intStorage"),
                         new StaticFieldSuggestion(context, "x")));
     }
@@ -73,6 +77,15 @@ public class UnitStructureTests {
                         statements,
                         new StaticConstantSuggestion(context, "intStorage"),
                         new LocalVariableSuggestion(context, "x")));
+    }
+
+    @Test
+    public void staticFieldTest() {
+        assertSuggestions("""
+                static <cursor>
+                """,
+                context -> Lists.of(
+                        types));
     }
 
     private void assertSuggestions(String code, Function<TestCompletionContext, List<Suggestion>> expectedFactory) {

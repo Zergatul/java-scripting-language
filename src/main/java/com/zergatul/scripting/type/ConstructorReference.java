@@ -5,7 +5,7 @@ import org.objectweb.asm.MethodVisitor;
 import java.util.List;
 import java.util.Optional;
 
-public abstract class ConstructorReference {
+public abstract class ConstructorReference implements Invocable {
 
     public Optional<String> getDescription() {
         return Optional.empty();

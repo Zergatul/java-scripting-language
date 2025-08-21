@@ -1,6 +1,9 @@
 package com.zergatul.scripting.tests.compiler;
 
 import com.zergatul.scripting.AsyncRunnable;
+import com.zergatul.scripting.DiagnosticMessage;
+import com.zergatul.scripting.SingleLineTextRange;
+import com.zergatul.scripting.binding.BinderErrors;
 import com.zergatul.scripting.tests.compiler.helpers.*;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -9,8 +12,7 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
-import static com.zergatul.scripting.tests.compiler.helpers.CompilerHelper.compile;
-import static com.zergatul.scripting.tests.compiler.helpers.CompilerHelper.compileAsync;
+import static com.zergatul.scripting.tests.compiler.helpers.CompilerHelper.*;
 
 public class AsyncFunctionTests {
 
@@ -360,6 +362,19 @@ public class AsyncFunctionTests {
         ApiRoot.futures.getInt(0).complete(1);
         ApiRoot.futures.getInt(1).complete(2);
         Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(113));
+    }
+
+    @Test
+    public void missingAwaitTest() {
+        String code = """
+                async int count() => 1;
+                int x = count();
+                """;
+
+        List<DiagnosticMessage> messages = getDiagnostics(ApiRoot.class, code);
+
+        Assertions.assertIterableEquals(messages, List.of(
+                new DiagnosticMessage(BinderErrors.CannotImplicitlyConvert, new SingleLineTextRange(2, 9, 32, 7), "Future<int>", "int")));
     }
 
     public static class ApiRoot {

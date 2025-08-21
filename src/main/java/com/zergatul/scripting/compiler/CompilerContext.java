@@ -4,11 +4,11 @@ import com.zergatul.scripting.InternalException;
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.symbols.*;
 import com.zergatul.scripting.type.SDeclaredType;
-import com.zergatul.scripting.type.SReference;
+import com.zergatul.scripting.type.SByReference;
+import com.zergatul.scripting.type.SGenericFunction;
 import com.zergatul.scripting.type.SType;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
-import org.objectweb.asm.Type;
 
 import java.lang.reflect.Method;
 import java.util.*;
@@ -40,6 +40,8 @@ public class CompilerContext {
     private Label generatorContinueLabel;
     private JavaInteropPolicy policy;
     private int lastEmittedLine;
+    private final List<SGenericFunction> genericFunctions;
+    private Label startLabel;
 
     private CompilerContext(
             CompilerContext parent,
@@ -75,6 +77,12 @@ public class CompilerContext {
             stack.set(initialStackIndex);
         }
         lastEmittedLine = -1;
+
+        if (parent == null) {
+            genericFunctions = new ArrayList<>();
+        } else {
+            genericFunctions = null;
+        }
     }
 
     public static CompilerContext create(SType returnType, boolean isAsync) {
@@ -135,7 +143,14 @@ public class CompilerContext {
         return variable;
     }
 
-    public LocalVariable addLocalRefParameter(String name, SReference refType, SType underlying, TextRange definition) {
+    public SymbolRef addLocalParameter2(String name, SType type, TextRange definition) {
+        LocalVariable variable = new LocalParameter(name, type, definition);
+        SymbolRef symbolRef = new MutableSymbolRef(variable);
+        addLocalVariable(symbolRef);
+        return symbolRef;
+    }
+
+    public LocalVariable addLocalRefParameter(String name, SByReference refType, SType underlying, TextRange definition) {
         if (name == null || name.isEmpty()) {
             throw new InternalException();
         }
@@ -165,6 +180,10 @@ public class CompilerContext {
         List<RefHolder> variables = List.of(refVariables.toArray(RefHolder[]::new));
         refVariables.clear();
         return variables;
+    }
+
+    public void setStartLabel(Label label) {
+        startLabel = label;
     }
 
     public CompilerContext createChild() {
@@ -251,6 +270,19 @@ public class CompilerContext {
         return staticSymbols.values();
     }
 
+    public boolean hasLocalSymbol(String name) {
+        CompilerContext current = this;
+        while (true) {
+            if (current.localSymbols.containsKey(name)) {
+                return true;
+            }
+            if (current.isFunctionRoot) {
+                return false;
+            }
+            current = current.parent;
+        }
+    }
+
     public SymbolRef getSymbol(String name) {
         List<CompilerContext> functions = List.of(); // function boundaries
         for (CompilerContext context = this; context != null; ) {
@@ -264,12 +296,7 @@ public class CompilerContext {
                         LiftedVariable lifted = new LiftedVariable(localSymbolRef.asLocalVariable());
                         localSymbolRef.set(lifted); // updates all references
                         original = lifted;
-                        /*for (BoundNameExpressionNode nameExpression : localSymbolRef.getReferences()) {
-                            nameExpression.symbolRef.set(lifted);
-                        }*/
                         context.getFunctionContext().lifted.add(lifted);
-                        // no need???
-                        //context.insertLocalVariable(localSymbol); // replace local variable with lifted
                     }
 
                     Variable prev = original;
@@ -320,6 +347,26 @@ public class CompilerContext {
             current = current.parent;
         }
         return null;
+    }
+
+    public List<SGenericFunction> getGenericFunctions() {
+        return genericFunctions;
+    }
+
+    public SGenericFunction getGenericFunction(SType returnType, SType[] parameters) {
+        for (SGenericFunction func : root.genericFunctions) {
+            if (func.matches(returnType, parameters)) {
+                return func;
+            }
+        }
+
+        SGenericFunction genericFunction = new SGenericFunction(returnType, parameters);
+        root.genericFunctions.add(genericFunction);
+        return genericFunction;
+    }
+
+    public void copyGenericFunctionsFrom(CompilerContext other) {
+        genericFunctions.addAll(other.getGenericFunctions());
     }
 
     public boolean hasSymbol(String name) {
@@ -448,19 +495,34 @@ public class CompilerContext {
         stack.set(index);
     }
 
-    public void markEnd(MethodVisitor visitor) {
-        Label label = new Label();
-        visitor.visitLabel(label);
+    public void emitLocalVariableTable(MethodVisitor visitor, List<LocalVariable> variables) {
+        Label endLabel = new Label();
+        visitor.visitLabel(endLabel);
         for (SymbolRef ref : localSymbols.values()) {
             if (ref.get() instanceof LocalVariable local) {
+                if (local.getName() == null || local.getName().isEmpty()) {
+                    continue;
+                }
                 visitor.visitLocalVariable(
                         local.getName(),
-                        Type.getDescriptor(local.getType().getJavaClass()),
+                        local.getType().getDescriptor(),
                         null,
-                        local.getDeclarationLabel(),
-                        label,
+                        startLabel,
+                        endLabel,
                         local.getStackIndex());
             }
+        }
+        for (LocalVariable local : variables) {
+            if (local.getName() == null || local.getName().isEmpty()) {
+                continue;
+            }
+            visitor.visitLocalVariable(
+                    local.getName(),
+                    local.getType().getDescriptor(),
+                    null,
+                    startLabel,
+                    endLabel,
+                    local.getStackIndex());
         }
     }
 
