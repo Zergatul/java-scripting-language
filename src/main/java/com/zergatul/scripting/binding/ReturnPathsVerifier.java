@@ -4,10 +4,16 @@ import com.zergatul.scripting.binding.nodes.BoundBlockStatementNode;
 import com.zergatul.scripting.binding.nodes.BoundIfStatementNode;
 import com.zergatul.scripting.binding.nodes.BoundStatementNode;
 
+import java.util.List;
+
 public class ReturnPathsVerifier {
 
     public boolean verify(BoundBlockStatementNode block) {
-        for (BoundStatementNode statement : block.statements) {
+        return verify(block.statements);
+    }
+
+    public boolean verify(List<BoundStatementNode> statements) {
+        for (BoundStatementNode statement : statements) {
             if (verify(statement)) {
                 return true;
             }

@@ -23,10 +23,10 @@ public class GenericFunctionTests {
     @Test
     public void conversionFromFunctionTest() {
         String code = """
-                int f1() { return 10; }
-                int f2() { return 20; }
-                int f3() { return 30; }
-                () -> int func(int p) {
+                int f1() => 10;
+                int f2() => 20;
+                int f3() => 30;
+                fn<() => int> func(int p) {
                     if (p == 1) return f1;
                     if (p == 2) return f2;
                     return f3;
@@ -49,10 +49,10 @@ public class GenericFunctionTests {
     @Test
     public void argumentTest() {
         String code = """
-                int f1() { return 10; }
-                int f2() { return 20; }
-                int f3() { return 30; }
-                int sqr(() -> int func) {
+                int f1() => 10;
+                int f2() => 20;
+                int f3() => 30;
+                int sqr(fn<() => int> func) {
                     return func() * func();
                 }
                 
@@ -65,6 +65,48 @@ public class GenericFunctionTests {
         program.run();
 
         Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(100, 400, 900));
+    }
+
+    @Test
+    public void voidTest() {
+        String code = """
+                void f1() => intStorage.add(1);
+                void f2() => intStorage.add(2);
+                void f3() => intStorage.add(3);
+                void run(fn<() => void> func) => func();
+                
+                run(f3);
+                run(f2);
+                run(f1);
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(3, 2, 1));
+    }
+
+    @Test
+    public void returnLambdaTest() {
+        String code = """
+                int sum(int x1, int x2) => x1 + x2;
+                fn<int => int> add(int x) => y => sum(x, y);
+                
+                let add1 = add(1);
+                let add5 = add(5);
+                let add8 = add(8);
+                intStorage.add(add1(10));
+                intStorage.add(add5(20));
+                intStorage.add(add8(30));
+                intStorage.add(add1(40));
+                intStorage.add(add5(50));
+                intStorage.add(add8(60));
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(11, 25, 38, 41, 55, 68));
     }
 
     public static class ApiRoot {

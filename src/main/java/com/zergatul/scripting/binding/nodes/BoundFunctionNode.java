@@ -12,15 +12,15 @@ public class BoundFunctionNode extends BoundCompilationUnitMemberNode {
     public final BoundTypeNode returnType;
     public final BoundNameExpressionNode name;
     public final BoundParameterListNode parameters;
-    public final BoundBlockStatementNode block;
+    public final BoundStatementNode body;
 
-    public BoundFunctionNode(boolean isAsync, BoundTypeNode returnType, BoundNameExpressionNode name, BoundParameterListNode parameters, BoundBlockStatementNode block, TextRange range) {
+    public BoundFunctionNode(boolean isAsync, BoundTypeNode returnType, BoundNameExpressionNode name, BoundParameterListNode parameters, BoundStatementNode body, TextRange range) {
         super(NodeType.FUNCTION, range);
         this.isAsync = isAsync;
         this.returnType = returnType;
         this.name = name;
         this.parameters = parameters;
-        this.block = block;
+        this.body = body;
     }
 
     @Override
@@ -33,12 +33,12 @@ public class BoundFunctionNode extends BoundCompilationUnitMemberNode {
         returnType.accept(visitor);
         name.accept(visitor);
         parameters.accept(visitor);
-        block.accept(visitor);
+        body.accept(visitor);
     }
 
     @Override
     public List<BoundNode> getChildren() {
-        return List.of(returnType, name, parameters, block);
+        return List.of(returnType, name, parameters, body);
     }
 
     @Override
@@ -48,7 +48,7 @@ public class BoundFunctionNode extends BoundCompilationUnitMemberNode {
                     other.returnType.equals(returnType) &&
                     other.name.equals(name) &&
                     other.parameters.equals(parameters) &&
-                    other.block.equals(block) &&
+                    other.body.equals(body) &&
                     other.getRange().equals(getRange());
         } else {
             return false;

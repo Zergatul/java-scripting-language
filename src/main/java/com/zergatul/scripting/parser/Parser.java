@@ -532,9 +532,23 @@ public class Parser {
 
         NameExpressionNode name = new NameExpressionNode(identifier);
         ParameterListNode parameters = parseParameterList();
-        BlockStatementNode body = parameters.hasParentheses() ? parseBlockStatement() : createMissingBlockStatement();
 
-        return new FunctionNode(modifiers, returnType, name, parameters, body, TextRange.combine(modifiers, body));
+        StatementNode statement;
+        if (parameters.hasParentheses()) {
+            if (current.type == TokenType.LEFT_CURLY_BRACKET) {
+                statement = parseBlockStatement();
+            } else if (current.type == TokenType.EQUAL_GREATER) {
+                advance();
+                statement = parseSimpleStatementNotDeclaration().append(advance(TokenType.SEMICOLON));
+            } else {
+                statement = createMissingBlockStatement();
+                addDiagnostic(ParserErrors.CurlyBracketOrArrowExpected, current, current.getRawValue(code));
+            }
+        } else {
+            statement = createMissingBlockStatement();
+        }
+
+        return new FunctionNode(modifiers, returnType, name, parameters, statement, TextRange.combine(modifiers, statement));
     }
 
     private ModifiersNode parseModifiers() {
@@ -1362,12 +1376,13 @@ public class Parser {
                 IdentifierToken identifier = (IdentifierToken) current;
                 if (identifier.value.equals("Java")) {
                     yield parseJavaType();
+                } else if (identifier.value.equals("fn")) {
+                    yield parseFunctionType();
                 } else {
                     advance();
                     yield new CustomTypeNode(identifier.value, identifier.getRange());
                 }
             }
-            case LEFT_PARENTHESES -> parseFunctionType();
             default -> {
                 addDiagnostic(ParserErrors.TypeExpected, current, current.getRawValue(code));
                 yield new InvalidTypeNode(advance().getRange());
@@ -1463,91 +1478,123 @@ public class Parser {
     }
 
     private FunctionTypeNode parseFunctionType() {
-        if (current.type != TokenType.LEFT_PARENTHESES) {
+        if (current.type != TokenType.IDENTIFIER) {
             throw new InternalException();
         }
 
-        Token leftParenthesis = advance(TokenType.LEFT_PARENTHESES);
+        IdentifierToken fn = (IdentifierToken) advance(TokenType.IDENTIFIER);
+        if (!fn.value.equals("fn")) {
+            throw new InternalException();
+        }
+
+        Token open = advance(TokenType.LESS);
+        if (open.getRange().isEmpty()) {
+            return new FunctionTypeNode(
+                    fn, open, List.of(),
+                    new InvalidTypeNode(createMissingTokenRangeAfterLast()),
+                    createMissingTokenAfterLast(TokenType.GREATER),
+                    TextRange.combine(fn, open));
+        }
 
         List<TypeNode> parameters = new ArrayList<>();
 
-        final int STATE_BEGIN = 1;
-        final int STATE_READ_TYPE = 2;
-        final int STATE_READ_COMMA = 3;
-        final int STATE_END = 4;
-        int state = STATE_BEGIN;
-        while (state != STATE_END) {
-            switch (state) {
-                case STATE_BEGIN -> {
-                    if (current.type == TokenType.RIGHT_PARENTHESES) {
-                        state = STATE_END;
-                        break;
-                    }
+        if (current.type == TokenType.LEFT_PARENTHESES) {
+            advance();
 
-                    LookAhead ahead = new LookAhead();
-                    try {
-                        if (!tryAdvanceType()) {
+            final int STATE_BEGIN = 1;
+            final int STATE_READ_TYPE = 2;
+            final int STATE_READ_COMMA = 3;
+            final int STATE_END = 4;
+
+            int state = STATE_BEGIN;
+
+            while (state != STATE_END) {
+                switch (state) {
+                    case STATE_BEGIN -> {
+                        if (current.type == TokenType.RIGHT_PARENTHESES) {
+                            advance();
                             state = STATE_END;
+                            break;
                         }
-                    } finally {
-                        ahead.rollback();
-                    }
 
-                    if (state == STATE_END) {
-                        addDiagnostic(ParserErrors.TypeExpected, current, current.getRawValue(code));
-                    } else {
-                        parameters.add(parseTypeNode());
-                        state = STATE_READ_TYPE;
+                        LookAhead ahead = new LookAhead();
+                        try {
+                            if (!tryAdvanceType()) {
+                                state = STATE_END;
+                            }
+                        } finally {
+                            ahead.rollback();
+                        }
+
+                        if (state == STATE_END) {
+                            addDiagnostic(ParserErrors.TypeExpected, current, current.getRawValue(code));
+                        } else {
+                            parameters.add(parseTypeNode());
+                            state = STATE_READ_TYPE;
+                        }
                     }
-                }
-                case STATE_READ_TYPE -> {
-                    if (current.type == TokenType.COMMA) {
-                        advance();
-                        state = STATE_READ_COMMA;
-                        break;
-                    }
-                    if (current.type == TokenType.RIGHT_PARENTHESES) {
-                        state = STATE_END;
-                        break;
-                    }
-                    addDiagnostic(ParserErrors.CommaOrCloseParenthesesExpected, current, current.getRawValue(code));
-                    state = STATE_END;
-                }
-                case STATE_READ_COMMA -> {
-                    LookAhead ahead = new LookAhead();
-                    try {
-                        if (!tryAdvanceType()) {
+                    case STATE_READ_TYPE -> {
+                        if (current.type == TokenType.COMMA) {
+                            advance();
+                            state = STATE_READ_COMMA;
+                            break;
+                        }
+                        if (current.type == TokenType.RIGHT_PARENTHESES) {
+                            advance();
                             state = STATE_END;
+                            break;
                         }
-                    } finally {
-                        ahead.rollback();
+                        addDiagnostic(ParserErrors.CommaOrCloseParenthesesExpected, current, current.getRawValue(code));
+                        state = STATE_END;
                     }
+                    case STATE_READ_COMMA -> {
+                        LookAhead ahead = new LookAhead();
+                        try {
+                            if (!tryAdvanceType()) {
+                                state = STATE_END;
+                            }
+                        } finally {
+                            ahead.rollback();
+                        }
 
-                    if (state == STATE_END) {
-                        addDiagnostic(ParserErrors.TypeExpected, current, current.getRawValue(code));
-                    } else {
-                        parameters.add(parseTypeNode());
-                        state = STATE_READ_TYPE;
+                        if (state == STATE_END) {
+                            addDiagnostic(ParserErrors.TypeExpected, current, current.getRawValue(code));
+                        } else {
+                            parameters.add(parseTypeNode());
+                            state = STATE_READ_TYPE;
+                        }
                     }
                 }
             }
+        } else {
+            parameters.add(parseTypeNode());
         }
 
-        Token rightParenthesis = advance(TokenType.RIGHT_PARENTHESES);
+        Token arrow = advance(TokenType.EQUAL_GREATER);
 
-        if (rightParenthesis.getRange().isEmpty()) {
-            TypeNode returnTypeNode = new InvalidTypeNode(createMissingTokenRangeAfterLast());
-            return new FunctionTypeNode(leftParenthesis, parameters, rightParenthesis, returnTypeNode, TextRange.combine(leftParenthesis, returnTypeNode));
-        }
-
-        Token arrow = advance(TokenType.MINUS_GREATER);
         if (arrow.getRange().isEmpty()) {
-            TypeNode returnTypeNode = new InvalidTypeNode(createMissingTokenRangeAfterLast());
-            return new FunctionTypeNode(leftParenthesis, parameters, rightParenthesis, returnTypeNode, TextRange.combine(leftParenthesis, returnTypeNode));
+            return new FunctionTypeNode(
+                    fn, open, parameters,
+                    new InvalidTypeNode(createMissingTokenRangeAfterLast()),
+                    createMissingTokenAfterLast(TokenType.GREATER),
+                    TextRange.combine(fn, last));
         }
 
         TypeNode returnTypeNode = parseTypeOrVoidNode();
-        return new FunctionTypeNode(leftParenthesis, parameters, rightParenthesis, returnTypeNode, TextRange.combine(leftParenthesis, returnTypeNode));
+        if (returnTypeNode.getRange().isEmpty()) {
+            return new FunctionTypeNode(
+                    fn, open, parameters,
+                    returnTypeNode,
+                    createMissingTokenAfterLast(TokenType.GREATER),
+                    TextRange.combine(fn, returnTypeNode));
+        }
+
+        Token close = advance(TokenType.GREATER);
+        return new FunctionTypeNode(
+                fn, open, parameters,
+                returnTypeNode,
+                close,
+                TextRange.combine(fn, close));
     }
 
     private boolean tryAdvanceType() {
@@ -1566,19 +1613,13 @@ public class Parser {
                     }
                 }
             }
+            if (identifier.value.equals("fn")) {
+                if (current.type == TokenType.LESS) {
+                    advance();
+                    advanceFnType();
+                }
+            }
             advanceArrayMarkers();
-            return true;
-        } else if (current.type == TokenType.LEFT_PARENTHESES) {
-            advance();
-            if (current.type != TokenType.RIGHT_PARENTHESES) {
-                return false;
-            }
-            advance();
-            if (current.type != TokenType.MINUS_GREATER) {
-                return false;
-            }
-            advance();
-            tryAdvanceType();
             return true;
         } else {
             return false;
@@ -1617,6 +1658,76 @@ public class Parser {
                 }
             }
         }
+    }
+
+    private void advanceFnType() {
+        if (current.type == TokenType.LEFT_PARENTHESES) {
+            // () => type
+            // (type1, type2) => type3
+            advance();
+
+            final int STATE_BEGIN = 1;
+            final int STATE_TYPE_READ = 2;
+            final int STATE_COMMA_READ = 3;
+            final int STATE_END = 4;
+
+            int state = STATE_BEGIN;
+            while (state != STATE_END) {
+                switch (state) {
+                    case STATE_BEGIN -> {
+                        if (current.type == TokenType.RIGHT_PARENTHESES) {
+                            advance();
+                            state = STATE_END;
+                            break;
+                        }
+                        if (tryAdvanceType()) {
+                            state = STATE_TYPE_READ;
+                            break;
+                        }
+                        return;
+                    }
+                    case STATE_TYPE_READ -> {
+                        if (current.type == TokenType.RIGHT_PARENTHESES) {
+                            advance();
+                            state = STATE_END;
+                            break;
+                        }
+                        if (current.type == TokenType.COMMA) {
+                            advance();
+                            state = STATE_COMMA_READ;
+                            break;
+                        }
+                        return;
+                    }
+                    case STATE_COMMA_READ -> {
+                        if (tryAdvanceType()) {
+                            state = STATE_TYPE_READ;
+                            break;
+                        }
+                        return;
+                    }
+                }
+            }
+        } else {
+            // type1 => type2
+            if (!tryAdvanceType()) {
+                return;
+            }
+        }
+
+        if (current.type != TokenType.EQUAL_GREATER) {
+            return;
+        }
+        advance();
+
+        if (!tryAdvanceType()) {
+            return;
+        }
+
+        if (current.type != TokenType.GREATER) {
+            return;
+        }
+        advance();
     }
 
     private void advanceArrayMarkers() {
@@ -1663,11 +1774,12 @@ public class Parser {
                 case SEMICOLON -> addDiagnostic(ParserErrors.SemicolonExpected, last);
                 case COLON -> addDiagnostic(ParserErrors.ColonExpected, last);
                 case IN -> addDiagnostic(ParserErrors.InExpected, current);
+                case EQUAL_GREATER -> addDiagnostic(ParserErrors.ArrowExpected, current);
                 default -> throw new RuntimeException("Not implemented");
             }
 
             return switch (type) {
-                case LEFT_PARENTHESES, SEMICOLON, GREATER -> createMissingTokenAfterLast(type);
+                case LEFT_PARENTHESES, SEMICOLON, GREATER, EQUAL_GREATER -> createMissingTokenAfterLast(type);
                 default -> createMissingToken(type);
             };
         }

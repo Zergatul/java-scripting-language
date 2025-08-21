@@ -117,11 +117,6 @@ public class Lexer {
                         advance();
                         advance();
                         endToken(TokenType.MINUS_MINUS);
-                    } else if (next == '>') {
-                        trackBeginToken();
-                        advance();
-                        advance();
-                        endToken(TokenType.MINUS_GREATER);
                     } else {
                         appendToken(TokenType.MINUS);
                         advance();

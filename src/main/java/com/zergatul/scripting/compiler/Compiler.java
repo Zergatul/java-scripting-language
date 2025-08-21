@@ -350,9 +350,9 @@ public class Compiler {
             }
 
             if (function.isAsync) {
-                compileAsyncBoundStatementList(visitor, context, new BoundStatementsListNode(function.block.statements));
+                compileAsyncBoundStatementList(visitor, context, new BoundStatementsListNode(List.of(function.body)));
             } else {
-                compileBlockStatement(visitor, context, function.block);
+                compileStatement(visitor, context, function.body);
                 if (type.getReturnType() == SVoidType.instance) {
                     visitor.visitInsn(RETURN);
                 }
