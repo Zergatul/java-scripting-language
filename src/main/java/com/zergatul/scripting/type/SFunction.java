@@ -29,6 +29,10 @@ public abstract class SFunction extends SReferenceType {
         return returnType;
     }
 
+    public boolean isFunction() {
+        return returnType != SVoidType.instance;
+    }
+
     public String getMethodDescriptor() {
         return Type.getMethodDescriptor(
                 Type.getType(returnType.getJavaClass()),
@@ -87,7 +91,7 @@ public abstract class SFunction extends SReferenceType {
         if (parameters.size() != 1) {
             sb.append(')');
         }
-        sb.append(" -> ");
+        sb.append(" => ");
         sb.append(returnType.toString());
         sb.append('>');
         return sb.toString();

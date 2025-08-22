@@ -92,6 +92,7 @@ public class ErrorRecoveryBinderTests {
                                                                 new BoundInvalidExpressionNode(new SingleLineTextRange(2, 11, 23, 2)),
                                                                 new SingleLineTextRange(2, 5, 17, 8))),
                                                 new MultiLineTextRange(1, 12, 3, 2, 11, 16)),
+                                        List.of(),
                                         new MultiLineTextRange(1, 1, 3, 2, 0, 27))),
                         new MultiLineTextRange(1, 1, 3, 2, 0, 27)));
     }

@@ -1,5 +1,8 @@
 package com.zergatul.scripting.tests.compiler;
 
+import com.zergatul.scripting.DiagnosticMessage;
+import com.zergatul.scripting.SingleLineTextRange;
+import com.zergatul.scripting.binding.BinderErrors;
 import com.zergatul.scripting.tests.compiler.helpers.BoolStorage;
 import com.zergatul.scripting.tests.compiler.helpers.IntStorage;
 import com.zergatul.scripting.tests.compiler.helpers.StringStorage;
@@ -10,6 +13,7 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 
 import static com.zergatul.scripting.tests.compiler.helpers.CompilerHelper.compile;
+import static com.zergatul.scripting.tests.compiler.helpers.CompilerHelper.getDiagnostics;
 
 public class GenericFunctionTests {
 
@@ -107,6 +111,46 @@ public class GenericFunctionTests {
         program.run();
 
         Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(11, 25, 38, 41, 55, 68));
+    }
+
+    @Test
+    public void returnInnerLambdaTest() {
+        String code = """
+                fn<int => fn<int => fn<int => int>>> func(int a) =>
+                    x => y => z => (x * y + z) * a;
+                
+                intStorage.add(func(9)(8)(7)(6));
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(11, 25, 38, 41, 55, 68));
+    }
+
+    @Test
+    public void variableDeclarationTest1() {
+        String code = """
+                fn<(int, int, int) => int> func = (a, b, c) => a * b + c;
+                intStorage.add(func(7, 8, 9));
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(65));
+    }
+
+    @Test
+    public void variableDeclarationTest2() {
+        String code = """
+                let func = (a, b, c) => a * b + c;
+                """;
+
+        List<DiagnosticMessage> messages = getDiagnostics(ApiRoot.class, code);
+
+        Assertions.assertIterableEquals(messages, List.of(
+                new DiagnosticMessage(BinderErrors.LetUnboundLambda, new SingleLineTextRange(1, 1, 0, 3))));
     }
 
     public static class ApiRoot {

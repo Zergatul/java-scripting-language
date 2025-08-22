@@ -19,7 +19,6 @@ public class SFunctionalInterface extends SFunction {
     private final SType actualReturnType;
     private final SType[] rawParameters;
     private final SType[] actualParameters;
-    private final int[] paramStackIndexes;
 
     public static SFunctionalInterface from(Class<?> clazz) {
         Method method = InterfaceHelper.getFuncInterfaceMethod(clazz);
@@ -32,7 +31,6 @@ public class SFunctionalInterface extends SFunction {
         for (int i = 0; i < methodParameters.length; i++) {
             methodParameters[i] = new MethodParameter(method.getParameters()[i].getName(), parameters[i]);
         }
-        int[] paramStackIndexes = StackHelper.buildStackIndexes(parameters);
         return new SFunctionalInterface(
                 clazz,
                 method,
@@ -40,8 +38,7 @@ public class SFunctionalInterface extends SFunction {
                 returnType,
                 parameters,
                 parameters,
-                methodParameters,
-                paramStackIndexes);
+                methodParameters);
     }
 
     public static SFunctionalInterface from(ParameterizedType type) {
@@ -80,7 +77,6 @@ public class SFunctionalInterface extends SFunction {
             methodParameters[i] = new MethodParameter(method.getParameters()[i].getName(), actualParameters[i]);
         }
 
-        int[] paramStackIndexes = StackHelper.buildStackIndexes(rawParameters);
         return new SFunctionalInterface(
                 clazz,
                 method,
@@ -88,8 +84,7 @@ public class SFunctionalInterface extends SFunction {
                 actualReturnType,
                 rawParameters,
                 actualParameters,
-                methodParameters,
-                paramStackIndexes);
+                methodParameters);
     }
 
     private SFunctionalInterface(
@@ -99,8 +94,7 @@ public class SFunctionalInterface extends SFunction {
             SType actualReturnType,
             SType[] rawParameters,
             SType[] actualParameters,
-            MethodParameter[] methodParameters,
-            int[] paramStackIndexes
+            MethodParameter[] methodParameters
     ) {
         super(actualReturnType, methodParameters);
         this.clazz = clazz;
@@ -109,15 +103,10 @@ public class SFunctionalInterface extends SFunction {
         this.actualReturnType = actualReturnType;
         this.rawParameters = rawParameters;
         this.actualParameters = actualParameters;
-        this.paramStackIndexes = paramStackIndexes;
     }
 
     public Method getInterfaceMethod() {
         return method;
-    }
-
-    public boolean isFunction() {
-        return getActualReturnType() != SVoidType.instance;
     }
 
     @Override
@@ -139,10 +128,6 @@ public class SFunctionalInterface extends SFunction {
 
     public SType[] getActualParameters() {
         return actualParameters;
-    }
-
-    public int getParameterStackIndex(int index) {
-        return paramStackIndexes[index];
     }
 
     public String getMethodName() {

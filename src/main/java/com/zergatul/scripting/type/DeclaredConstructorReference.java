@@ -9,13 +9,13 @@ import static org.objectweb.asm.Opcodes.INVOKESPECIAL;
 public class DeclaredConstructorReference extends ConstructorReference {
 
     private final SDeclaredType classType;
-    private final SStaticFunction constructorType;
+    private final SMethodFunction constructorType;
 
     public DeclaredConstructorReference(SDeclaredType classType) {
-        this(classType, new SStaticFunction(SVoidType.instance, new MethodParameter[0]));
+        this(classType, new SMethodFunction(SVoidType.instance, new MethodParameter[0]));
     }
 
-    public DeclaredConstructorReference(SDeclaredType classType, SStaticFunction constructorType) {
+    public DeclaredConstructorReference(SDeclaredType classType, SMethodFunction constructorType) {
         this.classType = classType;
         this.constructorType = constructorType;
     }

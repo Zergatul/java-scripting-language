@@ -339,6 +339,11 @@ public abstract class BinderTreeVisitor {
         node.acceptChildren(this);
     }
 
+    public void explicitVisit(BoundUnconvertedLambdaExpressionNode node) {
+        visit(node);
+        node.acceptChildren(this);
+    }
+
     public void explicitVisit(BoundVariableDeclarationNode node) {
         visit(node);
         node.acceptChildren(this);
@@ -421,6 +426,7 @@ public abstract class BinderTreeVisitor {
     public void visit(BoundTypeTestExpressionNode node) {}
     public void visit(BoundUnaryExpressionNode node) {}
     public void visit(BoundUnaryOperatorNode node) {}
+    public void visit(BoundUnconvertedLambdaExpressionNode node) {}
     public void visit(BoundVariableDeclarationNode node) {}
     public void visit(BoundVoidTypeNode node) {}
     public void visit(BoundWhileLoopStatementNode node) {}

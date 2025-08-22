@@ -3,17 +3,17 @@ package com.zergatul.scripting.binding.nodes;
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
 import com.zergatul.scripting.parser.NodeType;
-import com.zergatul.scripting.type.SStaticFunction;
+import com.zergatul.scripting.type.SMethodFunction;
 
 import java.util.List;
 
 public class BoundClassConstructorNode extends BoundClassMemberNode {
 
-    public final SStaticFunction functionType;
+    public final SMethodFunction functionType;
     public final BoundParameterListNode parameters;
     public final BoundBlockStatementNode body;
 
-    public BoundClassConstructorNode(SStaticFunction functionType, BoundParameterListNode parameters, BoundBlockStatementNode body, TextRange range) {
+    public BoundClassConstructorNode(SMethodFunction functionType, BoundParameterListNode parameters, BoundBlockStatementNode body, TextRange range) {
         super(NodeType.CLASS_CONSTRUCTOR, range);
         this.functionType = functionType;
         this.parameters = parameters;

@@ -352,6 +352,16 @@ public class Compiler {
             if (function.isAsync) {
                 compileAsyncBoundStatementList(visitor, context, new BoundStatementsListNode(List.of(function.body)));
             } else {
+                if (!function.lifted.isEmpty()) {
+                    compileClosureClass(visitor, context, function.lifted);
+                    for (LiftedVariable lifted : function.lifted) {
+                        if (lifted.getUnderlying() instanceof LocalParameter parameter) {
+                            parameter.compileLoad(context, visitor);
+                            lifted.compileStore(context, visitor);
+                        }
+                    }
+                }
+
                 compileStatement(visitor, context, function.body);
                 if (type.getReturnType() == SVoidType.instance) {
                     visitor.visitInsn(RETURN);
@@ -1507,13 +1517,43 @@ public class Compiler {
     }
 
     private void compileLambdaExpression(MethodVisitor visitor, CompilerContext context, BoundLambdaExpressionNode expression) {
-        SFunctionalInterface type = (SFunctionalInterface) expression.type;
-        Class<?> funcInterface = type.getJavaClass();
+        String methodName;
+        SType rawReturnType;
+        SType actualReturnType;
+        SType[] rawParameters;
+        SType[] actualParameters;
+        String rawMethodDescriptor;
+
+        SFunction functionType = (SFunction) expression.type;
+        if (functionType instanceof SFunctionalInterface functionalInterface) {
+            methodName = functionalInterface.getMethodName();
+            rawReturnType = functionalInterface.getRawReturnType();
+            actualReturnType = functionalInterface.getActualReturnType();
+            rawParameters = functionalInterface.getRawParameters();
+            actualParameters = functionalInterface.getActualParameters();
+            rawMethodDescriptor = functionalInterface.getRawMethodDescriptor();
+
+        } else if (functionType instanceof SGenericFunction genericFunction) {
+            methodName = genericFunction.getMethodName();
+            rawReturnType = actualReturnType = genericFunction.getReturnType();
+            rawParameters = actualParameters = genericFunction.getParameterTypes().toArray(new SType[0]);
+            rawMethodDescriptor = genericFunction.getMethodDescriptor();
+        } else {
+            throw new InternalException();
+        }
+
+        int[] paramStackIndexes = StackHelper.buildStackIndexes(rawParameters);
 
         ClassWriter writer = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
         emitSourceFile(writer);
         String name = "com/zergatul/scripting/dynamic/DynamicLambdaClass_" + counter.incrementAndGet();
-        writer.visit(V1_8, ACC_PUBLIC, name, null, Type.getInternalName(Object.class), new String[] { Type.getInternalName(funcInterface) });
+        writer.visit(
+                V1_8,
+                ACC_PUBLIC,
+                name,
+                null,
+                Type.getInternalName(Object.class),
+                new String[] { functionType.getInternalName() });
 
         List<Variable> closures = new ArrayList<>();
         for (CapturedVariable captured : expression.captured) {
@@ -1534,13 +1574,13 @@ public class Compiler {
 
         MethodVisitor invokeVisitor = writer.visitMethod(
                 ACC_PUBLIC,
-                type.getMethodName(),
-                type.getRawMethodDescriptor(),
+                methodName,
+                rawMethodDescriptor,
                 null,
                 null);
         invokeVisitor.visitCode();
 
-        CompilerContext lambdaContext = context.createFunction(type.getActualReturnType(), false, !type.getActualReturnType().equals(type.getRawReturnType()));
+        CompilerContext lambdaContext = context.createFunction(actualReturnType, false, !actualReturnType.equals(rawReturnType));
         lambdaContext.setClassName(name);
 
         if (!expression.captured.isEmpty()) {
@@ -1568,8 +1608,8 @@ public class Compiler {
             lambdaContext.setStackIndex(arguments[i]);
         }
         for (int i = 0; i < expression.parameters.size(); i++) {
-            SType raw = type.getRawParameters()[i];
-            SType actual = type.getActualParameters()[i];
+            SType raw = rawParameters[i];
+            SType actual = actualParameters[i];
             if (!raw.equals(actual)) {
                 BoundParameterNode parameter = expression.parameters.get(i);
                 LocalVariable unboxed = parameter.getName().symbolRef.asLocalVariable();
@@ -1588,14 +1628,14 @@ public class Compiler {
             } else {
                 LocalVariable variable = expression.parameters.get(i).getName().symbolRef.asLocalVariable();
                 lambdaContext.addLocalVariable(expression.parameters.get(i).getName().symbolRef);
-                variable.setStackIndex(type.getParameterStackIndex(i));
+                variable.setStackIndex(paramStackIndexes[i]);
             }
         }
         if (!expression.lifted.isEmpty()) {
             compileClosureClass(invokeVisitor, lambdaContext, expression.lifted);
         }
         compileStatement(invokeVisitor, lambdaContext, expression.body);
-        if (!type.isFunction()) {
+        if (!functionType.isFunction()) {
             invokeVisitor.visitInsn(RETURN);
         }
         invokeVisitor.visitMaxs(0, 0);
@@ -1622,13 +1662,12 @@ public class Compiler {
     }
 
     private void compileFunctionInvocationExpression(MethodVisitor visitor, CompilerContext context, BoundFunctionInvocationExpression expression) {
-        Function symbol = expression.functionReferenceNode.getFunction();
-        SStaticFunction type = symbol.getFunctionType();
-
         for (BoundExpressionNode argument : expression.arguments.arguments) {
             compileExpression(visitor, context, argument);
         }
 
+        Function symbol = expression.functionReferenceNode.getFunction();
+        SStaticFunction type = symbol.getFunctionType();
         visitor.visitMethodInsn(
                 INVOKESTATIC,
                 context.getClassName(),
@@ -1641,6 +1680,10 @@ public class Compiler {
 
     private void compileVariableInvocation(MethodVisitor visitor, CompilerContext context, BoundVariableInvocationExpression expression) {
         expression.name.getSymbol().compileLoad(context, visitor);
+
+        for (BoundExpressionNode argument : expression.arguments.arguments) {
+            compileExpression(visitor, context, argument);
+        }
 
         SGenericFunction genericFunction = (SGenericFunction) expression.name.type;
         visitor.visitMethodInsn(
@@ -1693,7 +1736,7 @@ public class Compiler {
         }
 
         BoundFunctionInvocationExpression invocation = new BoundFunctionInvocationExpression(
-                new BoundFunctionReferenceNode(node.name.symbolRef, node.name.getRange()),
+                new BoundFunctionReferenceNode(node.name.value, node.name.symbolRef, node.name.getRange()),
                 type.getReturnType(),
                 new BoundArgumentsListNode(arguments));
         BoundStatementNode statement = type.getReturnType() == SVoidType.instance ?

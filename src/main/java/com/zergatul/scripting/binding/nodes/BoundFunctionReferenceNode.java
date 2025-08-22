@@ -11,10 +11,12 @@ import java.util.List;
 
 public class BoundFunctionReferenceNode extends BoundExpressionNode {
 
+    public final String name;
     public final SymbolRef symbolRef;
 
-    public BoundFunctionReferenceNode(SymbolRef symbolRef, TextRange range) {
+    public BoundFunctionReferenceNode(String name, SymbolRef symbolRef, TextRange range) {
         super(NodeType.FUNCTION_REFERENCE, symbolRef.asFunction().getFunctionType(), range);
+        this.name = name;
         this.symbolRef = symbolRef;
     }
 

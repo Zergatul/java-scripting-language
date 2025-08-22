@@ -3,6 +3,7 @@ package com.zergatul.scripting.binding.nodes;
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
 import com.zergatul.scripting.parser.NodeType;
+import com.zergatul.scripting.symbols.LiftedVariable;
 
 import java.util.List;
 
@@ -13,14 +14,16 @@ public class BoundFunctionNode extends BoundCompilationUnitMemberNode {
     public final BoundNameExpressionNode name;
     public final BoundParameterListNode parameters;
     public final BoundStatementNode body;
+    public final List<LiftedVariable> lifted;
 
-    public BoundFunctionNode(boolean isAsync, BoundTypeNode returnType, BoundNameExpressionNode name, BoundParameterListNode parameters, BoundStatementNode body, TextRange range) {
+    public BoundFunctionNode(boolean isAsync, BoundTypeNode returnType, BoundNameExpressionNode name, BoundParameterListNode parameters, BoundStatementNode body, List<LiftedVariable> lifted, TextRange range) {
         super(NodeType.FUNCTION, range);
         this.isAsync = isAsync;
         this.returnType = returnType;
         this.name = name;
         this.parameters = parameters;
         this.body = body;
+        this.lifted = lifted;
     }
 
     @Override

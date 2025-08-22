@@ -3,14 +3,16 @@ package com.zergatul.scripting.binding.nodes;
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
 import com.zergatul.scripting.parser.NodeType;
-import com.zergatul.scripting.type.SType;
 
 import java.util.List;
 
-public class BoundMethodGroup extends BoundExpressionNode {
+public class BoundUnresolvedMethodNode extends BoundNode {
 
-    public BoundMethodGroup(SType type, TextRange range) {
-        super(NodeType.METHOD_GROUP, type, range);
+    public final String name;
+
+    public BoundUnresolvedMethodNode(String name, TextRange range) {
+        super(NodeType.UNRESOLVED_METHOD, range);
+        this.name = name;
     }
 
     @Override

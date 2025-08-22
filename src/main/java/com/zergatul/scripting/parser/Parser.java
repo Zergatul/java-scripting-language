@@ -343,7 +343,11 @@ public class Parser {
         }
 
         if (current.type == TokenType.IDENTIFIER) {
-            if (((IdentifierToken) current).value.equals("Java")) {
+            IdentifierToken identifier = (IdentifierToken) current;
+            if (identifier.value.equals("Java") && next.type == TokenType.LESS) {
+                return true;
+            }
+            if (identifier.value.equals("fn") && next.type == TokenType.LESS) {
                 return true;
             }
             if (next.type == TokenType.LEFT_SQUARE_BRACKET && peek(2).type == TokenType.RIGHT_SQUARE_BRACKET) {
@@ -620,7 +624,7 @@ public class Parser {
                 switch (current.type) {
                     case SEMICOLON -> {
                         if (type.getNodeType() == NodeType.LET_TYPE) {
-                            addDiagnostic(ParserErrors.CannotUseLet, type.getRange());
+                            addDiagnostic(ParserErrors.CannotUseLet, type);
                         }
                         return new VariableDeclarationNode(type, name, TextRange.combine(type, name));
                     }
@@ -1801,14 +1805,6 @@ public class Parser {
 
     private boolean isSkippable(TokenType type) {
         return type == TokenType.WHITESPACE || type == TokenType.LINE_BREAK || type == TokenType.COMMENT;
-    }
-
-    private TextRange nextCharacter(TextRange range) {
-        return new SingleLineTextRange(range.getLine2(), range.getColumn2(), range.getPosition() + range.getLength() + 1, 1);
-    }
-
-    private void addDiagnostic(ErrorCode code, TextRange range) {
-        diagnostics.add(new DiagnosticMessage(code, range));
     }
 
     private void addDiagnostic(ErrorCode code, Locatable locatable, Object... parameters) {

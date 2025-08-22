@@ -28,7 +28,7 @@ public class BinderErrors {
     public static final ErrorCode CannotIterate = new ErrorCode("B022", "foreach statement cannot operate on expression of type '%s'");
     public static final ErrorCode ForEachTypesNotMatch = new ErrorCode("B023", "foreach variable type and expression type doesn't match");
     public static final ErrorCode LambdaIsInvalidInCurrentContext = new ErrorCode("B024", "Lambda expression is invalid in this context");
-    public static final ErrorCode NotFunction = new ErrorCode("B025", "'%s' is not a function");
+    public static final ErrorCode NotFunction = new ErrorCode("B025", "Not a function");
     public static final ErrorCode CannotCastArgument = new ErrorCode("B026", "Argument '%d' cannot convert from '%s' to '%s'");
     public static final ErrorCode EmptyReturnStatement = new ErrorCode("B027", "Cannot return void");
     public static final ErrorCode AugmentedAssignmentInvalidType = new ErrorCode("B030", "'%s' operator on types '%s' and '%s' returns '%s', and it does not match with left side");
@@ -50,6 +50,7 @@ public class BinderErrors {
     public static final ErrorCode LetInvalidContext = new ErrorCode("B046", "'let' is invalid in this context");
     public static final ErrorCode CastOperationNotAllowed = new ErrorCode("B047", "Implicit casting is not allowed for node of type %s");
     public static final ErrorCode InvalidRefExpression = new ErrorCode("B048", "Invalid ref expression");
+    public static final ErrorCode LetUnboundLambda = new ErrorCode("B049", "Cannot assign lambda to 'let' variable");
 
     public static final ErrorCode InternalError = new ErrorCode("B999", "Internal error: %s");
 }

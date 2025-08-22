@@ -640,7 +640,7 @@ public class LambdaTests {
                 List.of(
                         new DiagnosticMessage(
                                 BinderErrors.NoOverloadedMethods,
-                                new SingleLineTextRange(1, 1, 0, 8),
+                                new SingleLineTextRange(1, 5, 4, 4),
                                 "once",
                                 2)));
     }
@@ -702,8 +702,10 @@ public class LambdaTests {
         Assertions.assertEquals(arguments.get(0),
                 new BoundIntegerLiteralExpressionNode(10, new SingleLineTextRange(1, 14, 13, 2)));
 
-        Assertions.assertEquals(arguments.get(1),
-                new BoundInvalidExpressionNode(new SingleLineTextRange(1, 18, 17, 9)));
+        Assertions.assertTrue(arguments.get(1) instanceof BoundUnconvertedLambdaExpressionNode);
+
+        BoundUnconvertedLambdaExpressionNode lambda = (BoundUnconvertedLambdaExpressionNode) arguments.get(1);
+        Assertions.assertEquals(lambda.getRange(), new SingleLineTextRange(1, 18, 17, 9));
     }
 
     // TODO: capture function parameters?
