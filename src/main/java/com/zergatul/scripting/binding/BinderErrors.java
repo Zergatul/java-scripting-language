@@ -51,6 +51,7 @@ public class BinderErrors {
     public static final ErrorCode CastOperationNotAllowed = new ErrorCode("B047", "Implicit casting is not allowed for node of type %s");
     public static final ErrorCode InvalidRefExpression = new ErrorCode("B048", "Invalid ref expression");
     public static final ErrorCode LetUnboundLambda = new ErrorCode("B049", "Cannot assign lambda to 'let' variable");
+    public static final ErrorCode ArgumentCountMismatch2 = new ErrorCode("B050", "Function expects %d arguments");
 
     public static final ErrorCode InternalError = new ErrorCode("B999", "Internal error: %s");
 }

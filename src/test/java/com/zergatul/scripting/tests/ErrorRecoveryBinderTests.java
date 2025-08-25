@@ -11,6 +11,8 @@ import com.zergatul.scripting.compiler.CompilationParameters;
 import com.zergatul.scripting.compiler.CompilationParametersBuilder;
 import com.zergatul.scripting.lexer.Lexer;
 import com.zergatul.scripting.lexer.LexerInput;
+import com.zergatul.scripting.lexer.Token;
+import com.zergatul.scripting.lexer.TokenType;
 import com.zergatul.scripting.parser.*;
 import com.zergatul.scripting.symbols.Function;
 import com.zergatul.scripting.symbols.ImmutableSymbolRef;
@@ -24,6 +26,9 @@ import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.ParameterizedType;
 import java.util.List;
+import java.util.Optional;
+
+import static com.zergatul.scripting.tests.compiler.helpers.CompilerHelper.assertDiagnostic;
 
 public class ErrorRecoveryBinderTests {
 
@@ -40,10 +45,9 @@ public class ErrorRecoveryBinderTests {
         BinderOutput result = bind("""
                 main.chat("Hello!"(
                 """);
-        Assertions.assertFalse(result.diagnostics().isEmpty());
-        var option = result.diagnostics().stream().filter(d -> d.code.equals(BinderErrors.InvalidCallee.code())).findFirst();
-        Assertions.assertTrue(option.isPresent());
-        Assertions.assertEquals(option.get(), new DiagnosticMessage(BinderErrors.InvalidCallee, new SingleLineTextRange(1, 11, 10, 8), NodeType.STRING_LITERAL));
+
+        assertDiagnostic(result.diagnostics(),
+                new DiagnosticMessage(BinderErrors.NotFunction, new SingleLineTextRange(1, 11, 10, 8), NodeType.STRING_LITERAL));
     }
 
     @Test
@@ -89,7 +93,8 @@ public class ErrorRecoveryBinderTests {
                                         new BoundBlockStatementNode(
                                                 List.of(
                                                         new BoundReturnStatementNode(
-                                                                new BoundInvalidExpressionNode(new SingleLineTextRange(2, 11, 23, 2)),
+                                                                new Token(TokenType.RETURN, new SingleLineTextRange(2, 11, 23, 6)),
+                                                                new BoundInvalidExpressionNode(List.of(), new SingleLineTextRange(2, 11, 23, 2)),
                                                                 new SingleLineTextRange(2, 5, 17, 8))),
                                                 new MultiLineTextRange(1, 12, 3, 2, 11, 16)),
                                         List.of(),
@@ -128,6 +133,7 @@ public class ErrorRecoveryBinderTests {
                                                         SType.fromJavaType(Run.class),
                                                         "run",
                                                         new SingleLineTextRange(1, 1, 0, 3)),
+                                                new Token(TokenType.DOT, new SingleLineTextRange(1, 4, 3, 1)),
                                                 new BoundMethodNode(
                                                         new NativeInstanceMethodReference(
                                                                 Run.class.getMethod("onString", Run.Action1.class)),

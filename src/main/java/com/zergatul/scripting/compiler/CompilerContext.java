@@ -143,6 +143,13 @@ public class CompilerContext {
         return variable;
     }
 
+    public SymbolRef addLocalParameter2(String name, SType type, TextRange definition) {
+        LocalVariable variable = new LocalParameter(name, type, definition);
+        SymbolRef symbolRef = new MutableSymbolRef(variable);
+        addLocalVariable(symbolRef);
+        return symbolRef;
+    }
+
     public LocalVariable addLocalRefParameter(String name, SByReference refType, SType underlying, TextRange definition) {
         if (name == null || name.isEmpty()) {
             throw new InternalException();

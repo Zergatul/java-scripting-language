@@ -1,10 +1,9 @@
 package com.zergatul.scripting.tests.completion;
 
 import com.zergatul.scripting.tests.completion.helpers.CompletionTestHelper;
+import com.zergatul.scripting.tests.completion.helpers.Lists;
 import com.zergatul.scripting.tests.completion.helpers.TestCompletionContext;
-import com.zergatul.scripting.tests.completion.suggestions.MethodSuggestion;
-import com.zergatul.scripting.tests.completion.suggestions.PropertySuggestion;
-import com.zergatul.scripting.tests.completion.suggestions.Suggestion;
+import com.zergatul.scripting.tests.completion.suggestions.*;
 import com.zergatul.scripting.type.SInt;
 import com.zergatul.scripting.type.SType;
 import org.junit.jupiter.api.Test;
@@ -12,7 +11,22 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 import java.util.function.Function;
 
+import static com.zergatul.scripting.tests.completion.helpers.CommonSuggestions.expressions;
+
 public class ObjectMemberTests {
+
+    @Test
+    public void beforeDotTest() {
+        assertSuggestions("""
+                int x = 123;
+                x<cursor>.
+                x.toString();
+                """,
+                context -> Lists.of(
+                        expressions,
+                        new StaticConstantSuggestion(context, "api"),
+                        new LocalVariableSuggestion(context, "x")));
+    }
 
     @Test
     public void intVariableNoSymbolsTest() {
@@ -34,6 +48,19 @@ public class ObjectMemberTests {
                 int x = 123;
                 x.<cursor>a
                 x.toString();
+                """,
+                context -> List.of(
+                        MethodSuggestion.getInstance(SInt.instance, "toInt8"),
+                        MethodSuggestion.getInstance(SInt.instance, "toInt16"),
+                        MethodSuggestion.getInstance(SInt.instance, "toString"),
+                        MethodSuggestion.getInstance(SInt.instance, "toStandardString")));
+    }
+
+    @Test
+    public void intVariableValidMethodTest() {
+        assertSuggestions("""
+                int x = 123;
+                x.toString<cursor>();
                 """,
                 context -> List.of(
                         MethodSuggestion.getInstance(SInt.instance, "toInt8"),

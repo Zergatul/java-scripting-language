@@ -69,6 +69,10 @@ public abstract class TextRange {
         return getColumn1() > column;
     }
 
+    public TextRange getEnd() {
+        return new SingleLineTextRange(getLine2(), getColumn2(), getPosition() + getLength(), 0);
+    }
+
     public static TextRange inner(Locatable locatable1, Locatable locatable2) {
         return inner(locatable1.getRange(), locatable2.getRange());
     }
@@ -148,5 +152,9 @@ public abstract class TextRange {
 
     public static TextRange combine(Locatable locatable1, Locatable locatable2) {
         return combine(locatable1.getRange(), locatable2.getRange());
+    }
+
+    public static TextRange combineFromEnd(Locatable locatable1, Locatable locatable2) {
+        return combine(locatable1.getRange().getEnd(), locatable2.getRange());
     }
 }

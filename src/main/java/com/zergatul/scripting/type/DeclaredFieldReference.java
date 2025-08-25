@@ -1,7 +1,6 @@
 package com.zergatul.scripting.type;
 
 import org.objectweb.asm.MethodVisitor;
-import org.objectweb.asm.Type;
 
 import static org.objectweb.asm.Opcodes.GETFIELD;
 import static org.objectweb.asm.Opcodes.PUTFIELD;

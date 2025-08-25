@@ -5,7 +5,6 @@ import com.zergatul.scripting.SingleLineTextRange;
 import com.zergatul.scripting.lexer.*;
 import com.zergatul.scripting.parser.*;
 import com.zergatul.scripting.parser.nodes.*;
-import com.zergatul.scripting.tests.codegen.ParserDumper;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -149,8 +148,10 @@ public class ParserTests {
                             new MemberAccessExpressionNode(
                                     new MemberAccessExpressionNode(
                                             new NameExpressionNode("abc", new SingleLineTextRange(1, 1, 0, 3)),
+                                            new Token(TokenType.DOT, new SingleLineTextRange(1, 4, 3, 1)),
                                             new NameExpressionNode("qwe", new SingleLineTextRange(1, 5, 4, 3)),
                                             new SingleLineTextRange(1, 1, 0, 7)),
+                                    new Token(TokenType.DOT, new SingleLineTextRange(1, 8, 7, 1)),
                                     new NameExpressionNode("x", new SingleLineTextRange(1, 9, 8, 1)),
                                     new SingleLineTextRange(1, 1, 0, 9)),
                             new ArgumentsListNode(List.of(), new SingleLineTextRange(1, 10, 9, 2)),
@@ -268,7 +269,10 @@ public class ParserTests {
         Assertions.assertEquals(result.unit(), new CompilationUnitNode(
                 new CompilationUnitMembersListNode(List.of(), new SingleLineTextRange(1, 1, 0, 0)),
                 new StatementsListNode(List.of(
-                        new ReturnStatementNode(null, new SingleLineTextRange(1, 1, 0, 7))),
+                        new ReturnStatementNode(
+                                new Token(TokenType.RETURN, new SingleLineTextRange(1, 1, 0, 6)),
+                                null,
+                                new SingleLineTextRange(1, 1, 0, 7))),
                         new SingleLineTextRange(1, 1, 0, 7)),
                 new SingleLineTextRange(1, 1, 0, 7)));
     }
@@ -281,6 +285,7 @@ public class ParserTests {
                 new CompilationUnitMembersListNode(List.of(), new SingleLineTextRange(1, 1, 0, 0)),
                 new StatementsListNode(List.of(
                         new ReturnStatementNode(
+                                new Token(TokenType.RETURN, new SingleLineTextRange(1, 1, 0, 6)),
                                 new BooleanLiteralExpressionNode(true, new SingleLineTextRange(1, 8, 7, 4)),
                                 new SingleLineTextRange(1, 1, 0, 12))),
                         new SingleLineTextRange(1, 1, 0, 12)),

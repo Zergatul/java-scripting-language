@@ -354,12 +354,6 @@ public class Compiler {
             } else {
                 if (!function.lifted.isEmpty()) {
                     compileClosureClass(visitor, context, function.lifted);
-                    for (LiftedVariable lifted : function.lifted) {
-                        if (lifted.getUnderlying() instanceof LocalParameter parameter) {
-                            parameter.compileLoad(context, visitor);
-                            lifted.compileStore(context, visitor);
-                        }
-                    }
                 }
 
                 compileStatement(visitor, context, function.body);
@@ -885,6 +879,11 @@ public class Compiler {
 
         for (LiftedVariable lifted : variables) {
             lifted.setClosure(closureRef.asLocalVariable());
+
+            if (lifted.getUnderlying() instanceof LocalParameter parameter) {
+                parameter.compileLoad(parentContext, parentVisitor);
+                lifted.compileStore(parentContext, parentVisitor);
+            }
         }
     }
 
@@ -1205,7 +1204,7 @@ public class Compiler {
             case INDEX_EXPRESSION -> compileIndexExpression(visitor, context, (BoundIndexExpressionNode) expression);
             case LAMBDA_EXPRESSION -> compileLambdaExpression(visitor, context, (BoundLambdaExpressionNode) expression);
             case FUNCTION_INVOCATION -> compileFunctionInvocationExpression(visitor, context, (BoundFunctionInvocationExpression) expression);
-            case VARIABLE_INVOCATION -> compileVariableInvocation(visitor, context, (BoundVariableInvocationExpression) expression);
+            case OBJECT_INVOCATION -> compileVariableInvocation(visitor, context, (BoundObjectInvocationExpression) expression);
             case GENERATOR_GET_VALUE -> compileGeneratorGetValue(visitor, context, (BoundGeneratorGetValueNode) expression);
             case STACK_LOAD -> compileStackLoad(visitor, (BoundStackLoadNode) expression);
             case FUNCTION_AS_LAMBDA -> compileFunctionAsLambda(visitor, context, (BoundFunctionAsLambdaExpressionNode) expression);
@@ -1626,14 +1625,23 @@ public class Compiler {
                 }
                 unboxed.compileStore(context, invokeVisitor);
             } else {
-                LocalVariable variable = expression.parameters.get(i).getName().symbolRef.asLocalVariable();
+                Variable variable = expression.parameters.get(i).getName().symbolRef.asVariable();
+                LocalVariable localVariable;
+                if (variable instanceof LocalVariable) {
+                    localVariable = (LocalVariable) variable;
+                } else if (variable instanceof LiftedVariable lifted) {
+                    localVariable = lifted.getUnderlying();
+                } else {
+                    throw new InternalException();
+                }
                 lambdaContext.addLocalVariable(expression.parameters.get(i).getName().symbolRef);
-                variable.setStackIndex(paramStackIndexes[i]);
+                localVariable.setStackIndex(paramStackIndexes[i]);
             }
         }
         if (!expression.lifted.isEmpty()) {
             compileClosureClass(invokeVisitor, lambdaContext, expression.lifted);
         }
+
         compileStatement(invokeVisitor, lambdaContext, expression.body);
         if (!functionType.isFunction()) {
             invokeVisitor.visitInsn(RETURN);
@@ -1678,14 +1686,14 @@ public class Compiler {
         releaseRefVariables(visitor, context, expression.refVariables);
     }
 
-    private void compileVariableInvocation(MethodVisitor visitor, CompilerContext context, BoundVariableInvocationExpression expression) {
-        expression.name.getSymbol().compileLoad(context, visitor);
+    private void compileVariableInvocation(MethodVisitor visitor, CompilerContext context, BoundObjectInvocationExpression expression) {
+        compileExpression(visitor, context, expression.callee);
 
         for (BoundExpressionNode argument : expression.arguments.arguments) {
             compileExpression(visitor, context, argument);
         }
 
-        SGenericFunction genericFunction = (SGenericFunction) expression.name.type;
+        SGenericFunction genericFunction = (SGenericFunction) expression.callee.type;
         visitor.visitMethodInsn(
                 INVOKEINTERFACE,
                 genericFunction.getInternalName(),

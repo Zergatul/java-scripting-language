@@ -355,6 +355,7 @@ public class BinderTreeGenerator {
 
         return new BoundMethodInvocationExpressionNode(
                 node.objectReference,
+                node.dot,
                 node.method,
                 new BoundArgumentsListNode(Arrays.stream(variables).map(v -> (BoundExpressionNode) new BoundNameExpressionNode(v)).toList()),
                 node.refVariables,

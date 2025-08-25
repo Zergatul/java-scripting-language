@@ -138,14 +138,14 @@ public class Parser {
     }
 
     private ReturnStatementNode parseReturnStatement() {
-        Token returnToken = advance(TokenType.RETURN);
+        Token keyword = advance(TokenType.RETURN);
         ExpressionNode expression = null;
         if (isPossibleExpression()) {
             expression = parseExpression();
         }
 
         Token semicolon = advance(TokenType.SEMICOLON);
-        return new ReturnStatementNode(expression, TextRange.combine(returnToken, semicolon));
+        return new ReturnStatementNode(keyword, expression, TextRange.combine(keyword, semicolon));
     }
 
     private ForLoopStatementNode parseForLoopStatement() {
@@ -929,10 +929,10 @@ public class Parser {
                         IdentifierToken identifier = (IdentifierToken) current;
                         NameExpressionNode name = new NameExpressionNode(identifier.value, identifier.getRange());
                         advance();
-                        expression = new MemberAccessExpressionNode(expression, name, TextRange.combine(expression, name));
+                        expression = new MemberAccessExpressionNode(expression, dot, name, TextRange.combine(expression, name));
                     } else {
                         addDiagnostic(ParserErrors.IdentifierExpected, current, current.getRawValue(code));
-                        return new MemberAccessExpressionNode(expression, new NameExpressionNode("", createMissingTokenRangeAfterLast()), TextRange.combine(expression, dot));
+                        return new MemberAccessExpressionNode(expression, dot, new NameExpressionNode("", createMissingTokenRangeAfterLast()), TextRange.combine(expression, dot));
                     }
                 }
 

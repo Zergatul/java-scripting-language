@@ -75,4 +75,13 @@ public class CompilerHelper {
         Assertions.assertNull(result.getDiagnostics());
         return result.getProgram();
     }
+
+    public static void assertDiagnostic(List<DiagnosticMessage> diagnostics, DiagnosticMessage expected) {
+        for (DiagnosticMessage message : diagnostics) {
+            if (message.equals(expected)) {
+                return;
+            }
+        }
+        Assertions.fail();
+    }
 }

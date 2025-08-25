@@ -129,7 +129,7 @@ public class ClassTests {
     // TODO: constructor calls?
 
     private void assertSuggestions(String code, Function<TestCompletionContext, List<Suggestion>> expectedFactory) {
-        CompletionTestHelper.assertSuggestions(ApiRoot.class, code, expectedFactory);
+        CompletionTestHelper.assertSuggestions_old(ApiRoot.class, code, expectedFactory);
     }
 
     public static class ApiRoot {

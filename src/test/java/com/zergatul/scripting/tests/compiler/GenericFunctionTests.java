@@ -114,7 +114,22 @@ public class GenericFunctionTests {
     }
 
     @Test
-    public void returnInnerLambdaTest() {
+    public void returnInnerLambdaTest1() {
+        String code = """
+                fn<int => fn<int => int>> func(int a) =>
+                    x => y => (x + y) * a;
+                
+                intStorage.add(func(9)(8)(7));
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of((8 + 7) * 9));
+    }
+
+    @Test
+    public void returnInnerLambdaTest2() {
         String code = """
                 fn<int => fn<int => fn<int => int>>> func(int a) =>
                     x => y => z => (x * y + z) * a;
@@ -125,7 +140,7 @@ public class GenericFunctionTests {
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
-        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(11, 25, 38, 41, 55, 68));
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of((8 * 7 + 6) * 9));
     }
 
     @Test
