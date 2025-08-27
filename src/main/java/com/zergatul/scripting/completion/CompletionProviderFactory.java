@@ -17,8 +17,11 @@ public class CompletionProviderFactory<T> {
                 new TypesCompletionProvider<>(factory),
                 new MetaExpressionsCompletionProvider<>(factory),
                 new LocalVariablesCompletionProvider<>(factory),
+                new ObjectMemberCompletionProvider<>(factory),
                 new StatementsCompletionProvider<>(factory),
-                new ObjectMemberCompletionProvider<>(factory));
+                new ElseKeywordCompletionProvider<>(factory),
+                new LoopStatementsCompletionProvider<>(factory),
+                new LoopVariablesCompletionProvider<>(factory));
     }
 
     public List<T> getSuggestions(CompilationParameters parameters, BinderOutput output, int line, int column) {

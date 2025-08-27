@@ -1,5 +1,6 @@
 package com.zergatul.scripting.completion;
 
+import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.nodes.*;
 import com.zergatul.scripting.parser.NodeType;
 
@@ -82,6 +83,11 @@ public class CompletionContext {
 
     public boolean canExpression() {
         return switch (entry.node.getNodeType()) {
+            case IF_STATEMENT -> {
+                BoundIfStatementNode statement = (BoundIfStatementNode) entry.node;
+                // if (<cursor> <condition>
+                yield TextRange.isBetween2(line, column, statement.lParen, statement.condition);
+            }
             case NAME_EXPRESSION -> true;
             default -> canStatement();
         };
@@ -93,7 +99,18 @@ public class CompletionContext {
         if (isSingleWordStatementStart(entry, line, column)) {
             return true;
         }
-        return false;
+        return switch (entry.node.getNodeType()) {
+            case STATEMENTS_LIST, BLOCK_STATEMENT -> true;
+            case FOR_LOOP_STATEMENT -> {
+                BoundForLoopStatementNode loop = (BoundForLoopStatementNode) entry.node;
+                yield TextRange.isBetween(line, column, loop.rParen, loop.body);
+            }
+            case FOREACH_LOOP_STATEMENT -> {
+                BoundForEachLoopStatementNode loop = (BoundForEachLoopStatementNode) entry.node;
+                yield TextRange.isBetween(line, column, loop.rParen, loop.body);
+            }
+            default -> false;
+        };
     }
 
     public CompletionContext closestStatement() {

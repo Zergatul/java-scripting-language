@@ -69,6 +69,10 @@ public abstract class TextRange {
         return getColumn1() > column;
     }
 
+    public TextRange getStart() {
+        return new SingleLineTextRange(getLine1(), getColumn1(), getPosition(), 0);
+    }
+
     public TextRange getEnd() {
         return new SingleLineTextRange(getLine2(), getColumn2(), getPosition() + getLength(), 0);
     }
@@ -96,6 +100,10 @@ public abstract class TextRange {
         }
     }
 
+    public static boolean isBetween(int line, int column, Locatable locatable1, Locatable locatable2) {
+        return isBetween(line, column, locatable1.getRange(), locatable2.getRange());
+    }
+
     public static boolean isBetween(int line, int column, TextRange range1, TextRange range2) {
         if (line < range1.getLine1()) {
             return false;
@@ -107,6 +115,26 @@ public abstract class TextRange {
             return false;
         }
         if (line == range2.getLine2() && column > range2.getColumn2()) {
+            return false;
+        }
+        return true;
+    }
+
+    public static boolean isBetween2(int line, int column, Locatable locatable1, Locatable locatable2) {
+        return isBetween2(line, column, locatable1.getRange(), locatable2.getRange());
+    }
+
+    public static boolean isBetween2(int line, int column, TextRange range1, TextRange range2) {
+        if (line < range1.getLine2()) {
+            return false;
+        }
+        if (line == range1.getLine2() && column < range1.getColumn2()) {
+            return false;
+        }
+        if (line > range2.getLine1()) {
+            return false;
+        }
+        if (line == range2.getLine1() && column > range2.getColumn2()) {
             return false;
         }
         return true;
@@ -156,5 +184,9 @@ public abstract class TextRange {
 
     public static TextRange combineFromEnd(Locatable locatable1, Locatable locatable2) {
         return combine(locatable1.getRange().getEnd(), locatable2.getRange());
+    }
+
+    public static TextRange between(Locatable locatable1, Locatable locatable2) {
+        return combine(locatable1.getRange().getEnd(), locatable2.getRange().getStart());
     }
 }

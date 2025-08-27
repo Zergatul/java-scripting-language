@@ -103,7 +103,7 @@ public class IfStatementTests {
     }
 
     private void assertSuggestions(String code, Function<TestCompletionContext, List<Suggestion>> expectedFactory) {
-        CompletionTestHelper.assertSuggestions_old(ApiRoot.class, code, expectedFactory);
+        CompletionTestHelper.assertSuggestions(ApiRoot.class, code, expectedFactory);
     }
 
     public static class ApiRoot {

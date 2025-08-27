@@ -50,6 +50,45 @@ public class VariableDeclarationTests {
                         new LocalVariableSuggestion(context, "b")));
     }
 
+    @Test
+    public void nestedScopesTest() {
+        assertSuggestions("""
+                int a = 0;
+                while (true) {
+                    int b = 1;
+                    while (true) {
+                        int c = 1;
+                        while (true) {
+                            int d = 1;
+                            <cursor>
+                        }
+                    }
+                }
+                """,
+                context -> Lists.of(
+                        statements,
+                        new StaticConstantSuggestion(context, "intStorage"),
+                        new LocalVariableSuggestion(context, "a"),
+                        new LocalVariableSuggestion(context, "b"),
+                        new LocalVariableSuggestion(context, "c"),
+                        new LocalVariableSuggestion(context, "d")));
+    }
+
+    @Test
+    public void nestedLambdaTest() {
+        assertSuggestions("""
+                int a = 123;
+                fn<int => int> b = c => <cursor>
+                """,
+                context -> Lists.of(
+                        statements,
+                        new StaticConstantSuggestion(context, "intStorage"),
+                        new LocalVariableSuggestion(context, "a"),
+                        new LocalVariableSuggestion(context, "b"),
+                        new LocalVariableSuggestion(context, "c"),
+                        new LocalVariableSuggestion(context, "d")));
+    }
+
     private void assertSuggestions(String code, Function<TestCompletionContext, List<Suggestion>> expectedFactory) {
         CompletionTestHelper.assertSuggestions(ApiRoot.class, code, expectedFactory);
     }

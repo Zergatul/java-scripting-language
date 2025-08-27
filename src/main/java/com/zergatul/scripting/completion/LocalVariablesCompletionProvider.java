@@ -47,6 +47,22 @@ public class LocalVariablesCompletionProvider<T> extends AbstractCompletionProvi
             return List.of();
         }
 
+        switch (context.entry.node.getNodeType()) {
+            case STATEMENTS_LIST, BLOCK_STATEMENT -> {
+                List<BoundStatementNode> statements = new ArrayList<>();
+                for (BoundNode child : context.entry.node.getChildren()) {
+                    if (child.getRange().isAfter(context.line, context.column)) {
+                        break;
+                    }
+                    if (child instanceof BoundStatementNode statement) {
+                        statements.add(statement);
+                    }
+                }
+                statements.addAll(getFromParentScopes(context));
+                return statements;
+            }
+        }
+
         CompletionContext parent = context.up();
         if (parent == null || parent.entry == null) {
             return List.of();
@@ -62,9 +78,19 @@ public class LocalVariablesCompletionProvider<T> extends AbstractCompletionProvi
                     statements.add(statement);
                 }
             }
+            statements.addAll(getFromParentScopes(parent));
             return statements;
         }
 
         return List.of();
+    }
+
+    private List<BoundStatementNode> getFromParentScopes(CompletionContext context) {
+        CompletionContext parent = context.up();
+        if (parent == null) {
+            return List.of();
+        }
+
+        return getStatementsPriorTo(parent);
     }
 }
