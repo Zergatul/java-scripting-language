@@ -31,7 +31,7 @@ public class TypesCompletionProvider<T> extends AbstractCompletionProvider<T> {
 
     @Override
     public List<T> provide(CompilationParameters parameters, BinderOutput output, CompletionContext context) {
-        if (context.canExpression()) {
+        if (context.canExpression() || context.canType()) {
             return getTypes(parameters, output);
         } else {
             return List.of();

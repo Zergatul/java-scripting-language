@@ -1,6 +1,9 @@
 package com.zergatul.scripting.completion;
 
+import com.zergatul.scripting.InternalException;
+import com.zergatul.scripting.Lazy;
 import com.zergatul.scripting.TextRange;
+import com.zergatul.scripting.binding.BinderOutput;
 import com.zergatul.scripting.binding.nodes.*;
 import com.zergatul.scripting.parser.NodeType;
 
@@ -14,6 +17,12 @@ public class CompletionContext {
     public final BoundNode next;
     public final int line;
     public final int column;
+
+    private final Lazy<Boolean> canUnitMemberLazy = new Lazy<>(this::canUnitMemberInternal);
+    private final Lazy<Boolean> canStatementLazy = new Lazy<>(this::canStatementInternal);
+    private final Lazy<Boolean> canExpressionLazy = new Lazy<>(this::canExpressionInternal);
+    private final Lazy<Boolean> canTypeLazy = new Lazy<>(this::canTypeInternal);
+    private final Lazy<Boolean> canVoidLazy = new Lazy<>(this::canVoidInternal);
 
     public CompletionContext(ContextType type, int line, int column) {
         this.type = type;
@@ -56,13 +65,28 @@ public class CompletionContext {
         SearchEntry entry = find(null, unit, line, column);
         if (entry == null) {
             if (unit.getRange().isAfter(line, column)) {
-                return new CompletionContext(ContextType.BEFORE_FIRST, line, column);
+                return new CompletionContext(
+                        unit.members.members.isEmpty() ? ContextType.BEFORE_FIRST_NO_MEMBERS : ContextType.BEFORE_FIRST_WITH_MEMBERS,
+                        line, column);
             }
             if (unit.getRange().isBefore(line, column)) {
                 if (unit.getRange().endsWith(line, column)) {
                     return getAtLastContext(unit, line, column);
                 } else {
-                    return new CompletionContext(ContextType.AFTER_LAST, line, column);
+                    if (unit.statements.isOpen()) {
+                        TextRange last = unit.statements.statements.getLast().getRange();
+                        line = last.getLine2();
+                        column = last.getColumn2();
+                        entry = find(null, unit, line, column);
+                        if (entry == null) {
+                            throw new InternalException();
+                        }
+                        return new CompletionContext(entry, line, column);
+                    } else {
+                        return new CompletionContext(
+                                unit.statements.statements.isEmpty() ? ContextType.AFTER_LAST_NO_STATEMENTS : ContextType.AFTER_LAST_WITH_STATEMENTS,
+                                line, column);
+                    }
                 }
             }
             return new CompletionContext(ContextType.NO_CODE, line, column);
@@ -81,46 +105,45 @@ public class CompletionContext {
         return new CompletionContext(this.entry.parent, line, column);
     }
 
-    public boolean canExpression() {
-        return switch (entry.node.getNodeType()) {
-            case IF_STATEMENT -> {
-                BoundIfStatementNode statement = (BoundIfStatementNode) entry.node;
-                // if (<cursor> <condition>
-                yield TextRange.isBetween2(line, column, statement.lParen, statement.condition);
-            }
-            case NAME_EXPRESSION -> true;
-            default -> canStatement();
-        };
+    public boolean canType() {
+        return canTypeLazy.value();
+    }
+
+    public boolean canVoid() {
+        return canVoidLazy.value();
+    }
+
+    public boolean canUnitMember() {
+        return canUnitMemberLazy.value();
     }
 
     public boolean canStatement() {
-        // handle cases like this:
-        // i<cursor>
-        if (isSingleWordStatementStart(entry, line, column)) {
-            return true;
-        }
-        return switch (entry.node.getNodeType()) {
-            case STATEMENTS_LIST, BLOCK_STATEMENT -> true;
-            case FOR_LOOP_STATEMENT -> {
-                BoundForLoopStatementNode loop = (BoundForLoopStatementNode) entry.node;
-                yield TextRange.isBetween(line, column, loop.rParen, loop.body);
-            }
-            case FOREACH_LOOP_STATEMENT -> {
-                BoundForEachLoopStatementNode loop = (BoundForEachLoopStatementNode) entry.node;
-                yield TextRange.isBetween(line, column, loop.rParen, loop.body);
-            }
-            default -> false;
-        };
+        return canStatementLazy.value();
     }
 
-    public CompletionContext closestStatement() {
+    public boolean canExpression() {
+        return canExpressionLazy.value();
+    }
+
+    public CompletionContext closestStatement(BinderOutput output) {
+        if (entry == null) {
+            if (type == ContextType.AFTER_LAST_NO_STATEMENTS) {
+                return null;
+            }
+            if (type == ContextType.AFTER_LAST_WITH_STATEMENTS) {
+                return new CompletionContext(
+                        new SearchEntry(
+                                new SearchEntry(null, output.unit()),
+                                output.unit().statements),
+                        line, column);
+            }
+            return null;
+        }
+
         CompletionContext current = this;
         while (true) {
             if (current.entry.node instanceof BoundStatementNode) {
                 return current;
-            }
-            if (current.entry.node.getNodeType() == NodeType.LAMBDA_EXPRESSION) {
-                return null;
             }
             if (current.entry.node.getNodeType() == NodeType.FUNCTION) {
                 return null;
@@ -136,6 +159,157 @@ public class CompletionContext {
                 return null;
             }
         }
+    }
+
+    private boolean canUnitMemberInternal() {
+        if (type == ContextType.NO_CODE) {
+            return true;
+        }
+        if (type == ContextType.BEFORE_FIRST_NO_MEMBERS || type == ContextType.BEFORE_FIRST_WITH_MEMBERS) {
+            return true;
+        }
+        if (type == ContextType.AFTER_LAST_NO_STATEMENTS) {
+            return true;
+        }
+        if (type == ContextType.WITHIN) {
+            return entry.node.getNodeType() == NodeType.COMPILATION_UNIT;
+        }
+        return false;
+    }
+
+    private boolean canStatementInternal() {
+        if (entry == null) {
+            if (type == ContextType.NO_CODE) {
+                return true;
+            }
+            if (type == ContextType.BEFORE_FIRST_NO_MEMBERS) {
+                return true;
+            }
+            if (type == ContextType.AFTER_LAST_NO_STATEMENTS || type == ContextType.AFTER_LAST_WITH_STATEMENTS) {
+                return true;
+            }
+            return false;
+        }
+
+        if (type == ContextType.WITHIN && entry.node.getNodeType() == NodeType.COMPILATION_UNIT) {
+            return true;
+        }
+
+        // handle cases like this:
+        // i<cursor>
+        if (isSingleWordStatementStart(entry, line, column)) {
+            return true;
+        }
+        return switch (entry.node.getNodeType()) {
+            case STATEMENTS_LIST, BLOCK_STATEMENT -> true;
+            case FOR_LOOP_STATEMENT -> {
+                BoundForLoopStatementNode loop = (BoundForLoopStatementNode) entry.node;
+                yield TextRange.isBetween(line, column, loop.rParen, loop.body);
+            }
+            case FOREACH_LOOP_STATEMENT -> {
+                BoundForEachLoopStatementNode loop = (BoundForEachLoopStatementNode) entry.node;
+                yield TextRange.isBetween(line, column, loop.closeParen, loop.body);
+            }
+            default -> false;
+        };
+    }
+
+    private boolean canExpressionInternal() {
+        if (entry == null) {
+            if (type == ContextType.NO_CODE) {
+                return true;
+            }
+            if (type == ContextType.AFTER_LAST_NO_STATEMENTS || type == ContextType.AFTER_LAST_WITH_STATEMENTS) {
+                return true;
+            }
+            return false;
+        }
+
+        return switch (entry.node.getNodeType()) {
+            case IF_STATEMENT -> {
+                BoundIfStatementNode statement = (BoundIfStatementNode) entry.node;
+                // if (<cursor> <condition>
+                yield TextRange.isBetween2(line, column, statement.lParen, statement.condition);
+            }
+            case LAMBDA_EXPRESSION -> {
+                BoundLambdaExpressionNode lambda = (BoundLambdaExpressionNode) entry.node;
+                yield lambda.isOpen() && lambda.arrow.getRange().isBefore(line, column);
+            }
+            case META_TYPE_OF_EXPRESSION -> {
+                BoundMetaTypeOfExpressionNode meta = (BoundMetaTypeOfExpressionNode) entry.node;
+                yield TextRange.isBetween(line, column, meta.openParen, meta.closeParen);
+            }
+            case NAME_EXPRESSION -> {
+                yield switch (entry.parent.node.getNodeType()) {
+                    case PARAMETER -> false;
+                    default -> true;
+                };
+            }
+            default -> canStatement();
+        };
+    }
+
+    private boolean canTypeInternal() {
+        if (canUnitMember()) {
+            return true;
+        }
+
+        if (entry == null) {
+            return false;
+        }
+
+        return switch (entry.node.getNodeType()) {
+            case META_TYPE_EXPRESSION -> {
+                BoundMetaTypeExpressionNode meta = (BoundMetaTypeExpressionNode) entry.node;
+                yield TextRange.isBetween(line, column, meta.openParen, meta.closeParen);
+            }
+
+            case PARAMETER_LIST -> {
+                BoundParameterListNode parameters = (BoundParameterListNode) entry.node;
+                if (TextRange.isBetween(line, column, parameters.openParen, parameters.closeParen)) {
+                    if (parameters.parameters.isEmpty()) {
+                        yield true;
+                    }
+
+                    if (TextRange.isBetween(line, column, parameters.openParen, parameters.parameters.getFirst())) {
+                        yield true;
+                    }
+
+                    for (int i = 1; i < parameters.parameters.size(); i++) {
+                        if (TextRange.isBetween(line, column, parameters.parameters.get(i - 1), parameters.parameters.get(i))) {
+                            yield true;
+                        }
+                    }
+
+                    if (TextRange.isBetween(line, column, parameters.parameters.getFirst(), parameters.closeParen)) {
+                        yield true;
+                    }
+                }
+
+                yield false;
+            }
+
+            case CLASS -> true;
+
+            case INVALID_TYPE, PREDEFINED_TYPE, CUSTOM_TYPE -> true;
+
+            default -> canStatement();
+        };
+    }
+
+    private boolean canVoidInternal() {
+        if (canUnitMember()) {
+            return true;
+        }
+
+        if (entry == null) {
+            return false;
+        }
+
+        return switch (entry.node.getNodeType()) {
+            case CLASS -> true;
+            default -> false;
+        };
     }
 
     private static boolean isSingleWordStatementStart(SearchEntry entry, int line, int column) {
@@ -171,11 +345,11 @@ public class CompletionContext {
         }
         if (entry.node.getNodeType() == NodeType.FOREACH_LOOP_STATEMENT) {
             BoundForEachLoopStatementNode statement = (BoundForEachLoopStatementNode) entry.node;
-            return  statement.lParen.getRange().isEmpty() &&
+            return  statement.openParen.getRange().isEmpty() &&
                     statement.typeNode.getNodeType() == NodeType.INVALID_TYPE &&
                     statement.name.value.isEmpty() &&
                     statement.iterable.getNodeType() == NodeType.INVALID_EXPRESSION &&
-                    statement.rParen.getRange().isEmpty() &&
+                    statement.closeParen.getRange().isEmpty() &&
                     statement.body.getNodeType() == NodeType.INVALID_STATEMENT;
         }
         if (entry.node.getNodeType() == NodeType.WHILE_LOOP_STATEMENT) {
@@ -193,7 +367,7 @@ public class CompletionContext {
 
     private static CompletionContext getAtLastContext(BoundCompilationUnitNode unit, int line, int column) {
         if (unit.statements.statements.isEmpty()) {
-            return new CompletionContext(ContextType.AFTER_LAST, line, column);
+            return new CompletionContext(ContextType.AFTER_LAST_NO_STATEMENTS, line, column);
         }
 
         SearchEntry root = new SearchEntry(null, unit);

@@ -94,10 +94,7 @@ public class BinderTreeGenerator {
 
     private BoundForEachLoopStatementNode rewrite(BoundForEachLoopStatementNode node) {
         return new BoundForEachLoopStatementNode(
-                node.lParen, node.rParen,
-                node.typeNode,
-                node.name,
-                node.iterable,
+                node.openParen, node.typeNode, node.name, node.iterable, node.closeParen,
                 rewriteStatementSync(node.body),
                 node.index,
                 node.length,

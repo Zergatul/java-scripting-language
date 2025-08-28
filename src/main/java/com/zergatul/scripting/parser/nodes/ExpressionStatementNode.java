@@ -34,7 +34,7 @@ public class ExpressionStatementNode extends StatementNode {
     }
 
     @Override
-    public StatementNode append(Token token) {
-        return new ExpressionStatementNode(expression, TextRange.combine(getRange(), token.getRange()));
+    public StatementNode updateWithSemicolon(Token semicolon) {
+        return new ExpressionStatementNode(expression, TextRange.combine(getRange(), semicolon.getRange()));
     }
 }

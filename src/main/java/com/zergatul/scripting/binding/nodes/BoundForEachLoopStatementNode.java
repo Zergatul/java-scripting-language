@@ -4,38 +4,51 @@ import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
 import com.zergatul.scripting.lexer.Token;
 import com.zergatul.scripting.parser.NodeType;
+import com.zergatul.scripting.parser.nodes.ForEachLoopStatementNode;
 import com.zergatul.scripting.symbols.SymbolRef;
 
 import java.util.List;
 
 public class BoundForEachLoopStatementNode extends BoundStatementNode {
 
-    public final Token lParen;
-    public final Token rParen;
+    public final Token openParen;
     public final BoundTypeNode typeNode;
     public final BoundNameExpressionNode name;
     public final BoundExpressionNode iterable;
+    public final Token closeParen;
     public final BoundStatementNode body;
     public final SymbolRef index;
     public final SymbolRef length;
 
     public BoundForEachLoopStatementNode(
-            Token lParen,
-            Token rParen,
             BoundTypeNode typeNode,
             BoundNameExpressionNode name,
             BoundExpressionNode iterable,
             BoundStatementNode body,
             SymbolRef index,
             SymbolRef length,
+            ForEachLoopStatementNode node
+    ) {
+        this(node.openParen, typeNode, name, iterable, node.closeParen, body, index, length, node.getRange());
+    }
+
+    public BoundForEachLoopStatementNode(
+            Token openParen,
+            BoundTypeNode typeNode,
+            BoundNameExpressionNode name,
+            BoundExpressionNode iterable,
+            Token closeParen,
+            BoundStatementNode body,
+            SymbolRef index,
+            SymbolRef length,
             TextRange range
     ) {
         super(NodeType.FOREACH_LOOP_STATEMENT, range);
-        this.lParen = lParen;
-        this.rParen = rParen;
+        this.openParen = openParen;
         this.typeNode = typeNode;
         this.name = name;
         this.iterable = iterable;
+        this.closeParen = closeParen;
         this.body = body;
         this.index = index;
         this.length = length;

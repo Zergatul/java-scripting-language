@@ -236,7 +236,7 @@ public class CompletionProvider<T> {
                         suggestions.addAll(get(parameters, output, ctx, line, column));
                     } else {
                         BoundForEachLoopStatementNode loop = (BoundForEachLoopStatementNode) completionContext.entry.node;
-                        if (loop.rParen.getRange().endsWith(line, column) || (loop.rParen.getRange().isBefore(line, column) && loop.body.getRange().isAfter(line, column))) {
+                        if (loop.closeParen.getRange().endsWith(line, column) || (loop.closeParen.getRange().isBefore(line, column) && loop.body.getRange().isAfter(line, column))) {
                             canStatement = true;
                         }
                     }
@@ -749,11 +749,11 @@ public class CompletionProvider<T> {
         }
         if (entry.node.getNodeType() == NodeType.FOREACH_LOOP_STATEMENT) {
             BoundForEachLoopStatementNode statement = (BoundForEachLoopStatementNode) entry.node;
-            return  statement.lParen.getRange().isEmpty() &&
+            return  statement.openParen.getRange().isEmpty() &&
                     statement.typeNode.getNodeType() == NodeType.INVALID_TYPE &&
                     statement.name.value.isEmpty() &&
                     statement.iterable.getNodeType() == NodeType.INVALID_EXPRESSION &&
-                    statement.rParen.getRange().isEmpty() &&
+                    statement.closeParen.getRange().isEmpty() &&
                     statement.body.getNodeType() == NodeType.INVALID_STATEMENT;
         }
         if (entry.node.getNodeType() == NodeType.WHILE_LOOP_STATEMENT) {

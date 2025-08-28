@@ -30,6 +30,14 @@ public abstract class SymbolRef {
         return (LocalVariable) get();
     }
 
+    public DeclaredStaticVariable asStaticVariable() {
+        return (DeclaredStaticVariable) get();
+    }
+
+    public ClassSymbol asClass() {
+        return (ClassSymbol) get();
+    }
+
     @Override
     public boolean equals(Object obj) {
         if (obj instanceof SymbolRef other) {

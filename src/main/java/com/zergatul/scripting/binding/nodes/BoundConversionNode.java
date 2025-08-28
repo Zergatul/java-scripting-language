@@ -37,6 +37,11 @@ public class BoundConversionNode extends BoundExpressionNode {
     }
 
     @Override
+    public boolean isOpen() {
+        return expression.isOpen();
+    }
+
+    @Override
     public List<BoundNode> getChildren() {
         return List.of(expression);
     }

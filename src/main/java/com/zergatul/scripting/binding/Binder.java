@@ -245,7 +245,7 @@ public class Binder {
                 parameters.add(new BoundParameterNode(name, type, parameter.getRange()));
             }
         }
-        return new BoundParameterListNode(parameters, node.getRange());
+        return new BoundParameterListNode(parameters, node);
     }
 
     private BoundStatementsListNode bindStatementList(StatementsListNode node) {
@@ -380,7 +380,7 @@ public class Binder {
                 variableDeclaration.name.value,
                 variableDeclaration.name.getRange());
 
-        return new BoundVariableDeclarationNode(variableType, name, expression, variableDeclaration.getRange());
+        return new BoundVariableDeclarationNode(variableType, name, expression, variableDeclaration);
     }
 
     private BoundExpressionStatementNode bindExpressionStatement(ExpressionStatementNode statement) {
@@ -483,10 +483,10 @@ public class Binder {
         popScope();
 
         return new BoundForEachLoopStatementNode(
-                statement.openParenthesis, statement.closeParenthesis,
-                variableType, name, iterable, body,
+                variableType, name, iterable,
+                body,
                 index, length,
-                statement.getRange());
+                statement);
     }
 
     private BoundWhileLoopStatementNode bindWhileLoopStatement(WhileLoopStatementNode statement) {
@@ -503,7 +503,7 @@ public class Binder {
 
         popScope();
 
-        return new BoundWhileLoopStatementNode(condition, body, statement.getRange());
+        return new BoundWhileLoopStatementNode(condition, body, statement);
     }
 
     private BoundBreakStatementNode bindBreakStatement(BreakStatementNode statement) {
@@ -988,6 +988,7 @@ public class Binder {
         return new BoundLambdaExpressionNode(
                 functionType,
                 parameters,
+                node.arrow,
                 statement,
                 lifted,
                 captured,
@@ -1370,12 +1371,12 @@ public class Binder {
 
     private BoundMetaTypeExpressionNode bindMetaTypeExpression(MetaTypeExpressionNode meta) {
         BoundTypeNode type = bindType(meta.type);
-        return new BoundMetaTypeExpressionNode(type, meta.getRange());
+        return new BoundMetaTypeExpressionNode(type, meta);
     }
 
     private BoundMetaTypeOfExpressionNode bindMetaTypeOfExpression(MetaTypeOfExpressionNode meta) {
         BoundExpressionNode expression = bindExpression(meta.expression);
-        return new BoundMetaTypeOfExpressionNode(expression, expression.getRange());
+        return new BoundMetaTypeOfExpressionNode(expression, meta);
     }
 
     private BoundInvalidExpressionNode bindInvalidExpression(InvalidExpressionNode expression) {

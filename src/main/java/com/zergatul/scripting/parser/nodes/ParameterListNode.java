@@ -10,15 +10,15 @@ import java.util.Objects;
 
 public class ParameterListNode extends Node {
 
-    public final Token openParenthesis;
+    public final Token openParen;
     public final List<ParameterNode> parameters;
-    public final Token closeParenthesis;
+    public final Token closeParen;
 
-    public ParameterListNode(Token openParenthesis, List<ParameterNode> parameters, Token closeParenthesis, TextRange range) {
+    public ParameterListNode(Token openParen, List<ParameterNode> parameters, Token closeParen, TextRange range) {
         super(NodeType.PARAMETER_LIST, range);
-        this.openParenthesis = openParenthesis;
+        this.openParen = openParen;
         this.parameters = parameters;
-        this.closeParenthesis = closeParenthesis;
+        this.closeParen = closeParen;
     }
 
     @Override
@@ -34,15 +34,15 @@ public class ParameterListNode extends Node {
     }
 
     public boolean hasParentheses() {
-        return openParenthesis.getRange().getLength() > 0 && closeParenthesis.getRange().getLength() > 0;
+        return !openParen.isMissing() && !closeParen.isMissing();
     }
 
     @Override
     public boolean equals(Object obj) {
         if (obj instanceof ParameterListNode other) {
-            return  other.openParenthesis.equals(openParenthesis) &&
+            return  other.openParen.equals(openParen) &&
                     Objects.equals(other.parameters, parameters) &&
-                    other.closeParenthesis.equals(closeParenthesis) &&
+                    other.closeParen.equals(closeParen) &&
                     other.getRange().equals(getRange());
         } else {
             return false;

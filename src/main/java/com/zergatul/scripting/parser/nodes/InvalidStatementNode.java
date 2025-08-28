@@ -20,8 +20,8 @@ public class InvalidStatementNode extends StatementNode {
     public void acceptChildren(ParserTreeVisitor visitor) {}
 
     @Override
-    public StatementNode append(Token token) {
-        return new InvalidStatementNode(TextRange.combine(getRange(), token.getRange()));
+    public StatementNode updateWithSemicolon(Token semicolon) {
+        return new InvalidStatementNode(TextRange.combine(getRange(), semicolon.getRange()));
     }
 
     @Override

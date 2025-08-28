@@ -1,16 +1,23 @@
 package com.zergatul.scripting.parser.nodes;
 
 import com.zergatul.scripting.TextRange;
+import com.zergatul.scripting.lexer.Token;
 import com.zergatul.scripting.parser.NodeType;
 import com.zergatul.scripting.parser.ParserTreeVisitor;
 
 public class MetaTypeExpressionNode extends ExpressionNode {
 
+    public final Token keyword;
+    public final Token openParen;
     public final TypeNode type;
+    public final Token closeParen;
 
-    public MetaTypeExpressionNode(TypeNode type, TextRange range) {
+    public MetaTypeExpressionNode(Token keyword, Token openParen, TypeNode type, Token closeParen, TextRange range) {
         super(NodeType.META_TYPE_EXPRESSION, range);
+        this.keyword = keyword;
+        this.openParen = openParen;
         this.type = type;
+        this.closeParen = closeParen;
     }
 
     @Override
@@ -26,7 +33,11 @@ public class MetaTypeExpressionNode extends ExpressionNode {
     @Override
     public boolean equals(Object obj) {
         if (obj instanceof MetaTypeExpressionNode other) {
-            return other.type.equals(type) && other.getRange().equals(getRange());
+            return  other.keyword.equals(keyword) &&
+                    other.openParen.equals(openParen) &&
+                    other.type.equals(type) &&
+                    other.closeParen.equals(closeParen) &&
+                    other.getRange().equals(getRange());
         } else {
             return false;
         }

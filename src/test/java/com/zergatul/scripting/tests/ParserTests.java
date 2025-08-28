@@ -47,6 +47,8 @@ public class ParserTests {
                         new VariableDeclarationNode(
                                 new PredefinedTypeNode(PredefinedType.INT, new SingleLineTextRange(1, 1, 0, 3)),
                                 new NameExpressionNode("x", new SingleLineTextRange(1, 5, 4, 1)),
+                                null,
+                                new Token(TokenType.SEMICOLON, new SingleLineTextRange(1, 6, 5, 1)),
                                 new SingleLineTextRange(1, 1, 0, 6))),
                         new SingleLineTextRange(1, 1, 0, 6)),
                 new SingleLineTextRange(1, 1, 0, 6)));
@@ -63,6 +65,7 @@ public class ParserTests {
                                 new PredefinedTypeNode(PredefinedType.INT, new SingleLineTextRange(1, 1, 0, 3)),
                                 new NameExpressionNode("x", new SingleLineTextRange(1, 5, 4, 1)),
                                 new IntegerLiteralExpressionNode("10", new SingleLineTextRange(1, 9, 8, 2)),
+                                new Token(TokenType.SEMICOLON, new SingleLineTextRange(1, 11, 10, 1)),
                                 new SingleLineTextRange(1, 1, 0, 11))),
                         new SingleLineTextRange(1, 1, 0, 11)),
                 new SingleLineTextRange(1, 1, 0, 11)));
@@ -82,6 +85,8 @@ public class ParserTests {
                                             new SingleLineTextRange(1, 1, 0, 5)),
                                         new SingleLineTextRange(1, 1, 0, 7)),
                                 new NameExpressionNode("x", new SingleLineTextRange(1, 9, 8, 1)),
+                                null,
+                                new Token(TokenType.SEMICOLON, new SingleLineTextRange(1, 10, 9, 1)),
                                 new SingleLineTextRange(1, 1, 0, 10))),
                         new SingleLineTextRange(1, 1, 0, 10)),
                 new SingleLineTextRange(1, 1, 0, 10)));
@@ -305,6 +310,7 @@ public class ParserTests {
                                         new ArgumentsListNode(List.of(
                                                 new LambdaExpressionNode(
                                                         List.of(),
+                                                        new Token(TokenType.EQUAL_GREATER, new SingleLineTextRange(1, 9, 8, 2)),
                                                         new ExpressionStatementNode(
                                                                 new IntegerLiteralExpressionNode("1", new SingleLineTextRange(1, 12, 11, 1)),
                                                                 new SingleLineTextRange(1, 12, 11, 1)),
@@ -331,6 +337,7 @@ public class ParserTests {
                                                         List.of(
                                                                 new NameExpressionNode(
                                                                     new IdentifierToken("a", new SingleLineTextRange(1, 6, 5, 1)))),
+                                                        new Token(TokenType.EQUAL_GREATER, new SingleLineTextRange(1, 8, 7, 2)),
                                                         new BlockStatementNode(
                                                                 List.of(),
                                                                 new SingleLineTextRange(1, 11, 10, 2)),
@@ -361,6 +368,7 @@ public class ParserTests {
                                                                         new IdentifierToken("b", new SingleLineTextRange(1, 10, 9, 1))),
                                                                 new NameExpressionNode(
                                                                         new IdentifierToken("c", new SingleLineTextRange(1, 13, 12, 1)))),
+                                                        new Token(TokenType.EQUAL_GREATER, new SingleLineTextRange(1, 16, 15, 2)),
                                                         new BlockStatementNode(
                                                                 List.of(),
                                                                 new SingleLineTextRange(1, 19, 18, 2)),
@@ -483,6 +491,7 @@ public class ParserTests {
                                         new BinaryOperatorNode(BinaryOperator.PLUS, new SingleLineTextRange(1, 15, 14, 1)),
                                         new IntegerLiteralExpressionNode("3", new SingleLineTextRange(1, 17, 16, 1)),
                                         new SingleLineTextRange(1, 9, 8, 9)),
+                                new Token(TokenType.SEMICOLON, new SingleLineTextRange(1, 18, 17, 1)),
                                 new SingleLineTextRange(1, 1, 0, 18))),
                         new SingleLineTextRange(1, 1, 0, 18)),
                 new SingleLineTextRange(1, 1, 0, 18)));
@@ -501,6 +510,7 @@ public class ParserTests {
                                 new LetTypeNode(new SingleLineTextRange(1, 1, 0, 3)),
                                 new NameExpressionNode("x", new SingleLineTextRange(1, 5, 4, 1)),
                                 new IntegerLiteralExpressionNode("123", new SingleLineTextRange(1, 9, 8, 3)),
+                                new Token(TokenType.SEMICOLON, new SingleLineTextRange(1, 12, 11, 1)),
                                 new SingleLineTextRange(1, 1, 0, 12))),
                         new SingleLineTextRange(1, 1, 0, 12)),
                 new SingleLineTextRange(1, 1, 0, 12)));
@@ -526,6 +536,7 @@ public class ParserTests {
                                         new BinaryOperatorNode(BinaryOperator.BOOLEAN_OR, new SingleLineTextRange(1, 21, 20, 2)),
                                         new NameExpressionNode("b", new SingleLineTextRange(1, 24, 23, 1)),
                                         new SingleLineTextRange(1, 9, 8, 16)),
+                                new Token(TokenType.SEMICOLON, new SingleLineTextRange(1, 25, 24, 1)),
                                 new SingleLineTextRange(1, 1, 0, 25))),
                         new SingleLineTextRange(1, 1, 0, 25)),
                 new SingleLineTextRange(1, 1, 0, 25)));
@@ -551,6 +562,7 @@ public class ParserTests {
                                                 new PredefinedTypeNode(PredefinedType.STRING, new SingleLineTextRange(1, 19, 18, 6)),
                                                 new SingleLineTextRange(1, 14, 13, 11)),
                                         new SingleLineTextRange(1, 9, 8, 16)),
+                                new Token(TokenType.SEMICOLON, new SingleLineTextRange(1, 25, 24, 1)),
                                 new SingleLineTextRange(1, 1, 0, 25))),
                         new SingleLineTextRange(1, 1, 0, 25)),
                 new SingleLineTextRange(1, 1, 0, 25)));
@@ -570,13 +582,20 @@ public class ParserTests {
                                 new NameExpressionNode("x", new SingleLineTextRange(1, 5, 4, 1)),
                                 new BinaryExpressionNode(
                                         new MetaTypeOfExpressionNode(
+                                                new Token(TokenType.META_TYPE_OF, new SingleLineTextRange(1, 9, 8, 7)),
+                                                new Token(TokenType.LEFT_PARENTHESES, new SingleLineTextRange(1, 16, 15, 1)),
                                                 new IntegerLiteralExpressionNode("1", new SingleLineTextRange(1, 17, 16, 1)),
+                                                new Token(TokenType.RIGHT_PARENTHESES, new SingleLineTextRange(1, 18, 17, 1)),
                                                 new SingleLineTextRange(1, 9, 8, 10)),
                                         new BinaryOperatorNode(BinaryOperator.EQUALS, new SingleLineTextRange(1, 20, 19, 2)),
                                         new MetaTypeExpressionNode(
+                                                new Token(TokenType.META_TYPE, new SingleLineTextRange(1, 23, 22, 5)),
+                                                new Token(TokenType.LEFT_PARENTHESES, new SingleLineTextRange(1, 28, 27, 1)),
                                                 new PredefinedTypeNode(PredefinedType.INT, new SingleLineTextRange(1, 29, 28, 3)),
+                                                new Token(TokenType.RIGHT_PARENTHESES, new SingleLineTextRange(1, 32, 31, 1)),
                                                 new SingleLineTextRange(1, 23, 22, 10)),
                                         new SingleLineTextRange(1, 9, 8, 24)),
+                                new Token(TokenType.SEMICOLON, new SingleLineTextRange(1, 33, 32, 1)),
                                 new SingleLineTextRange(1, 1, 0, 33))),
                         new SingleLineTextRange(1, 1, 0, 33)),
                 new SingleLineTextRange(1, 1, 0, 33)));
@@ -598,6 +617,8 @@ public class ParserTests {
                                         new Token(TokenType.GREATER, new SingleLineTextRange(1, 24, 23, 1)),
                                         new SingleLineTextRange(1, 1, 0, 24)),
                                 new NameExpressionNode("a", new SingleLineTextRange(1, 26, 25, 1)),
+                                null,
+                                new Token(TokenType.SEMICOLON, new SingleLineTextRange(1, 27, 26, 1)),
                                 new SingleLineTextRange(1, 1, 0, 27))),
                         new SingleLineTextRange(1, 1, 0, 27)),
                 new SingleLineTextRange(1, 1, 0, 27)));
@@ -621,6 +642,7 @@ public class ParserTests {
                                                 new SingleLineTextRange(1, 13, 12, 7)),
                                         new IntegerLiteralExpressionNode("10", new SingleLineTextRange(1, 17, 16, 2)),
                                         new SingleLineTextRange(1, 9, 8, 11)),
+                                new Token(TokenType.SEMICOLON, new SingleLineTextRange(1, 20, 19, 1)),
                                 new SingleLineTextRange(1, 1, 0, 20))),
                         new SingleLineTextRange(1, 1, 0, 20)),
                 new SingleLineTextRange(1, 1, 0, 20)));
@@ -647,6 +669,7 @@ public class ParserTests {
                                                 new IntegerLiteralExpressionNode("2", new SingleLineTextRange(1, 24, 23, 1)),
                                                 new IntegerLiteralExpressionNode("3", new SingleLineTextRange(1, 27, 26, 1))),
                                         new SingleLineTextRange(1, 9, 8, 21)),
+                                new Token(TokenType.SEMICOLON, new SingleLineTextRange(1, 30, 29, 1)),
                                 new SingleLineTextRange(1, 1, 0, 30))),
                         new SingleLineTextRange(1, 1, 0, 30)),
                 new SingleLineTextRange(1, 1, 0, 30)));
@@ -667,6 +690,7 @@ public class ParserTests {
                                         new CustomTypeNode("ClassA", new SingleLineTextRange(1, 13, 12, 6)),
                                         new ArgumentsListNode(List.of(), new SingleLineTextRange(1, 19, 18, 2)),
                                         new SingleLineTextRange(1, 9, 8, 12)),
+                                new Token(TokenType.SEMICOLON, new SingleLineTextRange(1, 21, 20, 1)),
                                 new SingleLineTextRange(1, 1, 0, 21))),
                         new SingleLineTextRange(1, 1, 0, 21)),
                 new SingleLineTextRange(1, 1, 0, 21)));
@@ -687,6 +711,8 @@ public class ParserTests {
                                 new VariableDeclarationNode(
                                         new CustomTypeNode("CustomType", new SingleLineTextRange(1, 1, 0, 10)),
                                         new NameExpressionNode("a", new SingleLineTextRange(1, 12, 11, 1)),
+                                        null,
+                                        new Token(TokenType.SEMICOLON, new SingleLineTextRange(1, 13, 12, 1)),
                                         new SingleLineTextRange(1, 1, 0, 13))),
                         new SingleLineTextRange(1, 1, 0, 13)),
                 new SingleLineTextRange(1, 1, 0, 13)));

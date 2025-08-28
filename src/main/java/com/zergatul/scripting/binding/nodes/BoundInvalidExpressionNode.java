@@ -27,6 +27,11 @@ public class BoundInvalidExpressionNode extends BoundExpressionNode {
     public void acceptChildren(BinderTreeVisitor visitor) {}
 
     @Override
+    public boolean isOpen() {
+        return true;
+    }
+
+    @Override
     public List<BoundNode> getChildren() {
         return List.of(children.toArray(BoundNode[]::new));
     }

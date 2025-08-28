@@ -13,15 +13,22 @@ public class CompletionProviderFactory<T> {
 
     public CompletionProviderFactory(SuggestionFactory<T> factory) {
         providers = List.of(
+                new UnitMemberCompletionProvider<>(factory),
                 new StaticConstantsCompletionProvider<>(factory),
+                new ConstructorCompletionProvider<>(factory),
                 new TypesCompletionProvider<>(factory),
+                new VoidCompletionProvider<>(factory),
+                new FunctionsCompletionProvider<>(factory),
+                new StaticFieldsCompletionProvider<>(factory),
                 new MetaExpressionsCompletionProvider<>(factory),
                 new LocalVariablesCompletionProvider<>(factory),
+                new ParametersCompletionProvider<>(factory),
                 new ObjectMemberCompletionProvider<>(factory),
                 new StatementsCompletionProvider<>(factory),
                 new ElseKeywordCompletionProvider<>(factory),
                 new LoopStatementsCompletionProvider<>(factory),
-                new LoopVariablesCompletionProvider<>(factory));
+                new LoopVariablesCompletionProvider<>(factory),
+                new ThisCompletionProvider<>(factory));
     }
 
     public List<T> getSuggestions(CompilationParameters parameters, BinderOutput output, int line, int column) {

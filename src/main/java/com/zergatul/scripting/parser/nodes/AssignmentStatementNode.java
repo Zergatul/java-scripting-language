@@ -40,7 +40,7 @@ public class AssignmentStatementNode extends StatementNode {
     }
 
     @Override
-    public StatementNode append(Token token) {
-        return new AssignmentStatementNode(left, operator, right, TextRange.combine(getRange(), token.getRange()));
+    public StatementNode updateWithSemicolon(Token semicolon) {
+        return new AssignmentStatementNode(left, operator, right, TextRange.combine(getRange(), semicolon.getRange()));
     }
 }

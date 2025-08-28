@@ -77,6 +77,7 @@ public class ErrorRecoveryParserTests {
                                 new PredefinedTypeNode(PredefinedType.BOOLEAN, new SingleLineTextRange(2, 1, 5, 7)),
                                 new NameExpressionNode("bbb", new SingleLineTextRange(2, 9, 13, 3)),
                                 new BooleanLiteralExpressionNode(true, new SingleLineTextRange(2, 15, 19, 4)),
+                                new Token(TokenType.SEMICOLON, new SingleLineTextRange(2, 19, 23, 1)),
                                 new SingleLineTextRange(2, 1, 5, 19))));
     }
 
@@ -194,6 +195,7 @@ public class ErrorRecoveryParserTests {
                                                 List.of(
                                                         new IntegerLiteralExpressionNode("1", new SingleLineTextRange(1, 23, 22, 1))),
                                                 new SingleLineTextRange(1, 11, 10, 13)),
+                                        new Token(TokenType.SEMICOLON, new SingleLineTextRange(1, 25, 24, 1)),
                                         new SingleLineTextRange(1, 1, 0, 25))),
                         new SingleLineTextRange(1, 1, 0, 25)));
     }
@@ -247,6 +249,8 @@ public class ErrorRecoveryParserTests {
                         new VariableDeclarationNode(
                                 new PredefinedTypeNode(PredefinedType.INT, new SingleLineTextRange(1, 1, 0, 3)),
                                 new NameExpressionNode("", new SingleLineTextRange(2, 1, 4, 0)),
+                                null,
+                                new Token(TokenType.SEMICOLON, new SingleLineTextRange(1, 4, 3, 0)),
                                 new SingleLineTextRange(1, 1, 0, 3)),
                         new ExpressionStatementNode(
                                 new InvocationExpressionNode(
@@ -388,7 +392,10 @@ public class ErrorRecoveryParserTests {
                 result.unit().statements.statements,
                 List.of(
                         new WhileLoopStatementNode(
+                                new Token(TokenType.WHILE, new SingleLineTextRange(1, 1, 0, 5)),
+                                new Token(TokenType.LEFT_PARENTHESES, new SingleLineTextRange(1, 6, 5, 0)),
                                 new InvalidExpressionNode(new SingleLineTextRange(2, 1, 6, 0)),
+                                new Token(TokenType.RIGHT_PARENTHESES, new SingleLineTextRange(2, 1, 6, 0)),
                                 new InvalidStatementNode(new SingleLineTextRange(2, 1, 6, 0)),
                                 new SingleLineTextRange(1, 1, 0, 5)),
                         new ExpressionStatementNode(

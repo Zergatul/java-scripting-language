@@ -21,6 +21,11 @@ public class BoundInvalidStatementNode extends BoundStatementNode {
     public void acceptChildren(BinderTreeVisitor visitor) {}
 
     @Override
+    public boolean isOpen() {
+        return isMissing();
+    }
+
+    @Override
     public List<BoundNode> getChildren() {
         return List.of();
     }

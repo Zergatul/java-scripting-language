@@ -103,11 +103,11 @@ public class ParserDumper {
 
     private void dump(ParameterListNode node) {
         sb.append("new ParameterListNode(");
-        dump(node.openParenthesis);
+        dump(node.openParen);
         sb.append(", ");
         dumpList(node.parameters);
         sb.append(", ");
-        dump(node.closeParenthesis);
+        dump(node.closeParen);
         sb.append(", ");
         dump(node.getRange());
         sb.append(")");
@@ -141,7 +141,7 @@ public class ParserDumper {
 
     private void dump(ForEachLoopStatementNode node) {
         sb.append("new ForEachLoopStatementNode(");
-        dump(node.openParenthesis);
+        dump(node.openParen);
         sb.append(", ");
         dump(node.typeNode);
         sb.append(", ");
@@ -149,7 +149,7 @@ public class ParserDumper {
         sb.append(", ");
         dump(node.iterable);
         sb.append(", ");
-        dump(node.closeParenthesis);
+        dump(node.closeParen);
         sb.append(", ");
         dump(node.body);
         sb.append(", ");

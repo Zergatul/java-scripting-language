@@ -89,7 +89,11 @@ public class ErrorRecoveryBinderTests {
                                         new BoundNameExpressionNode(
                                                 new Function("func", new SStaticFunction(SInt.instance, new MethodParameter[0]), new MultiLineTextRange(1, 1, 3, 2, 0, 27)),
                                                 new SingleLineTextRange(1, 5, 4, 4)),
-                                        new BoundParameterListNode(List.of(), new SingleLineTextRange(1, 9, 8, 2)),
+                                        new BoundParameterListNode(
+                                                new Token(TokenType.LEFT_PARENTHESES, new SingleLineTextRange(1, 9, 8, 1)),
+                                                List.of(),
+                                                new Token(TokenType.RIGHT_PARENTHESES, new SingleLineTextRange(1, 10, 9, 1)),
+                                                new SingleLineTextRange(1, 9, 8, 2)),
                                         new BoundBlockStatementNode(
                                                 List.of(
                                                         new BoundReturnStatementNode(
@@ -147,6 +151,7 @@ public class ErrorRecoveryBinderTests {
                                                                                 new SingleLineTextRange(1, 14, 13, 3)),
                                                                         SString.instance,
                                                                         new SingleLineTextRange(1, 14, 13, 3))),
+                                                                new Token(TokenType.EQUAL_GREATER, new SingleLineTextRange(1, 18, 17, 2)),
                                                                 new BoundInvalidStatementNode(new SingleLineTextRange(1, 21, 20, 0)),
                                                                 List.of(),
                                                                 List.of(),

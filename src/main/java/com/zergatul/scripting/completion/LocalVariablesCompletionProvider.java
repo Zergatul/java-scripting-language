@@ -1,9 +1,7 @@
 package com.zergatul.scripting.completion;
 
 import com.zergatul.scripting.binding.BinderOutput;
-import com.zergatul.scripting.binding.nodes.BoundNode;
-import com.zergatul.scripting.binding.nodes.BoundStatementNode;
-import com.zergatul.scripting.binding.nodes.BoundVariableDeclarationNode;
+import com.zergatul.scripting.binding.nodes.*;
 import com.zergatul.scripting.compiler.CompilationParameters;
 import com.zergatul.scripting.symbols.LocalVariable;
 
@@ -22,7 +20,7 @@ public class LocalVariablesCompletionProvider<T> extends AbstractCompletionProvi
             return List.of();
         }
 
-        context = context.closestStatement();
+        context = context.closestStatement(output);
         if (context == null) {
             return List.of();
         }
@@ -47,23 +45,31 @@ public class LocalVariablesCompletionProvider<T> extends AbstractCompletionProvi
             return List.of();
         }
 
-        switch (context.entry.node.getNodeType()) {
-            case STATEMENTS_LIST, BLOCK_STATEMENT -> {
-                List<BoundStatementNode> statements = new ArrayList<>();
-                for (BoundNode child : context.entry.node.getChildren()) {
-                    if (child.getRange().isAfter(context.line, context.column)) {
-                        break;
-                    }
-                    if (child instanceof BoundStatementNode statement) {
-                        statements.add(statement);
-                    }
+        List<BoundStatementNode> children = switch (context.entry.node.getNodeType()) {
+            case STATEMENTS_LIST -> ((BoundStatementsListNode) context.entry.node).statements;
+            case BLOCK_STATEMENT -> ((BoundBlockStatementNode) context.entry.node).statements;
+            default -> null;
+        };
+
+        if (children != null) {
+            List<BoundStatementNode> statements = new ArrayList<>();
+            for (int i = 0; i < children.size(); i++) {
+                BoundStatementNode statement = children.get(i);
+                if (statement.getRange().getEnd().isAfter(context.line, context.column)) {
+                    break;
                 }
-                statements.addAll(getFromParentScopes(context));
-                return statements;
+                boolean beforeNext = i == children.size() - 1 || children.get(i + 1).getRange().getStart().isBefore(context.line, context.column);
+                if (beforeNext && statement.isOpen()) {
+                    // we technically in the context of current statement, even though we are outside of its range
+                    continue;
+                }
+                statements.add(statement);
             }
+            statements.addAll(getFromParentScopes(context));
+            return statements;
         }
 
-        CompletionContext parent = context.up();
+        CompletionContext parent = context.closestStatement(null);
         if (parent == null || parent.entry == null) {
             return List.of();
         }

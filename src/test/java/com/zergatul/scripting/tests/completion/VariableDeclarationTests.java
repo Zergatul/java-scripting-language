@@ -66,7 +66,7 @@ public class VariableDeclarationTests {
                 }
                 """,
                 context -> Lists.of(
-                        statements,
+                        loopStatements,
                         new StaticConstantSuggestion(context, "intStorage"),
                         new LocalVariableSuggestion(context, "a"),
                         new LocalVariableSuggestion(context, "b"),
@@ -81,12 +81,10 @@ public class VariableDeclarationTests {
                 fn<int => int> b = c => <cursor>
                 """,
                 context -> Lists.of(
-                        statements,
+                        expressions,
                         new StaticConstantSuggestion(context, "intStorage"),
                         new LocalVariableSuggestion(context, "a"),
-                        new LocalVariableSuggestion(context, "b"),
-                        new LocalVariableSuggestion(context, "c"),
-                        new LocalVariableSuggestion(context, "d")));
+                        LocalVariableSuggestion.getParameter(context, "c")));
     }
 
     private void assertSuggestions(String code, Function<TestCompletionContext, List<Suggestion>> expectedFactory) {

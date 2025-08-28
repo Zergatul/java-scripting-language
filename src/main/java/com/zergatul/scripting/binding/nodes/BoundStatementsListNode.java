@@ -42,6 +42,11 @@ public class BoundStatementsListNode extends BoundStatementNode {
     }
 
     @Override
+    public boolean isOpen() {
+        return !statements.isEmpty() && statements.getLast().isOpen();
+    }
+
+    @Override
     public List<BoundNode> getChildren() {
         return List.copyOf(statements);
     }
