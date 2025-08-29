@@ -239,3 +239,35 @@ Access modifiers (private/public/etc) are not supported.
 Static members are not supported.
 
 Inheritance is not supported.
+
+### Functional Types
+You can describe functional types like this: `fn<() => void>` / `fn<int => string>` / `fn<(int, int, int) => fn<int => int>>`
+
+You can use them as function parameters:
+```c#
+void run(fn<() => void> func, int times) {
+    for (let i = 0; i < times; i++) {
+        func();
+    }
+}
+
+run(() => debug.write("a"), 3); // writes "a" to debug 3 times
+```
+
+As local variables:
+```c#
+int x = 3;
+fn<int => int> add3 = a => a + x;
+
+debug.write(add3(5).toString()); // writes 8
+```
+
+Functions can be casted to functional type:
+```c#
+void write(string value) {
+    debug.write(value);
+}
+
+fn<string => void> f = write;
+f();
+```
