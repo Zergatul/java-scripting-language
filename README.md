@@ -6,7 +6,7 @@ Although this scripting language was designed for Minecraft mod, it doesn't have
 The only dependency it has is ASM library (for emitting Java bytecode).
 The language itself can be used for something else.
 
-This scripting language allows cheatutils users to create custom scripts, bind them to keys, automate tasks, react to in-game events by using C#/Java-like syntax.
+This scripting language allows mod users to create custom scripts, bind them to keys, automate tasks, react to in-game events by using C#/Java-like syntax.
 It is lightweight, async-friendly, and designed to interop with Java APIs where needed.
 
 # Short list of supported features
