@@ -15,6 +15,7 @@ public class CompilerHelper {
     public static Runnable compile(Class<?> api, String code) {
         Compiler compiler = new Compiler(new CompilationParametersBuilder()
                 .setRoot(api)
+                .emitVariableNames(true)
                 //.setDebug()
                 .build());
         CompilationResult result = compiler.compile(code);
@@ -34,6 +35,7 @@ public class CompilerHelper {
                 .setRoot(api)
                 .setInterface(AsyncRunnable.class)
                 .setAsyncReturnType(SVoidType.instance)
+                .emitVariableNames(true)
                 //.setDebug()
                 .build());
         CompilationResult result = compiler.compile(code);
@@ -45,6 +47,7 @@ public class CompilerHelper {
         Compiler compiler = new Compiler(new CompilationParametersBuilder()
                 .setRoot(api)
                 .addCustomType(custom)
+                .emitVariableNames(true)
                 //.setDebug()
                 .build());
         CompilationResult result = compiler.compile(code);
@@ -56,6 +59,7 @@ public class CompilerHelper {
         Compiler compiler = new Compiler(new CompilationParametersBuilder()
                 .setRoot(api)
                 .addCustomTypes(List.of(customTypes))
+                .emitVariableNames(true)
                 //.setDebug()
                 .build());
         CompilationResult result = compiler.compile(code);
@@ -69,6 +73,7 @@ public class CompilerHelper {
                 .addCustomTypes(List.of(customTypes))
                 .setInterface(AsyncRunnable.class)
                 .setAsyncReturnType(SVoidType.instance)
+                .emitVariableNames(true)
                 //.setDebug()
                 .build());
         CompilationResult result = compiler.compile(code);

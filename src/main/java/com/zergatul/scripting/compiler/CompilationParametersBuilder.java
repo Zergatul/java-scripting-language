@@ -16,6 +16,7 @@ public class CompilationParametersBuilder {
     private String classNamePrefix;
     private String sourceFile;
     private boolean emitLineNumbers;
+    private boolean emitVariableNames;
     private boolean debug;
 
     public CompilationParametersBuilder() {
@@ -69,8 +70,13 @@ public class CompilationParametersBuilder {
         return this;
     }
 
-    public CompilationParametersBuilder setLineNumbers(boolean value) {
+    public CompilationParametersBuilder emitLineNumbers(boolean value) {
         this.emitLineNumbers = value;
+        return this;
+    }
+
+    public CompilationParametersBuilder emitVariableNames(boolean value) {
+        this.emitVariableNames = value;
         return this;
     }
 
@@ -80,6 +86,16 @@ public class CompilationParametersBuilder {
     }
 
     public CompilationParameters build() {
-        return new CompilationParameters(root, functionalInterface, asyncReturnType, customTypes, policy, classNamePrefix, sourceFile, emitLineNumbers, debug);
+        return new CompilationParameters(
+                root,
+                functionalInterface,
+                asyncReturnType,
+                customTypes,
+                policy,
+                classNamePrefix,
+                sourceFile,
+                emitLineNumbers,
+                emitVariableNames,
+                debug);
     }
 }

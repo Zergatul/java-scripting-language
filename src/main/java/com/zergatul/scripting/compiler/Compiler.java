@@ -344,6 +344,7 @@ public class Compiler {
             visitor.visitCode();
 
             context = context.createStaticFunction(type.getReturnType(), function.isAsync);
+            processContextStart(visitor, context);
 
             for (BoundParameterNode parameter : function.parameters.parameters) {
                 context.setStackIndex((LocalVariable) parameter.getName().getSymbol());
@@ -362,6 +363,7 @@ public class Compiler {
                 }
             }
 
+            processContextEnd(visitor, context, function.parameters.parameters.stream().map(p -> p.getName().symbolRef.asLocalVariable()).toList());
             visitor.visitMaxs(0, 0);
             visitor.visitEnd();
         }
@@ -425,6 +427,8 @@ public class Compiler {
         CompilerContext context = parameters.getContext();
         context.reserveStack(1 + method.getParameterCount()); // assuming all parameters size = 1
 
+        processContextStart(visitor, context);
+
         ExternalParameterVisitor treeVisitor = new ExternalParameterVisitor();
         unit.statements.accept(treeVisitor);
         List<BoundVariableDeclarationNode> prepend = new ArrayList<>();
@@ -473,7 +477,7 @@ public class Compiler {
             visitor.visitInsn(RETURN);
         }
 
-        markEnd(visitor, context);
+        processContextEnd(visitor, context);
         visitor.visitMaxs(0, 0);
         visitor.visitEnd();
     }
@@ -520,11 +524,6 @@ public class Compiler {
 
         if (variable instanceof LocalVariable local) {
             context.setStackIndex(local);
-            if (parameters.isDebug()) {
-                Label label = new Label();
-                visitor.visitLabel(label);
-                local.setDeclarationLabel(label);
-            }
         }
 
         variable.compileStore(context, visitor);
@@ -618,9 +617,9 @@ public class Compiler {
     }
 
     private void compileBlockStatement(MethodVisitor visitor, CompilerContext context, BoundBlockStatementNode statement) {
-        context = context.createChild();
+        context = createChildContext(visitor, context);
         compileStatements(visitor, context, statement.statements);
-        markEnd(visitor, context);
+        processContextEnd(visitor, context);
     }
 
     private void compileReturnStatement(MethodVisitor visitor, CompilerContext context, BoundReturnStatementNode statement) {
@@ -638,7 +637,7 @@ public class Compiler {
     }
 
     private void compileForLoopStatement(MethodVisitor visitor, CompilerContext context, BoundForLoopStatementNode statement) {
-        context = context.createChild();
+        context = createChildContext(visitor, context);
 
         /*
             <init>
@@ -677,11 +676,11 @@ public class Compiler {
         visitor.visitJumpInsn(GOTO, begin);
         visitor.visitLabel(end);
 
-        markEnd(visitor, context);
+        processContextEnd(visitor, context);
     }
 
     private void compileForEachLoopStatement(MethodVisitor visitor, CompilerContext context, BoundForEachLoopStatementNode statement) {
-        context = context.createChild();
+        context = createChildContext(visitor, context);
 
         Label begin = new Label();
         Label continueLabel = new Label();
@@ -691,9 +690,6 @@ public class Compiler {
 
         LocalVariable variable = statement.name.symbolRef.asLocalVariable();
         context.addLocalVariable(statement.name.symbolRef);
-        if (parameters.isDebug()) {
-            variable.setDeclarationLabel(begin);
-        }
         context.addLocalVariable(statement.index);
         context.addLocalVariable(statement.length);
 
@@ -735,7 +731,7 @@ public class Compiler {
 
         visitor.visitInsn(POP);
 
-        markEnd(visitor, context);
+        processContextEnd(visitor, context);
     }
 
     private void compileWhileLoopStatement(MethodVisitor visitor, CompilerContext context, BoundWhileLoopStatementNode statement) {
@@ -759,7 +755,7 @@ public class Compiler {
         visitor.visitJumpInsn(GOTO, begin);
         visitor.visitLabel(end);
 
-        markEnd(visitor, context);
+        processContextEnd(visitor, context);
     }
 
     private void compileBreakStatement(MethodVisitor visitor, CompilerContext context) {
@@ -1662,6 +1658,8 @@ public class Compiler {
         CompilerContext lambdaContext = context.createFunction(actualReturnType, false, !actualReturnType.equals(rawReturnType));
         lambdaContext.setClassName(name);
 
+        processContextStart(invokeVisitor, lambdaContext);
+
         if (!expression.captured.isEmpty()) {
             FieldVariable[] closureFieldVariables = new FieldVariable[closures.size()];
             for (int i = 0; i < closures.size(); i++) {
@@ -1726,6 +1724,8 @@ public class Compiler {
         if (!functionType.isFunction()) {
             invokeVisitor.visitInsn(RETURN);
         }
+
+        processContextEnd(invokeVisitor, lambdaContext);
         invokeVisitor.visitMaxs(0, 0);
         invokeVisitor.visitEnd();
 
@@ -1883,12 +1883,6 @@ public class Compiler {
         }
     }
 
-    private void markEnd(MethodVisitor visitor, CompilerContext context) {
-        if (parameters.isDebug()) {
-            context.markEnd(visitor);
-        }
-    }
-
     private void emitSourceFile(ClassWriter writer) {
         if (parameters.getSourceFile() != null) {
             writer.visitSource(parameters.getSourceFile(), null);
@@ -1919,6 +1913,30 @@ public class Compiler {
             } catch (IOException e) {
                 throw new RuntimeException("Cannot write class file.", e);
             }
+        }
+    }
+
+    private CompilerContext createChildContext(MethodVisitor visitor, CompilerContext context) {
+        context = context.createChild();
+        processContextStart(visitor, context);
+        return context;
+    }
+
+    private void processContextStart(MethodVisitor visitor, CompilerContext context) {
+        if (parameters.shouldEmitVariableNames()) {
+            Label label = new Label();
+            context.setStartLabel(label);
+            visitor.visitLabel(label);
+        }
+    }
+
+    private void processContextEnd(MethodVisitor visitor, CompilerContext context) {
+        processContextEnd(visitor, context, List.of());
+    }
+
+    private void processContextEnd(MethodVisitor visitor, CompilerContext context, List<LocalVariable> variables) {
+        if (parameters.shouldEmitVariableNames()) {
+            context.emitLocalVariableTable(visitor, variables);
         }
     }
 }

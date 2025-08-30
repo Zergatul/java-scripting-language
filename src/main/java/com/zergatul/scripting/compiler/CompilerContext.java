@@ -9,7 +9,6 @@ import com.zergatul.scripting.type.SGenericFunction;
 import com.zergatul.scripting.type.SType;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
-import org.objectweb.asm.Type;
 
 import java.lang.reflect.Method;
 import java.util.*;
@@ -42,6 +41,7 @@ public class CompilerContext {
     private JavaInteropPolicy policy;
     private int lastEmittedLine;
     private final List<SGenericFunction> genericFunctions;
+    private Label startLabel;
 
     private CompilerContext(
             CompilerContext parent,
@@ -180,6 +180,10 @@ public class CompilerContext {
         List<RefHolder> variables = List.of(refVariables.toArray(RefHolder[]::new));
         refVariables.clear();
         return variables;
+    }
+
+    public void setStartLabel(Label label) {
+        startLabel = label;
     }
 
     public CompilerContext createChild() {
@@ -483,19 +487,34 @@ public class CompilerContext {
         stack.set(index);
     }
 
-    public void markEnd(MethodVisitor visitor) {
-        Label label = new Label();
-        visitor.visitLabel(label);
+    public void emitLocalVariableTable(MethodVisitor visitor, List<LocalVariable> variables) {
+        Label endLabel = new Label();
+        visitor.visitLabel(endLabel);
         for (SymbolRef ref : localSymbols.values()) {
             if (ref.get() instanceof LocalVariable local) {
+                if (local.getName() == null || local.getName().isEmpty()) {
+                    continue;
+                }
                 visitor.visitLocalVariable(
                         local.getName(),
                         local.getType().getDescriptor(),
                         null,
-                        local.getDeclarationLabel(),
-                        label,
+                        startLabel,
+                        endLabel,
                         local.getStackIndex());
             }
+        }
+        for (LocalVariable local : variables) {
+            if (local.getName() == null || local.getName().isEmpty()) {
+                continue;
+            }
+            visitor.visitLocalVariable(
+                    local.getName(),
+                    local.getType().getDescriptor(),
+                    null,
+                    startLabel,
+                    endLabel,
+                    local.getStackIndex());
         }
     }
 
