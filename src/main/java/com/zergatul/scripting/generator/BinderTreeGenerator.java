@@ -381,8 +381,7 @@ public class BinderTreeGenerator {
         storeExpressionValue(variable, node.expression);
         return new BoundConversionNode(
                 new BoundNameExpressionNode(variable),
-                node.conversionType,
-                node.operation,
+                node.conversionInfo,
                 node.type,
                 node.getRange());
     }

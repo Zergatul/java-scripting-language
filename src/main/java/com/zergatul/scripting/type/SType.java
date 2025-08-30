@@ -34,6 +34,10 @@ public abstract class SType {
         return Type.getInternalName(getJavaClass());
     }
 
+    public Type getAsmType() {
+        return Type.getType(getJavaClass());
+    }
+
     public String getDescriptor() {
         return Type.getDescriptor(getJavaClass());
     }

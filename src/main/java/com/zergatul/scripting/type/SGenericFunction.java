@@ -1,5 +1,8 @@
 package com.zergatul.scripting.type;
 
+import com.zergatul.scripting.InternalException;
+import org.objectweb.asm.Type;
+
 public class SGenericFunction extends SFunction {
 
     private String internalName;
@@ -29,6 +32,15 @@ public class SGenericFunction extends SFunction {
     @Override
     public String getInternalName() {
         return internalName;
+    }
+
+    @Override
+    public String getDescriptor() {
+        if (internalName == null) {
+            throw new InternalException();
+        } else {
+            return Type.getObjectType(internalName).getDescriptor();
+        }
     }
 
     @Override

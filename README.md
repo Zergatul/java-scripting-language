@@ -144,6 +144,11 @@ int factorial(int value) {
 debug.write(factorial(10).toString());
 ```
 
+You can also use arrow syntax if function is short:
+```c#
+int sum(int a, int b) => a + b;
+```
+
 Function overloading is not supported:
 ```c#
 void func() {}
@@ -172,6 +177,22 @@ boolean filterSword(ItemStack stack) {
 }
 
 inventory.findAndMoveToHotbar(1, filterSword);
+```
+
+Class methods can be used as functions:
+```c#
+class MyClass {
+    void method(int x) {
+        debug.write((x * x).toString());
+    }
+}
+
+void test(fn<int => void> func) {
+    func(10);
+}
+
+let my = new MyClass();
+test(my.method); // prints "100"
 ```
 
 #### Functional Types

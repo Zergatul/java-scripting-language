@@ -50,12 +50,7 @@ public class StaticMethodReference extends MethodReference {
                 INVOKESTATIC,
                 Type.getInternalName(ownerClass),
                 name,
-                Type.getMethodDescriptor(
-                        Type.getType(returnType.getJavaClass()),
-                        getParameterTypes().stream()
-                                .map(SType::getJavaClass)
-                                .map(Type::getType)
-                                .toArray(Type[]::new)),
+                getDescriptor(),
                 false);
     }
 }

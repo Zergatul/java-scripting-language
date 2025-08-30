@@ -1299,7 +1299,7 @@ public class Compiler {
     }
 
     private void compileConversionExpression(MethodVisitor visitor, CompilerContext context, BoundConversionNode expression) {
-        switch (expression.conversionType) {
+        switch (expression.conversionInfo.type()) {
             case IDENTITY -> compileExpression(visitor, context, expression.expression);
 
             case IMPLICIT_CAST -> compileImplicitCastConversion(visitor, context, expression);
@@ -1316,13 +1316,27 @@ public class Compiler {
                     (BoundFunctionReferenceNode) expression.expression,
                     (SGenericFunction) expression.type);
 
+            case METHOD_GROUP_TO_INTERFACE -> compileInstanceMethodToInterface(
+                    visitor,
+                    context,
+                    (BoundMethodGroupExpressionNode) expression.expression,
+                    expression.conversionInfo.method(),
+                    (SFunctionalInterface) expression.type);
+
+            case METHOD_GROUP_TO_GENERIC -> compileInstanceMethodToGeneric(
+                    visitor,
+                    context,
+                    (BoundMethodGroupExpressionNode) expression.expression,
+                    expression.conversionInfo.method(),
+                    (SGenericFunction) expression.type);
+
             default -> throw new InternalException();
         }
     }
 
     private void compileImplicitCastConversion(MethodVisitor visitor, CompilerContext context, BoundConversionNode expression) {
         compileExpression(visitor, context, expression.expression);
-        expression.operation.apply(visitor);
+        expression.conversionInfo.cast().apply(visitor);
     }
 
     private void compileFunctionToInterfaceConversion(MethodVisitor visitor, CompilerContext context, BoundFunctionReferenceNode functionReferenceNode, SFunctionalInterface functionalInterface) {
@@ -1379,6 +1393,72 @@ public class Compiler {
         visitor.visitInvokeDynamicInsn(
                 genericFunction.getMethodName(),
                 Type.getMethodDescriptor(Type.getObjectType(genericFunction.getInternalName())),
+                bsm,
+                Type.getType(genericFunction.getMethodDescriptor()),
+                impl,
+                Type.getType(genericFunction.getMethodDescriptor()));
+    }
+
+    private void compileInstanceMethodToInterface(MethodVisitor visitor, CompilerContext context, BoundMethodGroupExpressionNode methodGroupNode, MethodReference method, SFunctionalInterface functionalInterface) {
+        Handle bsm = new Handle(
+                H_INVOKESTATIC,
+                Type.getInternalName(LambdaMetafactory.class),
+                "metafactory",
+                "(Ljava/lang/invoke/MethodHandles$Lookup;"
+                        + "Ljava/lang/String;"
+                        + "Ljava/lang/invoke/MethodType;"
+                        + "Ljava/lang/invoke/MethodType;"
+                        + "Ljava/lang/invoke/MethodHandle;"
+                        + "Ljava/lang/invoke/MethodType;)"
+                        + "Ljava/lang/invoke/CallSite;",
+                false);
+
+        Handle impl = new Handle(
+                H_INVOKEVIRTUAL,
+                method.getOwner().getInternalName(),
+                method.getName(),
+                method.getDescriptor(),
+                false);
+
+        compileExpression(visitor, context, methodGroupNode.callee);
+        visitor.visitInvokeDynamicInsn(
+                functionalInterface.getMethodName(),
+                Type.getMethodDescriptor(
+                        Type.getObjectType(functionalInterface.getInternalName()),
+                        Type.getObjectType(method.getOwner().getInternalName())),
+                bsm,
+                Type.getType(functionalInterface.getRawMethodDescriptor()),
+                impl,
+                Type.getType(functionalInterface.getIntermediateMethodDescriptor()));
+    }
+
+    private void compileInstanceMethodToGeneric(MethodVisitor visitor, CompilerContext context, BoundMethodGroupExpressionNode methodGroupNode, MethodReference method, SGenericFunction genericFunction) {
+        Handle bsm = new Handle(
+                H_INVOKESTATIC,
+                Type.getInternalName(LambdaMetafactory.class),
+                "metafactory",
+                "(Ljava/lang/invoke/MethodHandles$Lookup;"
+                        + "Ljava/lang/String;"
+                        + "Ljava/lang/invoke/MethodType;"
+                        + "Ljava/lang/invoke/MethodType;"
+                        + "Ljava/lang/invoke/MethodHandle;"
+                        + "Ljava/lang/invoke/MethodType;)"
+                        + "Ljava/lang/invoke/CallSite;",
+                false);
+
+        Handle impl = new Handle(
+                H_INVOKEVIRTUAL,
+                method.getOwner().getInternalName(),
+                method.getName(),
+                method.getDescriptor(),
+                false);
+
+        compileExpression(visitor, context, methodGroupNode.callee);
+        visitor.visitInvokeDynamicInsn(
+                genericFunction.getMethodName(),
+                Type.getMethodDescriptor(
+                        Type.getObjectType(genericFunction.getInternalName()),
+                        Type.getObjectType(method.getOwner().getInternalName())),
                 bsm,
                 Type.getType(genericFunction.getMethodDescriptor()),
                 impl,

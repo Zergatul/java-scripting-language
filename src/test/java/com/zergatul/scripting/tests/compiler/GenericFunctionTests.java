@@ -168,6 +168,89 @@ public class GenericFunctionTests {
                 new DiagnosticMessage(BinderErrors.LetUnboundLambda, new SingleLineTextRange(1, 1, 0, 3))));
     }
 
+    @Test
+    public void classMethodAsFunctionSimpleTest() {
+        String code = """
+                class MyClass {
+                    int delta;
+                    constructor(int delta) { this.delta = delta; }
+                    void add(int x) { intStorage.add(this.delta + x); }
+                }
+                
+                fn<int => void> func = new MyClass(10).add;
+                func(1); func(3); func(5);
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(11, 13, 15));
+    }
+
+    @Test
+    public void classMethodAsFunctionOverloadTest() {
+        String code = """
+                class MyClass {
+                    int delta;
+                    constructor(int delta) { this.delta = delta; }
+                    void add(int x) { intStorage.add(this.delta + x); }
+                    void add(int x, int y) { intStorage.add(this.delta + x + y); }
+                    void add(int x, int y, int z) { intStorage.add(this.delta + x + y * z); }
+                }
+                
+                fn<int => void> func1 = new MyClass(10).add;
+                fn<(int, int) => void> func2 = new MyClass(10).add;
+                fn<(int, int, int) => void> func3 = new MyClass(10).add;
+                
+                func1(8);
+                func2(9, 9);
+                func3(15, 3, 8);
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(18, 28, 49));
+    }
+
+    @Test
+    public void classMethodAsFunctionNoOverloadTest() {
+        String code = """
+                class MyClass {
+                    int delta;
+                    constructor(int delta) { this.delta = delta; }
+                    void add(int x, int y) { intStorage.add(this.delta + x + y); }
+                }
+                
+                fn<int => void> func1 = new MyClass(10).add;
+                """;
+
+        List<DiagnosticMessage> messages = getDiagnostics(ApiRoot.class, code);
+
+        Assertions.assertIterableEquals(messages, List.of(
+                new DiagnosticMessage(BinderErrors.CannotImplicitlyConvert, new SingleLineTextRange(7, 25, 176, 19),
+                        "<MethodGroup>", "fn<int => void>")));
+    }
+
+    @Test
+    public void classFieldTest() {
+        String code = """
+                class MyClass {
+                    fn<int => int> func;
+                }
+                
+                let c = new MyClass();
+                c.func = x => x * x;
+                intStorage.add(c.func(3));
+                intStorage.add(c.func(5));
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(9, 25));
+    }
+
     public static class ApiRoot {
         public static BoolStorage boolStorage;
         public static IntStorage intStorage;

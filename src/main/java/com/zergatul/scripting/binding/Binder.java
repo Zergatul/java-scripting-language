@@ -1125,7 +1125,7 @@ public class Binder {
                             ConversionInfo conversion = getConversionInfo(argument, expected);
                             if (conversion != null) {
                                 conversions.add(conversion);
-                                if (conversion.type == ConversionType.IMPLICIT_CAST) {
+                                if (conversion.type() == ConversionType.IMPLICIT_CAST) {
                                     count++;
                                 }
                             } else {
@@ -1146,7 +1146,7 @@ public class Binder {
                     BoundExpressionNode argument = arguments.get(i);
                     ConversionInfo conversion = overload.conversions.get(i);
                     SType parameterType = overload.invocable != unknown ? overload.invocable.getParameterTypes().get(i) : SUnknown.instance;
-                    switch (conversion.type) {
+                    switch (conversion.type()) {
                         case IDENTITY -> {}
                         case LAMBDA_BINDING -> {
                             arguments.set(i, bindUnconvertedLambda((BoundUnconvertedLambdaExpressionNode) argument, (SFunction) parameterType));
@@ -1154,8 +1154,7 @@ public class Binder {
                         default -> {
                             arguments.set(i, new BoundConversionNode(
                                     argument,
-                                    conversion.type,
-                                    conversion.cast,
+                                    conversion,
                                     parameterType,
                                     argument.getRange()));
                         }
@@ -1393,15 +1392,15 @@ public class Binder {
             return expression;
         }
 
-        if (info.type == ConversionType.IDENTITY) {
+        if (info.type() == ConversionType.IDENTITY) {
             return expression;
         }
 
-        if (info.type == ConversionType.LAMBDA_BINDING) {
+        if (info.type() == ConversionType.LAMBDA_BINDING) {
             return bindUnconvertedLambda((BoundUnconvertedLambdaExpressionNode) expression, (SFunction) type);
         }
 
-        return new BoundConversionNode(expression, info.type, info.cast, type, expression.getRange());
+        return new BoundConversionNode(expression, info, type, expression.getRange());
     }
 
     private ConversionInfo getConversionInfo(BoundExpressionNode expression, SType type) {
@@ -1446,6 +1445,27 @@ public class Binder {
                 } else {
                     return null;
                 }
+            }
+            return null;
+        }
+
+        if (expression.getNodeType() == NodeType.METHOD_GROUP) {
+            BoundMethodGroupExpressionNode methodGroupExpressionNode = (BoundMethodGroupExpressionNode) expression;
+            if (type instanceof SFunctionalInterface functionalInterface) {
+                for (MethodReference method : methodGroupExpressionNode.candidates) {
+                    if (method.matches(functionalInterface)) {
+                        return new ConversionInfo(ConversionType.METHOD_GROUP_TO_INTERFACE, method);
+                    }
+                }
+                return null;
+            }
+            if (type instanceof SGenericFunction genericFunction) {
+                for (MethodReference method : methodGroupExpressionNode.candidates) {
+                    if (method.matches(genericFunction)) {
+                        return new ConversionInfo(ConversionType.METHOD_GROUP_TO_GENERIC, method);
+                    }
+                }
+                return null;
             }
             return null;
         }
@@ -1773,12 +1793,6 @@ public class Binder {
     }
 
     private record ArgumentsCast<T extends Invocable>(T invocable, List<ConversionInfo> conversions, int count) {}
-
-    private record ConversionInfo(ConversionType type, CastOperation cast) {
-        public ConversionInfo(ConversionType type) {
-            this(type, null);
-        }
-    }
 
     private record BindInvocableArgsResult<T extends Invocable>(
             T invocable,

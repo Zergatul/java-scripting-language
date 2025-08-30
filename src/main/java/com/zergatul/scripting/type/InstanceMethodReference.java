@@ -50,9 +50,7 @@ public class InstanceMethodReference extends MethodReference {
                 INVOKEVIRTUAL,
                 Type.getInternalName(ownerClass),
                 name,
-                Type.getMethodDescriptor(
-                        Type.getType(returnType.getJavaClass()),
-                        getParameterTypes().stream().map(p -> Type.getType(p.getJavaClass())).toArray(Type[]::new)),
+                getDescriptor(),
                 false);
     }
 }
