@@ -1,5 +1,6 @@
 package com.zergatul.scripting.tests.completion;
 
+import com.zergatul.scripting.lexer.TokenType;
 import com.zergatul.scripting.tests.compiler.helpers.IntStorage;
 import com.zergatul.scripting.tests.completion.helpers.CompletionTestHelper;
 import com.zergatul.scripting.tests.completion.helpers.Lists;
@@ -82,7 +83,8 @@ public class FunctionTests {
                 async <cursor>
                 """,
                 context -> Lists.of(
-                        types));
+                        types,
+                        new KeywordSuggestion(TokenType.VOID)));
     }
 
     private void assertSuggestions(String code, Function<TestCompletionContext, List<Suggestion>> expectedFactory) {

@@ -369,7 +369,19 @@ public class CompletionContext {
         }
 
         return switch (entry.node.getNodeType()) {
+
+            case FUNCTION -> {
+                BoundFunctionNode functionNode = (BoundFunctionNode) entry.node;
+                if (functionNode.modifiers.getRange().isBefore(line, column)) {
+                    if (functionNode.returnType.isMissing() || functionNode.returnType.getRange().getEnd().isAfter(line, column)) {
+                        yield true;
+                    }
+                }
+                yield false;
+            }
+
             case CLASS -> true;
+
             default -> false;
         };
     }
