@@ -119,7 +119,7 @@ public class CompletionProvider<T> {
                     } else {
                         BoundIfStatementNode statement = (BoundIfStatementNode) completionContext.entry.node;
                         // if (...<here>...)
-                        if (TextRange.isBetween(line, column, statement.lParen.getRange(), statement.rParen.getRange())) {
+                        if (TextRange.isBetween(line, column, statement.openParen.getRange(), statement.closeParen.getRange())) {
                             if (statement.condition.getRange().isAfter(line, column) || statement.condition.getRange().isEmpty()) {
                                 // if (<here> ...) or if (<here>)
                                 canExpression = true;
@@ -732,9 +732,9 @@ public class CompletionProvider<T> {
         }
         if (entry.node.getNodeType() == NodeType.IF_STATEMENT) {
             BoundIfStatementNode statement = (BoundIfStatementNode) entry.node;
-            return  statement.lParen.getRange().isEmpty() &&
+            return  statement.openParen.getRange().isEmpty() &&
                     statement.condition.getRange().isEmpty() &&
-                    statement.rParen.getRange().isEmpty() &&
+                    statement.closeParen.getRange().isEmpty() &&
                     statement.thenStatement.getNodeType() == NodeType.INVALID_STATEMENT &&
                     statement.elseStatement == null;
         }

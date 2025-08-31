@@ -239,6 +239,7 @@ public class ParserTests {
                 new CompilationUnitMembersListNode(List.of(), new SingleLineTextRange(1, 1, 0, 0)),
                 new StatementsListNode(List.of(
                         new IfStatementNode(
+                                new Token(TokenType.IF, new SingleLineTextRange(1, 1, 0, 2)),
                                 new Token(TokenType.LEFT_PARENTHESES, new SingleLineTextRange(1, 4, 3, 1)),
                                 new Token(TokenType.RIGHT_PARENTHESES, new SingleLineTextRange(1, 6, 5, 1)),
                                 new NameExpressionNode("a", new SingleLineTextRange(1, 5, 4, 1)),
@@ -248,6 +249,7 @@ public class ParserTests {
                                         new IntegerLiteralExpressionNode("3", new SingleLineTextRange(1, 12, 11, 1)),
                                         new Token(TokenType.SEMICOLON, new SingleLineTextRange(1, 13, 12, 1)),
                                         new SingleLineTextRange(1, 8, 7, 6)),
+                                null,
                                 null,
                                 new SingleLineTextRange(1, 1, 0, 13))),
                         new SingleLineTextRange(1, 1, 0, 13)),
@@ -262,6 +264,7 @@ public class ParserTests {
                 new CompilationUnitMembersListNode(List.of(), new SingleLineTextRange(1, 1, 0, 0)),
                 new StatementsListNode(List.of(
                         new IfStatementNode(
+                                new Token(TokenType.IF, new SingleLineTextRange(1, 1, 0, 2)),
                                 new Token(TokenType.LEFT_PARENTHESES, new SingleLineTextRange(1, 4, 3, 1)),
                                 new Token(TokenType.RIGHT_PARENTHESES, new SingleLineTextRange(1, 6, 5, 1)),
                                 new NameExpressionNode("a", new SingleLineTextRange(1, 5, 4, 1)),
@@ -271,6 +274,7 @@ public class ParserTests {
                                         new IntegerLiteralExpressionNode("3", new SingleLineTextRange(1, 12, 11, 1)),
                                         new Token(TokenType.SEMICOLON, new SingleLineTextRange(1, 13, 12, 1)),
                                         new SingleLineTextRange(1, 8, 7, 6)),
+                                new Token(TokenType.ELSE, new SingleLineTextRange(1, 14, 13, 4)),
                                 new BlockStatementNode(List.of(), new SingleLineTextRange(1, 18, 17, 2)),
                                 new SingleLineTextRange(1, 1, 0, 19))),
                         new SingleLineTextRange(1, 1, 0, 19)),

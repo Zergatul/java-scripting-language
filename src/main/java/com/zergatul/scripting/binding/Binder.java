@@ -390,7 +390,7 @@ public class Binder {
         BoundExpressionNode condition = convert(bindExpression(statement.condition), SBoolean.instance);
         BoundStatementNode thenStatement = bindStatement(statement.thenStatement);
         BoundStatementNode elseStatement = statement.elseStatement == null ? null : bindStatement(statement.elseStatement);
-        return new BoundIfStatementNode(statement.lParen, statement.rParen, condition, thenStatement, elseStatement, statement.getRange());
+        return new BoundIfStatementNode(condition, thenStatement, elseStatement, statement);
     }
 
     private BoundReturnStatementNode bindReturnStatement(ReturnStatementNode statement) {

@@ -127,6 +127,7 @@ public class ErrorRecoveryParserTests {
                 new StatementsListNode(
                         List.of(
                                 new IfStatementNode(
+                                        new Token(TokenType.IF, new SingleLineTextRange(1, 1, 0, 2)),
                                         new Token(TokenType.LEFT_PARENTHESES, new SingleLineTextRange(1, 4, 3, 1)),
                                         new Token(TokenType.RIGHT_PARENTHESES, new SingleLineTextRange(1, 10, 9, 1)),
                                         new MemberAccessExpressionNode(
@@ -135,6 +136,7 @@ public class ErrorRecoveryParserTests {
                                                 new NameExpressionNode("", new SingleLineTextRange(1, 10, 9, 0)),
                                                 new SingleLineTextRange(1, 5, 4, 5)),
                                         new InvalidStatementNode(new SingleLineTextRange(1, 12, 11, 0)),
+                                        null,
                                         null,
                                         new SingleLineTextRange(1, 1, 0, 11))),
                         new SingleLineTextRange(1, 1, 0, 11)));
@@ -282,10 +284,12 @@ public class ErrorRecoveryParserTests {
                 result.unit().statements.statements,
                 List.of(
                         new IfStatementNode(
-                                new Token(TokenType.LEFT_PARENTHESES, new SingleLineTextRange(2, 1, 3, 0)),
+                                new Token(TokenType.IF, new SingleLineTextRange(1, 1, 0, 2)),
+                                new Token(TokenType.LEFT_PARENTHESES, new SingleLineTextRange(1, 3, 2, 0)),
                                 new Token(TokenType.RIGHT_PARENTHESES, new SingleLineTextRange(2, 1, 3, 0)),
                                 new InvalidExpressionNode(new SingleLineTextRange(2, 1, 3, 0)),
                                 new InvalidStatementNode(new SingleLineTextRange(2, 1, 3, 0)),
+                                null,
                                 null,
                                 new SingleLineTextRange(1, 1, 0, 2)),
                         new ExpressionStatementNode(

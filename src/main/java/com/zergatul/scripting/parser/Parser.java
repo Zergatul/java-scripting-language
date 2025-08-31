@@ -93,14 +93,16 @@ public class Parser {
     private IfStatementNode parseIfStatement() {
         Token ifToken = advance(TokenType.IF);
 
-        Token lParen = advance(TokenType.LEFT_PARENTHESES);
-        if (lParen.getRange().isEmpty()) {
+        Token openParen = advance(TokenType.LEFT_PARENTHESES);
+        if (openParen.getRange().isEmpty()) {
             // assume entire statement is missing
             return new IfStatementNode(
-                    lParen,
+                    ifToken,
+                    openParen,
                     createMissingToken(TokenType.RIGHT_PARENTHESES),
                     new InvalidExpressionNode(createMissingTokenRange()),
                     new InvalidStatementNode(createMissingTokenRange()),
+                    null,
                     null,
                     ifToken.getRange());
         }
@@ -113,7 +115,7 @@ public class Parser {
             condition = new InvalidExpressionNode(createMissingTokenRange());
         }
 
-        Token rParen = advance(TokenType.RIGHT_PARENTHESES);
+        Token closeParen = advance(TokenType.RIGHT_PARENTHESES);
 
         StatementNode thenStatement;
         if (isPossibleStatement()) {
@@ -123,9 +125,10 @@ public class Parser {
             thenStatement = new InvalidStatementNode(createMissingTokenRange());
         }
 
+        Token elseToken = null;
         StatementNode elseStatement = null;
         if (current.type == TokenType.ELSE) {
-            advance();
+            elseToken = advance();
             if (isPossibleStatement()) {
                 elseStatement = parseStatement();
             } else {
@@ -134,7 +137,15 @@ public class Parser {
             }
         }
 
-        return new IfStatementNode(lParen, rParen, condition, thenStatement, elseStatement, TextRange.combine(ifToken, elseStatement == null ? thenStatement : elseStatement));
+        return new IfStatementNode(
+                ifToken,
+                openParen,
+                closeParen,
+                condition,
+                thenStatement,
+                elseToken,
+                elseStatement,
+                TextRange.combine(ifToken, elseStatement == null ? thenStatement : elseStatement));
     }
 
     private ReturnStatementNode parseReturnStatement() {

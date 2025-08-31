@@ -6,7 +6,6 @@ import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.BinderOutput;
 import com.zergatul.scripting.binding.nodes.*;
 import com.zergatul.scripting.parser.NodeType;
-import com.zergatul.scripting.parser.PredefinedType;
 
 import java.util.List;
 
@@ -220,6 +219,37 @@ public class CompletionContext {
                 BoundForEachLoopStatementNode loop = (BoundForEachLoopStatementNode) entry.node;
                 yield TextRange.isBetween(line, column, loop.closeParen, loop.body);
             }
+            case IF_STATEMENT -> {
+                BoundIfStatementNode ifStatementNode = (BoundIfStatementNode) entry.node;
+                if (ifStatementNode.elseToken != null) {
+                    if (ifStatementNode.elseToken.getRange().isBefore(line, column)) {
+                        if (ifStatementNode.elseStatement.getNodeType() == NodeType.INVALID_STATEMENT) {
+                            yield true;
+                        }
+                        if (ifStatementNode.elseStatement.getRange().isAfter(line, column)) {
+                            yield true;
+                        }
+                    }
+                    if (ifStatementNode.closeParen.getRange().isBefore(line, column) && ifStatementNode.elseToken.getRange().isAfter(line, column)) {
+                        if (ifStatementNode.thenStatement.getNodeType() == NodeType.INVALID_STATEMENT) {
+                            yield true;
+                        }
+                        if (ifStatementNode.thenStatement.getRange().isAfter(line, column)) {
+                            yield true;
+                        }
+                    }
+                } else {
+                    if (ifStatementNode.closeParen.getRange().isBefore(line, column)) {
+                        if (ifStatementNode.thenStatement.getNodeType() == NodeType.INVALID_STATEMENT) {
+                            yield true;
+                        }
+                        if (ifStatementNode.thenStatement.getRange().isAfter(line, column)) {
+                            yield true;
+                        }
+                    }
+                }
+                yield false;
+            }
             default -> {
                 // handle: <cursor>(expr).method();
                 if (entry.node instanceof BoundExpressionNode) {
@@ -265,7 +295,11 @@ public class CompletionContext {
             case IF_STATEMENT -> {
                 BoundIfStatementNode statement = (BoundIfStatementNode) entry.node;
                 // if (<cursor> <condition>
-                yield TextRange.isBetween2(line, column, statement.lParen, statement.condition);
+                if (TextRange.isBetween2(line, column, statement.openParen, statement.condition)) {
+                    yield true;
+                } else {
+                    yield canStatement();
+                }
             }
             case ASSIGNMENT_STATEMENT -> {
                 BoundAssignmentStatementNode statement = (BoundAssignmentStatementNode) entry.node;
@@ -406,9 +440,9 @@ public class CompletionContext {
         }
         if (entry.node.getNodeType() == NodeType.IF_STATEMENT) {
             BoundIfStatementNode statement = (BoundIfStatementNode) entry.node;
-            return  statement.lParen.getRange().isEmpty() &&
+            return  statement.openParen.getRange().isEmpty() &&
                     statement.condition.getRange().isEmpty() &&
-                    statement.rParen.getRange().isEmpty() &&
+                    statement.closeParen.getRange().isEmpty() &&
                     statement.thenStatement.getNodeType() == NodeType.INVALID_STATEMENT &&
                     statement.elseStatement == null;
         }
