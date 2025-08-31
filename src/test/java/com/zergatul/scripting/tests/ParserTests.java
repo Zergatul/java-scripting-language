@@ -718,6 +718,42 @@ public class ParserTests {
                 new SingleLineTextRange(1, 1, 0, 13)));
     }
 
+    @Test
+    public void notAStatementTest1() {
+        ParserOutput result = parse("""
+                a.b;
+                """);
+        Assertions.assertIterableEquals(result.diagnostics(), List.of(
+                new DiagnosticMessage(ParserErrors.NotAStatement, new SingleLineTextRange(1, 1, 0, 3))));
+    }
+
+    @Test
+    public void notAStatementTest2() {
+        ParserOutput result = parse("""
+                a + b;
+                """);
+        Assertions.assertIterableEquals(result.diagnostics(), List.of(
+                new DiagnosticMessage(ParserErrors.NotAStatement, new SingleLineTextRange(1, 1, 0, 5))));
+    }
+
+    @Test
+    public void notAStatementTest3() {
+        ParserOutput result = parse("""
+                "ab";
+                """);
+        Assertions.assertIterableEquals(result.diagnostics(), List.of(
+                new DiagnosticMessage(ParserErrors.NotAStatement, new SingleLineTextRange(1, 1, 0, 4))));
+    }
+
+    @Test
+    public void notAStatementTest4() {
+        ParserOutput result = parse("""
+                (a == b);
+                """);
+        Assertions.assertIterableEquals(result.diagnostics(), List.of(
+                new DiagnosticMessage(ParserErrors.NotAStatement, new SingleLineTextRange(1, 1, 0, 8))));
+    }
+
     private ParserOutput parse(String code) {
         return new Parser(new Lexer(new LexerInput(code)).lex()).parse();
     }

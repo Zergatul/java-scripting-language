@@ -304,6 +304,7 @@ public class BinderTreeGenerator {
         if (isAsync(node)) {
             return switch (node.getNodeType()) {
                 case AWAIT_EXPRESSION -> rewriteAsync((BoundAwaitExpressionNode) node);
+                case PARENTHESIZED_EXPRESSION -> rewriteAsync((BoundParenthesizedExpressionNode) node);
                 case BINARY_EXPRESSION -> rewriteAsync((BoundBinaryExpressionNode) node);
                 case METHOD_INVOCATION_EXPRESSION -> rewriteAsync((BoundMethodInvocationExpressionNode) node);
                 case UNARY_EXPRESSION -> rewriteAsync((BoundUnaryExpressionNode) node);
@@ -324,6 +325,10 @@ public class BinderTreeGenerator {
         currentBoundary = boundary;
 
         return new BoundGeneratorGetValueNode(node.type);
+    }
+
+    public BoundExpressionNode rewriteAsync(BoundParenthesizedExpressionNode node) {
+        return rewriteExpression(node.inner);
     }
 
     private BoundExpressionNode rewriteAsync(BoundBinaryExpressionNode node) {

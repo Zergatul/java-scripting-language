@@ -1180,6 +1180,7 @@ public class Compiler {
             case FLOAT_LITERAL -> compileFloatLiteral(visitor, (BoundFloatLiteralExpressionNode) expression);
             case STRING_LITERAL -> compileStringLiteral(visitor, (BoundStringLiteralExpressionNode) expression);
             case CHAR_LITERAL -> compileCharLiteral(visitor, (BoundCharLiteralExpressionNode) expression);
+            case PARENTHESIZED_EXPRESSION -> compileExpression(visitor, context, ((BoundParenthesizedExpressionNode) expression).inner);
             case UNARY_EXPRESSION -> compileUnaryExpression(visitor, context, (BoundUnaryExpressionNode) expression);
             case BINARY_EXPRESSION -> compileBinaryExpression(visitor, context, (BoundBinaryExpressionNode) expression);
             case TYPE_TEST_EXPRESSION -> compileTypeTestExpression(visitor, context, (BoundTypeTestExpressionNode) expression);

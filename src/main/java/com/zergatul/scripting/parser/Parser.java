@@ -195,7 +195,7 @@ public class Parser {
             update = new EmptyStatementNode(current.getRange());
         } else {
             if (isPossibleSimpleStatement() && !isPossibleDeclaration()) {
-                update = parseSimpleStatementNotDeclaration();
+                update = parseSimpleStatementNotDeclaration(false);
             } else {
                 addDiagnostic(ParserErrors.SimpleStatementExpected, current, current.getRawValue(code));
                 update = new InvalidStatementNode(createMissingTokenRange());
@@ -330,7 +330,7 @@ public class Parser {
         if (isPossibleDeclaration()) {
             return parseVariableDeclaration();
         } else {
-            return parseSimpleStatementNotDeclaration();
+            return parseSimpleStatementNotDeclaration(false);
         }
     }
 
@@ -546,7 +546,7 @@ public class Parser {
                 statement = parseBlockStatement();
             } else if (current.type == TokenType.EQUAL_GREATER) {
                 advance();
-                statement = parseSimpleStatementNotDeclaration().updateWithSemicolon(advance(TokenType.SEMICOLON));
+                statement = parseSimpleStatementNotDeclaration(true).updateWithSemicolon(advance(TokenType.SEMICOLON));
             } else {
                 statement = createMissingBlockStatement();
                 addDiagnostic(ParserErrors.CurlyBracketOrArrowExpected, current, current.getRawValue(code));
@@ -663,7 +663,7 @@ public class Parser {
         }
     }
 
-    private StatementNode parseSimpleStatementNotDeclaration() {
+    private StatementNode parseSimpleStatementNotDeclaration(boolean canBeExpression) {
         // TODO: custom types
         ExpressionNode expression1 = parseExpression();
         AssignmentOperator assignment = switch (current.type) {
@@ -692,6 +692,16 @@ public class Parser {
                 }
                 return new PostfixStatementNode(NodeType.DECREMENT_STATEMENT, expression1, TextRange.combine(expression1, minusMinus));
             } else {
+                if (!canBeExpression) {
+                    NodeType nodeType = expression1.getNodeType();
+                    boolean notAStatement =
+                            nodeType != NodeType.INVOCATION_EXPRESSION &&
+                            nodeType != NodeType.OBJECT_CREATION_EXPRESSION &&
+                            nodeType != NodeType.AWAIT_EXPRESSION;
+                    if (notAStatement) {
+                        addDiagnostic(ParserErrors.NotAStatement, expression1);
+                    }
+                }
                 return new ExpressionStatementNode(expression1, expression1.getRange());
             }
         } else {
@@ -1123,10 +1133,10 @@ public class Parser {
     }
 
     private ExpressionNode parseParenthesizedExpression() {
-        advance(TokenType.LEFT_PARENTHESES);
+        Token openParen = advance(TokenType.LEFT_PARENTHESES);
         ExpressionNode expression = parseExpression();
-        advance(TokenType.RIGHT_PARENTHESES);
-        return expression;
+        Token closeParen = advance(TokenType.RIGHT_PARENTHESES);
+        return new ParenthesizedExpressionNode(expression, TextRange.combine(openParen, closeParen));
     }
 
     private ExpressionNode parseCollectionExpression() {
@@ -1201,7 +1211,7 @@ public class Parser {
             statement = parseBlockStatement();
         } else {
             if (isPossibleSimpleStatement() && !isPossibleDeclaration()) {
-                statement = parseSimpleStatementNotDeclaration();
+                statement = parseSimpleStatementNotDeclaration(true);
             } else {
                 statement = new InvalidStatementNode(createMissingTokenRange());
                 addDiagnostic(ParserErrors.SimpleStatementExpected, current, current.getRawValue(code));

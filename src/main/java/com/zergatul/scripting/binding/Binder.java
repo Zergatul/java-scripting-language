@@ -557,6 +557,7 @@ public class Binder {
             case FLOAT_LITERAL -> bindFloatLiteralExpression((FloatLiteralExpressionNode) expression);
             case STRING_LITERAL -> bindStringLiteralExpression((StringLiteralExpressionNode) expression);
             case CHAR_LITERAL -> bindCharLiteralExpression((CharLiteralExpressionNode) expression);
+            case PARENTHESIZED_EXPRESSION -> bindParenthesizedExpression((ParenthesizedExpressionNode) expression);
             case UNARY_EXPRESSION -> bindUnaryExpression((UnaryExpressionNode) expression);
             case BINARY_EXPRESSION -> bindBinaryExpression((BinaryExpressionNode) expression);
             case TYPE_TEST_EXPRESSION -> bindTypeTestExpression((TypeTestExpressionNode) expression);
@@ -581,6 +582,10 @@ public class Binder {
             case INVALID_EXPRESSION -> bindInvalidExpression((InvalidExpressionNode) expression);
             default -> throw new InternalException();
         };
+    }
+
+    private BoundParenthesizedExpressionNode bindParenthesizedExpression(ParenthesizedExpressionNode parenthesizedExpression) {
+        return new BoundParenthesizedExpressionNode(bindExpression(parenthesizedExpression.inner), parenthesizedExpression.getRange());
     }
 
     private BoundUnaryExpressionNode bindUnaryExpression(UnaryExpressionNode unary) {

@@ -254,6 +254,11 @@ public abstract class ParserTreeVisitor {
         node.acceptChildren(this);
     }
 
+    public void explicitVisit(ParenthesizedExpressionNode node) {
+        visit(node);
+        node.acceptChildren(this);
+    }
+
     public void explicitVisit(PostfixStatementNode node) {
         visit(node);
         node.acceptChildren(this);
@@ -389,6 +394,7 @@ public abstract class ParserTreeVisitor {
     public void visit(NameExpressionNode node) {}
     public void visit(ParameterListNode node) {}
     public void visit(ParameterNode node) {}
+    public void visit(ParenthesizedExpressionNode node) {}
     public void visit(PostfixStatementNode node) {}
     public void visit(PredefinedTypeNode node) {}
     public void visit(RefArgumentExpressionNode node) {}

@@ -26,6 +26,7 @@ public class ErrorRecoveryParserTests {
         Assertions.assertIterableEquals(
                 result.diagnostics(),
                 List.of(
+                        new DiagnosticMessage(ParserErrors.NotAStatement, new SingleLineTextRange(1, 1, 0, 9)),
                         new DiagnosticMessage(ParserErrors.SemicolonExpected, new SingleLineTextRange(1, 9, 8, 1))));
 
         Assertions.assertIterableEquals(
@@ -61,6 +62,7 @@ public class ErrorRecoveryParserTests {
                 result.diagnostics(),
                 List.of(
                         new DiagnosticMessage(ParserErrors.IdentifierExpected, new SingleLineTextRange(2, 1, 5, 7), "boolean"),
+                        new DiagnosticMessage(ParserErrors.NotAStatement, new SingleLineTextRange(1, 1, 0, 4)),
                         new DiagnosticMessage(ParserErrors.SemicolonExpected, new SingleLineTextRange(1, 4, 3, 1))));
 
         Assertions.assertIterableEquals(
@@ -210,6 +212,7 @@ public class ErrorRecoveryParserTests {
         Assertions.assertIterableEquals(
                 result.diagnostics(),
                 List.of(
+                        new DiagnosticMessage(ParserErrors.NotAStatement, new SingleLineTextRange(1, 1, 0, 1)),
                         new DiagnosticMessage(ParserErrors.SemicolonExpected, new SingleLineTextRange(1, 1, 0, 1))));
 
         Assertions.assertIterableEquals(

@@ -210,7 +210,25 @@ public class CompletionContext {
                 BoundForEachLoopStatementNode loop = (BoundForEachLoopStatementNode) entry.node;
                 yield TextRange.isBetween(line, column, loop.closeParen, loop.body);
             }
-            default -> false;
+            default -> {
+                // handle: <cursor>(expr).method();
+                if (entry.node instanceof BoundExpressionNode) {
+                    SearchEntry current = entry;
+                    while (current.parent != null) {
+                        current = current.parent;
+                        if (current.node instanceof BoundExpressionStatementNode) {
+                            if (current.node.getRange().getLine1() == line && current.node.getRange().getColumn1() == column) {
+                                yield true;
+                            }
+                            break;
+                        }
+                        if (!(current.node instanceof BoundExpressionNode)) {
+                            break;
+                        }
+                    }
+                }
+                yield false;
+            }
         };
     }
 
