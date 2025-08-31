@@ -281,6 +281,10 @@ public class CompletionContext {
             }
             case NAME_EXPRESSION -> {
                 yield switch (entry.parent.node.getNodeType()) {
+                    case VARIABLE_DECLARATION -> {
+                        BoundVariableDeclarationNode declarationNode = (BoundVariableDeclarationNode) entry.parent.node;
+                        yield declarationNode.name != entry.node;
+                    }
                     case PARAMETER -> false;
                     default -> true;
                 };

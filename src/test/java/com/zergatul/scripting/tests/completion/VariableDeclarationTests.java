@@ -105,6 +105,30 @@ public class VariableDeclarationTests {
                 context -> List.of());
     }
 
+    @Test
+    public void variableNameTest3() {
+        assertSuggestions("""
+                while (true) {
+                    let i<cursor>
+                }
+                """,
+                context -> List.of());
+    }
+
+    @Test
+    public void variableNameTest4() {
+        assertSuggestions("""
+                while (true) {
+                    let a = 123;
+                    let x = a<cursor>
+                }
+                """,
+                context -> Lists.of(
+                        expressions,
+                        new LocalVariableSuggestion(context, "a"),
+                        new StaticConstantSuggestion(context, "intStorage")));
+    }
+
     private void assertSuggestions(String code, Function<TestCompletionContext, List<Suggestion>> expectedFactory) {
         CompletionTestHelper.assertSuggestions(ApiRoot.class, code, expectedFactory);
     }
