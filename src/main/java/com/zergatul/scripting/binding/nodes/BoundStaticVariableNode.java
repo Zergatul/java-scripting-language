@@ -37,7 +37,16 @@ public class BoundStaticVariableNode extends BoundCompilationUnitMemberNode {
     }
 
     @Override
+    public boolean isOpen() {
+        return (expression != null && expression.isMissing()) || name.isMissing();
+    }
+
+    @Override
     public List<BoundNode> getChildren() {
-        return List.of(type, name, expression);
+        if (expression != null) {
+            return List.of(type, name, expression);
+        } else {
+            return List.of(type, name);
+        }
     }
 }

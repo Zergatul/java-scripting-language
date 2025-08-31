@@ -73,7 +73,16 @@ public class CompletionContext {
                 if (unit.getRange().endsWith(line, column)) {
                     return getAtLastContext(unit, line, column);
                 } else {
-                    if (unit.statements.isOpen()) {
+                    if (unit.members.isOpen() && unit.statements.statements.isEmpty()) {
+                        TextRange last = unit.members.members.getLast().getRange();
+                        line = last.getLine2();
+                        column = last.getColumn2();
+                        entry = find(null, unit, line, column);
+                        if (entry == null) {
+                            throw new InternalException();
+                        }
+                        return new CompletionContext(entry, line, column);
+                    } else if (unit.statements.isOpen()) {
                         TextRange last = unit.statements.statements.getLast().getRange();
                         line = last.getLine2();
                         column = last.getColumn2();
@@ -277,6 +286,15 @@ public class CompletionContext {
         }
 
         return switch (entry.node.getNodeType()) {
+            case STATIC_VARIABLE -> {
+                BoundStaticVariableNode variable = (BoundStaticVariableNode) entry.node;
+                if (variable.type.isMissing()) {
+                    yield variable.keyword.getRange().isBefore(line, column);
+                } else {
+                    yield false;
+                }
+            }
+
             case META_TYPE_EXPRESSION -> {
                 BoundMetaTypeExpressionNode meta = (BoundMetaTypeExpressionNode) entry.node;
                 yield TextRange.isBetween(line, column, meta.openParen, meta.closeParen);

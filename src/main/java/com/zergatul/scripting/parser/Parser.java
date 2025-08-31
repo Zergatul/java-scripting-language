@@ -1403,7 +1403,7 @@ public class Parser {
             }
             default -> {
                 addDiagnostic(ParserErrors.TypeExpected, current, current.getRawValue(code));
-                if (current.type == TokenType.RIGHT_PARENTHESES) {
+                if (current.type == TokenType.RIGHT_PARENTHESES || current.type == TokenType.END_OF_FILE) {
                     // TODO: add other token types
                     yield new InvalidTypeNode(createMissingTokenRangeAfterLast());
                 } else {

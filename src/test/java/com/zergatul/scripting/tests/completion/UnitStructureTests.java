@@ -74,6 +74,15 @@ public class UnitStructureTests {
                         new LocalVariableSuggestion(context, "x")));
     }
 
+    @Test
+    public void staticFieldTest() {
+        assertSuggestions("""
+                static <cursor>
+                """,
+                context -> Lists.of(
+                        types));
+    }
+
     private void assertSuggestions(String code, Function<TestCompletionContext, List<Suggestion>> expectedFactory) {
         CompletionTestHelper.assertSuggestions(ApiRoot.class, code, expectedFactory);
     }

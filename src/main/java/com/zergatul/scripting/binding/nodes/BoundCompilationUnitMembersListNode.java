@@ -29,6 +29,11 @@ public class BoundCompilationUnitMembersListNode extends BoundNode {
     }
 
     @Override
+    public boolean isOpen() {
+        return !members.isEmpty() && members.getLast().isOpen();
+    }
+
+    @Override
     public List<BoundNode> getChildren() {
         return List.copyOf(members);
     }
