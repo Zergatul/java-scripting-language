@@ -4,6 +4,7 @@ import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
 import com.zergatul.scripting.lexer.Token;
 import com.zergatul.scripting.parser.NodeType;
+import com.zergatul.scripting.parser.nodes.StaticVariableNode;
 
 import java.util.List;
 
@@ -12,13 +13,19 @@ public class BoundStaticVariableNode extends BoundCompilationUnitMemberNode {
     public final Token keyword;
     public final BoundTypeNode type;
     public final BoundNameExpressionNode name;
+    public final Token equal;
     public final BoundExpressionNode expression;
 
-    public BoundStaticVariableNode(Token keyword, BoundTypeNode type, BoundNameExpressionNode name, BoundExpressionNode expression, TextRange range) {
+    public BoundStaticVariableNode(BoundTypeNode type, BoundNameExpressionNode name, BoundExpressionNode expression, StaticVariableNode node) {
+        this(node.keyword, type, name, node.equal, expression, node.getRange());
+    }
+
+    public BoundStaticVariableNode(Token keyword, BoundTypeNode type, BoundNameExpressionNode name, Token equal, BoundExpressionNode expression, TextRange range) {
         super(NodeType.STATIC_VARIABLE, range);
         this.keyword = keyword;
         this.type = type;
         this.name = name;
+        this.equal = equal;
         this.expression = expression;
     }
 

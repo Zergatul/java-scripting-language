@@ -6,6 +6,7 @@ import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.BinderOutput;
 import com.zergatul.scripting.binding.nodes.*;
 import com.zergatul.scripting.parser.NodeType;
+import com.zergatul.scripting.parser.PredefinedType;
 
 import java.util.List;
 
@@ -253,10 +254,22 @@ public class CompletionContext {
         }
 
         return switch (entry.node.getNodeType()) {
+            case STATIC_VARIABLE -> {
+                BoundStaticVariableNode variableNode = (BoundStaticVariableNode) entry.node;
+                if (variableNode.equal == null) {
+                    yield false;
+                } else {
+                    yield variableNode.equal.getRange().isBefore(line, column);
+                }
+            }
             case IF_STATEMENT -> {
                 BoundIfStatementNode statement = (BoundIfStatementNode) entry.node;
                 // if (<cursor> <condition>
                 yield TextRange.isBetween2(line, column, statement.lParen, statement.condition);
+            }
+            case ASSIGNMENT_STATEMENT -> {
+                BoundAssignmentStatementNode statement = (BoundAssignmentStatementNode) entry.node;
+                yield statement.operator.getRange().isBefore(line, column);
             }
             case LAMBDA_EXPRESSION -> {
                 BoundLambdaExpressionNode lambda = (BoundLambdaExpressionNode) entry.node;
@@ -271,6 +284,9 @@ public class CompletionContext {
                     case PARAMETER -> false;
                     default -> true;
                 };
+            }
+            case ASSIGNMENT_OPERATOR -> {
+                yield up().canExpression();
             }
             default -> canStatement();
         };

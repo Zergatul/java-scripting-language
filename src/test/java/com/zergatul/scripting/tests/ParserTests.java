@@ -106,6 +106,7 @@ public class ParserTests {
                                 new BinaryOperatorNode(BinaryOperator.PLUS, new SingleLineTextRange(1, 7, 6, 1)),
                                 new NameExpressionNode("c", new SingleLineTextRange(1, 9, 8, 1)),
                                 new SingleLineTextRange(1, 5, 4, 5)),
+                        new Token(TokenType.SEMICOLON, new SingleLineTextRange(1, 10, 9, 1)),
                         new SingleLineTextRange(1, 1, 0, 10))),
                         new SingleLineTextRange(1, 1, 0, 10)),
                 new SingleLineTextRange(1, 1, 0, 10)));
@@ -122,21 +123,25 @@ public class ParserTests {
                         new NameExpressionNode("a", new SingleLineTextRange(1, 1, 0, 1)),
                         new AssignmentOperatorNode(AssignmentOperator.PLUS_ASSIGNMENT, new SingleLineTextRange(1, 3, 2, 2)),
                         new IntegerLiteralExpressionNode("10", new SingleLineTextRange(1, 6, 5, 2)),
+                        new Token(TokenType.SEMICOLON, new SingleLineTextRange(1, 8, 7, 1)),
                         new SingleLineTextRange(1, 1, 0, 8)),
                 new AssignmentStatementNode(
                         new NameExpressionNode("b", new SingleLineTextRange(1, 10, 9, 1)),
                         new AssignmentOperatorNode(AssignmentOperator.MINUS_ASSIGNMENT, new SingleLineTextRange(1, 12, 11, 2)),
                         new IntegerLiteralExpressionNode("15", new SingleLineTextRange(1, 15, 14, 2)),
+                        new Token(TokenType.SEMICOLON, new SingleLineTextRange(1, 17, 16, 1)),
                         new SingleLineTextRange(1, 10, 9, 8)),
                 new AssignmentStatementNode(
                         new NameExpressionNode("c", new SingleLineTextRange(1, 19, 18, 1)),
                         new AssignmentOperatorNode(AssignmentOperator.MULTIPLY_ASSIGNMENT, new SingleLineTextRange(1, 21, 20, 2)),
                         new IntegerLiteralExpressionNode("2", new SingleLineTextRange(1, 24, 23, 1)),
+                        new Token(TokenType.SEMICOLON, new SingleLineTextRange(1, 25, 24, 1)),
                         new SingleLineTextRange(1, 19, 18, 7)),
                 new AssignmentStatementNode(
                         new NameExpressionNode("d", new SingleLineTextRange(1, 27, 26, 1)),
                         new AssignmentOperatorNode(AssignmentOperator.DIVIDE_ASSIGNMENT, new SingleLineTextRange(1, 29, 28, 2)),
                         new IntegerLiteralExpressionNode("2", new SingleLineTextRange(1, 32, 31, 1)),
+                        new Token(TokenType.SEMICOLON, new SingleLineTextRange(1, 33, 32, 1)),
                         new SingleLineTextRange(1, 27, 26, 7))),
                 new SingleLineTextRange(1, 1, 0, 33)),
                 new SingleLineTextRange(1, 1, 0, 33)));
@@ -182,6 +187,7 @@ public class ParserTests {
                                         new NameExpressionNode("b", new SingleLineTextRange(1, 6, 5, 1)),
                                         new SingleLineTextRange(1, 5, 4, 2)
                                 ),
+                                new Token(TokenType.SEMICOLON, new SingleLineTextRange(1, 7, 6, 1)),
                                 new SingleLineTextRange(1, 1, 0, 7))),
                         new SingleLineTextRange(1, 1, 0, 7)),
                 new SingleLineTextRange(1, 1, 0, 7)));
@@ -195,10 +201,11 @@ public class ParserTests {
                 new CompilationUnitMembersListNode(List.of(), new SingleLineTextRange(1, 1, 0, 0)),
                 new StatementsListNode(List.of(
                         new AssignmentStatementNode(
-                            new NameExpressionNode("x", new SingleLineTextRange(1, 1, 0, 1)),
-                            new AssignmentOperatorNode(AssignmentOperator.ASSIGNMENT, new SingleLineTextRange(1, 3, 2, 1)),
-                            new IntegerLiteralExpressionNode("-100", new SingleLineTextRange(1, 5, 4, 4)),
-                            new SingleLineTextRange(1, 1, 0, 9))),
+                                new NameExpressionNode("x", new SingleLineTextRange(1, 1, 0, 1)),
+                                new AssignmentOperatorNode(AssignmentOperator.ASSIGNMENT, new SingleLineTextRange(1, 3, 2, 1)),
+                                new IntegerLiteralExpressionNode("-100", new SingleLineTextRange(1, 5, 4, 4)),
+                                new Token(TokenType.SEMICOLON, new SingleLineTextRange(1, 9, 8, 1)),
+                                new SingleLineTextRange(1, 1, 0, 9))),
                         new SingleLineTextRange(1, 1, 0, 9)),
                 new SingleLineTextRange(1, 1, 0, 9)));
     }
@@ -218,6 +225,7 @@ public class ParserTests {
                                         new BinaryOperatorNode(BinaryOperator.PLUS, new SingleLineTextRange(1, 8, 7, 1)),
                                         new IntegerLiteralExpressionNode("1", new SingleLineTextRange(1, 10, 9, 1)),
                                         new SingleLineTextRange(1, 5, 4, 6)),
+                                new Token(TokenType.SEMICOLON, new SingleLineTextRange(1, 11, 10, 1)),
                                 new SingleLineTextRange(1, 1, 0, 11))),
                         new SingleLineTextRange(1, 1, 0, 11)),
                 new SingleLineTextRange(1, 1, 0, 11)));
@@ -238,6 +246,7 @@ public class ParserTests {
                                         new NameExpressionNode("b", new SingleLineTextRange(1, 8, 7, 1)),
                                         new AssignmentOperatorNode(AssignmentOperator.ASSIGNMENT, new SingleLineTextRange(1, 10, 9, 1)),
                                         new IntegerLiteralExpressionNode("3", new SingleLineTextRange(1, 12, 11, 1)),
+                                        new Token(TokenType.SEMICOLON, new SingleLineTextRange(1, 13, 12, 1)),
                                         new SingleLineTextRange(1, 8, 7, 6)),
                                 null,
                                 new SingleLineTextRange(1, 1, 0, 13))),
@@ -260,6 +269,7 @@ public class ParserTests {
                                         new NameExpressionNode("b", new SingleLineTextRange(1, 8, 7, 1)),
                                         new AssignmentOperatorNode(AssignmentOperator.ASSIGNMENT, new SingleLineTextRange(1, 10, 9, 1)),
                                         new IntegerLiteralExpressionNode("3", new SingleLineTextRange(1, 12, 11, 1)),
+                                        new Token(TokenType.SEMICOLON, new SingleLineTextRange(1, 13, 12, 1)),
                                         new SingleLineTextRange(1, 8, 7, 6)),
                                 new BlockStatementNode(List.of(), new SingleLineTextRange(1, 18, 17, 2)),
                                 new SingleLineTextRange(1, 1, 0, 19))),

@@ -10,6 +10,7 @@ import com.zergatul.scripting.lexer.Lexer;
 import com.zergatul.scripting.lexer.LexerInput;
 import com.zergatul.scripting.parser.Parser;
 import com.zergatul.scripting.tests.completion.suggestions.Suggestion;
+import com.zergatul.scripting.type.SType;
 import org.junit.jupiter.api.Assertions;
 
 import java.util.ArrayList;
@@ -20,12 +21,8 @@ public class CompletionTestHelper {
 
     private static final String CURSOR = "<cursor>";
 
-    public static void assertSuggestions_old(Class<?> root, String code, Function<TestCompletionContext, List<Suggestion>> expectedFactory) {
-        assertSuggestions_old(root, code, Runnable.class, expectedFactory);
-    }
-
     public static void assertSuggestions(Class<?> root, String code, Function<TestCompletionContext, List<Suggestion>> expectedFactory) {
-        assertSuggestions(root, code, Runnable.class, expectedFactory);
+        assertSuggestions(root, code, Runnable.class, null, expectedFactory);
     }
 
     public static void assertSuggestions_old(
@@ -71,8 +68,9 @@ public class CompletionTestHelper {
             Class<?> root,
             String code,
             Class<?> functionalInterface,
+            SType asyncReturnType,
             Function<TestCompletionContext,
-                    List<Suggestion>> expectedFactory
+            List<Suggestion>> expectedFactory
     ) {
         if (!code.contains(CURSOR)) {
             Assertions.fail();
@@ -99,6 +97,7 @@ public class CompletionTestHelper {
         CompilationParameters parameters = new CompilationParametersBuilder()
                 .setRoot(root)
                 .setInterface(functionalInterface)
+                .setAsyncReturnType(asyncReturnType)
                 .build();
         BinderOutput output = new Binder(new Parser(new Lexer(new LexerInput(code)).lex()).parse(), parameters).bind();
         CompletionProviderFactory<Suggestion> factory = new CompletionProviderFactory<>(new TestSuggestionFactory());

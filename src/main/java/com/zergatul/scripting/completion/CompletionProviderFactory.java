@@ -16,6 +16,8 @@ public class CompletionProviderFactory<T> {
                 new UnitMemberCompletionProvider<>(factory),
                 new StaticConstantsCompletionProvider<>(factory),
                 new ConstructorCompletionProvider<>(factory),
+                new AsyncCompletionProvider<>(factory),
+                new AwaitCompletionProvider<>(factory),
                 new TypesCompletionProvider<>(factory),
                 new VoidCompletionProvider<>(factory),
                 new FunctionsCompletionProvider<>(factory),

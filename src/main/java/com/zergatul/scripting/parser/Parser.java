@@ -400,30 +400,30 @@ public class Parser {
         TypeNode type = parseTypeNode();
         if (current.type != TokenType.IDENTIFIER) {
             IdentifierToken identifier = new IdentifierToken("", createMissingTokenRangeAfterLast());
-            return new StaticVariableNode(keyword, type, new NameExpressionNode(identifier), null, TextRange.combine(keyword, identifier));
+            return new StaticVariableNode(keyword, type, new NameExpressionNode(identifier), null, null, TextRange.combine(keyword, identifier));
         }
 
         NameExpressionNode name = new NameExpressionNode((IdentifierToken) advance());
         switch (current.type) {
             case SEMICOLON -> {
                 Token semicolon = advance();
-                return new StaticVariableNode(keyword, type, name, null, TextRange.combine(keyword, semicolon));
+                return new StaticVariableNode(keyword, type, name, null, null, TextRange.combine(keyword, semicolon));
             }
             case EQUAL -> {
-                advance();
+                Token equal = advance();
                 if (isPossibleExpression()) {
                     ExpressionNode expression = parseExpression();
                     Token semicolon = advance();
-                    return new StaticVariableNode(keyword, type, name, expression, TextRange.combine(keyword, semicolon));
+                    return new StaticVariableNode(keyword, type, name, equal, expression, TextRange.combine(keyword, semicolon));
                 } else {
                     addDiagnostic(ParserErrors.ExpressionExpected, current, current.getRawValue(code));
                     ExpressionNode invalid = new InvalidExpressionNode(createMissingTokenRange());
-                    return new StaticVariableNode(keyword, type, name, invalid, TextRange.combine(keyword, invalid));
+                    return new StaticVariableNode(keyword, type, name, equal, invalid, TextRange.combine(keyword, invalid));
                 }
             }
             default -> {
                 addDiagnostic(ParserErrors.SemicolonOrEqualExpected, current, current.getRawValue(code));
-                return new StaticVariableNode(keyword, type, name, null, TextRange.combine(type, name));
+                return new StaticVariableNode(keyword, type, name, null, null, TextRange.combine(type, name));
             }
         }
     }
@@ -718,6 +718,7 @@ public class Parser {
                     expression1,
                     new AssignmentOperatorNode(assignment, assignmentToken.getRange()),
                     expression2,
+                    null,
                     TextRange.combine(expression1, expression2));
         }
     }

@@ -88,11 +88,10 @@ public class Binder {
                 staticVariableNode.name.getRange());
 
         return new BoundStaticVariableNode(
-                staticVariableNode.keyword,
                 typeNode,
                 name,
                 expression,
-                staticVariableNode.getRange());
+                staticVariableNode);
     }
 
     private BoundFunctionNode bindFunction(FunctionNode functionNode) {
@@ -291,7 +290,7 @@ public class Binder {
 
         if (operator.operator == AssignmentOperator.ASSIGNMENT) {
             right = convert(right, left.type);
-            return new BoundAssignmentStatementNode(left, operator, right, statement.getRange());
+            return new BoundAssignmentStatementNode(left, operator, right, statement);
         }
 
         BinaryOperation operation = left.type.binary(operator.operator.getBinaryOperator(), right.type);

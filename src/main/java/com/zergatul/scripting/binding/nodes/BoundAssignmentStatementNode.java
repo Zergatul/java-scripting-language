@@ -2,7 +2,10 @@ package com.zergatul.scripting.binding.nodes;
 
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
+import com.zergatul.scripting.lexer.Token;
 import com.zergatul.scripting.parser.NodeType;
+import com.zergatul.scripting.parser.nodes.AssignmentStatementNode;
+import com.zergatul.scripting.parser.nodes.StatementNode;
 
 import java.util.List;
 
@@ -11,16 +14,22 @@ public class BoundAssignmentStatementNode extends BoundStatementNode {
     public final BoundExpressionNode left;
     public final BoundAssignmentOperatorNode operator;
     public final BoundExpressionNode right;
+    public final Token semicolon;
 
     public BoundAssignmentStatementNode(BoundExpressionNode left, BoundAssignmentOperatorNode operator, BoundExpressionNode right) {
-        this(left, operator, right, null);
+        this(left, operator, right, null, null);
     }
 
-    public BoundAssignmentStatementNode(BoundExpressionNode left, BoundAssignmentOperatorNode operator, BoundExpressionNode right, TextRange range) {
+    public BoundAssignmentStatementNode(BoundExpressionNode left, BoundAssignmentOperatorNode operator, BoundExpressionNode right, AssignmentStatementNode node) {
+        this(left, operator, right, node.semicolon, node.getRange());
+    }
+
+    public BoundAssignmentStatementNode(BoundExpressionNode left, BoundAssignmentOperatorNode operator, BoundExpressionNode right, Token semicolon, TextRange range) {
         super(NodeType.ASSIGNMENT_STATEMENT, range);
         this.left = left;
         this.operator = operator;
         this.right = right;
+        this.semicolon = semicolon;
     }
 
     @Override
@@ -33,6 +42,11 @@ public class BoundAssignmentStatementNode extends BoundStatementNode {
         left.accept(visitor);
         operator.accept(visitor);
         right.accept(visitor);
+    }
+
+    @Override
+    public boolean isOpen() {
+        return semicolon == null || semicolon.isMissing();
     }
 
     @Override

@@ -10,13 +10,15 @@ public class StaticVariableNode extends CompilationUnitMemberNode {
     public final Token keyword;
     public final TypeNode type;
     public final NameExpressionNode name;
+    public final Token equal;
     public final ExpressionNode expression;
 
-    public StaticVariableNode(Token keyword, TypeNode type, NameExpressionNode name, ExpressionNode expression, TextRange range) {
+    public StaticVariableNode(Token keyword, TypeNode type, NameExpressionNode name, Token equal, ExpressionNode expression, TextRange range) {
         super(NodeType.STATIC_VARIABLE, range);
         this.keyword = keyword;
         this.type = type;
         this.name = name;
+        this.equal = equal;
         this.expression = expression;
     }
 

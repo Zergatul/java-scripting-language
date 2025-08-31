@@ -1,5 +1,6 @@
 package com.zergatul.scripting.tests.completion;
 
+import com.zergatul.scripting.lexer.TokenType;
 import com.zergatul.scripting.tests.compiler.helpers.IntStorage;
 import com.zergatul.scripting.tests.completion.helpers.CompletionTestHelper;
 import com.zergatul.scripting.tests.completion.helpers.Lists;
@@ -21,6 +22,7 @@ public class UnitStructureTests {
                 context -> Lists.of(
                         unitMembers,
                         statements,
+                        new KeywordSuggestion(TokenType.ASYNC),
                         new StaticConstantSuggestion(context, "intStorage")));
     }
 
@@ -32,7 +34,8 @@ public class UnitStructureTests {
                 """,
                 context -> Lists.of(
                         unitMembers,
-                        types));
+                        types,
+                        new KeywordSuggestion(TokenType.ASYNC)));
     }
 
     @Test
@@ -44,6 +47,7 @@ public class UnitStructureTests {
                 context -> Lists.of(
                         unitMembers,
                         statements,
+                        new KeywordSuggestion(TokenType.ASYNC),
                         new StaticConstantSuggestion(context, "intStorage"),
                         new StaticFieldSuggestion(context, "x")));
     }
@@ -58,6 +62,7 @@ public class UnitStructureTests {
                 context -> Lists.of(
                         unitMembers,
                         statements,
+                        new KeywordSuggestion(TokenType.ASYNC),
                         new StaticConstantSuggestion(context, "intStorage"),
                         new StaticFieldSuggestion(context, "x")));
     }
