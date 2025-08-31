@@ -26,6 +26,10 @@ public abstract class Node implements Locatable {
         return this.range;
     }
 
+    public boolean isMissing() {
+        return this.range.isEmpty();
+    }
+
     @Override
     public boolean equals(Object obj) {
         throw new RuntimeException("Not implemented");

@@ -76,6 +76,15 @@ public class FunctionTests {
                         new LocalVariableSuggestion(context, "x")));
     }
 
+    @Test
+    public void asyncFunctionTest() {
+        assertSuggestions("""
+                async <cursor>
+                """,
+                context -> Lists.of(
+                        types));
+    }
+
     private void assertSuggestions(String code, Function<TestCompletionContext, List<Suggestion>> expectedFactory) {
         CompletionTestHelper.assertSuggestions(ApiRoot.class, code, expectedFactory);
     }

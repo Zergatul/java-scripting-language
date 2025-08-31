@@ -133,7 +133,7 @@ public class Binder {
                 declaration.getParameters(),
                 statement,
                 context.getLifted(),
-                functionNode.getRange());
+                functionNode);
 
         popScope();
 

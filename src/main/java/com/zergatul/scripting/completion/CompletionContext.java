@@ -311,6 +311,16 @@ public class CompletionContext {
                 }
             }
 
+            case FUNCTION -> {
+                BoundFunctionNode functionNode = (BoundFunctionNode) entry.node;
+                if (functionNode.modifiers.getRange().isBefore(line, column)) {
+                    if (functionNode.returnType.isMissing() || functionNode.returnType.getRange().getEnd().isAfter(line, column)) {
+                        yield true;
+                    }
+                }
+                yield false;
+            }
+
             case META_TYPE_EXPRESSION -> {
                 BoundMetaTypeExpressionNode meta = (BoundMetaTypeExpressionNode) entry.node;
                 yield TextRange.isBetween(line, column, meta.openParen, meta.closeParen);

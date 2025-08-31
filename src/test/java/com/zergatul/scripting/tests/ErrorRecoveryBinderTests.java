@@ -14,6 +14,7 @@ import com.zergatul.scripting.lexer.LexerInput;
 import com.zergatul.scripting.lexer.Token;
 import com.zergatul.scripting.lexer.TokenType;
 import com.zergatul.scripting.parser.*;
+import com.zergatul.scripting.parser.nodes.ModifiersNode;
 import com.zergatul.scripting.symbols.Function;
 import com.zergatul.scripting.symbols.ImmutableSymbolRef;
 import com.zergatul.scripting.symbols.LocalVariable;
@@ -84,6 +85,7 @@ public class ErrorRecoveryBinderTests {
                 new BoundCompilationUnitMembersListNode(
                         List.of(
                                 new BoundFunctionNode(
+                                        new ModifiersNode(List.of(), new SingleLineTextRange(1, 1, 0, 0)),
                                         false,
                                         new BoundPredefinedTypeNode(SInt.instance, new SingleLineTextRange(1, 1, 0, 3)),
                                         new BoundNameExpressionNode(

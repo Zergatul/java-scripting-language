@@ -528,6 +528,20 @@ public class Parser {
     private FunctionNode parseFunction() {
         ModifiersNode modifiers = parseModifiers();
         TypeNode returnType = parseTypeOrVoidNode();
+        if (returnType.isMissing()) {
+            TextRange range = createMissingTokenRangeAfterLast();
+            return new FunctionNode(
+                    modifiers,
+                    returnType,
+                    new NameExpressionNode("", range),
+                    new ParameterListNode(
+                            new Token(TokenType.LEFT_PARENTHESES, range),
+                            List.of(),
+                            new Token(TokenType.RIGHT_PARENTHESES, range),
+                            range),
+                    new InvalidStatementNode(range),
+                    TextRange.combine(modifiers, returnType));
+        }
 
         IdentifierToken identifier;
         if (current.type == TokenType.IDENTIFIER) {
