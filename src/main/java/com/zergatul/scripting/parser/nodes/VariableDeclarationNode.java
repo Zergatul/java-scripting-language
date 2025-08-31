@@ -36,6 +36,11 @@ public class VariableDeclarationNode extends StatementNode {
     }
 
     @Override
+    public boolean isOpen() {
+        return (semicolon != null && semicolon.isMissing()) || (expression != null && expression.isMissing()) || name.isMissing();
+    }
+
+    @Override
     public void acceptChildren(ParserTreeVisitor visitor) {
         type.accept(visitor);
         name.accept(visitor);
@@ -50,7 +55,7 @@ public class VariableDeclarationNode extends StatementNode {
             return  other.type.equals(type) &&
                     other.name.equals(name) &&
                     Objects.equals(other.expression, expression) &&
-                    other.semicolon.equals(semicolon) &&
+                    Objects.equals(other.semicolon, semicolon) &&
                     other.getRange().equals(getRange());
         } else {
             return false;

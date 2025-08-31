@@ -87,6 +87,24 @@ public class VariableDeclarationTests {
                         LocalVariableSuggestion.getParameter(context, "c")));
     }
 
+    @Test
+    public void variableNameTest1() {
+        assertSuggestions("""
+                let <cursor>
+                """,
+                context -> List.of());
+    }
+
+    @Test
+    public void variableNameTest2() {
+        assertSuggestions("""
+                while (true) {
+                    let <cursor>
+                }
+                """,
+                context -> List.of());
+    }
+
     private void assertSuggestions(String code, Function<TestCompletionContext, List<Suggestion>> expectedFactory) {
         CompletionTestHelper.assertSuggestions(ApiRoot.class, code, expectedFactory);
     }

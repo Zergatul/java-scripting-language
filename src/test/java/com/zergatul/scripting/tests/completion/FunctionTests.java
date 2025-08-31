@@ -78,13 +78,21 @@ public class FunctionTests {
     }
 
     @Test
-    public void asyncFunctionTest() {
+    public void asyncFunctionTest1() {
         assertSuggestions("""
                 async <cursor>
                 """,
                 context -> Lists.of(
                         types,
                         new KeywordSuggestion(TokenType.VOID)));
+    }
+
+    @Test
+    public void asyncFunctionTest2() {
+        assertSuggestions("""
+                async void <cursor>
+                """,
+                context -> List.of());
     }
 
     private void assertSuggestions(String code, Function<TestCompletionContext, List<Suggestion>> expectedFactory) {

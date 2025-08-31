@@ -243,8 +243,7 @@ public class ErrorRecoveryParserTests {
         Assertions.assertIterableEquals(
                 result.diagnostics(),
                 List.of(
-                        new DiagnosticMessage(ParserErrors.IdentifierExpected, new SingleLineTextRange(2, 1, 4, 7), "freeCam."),
-                        new DiagnosticMessage(ParserErrors.SemicolonExpected, new SingleLineTextRange(1, 1, 0, 3))));
+                        new DiagnosticMessage(ParserErrors.IdentifierExpected, new SingleLineTextRange(2, 1, 4, 7), "freeCam.")));
 
         Assertions.assertIterableEquals(
                 result.unit().statements.statements,
@@ -253,8 +252,8 @@ public class ErrorRecoveryParserTests {
                                 new PredefinedTypeNode(PredefinedType.INT, new SingleLineTextRange(1, 1, 0, 3)),
                                 new NameExpressionNode("", new SingleLineTextRange(2, 1, 4, 0)),
                                 null,
-                                new Token(TokenType.SEMICOLON, new SingleLineTextRange(1, 4, 3, 0)),
-                                new SingleLineTextRange(1, 1, 0, 3)),
+                                null,
+                                new MultiLineTextRange(1, 1, 2, 1, 0, 4)),
                         new ExpressionStatementNode(
                                 new InvocationExpressionNode(
                                         new MemberAccessExpressionNode(
