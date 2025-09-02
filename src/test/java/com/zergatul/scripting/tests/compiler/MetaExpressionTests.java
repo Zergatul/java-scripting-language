@@ -2,7 +2,6 @@ package com.zergatul.scripting.tests.compiler;
 
 import com.zergatul.scripting.DiagnosticMessage;
 import com.zergatul.scripting.SingleLineTextRange;
-import com.zergatul.scripting.binding.BinderErrors;
 import com.zergatul.scripting.parser.ParserErrors;
 import com.zergatul.scripting.tests.compiler.helpers.BoolStorage;
 import com.zergatul.scripting.tests.compiler.helpers.FloatStorage;
@@ -93,6 +92,21 @@ public class MetaExpressionTests {
                 messages,
                 List.of(
                         new DiagnosticMessage(ParserErrors.TypeExpected, new SingleLineTextRange(1, 15, 14, 1), "1")));
+    }
+
+    @Test
+    public void synonymsTest() {
+        String code = """
+                boolStorage.add(#type(int) == #type(int32));
+                boolStorage.add(#type(long) == #type(int64));
+                boolStorage.add(#type(float) == #type(float64));
+                boolStorage.add(#type(int) == #type(int16));
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(ApiRoot.boolStorage.list, List.of(true, true, true, false));
     }
 
     public static class ApiRoot {

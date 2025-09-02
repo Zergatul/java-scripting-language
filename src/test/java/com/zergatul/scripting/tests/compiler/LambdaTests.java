@@ -629,6 +629,23 @@ public class LambdaTests {
     }
 
     @Test
+    public void localVariableShadowTest() {
+        String code = """
+                int x = 100;
+                fn<int => int> add = a => {
+                    int x = 7;
+                    return a + x;
+                };
+                intStorage.add(add(5));
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(12));
+    }
+
+    @Test
     public void failedArguments1Test() {
         String code = """
                 run.once(10, () => {});

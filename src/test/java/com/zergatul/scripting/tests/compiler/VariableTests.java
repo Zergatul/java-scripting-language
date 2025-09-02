@@ -121,13 +121,13 @@ public class VariableTests {
     public void variableAsStaticConstantTest() {
         String code = """
                 let run = 123;
+                intStorage.add(run);
                 """;
 
-        List<DiagnosticMessage> messages = getDiagnostics(ApiRoot.class, code);
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
 
-        Assertions.assertIterableEquals(
-                messages,
-                List.of(new DiagnosticMessage(BinderErrors.SymbolAlreadyDeclared, new SingleLineTextRange(1, 5, 4, 3), "run")));
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(123));
     }
 
     public static class ApiRoot {

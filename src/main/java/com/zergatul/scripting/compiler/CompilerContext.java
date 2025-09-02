@@ -270,6 +270,19 @@ public class CompilerContext {
         return staticSymbols.values();
     }
 
+    public boolean hasLocalSymbol(String name) {
+        CompilerContext current = this;
+        while (true) {
+            if (current.localSymbols.containsKey(name)) {
+                return true;
+            }
+            if (current.isFunctionRoot) {
+                return false;
+            }
+            current = current.parent;
+        }
+    }
+
     public SymbolRef getSymbol(String name) {
         List<CompilerContext> functions = List.of(); // function boundaries
         for (CompilerContext context = this; context != null; ) {
@@ -283,12 +296,7 @@ public class CompilerContext {
                         LiftedVariable lifted = new LiftedVariable(localSymbolRef.asLocalVariable());
                         localSymbolRef.set(lifted); // updates all references
                         original = lifted;
-                        /*for (BoundNameExpressionNode nameExpression : localSymbolRef.getReferences()) {
-                            nameExpression.symbolRef.set(lifted);
-                        }*/
                         context.getFunctionContext().lifted.add(lifted);
-                        // no need???
-                        //context.insertLocalVariable(localSymbol); // replace local variable with lifted
                     }
 
                     Variable prev = original;

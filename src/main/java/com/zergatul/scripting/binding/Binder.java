@@ -359,9 +359,9 @@ public class Binder {
             }
         }
 
-        SymbolRef existingRef = context.getSymbol(variableDeclaration.name.value);
+        boolean exists = context.hasLocalSymbol(variableDeclaration.name.value);
         SymbolRef symbolRef;
-        if (existingRef != null) {
+        if (exists) {
             symbolRef = new InvalidSymbolRef();
             addDiagnostic(
                     BinderErrors.SymbolAlreadyDeclared,

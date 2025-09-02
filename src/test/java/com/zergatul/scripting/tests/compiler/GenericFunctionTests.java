@@ -251,6 +251,20 @@ public class GenericFunctionTests {
         Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(9, 25));
     }
 
+    @Test
+    public void localFunctionCaptureTest() {
+        String code = """
+                int x = 3;
+                fn<int => int> add = a => a + x;
+                intStorage.add(add(5));
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(8));
+    }
+
     public static class ApiRoot {
         public static BoolStorage boolStorage;
         public static IntStorage intStorage;
