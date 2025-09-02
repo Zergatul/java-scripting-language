@@ -10,6 +10,7 @@ This scripting language allows mod users to create custom scripts, bind them to 
 It is lightweight, async-friendly, and designed to interop with Java APIs where needed.
 
 # Short list of supported features
+- [Hello World](#hello-world)
 - [Basic Types](#basic-types)
 - [Variables](#variables)
 - [Arrays](#arrays)
@@ -32,6 +33,11 @@ It is lightweight, async-friendly, and designed to interop with Java APIs where 
 - [Java Interop](#java-interop)
 - [Limitations](#limitations)
 - [Comparison Table](#comparison-table)
+
+### Hello World
+```c#
+debug.write("Hello World!");
+```
 
 ### Basic Types
 - `boolean`
@@ -68,7 +74,7 @@ int[] a2 = [7, 8, 9];
 int[] a3 = a1 + a2 + 10; // a3=[1,2,3,7,8,9,10]
 ```
 
-Array length is static, it cannot be resized. "+" operation always creates new array.
+Array length is **static**, it cannot be resized. "+" operation always creates new array.
 
 ### Static variables
 Static variables should be defined in the beginning of the script, along with functions/classes.
@@ -156,6 +162,14 @@ void func(int x) {} // will not compile
 ```
 
 #### Lambda Functions
+Subscribing to event:
+```c#
+events.onTickEnd(() => {
+    debug.write("Tick: #" + game.getTick());
+});
+```
+
+Using lambda for filtering:
 ```c#
 inventory.findAndMoveToHotbar(1, (stack) => {
     return stack.item.id == "minecraft:wooden_sword";
@@ -192,7 +206,7 @@ void test(fn<int => void> func) {
 }
 
 let my = new MyClass();
-test(my.method); // prints "100"
+test(my.method); // prints "100", captures "my" variable into closure
 ```
 
 #### Functional Types
@@ -217,7 +231,7 @@ fn<int => int> add3 = a => a + x;
 debug.write(add3(5).toString()); // writes 8
 ```
 
-Functions can be casted to functional type:
+Functions can be cast to functional type:
 ```c#
 void write(string value) {
     debug.write(value);
@@ -263,10 +277,10 @@ async void loop() {
 
 loop();
 loop();
-// 2 loop's will run at the same time
+// 2 loops will run at the same time
 ```
 
-Async functions can also return some value:
+Async functions can also return any type:
 ```c#
 async int waitForChestAndCountItems(string itemId) {
     while (containers.getMenuClass() != "net.minecraft.world.inventory.ChestMenu") {
@@ -306,6 +320,8 @@ if (possiblyNull is ExpectedType) {
     // possiblyNull == null
 }
 ```
+
+Normally APIs to be used from scripting language should not return or expect `null`. There is no simple way to assign/pass `null` value.
 
 ### Reflection
 ```c#
@@ -367,19 +383,22 @@ table.put("qq", "ww");
 debug.write(table.get("qq").toString());  // ww
 debug.write(table.get(200).toString());   // true
 debug.write(table.get(false).toString()); // 100
+
+// if you need to cast Object to specific type
+let obj = table.get("qq"); // type: Java<java.lang.Object>
+let str = obj as string;   // cast to string
+debug.write(str);
 ```
 
 ### Limitations
 - `try/catch` not supported
-- class inheritance not supported
-- generic classes not supported
-- static class members not supported
 - operator overloading not supported
+- Java interop with parameterized types (generics) is not supported
 
 ### Comparison Table
 | C# | Scripting Language |
 |---|---|
 | `var` | `let` |
 | `(int)x` | `x as int` |
-| `x as int` | Not supported |
+| `x as int` | Not supported (only cast syntax exists) |
 | `x is ClassA` | `x is ClassA` |
