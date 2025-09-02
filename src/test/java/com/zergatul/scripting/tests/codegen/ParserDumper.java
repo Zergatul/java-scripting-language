@@ -199,6 +199,8 @@ public class ParserDumper {
         sb.append("new MemberAccessExpressionNode(");
         dump(node.callee);
         sb.append(", ");
+        dump(node.dot);
+        sb.append(", ");
         dump(node.name);
         sb.append(", ");
         dump(node.getRange());

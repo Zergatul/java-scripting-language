@@ -997,15 +997,15 @@ public class Parser {
     }
 
     private ArgumentsListNode parseArgumentsList() {
-        Token left = advance(TokenType.LEFT_PARENTHESES);
-        if (left.getRange().getLength() == 0) {
-            return new ArgumentsListNode(List.of(), left.getRange());
+        Token openParen = advance(TokenType.LEFT_PARENTHESES);
+        if (openParen.getRange().getLength() == 0) {
+            return new ArgumentsListNode(List.of(), openParen.getRange());
         }
 
         List<ExpressionNode> expressions = new ArrayList<>();
         if (current.type == TokenType.RIGHT_PARENTHESES) {
             Token right = advance();
-            return new ArgumentsListNode(expressions, TextRange.combine(left, right));
+            return new ArgumentsListNode(expressions, TextRange.combine(openParen, right));
         }
 
         if (isPossibleArgumentExpression()) {
@@ -1013,13 +1013,13 @@ public class Parser {
         } else {
             addDiagnostic(ParserErrors.ExpressionOrCloseParenthesesExpected, current, current.getRawValue(code));
             Token right = createMissingToken(TokenType.RIGHT_PARENTHESES);
-            return new ArgumentsListNode(expressions, TextRange.combine(left, right));
+            return new ArgumentsListNode(expressions, TextRange.combine(openParen, right));
         }
 
         while (true) {
             if (current.type == TokenType.RIGHT_PARENTHESES) {
-                Token right = advance();
-                return new ArgumentsListNode(expressions, TextRange.combine(left, right));
+                Token closeParen = advance();
+                return new ArgumentsListNode(expressions, TextRange.combine(openParen, closeParen));
             }
 
             if (current.type == TokenType.COMMA) {
@@ -1028,13 +1028,13 @@ public class Parser {
                     expressions.add(parseArgumentExpression());
                 } else {
                     addDiagnostic(ParserErrors.ExpressionExpected, current, current.getRawValue(code));
-                    Token right = createMissingToken(TokenType.RIGHT_PARENTHESES);
-                    return new ArgumentsListNode(expressions, TextRange.combine(left, right));
+                    Token closeParen = advance(TokenType.RIGHT_PARENTHESES);
+                    return new ArgumentsListNode(expressions, TextRange.combine(openParen, closeParen));
                 }
             } else {
                 addDiagnostic(ParserErrors.CommaOrCloseParenthesesExpected, current, current.getRawValue(code));
                 Token right = createMissingToken(TokenType.RIGHT_PARENTHESES);
-                return new ArgumentsListNode(expressions, TextRange.combine(left, right));
+                return new ArgumentsListNode(expressions, TextRange.combine(openParen, right));
             }
         }
     }

@@ -461,6 +461,39 @@ public class ErrorRecoveryParserTests {
                         new MultiLineTextRange(1, 1, 2, 18, 0, 26)));
     }
 
+    @Test
+    public void unfinishedParametersTest() {
+        ParserOutput result = parse("""
+                obj.method(100,)
+                """);
+
+        Assertions.assertIterableEquals(
+                result.diagnostics(),
+                List.of(
+                        new DiagnosticMessage(ParserErrors.ExpressionExpected, new SingleLineTextRange(1, 16, 15, 1), ")"),
+                        new DiagnosticMessage(ParserErrors.SemicolonExpected, new SingleLineTextRange(1,16, 15, 1))));
+
+        Assertions.assertEquals(
+                result.unit(),
+                new CompilationUnitNode(
+                        new CompilationUnitMembersListNode(List.of(), new SingleLineTextRange(1, 1, 0, 0)),
+                        new StatementsListNode(List.of(
+                                new ExpressionStatementNode(
+                                        new InvocationExpressionNode(
+                                                new MemberAccessExpressionNode(
+                                                        new NameExpressionNode("obj", new SingleLineTextRange(1, 1, 0, 3)),
+                                                        new Token(TokenType.DOT, new SingleLineTextRange(1, 4, 3, 1)),
+                                                        new NameExpressionNode("method", new SingleLineTextRange(1, 5, 4, 6)),
+                                                        new SingleLineTextRange(1, 1, 0, 10)),
+                                                new ArgumentsListNode(List.of(
+                                                        new IntegerLiteralExpressionNode("100", new SingleLineTextRange(1, 12, 11, 3))),
+                                                        new SingleLineTextRange(1, 11, 10, 6)),
+                                                new SingleLineTextRange(1, 1, 0, 16)),
+                                        new SingleLineTextRange(1, 1, 0, 16))),
+                                new SingleLineTextRange(1, 1, 0, 16)),
+                        new SingleLineTextRange(1, 1, 0, 16)));
+    }
+
     private ParserOutput parse(String code) {
         return new Parser(new Lexer(new LexerInput(code)).lex()).parse();
     }

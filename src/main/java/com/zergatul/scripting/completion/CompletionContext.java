@@ -305,6 +305,7 @@ public class CompletionContext {
                 BoundAssignmentStatementNode statement = (BoundAssignmentStatementNode) entry.node;
                 yield statement.operator.getRange().isBefore(line, column);
             }
+            case ARGUMENTS_LIST -> true;
             case LAMBDA_EXPRESSION -> {
                 BoundLambdaExpressionNode lambda = (BoundLambdaExpressionNode) entry.node;
                 yield lambda.isOpen() && lambda.arrow.getRange().isBefore(line, column);
