@@ -181,7 +181,7 @@ public class Binder {
 
         pushConstructorScope();
         addParametersToContext(constructorDeclaration.getParameters());
-        BoundBlockStatementNode body = bindBlockStatement(constructorNode.body);
+        BoundStatementNode body = bindStatement(constructorNode.body);
         popScope();
 
         return new BoundClassConstructorNode(
@@ -201,11 +201,22 @@ public class Binder {
 
         pushMethodScope(returnType, methodDeclaration.isAsync());
         addParametersToContext(methodDeclaration.getParameters());
-        BoundBlockStatementNode body = bindBlockStatement(methodNode.body);
+
+        BoundStatementNode body;
+        if (returnType != SVoidType.instance && methodNode.body.getNodeType() == NodeType.EXPRESSION_STATEMENT) {
+            // rewrite to return statement
+            ExpressionStatementNode expressionStatement = (ExpressionStatementNode) methodNode.body;
+            BoundExpressionNode expression = bindExpression(expressionStatement.expression);
+            BoundExpressionNode converted = convert(expression, returnType);
+            body = new BoundReturnStatementNode(null, converted, methodNode.body.getRange());
+        } else {
+            body = bindStatement(methodNode.body);
+        }
+
         popScope();
 
         if (returnType != SVoidType.instance && returnType != SUnknown.instance) {
-            if (!new ReturnPathsVerifier().verify(body)) {
+            if (!new ReturnPathsVerifier().verify(List.of(body))) {
                 addDiagnostic(BinderErrors.NotAllPathReturnValue, body);
             }
         }
@@ -1002,30 +1013,51 @@ public class Binder {
     private BoundExpressionNode bindNameExpression(NameExpressionNode name) {
         SymbolRef symbolRef = getSymbol(name.value);
 
-        if (symbolRef == null) {
-            Optional<Class<?>> optional = parameters.getCustomTypes().stream().filter(c -> {
-                return c.getAnnotation(CustomType.class).name().equals(name.value);
-            }).findFirst();
-            if (optional.isPresent()) {
-                SType type = SType.fromJavaType(optional.get());
-                BoundCustomTypeNode typeNode = new BoundCustomTypeNode(type, name.getRange());
-                return new BoundStaticReferenceExpression(typeNode, new SStaticTypeReference(type), name.getRange());
-            }
-        }
-
         if (symbolRef != null) {
             if (symbolRef.get() instanceof Function) {
                 return new BoundFunctionReferenceNode(name.value, symbolRef, name.getRange());
             } else {
                 return new BoundNameExpressionNode(symbolRef, name.getRange());
             }
-        } else {
-            addDiagnostic(
-                    BinderErrors.NameDoesNotExist,
-                    name,
-                    name.value);
-            return new BoundNameExpressionNode(new InvalidSymbolRef(), SUnknown.instance, name.value, name.getRange());
         }
+
+        if (context.isClassMethod()) {
+            PropertyReference property = context.getClassType().getInstanceProperty(name.value);
+            if (property != null) {
+                return new BoundPropertyAccessExpressionNode(
+                        new BoundThisExpressionNode(context.getClassType(), name.getRange().getStart()),
+                        null,
+                        new BoundPropertyNode(name.value, property, name.getRange()),
+                        name.getRange());
+            }
+
+            List<MethodReference> methods = context.getClassType().getInstanceMethods().stream()
+                    .filter(m -> m.getName().equals(name.value))
+                    .toList();
+            if (!methods.isEmpty()) {
+                return new BoundMethodGroupExpressionNode(
+                        new BoundThisExpressionNode(context.getClassType(), name.getRange().getStart()),
+                        null,
+                        methods,
+                        new BoundUnresolvedMethodNode(name.value, name.getRange()),
+                        name.getRange());
+            }
+        }
+
+        Optional<Class<?>> optional = parameters.getCustomTypes().stream().filter(c -> {
+            return c.getAnnotation(CustomType.class).name().equals(name.value);
+        }).findFirst();
+        if (optional.isPresent()) {
+            SType type = SType.fromJavaType(optional.get());
+            BoundCustomTypeNode typeNode = new BoundCustomTypeNode(type, name.getRange());
+            return new BoundStaticReferenceExpression(typeNode, new SStaticTypeReference(type), name.getRange());
+        }
+
+        addDiagnostic(
+                BinderErrors.NameDoesNotExist,
+                name,
+                name.value);
+        return new BoundNameExpressionNode(new InvalidSymbolRef(), SUnknown.instance, name.value, name.getRange());
     }
 
     private BoundThisExpressionNode bindThisExpression(ThisExpressionNode expression) {

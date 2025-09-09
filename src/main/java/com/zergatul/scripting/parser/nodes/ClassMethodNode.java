@@ -10,9 +10,9 @@ public class ClassMethodNode extends ClassMemberNode {
     public final TypeNode type;
     public final NameExpressionNode name;
     public final ParameterListNode parameters;
-    public final BlockStatementNode body;
+    public final StatementNode body;
 
-    public ClassMethodNode(ModifiersNode modifiers, TypeNode type, NameExpressionNode name, ParameterListNode parameters, BlockStatementNode body, TextRange range) {
+    public ClassMethodNode(ModifiersNode modifiers, TypeNode type, NameExpressionNode name, ParameterListNode parameters, StatementNode body, TextRange range) {
         super(NodeType.CLASS_METHOD, range);
         this.modifiers = modifiers;
         this.type = type;

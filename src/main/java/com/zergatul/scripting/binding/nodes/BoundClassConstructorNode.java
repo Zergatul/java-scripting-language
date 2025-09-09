@@ -11,9 +11,9 @@ public class BoundClassConstructorNode extends BoundClassMemberNode {
 
     public final SMethodFunction functionType;
     public final BoundParameterListNode parameters;
-    public final BoundBlockStatementNode body;
+    public final BoundStatementNode body;
 
-    public BoundClassConstructorNode(SMethodFunction functionType, BoundParameterListNode parameters, BoundBlockStatementNode body, TextRange range) {
+    public BoundClassConstructorNode(SMethodFunction functionType, BoundParameterListNode parameters, BoundStatementNode body, TextRange range) {
         super(NodeType.CLASS_CONSTRUCTOR, range);
         this.functionType = functionType;
         this.parameters = parameters;

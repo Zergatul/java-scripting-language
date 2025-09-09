@@ -513,7 +513,22 @@ public class Parser {
 
         Token keyword = advance();
         ParameterListNode parameters = parseParameterList();
-        BlockStatementNode body = parameters.hasParentheses() ? parseBlockStatement() : createMissingBlockStatement();
+
+        StatementNode body;
+        if (parameters.hasParentheses()) {
+            if (current.type == TokenType.LEFT_CURLY_BRACKET) {
+                body = parseBlockStatement();
+            } else if (current.type == TokenType.EQUAL_GREATER) {
+                advance();
+                body = withSemicolon(parseSimpleStatementNotDeclaration(true));
+            } else {
+                body = createMissingBlockStatement();
+                addDiagnostic(ParserErrors.CurlyBracketOrArrowExpected, current, current.getRawValue(code));
+            }
+        } else {
+            body = createMissingBlockStatement();
+        }
+
         return new ClassConstructorNode(keyword, parameters, body, TextRange.combine(keyword, body));
     }
 
@@ -526,7 +541,21 @@ public class Parser {
 
     private ClassMethodNode parseClassMethod(ModifiersNode modifiersNode, TypeNode typeNode, IdentifierToken identifier) {
         ParameterListNode parameters = parseParameterList();
-        BlockStatementNode body = parameters.hasParentheses() ? parseBlockStatement() : createMissingBlockStatement();
+
+        StatementNode body;
+        if (parameters.hasParentheses()) {
+            if (current.type == TokenType.LEFT_CURLY_BRACKET) {
+                body = parseBlockStatement();
+            } else if (current.type == TokenType.EQUAL_GREATER) {
+                advance();
+                body = withSemicolon(parseSimpleStatementNotDeclaration(true));
+            } else {
+                body = createMissingBlockStatement();
+                addDiagnostic(ParserErrors.CurlyBracketOrArrowExpected, current, current.getRawValue(code));
+            }
+        } else {
+            body = createMissingBlockStatement();
+        }
         return new ClassMethodNode(
                 modifiersNode,
                 typeNode,

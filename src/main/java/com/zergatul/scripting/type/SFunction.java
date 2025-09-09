@@ -35,7 +35,7 @@ public abstract class SFunction extends SReferenceType {
 
     public String getMethodDescriptor() {
         return Type.getMethodDescriptor(
-                Type.getType(returnType.getJavaClass()),
+                Type.getType(returnType.getDescriptor()),
                 getParameterTypes().stream().map(SType::getDescriptor).map(Type::getType).toArray(Type[]::new));
     }
 

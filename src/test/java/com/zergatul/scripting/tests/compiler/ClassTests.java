@@ -564,6 +564,100 @@ public class ClassTests {
         Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(4 * 6 * 8 + 5 * 7 * 9));
     }
 
+    @Test
+    public void arrowConstructorTest() {
+        String code = """
+            class Class {
+                constructor(int x) => this.x = x;
+                int x;
+            }
+            
+            let c = new Class(12);
+            intStorage.add(c.x);
+            """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(12));
+    }
+
+    @Test
+    public void arrowMethodVoidTest() {
+        String code = """
+            class Class {
+                int x;
+                constructor(int x) => this.x = x;
+                void inc() => this.x++;
+            }
+            
+            let c = new Class(12);
+            c.inc();
+            intStorage.add(c.x);
+            """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(13));
+    }
+
+    @Test
+    public void arrowMethodReturnTest() {
+        String code = """
+            class Class {
+                int x;
+                constructor(int x) => this.x = x;
+                int sqr() => this.x * this.x;
+            }
+            
+            let c = new Class(12);
+            intStorage.add(c.sqr());
+            """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(144));
+    }
+
+    @Test
+    public void noThisAccessTest() {
+        String code = """
+            class Class {
+                int x;
+                constructor(int value) => x = value;
+                int sqr() => x * x;
+                void inc() => x++;
+                int cubic() => sqr() * x;
+                int overload() => x + 2;
+                int overload(int y) => x + y;
+                int overload(int y, int z) => x * y + z;
+                fn<() => int> func1() => overload;
+                fn<int => int> func2() => overload;
+                fn<(int, int) => int> func3() => overload;
+            }
+            
+            let c = new Class(12);
+            c.inc();
+            c.inc();
+            intStorage.add(c.sqr());
+            intStorage.add(c.cubic());
+            
+            let func1 = c.func1();
+            intStorage.add(func1());
+            let func2 = c.func2();
+            intStorage.add(func2(6));
+            let func3 = c.func3();
+            intStorage.add(func3(2, 8));
+            """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(196, 2744, 16, 20, 36));
+    }
+
     public static class ApiRoot {
         public static IntStorage intStorage;
         public static StringStorage stringStorage;

@@ -348,19 +348,28 @@ c.y = 2;
 debug.write((c.x + c.y).toString());
 ```
 
-You can only access class members by using `this` keyword. This was done to simplify compiler code:
+For constructor/method bodies you can use square brackets, or arrow if method is short:
 ```c#
 class MyClass {
     int x;
 
-    constructor(int value) {
-        this.x = value;
-        // "x = value" will not work
+    constructor(int x) {
+        this.x = x;
     }
+    // or
+    // constructor(int x) => this.x = x;
 
     int getX() {
-        return this.x;
+        return x;
     }
+    // or
+    // int getX() => x;
+    
+    void inc() {
+        x++;
+    }
+    // or
+    // void inc() => x++;
 }
 ```
 

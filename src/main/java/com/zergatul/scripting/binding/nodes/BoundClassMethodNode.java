@@ -14,9 +14,9 @@ public class BoundClassMethodNode extends BoundClassMemberNode {
     public final BoundTypeNode typeNode;
     public final BoundNameExpressionNode name;
     public final BoundParameterListNode parameters;
-    public final BoundBlockStatementNode body;
+    public final BoundStatementNode body;
 
-    public BoundClassMethodNode(boolean isAsync, SMethodFunction functionType, BoundTypeNode typeNode, BoundNameExpressionNode name, BoundParameterListNode parameters, BoundBlockStatementNode body, TextRange range) {
+    public BoundClassMethodNode(boolean isAsync, SMethodFunction functionType, BoundTypeNode typeNode, BoundNameExpressionNode name, BoundParameterListNode parameters, BoundStatementNode body, TextRange range) {
         super(NodeType.CLASS_METHOD, range);
         this.isAsync = isAsync;
         this.functionType = functionType;

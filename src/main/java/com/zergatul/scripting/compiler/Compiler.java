@@ -232,7 +232,7 @@ public class Compiler {
             context.setStackIndex((LocalVariable) parameter.getName().getSymbol());
         }
 
-        compileBlockStatement(constructorVisitor, context, constructor.body);
+        compileStatement(constructorVisitor, context, constructor.body);
 
         constructorVisitor.visitInsn(RETURN);
         constructorVisitor.visitMaxs(0, 0);
@@ -249,9 +249,9 @@ public class Compiler {
         }
 
         if (methodNode.isAsync) {
-            compileAsyncBoundStatementList(methodVisitor, context, new BoundStatementsListNode(methodNode.body.statements));
+            compileAsyncBoundStatementList(methodVisitor, context, new BoundStatementsListNode(List.of(methodNode.body)));
         } else {
-            compileBlockStatement(methodVisitor, context, methodNode.body);
+            compileStatement(methodVisitor, context, methodNode.body);
             if (methodNode.functionType.getReturnType() == SVoidType.instance) {
                 methodVisitor.visitInsn(RETURN);
             }

@@ -9,9 +9,9 @@ public class ClassConstructorNode extends ClassMemberNode {
 
     public final Token keyword;
     public final ParameterListNode parameters;
-    public final BlockStatementNode body;
+    public final StatementNode body;
 
-    public ClassConstructorNode(Token keyword, ParameterListNode parameters, BlockStatementNode body, TextRange range) {
+    public ClassConstructorNode(Token keyword, ParameterListNode parameters, StatementNode body, TextRange range) {
         super(NodeType.CLASS_CONSTRUCTOR, range);
         this.keyword = keyword;
         this.parameters = parameters;
