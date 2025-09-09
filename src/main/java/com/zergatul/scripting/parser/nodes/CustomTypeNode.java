@@ -1,16 +1,20 @@
 package com.zergatul.scripting.parser.nodes;
 
-import com.zergatul.scripting.TextRange;
-import com.zergatul.scripting.parser.NodeType;
+import com.zergatul.scripting.Locatable;
+import com.zergatul.scripting.lexer.ValueToken;
 import com.zergatul.scripting.parser.ParserTreeVisitor;
+
+import java.util.List;
 
 public class CustomTypeNode extends TypeNode {
 
+    public final ValueToken token;
     public final String value;
 
-    public CustomTypeNode(String value, TextRange range) {
-        super(NodeType.CUSTOM_TYPE, range);
-        this.value = value;
+    public CustomTypeNode(ValueToken token) {
+        super(ParserNodeType.CUSTOM_TYPE, token.getRange());
+        this.token = token;
+        this.value = token.value;
     }
 
     @Override
@@ -22,11 +26,7 @@ public class CustomTypeNode extends TypeNode {
     public void acceptChildren(ParserTreeVisitor visitor) {}
 
     @Override
-    public boolean equals(Object obj) {
-        if (obj instanceof CustomTypeNode other) {
-            return other.value.equals(value) && other.getRange().equals(getRange());
-        } else {
-            return false;
-        }
+    public List<Locatable> getChildNodes() {
+        return List.of(token);
     }
 }

@@ -4,7 +4,6 @@ import com.zergatul.scripting.binding.Binder;
 import com.zergatul.scripting.binding.BinderOutput;
 import com.zergatul.scripting.compiler.CompilationParameters;
 import com.zergatul.scripting.compiler.CompilationParametersBuilder;
-import com.zergatul.scripting.completion.CompletionProvider;
 import com.zergatul.scripting.completion.CompletionProviderFactory;
 import com.zergatul.scripting.lexer.Lexer;
 import com.zergatul.scripting.lexer.LexerInput;
@@ -25,43 +24,13 @@ public class CompletionTestHelper {
         assertSuggestions(root, code, Runnable.class, null, expectedFactory);
     }
 
-    public static void assertSuggestions_old(
+    public static void assertSuggestions(
             Class<?> root,
             String code,
             Class<?> functionalInterface,
-            Function<TestCompletionContext,
-            List<Suggestion>> expectedFactory
+            Function<TestCompletionContext, List<Suggestion>> expectedFactory
     ) {
-        if (!code.contains(CURSOR)) {
-            Assertions.fail();
-            return;
-        }
-
-        int line = -1, column = -1;
-        String[] lines = code.lines().toArray(String[]::new);
-        for (int i = 0; i < lines.length; i++) {
-            int index = lines[i].indexOf(CURSOR);
-            if (index >= 0) {
-                line = i + 1;
-                column = index + 1;
-                break;
-            }
-        }
-        if (line == -1) {
-            Assertions.fail();
-            return;
-        }
-
-        code = code.replace(CURSOR, "");
-
-        CompilationParameters parameters = new CompilationParametersBuilder()
-                .setRoot(root)
-                .setInterface(functionalInterface)
-                .build();
-        BinderOutput output = new Binder(new Parser(new Lexer(new LexerInput(code)).lex()).parse(), parameters).bind();
-        CompletionProvider<Suggestion> provider = new CompletionProvider<>(new TestSuggestionFactory());
-        List<Suggestion> actual = provider.get(parameters, output, line, column);
-        CompletionTestHelper.assertSuggestions(expectedFactory.apply(new TestCompletionContext(parameters, output)), actual);
+        assertSuggestions(root, code, functionalInterface, null, expectedFactory);
     }
 
     public static void assertSuggestions(

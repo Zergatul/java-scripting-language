@@ -2,21 +2,27 @@ package com.zergatul.scripting.binding.nodes;
 
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
-import com.zergatul.scripting.parser.NodeType;
+import com.zergatul.scripting.parser.nodes.IntegerLiteralExpressionNode;
 import com.zergatul.scripting.type.SInt;
 
 import java.util.List;
 
 public class BoundIntegerLiteralExpressionNode extends BoundExpressionNode {
 
+    public final IntegerLiteralExpressionNode syntaxNode;
     public final int value;
 
     public BoundIntegerLiteralExpressionNode(int value) {
-        this(value, null);
+        this(null, value, null);
     }
 
-    public BoundIntegerLiteralExpressionNode(int value, TextRange range) {
-        super(NodeType.INTEGER_LITERAL, SInt.instance, range);
+    public BoundIntegerLiteralExpressionNode(IntegerLiteralExpressionNode node, int value) {
+        this(node, value, node.getRange());
+    }
+
+    public BoundIntegerLiteralExpressionNode(IntegerLiteralExpressionNode node, int value, TextRange range) {
+        super(BoundNodeType.INTEGER_LITERAL, SInt.instance, range);
+        this.syntaxNode = node;
         this.value = value;
     }
 
@@ -31,14 +37,5 @@ public class BoundIntegerLiteralExpressionNode extends BoundExpressionNode {
     @Override
     public List<BoundNode> getChildren() {
         return List.of();
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (obj instanceof BoundIntegerLiteralExpressionNode other) {
-            return other.value == value && other.getRange().equals(getRange());
-        } else {
-            return false;
-        }
     }
 }

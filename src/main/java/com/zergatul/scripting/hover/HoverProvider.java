@@ -3,7 +3,6 @@ package com.zergatul.scripting.hover;
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.BinderOutput;
 import com.zergatul.scripting.binding.nodes.*;
-import com.zergatul.scripting.lexer.TokenType;
 import com.zergatul.scripting.symbols.*;
 import com.zergatul.scripting.type.*;
 import com.zergatul.scripting.type.operation.BinaryOperation;
@@ -15,11 +14,9 @@ import java.util.Optional;
 
 public class HoverProvider {
 
-    protected final Theme theme;
     protected final DocumentationProvider documentationProvider;
 
-    public HoverProvider(Theme theme) {
-        this.theme = theme;
+    public HoverProvider() {
         this.documentationProvider = new DocumentationProvider();
     }
 
@@ -41,27 +38,27 @@ public class HoverProvider {
 
         TextRange range = node.getRange();
         return switch (node.getNodeType()) {
-            case BOOLEAN_LITERAL -> getBoolean(range);
-            case INTEGER_LITERAL -> getInt(range);
-            case INTEGER64_LITERAL -> getInt64(range);
-            case CHAR_LITERAL -> getChar(range);
-            case FLOAT_LITERAL -> getFloat(range);
-            case STRING_LITERAL -> getString(range);
-            case CUSTOM_TYPE -> new HoverResponse(type(((BoundCustomTypeNode) node).type), range);
+            case BOOLEAN_LITERAL -> getBooleanHover(range);
+            case INTEGER_LITERAL -> getInt32Hover(range);
+            case INTEGER64_LITERAL -> getInt64Hover(range);
+            case CHAR_LITERAL -> getCharHover(range);
+            case FLOAT_LITERAL -> getFloat64Hover(range);
+            case STRING_LITERAL -> getStringHover(range);
+            case CUSTOM_TYPE -> new HoverResponse(formatType(((BoundCustomTypeNode) node).type), range);
             case PREDEFINED_TYPE -> {
                 SType type = ((BoundPredefinedTypeNode) node).type;
                 if (type == SBoolean.instance) {
-                    yield getBoolean(range);
+                    yield getBooleanHover(range);
                 } else if (type == SInt.instance) {
-                    yield getInt(range);
+                    yield getInt32Hover(range);
                 } else if (type == SInt64.instance) {
-                    yield getInt64(range);
+                    yield getInt64Hover(range);
                 } else if (type == SChar.instance) {
-                    yield getChar(range);
+                    yield getCharHover(range);
                 } else if (type == SFloat.instance) {
-                    yield getFloat(range);
+                    yield getFloat64Hover(range);
                 } else if (type == SString.instance) {
-                    yield getString(range);
+                    yield getStringHover(range);
                 } else {
                     yield null;
                 }
@@ -69,38 +66,38 @@ public class HoverProvider {
             case NAME_EXPRESSION -> {
                 BoundNameExpressionNode name = (BoundNameExpressionNode) node;
                 if (name.getSymbol() instanceof ExternalParameter external) {
-                    String line = description("(external parameter)") + " " + type(external.getType()) + " " + description(external.getName());
+                    String line = formatDescription("(external parameter)") + " " + formatType(external.getType()) + " " + formatIdentifier(external.getName());
                     yield new HoverResponse(line, range);
                 } else if (name.getSymbol() instanceof LocalParameter local) {
-                    String line = description("(parameter)") + " " + type(local.getType()) + " " + description(local.getName());
+                    String line = formatDescription("(parameter)") + " " + formatType(local.getType()) + " " + formatIdentifier(local.getName());
                     yield new HoverResponse(line, range);
                 } else if (name.getSymbol() instanceof LocalRefParameter local) {
-                    String line = description("(parameter)") + " " + predefinedType("ref") + " " + type(local.getType()) + " " + description(local.getName());
+                    String line = formatDescription("(parameter)") + " " + formatPredefinedType("ref") + " " + formatType(local.getType()) + " " + formatIdentifier(local.getName());
                     yield new HoverResponse(line, range);
                 } else if (name.getSymbol() instanceof LocalVariable local) {
-                    String line = description("(local variable)") + " " + type(local.getType()) + " " + description(local.getName());
+                    String line = formatDescription("(local variable)") + " " + formatType(local.getType()) + " " + formatIdentifier(local.getName());
                     yield new HoverResponse(line, range);
                 } else if (name.getSymbol() instanceof StaticFieldConstantStaticVariable field) {
-                    String line = description("(external static constant)") + " " + type(field.getType()) + " " + description(field.getName());
+                    String line = formatDescription("(external static constant)") + " " + formatType(field.getType()) + " " + formatIdentifier(field.getName());
                     yield new HoverResponse(line, range);
                 } else if (name.getSymbol() instanceof StaticVariable staticVariable) {
-                    String line = description("(static variable)") + " " + type(staticVariable.getType()) + " " + description(staticVariable.getName());
+                    String line = formatDescription("(static variable)") + " " + formatType(staticVariable.getType()) + " " + formatIdentifier(staticVariable.getName());
                     yield new HoverResponse(line, range);
                 } else if (name.getSymbol() instanceof Function function) {
                     SStaticFunction type = function.getFunctionType();
                     StringBuilder sb = new StringBuilder();
-                    sb.append(type(type.getReturnType())).append(' ');
-                    sb.append(span(theme.getMethodColor(), function.getName()));
-                    sb.append(description("("));
+                    sb.append(formatType(type.getReturnType())).append(' ');
+                    sb.append(formatMethod(function.getName()));
+                    sb.append(formatBrackets("("));
                     List<MethodParameter> parameters = type.getParameters();
                     for (int i = 0; i < parameters.size(); i++) {
-                        sb.append(type(parameters.get(i).type())).append(' ');
-                        sb.append(parameter(parameters.get(i).name()));
+                        sb.append(formatType(parameters.get(i).type())).append(' ');
+                        sb.append(formatParameter(parameters.get(i).name()));
                         if (i < parameters.size() - 1) {
-                            sb.append(description(", "));
+                            sb.append(", ");
                         }
                     }
-                    sb.append(description(")"));
+                    sb.append(formatBrackets(")"));
                     yield new HoverResponse(sb.toString(), range);
                 } else {
                     yield null;
@@ -113,20 +110,11 @@ public class HoverProvider {
                     yield null;
                 }
                 StringBuilder sb = new StringBuilder();
-                sb.append(type(methodReference.getReturn())).append(' ');
-                sb.append(type(methodReference.getOwner()));
-                sb.append(description("."));
-                sb.append(span(theme.getMethodColor(), methodReference.getName()));
-                sb.append(description("("));
-                List<MethodParameter> parameters = methodReference.getParameters();
-                for (int i = 0; i < parameters.size(); i++) {
-                    sb.append(type(parameters.get(i).type())).append(' ');
-                    sb.append(parameter(parameters.get(i).name()));
-                    if (i < parameters.size() - 1) {
-                        sb.append(description(", "));
-                    }
-                }
-                sb.append(description(")"));
+                sb.append(formatType(methodReference.getReturn())).append(' ');
+                sb.append(formatType(methodReference.getOwner()));
+                sb.append(".");
+                sb.append(formatMethod(methodReference.getName()));
+                sb.append(formatMethodParameters(methodReference.getParameters()));
 
                 List<String> lines = new ArrayList<>();
                 lines.add(sb.toString());
@@ -143,114 +131,140 @@ public class HoverProvider {
                     yield null;
                 }
                 BoundPropertyAccessExpressionNode access = (BoundPropertyAccessExpressionNode) chain.get(1);
-                String line = description("(property)") + " " + type(property.getType()) + " " + type(access.callee.type) + "." + description(property.getName());
+                String line = formatDescription("(property)") + " " + formatType(property.getType()) + " " + formatType(access.callee.type) + "." + formatIdentifier(property.getName());
                 yield new HoverResponse(line, range);
             }
             case BINARY_OPERATOR -> {
                 BoundBinaryOperatorNode operator = (BoundBinaryOperatorNode) node;
                 BinaryOperation operation = operator.operation;
-                String line = type(operation.type) + " " + description(operation.operator.toString()) + description("(") + type(operation.getLeft()) + " " + parameter("left") + description(",") + " " + type(operation.getRight()) + " " + parameter("right") + description(")");
+                String line = formatType(operation.type) + " " + formatDescription(operation.operator.toString()) + formatBrackets("(") + formatType(operation.getLeft()) + " " + formatParameter("left") + "," + " " + formatType(operation.getRight()) + " " + formatParameter("right") + formatBrackets(")");
+                yield new HoverResponse(line, range);
+            }
+            case FUNCTION_REFERENCE -> {
+                BoundFunctionReferenceNode reference = (BoundFunctionReferenceNode) node;
+                SFunction functionType = (SFunction) reference.type;
+                String line = formatDescription("(function)") + " " + formatType(functionType.getReturnType()) + " " + formatIdentifier(reference.name) + formatMethodParameters(functionType.getParameters());
                 yield new HoverResponse(line, range);
             }
             default -> null;
         };
     }
 
-    protected HoverResponse getBoolean(TextRange range) {
-        return new HoverResponse(List.of(predefinedType("boolean"), description(documentationProvider.getTypeDocs(SBoolean.instance))), range);
+    protected HoverResponse getBooleanHover(TextRange range) {
+        return new HoverResponse(List.of(formatPredefinedType("boolean"), formatDescription(documentationProvider.getTypeDocs(SBoolean.instance))), range);
     }
 
-    protected HoverResponse getInt(TextRange range) {
-        return new HoverResponse(List.of(predefinedType("int"), description(documentationProvider.getTypeDocs(SInt.instance))), range);
+    protected HoverResponse getInt32Hover(TextRange range) {
+        return new HoverResponse(List.of(formatPredefinedType("int"), formatDescription(documentationProvider.getTypeDocs(SInt.instance))), range);
     }
 
-    protected HoverResponse getInt64(TextRange range) {
-        return new HoverResponse(List.of(predefinedType("long"), description(documentationProvider.getTypeDocs(SInt64.instance))), range);
+    protected HoverResponse getInt64Hover(TextRange range) {
+        return new HoverResponse(List.of(formatPredefinedType("long"), formatDescription(documentationProvider.getTypeDocs(SInt64.instance))), range);
     }
 
-    protected HoverResponse getChar(TextRange range) {
-        return new HoverResponse(List.of(predefinedType("char"), description(documentationProvider.getTypeDocs(SChar.instance))), range);
+    protected HoverResponse getCharHover(TextRange range) {
+        return new HoverResponse(List.of(formatPredefinedType("char"), formatDescription(documentationProvider.getTypeDocs(SChar.instance))), range);
     }
 
-    protected HoverResponse getFloat(TextRange range) {
-        return new HoverResponse(List.of(predefinedType("float"), description(documentationProvider.getTypeDocs(SFloat.instance))), range);
+    protected HoverResponse getFloat64Hover(TextRange range) {
+        return new HoverResponse(List.of(formatPredefinedType("float"), formatDescription(documentationProvider.getTypeDocs(SFloat.instance))), range);
     }
 
-    protected HoverResponse getString(TextRange range) {
-        return new HoverResponse(List.of(predefinedType("string"), description(documentationProvider.getTypeDocs(SString.instance))), range);
+    protected HoverResponse getStringHover(TextRange range) {
+        return new HoverResponse(List.of(formatPredefinedType("string"), formatDescription(documentationProvider.getTypeDocs(SString.instance))), range);
     }
 
-    protected String type(SType type) {
-        if (type instanceof SPredefinedType) {
-            return predefinedType(type.toString());
-        } else if (type instanceof SArrayType array) {
-            return type(array.getElementsType()) + span(theme.getTokenColor(TokenType.LEFT_SQUARE_BRACKET), "[]");
-        } else if (type instanceof SFunctionalInterface func) {
-            StringBuilder sb = new StringBuilder();
-            sb.append(span(theme.getTypeColor(),"Lambda<"));
-            sb.append('(');
-            SType[] types = func.getActualParameters();
-            Parameter[] parameters = func.getInterfaceMethod().getParameters();
-            for (int i = 0; i < types.length; i++) {
-                sb.append(type(types[i]));
-                sb.append(' ');
-                sb.append(parameters[i].getName());
-                if (i != types.length - 1) {
-                    sb.append(", ");
+    protected String formatType(SType type) {
+        switch (type) {
+            case SPredefinedType sPredefinedType -> {
+                return formatPredefinedType(type.toString());
+            }
+            case SArrayType array -> {
+                return formatType(array.getElementsType()) + formatBrackets("[]");
+            }
+            case SFunctionalInterface func -> {
+                StringBuilder sb = new StringBuilder();
+                sb.append(formatType("Lambda<"));
+                sb.append('(');
+                SType[] types = func.getActualParameters();
+                Parameter[] parameters = func.getInterfaceMethod().getParameters();
+                for (int i = 0; i < types.length; i++) {
+                    sb.append(formatType(types[i]));
+                    sb.append(' ');
+                    sb.append(parameters[i].getName());
+                    if (i != types.length - 1) {
+                        sb.append(", ");
+                    }
+                }
+                sb.append(')');
+                sb.append(" => ");
+                sb.append(formatType(func.getActualReturnType()));
+                sb.append(formatType(">"));
+                return sb.toString();
+            }
+            case SFuture future -> {
+                if (future.getUnderlying() == SVoidType.instance) {
+                    return formatType("Future");
+                } else {
+                    return formatType("Future<") + formatType(future.getUnderlying()) + formatType(">");
                 }
             }
-            sb.append(')');
-            sb.append(" => ");
-            sb.append(type(func.getActualReturnType()));
-            sb.append(span(theme.getTypeColor(),">"));
-            return sb.toString();
-        } else if (type instanceof SFuture future) {
-            if (future.getUnderlying() == SVoidType.instance) {
-                return span(theme.getTypeColor(), "Future");
-            } else {
-                return span(theme.getTypeColor(), "Future<") + type(future.getUnderlying()) + span(theme.getTypeColor(), ">");
+            case SCustomType sCustomType -> {
+                return formatType(type.toString());
             }
-        } else if (type instanceof SCustomType) {
-            return span(theme.getTypeColor(), type.toString());
-        } else if (type instanceof SClassType) {
-            Class<?> clazz = type.getJavaClass();
-            return span(theme.getTypeColor(), clazz.getName());
-        } else if (type instanceof SDeclaredType) {
-            return span(theme.getTypeColor(), type.toString());
-        } else {
-            return "TODO";
-        }
-    }
-
-    protected String predefinedType(String text) {
-        return span(theme.getPredefinedTypeColor(), text);
-    }
-
-    protected String description(String text) {
-        return span(theme.getDescriptionColor(), text);
-    }
-
-    protected String parameter(String text) {
-        return span(theme.getParameterColor(), text);
-    }
-
-    protected String span(String color, String text) {
-        return String.format("<span style=\"color:#%s;\">%s</span>", color, escapeHtml(text));
-    }
-
-    public static String escapeHtml(String s) {
-        StringBuilder out = new StringBuilder(Math.max(16, s.length()));
-        for (int i = 0; i < s.length(); i++) {
-            char c = s.charAt(i);
-            if (c > 127 || c == '"' || c == '\'' || c == '<' || c == '>' || c == '&') {
-                out.append("&#");
-                out.append((int) c);
-                out.append(';');
-            } else {
-                out.append(c);
+            case SClassType sClassType -> {
+                Class<?> clazz = type.getJavaClass();
+                return formatType(clazz.getName());
+            }
+            case SDeclaredType declaredType -> {
+                return formatType(type.toString());
+            }
+            case null, default -> {
+                return "TODO";
             }
         }
-        return out.toString();
+    }
+
+    protected String formatPredefinedType(String text) {
+        return text;
+    }
+
+    protected String formatType(String text) {
+        return text;
+    }
+
+    protected String formatMethod(String text) {
+        return text;
+    }
+
+    protected String formatIdentifier(String text) {
+        return text;
+    }
+
+    protected String formatMethodParameters(List<MethodParameter> parameters) {
+        StringBuilder sb = new StringBuilder();
+        sb.append(formatBrackets("("));
+        for (int i = 0; i < parameters.size(); i++) {
+            sb.append(formatType(parameters.get(i).type())).append(' ');
+            sb.append(formatParameter(parameters.get(i).name()));
+            if (i < parameters.size() - 1) {
+                sb.append(", ");
+            }
+        }
+        sb.append(formatBrackets(")"));
+        return sb.toString();
+    }
+
+    protected String formatParameter(String text) {
+        return text;
+    }
+
+    protected String formatBrackets(String text) {
+        return text;
+    }
+
+    protected String formatDescription(String text) {
+        return text;
     }
 
     private static void findChain(List<BoundNode> chain, BoundNode node, int line, int column) {

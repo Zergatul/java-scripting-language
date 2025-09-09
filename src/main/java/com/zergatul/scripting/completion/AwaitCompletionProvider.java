@@ -5,7 +5,7 @@ import com.zergatul.scripting.binding.nodes.BoundClassMethodNode;
 import com.zergatul.scripting.binding.nodes.BoundFunctionNode;
 import com.zergatul.scripting.compiler.CompilationParameters;
 import com.zergatul.scripting.lexer.TokenType;
-import com.zergatul.scripting.parser.NodeType;
+import com.zergatul.scripting.binding.nodes.BoundNodeType;
 
 import java.util.List;
 
@@ -26,32 +26,32 @@ public class AwaitCompletionProvider<T> extends AbstractCompletionProvider<T> {
                 break;
             }
 
-            if (current.entry.node.getNodeType() == NodeType.CLASS_CONSTRUCTOR) {
+            if (current.entry.node.getNodeType() == BoundNodeType.CLASS_CONSTRUCTOR) {
                 return List.of();
             }
-            if (current.entry.node.getNodeType() == NodeType.CLASS_METHOD) {
+            if (current.entry.node.getNodeType() == BoundNodeType.CLASS_METHOD) {
                 BoundClassMethodNode methodNode = (BoundClassMethodNode) current.entry.node;
-                if (methodNode.isAsync) {
+                if (methodNode.isAsync()) {
                     return List.of(factory.getKeywordSuggestion(TokenType.AWAIT));
                 } else {
                     return List.of();
                 }
             }
-            if (current.entry.node.getNodeType() == NodeType.FUNCTION) {
+            if (current.entry.node.getNodeType() == BoundNodeType.FUNCTION) {
                 BoundFunctionNode functionNode = (BoundFunctionNode) current.entry.node;
-                if (functionNode.isAsync) {
+                if (functionNode.isAsync()) {
                     return List.of(factory.getKeywordSuggestion(TokenType.AWAIT));
                 } else {
                     return List.of();
                 }
             }
-            if (current.entry.node.getNodeType() == NodeType.LAMBDA_EXPRESSION) {
+            if (current.entry.node.getNodeType() == BoundNodeType.LAMBDA_EXPRESSION) {
                 return List.of();
             }
-            if (current.entry.node.getNodeType() == NodeType.STATIC_VARIABLE) {
+            if (current.entry.node.getNodeType() == BoundNodeType.STATIC_VARIABLE) {
                 return List.of();
             }
-            if (current.entry.node.getNodeType() == NodeType.STATEMENTS_LIST) {
+            if (current.entry.node.getNodeType() == BoundNodeType.STATEMENTS_LIST) {
                 if (parameters.isAsync()) {
                     return List.of(factory.getKeywordSuggestion(TokenType.AWAIT));
                 } else {

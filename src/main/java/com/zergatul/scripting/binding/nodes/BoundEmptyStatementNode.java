@@ -2,14 +2,21 @@ package com.zergatul.scripting.binding.nodes;
 
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
-import com.zergatul.scripting.parser.NodeType;
+import com.zergatul.scripting.parser.nodes.EmptyStatementNode;
 
 import java.util.List;
 
 public class BoundEmptyStatementNode extends BoundStatementNode {
 
-    public BoundEmptyStatementNode(TextRange range) {
-        super(NodeType.EMPTY_STATEMENT, range);
+    public final EmptyStatementNode syntaxNode;
+
+    public BoundEmptyStatementNode(EmptyStatementNode node) {
+        this(node, node.getRange());
+    }
+
+    public BoundEmptyStatementNode(EmptyStatementNode node, TextRange range) {
+        super(BoundNodeType.EMPTY_STATEMENT, range);
+        this.syntaxNode = node;
     }
 
     @Override

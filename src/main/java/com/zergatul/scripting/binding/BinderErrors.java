@@ -37,7 +37,7 @@ public class BinderErrors {
     public static final ErrorCode InvalidCallee = new ErrorCode("B033", "Cannot call %s");
     public static final ErrorCode AwaitInNonAsyncContext = new ErrorCode("B034", "Cannot use 'await' in non-async context");
     public static final ErrorCode TypeNotDefined = new ErrorCode("B035", "Type '%s' is not defined");
-    public static final ErrorCode EmptyCollectionExpression = new ErrorCode("B036", "Empty collection expression is not supported. Please use 'new' syntax.");
+    public static final ErrorCode LetEmptyCollection = new ErrorCode("B036", "Cannot infer type of empty array. Please use 'new' syntax or replace 'let' with explicit array type.");
     public static final ErrorCode CannotInferCollectionExpressionTypes = new ErrorCode("B037", "Cannot infer collection expression types: Type at position 0: '%s', type at position %d: '%s'.");
     public static final ErrorCode RefTypeNotSupported = new ErrorCode("B038", "ref type for '%s' is not supported");
     public static final ErrorCode JavaTypeDoesNotExist = new ErrorCode("B039", "Java type '%s' does not exist");

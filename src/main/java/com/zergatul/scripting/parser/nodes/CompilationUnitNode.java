@@ -1,20 +1,23 @@
 package com.zergatul.scripting.parser.nodes;
 
+import com.zergatul.scripting.Locatable;
 import com.zergatul.scripting.TextRange;
-import com.zergatul.scripting.parser.NodeType;
+import com.zergatul.scripting.lexer.EndOfFileToken;
 import com.zergatul.scripting.parser.ParserTreeVisitor;
 
-import java.util.Objects;
+import java.util.List;
 
-public class CompilationUnitNode extends Node {
+public class CompilationUnitNode extends ParserNode {
 
     public final CompilationUnitMembersListNode members;
     public final StatementsListNode statements;
+    public final EndOfFileToken end;
 
-    public CompilationUnitNode(CompilationUnitMembersListNode members, StatementsListNode statements, TextRange range) {
-        super(NodeType.COMPILATION_UNIT, range);
+    public CompilationUnitNode(CompilationUnitMembersListNode members, StatementsListNode statements, EndOfFileToken end) {
+        super(ParserNodeType.COMPILATION_UNIT, TextRange.combine(members, statements));
         this.members = members;
         this.statements = statements;
+        this.end = end;
     }
 
     @Override
@@ -29,13 +32,7 @@ public class CompilationUnitNode extends Node {
     }
 
     @Override
-    public boolean equals(Object obj) {
-        if (obj instanceof CompilationUnitNode other) {
-            return  other.members.equals(members) &&
-                    other.statements.equals(statements) &&
-                    other.getRange().equals(getRange());
-        } else {
-            return false;
-        }
+    public List<Locatable> getChildNodes() {
+        return List.of(members, statements, end);
     }
 }

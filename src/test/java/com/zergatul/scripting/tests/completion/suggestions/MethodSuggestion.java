@@ -6,6 +6,7 @@ import com.zergatul.scripting.type.MethodReference;
 import com.zergatul.scripting.type.SType;
 import org.junit.jupiter.api.Assertions;
 
+import java.lang.reflect.Method;
 import java.util.Optional;
 
 public class MethodSuggestion extends Suggestion {
@@ -28,6 +29,15 @@ public class MethodSuggestion extends Suggestion {
         } else {
             return new MethodSuggestion(optional.get());
         }
+    }
+
+    public static MethodSuggestion getInstance(SType type, Method method) {
+        return new MethodSuggestion(type.getInstanceMethods().stream()
+                .filter(ref -> ref.getName().equals(method.getName()))
+                .filter(ref -> ref.getParameters().size() == method.getParameters().length)
+                .filter(ref -> ref.getReturn().equals(SType.fromJavaType(method.getReturnType())))
+                .findFirst()
+                .orElseThrow());
     }
 
     public static MethodSuggestion getStatic(SType type, String name) {

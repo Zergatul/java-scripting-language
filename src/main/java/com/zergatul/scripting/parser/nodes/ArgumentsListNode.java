@@ -1,19 +1,28 @@
 package com.zergatul.scripting.parser.nodes;
 
+import com.zergatul.scripting.Locatable;
 import com.zergatul.scripting.TextRange;
-import com.zergatul.scripting.parser.NodeType;
+import com.zergatul.scripting.lexer.Token;
 import com.zergatul.scripting.parser.ParserTreeVisitor;
 
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 
-public class ArgumentsListNode extends Node {
+public class ArgumentsListNode extends ParserNode {
 
-    public final List<ExpressionNode> arguments;
+    public final Token openParen;
+    public final SeparatedList<ExpressionNode> arguments;
+    public final Token closeParen;
 
-    public ArgumentsListNode(List<ExpressionNode> arguments, TextRange range) {
-        super(NodeType.ARGUMENTS_LIST, range);
+    public ArgumentsListNode(
+            Token openParen,
+            SeparatedList<ExpressionNode> arguments,
+            Token closeParen
+    ) {
+        super(ParserNodeType.ARGUMENTS_LIST, TextRange.combine(openParen, closeParen));
+        this.openParen = openParen;
         this.arguments = arguments;
+        this.closeParen = closeParen;
     }
 
     @Override
@@ -23,17 +32,17 @@ public class ArgumentsListNode extends Node {
 
     @Override
     public void acceptChildren(ParserTreeVisitor visitor) {
-        for (ExpressionNode expression : arguments) {
+        for (ExpressionNode expression : arguments.getNodes()) {
             expression.accept(visitor);
         }
     }
 
     @Override
-    public boolean equals(Object obj) {
-        if (obj instanceof ArgumentsListNode other) {
-            return Objects.equals(other.arguments, arguments) && other.getRange().equals(getRange());
-        } else {
-            return false;
-        }
+    public List<Locatable> getChildNodes() {
+        List<Locatable> nodes = new ArrayList<>();
+        nodes.add(openParen);
+        nodes.addAll(arguments.getChildNodes());
+        nodes.add(closeParen);
+        return nodes;
     }
 }

@@ -50,11 +50,6 @@ public class SDeclaredType extends SType {
     }
 
     @Override
-    public boolean isSyntheticType() {
-        return true;
-    }
-
-    @Override
     public boolean isInstanceOf(SType other) {
         if (equals(other)) {
             return true;

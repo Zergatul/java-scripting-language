@@ -1,15 +1,20 @@
 package com.zergatul.scripting.parser.nodes;
 
+import com.zergatul.scripting.Locatable;
 import com.zergatul.scripting.TextRange;
-import com.zergatul.scripting.parser.NodeType;
+import com.zergatul.scripting.lexer.Token;
 import com.zergatul.scripting.parser.ParserTreeVisitor;
 
-public class JavaQualifiedTypeNameNode extends Node {
+import java.util.List;
 
+public class JavaQualifiedTypeNameNode extends ParserNode {
+
+    public final List<Token> tokens;
     public final String value;
 
-    public JavaQualifiedTypeNameNode(String value, TextRange range) {
-        super(NodeType.JAVA_TYPE_NAME, range);
+    public JavaQualifiedTypeNameNode(List<Token> tokens, String value) {
+        super(ParserNodeType.JAVA_TYPE_NAME, TextRange.combine(tokens));
+        this.tokens = tokens;
         this.value = value;
     }
 
@@ -22,11 +27,7 @@ public class JavaQualifiedTypeNameNode extends Node {
     public void acceptChildren(ParserTreeVisitor visitor) {}
 
     @Override
-    public boolean equals(Object obj) {
-        if (obj instanceof JavaQualifiedTypeNameNode other) {
-            return other.value.equals(value) && other.getRange().equals(getRange());
-        } else {
-            return false;
-        }
+    public List<Locatable> getChildNodes() {
+        return List.copyOf(tokens);
     }
 }

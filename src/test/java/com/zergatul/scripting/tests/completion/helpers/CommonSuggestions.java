@@ -31,6 +31,9 @@ public class CommonSuggestions {
 
     public static final List<Suggestion> expressions = Lists.of(
             types,
+            new KeywordSuggestion(TokenType.FALSE),
+            new KeywordSuggestion(TokenType.TRUE),
+            new KeywordSuggestion(TokenType.NEW),
             new KeywordSuggestion(TokenType.META_TYPE),
             new KeywordSuggestion(TokenType.META_TYPE_OF));
 

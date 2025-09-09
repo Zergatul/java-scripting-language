@@ -2,7 +2,6 @@ package com.zergatul.scripting.binding.nodes;
 
 import com.zergatul.scripting.InternalException;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
-import com.zergatul.scripting.parser.NodeType;
 
 import java.util.List;
 
@@ -11,7 +10,7 @@ public class BoundGeneratorReturnNode extends BoundStatementNode {
     public final BoundExpressionNode expression;
 
     public BoundGeneratorReturnNode(BoundExpressionNode expression) {
-        super(NodeType.GENERATOR_RETURN, null);
+        super(BoundNodeType.GENERATOR_RETURN, null);
         this.expression = expression;
     }
 

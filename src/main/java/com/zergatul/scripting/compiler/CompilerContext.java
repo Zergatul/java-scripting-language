@@ -3,10 +3,7 @@ package com.zergatul.scripting.compiler;
 import com.zergatul.scripting.InternalException;
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.symbols.*;
-import com.zergatul.scripting.type.SDeclaredType;
-import com.zergatul.scripting.type.SByReference;
-import com.zergatul.scripting.type.SGenericFunction;
-import com.zergatul.scripting.type.SType;
+import com.zergatul.scripting.type.*;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 

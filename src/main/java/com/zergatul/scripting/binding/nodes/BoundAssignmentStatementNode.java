@@ -2,34 +2,31 @@ package com.zergatul.scripting.binding.nodes;
 
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
-import com.zergatul.scripting.lexer.Token;
-import com.zergatul.scripting.parser.NodeType;
 import com.zergatul.scripting.parser.nodes.AssignmentStatementNode;
-import com.zergatul.scripting.parser.nodes.StatementNode;
 
 import java.util.List;
 
 public class BoundAssignmentStatementNode extends BoundStatementNode {
 
+    public final AssignmentStatementNode syntaxNode;
     public final BoundExpressionNode left;
     public final BoundAssignmentOperatorNode operator;
     public final BoundExpressionNode right;
-    public final Token semicolon;
 
     public BoundAssignmentStatementNode(BoundExpressionNode left, BoundAssignmentOperatorNode operator, BoundExpressionNode right) {
-        this(left, operator, right, null, null);
+        this(null, left, operator, right, null);
     }
 
-    public BoundAssignmentStatementNode(BoundExpressionNode left, BoundAssignmentOperatorNode operator, BoundExpressionNode right, AssignmentStatementNode node) {
-        this(left, operator, right, node.semicolon, node.getRange());
+    public BoundAssignmentStatementNode(AssignmentStatementNode node, BoundExpressionNode left, BoundAssignmentOperatorNode operator, BoundExpressionNode right) {
+        this(node, left, operator, right, node.getRange());
     }
 
-    public BoundAssignmentStatementNode(BoundExpressionNode left, BoundAssignmentOperatorNode operator, BoundExpressionNode right, Token semicolon, TextRange range) {
-        super(NodeType.ASSIGNMENT_STATEMENT, range);
+    public BoundAssignmentStatementNode(AssignmentStatementNode node, BoundExpressionNode left, BoundAssignmentOperatorNode operator, BoundExpressionNode right, TextRange range) {
+        super(BoundNodeType.ASSIGNMENT_STATEMENT, range);
+        this.syntaxNode = node;
         this.left = left;
         this.operator = operator;
         this.right = right;
-        this.semicolon = semicolon;
     }
 
     @Override
@@ -46,7 +43,7 @@ public class BoundAssignmentStatementNode extends BoundStatementNode {
 
     @Override
     public boolean isOpen() {
-        return semicolon == null || semicolon.isMissing();
+        return syntaxNode.semicolon == null || syntaxNode.semicolon.isMissing();
     }
 
     @Override

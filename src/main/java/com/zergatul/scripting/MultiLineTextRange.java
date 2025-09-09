@@ -58,4 +58,12 @@ public class MultiLineTextRange extends TextRange {
                 position + skip,
                 length - skip);
     }
+
+    public TextRange collapse() {
+        if (line1 == line2) {
+            return new SingleLineTextRange(line1, column1, position, length);
+        } else {
+            return this;
+        }
+    }
 }

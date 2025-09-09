@@ -1,18 +1,20 @@
 package com.zergatul.scripting.parser.nodes;
 
+import com.zergatul.scripting.Locatable;
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.lexer.Token;
-import com.zergatul.scripting.parser.NodeType;
 import com.zergatul.scripting.parser.ParserTreeVisitor;
+
+import java.util.List;
 
 public class AwaitExpressionNode extends ExpressionNode {
 
-    public final Token awaitToken;
+    public final Token keyword;
     public final ExpressionNode expression;
 
-    public AwaitExpressionNode(Token awaitToken, ExpressionNode expression, TextRange range) {
-        super(NodeType.AWAIT_EXPRESSION, range);
-        this.awaitToken = awaitToken;
+    public AwaitExpressionNode(Token keyword, ExpressionNode expression, TextRange range) {
+        super(ParserNodeType.AWAIT_EXPRESSION, range);
+        this.keyword = keyword;
         this.expression = expression;
     }
 
@@ -27,11 +29,7 @@ public class AwaitExpressionNode extends ExpressionNode {
     }
 
     @Override
-    public boolean equals(Object obj) {
-        if (obj instanceof AwaitExpressionNode other) {
-            return other.expression.equals(expression) && other.getRange().equals(getRange());
-        } else {
-            return false;
-        }
+    public List<Locatable> getChildNodes() {
+        return List.of(keyword, expression);
     }
 }

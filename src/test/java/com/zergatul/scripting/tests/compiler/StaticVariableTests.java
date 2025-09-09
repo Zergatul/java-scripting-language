@@ -2,8 +2,10 @@ package com.zergatul.scripting.tests.compiler;
 
 import com.zergatul.scripting.DiagnosticMessage;
 import com.zergatul.scripting.SingleLineTextRange;
+import com.zergatul.scripting.binding.BinderErrors;
 import com.zergatul.scripting.parser.ParserErrors;
 import com.zergatul.scripting.tests.compiler.helpers.*;
+import com.zergatul.scripting.tests.framework.ComparatorTest;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -13,7 +15,7 @@ import java.util.List;
 import static com.zergatul.scripting.tests.compiler.helpers.CompilerHelper.compile;
 import static com.zergatul.scripting.tests.compiler.helpers.CompilerHelper.getDiagnostics;
 
-public class StaticVariableTests {
+public class StaticVariableTests extends ComparatorTest {
 
     @BeforeEach
     public void clean() {
@@ -168,12 +170,20 @@ public class StaticVariableTests {
                 static let x = 1;
                 """;
 
-        List<DiagnosticMessage> messages = getDiagnostics(ApiRoot.class, code);
+        comparator.assertEquals(List.of(
+                new DiagnosticMessage(ParserErrors.TypeExpected, new SingleLineTextRange(1, 8, 7, 3), "let")),
+                getDiagnostics(ApiRoot.class, code));
+    }
 
-        Assertions.assertIterableEquals(
-                messages,
-                List.of(
-                        new DiagnosticMessage(ParserErrors.TypeExpected, new SingleLineTextRange(1, 8, 7, 3), "let")));
+    @Test
+    public void externalNameConflictTest() {
+        String code = """
+                static int run = 1;
+                """;
+
+        comparator.assertEquals(List.of(
+                        new DiagnosticMessage(BinderErrors.SymbolAlreadyDeclared, new SingleLineTextRange(1, 12, 11, 3), "run")),
+                getDiagnostics(ApiRoot.class, code));
     }
 
     public static class ApiRoot {

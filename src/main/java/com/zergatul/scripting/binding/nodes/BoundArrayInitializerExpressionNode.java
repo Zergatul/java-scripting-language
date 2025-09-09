@@ -2,18 +2,24 @@ package com.zergatul.scripting.binding.nodes;
 
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
-import com.zergatul.scripting.parser.NodeType;
+import com.zergatul.scripting.parser.nodes.ArrayInitializerExpressionNode;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class BoundArrayInitializerExpressionNode extends BoundExpressionNode {
 
+    public final ArrayInitializerExpressionNode syntaxNode;
     public final BoundTypeNode typeNode;
     public final List<BoundExpressionNode> items;
 
-    public BoundArrayInitializerExpressionNode(BoundTypeNode typeNode, List<BoundExpressionNode> items, TextRange range) {
-        super(NodeType.ARRAY_INITIALIZER_EXPRESSION, typeNode.type, range);
+    public BoundArrayInitializerExpressionNode(ArrayInitializerExpressionNode node, BoundTypeNode typeNode, List<BoundExpressionNode> items) {
+        this(node, typeNode, items, node.getRange());
+    }
+
+    public BoundArrayInitializerExpressionNode(ArrayInitializerExpressionNode node, BoundTypeNode typeNode, List<BoundExpressionNode> items, TextRange range) {
+        super(BoundNodeType.ARRAY_INITIALIZER_EXPRESSION, typeNode.type, range);
+        this.syntaxNode = node;
         this.typeNode = typeNode;
         this.items = items;
     }

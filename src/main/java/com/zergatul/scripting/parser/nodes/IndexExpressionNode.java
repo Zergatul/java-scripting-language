@@ -1,18 +1,25 @@
 package com.zergatul.scripting.parser.nodes;
 
+import com.zergatul.scripting.Locatable;
 import com.zergatul.scripting.TextRange;
-import com.zergatul.scripting.parser.NodeType;
+import com.zergatul.scripting.lexer.Token;
 import com.zergatul.scripting.parser.ParserTreeVisitor;
+
+import java.util.List;
 
 public class IndexExpressionNode extends ExpressionNode {
 
     public final ExpressionNode callee;
+    public final Token openBracket;
     public final ExpressionNode index;
+    public final Token closeBracket;
 
-    public IndexExpressionNode(ExpressionNode callee, ExpressionNode index, TextRange range) {
-        super(NodeType.INDEX_EXPRESSION, range);
+    public IndexExpressionNode(ExpressionNode callee, Token openBracket, ExpressionNode index, Token closeBracket) {
+        super(ParserNodeType.INDEX_EXPRESSION, TextRange.combine(callee, closeBracket));
         this.callee = callee;
+        this.openBracket = openBracket;
         this.index = index;
+        this.closeBracket = closeBracket;
     }
 
     @Override
@@ -24,5 +31,10 @@ public class IndexExpressionNode extends ExpressionNode {
     public void acceptChildren(ParserTreeVisitor visitor) {
         callee.accept(visitor);
         index.accept(visitor);
+    }
+
+    @Override
+    public List<Locatable> getChildNodes() {
+        return List.of(callee, openBracket, index, closeBracket);
     }
 }

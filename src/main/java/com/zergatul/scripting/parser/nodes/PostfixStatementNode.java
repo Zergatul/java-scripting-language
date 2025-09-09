@@ -1,17 +1,29 @@
 package com.zergatul.scripting.parser.nodes;
 
+import com.zergatul.scripting.Locatable;
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.lexer.Token;
-import com.zergatul.scripting.parser.NodeType;
 import com.zergatul.scripting.parser.ParserTreeVisitor;
+import org.jspecify.annotations.Nullable;
+
+import java.util.List;
 
 public class PostfixStatementNode extends StatementNode {
 
     public final ExpressionNode expression;
+    public final Token operation;
+    @Nullable public final Token semicolon;
 
-    public PostfixStatementNode(NodeType nodeType, ExpressionNode expression, TextRange range) {
-        super(nodeType, range);
+    public PostfixStatementNode(
+            ParserNodeType nodeType,
+            ExpressionNode expression,
+            Token operation,
+            @Nullable Token semicolon
+    ) {
+        super(nodeType, TextRange.combine(expression, semicolon != null ? semicolon : operation));
         this.expression = expression;
+        this.operation = operation;
+        this.semicolon = semicolon;
     }
 
     @Override
@@ -25,16 +37,16 @@ public class PostfixStatementNode extends StatementNode {
     }
 
     @Override
-    public boolean equals(Object obj) {
-        if (obj instanceof PostfixStatementNode other) {
-            return other.expression.equals(expression) && other.getRange().equals(getRange());
+    public List<Locatable> getChildNodes() {
+        if (semicolon != null) {
+            return List.of(expression, operation, semicolon);
         } else {
-            return false;
+            return List.of(expression, operation);
         }
     }
 
     @Override
     public StatementNode updateWithSemicolon(Token semicolon) {
-        return new PostfixStatementNode(getNodeType(), expression, TextRange.combine(getRange(), semicolon.getRange()));
+        return new PostfixStatementNode(getNodeType(), expression, operation, semicolon);
     }
 }

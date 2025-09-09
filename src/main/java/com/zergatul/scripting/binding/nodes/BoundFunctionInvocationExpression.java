@@ -3,23 +3,32 @@ package com.zergatul.scripting.binding.nodes;
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
 import com.zergatul.scripting.compiler.RefHolder;
-import com.zergatul.scripting.parser.NodeType;
+import com.zergatul.scripting.parser.nodes.InvocationExpressionNode;
 import com.zergatul.scripting.type.SType;
 
 import java.util.List;
 
 public class BoundFunctionInvocationExpression extends BoundExpressionNode {
 
+    public final InvocationExpressionNode syntaxNode;
     public final BoundFunctionReferenceNode functionReferenceNode;
     public final BoundArgumentsListNode arguments;
     public final List<RefHolder> refVariables;
 
     public BoundFunctionInvocationExpression(BoundFunctionReferenceNode functionReferenceNode, SType type, BoundArgumentsListNode arguments) {
-        this(functionReferenceNode, type, arguments, List.of(), null);
+        this(null, functionReferenceNode, type, arguments, List.of(), null);
     }
 
-    public BoundFunctionInvocationExpression(BoundFunctionReferenceNode functionReferenceNode, SType type, BoundArgumentsListNode arguments, List<RefHolder> refVariables, TextRange range) {
-        super(NodeType.FUNCTION_INVOCATION, type, range);
+    public BoundFunctionInvocationExpression(
+            InvocationExpressionNode node,
+            BoundFunctionReferenceNode functionReferenceNode,
+            SType type,
+            BoundArgumentsListNode arguments,
+            List<RefHolder> refVariables,
+            TextRange range
+    ) {
+        super(BoundNodeType.FUNCTION_INVOCATION, type, range);
+        this.syntaxNode = node;
         this.functionReferenceNode = functionReferenceNode;
         this.arguments = arguments;
         this.refVariables = refVariables;

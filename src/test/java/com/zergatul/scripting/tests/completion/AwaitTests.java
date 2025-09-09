@@ -81,7 +81,8 @@ public class AwaitTests {
                         statements,
                         new StaticConstantSuggestion(context, "intStorage"),
                         new ThisSuggestion(context, "MyClass"),
-                        new ClassSuggestion(context, "MyClass")));
+                        new ClassSuggestion(context, "MyClass"),
+                        MethodSuggestion.getInstance(context, "MyClass", "method")));
     }
 
     @Test
@@ -96,7 +97,8 @@ public class AwaitTests {
                         new KeywordSuggestion(TokenType.AWAIT),
                         new StaticConstantSuggestion(context, "intStorage"),
                         new ThisSuggestion(context, "MyClass"),
-                        new ClassSuggestion(context, "MyClass")));
+                        new ClassSuggestion(context, "MyClass"),
+                        MethodSuggestion.getInstance(context, "MyClass", "method")));
     }
 
     @Test

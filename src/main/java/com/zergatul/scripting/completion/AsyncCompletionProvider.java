@@ -3,7 +3,7 @@ package com.zergatul.scripting.completion;
 import com.zergatul.scripting.binding.BinderOutput;
 import com.zergatul.scripting.compiler.CompilationParameters;
 import com.zergatul.scripting.lexer.TokenType;
-import com.zergatul.scripting.parser.NodeType;
+import com.zergatul.scripting.binding.nodes.BoundNodeType;
 
 import java.util.List;
 
@@ -18,7 +18,7 @@ public class AsyncCompletionProvider<T> extends AbstractCompletionProvider<T> {
         if (context.canUnitMember()) {
             return List.of(factory.getKeywordSuggestion(TokenType.ASYNC));
         }
-        if (context.entry != null && context.entry.node.getNodeType() == NodeType.CLASS) {
+        if (context.entry != null && context.entry.node.getNodeType() == BoundNodeType.CLASS_DECLARATION) {
             return List.of(factory.getKeywordSuggestion(TokenType.ASYNC));
         }
         return List.of();

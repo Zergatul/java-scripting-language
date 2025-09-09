@@ -1,10 +1,10 @@
 package com.zergatul.scripting.symbols;
 
+import com.zergatul.scripting.InternalException;
 import com.zergatul.scripting.binding.nodes.BoundNameExpressionNode;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 
 public abstract class SymbolRef {
 
@@ -36,6 +36,17 @@ public abstract class SymbolRef {
 
     public ClassSymbol asClass() {
         return (ClassSymbol) get();
+    }
+
+    public LocalVariable asLocalVariableExpanded() {
+        Symbol symbol = get();
+        if (symbol instanceof LocalVariable local) {
+            return local;
+        }
+        if (symbol instanceof LiftedVariable lifted) {
+            return lifted.getUnderlying();
+        }
+        throw new InternalException();
     }
 
     @Override

@@ -6,6 +6,7 @@ import com.zergatul.scripting.binding.BinderErrors;
 import com.zergatul.scripting.tests.compiler.helpers.BoolStorage;
 import com.zergatul.scripting.tests.compiler.helpers.IntStorage;
 import com.zergatul.scripting.tests.compiler.helpers.StringStorage;
+import com.zergatul.scripting.tests.framework.ComparatorTest;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -15,7 +16,7 @@ import java.util.List;
 import static com.zergatul.scripting.tests.compiler.helpers.CompilerHelper.compile;
 import static com.zergatul.scripting.tests.compiler.helpers.CompilerHelper.getDiagnostics;
 
-public class GenericFunctionTests {
+public class GenericFunctionTests extends ComparatorTest {
 
     @BeforeEach
     public void clean() {
@@ -162,10 +163,9 @@ public class GenericFunctionTests {
                 let func = (a, b, c) => a * b + c;
                 """;
 
-        List<DiagnosticMessage> messages = getDiagnostics(ApiRoot.class, code);
-
-        Assertions.assertIterableEquals(messages, List.of(
-                new DiagnosticMessage(BinderErrors.LetUnboundLambda, new SingleLineTextRange(1, 1, 0, 3))));
+        comparator.assertEquals(List.of(
+                new DiagnosticMessage(BinderErrors.LetUnboundLambda, new SingleLineTextRange(1, 1, 0, 3))),
+                getDiagnostics(ApiRoot.class, code));
     }
 
     @Test
@@ -225,11 +225,10 @@ public class GenericFunctionTests {
                 fn<int => void> func1 = new MyClass(10).add;
                 """;
 
-        List<DiagnosticMessage> messages = getDiagnostics(ApiRoot.class, code);
-
-        Assertions.assertIterableEquals(messages, List.of(
+        comparator.assertEquals(List.of(
                 new DiagnosticMessage(BinderErrors.CannotImplicitlyConvert, new SingleLineTextRange(7, 25, 176, 19),
-                        "<MethodGroup>", "fn<int => void>")));
+                        "<MethodGroup>", "fn<int => void>")),
+                getDiagnostics(ApiRoot.class, code));
     }
 
     @Test

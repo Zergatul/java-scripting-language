@@ -2,20 +2,33 @@ package com.zergatul.scripting.binding.nodes;
 
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
-import com.zergatul.scripting.parser.NodeType;
+import com.zergatul.scripting.parser.nodes.InvalidExpressionNode;
+import com.zergatul.scripting.parser.nodes.ParserNode;
 import com.zergatul.scripting.type.SUnknown;
 
 import java.util.List;
 
 public class BoundInvalidExpressionNode extends BoundExpressionNode {
 
+    public final InvalidExpressionNode syntaxNode;
     public final List<BoundExpressionNode> children;
+    public final List<ParserNode> unboundNodes;
     // LookupResultKind resultKind;
     // List<Symbol> candidateSymbols;
 
     public BoundInvalidExpressionNode(List<BoundExpressionNode> children, TextRange range) {
-        super(NodeType.INVALID_EXPRESSION, SUnknown.instance, range);
+        this(null, children, List.of(), range);
+    }
+
+    public BoundInvalidExpressionNode(List<BoundExpressionNode> children, List<ParserNode> unboundNodes, TextRange range) {
+        this(null, children, unboundNodes, range);
+    }
+
+    public BoundInvalidExpressionNode(InvalidExpressionNode node, List<BoundExpressionNode> children, List<ParserNode> unboundNodes, TextRange range) {
+        super(BoundNodeType.INVALID_EXPRESSION, SUnknown.instance, range);
+        this.syntaxNode = node;
         this.children = children;
+        this.unboundNodes = unboundNodes;
     }
 
     @Override
@@ -34,14 +47,5 @@ public class BoundInvalidExpressionNode extends BoundExpressionNode {
     @Override
     public List<BoundNode> getChildren() {
         return List.of(children.toArray(BoundNode[]::new));
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (obj instanceof BoundInvalidExpressionNode other) {
-            return other.getRange().equals(getRange());
-        } else {
-            return false;
-        }
     }
 }

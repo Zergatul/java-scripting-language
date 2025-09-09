@@ -7,7 +7,7 @@ import com.zergatul.scripting.type.SInt;
 import com.zergatul.scripting.visitors.AwaitVisitor;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
 import com.zergatul.scripting.binding.nodes.*;
-import com.zergatul.scripting.parser.NodeType;
+import com.zergatul.scripting.binding.nodes.BoundNodeType;
 import com.zergatul.scripting.symbols.*;
 
 import java.util.ArrayList;
@@ -33,7 +33,7 @@ public class BinderTreeGenerator {
         List<BoundStatementNode> statements = currentBoundary.statements;
         boolean append =
                 statements.isEmpty() ||
-                statements.get(statements.size() - 1).getNodeType() != NodeType.GENERATOR_RETURN;
+                statements.get(statements.size() - 1).getNodeType() != BoundNodeType.GENERATOR_RETURN;
         if (append) {
             statements.add(new BoundGeneratorReturnNode(null));
         }
@@ -83,22 +83,11 @@ public class BinderTreeGenerator {
     }
 
     private BoundForLoopStatementNode rewrite(BoundForLoopStatementNode node) {
-        return new BoundForLoopStatementNode(
-                node.lParen,
-                node.rParen,
-                node.init,
-                node.condition,
-                node.update,
-                rewriteStatementSync(node.body));
+        return node.withBody(rewriteStatementSync(node.body));
     }
 
     private BoundForEachLoopStatementNode rewrite(BoundForEachLoopStatementNode node) {
-        return new BoundForEachLoopStatementNode(
-                node.openParen, node.typeNode, node.name, node.iterable, node.closeParen,
-                rewriteStatementSync(node.body),
-                node.index,
-                node.length,
-                node.getRange());
+        return node.withBody(rewriteStatementSync(node.body));
     }
 
     private BoundWhileLoopStatementNode rewrite(BoundWhileLoopStatementNode node) {
@@ -251,7 +240,7 @@ public class BinderTreeGenerator {
 
         makeCurrent(cont);
         add(new BoundPostfixStatementNode(
-                NodeType.INCREMENT_STATEMENT,
+                BoundNodeType.INCREMENT_STATEMENT,
                 new BoundNameExpressionNode(index),
                 SInt.instance.increment()));
 
@@ -296,7 +285,7 @@ public class BinderTreeGenerator {
         add(new BoundAugmentedAssignmentStatementNode(
                 node.left,
                 node.assignmentOperator,
-                node.operator,
+                node.operation,
                 expression));
     }
 
@@ -356,21 +345,21 @@ public class BinderTreeGenerator {
         }
 
         return new BoundMethodInvocationExpressionNode(
+                null,
                 node.objectReference,
-                node.dot,
                 node.method,
                 new BoundArgumentsListNode(Arrays.stream(variables).map(v -> (BoundExpressionNode) new BoundNameExpressionNode(v)).toList()),
                 node.refVariables,
-                node.getRange());
+                null);
     }
 
     private BoundExpressionNode rewriteAsync(BoundUnaryExpressionNode node) {
         LiftedVariable variable = new LiftedVariable(new LocalVariable(null, node.operand.type, null));
         storeExpressionValue(variable, node.operand);
         return new BoundUnaryExpressionNode(
+                node.syntaxNode,
                 node.operator,
-                new BoundNameExpressionNode(variable),
-                node.getRange());
+                new BoundNameExpressionNode(variable));
     }
 
     private BoundExpressionNode rewriteAsync(BoundImplicitCastExpressionNode node) {

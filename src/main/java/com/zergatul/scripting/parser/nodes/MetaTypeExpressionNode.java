@@ -1,9 +1,11 @@
 package com.zergatul.scripting.parser.nodes;
 
+import com.zergatul.scripting.Locatable;
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.lexer.Token;
-import com.zergatul.scripting.parser.NodeType;
 import com.zergatul.scripting.parser.ParserTreeVisitor;
+
+import java.util.List;
 
 public class MetaTypeExpressionNode extends ExpressionNode {
 
@@ -12,8 +14,8 @@ public class MetaTypeExpressionNode extends ExpressionNode {
     public final TypeNode type;
     public final Token closeParen;
 
-    public MetaTypeExpressionNode(Token keyword, Token openParen, TypeNode type, Token closeParen, TextRange range) {
-        super(NodeType.META_TYPE_EXPRESSION, range);
+    public MetaTypeExpressionNode(Token keyword, Token openParen, TypeNode type, Token closeParen) {
+        super(ParserNodeType.META_TYPE_EXPRESSION, TextRange.combine(keyword, closeParen));
         this.keyword = keyword;
         this.openParen = openParen;
         this.type = type;
@@ -31,15 +33,7 @@ public class MetaTypeExpressionNode extends ExpressionNode {
     }
 
     @Override
-    public boolean equals(Object obj) {
-        if (obj instanceof MetaTypeExpressionNode other) {
-            return  other.keyword.equals(keyword) &&
-                    other.openParen.equals(openParen) &&
-                    other.type.equals(type) &&
-                    other.closeParen.equals(closeParen) &&
-                    other.getRange().equals(getRange());
-        } else {
-            return false;
-        }
+    public List<Locatable> getChildNodes() {
+        return List.of(keyword, openParen, type, closeParen);
     }
 }

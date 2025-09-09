@@ -1,21 +1,34 @@
 package com.zergatul.scripting.parser.nodes;
 
+import com.zergatul.scripting.Locatable;
 import com.zergatul.scripting.TextRange;
-import com.zergatul.scripting.lexer.IntegerToken;
-import com.zergatul.scripting.parser.NodeType;
+import com.zergatul.scripting.lexer.Token;
+import com.zergatul.scripting.lexer.TokenType;
+import com.zergatul.scripting.lexer.ValueToken;
 import com.zergatul.scripting.parser.ParserTreeVisitor;
+import org.jspecify.annotations.Nullable;
+
+import java.util.List;
 
 public class IntegerLiteralExpressionNode extends ExpressionNode {
 
+    @Nullable
+    public Token sign;
+    public ValueToken token;
     public final String value;
 
-    public IntegerLiteralExpressionNode(IntegerToken token) {
-        this(token.value, token.getRange());
-    }
-
-    public IntegerLiteralExpressionNode(String value, TextRange range) {
-        super(NodeType.INTEGER_LITERAL, range);
-        this.value = value;
+    public IntegerLiteralExpressionNode(
+            @Nullable Token sign,
+            ValueToken token
+    ) {
+        super(ParserNodeType.INTEGER_LITERAL, sign == null ? token.getRange() : TextRange.combine(sign, token));
+        this.sign = sign;
+        this.token = token;
+        if (sign != null) {
+            this.value = sign.is(TokenType.MINUS) ? "-" + token.value : token.value;
+        } else {
+            this.value = token.value;
+        }
     }
 
     @Override
@@ -27,11 +40,15 @@ public class IntegerLiteralExpressionNode extends ExpressionNode {
     public void acceptChildren(ParserTreeVisitor visitor) {}
 
     @Override
-    public boolean equals(Object obj) {
-        if (obj instanceof IntegerLiteralExpressionNode other) {
-            return other.value.equals(value) && other.getRange().equals(getRange());
+    public List<Locatable> getChildNodes() {
+        if (sign != null) {
+            return List.of(sign, token);
         } else {
-            return false;
+            return List.of(token);
         }
+    }
+
+    public IntegerLiteralExpressionNode withSign(UnaryOperatorNode operator) {
+        return new IntegerLiteralExpressionNode(operator.token, token);
     }
 }

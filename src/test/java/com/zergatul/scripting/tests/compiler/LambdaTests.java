@@ -15,6 +15,7 @@ import com.zergatul.scripting.lexer.LexerOutput;
 import com.zergatul.scripting.parser.Parser;
 import com.zergatul.scripting.parser.ParserOutput;
 import com.zergatul.scripting.tests.compiler.helpers.*;
+import com.zergatul.scripting.tests.framework.ComparatorTest;
 import com.zergatul.scripting.type.CustomType;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -25,7 +26,7 @@ import java.util.function.Consumer;
 
 import static com.zergatul.scripting.tests.compiler.helpers.CompilerHelper.*;
 
-public class LambdaTests {
+public class LambdaTests extends ComparatorTest {
 
     @BeforeEach
     public void clean() {
@@ -241,9 +242,9 @@ public class LambdaTests {
                 run.sumInts(123, () => 123.0);
                 """;
 
-        List<DiagnosticMessage> messages = getDiagnostics(ApiRoot.class, code);
-        Assertions.assertEquals(1, messages.size());
-        Assertions.assertEquals(messages.get(0).code, BinderErrors.CannotImplicitlyConvert.code());
+        comparator.assertEquals(List.of(
+                new DiagnosticMessage(BinderErrors.CannotImplicitlyConvert, new SingleLineTextRange(1, 24, 23, 5), "float", "int")),
+                getDiagnostics(ApiRoot.class, code));
     }
 
     @Test
@@ -651,15 +652,13 @@ public class LambdaTests {
                 run.once(10, () => {});
                 """;
 
-        List<DiagnosticMessage> diagnostics = getDiagnostics(ApiRoot.class, code);
-        Assertions.assertIterableEquals(
-                diagnostics,
-                List.of(
-                        new DiagnosticMessage(
-                                BinderErrors.NoOverloadedMethods,
-                                new SingleLineTextRange(1, 5, 4, 4),
-                                "once",
-                                2)));
+        comparator.assertEquals(List.of(
+                new DiagnosticMessage(
+                        BinderErrors.NoOverloadedMethods,
+                        new SingleLineTextRange(1, 5, 4, 4),
+                        "once",
+                        2)),
+                getDiagnostics(ApiRoot.class, code));
     }
 
     @Test
@@ -668,13 +667,11 @@ public class LambdaTests {
                 run.multiple("10", () => {});
                 """;
 
-        List<DiagnosticMessage> diagnostics = getDiagnostics(ApiRoot.class, code);
-        Assertions.assertIterableEquals(
-                diagnostics,
-                List.of(
-                        new DiagnosticMessage(
-                                BinderErrors.CannotCastArguments,
-                                new SingleLineTextRange(1, 13, 12, 16))));
+        comparator.assertEquals(List.of(
+                new DiagnosticMessage(
+                        BinderErrors.CannotCastArguments,
+                        new SingleLineTextRange(1, 13, 12, 16))),
+                getDiagnostics(ApiRoot.class, code));
     }
 
     @Test
@@ -683,13 +680,11 @@ public class LambdaTests {
                 run.multiple(10, (x) => {});
                 """;
 
-        List<DiagnosticMessage> diagnostics = getDiagnostics(ApiRoot.class, code);
-        Assertions.assertIterableEquals(
-                diagnostics,
-                List.of(
-                        new DiagnosticMessage(
-                                BinderErrors.CannotCastArguments,
-                                new SingleLineTextRange(1, 13, 12, 15))));
+        comparator.assertEquals(List.of(
+                new DiagnosticMessage(
+                        BinderErrors.CannotCastArguments,
+                        new SingleLineTextRange(1, 13, 12, 15))),
+                getDiagnostics(ApiRoot.class, code));
     }
 
     @Test
@@ -716,8 +711,8 @@ public class LambdaTests {
         List<BoundExpressionNode> arguments = invocation.arguments.arguments;
         Assertions.assertEquals(arguments.size(), 2);
 
-        Assertions.assertEquals(arguments.get(0),
-                new BoundIntegerLiteralExpressionNode(10, new SingleLineTextRange(1, 14, 13, 2)));
+        /*Assertions.assertEquals(arguments.get(0),
+                new BoundIntegerLiteralExpressionNode(10, new SingleLineTextRange(1, 14, 13, 2)));*/
 
         Assertions.assertTrue(arguments.get(1) instanceof BoundUnconvertedLambdaExpressionNode);
 

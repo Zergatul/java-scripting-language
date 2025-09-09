@@ -2,8 +2,6 @@ package com.zergatul.scripting.binding.nodes;
 
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
-import com.zergatul.scripting.lexer.Token;
-import com.zergatul.scripting.parser.NodeType;
 import com.zergatul.scripting.parser.nodes.ForEachLoopStatementNode;
 import com.zergatul.scripting.symbols.SymbolRef;
 
@@ -11,44 +9,41 @@ import java.util.List;
 
 public class BoundForEachLoopStatementNode extends BoundStatementNode {
 
-    public final Token openParen;
+    public final ForEachLoopStatementNode syntaxNode;
     public final BoundTypeNode typeNode;
     public final BoundNameExpressionNode name;
     public final BoundExpressionNode iterable;
-    public final Token closeParen;
     public final BoundStatementNode body;
     public final SymbolRef index;
     public final SymbolRef length;
 
     public BoundForEachLoopStatementNode(
+            ForEachLoopStatementNode node,
             BoundTypeNode typeNode,
             BoundNameExpressionNode name,
             BoundExpressionNode iterable,
             BoundStatementNode body,
             SymbolRef index,
-            SymbolRef length,
-            ForEachLoopStatementNode node
+            SymbolRef length
     ) {
-        this(node.openParen, typeNode, name, iterable, node.closeParen, body, index, length, node.getRange());
+        this(node,  typeNode, name, iterable, body, index, length, node.getRange());
     }
 
     public BoundForEachLoopStatementNode(
-            Token openParen,
+            ForEachLoopStatementNode node,
             BoundTypeNode typeNode,
             BoundNameExpressionNode name,
             BoundExpressionNode iterable,
-            Token closeParen,
             BoundStatementNode body,
             SymbolRef index,
             SymbolRef length,
             TextRange range
     ) {
-        super(NodeType.FOREACH_LOOP_STATEMENT, range);
-        this.openParen = openParen;
+        super(BoundNodeType.FOREACH_LOOP_STATEMENT, range);
+        this.syntaxNode = node;
         this.typeNode = typeNode;
         this.name = name;
         this.iterable = iterable;
-        this.closeParen = closeParen;
         this.body = body;
         this.index = index;
         this.length = length;
@@ -70,5 +65,9 @@ public class BoundForEachLoopStatementNode extends BoundStatementNode {
     @Override
     public List<BoundNode> getChildren() {
         return List.of(typeNode, name, iterable, body);
+    }
+
+    public BoundForEachLoopStatementNode withBody(BoundStatementNode body) {
+        return new BoundForEachLoopStatementNode(syntaxNode, typeNode, name, iterable, body, index, length, getRange());
     }
 }

@@ -1,9 +1,11 @@
 package com.zergatul.scripting.lexer;
 
 public enum TokenType {
-    WHITESPACE,
-    COMMENT,
     LINE_BREAK,
+    WHITESPACE,
+    SINGLE_LINE_COMMENT,
+    MULTI_LINE_COMMENT,
+
     LEFT_PARENTHESES,
     RIGHT_PARENTHESES,
     LEFT_SQUARE_BRACKET,

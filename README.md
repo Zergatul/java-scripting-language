@@ -65,8 +65,10 @@ let s = "qq"; // variable "s" will have "string" type
 int[] array1; // will have zero length array assigned implicitly
 int[] array2 = new int[5];
 let array3 = new int[] { 10, 20, 30, 40, 50 };
-let array4 = [1, 2, 3]; // empty array syntax "[]" is not supported
-int[][] a = new int[][10]; // array of 10 arrays, by default with null values
+let array4 = [1, 2, 3];
+let array5 = [];   // not allowed, cannot infer type of array5
+int[] array6 = []; // allowed
+int[][] array7 = new int[][10]; // array of 10 arrays, by default with null values
 
 // array concatenation
 int[] a1 = [1, 2, 3];
@@ -348,19 +350,28 @@ c.y = 2;
 debug.write((c.x + c.y).toString());
 ```
 
-You can only access class members by using `this` keyword. This was done to simplify compiler code:
+For constructor/method bodies you can use square brackets, or arrow if method is short:
 ```c#
 class MyClass {
     int x;
 
-    constructor(int value) {
-        this.x = value;
-        // "x = value" will not work
+    constructor(int x) {
+        this.x = x;
     }
+    // or
+    // constructor(int x) => this.x = x;
 
     int getX() {
-        return this.x;
+        return x;
     }
+    // or
+    // int getX() => x;
+    
+    void inc() {
+        x++;
+    }
+    // or
+    // void inc() => x++;
 }
 ```
 

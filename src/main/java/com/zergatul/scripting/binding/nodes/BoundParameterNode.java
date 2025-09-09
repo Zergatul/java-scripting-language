@@ -2,11 +2,9 @@ package com.zergatul.scripting.binding.nodes;
 
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
-import com.zergatul.scripting.parser.NodeType;
 import com.zergatul.scripting.type.SType;
 
 import java.util.List;
-import java.util.Objects;
 
 public class BoundParameterNode extends BoundNode {
 
@@ -15,7 +13,7 @@ public class BoundParameterNode extends BoundNode {
     private final SType type;
 
     public BoundParameterNode(BoundNameExpressionNode name, BoundTypeNode typeNode, TextRange range) {
-        super(NodeType.PARAMETER, range);
+        super(BoundNodeType.PARAMETER, range);
         this.name = name;
         this.typeNode = typeNode;
         this.type = typeNode.type;
@@ -26,7 +24,7 @@ public class BoundParameterNode extends BoundNode {
     }
 
     public BoundParameterNode(BoundNameExpressionNode name, SType type, TextRange range) {
-        super(NodeType.PARAMETER, range);
+        super(BoundNodeType.PARAMETER, range);
         this.name = name;
         this.typeNode = null;
         this.type = type;
@@ -60,14 +58,5 @@ public class BoundParameterNode extends BoundNode {
     @Override
     public List<BoundNode> getChildren() {
         return typeNode == null ? List.of(name) : List.of(name, typeNode);
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (obj instanceof BoundParameterNode other) {
-            return other.name.equals(name) && Objects.equals(other.typeNode, typeNode) && other.type.equals(type);
-        } else {
-            return false;
-        }
     }
 }

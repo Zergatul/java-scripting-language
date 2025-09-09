@@ -5,6 +5,7 @@ import com.zergatul.scripting.SingleLineTextRange;
 import com.zergatul.scripting.binding.BinderErrors;
 import com.zergatul.scripting.tests.compiler.helpers.FloatStorage;
 import com.zergatul.scripting.tests.compiler.helpers.StringStorage;
+import com.zergatul.scripting.tests.framework.ComparatorTest;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -14,7 +15,7 @@ import java.util.List;
 import static com.zergatul.scripting.tests.compiler.helpers.CompilerHelper.compile;
 import static com.zergatul.scripting.tests.compiler.helpers.CompilerHelper.getDiagnostics;
 
-public class MethodOverloadTests {
+public class MethodOverloadTests extends ComparatorTest {
 
     @BeforeEach
     public void clean() {
@@ -58,13 +59,11 @@ public class MethodOverloadTests {
                 floatStorage.add(methods.m1(1, 2, 3, 4));
                 """;
 
-        List<DiagnosticMessage> messages = getDiagnostics(ApiRoot.class, code);
-
-        Assertions.assertIterableEquals(
-                messages,
-                List.of(new DiagnosticMessage(
+        comparator.assertEquals(List.of(
+                new DiagnosticMessage(
                         BinderErrors.CannotCastArguments,
-                        new SingleLineTextRange(1, 28,27, 12))));
+                        new SingleLineTextRange(1, 28,27, 12))),
+                getDiagnostics(ApiRoot.class, code));
     }
 
     public static class ApiRoot {

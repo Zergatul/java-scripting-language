@@ -1,9 +1,11 @@
 package com.zergatul.scripting.parser.nodes;
 
+import com.zergatul.scripting.Locatable;
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.lexer.Token;
-import com.zergatul.scripting.parser.NodeType;
 import com.zergatul.scripting.parser.ParserTreeVisitor;
+
+import java.util.List;
 
 public class AssignmentStatementNode extends StatementNode {
 
@@ -13,7 +15,7 @@ public class AssignmentStatementNode extends StatementNode {
     public final Token semicolon;
 
     public AssignmentStatementNode(ExpressionNode left, AssignmentOperatorNode operator, ExpressionNode right, Token semicolon, TextRange range) {
-        super(NodeType.ASSIGNMENT_STATEMENT, range);
+        super(ParserNodeType.ASSIGNMENT_STATEMENT, range);
         this.left = left;
         this.operator = operator;
         this.right = right;
@@ -33,12 +35,8 @@ public class AssignmentStatementNode extends StatementNode {
     }
 
     @Override
-    public boolean equals(Object obj) {
-        if (obj instanceof AssignmentStatementNode other) {
-            return other.left.equals(left) && other.operator.equals(operator) && other.right.equals(right) && other.semicolon.equals(semicolon);
-        } else {
-            return false;
-        }
+    public List<Locatable> getChildNodes() {
+        return List.of(left, operator, right, semicolon);
     }
 
     @Override

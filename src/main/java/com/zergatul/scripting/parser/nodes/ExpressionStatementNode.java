@@ -1,17 +1,26 @@
 package com.zergatul.scripting.parser.nodes;
 
+import com.zergatul.scripting.Locatable;
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.lexer.Token;
-import com.zergatul.scripting.parser.NodeType;
 import com.zergatul.scripting.parser.ParserTreeVisitor;
+import org.jspecify.annotations.Nullable;
+
+import java.util.List;
 
 public class ExpressionStatementNode extends StatementNode {
 
     public final ExpressionNode expression;
+    @Nullable
+    public final Token semicolon;
 
-    public ExpressionStatementNode(ExpressionNode expression, TextRange range) {
-        super(NodeType.EXPRESSION_STATEMENT, range);
+    public ExpressionStatementNode(
+            ExpressionNode expression,
+            @Nullable Token semicolon
+    ) {
+        super(ParserNodeType.EXPRESSION_STATEMENT, semicolon == null ? expression.getRange() : TextRange.combine(expression, semicolon));
         this.expression = expression;
+        this.semicolon = semicolon;
     }
 
     @Override
@@ -25,16 +34,16 @@ public class ExpressionStatementNode extends StatementNode {
     }
 
     @Override
-    public boolean equals(Object obj) {
-        if (obj instanceof ExpressionStatementNode other) {
-            return other.expression.equals(expression) && other.getRange().equals(getRange());
+    public List<Locatable> getChildNodes() {
+        if (semicolon != null) {
+            return List.of(expression, semicolon);
         } else {
-            return false;
+            return List.of(expression);
         }
     }
 
     @Override
     public StatementNode updateWithSemicolon(Token semicolon) {
-        return new ExpressionStatementNode(expression, TextRange.combine(getRange(), semicolon.getRange()));
+        return new ExpressionStatementNode(expression, semicolon);
     }
 }

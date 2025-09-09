@@ -36,6 +36,11 @@ public class SArrayType extends SType {
     }
 
     @Override
+    public boolean isSyntheticType() {
+        return underlying.isSyntheticType();
+    }
+
+    @Override
     public int getLoadInst() {
         return ALOAD;
     }

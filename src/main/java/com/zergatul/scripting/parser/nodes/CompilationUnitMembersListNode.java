@@ -1,18 +1,17 @@
 package com.zergatul.scripting.parser.nodes;
 
+import com.zergatul.scripting.Locatable;
 import com.zergatul.scripting.TextRange;
-import com.zergatul.scripting.parser.NodeType;
 import com.zergatul.scripting.parser.ParserTreeVisitor;
 
 import java.util.List;
-import java.util.Objects;
 
-public class CompilationUnitMembersListNode extends Node {
+public class CompilationUnitMembersListNode extends ParserNode {
 
     public final List<CompilationUnitMemberNode> members;
 
     public CompilationUnitMembersListNode(List<CompilationUnitMemberNode> members,  TextRange range) {
-        super(NodeType.COMPILATION_UNIT_MEMBERS, range);
+        super(ParserNodeType.COMPILATION_UNIT_MEMBERS, range);
         this.members = members;
     }
 
@@ -29,11 +28,7 @@ public class CompilationUnitMembersListNode extends Node {
     }
 
     @Override
-    public boolean equals(Object obj) {
-        if (obj instanceof CompilationUnitMembersListNode other) {
-            return Objects.equals(other.members, members) && other.getRange().equals(getRange());
-        } else {
-            return false;
-        }
+    public List<Locatable> getChildNodes() {
+        return List.copyOf(members);
     }
 }

@@ -1,31 +1,36 @@
 package com.zergatul.scripting.parser.nodes;
 
+import com.zergatul.scripting.Locatable;
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.lexer.Token;
-import com.zergatul.scripting.parser.NodeType;
 import com.zergatul.scripting.parser.ParserTreeVisitor;
+import org.jspecify.annotations.Nullable;
 
-import java.util.Objects;
+import java.util.ArrayList;
+import java.util.List;
 
 public class VariableDeclarationNode extends StatementNode {
 
     public final TypeNode type;
     public final NameExpressionNode name;
-    public final ExpressionNode expression;
+    @Nullable public final Token equal;
+    @Nullable public final ExpressionNode expression;
     public final Token semicolon;
 
-    public VariableDeclarationNode(TypeNode type, NameExpressionNode name, TextRange range) {
-        this(type, name, null, null, range);
-    }
+    public VariableDeclarationNode(
+            TypeNode type,
+            NameExpressionNode name,
+            @Nullable Token equal,
+            @Nullable ExpressionNode expression,
+            Token semicolon
+    ) {
+        super(ParserNodeType.VARIABLE_DECLARATION, TextRange.combine(type, semicolon));
 
-    public VariableDeclarationNode(TypeNode type, NameExpressionNode name, ExpressionNode expression, TextRange range) {
-        this(type, name, expression, null, range);
-    }
+        assert (equal != null) == (expression != null);
 
-    public VariableDeclarationNode(TypeNode type, NameExpressionNode name, ExpressionNode expression, Token semicolon, TextRange range) {
-        super(NodeType.VARIABLE_DECLARATION, range);
         this.type = type;
         this.name = name;
+        this.equal = equal;
         this.expression = expression;
         this.semicolon = semicolon;
     }
@@ -37,7 +42,22 @@ public class VariableDeclarationNode extends StatementNode {
 
     @Override
     public boolean isOpen() {
-        return (semicolon != null && semicolon.isMissing()) || (expression != null && expression.isMissing()) || name.isMissing();
+        return (expression != null && expression.isMissing()) || name.isMissing();
+    }
+
+    @Override
+    public List<Locatable> getChildNodes() {
+        List<Locatable> nodes = new ArrayList<>();
+        nodes.add(type);
+        nodes.add(name);
+        if (equal != null) {
+            nodes.add(equal);
+        }
+        if (expression != null) {
+            nodes.add(expression);
+        }
+        nodes.add(semicolon);
+        return nodes;
     }
 
     @Override
@@ -50,20 +70,7 @@ public class VariableDeclarationNode extends StatementNode {
     }
 
     @Override
-    public boolean equals(Object obj) {
-        if (obj instanceof VariableDeclarationNode other) {
-            return  other.type.equals(type) &&
-                    other.name.equals(name) &&
-                    Objects.equals(other.expression, expression) &&
-                    Objects.equals(other.semicolon, semicolon) &&
-                    other.getRange().equals(getRange());
-        } else {
-            return false;
-        }
-    }
-
-    @Override
     public StatementNode updateWithSemicolon(Token semicolon) {
-        return new VariableDeclarationNode(type, name, expression, semicolon, TextRange.combine(getRange(), semicolon.getRange()));
+        return new VariableDeclarationNode(type, name, equal, expression, semicolon);
     }
 }

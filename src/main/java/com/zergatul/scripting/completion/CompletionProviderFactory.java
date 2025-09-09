@@ -23,6 +23,7 @@ public class CompletionProviderFactory<T> {
                 new FunctionsCompletionProvider<>(factory),
                 new StaticFieldsCompletionProvider<>(factory),
                 new MetaExpressionsCompletionProvider<>(factory),
+                new InputParametersCompletionProvider<>(factory),
                 new LocalVariablesCompletionProvider<>(factory),
                 new ParametersCompletionProvider<>(factory),
                 new ObjectMemberCompletionProvider<>(factory),
@@ -30,7 +31,9 @@ public class CompletionProviderFactory<T> {
                 new ElseKeywordCompletionProvider<>(factory),
                 new LoopStatementsCompletionProvider<>(factory),
                 new LoopVariablesCompletionProvider<>(factory),
-                new ThisCompletionProvider<>(factory));
+                new ThisCompletionProvider<>(factory),
+                new ClassMembersCompletionProvider<>(factory),
+                new BasicExpressionStartCompletionProvider<>(factory));
     }
 
     public List<T> getSuggestions(CompilationParameters parameters, BinderOutput output, int line, int column) {

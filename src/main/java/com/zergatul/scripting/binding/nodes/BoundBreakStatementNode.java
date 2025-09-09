@@ -2,14 +2,21 @@ package com.zergatul.scripting.binding.nodes;
 
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
-import com.zergatul.scripting.parser.NodeType;
+import com.zergatul.scripting.parser.nodes.BreakStatementNode;
 
 import java.util.List;
 
 public class BoundBreakStatementNode extends BoundStatementNode {
 
-    public BoundBreakStatementNode(TextRange range) {
-        super(NodeType.BREAK_STATEMENT, range);
+    public final BreakStatementNode syntaxNode;
+
+    public BoundBreakStatementNode(BreakStatementNode node) {
+        this(node, node.getRange());
+    }
+
+    public BoundBreakStatementNode(BreakStatementNode node, TextRange range) {
+        super(BoundNodeType.BREAK_STATEMENT, range);
+        this.syntaxNode = node;
     }
 
     @Override

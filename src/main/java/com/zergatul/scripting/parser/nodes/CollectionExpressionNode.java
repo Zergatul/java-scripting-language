@@ -1,19 +1,24 @@
 package com.zergatul.scripting.parser.nodes;
 
+import com.zergatul.scripting.Locatable;
 import com.zergatul.scripting.TextRange;
-import com.zergatul.scripting.parser.NodeType;
+import com.zergatul.scripting.lexer.Token;
 import com.zergatul.scripting.parser.ParserTreeVisitor;
 
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 
 public class CollectionExpressionNode extends ExpressionNode {
 
-    public final List<ExpressionNode> items;
+    public final Token openBracket;
+    public final SeparatedList<ExpressionNode> list;
+    public final Token closeBracket;
 
-    public CollectionExpressionNode(List<ExpressionNode> items, TextRange range) {
-        super(NodeType.COLLECTION_EXPRESSION, range);
-        this.items = items;
+    public CollectionExpressionNode(Token openBracket, SeparatedList<ExpressionNode> list, Token closeBracket, TextRange range) {
+        super(ParserNodeType.COLLECTION_EXPRESSION, range);
+        this.openBracket = openBracket;
+        this.list = list;
+        this.closeBracket = closeBracket;
     }
 
     @Override
@@ -23,18 +28,17 @@ public class CollectionExpressionNode extends ExpressionNode {
 
     @Override
     public void acceptChildren(ParserTreeVisitor visitor) {
-        for (ExpressionNode item : items) {
+        for (ExpressionNode item : list.getNodes()) {
             item.accept(visitor);
         }
     }
 
     @Override
-    public boolean equals(Object obj) {
-        if (obj instanceof CollectionExpressionNode other) {
-            return  Objects.equals(other.items, items) &&
-                    other.getRange().equals(getRange());
-        } else {
-            return false;
-        }
+    public List<Locatable> getChildNodes() {
+        List<Locatable> nodes = new ArrayList<>();
+        nodes.add(openBracket);
+        nodes.addAll(list.getChildNodes());
+        nodes.add(closeBracket);
+        return nodes;
     }
 }

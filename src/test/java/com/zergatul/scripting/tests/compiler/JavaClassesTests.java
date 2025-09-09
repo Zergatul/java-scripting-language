@@ -4,6 +4,7 @@ import com.zergatul.scripting.DiagnosticMessage;
 import com.zergatul.scripting.SingleLineTextRange;
 import com.zergatul.scripting.binding.BinderErrors;
 import com.zergatul.scripting.tests.compiler.helpers.IntStorage;
+import com.zergatul.scripting.tests.framework.ComparatorTest;
 import com.zergatul.scripting.type.SType;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -14,7 +15,7 @@ import java.util.List;
 import static com.zergatul.scripting.tests.compiler.helpers.CompilerHelper.compile;
 import static com.zergatul.scripting.tests.compiler.helpers.CompilerHelper.getDiagnostics;
 
-public class JavaClassesTests {
+public class JavaClassesTests extends ComparatorTest {
 
     @BeforeEach
     public void clean() {
@@ -47,30 +48,28 @@ public class JavaClassesTests {
                 class3.hashCode();
                 """;
 
-        List<DiagnosticMessage> diagnostics = getDiagnostics(ApiRoot.class, code);
-        Assertions.assertIterableEquals(
-                diagnostics,
-                List.of(
-                        new DiagnosticMessage(
-                                BinderErrors.MemberDoesNotExist,
-                                new SingleLineTextRange(1, 8, 7, 6),
-                                SType.fromJavaType(Class3.class),
-                                "notify"),
-                        new DiagnosticMessage(
-                                BinderErrors.MemberDoesNotExist,
-                                new SingleLineTextRange(2, 8, 24, 8),
-                                SType.fromJavaType(Class3.class),
-                                "getClass"),
-                        new DiagnosticMessage(
-                                BinderErrors.MemberDoesNotExist,
-                                new SingleLineTextRange(3, 8, 43, 8),
-                                SType.fromJavaType(Class3.class),
-                                "toString"),
-                        new DiagnosticMessage(
-                                BinderErrors.MemberDoesNotExist,
-                                new SingleLineTextRange(4, 8, 62, 8),
-                                SType.fromJavaType(Class3.class),
-                                "hashCode")));
+        comparator.assertEquals(List.of(
+                new DiagnosticMessage(
+                        BinderErrors.MemberDoesNotExist,
+                        new SingleLineTextRange(1, 8, 7, 6),
+                        SType.fromJavaType(Class3.class),
+                        "notify"),
+                new DiagnosticMessage(
+                        BinderErrors.MemberDoesNotExist,
+                        new SingleLineTextRange(2, 8, 24, 8),
+                        SType.fromJavaType(Class3.class),
+                        "getClass"),
+                new DiagnosticMessage(
+                        BinderErrors.MemberDoesNotExist,
+                        new SingleLineTextRange(3, 8, 43, 8),
+                        SType.fromJavaType(Class3.class),
+                        "toString"),
+                new DiagnosticMessage(
+                        BinderErrors.MemberDoesNotExist,
+                        new SingleLineTextRange(4, 8, 62, 8),
+                        SType.fromJavaType(Class3.class),
+                        "hashCode")),
+                getDiagnostics(ApiRoot.class, code));
     }
 
     public static class ApiRoot {

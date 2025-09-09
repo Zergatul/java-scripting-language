@@ -1,13 +1,18 @@
 package com.zergatul.scripting.parser.nodes;
 
-import com.zergatul.scripting.TextRange;
-import com.zergatul.scripting.parser.NodeType;
+import com.zergatul.scripting.Locatable;
+import com.zergatul.scripting.lexer.Token;
 import com.zergatul.scripting.parser.ParserTreeVisitor;
+
+import java.util.List;
 
 public class InvalidTypeNode extends TypeNode {
 
-    public InvalidTypeNode(TextRange range) {
-        super(NodeType.INVALID_TYPE, range);
+    public final Token token;
+
+    public InvalidTypeNode(Token token) {
+        super(ParserNodeType.INVALID_TYPE, token.getRange());
+        this.token = token;
     }
 
     @Override
@@ -19,11 +24,7 @@ public class InvalidTypeNode extends TypeNode {
     public void acceptChildren(ParserTreeVisitor visitor) {}
 
     @Override
-    public boolean equals(Object obj) {
-        if (obj instanceof InvalidTypeNode other) {
-            return other.getRange().equals(getRange());
-        } else {
-            return false;
-        }
+    public List<Locatable> getChildNodes() {
+        return List.of(token);
     }
 }

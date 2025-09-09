@@ -1,9 +1,11 @@
 package com.zergatul.scripting.parser.nodes;
 
+import com.zergatul.scripting.Locatable;
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.lexer.Token;
-import com.zergatul.scripting.parser.NodeType;
 import com.zergatul.scripting.parser.ParserTreeVisitor;
+
+import java.util.List;
 
 public class WhileLoopStatementNode extends StatementNode {
 
@@ -13,8 +15,8 @@ public class WhileLoopStatementNode extends StatementNode {
     public final Token closeParen;
     public final StatementNode body;
 
-    public WhileLoopStatementNode(Token keyword, Token openParen, ExpressionNode condition, Token closeParen, StatementNode body, TextRange range) {
-        super(NodeType.WHILE_LOOP_STATEMENT, range);
+    public WhileLoopStatementNode(Token keyword, Token openParen, ExpressionNode condition, Token closeParen, StatementNode body) {
+        super(ParserNodeType.WHILE_LOOP_STATEMENT, TextRange.combine(keyword, body));
         this.keyword = keyword;
         this.openParen = openParen;
         this.condition = condition;
@@ -34,16 +36,7 @@ public class WhileLoopStatementNode extends StatementNode {
     }
 
     @Override
-    public boolean equals(Object obj) {
-        if (obj instanceof WhileLoopStatementNode other) {
-            return  other.keyword.equals(keyword) &&
-                    other.openParen.equals(openParen) &&
-                    other.condition.equals(condition) &&
-                    other.closeParen.equals(closeParen) &&
-                    other.body.equals(body) &&
-                    other.getRange().equals(getRange());
-        } else {
-            return false;
-        }
+    public List<Locatable> getChildNodes() {
+        return List.of(keyword, openParen, condition, closeParen, body);
     }
 }

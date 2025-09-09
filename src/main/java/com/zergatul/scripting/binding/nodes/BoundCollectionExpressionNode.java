@@ -2,18 +2,28 @@ package com.zergatul.scripting.binding.nodes;
 
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
-import com.zergatul.scripting.parser.NodeType;
+import com.zergatul.scripting.parser.nodes.CollectionExpressionNode;
 import com.zergatul.scripting.type.SType;
 
 import java.util.List;
 
 public class BoundCollectionExpressionNode extends BoundExpressionNode {
 
-    public final List<BoundExpressionNode> items;
+    public final CollectionExpressionNode syntaxNode;
+    public final List<BoundExpressionNode> list;
 
-    public BoundCollectionExpressionNode(SType type, List<BoundExpressionNode> items, TextRange range) {
-        super(NodeType.COLLECTION_EXPRESSION, type, range);
-        this.items = items;
+    public BoundCollectionExpressionNode(BoundEmptyCollectionExpressionNode node, SType type) {
+        this(node.syntaxNode, type, List.of(), node.getRange());
+    }
+
+    public BoundCollectionExpressionNode(CollectionExpressionNode node, SType type, List<BoundExpressionNode> list) {
+        this(node, type, list, node.getRange());
+    }
+
+    public BoundCollectionExpressionNode(CollectionExpressionNode node, SType type, List<BoundExpressionNode> list, TextRange range) {
+        super(BoundNodeType.COLLECTION_EXPRESSION, type, range);
+        this.syntaxNode = node;
+        this.list = list;
     }
 
     @Override
@@ -23,13 +33,13 @@ public class BoundCollectionExpressionNode extends BoundExpressionNode {
 
     @Override
     public void acceptChildren(BinderTreeVisitor visitor) {
-        for (BoundExpressionNode item : items) {
+        for (BoundExpressionNode item : list) {
             item.accept(visitor);
         }
     }
 
     @Override
     public List<BoundNode> getChildren() {
-        return List.copyOf(items);
+        return List.copyOf(list);
     }
 }

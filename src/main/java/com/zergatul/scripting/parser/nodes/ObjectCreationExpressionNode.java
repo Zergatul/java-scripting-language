@@ -1,16 +1,21 @@
 package com.zergatul.scripting.parser.nodes;
 
+import com.zergatul.scripting.Locatable;
 import com.zergatul.scripting.TextRange;
-import com.zergatul.scripting.parser.NodeType;
+import com.zergatul.scripting.lexer.Token;
 import com.zergatul.scripting.parser.ParserTreeVisitor;
+
+import java.util.List;
 
 public class ObjectCreationExpressionNode extends ExpressionNode {
 
+    public final Token keyword;
     public final TypeNode typeNode;
     public final ArgumentsListNode arguments;
 
-    public ObjectCreationExpressionNode(TypeNode typeNode, ArgumentsListNode arguments, TextRange range) {
-        super(NodeType.OBJECT_CREATION_EXPRESSION, range);
+    public ObjectCreationExpressionNode(Token keyword, TypeNode typeNode, ArgumentsListNode arguments) {
+        super(ParserNodeType.OBJECT_CREATION_EXPRESSION, TextRange.combine(keyword, arguments));
+        this.keyword = keyword;
         this.typeNode = typeNode;
         this.arguments = arguments;
     }
@@ -27,12 +32,7 @@ public class ObjectCreationExpressionNode extends ExpressionNode {
     }
 
     @Override
-    public boolean equals(Object obj) {
-        if (obj instanceof ObjectCreationExpressionNode other) {
-            return  other.typeNode.equals(typeNode) &&
-                    other.arguments.equals(arguments) &&
-                    other.getRange().equals(getRange());
-        }
-        return super.equals(obj);
+    public List<Locatable> getChildNodes() {
+        return List.of(keyword, typeNode, arguments);
     }
 }

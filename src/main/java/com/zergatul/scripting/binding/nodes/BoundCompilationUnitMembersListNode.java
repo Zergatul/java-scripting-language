@@ -2,17 +2,22 @@ package com.zergatul.scripting.binding.nodes;
 
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
-import com.zergatul.scripting.parser.NodeType;
+import com.zergatul.scripting.parser.nodes.CompilationUnitMembersListNode;
 
 import java.util.List;
-import java.util.Objects;
 
 public class BoundCompilationUnitMembersListNode extends BoundNode {
 
+    public final CompilationUnitMembersListNode syntaxNode;
     public final List<BoundCompilationUnitMemberNode> members;
 
-    public BoundCompilationUnitMembersListNode(List<BoundCompilationUnitMemberNode> members, TextRange range) {
-        super(NodeType.COMPILATION_UNIT_MEMBERS, range);
+    public BoundCompilationUnitMembersListNode(CompilationUnitMembersListNode node, List<BoundCompilationUnitMemberNode> members) {
+        this(node, members, node.getRange());
+    }
+
+    public BoundCompilationUnitMembersListNode(CompilationUnitMembersListNode node, List<BoundCompilationUnitMemberNode> members, TextRange range) {
+        super(BoundNodeType.COMPILATION_UNIT_MEMBERS, range);
+        this.syntaxNode = node;
         this.members = members;
     }
 
@@ -36,14 +41,5 @@ public class BoundCompilationUnitMembersListNode extends BoundNode {
     @Override
     public List<BoundNode> getChildren() {
         return List.copyOf(members);
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (obj instanceof BoundCompilationUnitMembersListNode other) {
-            return Objects.equals(other.members, members);
-        } else {
-            return false;
-        }
     }
 }

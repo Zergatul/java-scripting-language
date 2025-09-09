@@ -1,37 +1,44 @@
 package com.zergatul.scripting.parser.nodes;
 
+import com.zergatul.scripting.Locatable;
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.lexer.Token;
-import com.zergatul.scripting.parser.NodeType;
 import com.zergatul.scripting.parser.ParserTreeVisitor;
+import org.jspecify.annotations.Nullable;
 
-import java.util.Objects;
+import java.util.ArrayList;
+import java.util.List;
 
 public class IfStatementNode extends StatementNode {
 
     public final Token ifToken;
     public final Token openParen;
-    public final Token closeParen;
     public final ExpressionNode condition;
+    public final Token closeParen;
     public final StatementNode thenStatement;
+    @Nullable
     public final Token elseToken;
+    @Nullable
     public final StatementNode elseStatement;
 
     public IfStatementNode(
             Token ifToken,
             Token openParen,
-            Token closeParen,
             ExpressionNode condition,
+            Token closeParen,
             StatementNode thenStatement,
-            Token elseToken,
-            StatementNode elseStatement,
+            @Nullable Token elseToken,
+            @Nullable StatementNode elseStatement,
             TextRange range
     ) {
-        super(NodeType.IF_STATEMENT, range);
+        super(ParserNodeType.IF_STATEMENT, range);
+
+        assert (elseToken != null) == (elseStatement != null);
+
         this.ifToken = ifToken;
         this.openParen = openParen;
-        this.closeParen = closeParen;
         this.condition = condition;
+        this.closeParen = closeParen;
         this.thenStatement = thenStatement;
         this.elseToken = elseToken;
         this.elseStatement = elseStatement;
@@ -52,18 +59,19 @@ public class IfStatementNode extends StatementNode {
     }
 
     @Override
-    public boolean equals(Object obj) {
-        if (obj instanceof IfStatementNode other) {
-            return  other.ifToken.equals(ifToken) &&
-                    other.openParen.equals(openParen) &&
-                    other.condition.equals(condition) &&
-                    other.closeParen.equals(closeParen) &&
-                    other.thenStatement.equals(thenStatement) &&
-                    Objects.equals(other.elseToken, elseToken) &&
-                    Objects.equals(other.elseStatement, elseStatement) &&
-                    other.getRange().equals(getRange());
-        } else {
-            return false;
+    public List<Locatable> getChildNodes() {
+        List<Locatable> nodes = new ArrayList<>();
+        nodes.add(ifToken);
+        nodes.add(openParen);
+        nodes.add(condition);
+        nodes.add(closeParen);
+        nodes.add(thenStatement);
+        if (elseToken != null) {
+            nodes.add(elseToken);
         }
+        if (elseStatement != null) {
+            nodes.add(elseStatement);
+        }
+        return nodes;
     }
 }

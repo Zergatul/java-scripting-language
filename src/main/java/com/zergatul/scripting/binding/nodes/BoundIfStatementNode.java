@@ -2,51 +2,40 @@ package com.zergatul.scripting.binding.nodes;
 
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
-import com.zergatul.scripting.lexer.Token;
-import com.zergatul.scripting.parser.NodeType;
 import com.zergatul.scripting.parser.nodes.IfStatementNode;
 
 import java.util.List;
 
 public class BoundIfStatementNode extends BoundStatementNode {
 
-    public final Token ifToken;
-    public final Token openParen;
-    public final Token closeParen;
+    public final IfStatementNode syntaxNode;
     public final BoundExpressionNode condition;
     public final BoundStatementNode thenStatement;
-    public final Token elseToken;
     public final BoundStatementNode elseStatement;
 
     public BoundIfStatementNode(BoundExpressionNode condition, BoundStatementNode thenStatement) {
-        this(null, null, null, condition, thenStatement, null, null, null);
-    }
-
-    public BoundIfStatementNode(BoundExpressionNode condition, BoundStatementNode thenStatement, BoundStatementNode elseStatement, IfStatementNode node) {
-        this(node.ifToken, node.openParen, node.closeParen, condition, thenStatement, node.elseToken, elseStatement, node.getRange());
+        this(null, condition, thenStatement, null, null);
     }
 
     public BoundIfStatementNode(BoundExpressionNode condition, BoundStatementNode thenStatement, BoundStatementNode elseStatement) {
-        this(null, null, null, condition, thenStatement, null, elseStatement, null);
+        this(null, condition, thenStatement, elseStatement, null);
+    }
+
+    public BoundIfStatementNode(IfStatementNode node, BoundExpressionNode condition, BoundStatementNode thenStatement, BoundStatementNode elseStatement) {
+        this(node, condition, thenStatement, elseStatement, node.getRange());
     }
 
     public BoundIfStatementNode(
-            Token ifToken,
-            Token openParen,
-            Token closeParen,
+            IfStatementNode node,
             BoundExpressionNode condition,
             BoundStatementNode thenStatement,
-            Token elseToken,
             BoundStatementNode elseStatement,
             TextRange range
     ) {
-        super(NodeType.IF_STATEMENT, range);
-        this.ifToken = ifToken;
-        this.openParen = openParen;
-        this.closeParen = closeParen;
+        super(BoundNodeType.IF_STATEMENT, range);
+        this.syntaxNode = node;
         this.condition = condition;
         this.thenStatement = thenStatement;
-        this.elseToken = elseToken;
         this.elseStatement = elseStatement;
     }
 

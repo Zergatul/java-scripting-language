@@ -1,16 +1,20 @@
 package com.zergatul.scripting.parser.nodes;
 
-import com.zergatul.scripting.lexer.CharToken;
-import com.zergatul.scripting.parser.NodeType;
+import com.zergatul.scripting.Locatable;
+import com.zergatul.scripting.lexer.ValueToken;
 import com.zergatul.scripting.parser.ParserTreeVisitor;
+
+import java.util.List;
 
 public class CharLiteralExpressionNode extends ExpressionNode {
 
+    public final ValueToken token;
     public final char value;
 
-    public CharLiteralExpressionNode(CharToken token) {
-        super(NodeType.CHAR_LITERAL, token.getRange());
-        this.value = token.value;
+    public CharLiteralExpressionNode(ValueToken token) {
+        super(ParserNodeType.CHAR_LITERAL, token.getRange());
+        this.token = token;
+        this.value = token.value.charAt(0);
     }
 
     @Override
@@ -20,4 +24,9 @@ public class CharLiteralExpressionNode extends ExpressionNode {
 
     @Override
     public void acceptChildren(ParserTreeVisitor visitor) {}
+
+    @Override
+    public List<Locatable> getChildNodes() {
+        return List.of(token);
+    }
 }

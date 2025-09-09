@@ -1,16 +1,18 @@
 package com.zergatul.scripting.parser.nodes;
 
+import com.zergatul.scripting.Locatable;
 import com.zergatul.scripting.TextRange;
-import com.zergatul.scripting.parser.NodeType;
 import com.zergatul.scripting.parser.ParserTreeVisitor;
+
+import java.util.List;
 
 public class UnaryExpressionNode extends ExpressionNode {
 
     public final UnaryOperatorNode operator;
     public final ExpressionNode operand;
 
-    public UnaryExpressionNode(UnaryOperatorNode operator, ExpressionNode operand, TextRange range) {
-        super(NodeType.UNARY_EXPRESSION, range);
+    public UnaryExpressionNode(UnaryOperatorNode operator, ExpressionNode operand) {
+        super(ParserNodeType.UNARY_EXPRESSION, TextRange.combine(operator, operand));
         this.operator = operator;
         this.operand = operand;
     }
@@ -27,11 +29,7 @@ public class UnaryExpressionNode extends ExpressionNode {
     }
 
     @Override
-    public boolean equals(Object obj) {
-        if (obj instanceof UnaryExpressionNode other) {
-            return other.operator.equals(operator) && other.getRange().equals(getRange());
-        } else {
-            return false;
-        }
+    public List<Locatable> getChildNodes() {
+        return List.of(operand);
     }
 }

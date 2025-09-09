@@ -2,17 +2,23 @@ package com.zergatul.scripting.binding.nodes;
 
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
-import com.zergatul.scripting.parser.NodeType;
+import com.zergatul.scripting.parser.nodes.TypeCastExpressionNode;
 
 import java.util.List;
 
 public class BoundTypeCastExpressionNode extends BoundExpressionNode {
 
+    public final TypeCastExpressionNode syntaxNode;
     public final BoundExpressionNode expression;
     public final BoundTypeNode type;
 
-    public BoundTypeCastExpressionNode(BoundExpressionNode expression, BoundTypeNode type, TextRange range) {
-        super(NodeType.TYPE_CAST_EXPRESSION, type.type, range);
+    public BoundTypeCastExpressionNode(TypeCastExpressionNode node, BoundExpressionNode expression, BoundTypeNode type) {
+        this(node, expression, type, node.getRange());
+    }
+
+    public BoundTypeCastExpressionNode(TypeCastExpressionNode node, BoundExpressionNode expression, BoundTypeNode type, TextRange range) {
+        super(BoundNodeType.TYPE_CAST_EXPRESSION, type.type, range);
+        this.syntaxNode = node;
         this.expression = expression;
         this.type = type;
     }

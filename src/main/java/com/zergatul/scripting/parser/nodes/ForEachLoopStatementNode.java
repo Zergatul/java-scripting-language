@@ -1,24 +1,39 @@
 package com.zergatul.scripting.parser.nodes;
 
+import com.zergatul.scripting.Locatable;
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.lexer.Token;
-import com.zergatul.scripting.parser.NodeType;
 import com.zergatul.scripting.parser.ParserTreeVisitor;
+
+import java.util.List;
 
 public class ForEachLoopStatementNode extends StatementNode {
 
+    public final Token keyword;
     public final Token openParen;
     public final TypeNode typeNode;
     public final NameExpressionNode name;
+    public final Token in;
     public final ExpressionNode iterable;
     public final Token closeParen;
     public final StatementNode body;
 
-    public ForEachLoopStatementNode(Token openParen, TypeNode typeNode, NameExpressionNode name, ExpressionNode iterable, Token closeParen, StatementNode body, TextRange range) {
-        super(NodeType.FOREACH_LOOP_STATEMENT, range);
+    public ForEachLoopStatementNode(
+            Token keyword,
+            Token openParen,
+            TypeNode typeNode,
+            NameExpressionNode name,
+            Token in,
+            ExpressionNode iterable,
+            Token closeParen,
+            StatementNode body
+    ) {
+        super(ParserNodeType.FOREACH_LOOP_STATEMENT, TextRange.combine(keyword, body));
+        this.keyword = keyword;
         this.openParen = openParen;
         this.typeNode = typeNode;
         this.name = name;
+        this.in = in;
         this.iterable = iterable;
         this.closeParen = closeParen;
         this.body = body;
@@ -38,17 +53,7 @@ public class ForEachLoopStatementNode extends StatementNode {
     }
 
     @Override
-    public boolean equals(Object obj) {
-        if (obj instanceof ForEachLoopStatementNode other) {
-            return  other.openParen.equals(openParen) &&
-                    other.typeNode.equals(typeNode) &&
-                    other.name.equals(name) &&
-                    other.iterable.equals(iterable) &&
-                    other.closeParen.equals(closeParen) &&
-                    other.body.equals(body) &&
-                    other.getRange().equals(getRange());
-        } else {
-            return false;
-        }
+    public List<Locatable> getChildNodes() {
+        return List.of(keyword, openParen, typeNode, name, in, iterable, closeParen, body);
     }
 }

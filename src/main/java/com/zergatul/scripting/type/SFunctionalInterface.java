@@ -2,13 +2,9 @@ package com.zergatul.scripting.type;
 
 import com.zergatul.scripting.InterfaceHelper;
 import com.zergatul.scripting.InternalException;
-import com.zergatul.scripting.compiler.StackHelper;
 import org.objectweb.asm.Type;
 
-import java.lang.reflect.Method;
-import java.lang.reflect.Parameter;
-import java.lang.reflect.ParameterizedType;
-import java.lang.reflect.TypeVariable;
+import java.lang.reflect.*;
 import java.util.Arrays;
 
 public class SFunctionalInterface extends SFunction {
@@ -64,7 +60,12 @@ public class SFunctionalInterface extends SFunction {
         SType[] actualParameters = Arrays.stream(method.getGenericParameterTypes())
                 .map(t -> {
                     if (t instanceof TypeVariable<?> typeVariable) {
-                        return (Class<?>) actualArgs[findTypeParamIndex(classTypeParams, typeVariable.getName())];
+                        java.lang.reflect.Type actual = actualArgs[findTypeParamIndex(classTypeParams, typeVariable.getName())];
+                        if (actual instanceof WildcardType wildcard) {
+                            return ((TypeVariable<?>) wildcard.getLowerBounds()[0]).getBounds()[0];
+                        } else {
+                            return (Class<?>) actual;
+                        }
                     } else {
                         return (Class<?>) t;
                     }
@@ -152,6 +153,18 @@ public class SFunctionalInterface extends SFunction {
 
     public String getActualMethodDescriptor() {
         return getMethodDescriptor();
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj instanceof SFunctionalInterface other) {
+            return  other.clazz == clazz &&
+                    other.method.equals(method) &&
+                    other.actualReturnType.equals(actualReturnType) &&
+                    Arrays.equals(other.actualParameters, actualParameters);
+        } else {
+            return false;
+        }
     }
 
     private static int findTypeParamIndex(TypeVariable<? extends Class<?>>[] params, String name) {

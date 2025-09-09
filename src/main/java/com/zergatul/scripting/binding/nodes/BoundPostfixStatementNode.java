@@ -2,22 +2,28 @@ package com.zergatul.scripting.binding.nodes;
 
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
-import com.zergatul.scripting.parser.NodeType;
+import com.zergatul.scripting.parser.nodes.PostfixStatementNode;
 import com.zergatul.scripting.type.operation.PostfixOperation;
 
 import java.util.List;
 
 public class BoundPostfixStatementNode extends BoundStatementNode {
 
+    public final PostfixStatementNode syntaxNode;
     public final BoundExpressionNode expression;
     public final PostfixOperation operation;
 
-    public BoundPostfixStatementNode(NodeType nodeType, BoundExpressionNode expression, PostfixOperation operation) {
-        this(nodeType, expression, operation, null);
+    public BoundPostfixStatementNode(BoundNodeType nodeType, BoundExpressionNode expression, PostfixOperation operation) {
+        this(null, nodeType, expression, operation, null);
     }
 
-    public BoundPostfixStatementNode(NodeType nodeType, BoundExpressionNode expression, PostfixOperation operation, TextRange range) {
+    public BoundPostfixStatementNode(PostfixStatementNode node, BoundNodeType nodeType, BoundExpressionNode expression, PostfixOperation operation) {
+        this(node, nodeType, expression, operation, node.getRange());
+    }
+
+    public BoundPostfixStatementNode(PostfixStatementNode node, BoundNodeType nodeType, BoundExpressionNode expression, PostfixOperation operation, TextRange range) {
         super(nodeType, range);
+        this.syntaxNode = node;
         this.expression = expression;
         this.operation = operation;
     }

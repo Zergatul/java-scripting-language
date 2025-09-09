@@ -2,9 +2,10 @@ package com.zergatul.scripting.binding.nodes;
 
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
+import com.zergatul.scripting.parser.nodes.NameExpressionNode;
+import com.zergatul.scripting.symbols.ImmutableSymbolRef;
 import com.zergatul.scripting.symbols.MutableSymbolRef;
 import com.zergatul.scripting.symbols.Symbol;
-import com.zergatul.scripting.parser.NodeType;
 import com.zergatul.scripting.symbols.SymbolRef;
 import com.zergatul.scripting.type.SType;
 
@@ -12,31 +13,33 @@ import java.util.List;
 
 public class BoundNameExpressionNode extends BoundExpressionNode {
 
+    public final NameExpressionNode syntaxNode;
     public final String value;
     public final SymbolRef symbolRef;
 
     public BoundNameExpressionNode(Symbol symbol) {
-        this(symbol, null);
-    }
-
-    public BoundNameExpressionNode(Symbol symbol, TextRange range) {
-        this(symbol, symbol.getType(), symbol.getName(), range);
-    }
-
-    public BoundNameExpressionNode(Symbol symbol, SType type, String value, TextRange range) {
-        this(new MutableSymbolRef(symbol), type, value, range);
+        this(new ImmutableSymbolRef(symbol));
     }
 
     public BoundNameExpressionNode(SymbolRef symbolRef) {
-        this(symbolRef, null);
+        this(null, symbolRef, symbolRef.get().getType(), symbolRef.get().getName(), null);
     }
 
-    public BoundNameExpressionNode(SymbolRef symbolRef, TextRange range) {
-        this(symbolRef, symbolRef.get().getType(), symbolRef.get().getName(), range);
+    public BoundNameExpressionNode(NameExpressionNode node, Symbol symbol, SType type) {
+        this(node, new MutableSymbolRef(symbol), type, node.value, node.getRange());
     }
 
-    public BoundNameExpressionNode(SymbolRef symbolRef, SType type, String value, TextRange range) {
-        super(NodeType.NAME_EXPRESSION, type, range);
+    public BoundNameExpressionNode(NameExpressionNode node, SymbolRef symbolRef) {
+        this(node, symbolRef, symbolRef.get().getType());
+    }
+
+    public BoundNameExpressionNode(NameExpressionNode node, SymbolRef symbolRef, SType type) {
+        this(node, symbolRef, type, node.value, node.getRange());
+    }
+
+    public BoundNameExpressionNode(NameExpressionNode node, SymbolRef symbolRef, SType type, String value, TextRange range) {
+        super(BoundNodeType.NAME_EXPRESSION, type, range);
+        this.syntaxNode = node;
         this.symbolRef = symbolRef;
         this.value = value;
 
@@ -65,14 +68,5 @@ public class BoundNameExpressionNode extends BoundExpressionNode {
     @Override
     public List<BoundNode> getChildren() {
         return List.of();
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (obj instanceof BoundNameExpressionNode other) {
-            return other.value.equals(value) && other.symbolRef.equals(symbolRef) && equals(other, this);
-        } else {
-            return false;
-        }
     }
 }

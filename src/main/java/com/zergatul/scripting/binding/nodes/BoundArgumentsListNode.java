@@ -2,21 +2,30 @@ package com.zergatul.scripting.binding.nodes;
 
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
-import com.zergatul.scripting.parser.NodeType;
+import com.zergatul.scripting.parser.nodes.ArgumentsListNode;
 
 import java.util.List;
-import java.util.Objects;
 
 public class BoundArgumentsListNode extends BoundNode {
 
+    public final ArgumentsListNode syntaxNode;
     public final List<BoundExpressionNode> arguments;
 
     public BoundArgumentsListNode(List<BoundExpressionNode> arguments) {
-        this(arguments, null);
+        this(null, arguments, null);
     }
 
-    public BoundArgumentsListNode(List<BoundExpressionNode> arguments, TextRange range) {
-        super(NodeType.ARGUMENTS_LIST, range);
+    public BoundArgumentsListNode(ArgumentsListNode node, List<BoundExpressionNode> arguments) {
+        this(node, arguments, node.getRange());
+    }
+
+    public BoundArgumentsListNode(
+            ArgumentsListNode node,
+            List<BoundExpressionNode> arguments,
+            TextRange range
+    ) {
+        super(BoundNodeType.ARGUMENTS_LIST, range);
+        this.syntaxNode = node;
         this.arguments = arguments;
     }
 
@@ -35,14 +44,5 @@ public class BoundArgumentsListNode extends BoundNode {
     @Override
     public List<BoundNode> getChildren() {
         return List.copyOf(arguments);
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (obj instanceof BoundArgumentsListNode other) {
-            return Objects.equals(other.arguments, arguments) && other.getRange().equals(getRange());
-        } else {
-            return false;
-        }
     }
 }

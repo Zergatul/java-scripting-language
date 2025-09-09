@@ -5,6 +5,7 @@ import com.zergatul.scripting.DiagnosticMessage;
 import com.zergatul.scripting.SingleLineTextRange;
 import com.zergatul.scripting.binding.BinderErrors;
 import com.zergatul.scripting.tests.compiler.helpers.*;
+import com.zergatul.scripting.tests.framework.ComparatorTest;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -14,7 +15,7 @@ import java.util.concurrent.CompletableFuture;
 
 import static com.zergatul.scripting.tests.compiler.helpers.CompilerHelper.*;
 
-public class AsyncFunctionTests {
+public class AsyncFunctionTests extends ComparatorTest {
 
     @BeforeEach
     public void clean() {
@@ -371,10 +372,9 @@ public class AsyncFunctionTests {
                 int x = count();
                 """;
 
-        List<DiagnosticMessage> messages = getDiagnostics(ApiRoot.class, code);
-
-        Assertions.assertIterableEquals(messages, List.of(
-                new DiagnosticMessage(BinderErrors.CannotImplicitlyConvert, new SingleLineTextRange(2, 9, 32, 7), "Future<int>", "int")));
+        comparator.assertEquals(List.of(
+                new DiagnosticMessage(BinderErrors.CannotImplicitlyConvert, new SingleLineTextRange(2, 9, 32, 7), "Future<int>", "int")),
+                getDiagnostics(ApiRoot.class, code));
     }
 
     public static class ApiRoot {

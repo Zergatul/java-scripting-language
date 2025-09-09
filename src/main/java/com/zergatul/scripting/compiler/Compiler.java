@@ -11,7 +11,7 @@ import com.zergatul.scripting.lexer.Lexer;
 import com.zergatul.scripting.lexer.LexerInput;
 import com.zergatul.scripting.lexer.LexerOutput;
 import com.zergatul.scripting.parser.AssignmentOperator;
-import com.zergatul.scripting.parser.NodeType;
+import com.zergatul.scripting.binding.nodes.BoundNodeType;
 import com.zergatul.scripting.parser.Parser;
 import com.zergatul.scripting.parser.ParserOutput;
 import com.zergatul.scripting.runtime.AsyncStateMachine;
@@ -129,7 +129,7 @@ public class Compiler {
             switch (member.getNodeType()) {
                 case STATIC_VARIABLE -> fields.add((BoundStaticVariableNode) member);
                 case FUNCTION -> functions.add((BoundFunctionNode) member);
-                case CLASS -> classes.add((BoundClassNode) member);
+                case CLASS_DECLARATION -> classes.add((BoundClassNode) member);
                 default -> throw new InternalException();
             }
         }
@@ -184,7 +184,7 @@ public class Compiler {
             }
 
             // add default constructor if we have zero constructors defined
-            if (classNode.members.stream().noneMatch(m -> m.getNodeType() == NodeType.CLASS_CONSTRUCTOR)) {
+            if (classNode.members.stream().noneMatch(m -> m.getNodeType() == BoundNodeType.CLASS_CONSTRUCTOR)) {
                 MethodVisitor constructorVisitor = innerWriter.visitMethod(ACC_PUBLIC, "<init>", Type.getMethodDescriptor(Type.VOID_TYPE), null, null);
                 constructorVisitor.visitCode();
                 constructorVisitor.visitVarInsn(ALOAD, 0);
@@ -232,7 +232,7 @@ public class Compiler {
             context.setStackIndex((LocalVariable) parameter.getName().getSymbol());
         }
 
-        compileBlockStatement(constructorVisitor, context, constructor.body);
+        compileStatement(constructorVisitor, context, constructor.body);
 
         constructorVisitor.visitInsn(RETURN);
         constructorVisitor.visitMaxs(0, 0);
@@ -243,15 +243,15 @@ public class Compiler {
         MethodVisitor methodVisitor = writer.visitMethod(ACC_PUBLIC, methodNode.name.value, methodNode.functionType.getMethodDescriptor(), null, null);
         methodVisitor.visitCode();
 
-        context = context.createClassMethod(methodNode.functionType.getReturnType(), methodNode.isAsync);
+        context = context.createClassMethod(methodNode.functionType.getReturnType(), methodNode.isAsync());
         for (BoundParameterNode parameter : methodNode.parameters.parameters) {
             context.setStackIndex((LocalVariable) parameter.getName().getSymbol());
         }
 
-        if (methodNode.isAsync) {
-            compileAsyncBoundStatementList(methodVisitor, context, new BoundStatementsListNode(methodNode.body.statements));
+        if (methodNode.isAsync()) {
+            compileAsyncBoundStatementList(methodVisitor, context, new BoundStatementsListNode(List.of(methodNode.body)));
         } else {
-            compileBlockStatement(methodVisitor, context, methodNode.body);
+            compileStatement(methodVisitor, context, methodNode.body);
             if (methodNode.functionType.getReturnType() == SVoidType.instance) {
                 methodVisitor.visitInsn(RETURN);
             }
@@ -343,14 +343,14 @@ public class Compiler {
                     null);
             visitor.visitCode();
 
-            context = context.createStaticFunction(type.getReturnType(), function.isAsync);
+            context = context.createStaticFunction(type.getReturnType(), function.isAsync());
             processContextStart(visitor, context);
 
             for (BoundParameterNode parameter : function.parameters.parameters) {
                 context.setStackIndex((LocalVariable) parameter.getName().getSymbol());
             }
 
-            if (function.isAsync) {
+            if (function.isAsync()) {
                 compileAsyncBoundStatementList(visitor, context, new BoundStatementsListNode(List.of(function.body)));
             } else {
                 if (!function.lifted.isEmpty()) {
@@ -451,17 +451,12 @@ public class Compiler {
         }
 
         if (!prepend.isEmpty()) {
-            BoundStatementsListNode statements = new BoundStatementsListNode(
-                    prepend,
-                    unit.statements.statements,
-                    unit.statements.lifted,
-                    unit.statements.getRange());
-            unit = new BoundCompilationUnitNode(unit.members, statements, unit.getRange());
+            unit = unit.withStatements(unit.statements.withPrepend(prepend));
         }
 
         context.setClassName(className);
         for (BoundCompilationUnitMemberNode member : unit.members.members) {
-            if (member.getNodeType() == NodeType.STATIC_VARIABLE) {
+            if (member.getNodeType() == BoundNodeType.STATIC_VARIABLE) {
                 BoundStaticVariableNode field = (BoundStaticVariableNode) member;
                 context.addStaticSymbol(field.name.value, field.name.symbolRef);
             }
@@ -564,7 +559,7 @@ public class Compiler {
                 BufferedMethodVisitor buffer = new BufferedMethodVisitor();
                 compileExpression(visitor, context, assignment.left);
                 compileExpression(buffer, context, assignment.right);
-                assignment.operator.operation.apply(visitor, buffer);
+                assignment.operation.apply(visitor, buffer);
 
                 BoundNameExpressionNode name = (BoundNameExpressionNode) assignment.left;
                 Variable variable = name.symbolRef.asVariable();
@@ -579,7 +574,7 @@ public class Compiler {
                 BufferedMethodVisitor buffer = new BufferedMethodVisitor();
                 indexExpression.operation.compileGet(visitor);
                 compileExpression(buffer, context, assignment.right);
-                assignment.operator.operation.apply(visitor, buffer);
+                assignment.operation.apply(visitor, buffer);
 
                 indexExpression.operation.compileSet(visitor);
             }
@@ -590,7 +585,7 @@ public class Compiler {
                 propertyAccess.property.property.compileGet(visitor);
                 BufferedMethodVisitor buffer = new BufferedMethodVisitor();
                 compileExpression(buffer, context, assignment.right);
-                assignment.operator.operation.apply(visitor, buffer);
+                assignment.operation.apply(visitor, buffer);
                 propertyAccess.property.property.compileSet(visitor);
             }
             default -> throw new InternalException("Not implemented.");
@@ -1045,7 +1040,7 @@ public class Compiler {
             for (BoundStatementNode statement : boundary.statements) {
                 compileStatement(nextMethodVisitor, nextMethodContext, statement);
             }
-            if (boundary.statements.isEmpty() || boundary.statements.get(boundary.statements.size() - 1).getNodeType() != NodeType.RETURN_STATEMENT) {
+            if (boundary.statements.isEmpty() || boundary.statements.get(boundary.statements.size() - 1).getNodeType() != BoundNodeType.RETURN_STATEMENT) {
                 nextMethodVisitor.visitJumpInsn(GOTO, loop);
             }
         }
@@ -1568,7 +1563,7 @@ public class Compiler {
     }
 
     private void compileCollectionExpression(MethodVisitor visitor, CompilerContext context, BoundCollectionExpressionNode expression) {
-        visitor.visitLdcInsn(expression.items.size());
+        visitor.visitLdcInsn(expression.list.size());
 
         SArrayType arrayType = (SArrayType) expression.type;
         SType elementsType = arrayType.getElementsType();
@@ -1578,10 +1573,10 @@ public class Compiler {
             visitor.visitIntInsn(NEWARRAY, ((SPredefinedType) elementsType).getArrayTypeInst());
         }
 
-        for (int i = 0; i < expression.items.size(); i++) {
+        for (int i = 0; i < expression.list.size(); i++) {
             visitor.visitInsn(DUP);
             visitor.visitLdcInsn(i);
-            compileExpression(visitor, context, expression.items.get(i));
+            compileExpression(visitor, context, expression.list.get(i));
             visitor.visitInsn(elementsType.getArrayStoreInst());
         }
     }
@@ -1825,16 +1820,13 @@ public class Compiler {
         }
 
         BoundFunctionInvocationExpression invocation = new BoundFunctionInvocationExpression(
-                new BoundFunctionReferenceNode(node.name.value, node.name.symbolRef, node.name.getRange()),
+                new BoundFunctionReferenceNode(node.name.syntaxNode, node.name.symbolRef),
                 type.getReturnType(),
                 new BoundArgumentsListNode(arguments));
         BoundStatementNode statement = type.getReturnType() == SVoidType.instance ?
                 new BoundExpressionStatementNode(invocation) :
                 new BoundReturnStatementNode(invocation);
-        BoundLambdaExpressionNode lambda = new BoundLambdaExpressionNode(
-                node.type,
-                parameters,
-                statement);
+        BoundLambdaExpressionNode lambda = new BoundLambdaExpressionNode(parameters, statement, node.type);
         compileLambdaExpression(visitor, context, lambda);
     }
 

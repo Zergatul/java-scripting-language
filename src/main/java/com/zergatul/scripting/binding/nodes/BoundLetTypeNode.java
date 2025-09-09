@@ -2,15 +2,22 @@ package com.zergatul.scripting.binding.nodes;
 
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
-import com.zergatul.scripting.parser.NodeType;
+import com.zergatul.scripting.parser.nodes.LetTypeNode;
 import com.zergatul.scripting.type.SType;
 
 import java.util.List;
 
 public class BoundLetTypeNode extends BoundTypeNode {
 
-    public BoundLetTypeNode(SType type, TextRange range) {
-        super(NodeType.LET_TYPE, type, range);
+    public final LetTypeNode syntaxNode;
+
+    public BoundLetTypeNode(LetTypeNode node, SType type) {
+        this(node, type, node.getRange());
+    }
+
+    public BoundLetTypeNode(LetTypeNode node, SType type, TextRange range) {
+        super(BoundNodeType.LET_TYPE, type, range);
+        this.syntaxNode = node;
     }
 
     @Override

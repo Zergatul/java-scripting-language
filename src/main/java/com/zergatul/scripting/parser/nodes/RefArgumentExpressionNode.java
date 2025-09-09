@@ -1,15 +1,20 @@
 package com.zergatul.scripting.parser.nodes;
 
+import com.zergatul.scripting.Locatable;
 import com.zergatul.scripting.TextRange;
-import com.zergatul.scripting.parser.NodeType;
+import com.zergatul.scripting.lexer.Token;
 import com.zergatul.scripting.parser.ParserTreeVisitor;
+
+import java.util.List;
 
 public class RefArgumentExpressionNode extends ExpressionNode {
 
+    public final Token keyword;
     public final NameExpressionNode name;
 
-    public RefArgumentExpressionNode(NameExpressionNode name, TextRange range) {
-        super(NodeType.REF_ARGUMENT_EXPRESSION, range);
+    public RefArgumentExpressionNode(Token keyword, NameExpressionNode name) {
+        super(ParserNodeType.REF_ARGUMENT_EXPRESSION, TextRange.combine(keyword, name));
+        this.keyword = keyword;
         this.name = name;
     }
 
@@ -21,5 +26,10 @@ public class RefArgumentExpressionNode extends ExpressionNode {
     @Override
     public void acceptChildren(ParserTreeVisitor visitor) {
         name.accept(visitor);
+    }
+
+    @Override
+    public List<Locatable> getChildNodes() {
+        return List.of(keyword, name);
     }
 }

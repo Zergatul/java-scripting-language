@@ -4,4 +4,4 @@ import com.zergatul.scripting.DiagnosticMessage;
 
 import java.util.List;
 
-public record LexerOutput(String code, TokenQueue tokens, List<DiagnosticMessage> diagnostics) {}
+public record LexerOutput(String code, List<Line> lines, TokenQueue tokens, List<DiagnosticMessage> diagnostics) {}

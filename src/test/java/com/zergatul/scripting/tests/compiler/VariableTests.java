@@ -5,6 +5,7 @@ import com.zergatul.scripting.SingleLineTextRange;
 import com.zergatul.scripting.binding.BinderErrors;
 import com.zergatul.scripting.tests.compiler.helpers.IntStorage;
 import com.zergatul.scripting.tests.compiler.helpers.Run;
+import com.zergatul.scripting.tests.framework.ComparatorTest;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -14,7 +15,7 @@ import java.util.List;
 import static com.zergatul.scripting.tests.compiler.helpers.CompilerHelper.compile;
 import static com.zergatul.scripting.tests.compiler.helpers.CompilerHelper.getDiagnostics;
 
-public class VariableTests {
+public class VariableTests extends ComparatorTest {
 
     @BeforeEach
     public void clean() {
@@ -48,9 +49,9 @@ public class VariableTests {
                 int x = y;
                 """;
 
-        List<DiagnosticMessage> messages = getDiagnostics(ApiRoot.class, code);
-        Assertions.assertIterableEquals(messages, List.of(
-                new DiagnosticMessage(BinderErrors.SymbolAlreadyDeclared, new SingleLineTextRange(3, 5, 22, 1), "x")));
+        comparator.assertEquals(List.of(
+                new DiagnosticMessage(BinderErrors.SymbolAlreadyDeclared, new SingleLineTextRange(3, 5, 22, 1), "x")),
+                getDiagnostics(ApiRoot.class, code));
     }
 
     @Test
@@ -62,9 +63,9 @@ public class VariableTests {
                 }
                 """;
 
-        List<DiagnosticMessage> messages = getDiagnostics(ApiRoot.class, code);
-        Assertions.assertIterableEquals(messages, List.of(
-                new DiagnosticMessage(BinderErrors.SymbolAlreadyDeclared, new SingleLineTextRange(3, 9, 28, 1), "x")));
+        comparator.assertEquals(List.of(
+                new DiagnosticMessage(BinderErrors.SymbolAlreadyDeclared, new SingleLineTextRange(3, 9, 28, 1), "x")),
+                getDiagnostics(ApiRoot.class, code));
     }
 
     @Test

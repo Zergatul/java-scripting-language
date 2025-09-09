@@ -1,21 +1,21 @@
 package com.zergatul.scripting.parser.nodes;
 
+import com.zergatul.scripting.Locatable;
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.lexer.Token;
-import com.zergatul.scripting.parser.NodeType;
 import com.zergatul.scripting.parser.ParserTreeVisitor;
 
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 
-public class ParameterListNode extends Node {
+public class ParameterListNode extends ParserNode {
 
     public final Token openParen;
-    public final List<ParameterNode> parameters;
+    public final SeparatedList<ParameterNode> parameters;
     public final Token closeParen;
 
-    public ParameterListNode(Token openParen, List<ParameterNode> parameters, Token closeParen, TextRange range) {
-        super(NodeType.PARAMETER_LIST, range);
+    public ParameterListNode(Token openParen, SeparatedList<ParameterNode> parameters, Token closeParen) {
+        super(ParserNodeType.PARAMETER_LIST, TextRange.combine(openParen, closeParen));
         this.openParen = openParen;
         this.parameters = parameters;
         this.closeParen = closeParen;
@@ -28,24 +28,21 @@ public class ParameterListNode extends Node {
 
     @Override
     public void acceptChildren(ParserTreeVisitor visitor) {
-        for (ParameterNode parameter : parameters) {
+        for (ParameterNode parameter : parameters.getNodes()) {
             parameter.accept(visitor);
         }
     }
 
-    public boolean hasParentheses() {
-        return !openParen.isMissing() && !closeParen.isMissing();
+    @Override
+    public List<Locatable> getChildNodes() {
+        List<Locatable> nodes = new ArrayList<>();
+        nodes.add(openParen);
+        nodes.addAll(parameters.getChildNodes());
+        nodes.add(closeParen);
+        return nodes;
     }
 
-    @Override
-    public boolean equals(Object obj) {
-        if (obj instanceof ParameterListNode other) {
-            return  other.openParen.equals(openParen) &&
-                    Objects.equals(other.parameters, parameters) &&
-                    other.closeParen.equals(closeParen) &&
-                    other.getRange().equals(getRange());
-        } else {
-            return false;
-        }
+    public boolean hasParentheses() {
+        return !openParen.isMissing() && !closeParen.isMissing();
     }
 }

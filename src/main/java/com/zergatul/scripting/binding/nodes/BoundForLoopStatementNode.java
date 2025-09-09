@@ -2,28 +2,40 @@ package com.zergatul.scripting.binding.nodes;
 
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
-import com.zergatul.scripting.lexer.Token;
-import com.zergatul.scripting.parser.NodeType;
+import com.zergatul.scripting.parser.nodes.ForLoopStatementNode;
+import org.jspecify.annotations.Nullable;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class BoundForLoopStatementNode extends BoundStatementNode {
 
-    public final Token lParen;
-    public final Token rParen;
-    public final BoundStatementNode init;
-    public final BoundExpressionNode condition;
-    public final BoundStatementNode update;
+    public final ForLoopStatementNode syntaxNode;
+    @Nullable public final BoundStatementNode init;
+    @Nullable public final BoundExpressionNode condition;
+    @Nullable public final BoundStatementNode update;
     public final BoundStatementNode body;
 
-    public BoundForLoopStatementNode(Token lParen, Token rParen, BoundStatementNode init, BoundExpressionNode condition, BoundStatementNode update, BoundStatementNode body) {
-        this(lParen, rParen, init, condition, update, body, null);
+    public BoundForLoopStatementNode(
+            ForLoopStatementNode node,
+            @Nullable BoundStatementNode init,
+            @Nullable BoundExpressionNode condition,
+            @Nullable BoundStatementNode update,
+            BoundStatementNode body
+    ) {
+        this(node, init, condition, update, body, node.getRange());
     }
 
-    public BoundForLoopStatementNode(Token lParen, Token rParen, BoundStatementNode init, BoundExpressionNode condition, BoundStatementNode update, BoundStatementNode body, TextRange range) {
-        super(NodeType.FOR_LOOP_STATEMENT, range);
-        this.lParen = lParen;
-        this.rParen = rParen;
+    public BoundForLoopStatementNode(
+            ForLoopStatementNode node,
+            @Nullable BoundStatementNode init,
+            @Nullable BoundExpressionNode condition,
+            @Nullable BoundStatementNode update,
+            BoundStatementNode body,
+            TextRange range
+    ) {
+        super(BoundNodeType.FOR_LOOP_STATEMENT, range);
+        this.syntaxNode = node;
         this.init = init;
         this.condition = condition;
         this.update = update;
@@ -37,20 +49,35 @@ public class BoundForLoopStatementNode extends BoundStatementNode {
 
     @Override
     public void acceptChildren(BinderTreeVisitor visitor) {
-        init.accept(visitor);
+        if (init != null) {
+            init.accept(visitor);
+        }
         if (condition != null) {
             condition.accept(visitor);
         }
-        update.accept(visitor);
+        if (update != null) {
+            update.accept(visitor);
+        }
         body.accept(visitor);
     }
 
     @Override
     public List<BoundNode> getChildren() {
-        if (condition != null) {
-            return List.of(init, condition, update, body);
-        } else {
-            return List.of(init, update, body);
+        List<BoundNode> nodes = new ArrayList<>();
+        if (init != null) {
+            nodes.add(init);
         }
+        if (condition != null) {
+            nodes.add(condition);
+        }
+        if (update != null) {
+            nodes.add(update);
+        }
+        nodes.add(body);
+        return nodes;
+    }
+
+    public BoundForLoopStatementNode withBody(BoundStatementNode body) {
+        return new BoundForLoopStatementNode(syntaxNode, init, condition, update, body, getRange());
     }
 }

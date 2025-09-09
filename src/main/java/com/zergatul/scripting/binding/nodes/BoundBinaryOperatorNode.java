@@ -2,21 +2,27 @@ package com.zergatul.scripting.binding.nodes;
 
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
-import com.zergatul.scripting.parser.NodeType;
+import com.zergatul.scripting.parser.nodes.BinaryOperatorNode;
 import com.zergatul.scripting.type.operation.BinaryOperation;
 
 import java.util.List;
 
 public class BoundBinaryOperatorNode extends BoundNode {
 
+    public final BinaryOperatorNode syntaxNode;
     public final BinaryOperation operation;
 
     public BoundBinaryOperatorNode(BinaryOperation operation) {
-        this(operation, null);
+        this(null, operation, null);
     }
 
-    public BoundBinaryOperatorNode(BinaryOperation operation, TextRange range) {
-        super(NodeType.BINARY_OPERATOR, range);
+    public BoundBinaryOperatorNode(BinaryOperatorNode node, BinaryOperation operation) {
+        this(node, operation, node.getRange());
+    }
+
+    public BoundBinaryOperatorNode(BinaryOperatorNode node, BinaryOperation operation, TextRange range) {
+        super(BoundNodeType.BINARY_OPERATOR, range);
+        this.syntaxNode = node;
         this.operation = operation;
     }
 

@@ -2,18 +2,29 @@ package com.zergatul.scripting.binding.nodes;
 
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
-import com.zergatul.scripting.parser.NodeType;
+import com.zergatul.scripting.parser.nodes.ClassNode;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class BoundClassNode extends BoundCompilationUnitMemberNode {
 
+    public final ClassNode syntaxNode;
     public final BoundNameExpressionNode name;
     public final List<BoundClassMemberNode> members;
 
-    public BoundClassNode(BoundNameExpressionNode name, List<BoundClassMemberNode> members, TextRange range) {
-        super(NodeType.CLASS, range);
+    public BoundClassNode(ClassNode node, BoundNameExpressionNode name, List<BoundClassMemberNode> members) {
+        this(node, name, members, node.getRange());
+    }
+
+    public BoundClassNode(
+            ClassNode node,
+            BoundNameExpressionNode name,
+            List<BoundClassMemberNode> members,
+            TextRange range
+    ) {
+        super(BoundNodeType.CLASS_DECLARATION, range);
+        this.syntaxNode = node;
         this.name = name;
         this.members = members;
     }

@@ -2,23 +2,29 @@ package com.zergatul.scripting.binding.nodes;
 
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
-import com.zergatul.scripting.parser.NodeType;
+import com.zergatul.scripting.parser.nodes.IndexExpressionNode;
 import com.zergatul.scripting.type.operation.IndexOperation;
 
 import java.util.List;
 
 public class BoundIndexExpressionNode extends BoundExpressionNode {
 
+    public final IndexExpressionNode syntaxNode;
     public final BoundExpressionNode callee;
     public final BoundExpressionNode index;
     public final IndexOperation operation;
 
     public BoundIndexExpressionNode(BoundExpressionNode callee, BoundExpressionNode index, IndexOperation operation) {
-        this(callee, index, operation, null);
+        this(null, callee, index, operation, null);
     }
 
-    public BoundIndexExpressionNode(BoundExpressionNode callee, BoundExpressionNode index, IndexOperation operation, TextRange range) {
-        super(NodeType.INDEX_EXPRESSION, operation.returnType, range);
+    public BoundIndexExpressionNode(IndexExpressionNode node, BoundExpressionNode callee, BoundExpressionNode index, IndexOperation operation) {
+        this(node, callee, index, operation, node.getRange());
+    }
+
+    public BoundIndexExpressionNode(IndexExpressionNode node, BoundExpressionNode callee, BoundExpressionNode index, IndexOperation operation, TextRange range) {
+        super(BoundNodeType.INDEX_EXPRESSION, operation.returnType, range);
+        this.syntaxNode = node;
         this.callee = callee;
         this.index = index;
         this.operation = operation;
