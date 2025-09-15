@@ -1,5 +1,6 @@
 package com.zergatul.scripting.tests.completion;
 
+import com.zergatul.scripting.lexer.TokenType;
 import com.zergatul.scripting.tests.compiler.helpers.IntStorage;
 import com.zergatul.scripting.tests.completion.helpers.CompletionTestHelper;
 import com.zergatul.scripting.tests.completion.helpers.Lists;
@@ -24,6 +25,7 @@ public class CustomInterfaceTests {
                 context -> Lists.of(
                         unitMembers,
                         statements,
+                        new KeywordSuggestion(TokenType.ASYNC),
                         new StaticConstantSuggestion(context, "intStorage"),
                         new InputParameterSuggestion("value1", SInt.instance),
                         new InputParameterSuggestion("text", SString.instance)));
@@ -133,7 +135,7 @@ public class CustomInterfaceTests {
     }
 
     private void assertSuggestions(String code, Class<?> functionalInterface, Function<TestCompletionContext, List<Suggestion>> expectedFactory) {
-        CompletionTestHelper.assertSuggestions_old(ApiRoot.class, code, functionalInterface, expectedFactory);
+        CompletionTestHelper.assertSuggestions(ApiRoot.class, code, functionalInterface, expectedFactory);
     }
 
     public static class ApiRoot {
