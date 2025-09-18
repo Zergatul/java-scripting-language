@@ -404,7 +404,7 @@ public class ArrayTests {
     }
 
     @Test
-    public void collectionExpressionNoItemsTest() {
+    public void letEmptyCollectionTest() {
         String code = """
                 let a1 = [];
                 """;
@@ -412,7 +412,7 @@ public class ArrayTests {
         List<DiagnosticMessage> messages = getDiagnostics(ApiRoot.class, code);
 
         Assertions.assertIterableEquals(messages, List.of(
-                new DiagnosticMessage(BinderErrors.EmptyCollectionExpression, new SingleLineTextRange(1, 10, 9, 2))));
+                new DiagnosticMessage(BinderErrors.LetEmptyCollection, new SingleLineTextRange(1, 1, 0, 3))));
     }
 
     @Test
@@ -440,6 +440,70 @@ public class ArrayTests {
                 new DiagnosticMessage(BinderErrors.BinaryOperatorNotDefined, new SingleLineTextRange(2, 10, 29, 8), "+", "int[]", "string")));
     }
 
+    @Test
+    public void emptyCollectionValidTest() {
+        String code = """
+                int[] a1 = [];
+                float[] a2 = [];
+                string[] a3 = [];
+                boolean[] a4 = [];
+                
+                stringStorage.add(#typeof(a1).name);
+                stringStorage.add(#typeof(a2).name);
+                stringStorage.add(#typeof(a3).name);
+                stringStorage.add(#typeof(a4).name);
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(ApiRoot.stringStorage.list, List.of(
+                "int[]",
+                "float[]",
+                "string[]",
+                "boolean[]"));
+    }
+
+    @Test
+    public void emptyCollectionAsArgumentTest() {
+        String code = """
+                intStorage.add(test.sum([]));
+                intStorage.add(test.sum([1]));
+                intStorage.add(test.sum([2, 3]));
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(0, 1, 5));
+    }
+
+    @Test
+    public void emptyCollectionForEach() {
+        String code = """
+                foreach (let x in []) {}
+                """;
+
+        List<DiagnosticMessage> messages = getDiagnostics(ApiRoot.class, code);
+
+        Assertions.assertIterableEquals(messages, List.of(
+                new DiagnosticMessage(BinderErrors.CannotIterate, new SingleLineTextRange(1, 19, 18, 2), "[]")));
+    }
+
+//    @Test
+//    public void emptyCollectionArrayConcatTest() {
+//        String code = """
+//                int[] a1 = [1, 2];
+//                a1 += [];
+//                intStorage.add(a1.length);
+//                """;
+//
+//        Runnable program = compile(ApiRoot.class, code);
+//        program.run();
+//
+//        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(2));
+//    }
+
     public static class ApiRoot {
         public static BoolStorage boolStorage;
         public static IntStorage intStorage;
@@ -462,6 +526,14 @@ public class ArrayTests {
         public int getIndex() {
             ApiRoot.intStorage.add(0xCDEF);
             return 2;
+        }
+
+        public int sum(int[] array) {
+            int sum = 0;
+            for (int x : array) {
+                sum += x;
+            }
+            return sum;
         }
     }
 }

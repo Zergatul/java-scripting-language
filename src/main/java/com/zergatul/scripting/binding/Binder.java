@@ -356,6 +356,9 @@ public class Binder {
                 if (expression.getNodeType() == NodeType.UNCONVERTED_LAMBDA) {
                     addDiagnostic(BinderErrors.LetUnboundLambda, variableDeclaration.type);
                 }
+                if (expression.getNodeType() == NodeType.EMPTY_COLLECTION_EXPRESSION) {
+                    addDiagnostic(BinderErrors.LetEmptyCollection, variableDeclaration.type);
+                }
             } else {
                 TextRange range = variableDeclaration.name.getRange();
                 expression = new BoundInvalidExpressionNode(List.of(), new SingleLineTextRange(range.getLine1(), range.getColumn1(), range.getPosition(), 0));
@@ -1182,18 +1185,8 @@ public class Binder {
                     BoundExpressionNode argument = arguments.get(i);
                     ConversionInfo conversion = overload.conversions.get(i);
                     SType parameterType = overload.invocable != unknown ? overload.invocable.getParameterTypes().get(i) : SUnknown.instance;
-                    switch (conversion.type()) {
-                        case IDENTITY -> {}
-                        case LAMBDA_BINDING -> {
-                            arguments.set(i, bindUnconvertedLambda((BoundUnconvertedLambdaExpressionNode) argument, (SFunction) parameterType));
-                        }
-                        default -> {
-                            arguments.set(i, new BoundConversionNode(
-                                    argument,
-                                    conversion,
-                                    parameterType,
-                                    argument.getRange()));
-                        }
+                    if (conversion.type() != ConversionType.IDENTITY) {
+                        arguments.set(i, convert(conversion, argument, parameterType));
                     }
                 }
 
@@ -1205,10 +1198,9 @@ public class Binder {
         return new BindInvocableArgsResult<>(matchedInvocable, boundArgumentsListNode, noInvocables, noOverloads);
     }
 
-    private BoundCollectionExpressionNode bindCollectionExpression(CollectionExpressionNode collection) {
+    private BoundExpressionNode bindCollectionExpression(CollectionExpressionNode collection) {
         if (collection.items.isEmpty()) {
-            addDiagnostic(BinderErrors.EmptyCollectionExpression, collection);
-            return new BoundCollectionExpressionNode(SUnknown.instance, List.of(), collection.getRange());
+            return new BoundEmptyCollectionExpressionNode(collection.getRange());
         }
 
         List<BoundExpressionNode> items = collection.items.stream().map(this::bindExpression).toList();
@@ -1428,8 +1420,20 @@ public class Binder {
             return expression;
         }
 
+        return convert(info, expression, type);
+    }
+
+    private BoundExpressionNode convert(ConversionInfo info, BoundExpressionNode expression, SType type) {
+        if (info == null) {
+            throw new InternalException();
+        }
+
         if (info.type() == ConversionType.IDENTITY) {
             return expression;
+        }
+
+        if (info.type() == ConversionType.EMPTY_ARRAY) {
+            return new BoundCollectionExpressionNode(type, List.of(), expression.getRange());
         }
 
         if (info.type() == ConversionType.LAMBDA_BINDING) {
@@ -1447,6 +1451,14 @@ public class Binder {
         CastOperation operation = SType.implicitCastTo(expression.type, type);
         if (operation != null) {
             return new ConversionInfo(ConversionType.IMPLICIT_CAST, operation);
+        }
+
+        if (expression.getNodeType() == NodeType.EMPTY_COLLECTION_EXPRESSION) {
+            if (type instanceof SArrayType) {
+                return new ConversionInfo(ConversionType.EMPTY_ARRAY);
+            } else {
+                return null;
+            }
         }
 
         if (expression.getNodeType() == NodeType.UNCONVERTED_LAMBDA) {
