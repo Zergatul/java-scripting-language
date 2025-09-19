@@ -10,6 +10,7 @@ public class Lexer {
     private final String code;
     private final List<DiagnosticMessage> diagnostics;
     private final List<Token> list;
+    private final List<Trivia> triviaBuffer;
     private int position;
     private int previous;
     private int current;
@@ -24,13 +25,14 @@ public class Lexer {
         this.code = input.code();
         this.diagnostics = new ArrayList<>();
 
-        list = new ArrayList<>();
-        line = 1;
-        column = 0;
-        position = -1;
-        previous = -1;
-        current = -1;
-        next = charAt(0);
+        this.list = new ArrayList<>();
+        this.triviaBuffer = new ArrayList<>();
+        this.line = 1;
+        this.column = 0;
+        this.position = -1;
+        this.previous = -1;
+        this.current = -1;
+        this.next = charAt(0);
         advance();
     }
 
@@ -143,7 +145,7 @@ public class Lexer {
                                 advance();
                             }
 
-                            endComment(true);
+                            endComment(true, TokenType.SINGLE_LINE_COMMENT);
                         }
                         case '*' -> {
                             trackBeginToken();
@@ -151,32 +153,24 @@ public class Lexer {
                             advance();
                             while (true) {
                                 if (current == -1) {
-                                    endComment(true);
+                                    endComment(true, TokenType.MULTI_LINE_COMMENT);
                                     break;
                                 } else if (current == '*' && next == '/') {
                                     advance();
                                     advance();
-                                    endComment(false);
+                                    endComment(false, TokenType.MULTI_LINE_COMMENT);
                                     break;
                                 } else if (current == '\n') {
-                                    endComment(true);
-                                    appendToken(TokenType.LINE_BREAK);
                                     advance();
                                     newLine();
-                                    trackBeginToken();
                                 } else if (current == '\r') {
-                                    endComment(true);
                                     if (next == '\n') {
-                                        trackBeginToken();
                                         advance();
                                         advance();
-                                        endToken(TokenType.LINE_BREAK);
                                     } else {
-                                        appendToken(TokenType.LINE_BREAK);
                                         advance();
                                     }
                                     newLine();
-                                    trackBeginToken();
                                 } else {
                                     advance();
                                 }
@@ -292,20 +286,20 @@ public class Lexer {
                     while (true) {
                         advance();
                         if (current == -1) {
-                            Token token = new StringToken(builder.toString(), getCurrentTokenRange());
-                            list.add(token);
+                            Token token = new ValueToken(TokenType.STRING_LITERAL, builder.toString(), getCurrentTokenRange());
+                            appendToken(token);
                             addDiagnostic(LexerErrors.UnfinishedString, token);
                             break;
                         } else if (current == '\\') {
                             builder.append(processEscapedChar());
                         } else if (current == '\r' || current == '\n') {
-                            Token token = new StringToken(builder.toString(), getCurrentTokenRange());
-                            list.add(token);
+                            Token token = new ValueToken(TokenType.STRING_LITERAL, builder.toString(), getCurrentTokenRange());
+                            appendToken(token);
                             addDiagnostic(LexerErrors.NewlineInString, token);
                             break;
                         } else if (current == '"') {
                             advance();
-                            list.add(new StringToken(builder.toString(), getCurrentTokenRange()));
+                            appendToken(new ValueToken(TokenType.STRING_LITERAL, builder.toString(), getCurrentTokenRange()));
                             break;
                         } else {
                             builder.append((char) current);
@@ -320,8 +314,8 @@ public class Lexer {
                     while (true) {
                         advance();
                         if (current == -1 || current == '\r' || current == '\n') {
-                            Token token = new CharToken(value, getCurrentTokenRange());
-                            list.add(token);
+                            Token token = new ValueToken(TokenType.CHAR_LITERAL, String.valueOf(value), getCurrentTokenRange());
+                            appendToken(token);
                             addDiagnostic(LexerErrors.NewlineInCharacter, token);
                             break;
                         } else if (current == '\\') {
@@ -330,8 +324,8 @@ public class Lexer {
                             hasValue = true;
                         } else if (current == '\'') {
                             advance();
-                            CharToken token = new CharToken(value, getCurrentTokenRange());
-                            list.add(token);
+                            Token token = new ValueToken(TokenType.CHAR_LITERAL, String.valueOf(value), getCurrentTokenRange());
+                            appendToken(token);
                             if (token.getRange().getLength() <= 2) {
                                 addDiagnostic(LexerErrors.EmptyCharacterLiteral, token);
                             }
@@ -354,17 +348,17 @@ public class Lexer {
                     }
                     String value = getCurrentTokenValue();
                     switch (value) {
-                        case "#type" -> list.add(new Token(TokenType.META_TYPE, getCurrentTokenRange()));
-                        case "#typeof" -> list.add(new Token(TokenType.META_TYPE_OF, getCurrentTokenRange()));
+                        case "#type" -> appendToken(new Token(TokenType.META_TYPE, getCurrentTokenRange()));
+                        case "#typeof" -> appendToken(new Token(TokenType.META_TYPE_OF, getCurrentTokenRange()));
                         default -> {
                             Token token = new Token(TokenType.META_UNKNOWN, getCurrentTokenRange());
-                            list.add(token);
+                            appendToken(token);
                             addDiagnostic(LexerErrors.UnknownMetaFunction, token, value.substring(1));
                         }
                     }
                 }
                 case '\n' -> {
-                    appendToken(TokenType.LINE_BREAK);
+                    appendTrivia(TokenType.LINE_BREAK);
                     advance();
                     newLine();
                 }
@@ -375,7 +369,7 @@ public class Lexer {
                         advance();
                         endToken(TokenType.LINE_BREAK);
                     } else {
-                        appendToken(TokenType.LINE_BREAK);
+                        appendTrivia(TokenType.LINE_BREAK);
                         advance();
                     }
                     newLine();
@@ -408,6 +402,8 @@ public class Lexer {
                 }
             }
         }
+
+        appendToken(new EndOfFileToken(new SingleLineTextRange(line, column, position, 0)));
 
         return new LexerOutput(code, new TokenQueue(list), diagnostics);
     }
@@ -499,17 +495,17 @@ public class Lexer {
         if (isValid) {
             if (isInteger) {
                 if (isLong) {
-                    list.add(new Integer64Token(value, range));
+                    appendToken(new ValueToken(TokenType.INTEGER64_LITERAL, value, range));
                 } else {
-                    list.add(new IntegerToken(value, range));
+                    appendToken(new ValueToken(TokenType.INTEGER_LITERAL, value, range));
                 }
             } else {
-                list.add(new FloatToken(value, range));
+                appendToken(new ValueToken(TokenType.FLOAT_LITERAL, value, range));
             }
         } else {
             Token token = new InvalidNumberToken(value, range);
             addDiagnostic(LexerErrors.InvalidNumber, token, value);
-            list.add(token);
+            appendToken(token);
         }
     }
 
@@ -537,12 +533,12 @@ public class Lexer {
         if (value.length() == 2 || !isValidHex) {
             Token token = new InvalidNumberToken(value, range);
             addDiagnostic(LexerErrors.InvalidNumber, token, value);
-            list.add(token);
+            appendToken(token);
         } else {
             if (isLong) {
-                list.add(new Integer64Token(value, range));
+                appendToken(new ValueToken(TokenType.INTEGER64_LITERAL, value, range));
             } else {
-                list.add(new IntegerToken(value, range));
+                appendToken(new ValueToken(TokenType.INTEGER_LITERAL, value, range));
             }
         }
     }
@@ -589,9 +585,9 @@ public class Lexer {
         };
         TextRange range = getCurrentTokenRange();
         if (reservedWord != null) {
-            list.add(new Token(reservedWord, range));
+            appendToken(new Token(reservedWord, range));
         } else {
-            list.add(new IdentifierToken(value, range));
+            appendToken(new ValueToken(TokenType.IDENTIFIER, value, range));
         }
     }
 
@@ -643,7 +639,11 @@ public class Lexer {
     }
 
     private void appendToken(TokenType type) {
-        list.add(new Token(type, new SingleLineTextRange(line, column, position, 1)));
+        appendToken(new Token(type, new SingleLineTextRange(line, column, position, 1)));
+    }
+
+    private void appendTrivia(TokenType type) {
+        appendTrivia(new Trivia(type, new SingleLineTextRange(line, column, position, 1)));
     }
 
     private void trackBeginToken() {
@@ -659,14 +659,54 @@ public class Lexer {
         TextRange range = beginLine == line ?
                 new SingleLineTextRange(beginLine, beginColumn, beginPosition, position - beginPosition) :
                 new MultiLineTextRange(beginLine, beginColumn, line, column, beginPosition, position - beginPosition);
-        list.add(new Token(type, range));
+
+        if (isTriviaType(type)) {
+            appendTrivia(new Trivia(type, range));
+        } else {
+            appendToken(new Token(type, range));
+        }
     }
 
-    private void endComment(boolean ending) {
-        if (beginLine != line) {
-            throw new InternalException();
+    private void endComment(boolean ending, TokenType type) {
+        TextRange range = beginLine == line ?
+                new SingleLineTextRange(beginLine, beginColumn, beginPosition, position - beginPosition) :
+                new MultiLineTextRange(beginLine, beginColumn, line, column, beginPosition, position - beginPosition);
+
+        appendTrivia(new Trivia(type, range));
+    }
+
+    private void appendToken(Token token) {
+        if (triviaBuffer.isEmpty()) {
+            list.add(token);
+        } else {
+            list.add(token.withLeadingTrivia(triviaBuffer));
+            triviaBuffer.clear();
         }
-        list.add(new CommentToken(ending, new SingleLineTextRange(beginLine, beginColumn, beginPosition, position - beginPosition)));
+    }
+
+    private void appendTrivia(Trivia trivia) {
+        if (list.isEmpty()) {
+            triviaBuffer.add(trivia);
+            return;
+        }
+
+        Token last = list.getLast();
+        List<Trivia> trailing = last.getTrailingTrivia();
+        if (trailing.isEmpty()) {
+            list.set(list.size() - 1, last.withTrailingTrivia(trivia));
+            return;
+        }
+
+        Trivia lastTrivia = trailing.getLast();
+        if (lastTrivia.is(TokenType.LINE_BREAK)) {
+            triviaBuffer.add(trivia);
+        } else {
+            list.set(list.size() - 1, last.withTrailingTrivia(trivia));
+        }
+    }
+
+    private boolean isTriviaType(TokenType type) {
+        return type == TokenType.WHITESPACE || type == TokenType.LINE_BREAK || type == TokenType.SINGLE_LINE_COMMENT || type == TokenType.MULTI_LINE_COMMENT || type == TokenType.COMMENT;
     }
 
     private void advance() {

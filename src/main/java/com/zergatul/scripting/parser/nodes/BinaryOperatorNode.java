@@ -2,10 +2,10 @@ package com.zergatul.scripting.parser.nodes;
 
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.parser.BinaryOperator;
-import com.zergatul.scripting.parser.NodeType;
+import com.zergatul.scripting.NodeType;
 import com.zergatul.scripting.parser.ParserTreeVisitor;
 
-public class BinaryOperatorNode extends Node {
+public class BinaryOperatorNode extends ParserNode {
 
     public final BinaryOperator operator;
 

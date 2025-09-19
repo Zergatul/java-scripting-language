@@ -2,10 +2,10 @@ package com.zergatul.scripting.parser.nodes;
 
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.parser.AssignmentOperator;
-import com.zergatul.scripting.parser.NodeType;
+import com.zergatul.scripting.NodeType;
 import com.zergatul.scripting.parser.ParserTreeVisitor;
 
-public class AssignmentOperatorNode extends Node {
+public class AssignmentOperatorNode extends ParserNode {
 
     public final AssignmentOperator operator;
 

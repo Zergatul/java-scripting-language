@@ -1,15 +1,15 @@
 package com.zergatul.scripting.parser.nodes;
 
 import com.zergatul.scripting.TextRange;
-import com.zergatul.scripting.lexer.Integer64Token;
-import com.zergatul.scripting.parser.NodeType;
+import com.zergatul.scripting.NodeType;
+import com.zergatul.scripting.lexer.ValueToken;
 import com.zergatul.scripting.parser.ParserTreeVisitor;
 
 public class Integer64LiteralExpressionNode extends ExpressionNode {
 
     public final String value;
 
-    public Integer64LiteralExpressionNode(Integer64Token token) {
+    public Integer64LiteralExpressionNode(ValueToken token) {
         this(token.value, token.getRange());
     }
 

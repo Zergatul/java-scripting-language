@@ -1,17 +1,35 @@
 package com.zergatul.scripting.lexer;
 
-import com.zergatul.scripting.SingleLineTextRange;
+import com.zergatul.scripting.TextRange;
+
+import java.util.List;
 
 public class EndOfFileToken extends Token {
 
-    public static final EndOfFileToken instance = new EndOfFileToken();
+    public EndOfFileToken(TextRange range) {
+        this(EMPTY_TRIVIA, range);
+    }
 
-    private EndOfFileToken() {
-        super(TokenType.END_OF_FILE, new SingleLineTextRange(Integer.MIN_VALUE, Integer.MIN_VALUE, Integer.MIN_VALUE, Integer.MIN_VALUE));
+    private EndOfFileToken(Trivia[] leading, TextRange range) {
+        super(TokenType.END_OF_FILE, leading, EMPTY_TRIVIA, range);
     }
 
     @Override
     public String getRawValue(String code) {
         return "<EOF>";
+    }
+
+    @Override
+    public Token withLeadingTrivia(List<Trivia> trivia) {
+        return new EndOfFileToken(merge(leadingTrivia, trivia), getRange());
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj instanceof EndOfFileToken other) {
+            return super.equals(other);
+        } else {
+            return false;
+        }
     }
 }

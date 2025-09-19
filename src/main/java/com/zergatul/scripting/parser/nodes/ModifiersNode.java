@@ -2,14 +2,14 @@ package com.zergatul.scripting.parser.nodes;
 
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.lexer.Token;
+import com.zergatul.scripting.NodeType;
 import com.zergatul.scripting.lexer.TokenType;
-import com.zergatul.scripting.parser.NodeType;
 import com.zergatul.scripting.parser.ParserTreeVisitor;
 
 import java.util.List;
 import java.util.Objects;
 
-public class ModifiersNode extends Node {
+public class ModifiersNode extends ParserNode {
 
     public final List<Token> tokens;
 
@@ -19,7 +19,7 @@ public class ModifiersNode extends Node {
     }
 
     public boolean isAsync() {
-        return tokens.stream().anyMatch(t -> t.type == TokenType.ASYNC);
+        return tokens.stream().anyMatch(t -> t.is(TokenType.ASYNC));
     }
 
     @Override

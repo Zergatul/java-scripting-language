@@ -4,7 +4,7 @@ import com.zergatul.scripting.binding.BinderOutput;
 import com.zergatul.scripting.binding.nodes.BoundClassNode;
 import com.zergatul.scripting.binding.nodes.BoundCompilationUnitMemberNode;
 import com.zergatul.scripting.compiler.CompilationParameters;
-import com.zergatul.scripting.parser.NodeType;
+import com.zergatul.scripting.NodeType;
 import com.zergatul.scripting.symbols.ClassSymbol;
 import com.zergatul.scripting.type.*;
 
@@ -47,7 +47,7 @@ public class TypesCompletionProvider<T> extends AbstractCompletionProvider<T> {
             suggestions.add(factory.getCustomTypeSuggestion(clazz));
         }
         for (BoundCompilationUnitMemberNode memberNode : output.unit().members.members) {
-            if (memberNode.getNodeType() == NodeType.CLASS) {
+            if (memberNode.getNodeType() == NodeType.CLASS_DECLARATION) {
                 BoundClassNode classNode = (BoundClassNode) memberNode;
                 if (!classNode.name.value.isEmpty()) {
                     suggestions.add(factory.getClassSuggestion((ClassSymbol) classNode.name.getSymbol()));

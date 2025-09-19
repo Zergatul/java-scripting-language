@@ -4,7 +4,7 @@ import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
 import com.zergatul.scripting.compiler.RefHolder;
 import com.zergatul.scripting.lexer.Token;
-import com.zergatul.scripting.parser.NodeType;
+import com.zergatul.scripting.NodeType;
 
 import java.util.List;
 import java.util.Objects;

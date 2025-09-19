@@ -4,7 +4,7 @@ import com.zergatul.scripting.*;
 import com.zergatul.scripting.binding.nodes.*;
 import com.zergatul.scripting.compiler.*;
 import com.zergatul.scripting.parser.AssignmentOperator;
-import com.zergatul.scripting.parser.NodeType;
+import com.zergatul.scripting.NodeType;
 import com.zergatul.scripting.parser.ParserOutput;
 import com.zergatul.scripting.parser.nodes.*;
 import com.zergatul.scripting.symbols.*;
@@ -54,7 +54,7 @@ public class Binder {
             boundMembers.add(switch (member.getNodeType()) {
                 case STATIC_VARIABLE -> bindStaticVariable((StaticVariableNode) member);
                 case FUNCTION -> bindFunction((FunctionNode) member);
-                case CLASS -> bindClass((ClassNode) member);
+                case CLASS_DECLARATION -> bindClass((ClassNode) member);
                 default -> throw new InternalException();
             });
         }
@@ -1637,7 +1637,7 @@ public class Binder {
 
         // 1. process classes
         for (CompilationUnitMemberNode member : unit.members.members) {
-            if (member.getNodeType() == NodeType.CLASS) {
+            if (member.getNodeType() == NodeType.CLASS_DECLARATION) {
                 buildClassDeclaration((ClassNode) member);
             }
         }
@@ -1645,7 +1645,7 @@ public class Binder {
         // 2. process static variables and functions
         for (CompilationUnitMemberNode member : unit.members.members) {
             switch (member.getNodeType()) {
-                case CLASS -> {}
+                case CLASS_DECLARATION -> {}
                 case STATIC_VARIABLE -> buildStaticFieldDeclaration((StaticVariableNode) member);
                 case FUNCTION -> buildFunctionDeclaration((FunctionNode) member);
                 default -> throw new InternalException();

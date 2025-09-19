@@ -5,7 +5,7 @@ import com.zergatul.scripting.binding.nodes.BoundClassMethodNode;
 import com.zergatul.scripting.binding.nodes.BoundFunctionNode;
 import com.zergatul.scripting.compiler.CompilationParameters;
 import com.zergatul.scripting.lexer.TokenType;
-import com.zergatul.scripting.parser.NodeType;
+import com.zergatul.scripting.NodeType;
 
 import java.util.List;
 

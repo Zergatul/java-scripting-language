@@ -11,7 +11,7 @@ import com.zergatul.scripting.lexer.Lexer;
 import com.zergatul.scripting.lexer.LexerInput;
 import com.zergatul.scripting.lexer.LexerOutput;
 import com.zergatul.scripting.parser.AssignmentOperator;
-import com.zergatul.scripting.parser.NodeType;
+import com.zergatul.scripting.NodeType;
 import com.zergatul.scripting.parser.Parser;
 import com.zergatul.scripting.parser.ParserOutput;
 import com.zergatul.scripting.runtime.AsyncStateMachine;
@@ -129,7 +129,7 @@ public class Compiler {
             switch (member.getNodeType()) {
                 case STATIC_VARIABLE -> fields.add((BoundStaticVariableNode) member);
                 case FUNCTION -> functions.add((BoundFunctionNode) member);
-                case CLASS -> classes.add((BoundClassNode) member);
+                case CLASS_DECLARATION -> classes.add((BoundClassNode) member);
                 default -> throw new InternalException();
             }
         }

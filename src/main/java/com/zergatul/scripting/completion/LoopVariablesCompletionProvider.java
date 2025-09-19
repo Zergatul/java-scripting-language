@@ -3,7 +3,7 @@ package com.zergatul.scripting.completion;
 import com.zergatul.scripting.binding.BinderOutput;
 import com.zergatul.scripting.binding.nodes.BoundForEachLoopStatementNode;
 import com.zergatul.scripting.compiler.CompilationParameters;
-import com.zergatul.scripting.parser.NodeType;
+import com.zergatul.scripting.NodeType;
 import com.zergatul.scripting.symbols.LocalVariable;
 
 import java.util.ArrayList;

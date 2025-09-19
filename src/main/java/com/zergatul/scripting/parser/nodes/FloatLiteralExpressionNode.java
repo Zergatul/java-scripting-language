@@ -1,15 +1,15 @@
 package com.zergatul.scripting.parser.nodes;
 
 import com.zergatul.scripting.TextRange;
-import com.zergatul.scripting.lexer.FloatToken;
-import com.zergatul.scripting.parser.NodeType;
+import com.zergatul.scripting.NodeType;
+import com.zergatul.scripting.lexer.ValueToken;
 import com.zergatul.scripting.parser.ParserTreeVisitor;
 
 public class FloatLiteralExpressionNode extends ExpressionNode {
 
     public final String value;
 
-    public FloatLiteralExpressionNode(FloatToken token) {
+    public FloatLiteralExpressionNode(ValueToken token) {
         this(token.value, token.getRange());
     }
 

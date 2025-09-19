@@ -3,7 +3,7 @@ package com.zergatul.scripting.completion;
 import com.zergatul.scripting.binding.BinderOutput;
 import com.zergatul.scripting.compiler.CompilationParameters;
 import com.zergatul.scripting.lexer.TokenType;
-import com.zergatul.scripting.parser.NodeType;
+import com.zergatul.scripting.NodeType;
 
 import java.util.List;
 

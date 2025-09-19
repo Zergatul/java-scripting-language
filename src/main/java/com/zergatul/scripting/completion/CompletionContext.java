@@ -5,7 +5,7 @@ import com.zergatul.scripting.Lazy;
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.BinderOutput;
 import com.zergatul.scripting.binding.nodes.*;
-import com.zergatul.scripting.parser.NodeType;
+import com.zergatul.scripting.NodeType;
 
 import java.util.List;
 
@@ -390,7 +390,7 @@ public class CompletionContext {
                 yield false;
             }
 
-            case CLASS -> true;
+            case CLASS_DECLARATION -> true;
 
             case INVALID_TYPE, PREDEFINED_TYPE, CUSTOM_TYPE -> true;
 
@@ -419,7 +419,7 @@ public class CompletionContext {
                 yield false;
             }
 
-            case CLASS -> true;
+            case CLASS_DECLARATION -> true;
 
             default -> false;
         };

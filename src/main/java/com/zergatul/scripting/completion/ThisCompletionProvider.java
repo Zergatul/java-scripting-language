@@ -4,7 +4,7 @@ import com.zergatul.scripting.InternalException;
 import com.zergatul.scripting.binding.BinderOutput;
 import com.zergatul.scripting.binding.nodes.BoundClassNode;
 import com.zergatul.scripting.compiler.CompilationParameters;
-import com.zergatul.scripting.parser.NodeType;
+import com.zergatul.scripting.NodeType;
 import com.zergatul.scripting.symbols.ClassSymbol;
 
 import java.util.List;
@@ -26,7 +26,7 @@ public class ThisCompletionProvider<T> extends AbstractCompletionProvider<T> {
                 NodeType nodeType = current.entry.node.getNodeType();
                 if (nodeType == NodeType.CLASS_CONSTRUCTOR || nodeType == NodeType.CLASS_METHOD) {
                     current = current.up();
-                    if (current.entry.node.getNodeType() != NodeType.CLASS) {
+                    if (current.entry.node.getNodeType() != NodeType.CLASS_DECLARATION) {
                         throw new InternalException();
                     }
                     BoundClassNode classNode = (BoundClassNode) current.entry.node;

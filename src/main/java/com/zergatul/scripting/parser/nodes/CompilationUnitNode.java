@@ -1,12 +1,10 @@
 package com.zergatul.scripting.parser.nodes;
 
 import com.zergatul.scripting.TextRange;
-import com.zergatul.scripting.parser.NodeType;
+import com.zergatul.scripting.NodeType;
 import com.zergatul.scripting.parser.ParserTreeVisitor;
 
-import java.util.Objects;
-
-public class CompilationUnitNode extends Node {
+public class CompilationUnitNode extends ParserNode {
 
     public final CompilationUnitMembersListNode members;
     public final StatementsListNode statements;

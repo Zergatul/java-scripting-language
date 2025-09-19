@@ -1,9 +1,4 @@
-package com.zergatul.scripting.parser.nodes;
-
-import com.zergatul.scripting.Locatable;
-import com.zergatul.scripting.TextRange;
-import com.zergatul.scripting.parser.NodeType;
-import com.zergatul.scripting.parser.ParserTreeVisitor;
+package com.zergatul.scripting;
 
 public abstract class Node implements Locatable {
 
@@ -15,9 +10,6 @@ public abstract class Node implements Locatable {
         this.range = range;
     }
 
-    public abstract void accept(ParserTreeVisitor visitor);
-    public abstract void acceptChildren(ParserTreeVisitor visitor);
-
     public NodeType getNodeType() {
         return nodeType;
     }
@@ -26,12 +18,12 @@ public abstract class Node implements Locatable {
         return this.range;
     }
 
-    public boolean isMissing() {
-        return this.range.isEmpty();
+    public boolean is(NodeType nodeType) {
+        return this.nodeType == nodeType;
     }
 
-    public boolean isOpen() {
-        return false;
+    public boolean isNot(NodeType nodeType) {
+        return this.nodeType != nodeType;
     }
 
     @Override

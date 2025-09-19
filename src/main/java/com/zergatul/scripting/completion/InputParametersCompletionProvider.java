@@ -2,11 +2,7 @@ package com.zergatul.scripting.completion;
 
 import com.zergatul.scripting.InterfaceHelper;
 import com.zergatul.scripting.binding.BinderOutput;
-import com.zergatul.scripting.binding.nodes.BoundClassMethodNode;
-import com.zergatul.scripting.binding.nodes.BoundFunctionNode;
 import com.zergatul.scripting.compiler.CompilationParameters;
-import com.zergatul.scripting.lexer.TokenType;
-import com.zergatul.scripting.parser.NodeType;
 import com.zergatul.scripting.type.SType;
 
 import java.lang.reflect.Method;

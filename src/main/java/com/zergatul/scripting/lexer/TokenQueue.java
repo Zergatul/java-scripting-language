@@ -17,7 +17,7 @@ public class TokenQueue implements Iterable<Token> {
         if (position < list.size()) {
             return list.get(position++);
         } else {
-            return EndOfFileToken.instance;
+            return list.getLast();
         }
     }
 
@@ -25,12 +25,12 @@ public class TokenQueue implements Iterable<Token> {
         if (position + n - 1 < list.size()) {
             return list.get(position + n - 1);
         } else {
-            return EndOfFileToken.instance;
+            return list.getLast();
         }
     }
 
     public Token last() {
-        return list.get(list.size() - 1);
+        return list.getLast();
     }
 
     public int size() {

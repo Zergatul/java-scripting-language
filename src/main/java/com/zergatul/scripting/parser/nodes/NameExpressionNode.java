@@ -1,15 +1,15 @@
 package com.zergatul.scripting.parser.nodes;
 
 import com.zergatul.scripting.TextRange;
-import com.zergatul.scripting.lexer.IdentifierToken;
-import com.zergatul.scripting.parser.NodeType;
+import com.zergatul.scripting.NodeType;
+import com.zergatul.scripting.lexer.ValueToken;
 import com.zergatul.scripting.parser.ParserTreeVisitor;
 
 public class NameExpressionNode extends ExpressionNode {
 
     public final String value;
 
-    public NameExpressionNode(IdentifierToken identifier) {
+    public NameExpressionNode(ValueToken identifier) {
         this(identifier.value, identifier.getRange());
     }
 

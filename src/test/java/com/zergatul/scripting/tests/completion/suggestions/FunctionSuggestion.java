@@ -3,7 +3,7 @@ package com.zergatul.scripting.tests.completion.suggestions;
 import com.zergatul.scripting.binding.nodes.BoundCompilationUnitMemberNode;
 import com.zergatul.scripting.binding.nodes.BoundCompilationUnitNode;
 import com.zergatul.scripting.binding.nodes.BoundFunctionNode;
-import com.zergatul.scripting.parser.NodeType;
+import com.zergatul.scripting.NodeType;
 import com.zergatul.scripting.symbols.Function;
 import com.zergatul.scripting.tests.completion.helpers.TestCompletionContext;
 import org.junit.jupiter.api.Assertions;

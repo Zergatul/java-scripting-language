@@ -1,11 +1,11 @@
 package com.zergatul.scripting.parser.nodes;
 
 import com.zergatul.scripting.TextRange;
-import com.zergatul.scripting.parser.NodeType;
+import com.zergatul.scripting.NodeType;
 import com.zergatul.scripting.parser.ParserTreeVisitor;
 import com.zergatul.scripting.parser.UnaryOperator;
 
-public class UnaryOperatorNode extends Node {
+public class UnaryOperatorNode extends ParserNode {
 
     public final UnaryOperator operator;
 

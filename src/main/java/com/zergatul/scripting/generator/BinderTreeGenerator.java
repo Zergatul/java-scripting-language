@@ -7,7 +7,7 @@ import com.zergatul.scripting.type.SInt;
 import com.zergatul.scripting.visitors.AwaitVisitor;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
 import com.zergatul.scripting.binding.nodes.*;
-import com.zergatul.scripting.parser.NodeType;
+import com.zergatul.scripting.NodeType;
 import com.zergatul.scripting.symbols.*;
 
 import java.util.ArrayList;

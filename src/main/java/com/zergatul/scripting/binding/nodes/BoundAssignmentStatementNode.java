@@ -3,9 +3,8 @@ package com.zergatul.scripting.binding.nodes;
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
 import com.zergatul.scripting.lexer.Token;
-import com.zergatul.scripting.parser.NodeType;
+import com.zergatul.scripting.NodeType;
 import com.zergatul.scripting.parser.nodes.AssignmentStatementNode;
-import com.zergatul.scripting.parser.nodes.StatementNode;
 
 import java.util.List;
 

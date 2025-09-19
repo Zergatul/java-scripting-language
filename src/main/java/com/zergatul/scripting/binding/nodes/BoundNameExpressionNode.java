@@ -4,7 +4,7 @@ import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
 import com.zergatul.scripting.symbols.MutableSymbolRef;
 import com.zergatul.scripting.symbols.Symbol;
-import com.zergatul.scripting.parser.NodeType;
+import com.zergatul.scripting.NodeType;
 import com.zergatul.scripting.symbols.SymbolRef;
 import com.zergatul.scripting.type.SType;
 

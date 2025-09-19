@@ -20,7 +20,7 @@ public class ParserDumper {
         return sb.toString();
     }
 
-    private void dump(Node node) {
+    private void dump(ParserNode node) {
         switch (node.getNodeType()) {
             case COMPILATION_UNIT -> dump((CompilationUnitNode) node);
             case FUNCTION -> dump((FunctionNode) node);
@@ -314,7 +314,7 @@ public class ParserDumper {
             sb.append("null");
         } else if (token.getClass() == Token.class) {
             sb.append("new Token(TokenType.");
-            sb.append(token.type.toString());
+            sb.append(token.getTokenType().toString());
             sb.append(", ");
             dump(token.getRange());
             sb.append(")");
@@ -364,7 +364,7 @@ public class ParserDumper {
         sb.append(")");
     }
 
-    private <T extends Node> void dumpList(List<T> nodes) {
+    private <T extends ParserNode> void dumpList(List<T> nodes) {
         sb.append("List.of(");
         for (int i = 0; i < nodes.size(); i++) {
             dump(nodes.get(i));

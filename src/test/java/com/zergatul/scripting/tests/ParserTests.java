@@ -350,7 +350,7 @@ public class ParserTests {
                                                 new LambdaExpressionNode(
                                                         List.of(
                                                                 new NameExpressionNode(
-                                                                    new IdentifierToken("a", new SingleLineTextRange(1, 6, 5, 1)))),
+                                                                    new ValueToken(TokenType.IDENTIFIER, "a", new SingleLineTextRange(1, 6, 5, 1)))),
                                                         new Token(TokenType.EQUAL_GREATER, new SingleLineTextRange(1, 8, 7, 2)),
                                                         new BlockStatementNode(
                                                                 List.of(),
@@ -377,11 +377,11 @@ public class ParserTests {
                                                 new LambdaExpressionNode(
                                                         List.of(
                                                                 new NameExpressionNode(
-                                                                        new IdentifierToken("a", new SingleLineTextRange(1, 7, 6, 1))),
+                                                                        new ValueToken(TokenType.IDENTIFIER, "a", new SingleLineTextRange(1, 7, 6, 1))),
                                                                 new NameExpressionNode(
-                                                                        new IdentifierToken("b", new SingleLineTextRange(1, 10, 9, 1))),
+                                                                        new ValueToken(TokenType.IDENTIFIER, "b", new SingleLineTextRange(1, 10, 9, 1))),
                                                                 new NameExpressionNode(
-                                                                        new IdentifierToken("c", new SingleLineTextRange(1, 13, 12, 1)))),
+                                                                        new ValueToken(TokenType.IDENTIFIER, "c", new SingleLineTextRange(1, 13, 12, 1)))),
                                                         new Token(TokenType.EQUAL_GREATER, new SingleLineTextRange(1, 16, 15, 2)),
                                                         new BlockStatementNode(
                                                                 List.of(),
@@ -404,7 +404,7 @@ public class ParserTests {
                                 new ModifiersNode(List.of(), new SingleLineTextRange(1, 1, 0, 0)),
                                 new VoidTypeNode(new SingleLineTextRange(1, 1, 0, 4)),
                                 new NameExpressionNode(
-                                        new IdentifierToken("a", new SingleLineTextRange(1, 6, 5, 1))),
+                                        new ValueToken(TokenType.IDENTIFIER, "a", new SingleLineTextRange(1, 6, 5, 1))),
                                 new ParameterListNode(
                                         new Token(TokenType.LEFT_PARENTHESES, new SingleLineTextRange(1, 7, 6, 1)),
                                         List.of(),
@@ -433,7 +433,7 @@ public class ParserTests {
                                                 new SingleLineTextRange(1, 1, 0, 7)),
                                         new SingleLineTextRange(1, 1, 0, 9)),
                                 new NameExpressionNode(
-                                        new IdentifierToken("a", new SingleLineTextRange(1, 11, 10, 1))),
+                                        new ValueToken(TokenType.IDENTIFIER, "a", new SingleLineTextRange(1, 11, 10, 1))),
                                 new ParameterListNode(
                                         new Token(TokenType.LEFT_PARENTHESES, new SingleLineTextRange(1, 12, 11, 1)),
                                         List.of(
@@ -446,12 +446,12 @@ public class ParserTests {
                                                                         new SingleLineTextRange(1, 13, 12, 7)),
                                                                 new SingleLineTextRange(1, 13, 12, 9)),
                                                         new NameExpressionNode(
-                                                            new IdentifierToken("b", new SingleLineTextRange(1, 23, 22, 1))),
+                                                            new ValueToken(TokenType.IDENTIFIER, "b", new SingleLineTextRange(1, 23, 22, 1))),
                                                         new SingleLineTextRange(1, 13, 12, 11)),
                                                 new ParameterNode(
                                                         new PredefinedTypeNode(PredefinedType.STRING, new SingleLineTextRange(1, 26, 25, 6)),
                                                         new NameExpressionNode(
-                                                            new IdentifierToken("s", new SingleLineTextRange(1, 33, 32, 1))),
+                                                            new ValueToken(TokenType.IDENTIFIER, "s", new SingleLineTextRange(1, 33, 32, 1))),
                                                         new SingleLineTextRange(1, 26, 25, 8))),
                                         new Token(TokenType.RIGHT_PARENTHESES, new SingleLineTextRange(1, 34, 33, 1)),
                                         new SingleLineTextRange(1, 12, 11, 23)),

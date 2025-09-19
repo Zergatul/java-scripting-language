@@ -2,6 +2,7 @@ package com.zergatul.scripting.tests;
 
 import com.zergatul.scripting.DiagnosticMessage;
 import com.zergatul.scripting.MultiLineTextRange;
+import com.zergatul.scripting.NodeType;
 import com.zergatul.scripting.SingleLineTextRange;
 import com.zergatul.scripting.binding.Binder;
 import com.zergatul.scripting.binding.BinderErrors;
@@ -27,7 +28,6 @@ import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.ParameterizedType;
 import java.util.List;
-import java.util.Optional;
 
 import static com.zergatul.scripting.tests.compiler.helpers.CompilerHelper.assertDiagnostic;
 
