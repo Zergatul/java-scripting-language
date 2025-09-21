@@ -50,7 +50,9 @@ public class ComparatorRegistry {
                         .extract("range", node -> node.range))
                 /* Parser Nodes */
                 .register(ArgumentsListNode.class, builder -> builder
-                        .extract("arguments", node -> node.arguments))
+                        .extract("openParen", node -> node.openParen)
+                        .extract("arguments", node -> node.arguments)
+                        .extract("closeParen", node -> node.closeParen))
                 .register(ArrayCreationExpressionNode.class, builder -> builder
                         .extract("typeNode", node -> node.typeNode)
                         .extract("lengthExpression", node -> node.lengthExpression))

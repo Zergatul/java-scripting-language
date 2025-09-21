@@ -23,15 +23,18 @@ public class LambdaTests extends ParserTestBase {
                         new ExpressionStatementNode(
                                 new InvocationExpressionNode(
                                         new NameExpressionNode("func", new SingleLineTextRange(1, 1, 0, 4)),
-                                        new ArgumentsListNode(List.of(
-                                                new LambdaExpressionNode(
-                                                        List.of(),
-                                                        new Token(TokenType.EQUAL_GREATER, new SingleLineTextRange(1, 9, 8, 2))
-                                                                .withTrailingTrivia(new Trivia(TokenType.WHITESPACE, new SingleLineTextRange(1, 11, 10, 1))),
-                                                        new ExpressionStatementNode(
-                                                                new IntegerLiteralExpressionNode("1", new SingleLineTextRange(1, 12, 11, 1)),
-                                                                new SingleLineTextRange(1, 12, 11, 1)),
-                                                        new SingleLineTextRange(1, 6, 5, 7))),
+                                        new ArgumentsListNode(
+                                                new Token(TokenType.LEFT_PARENTHESES, new SingleLineTextRange(1, 5, 4, 1)),
+                                                List.of(
+                                                        new LambdaExpressionNode(
+                                                                List.of(),
+                                                                new Token(TokenType.EQUAL_GREATER, new SingleLineTextRange(1, 9, 8, 2))
+                                                                        .withTrailingTrivia(new Trivia(TokenType.WHITESPACE, new SingleLineTextRange(1, 11, 10, 1))),
+                                                                new ExpressionStatementNode(
+                                                                        new IntegerLiteralExpressionNode("1", new SingleLineTextRange(1, 12, 11, 1)),
+                                                                        new SingleLineTextRange(1, 12, 11, 1)),
+                                                                new SingleLineTextRange(1, 6, 5, 7))),
+                                                new Token(TokenType.RIGHT_PARENTHESES, new SingleLineTextRange(1, 13, 12, 1)),
                                                 new SingleLineTextRange(1, 5, 4, 9)),
                                         new SingleLineTextRange(1, 1, 0, 13)),
                                 new SingleLineTextRange(1, 1, 0, 14))),
@@ -50,17 +53,20 @@ public class LambdaTests extends ParserTestBase {
                         new ExpressionStatementNode(
                                 new InvocationExpressionNode(
                                         new NameExpressionNode("func", new SingleLineTextRange(1, 1, 0, 4)),
-                                        new ArgumentsListNode(List.of(
-                                                new LambdaExpressionNode(
-                                                        List.of(
-                                                                new NameExpressionNode(
-                                                                        new ValueToken(TokenType.IDENTIFIER, "a", new SingleLineTextRange(1, 6, 5, 1)))),
-                                                        new Token(TokenType.EQUAL_GREATER, new SingleLineTextRange(1, 8, 7, 2))
-                                                                .withTrailingTrivia(new Trivia(TokenType.WHITESPACE, new SingleLineTextRange(1, 10, 9, 1))),
-                                                        new BlockStatementNode(
-                                                                List.of(),
-                                                                new SingleLineTextRange(1, 11, 10, 2)),
-                                                        new SingleLineTextRange(1, 6, 5, 7))),
+                                        new ArgumentsListNode(
+                                                new Token(TokenType.LEFT_PARENTHESES, new SingleLineTextRange(1, 5, 4, 1)),
+                                                List.of(
+                                                        new LambdaExpressionNode(
+                                                                List.of(
+                                                                        new NameExpressionNode(
+                                                                                new ValueToken(TokenType.IDENTIFIER, "a", new SingleLineTextRange(1, 6, 5, 1)))),
+                                                                new Token(TokenType.EQUAL_GREATER, new SingleLineTextRange(1, 8, 7, 2))
+                                                                        .withTrailingTrivia(new Trivia(TokenType.WHITESPACE, new SingleLineTextRange(1, 10, 9, 1))),
+                                                                new BlockStatementNode(
+                                                                        List.of(),
+                                                                        new SingleLineTextRange(1, 11, 10, 2)),
+                                                                new SingleLineTextRange(1, 6, 5, 7))),
+                                                new Token(TokenType.RIGHT_PARENTHESES, new SingleLineTextRange(1, 13, 12, 1)),
                                                 new SingleLineTextRange(1, 5, 4, 9)),
                                         new SingleLineTextRange(1, 1, 0, 13)),
                                 new SingleLineTextRange(1, 1, 0, 14))),
@@ -79,21 +85,24 @@ public class LambdaTests extends ParserTestBase {
                         new ExpressionStatementNode(
                                 new InvocationExpressionNode(
                                         new NameExpressionNode("func", new SingleLineTextRange(1, 1, 0, 4)),
-                                        new ArgumentsListNode(List.of(
-                                                new LambdaExpressionNode(
-                                                        List.of(
-                                                                new NameExpressionNode(
-                                                                        new ValueToken(TokenType.IDENTIFIER, "a", new SingleLineTextRange(1, 7, 6, 1))),
-                                                                new NameExpressionNode(
-                                                                        new ValueToken(TokenType.IDENTIFIER, "b", new SingleLineTextRange(1, 10, 9, 1))),
-                                                                new NameExpressionNode(
-                                                                        new ValueToken(TokenType.IDENTIFIER, "c", new SingleLineTextRange(1, 13, 12, 1)))),
-                                                        new Token(TokenType.EQUAL_GREATER, new SingleLineTextRange(1, 16, 15, 2))
-                                                                .withTrailingTrivia(new Trivia(TokenType.WHITESPACE, new SingleLineTextRange(1, 18, 17, 1))),
-                                                        new BlockStatementNode(
-                                                                List.of(),
-                                                                new SingleLineTextRange(1, 19, 18, 2)),
-                                                        new SingleLineTextRange(1, 6, 5, 15))),
+                                        new ArgumentsListNode(
+                                                new Token(TokenType.LEFT_PARENTHESES, new SingleLineTextRange(1, 5, 4, 1)),
+                                                List.of(
+                                                        new LambdaExpressionNode(
+                                                                List.of(
+                                                                        new NameExpressionNode(
+                                                                                new ValueToken(TokenType.IDENTIFIER, "a", new SingleLineTextRange(1, 7, 6, 1))),
+                                                                        new NameExpressionNode(
+                                                                                new ValueToken(TokenType.IDENTIFIER, "b", new SingleLineTextRange(1, 10, 9, 1))),
+                                                                        new NameExpressionNode(
+                                                                                new ValueToken(TokenType.IDENTIFIER, "c", new SingleLineTextRange(1, 13, 12, 1)))),
+                                                                new Token(TokenType.EQUAL_GREATER, new SingleLineTextRange(1, 16, 15, 2))
+                                                                        .withTrailingTrivia(new Trivia(TokenType.WHITESPACE, new SingleLineTextRange(1, 18, 17, 1))),
+                                                                new BlockStatementNode(
+                                                                        List.of(),
+                                                                        new SingleLineTextRange(1, 19, 18, 2)),
+                                                                new SingleLineTextRange(1, 6, 5, 15))),
+                                                new Token(TokenType.RIGHT_PARENTHESES, new SingleLineTextRange(1, 21, 20, 1)),
                                                 new SingleLineTextRange(1, 5, 4, 17)),
                                         new SingleLineTextRange(1, 1, 0, 21)),
                                 new SingleLineTextRange(1, 1, 0, 22))),

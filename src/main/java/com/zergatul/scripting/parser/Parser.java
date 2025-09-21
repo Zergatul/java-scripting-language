@@ -1020,28 +1020,33 @@ public class Parser {
 
     private ArgumentsListNode parseArgumentsList() {
         Token openParen = advance(TokenType.LEFT_PARENTHESES);
-        if (openParen.getRange().getLength() == 0) {
-            return new ArgumentsListNode(List.of(), openParen.getRange());
+        if (openParen.isMissing()) {
+            Token closeParen = createMissingTokenAfterLast(TokenType.RIGHT_PARENTHESES);
+            return new ArgumentsListNode(
+                    openParen,
+                    List.of(),
+                    closeParen,
+                    TextRange.combine(openParen, closeParen));
         }
 
         List<ExpressionNode> expressions = new ArrayList<>();
         if (current.is(TokenType.RIGHT_PARENTHESES)) {
-            Token right = advance();
-            return new ArgumentsListNode(expressions, TextRange.combine(openParen, right));
+            Token closeParen = advance(TokenType.RIGHT_PARENTHESES);
+            return new ArgumentsListNode(openParen, expressions, closeParen, TextRange.combine(openParen, closeParen));
         }
 
         if (isPossibleArgumentExpression()) {
             expressions.add(parseArgumentExpression());
         } else {
             addDiagnostic(ParserErrors.ExpressionOrCloseParenthesesExpected, current, current.getRawValue(code));
-            Token right = createMissingToken(TokenType.RIGHT_PARENTHESES);
-            return new ArgumentsListNode(expressions, TextRange.combine(openParen, right));
+            Token closeParen = createMissingToken(TokenType.RIGHT_PARENTHESES);
+            return new ArgumentsListNode(openParen, expressions, closeParen, TextRange.combine(openParen, closeParen));
         }
 
         while (true) {
             if (current.is(TokenType.RIGHT_PARENTHESES)) {
                 Token closeParen = advance();
-                return new ArgumentsListNode(expressions, TextRange.combine(openParen, closeParen));
+                return new ArgumentsListNode(openParen, expressions, closeParen, TextRange.combine(openParen, closeParen));
             }
 
             if (current.is(TokenType.COMMA)) {
@@ -1051,12 +1056,12 @@ public class Parser {
                 } else {
                     addDiagnostic(ParserErrors.ExpressionExpected, current, current.getRawValue(code));
                     Token closeParen = advance(TokenType.RIGHT_PARENTHESES);
-                    return new ArgumentsListNode(expressions, TextRange.combine(openParen, closeParen));
+                    return new ArgumentsListNode(openParen, expressions, closeParen, TextRange.combine(openParen, closeParen));
                 }
             } else {
                 addDiagnostic(ParserErrors.CommaOrCloseParenthesesExpected, current, current.getRawValue(code));
-                Token right = createMissingToken(TokenType.RIGHT_PARENTHESES);
-                return new ArgumentsListNode(expressions, TextRange.combine(openParen, right));
+                Token closeParen = createMissingToken(TokenType.RIGHT_PARENTHESES);
+                return new ArgumentsListNode(openParen, expressions, closeParen, TextRange.combine(openParen, closeParen));
             }
         }
     }

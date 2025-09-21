@@ -81,7 +81,11 @@ public class NewExpressionTests extends ParserTestBase {
                                 new NameExpressionNode("x", new SingleLineTextRange(1, 5, 4, 1)),
                                 new ObjectCreationExpressionNode(
                                         new CustomTypeNode("ClassA", new SingleLineTextRange(1, 13, 12, 6)),
-                                        new ArgumentsListNode(List.of(), new SingleLineTextRange(1, 19, 18, 2)),
+                                        new ArgumentsListNode(
+                                                new Token(TokenType.LEFT_PARENTHESES, new SingleLineTextRange(1, 19, 18, 1)),
+                                                List.of(),
+                                                new Token(TokenType.RIGHT_PARENTHESES, new SingleLineTextRange(1, 20, 19, 1)),
+                                                new SingleLineTextRange(1, 19, 18, 2)),
                                         new SingleLineTextRange(1, 9, 8, 12)),
                                 new Token(TokenType.SEMICOLON, new SingleLineTextRange(1, 21, 20, 1))
                                         .withTrailingTrivia(new Trivia(TokenType.LINE_BREAK, new SingleLineTextRange(1, 22, 21, 1))),

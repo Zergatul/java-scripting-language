@@ -350,7 +350,11 @@ public class ParserDumper {
 
     private void dump(ArgumentsListNode node) {
         sb.append("new ArgumentsListNode(");
+        dump(node.openParen);
+        sb.append(", ");
         dumpList(node.arguments);
+        sb.append(", ");
+        dump(node.closeParen);
         sb.append(", ");
         dump(node.getRange());
         sb.append(")");

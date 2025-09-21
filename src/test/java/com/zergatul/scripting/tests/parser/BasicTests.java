@@ -175,7 +175,11 @@ public class BasicTests extends ParserTestBase {
                                                 new Token(TokenType.DOT, new SingleLineTextRange(1, 8, 7, 1)),
                                                 new NameExpressionNode("x", new SingleLineTextRange(1, 9, 8, 1)),
                                                 new SingleLineTextRange(1, 1, 0, 9)),
-                                        new ArgumentsListNode(List.of(), new SingleLineTextRange(1, 10, 9, 2)),
+                                        new ArgumentsListNode(
+                                                new Token(TokenType.LEFT_PARENTHESES, new SingleLineTextRange(1, 10, 9, 1)),
+                                                List.of(),
+                                                new Token(TokenType.RIGHT_PARENTHESES, new SingleLineTextRange(1, 11, 10, 1)),
+                                                new SingleLineTextRange(1, 10, 9, 2)),
                                         new SingleLineTextRange(1, 1, 0, 11)),
                                 new SingleLineTextRange(1, 1, 0, 12))),
                         new SingleLineTextRange(1, 1, 0, 12)),
