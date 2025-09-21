@@ -122,7 +122,7 @@ public class Parser {
             thenStatement = parseStatement();
         } else {
             addDiagnostic(ParserErrors.StatementExpected, current, current.getRawValue(code));
-            thenStatement = new InvalidStatementNode(createMissingTokenRange());
+            thenStatement = new InvalidStatementNode(createMissingTokenRangeAfterLast());
         }
 
         Token elseToken = null;

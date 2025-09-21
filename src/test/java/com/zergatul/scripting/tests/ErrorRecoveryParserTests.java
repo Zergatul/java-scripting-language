@@ -3,10 +3,7 @@ package com.zergatul.scripting.tests;
 import com.zergatul.scripting.DiagnosticMessage;
 import com.zergatul.scripting.MultiLineTextRange;
 import com.zergatul.scripting.SingleLineTextRange;
-import com.zergatul.scripting.lexer.Lexer;
-import com.zergatul.scripting.lexer.LexerInput;
-import com.zergatul.scripting.lexer.Token;
-import com.zergatul.scripting.lexer.TokenType;
+import com.zergatul.scripting.lexer.*;
 import com.zergatul.scripting.parser.*;
 import com.zergatul.scripting.parser.nodes.*;
 import org.junit.jupiter.api.Assertions;
@@ -71,7 +68,8 @@ public class ErrorRecoveryParserTests {
                         new ExpressionStatementNode(
                                 new MemberAccessExpressionNode(
                                         new NameExpressionNode("obj", new SingleLineTextRange(1, 1, 0, 3)),
-                                        new Token(TokenType.DOT, new SingleLineTextRange(1, 4, 3, 1)),
+                                        new Token(TokenType.DOT, new SingleLineTextRange(1, 4, 3, 1))
+                                                .withTrailingTrivia(new Trivia(TokenType.LINE_BREAK, new SingleLineTextRange(1, 5, 4, 1))),
                                         new NameExpressionNode("", new SingleLineTextRange(1, 5, 4, 0)),
                                         new SingleLineTextRange(1, 1, 0, 4)),
                                 new SingleLineTextRange(1, 1, 0, 4)),
@@ -79,7 +77,8 @@ public class ErrorRecoveryParserTests {
                                 new PredefinedTypeNode(PredefinedType.BOOLEAN, new SingleLineTextRange(2, 1, 5, 7)),
                                 new NameExpressionNode("bbb", new SingleLineTextRange(2, 9, 13, 3)),
                                 new BooleanLiteralExpressionNode(true, new SingleLineTextRange(2, 15, 19, 4)),
-                                new Token(TokenType.SEMICOLON, new SingleLineTextRange(2, 19, 23, 1)),
+                                new Token(TokenType.SEMICOLON, new SingleLineTextRange(2, 19, 23, 1))
+                                        .withTrailingTrivia(new Trivia(TokenType.LINE_BREAK, new SingleLineTextRange(2, 20, 24, 1))),
                                 new SingleLineTextRange(2, 1, 5, 19))));
     }
 
@@ -120,26 +119,28 @@ public class ErrorRecoveryParserTests {
                 result.diagnostics(),
                 List.of(
                         new DiagnosticMessage(ParserErrors.IdentifierExpected, new SingleLineTextRange(1, 10, 9, 1), ")"),
-                        new DiagnosticMessage(ParserErrors.StatementExpected, new SingleLineTextRange(1, 12, 11, 1), "<EOF>")));
+                        new DiagnosticMessage(ParserErrors.StatementExpected, new SingleLineTextRange(2, 1, 11, 0), "<EOF>")));
 
         Assertions.assertEquals(
                 result.unit().statements,
                 new StatementsListNode(
                         List.of(
                                 new IfStatementNode(
-                                        new Token(TokenType.IF, new SingleLineTextRange(1, 1, 0, 2)),
+                                        new Token(TokenType.IF, new SingleLineTextRange(1, 1, 0, 2))
+                                                .withTrailingTrivia(new Trivia(TokenType.WHITESPACE, new SingleLineTextRange(1, 3, 2, 1))),
                                         new Token(TokenType.LEFT_PARENTHESES, new SingleLineTextRange(1, 4, 3, 1)),
-                                        new Token(TokenType.RIGHT_PARENTHESES, new SingleLineTextRange(1, 10, 9, 1)),
+                                        new Token(TokenType.RIGHT_PARENTHESES, new SingleLineTextRange(1, 10, 9, 1))
+                                                .withTrailingTrivia(new Trivia(TokenType.LINE_BREAK, new SingleLineTextRange(1, 11, 10, 1))),
                                         new MemberAccessExpressionNode(
                                                 new NameExpressionNode("game", new SingleLineTextRange(1, 5, 4, 4)),
                                                 new Token(TokenType.DOT, new SingleLineTextRange(1, 9, 8, 1)),
                                                 new NameExpressionNode("", new SingleLineTextRange(1, 10, 9, 0)),
                                                 new SingleLineTextRange(1, 5, 4, 5)),
-                                        new InvalidStatementNode(new SingleLineTextRange(1, 12, 11, 0)),
+                                        new InvalidStatementNode(new SingleLineTextRange(1, 11, 10, 0)),
                                         null,
                                         null,
-                                        new SingleLineTextRange(1, 1, 0, 11))),
-                        new SingleLineTextRange(1, 1, 0, 11)));
+                                        new SingleLineTextRange(1, 1, 0, 10))),
+                        new SingleLineTextRange(1, 1, 0, 10)));
     }
 
     @Test
@@ -158,7 +159,8 @@ public class ErrorRecoveryParserTests {
                 new StatementsListNode(
                         List.of(
                                 new ReturnStatementNode(
-                                        new Token(TokenType.RETURN, new SingleLineTextRange(1, 1, 0, 6)),
+                                        new Token(TokenType.RETURN, new SingleLineTextRange(1, 1, 0, 6))
+                                                .withTrailingTrivia(new Trivia(TokenType.WHITESPACE, new SingleLineTextRange(1, 7, 6, 1))),
                                         new BinaryExpressionNode(
                                                 new BinaryExpressionNode(
                                                         new NameExpressionNode("a", new SingleLineTextRange(1, 8, 7, 1)),
@@ -199,7 +201,8 @@ public class ErrorRecoveryParserTests {
                                                 List.of(
                                                         new IntegerLiteralExpressionNode("1", new SingleLineTextRange(1, 23, 22, 1))),
                                                 new SingleLineTextRange(1, 11, 10, 13)),
-                                        new Token(TokenType.SEMICOLON, new SingleLineTextRange(1, 25, 24, 1)),
+                                        new Token(TokenType.SEMICOLON, new SingleLineTextRange(1, 25, 24, 1))
+                                                .withTrailingTrivia(new Trivia(TokenType.LINE_BREAK,  new SingleLineTextRange(1, 26, 25, 1))),
                                         new SingleLineTextRange(1, 1, 0, 25))),
                         new SingleLineTextRange(1, 1, 0, 25)));
     }
@@ -284,7 +287,8 @@ public class ErrorRecoveryParserTests {
                 result.unit().statements.statements,
                 List.of(
                         new IfStatementNode(
-                                new Token(TokenType.IF, new SingleLineTextRange(1, 1, 0, 2)),
+                                new Token(TokenType.IF, new SingleLineTextRange(1, 1, 0, 2))
+                                        .withTrailingTrivia(new Trivia(TokenType.LINE_BREAK, new SingleLineTextRange(1, 3, 2, 1))),
                                 new Token(TokenType.LEFT_PARENTHESES, new SingleLineTextRange(1, 3, 2, 0)),
                                 new Token(TokenType.RIGHT_PARENTHESES, new SingleLineTextRange(2, 1, 3, 0)),
                                 new InvalidExpressionNode(new SingleLineTextRange(2, 1, 3, 0)),
@@ -398,7 +402,8 @@ public class ErrorRecoveryParserTests {
                 result.unit().statements.statements,
                 List.of(
                         new WhileLoopStatementNode(
-                                new Token(TokenType.WHILE, new SingleLineTextRange(1, 1, 0, 5)),
+                                new Token(TokenType.WHILE, new SingleLineTextRange(1, 1, 0, 5))
+                                        .withTrailingTrivia(new Trivia(TokenType.LINE_BREAK, new SingleLineTextRange(1, 6, 5, 1))),
                                 new Token(TokenType.LEFT_PARENTHESES, new SingleLineTextRange(1, 6, 5, 0)),
                                 new InvalidExpressionNode(new SingleLineTextRange(2, 1, 6, 0)),
                                 new Token(TokenType.RIGHT_PARENTHESES, new SingleLineTextRange(2, 1, 6, 0)),

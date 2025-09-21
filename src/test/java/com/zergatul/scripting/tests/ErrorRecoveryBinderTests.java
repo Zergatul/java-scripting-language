@@ -10,10 +10,7 @@ import com.zergatul.scripting.binding.BinderOutput;
 import com.zergatul.scripting.binding.nodes.*;
 import com.zergatul.scripting.compiler.CompilationParameters;
 import com.zergatul.scripting.compiler.CompilationParametersBuilder;
-import com.zergatul.scripting.lexer.Lexer;
-import com.zergatul.scripting.lexer.LexerInput;
-import com.zergatul.scripting.lexer.Token;
-import com.zergatul.scripting.lexer.TokenType;
+import com.zergatul.scripting.lexer.*;
 import com.zergatul.scripting.parser.*;
 import com.zergatul.scripting.parser.nodes.ModifiersNode;
 import com.zergatul.scripting.symbols.Function;
@@ -94,12 +91,14 @@ public class ErrorRecoveryBinderTests {
                                         new BoundParameterListNode(
                                                 new Token(TokenType.LEFT_PARENTHESES, new SingleLineTextRange(1, 9, 8, 1)),
                                                 List.of(),
-                                                new Token(TokenType.RIGHT_PARENTHESES, new SingleLineTextRange(1, 10, 9, 1)),
+                                                new Token(TokenType.RIGHT_PARENTHESES, new SingleLineTextRange(1, 10, 9, 1))
+                                                        .withTrailingTrivia(new Trivia(TokenType.WHITESPACE, new SingleLineTextRange(1, 11, 10, 1))),
                                                 new SingleLineTextRange(1, 9, 8, 2)),
                                         new BoundBlockStatementNode(
                                                 List.of(
                                                         new BoundReturnStatementNode(
-                                                                new Token(TokenType.RETURN, new SingleLineTextRange(2, 11, 23, 6)),
+                                                                new Token(TokenType.RETURN, new SingleLineTextRange(2, 11, 23, 6))
+                                                                        .withTrailingTrivia(new Trivia(TokenType.WHITESPACE, new SingleLineTextRange(2, 17, 29, 1))),
                                                                 new BoundInvalidExpressionNode(List.of(), new SingleLineTextRange(2, 11, 23, 2)),
                                                                 new SingleLineTextRange(2, 5, 17, 8))),
                                                 new MultiLineTextRange(1, 12, 3, 2, 11, 16)),
@@ -153,7 +152,8 @@ public class ErrorRecoveryBinderTests {
                                                                                 new SingleLineTextRange(1, 14, 13, 3)),
                                                                         SString.instance,
                                                                         new SingleLineTextRange(1, 14, 13, 3))),
-                                                                new Token(TokenType.EQUAL_GREATER, new SingleLineTextRange(1, 18, 17, 2)),
+                                                                new Token(TokenType.EQUAL_GREATER, new SingleLineTextRange(1, 18, 17, 2))
+                                                                        .withTrailingTrivia(new Trivia(TokenType.WHITESPACE, new SingleLineTextRange(1, 20, 19, 1))),
                                                                 new BoundInvalidStatementNode(new SingleLineTextRange(1, 21, 20, 0)),
                                                                 List.of(),
                                                                 List.of(),

@@ -2,7 +2,9 @@ package com.zergatul.scripting.lexer;
 
 import com.zergatul.scripting.TextRange;
 
-public class ValueToken extends Token {
+import java.util.List;
+
+public final class ValueToken extends Token {
 
     public final String value;
 
@@ -13,6 +15,11 @@ public class ValueToken extends Token {
     private ValueToken(TokenType tokenType, String value, Trivia[] leading, Trivia[] trailing, TextRange range) {
         super(tokenType, leading, trailing, range);
         this.value = value;
+    }
+
+    @Override
+    public Token withLeadingTrivia(List<Trivia> trivia) {
+        return new ValueToken(getTokenType(), value, merge(leadingTrivia, trivia), trailingTrivia, getRange());
     }
 
     @Override

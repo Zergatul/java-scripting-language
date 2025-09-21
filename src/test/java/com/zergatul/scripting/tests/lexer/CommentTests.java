@@ -8,7 +8,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
-public class CommentTests {
+public class CommentTests extends LexerTestBase {
 
     @Test
     public void singleLineCommentTest1() {
@@ -107,9 +107,5 @@ public class CommentTests {
                         .withLeadingTrivia(new Trivia(TokenType.MULTI_LINE_COMMENT, new MultiLineTextRange(1, 1, 4, 3, 0, 9))),
                 new EndOfFileToken(new SingleLineTextRange(4, 4, 10, 0))));
         Assertions.assertEquals(result.diagnostics().size(), 0);
-    }
-
-    private LexerOutput lex(String code) {
-        return new Lexer(new LexerInput(code)).lex();
     }
 }
