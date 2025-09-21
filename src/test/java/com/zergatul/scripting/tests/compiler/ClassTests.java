@@ -9,6 +9,7 @@ import com.zergatul.scripting.tests.compiler.helpers.FutureHelper;
 import com.zergatul.scripting.tests.compiler.helpers.IntStorage;
 import com.zergatul.scripting.tests.compiler.helpers.ObjectStorage;
 import com.zergatul.scripting.tests.compiler.helpers.StringStorage;
+import com.zergatul.scripting.tests.framework.ComparatorTest;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -18,7 +19,7 @@ import java.util.concurrent.CompletableFuture;
 
 import static com.zergatul.scripting.tests.compiler.helpers.CompilerHelper.*;
 
-public class ClassTests {
+public class ClassTests extends ComparatorTest {
 
     @BeforeEach
     public void clean() {
@@ -82,10 +83,9 @@ public class ClassTests {
                 Class c = new Class();
                 """;
 
-        List<DiagnosticMessage> diagnostics = getDiagnostics(ApiRoot.class, code);
-
-        Assertions.assertIterableEquals(diagnostics, List.of(
-                new DiagnosticMessage(BinderErrors.SymbolAlreadyDeclared, new SingleLineTextRange(2, 7, 21, 5), "Class")));
+        comparator.assertEquals(List.of(
+                new DiagnosticMessage(BinderErrors.SymbolAlreadyDeclared, new SingleLineTextRange(2, 7, 21, 5), "Class")),
+                getDiagnostics(ApiRoot.class, code));
     }
 
     @Test
@@ -153,12 +153,9 @@ public class ClassTests {
                 }
                 """;
 
-        List<DiagnosticMessage> messages = getDiagnostics(ApiRoot.class, code);
-
-        Assertions.assertIterableEquals(
-                messages,
-                List.of(
-                        new DiagnosticMessage(BinderErrors.MemberAlreadyDeclared, new SingleLineTextRange(3, 9, 34, 3), "val")));
+        comparator.assertEquals(List.of(
+                new DiagnosticMessage(BinderErrors.MemberAlreadyDeclared, new SingleLineTextRange(3, 9, 34, 3), "val")),
+                getDiagnostics(ApiRoot.class, code));
     }
 
     @Test
@@ -295,12 +292,9 @@ public class ClassTests {
                 }
                 """;
 
-        List<DiagnosticMessage> messages = getDiagnostics(ApiRoot.class, code);
-
-        Assertions.assertIterableEquals(
-                messages,
-                List.of(
-                        new DiagnosticMessage(BinderErrors.ConstructorAlreadyDeclared, new SingleLineTextRange(3, 5, 54, 11))));
+        comparator.assertEquals(List.of(
+                new DiagnosticMessage(BinderErrors.ConstructorAlreadyDeclared, new SingleLineTextRange(3, 5, 54, 11))),
+                getDiagnostics(ApiRoot.class, code));
     }
 
     @Test
@@ -441,12 +435,9 @@ public class ClassTests {
                 }
                 """;
 
-        List<DiagnosticMessage> messages = getDiagnostics(ApiRoot.class, code);
-
-        Assertions.assertIterableEquals(
-                messages,
-                List.of(
-                        new DiagnosticMessage(BinderErrors.MethodAlreadyDeclared, new SingleLineTextRange(3, 9, 55, 6))));
+        comparator.assertEquals(List.of(
+                new DiagnosticMessage(BinderErrors.MethodAlreadyDeclared, new SingleLineTextRange(3, 9, 55, 6))),
+                getDiagnostics(ApiRoot.class, code));
     }
 
     @Test
@@ -463,12 +454,9 @@ public class ClassTests {
                 intStorage.add(new Class().inc(5));
                 """;
 
-        List<DiagnosticMessage> messages = getDiagnostics(ApiRoot.class, code);
-
-        Assertions.assertIterableEquals(
-                messages,
-                List.of(
-                        new DiagnosticMessage(BinderErrors.NotAllPathReturnValue, new MultiLineTextRange(2, 20, 6, 6, 33, 64))));
+        comparator.assertEquals(List.of(
+                new DiagnosticMessage(BinderErrors.NotAllPathReturnValue, new MultiLineTextRange(2, 20, 6, 6, 33, 64))),
+                getDiagnostics(ApiRoot.class, code));
     }
 
     @Test
@@ -481,12 +469,9 @@ public class ClassTests {
                 }
                 """;
 
-        List<DiagnosticMessage> messages = getDiagnostics(ApiRoot.class, code);
-
-        Assertions.assertIterableEquals(
-                messages,
-                List.of(
-                        new DiagnosticMessage(BinderErrors.AwaitInNonAsyncContext, new SingleLineTextRange(3, 9, 42, 5))));
+        comparator.assertEquals(List.of(
+                new DiagnosticMessage(BinderErrors.AwaitInNonAsyncContext, new SingleLineTextRange(3, 9, 42, 5))),
+                getDiagnostics(ApiRoot.class, code));
     }
 
     @Test
@@ -499,12 +484,9 @@ public class ClassTests {
                 }
                 """;
 
-        List<DiagnosticMessage> messages = getDiagnostics(ApiRoot.class, code);
-
-        Assertions.assertIterableEquals(
-                messages,
-                List.of(
-                        new DiagnosticMessage(BinderErrors.AwaitInNonAsyncContext, new SingleLineTextRange(3, 9, 42, 5))));
+        comparator.assertEquals(List.of(
+                new DiagnosticMessage(BinderErrors.AwaitInNonAsyncContext, new SingleLineTextRange(3, 9, 42, 5))),
+                getDiagnostics(ApiRoot.class, code));
     }
 
     @Test

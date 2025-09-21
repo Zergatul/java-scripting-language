@@ -7,6 +7,7 @@ import com.zergatul.scripting.tests.compiler.helpers.BoolStorage;
 import com.zergatul.scripting.tests.compiler.helpers.FloatStorage;
 import com.zergatul.scripting.tests.compiler.helpers.IntStorage;
 import com.zergatul.scripting.tests.compiler.helpers.StringStorage;
+import com.zergatul.scripting.tests.framework.ComparatorTest;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -16,7 +17,7 @@ import java.util.List;
 import static com.zergatul.scripting.tests.compiler.helpers.CompilerHelper.compile;
 import static com.zergatul.scripting.tests.compiler.helpers.CompilerHelper.getDiagnostics;
 
-public class LetTests {
+public class LetTests extends ComparatorTest {
 
     @BeforeEach
     public void clean() {
@@ -32,12 +33,9 @@ public class LetTests {
                 let x;
                 """;
 
-        List<DiagnosticMessage> messages = getDiagnostics(BooleanTests.ApiRoot.class, code);
-
-        Assertions.assertIterableEquals(
-                messages,
-                List.of(
-                        new DiagnosticMessage(ParserErrors.CannotUseLet, new SingleLineTextRange(1, 1, 0, 3))));
+        comparator.assertEquals(List.of(
+                new DiagnosticMessage(ParserErrors.CannotUseLet, new SingleLineTextRange(1, 1, 0, 3))),
+                getDiagnostics(ApiRoot.class, code));
     }
 
     @Test

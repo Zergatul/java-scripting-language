@@ -26,13 +26,4 @@ public final class ValueToken extends Token {
     public Token withTrailingTrivia(Trivia trivia) {
         return new ValueToken(getTokenType(), value, leadingTrivia, merge(trailingTrivia, trivia), getRange());
     }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (obj instanceof ValueToken other) {
-            return other.value.equals(value) && super.equals(other);
-        } else {
-            return false;
-        }
-    }
 }

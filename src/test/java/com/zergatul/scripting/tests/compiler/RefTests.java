@@ -3,6 +3,7 @@ package com.zergatul.scripting.tests.compiler;
 import com.zergatul.scripting.DiagnosticMessage;
 import com.zergatul.scripting.SingleLineTextRange;
 import com.zergatul.scripting.binding.BinderErrors;
+import com.zergatul.scripting.tests.framework.ComparatorTest;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -10,7 +11,7 @@ import java.util.List;
 
 import static com.zergatul.scripting.tests.compiler.helpers.CompilerHelper.getDiagnostics;
 
-public class RefTests {
+public class RefTests extends ComparatorTest {
 
     @Test
     public void invalidRefVariableTest() {
@@ -19,12 +20,9 @@ public class RefTests {
                 long.tryParse("123", ref a);
                 """;
 
-        List<DiagnosticMessage> messages = getDiagnostics(ApiRoot.class, code);
-
-        Assertions.assertIterableEquals(
-                messages,
-                List.of(
-                        new DiagnosticMessage(BinderErrors.RefTypeNotSupported, new SingleLineTextRange(2, 22, 46, 5), "int64[]")));
+        comparator.assertEquals(List.of(
+                new DiagnosticMessage(BinderErrors.RefTypeNotSupported, new SingleLineTextRange(2, 22, 46, 5), "int64[]")),
+                getDiagnostics(ApiRoot.class, code));
     }
 
     @Test
@@ -34,12 +32,9 @@ public class RefTests {
                 float.tryParse("123", ref f);
                 """;
 
-        List<DiagnosticMessage> messages = getDiagnostics(ApiRoot.class, code);
-
-        Assertions.assertIterableEquals(
-                messages,
-                List.of(
-                        new DiagnosticMessage(BinderErrors.CannotCastArguments, new SingleLineTextRange(2, 15, 25, 14))));
+        comparator.assertEquals(List.of(
+                new DiagnosticMessage(BinderErrors.CannotCastArguments, new SingleLineTextRange(2, 15, 25, 14))),
+                getDiagnostics(ApiRoot.class, code));
     }
 
     public static class ApiRoot {}

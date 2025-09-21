@@ -2,7 +2,6 @@ package com.zergatul.scripting.type;
 
 import com.zergatul.scripting.InterfaceHelper;
 import com.zergatul.scripting.InternalException;
-import com.zergatul.scripting.compiler.StackHelper;
 import org.objectweb.asm.Type;
 
 import java.lang.reflect.Method;
@@ -152,6 +151,18 @@ public class SFunctionalInterface extends SFunction {
 
     public String getActualMethodDescriptor() {
         return getMethodDescriptor();
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj instanceof SFunctionalInterface other) {
+            return  other.clazz == clazz &&
+                    other.method.equals(method) &&
+                    other.actualReturnType.equals(actualReturnType) &&
+                    Arrays.equals(other.actualParameters, actualParameters);
+        } else {
+            return false;
+        }
     }
 
     private static int findTypeParamIndex(TypeVariable<? extends Class<?>>[] params, String name) {

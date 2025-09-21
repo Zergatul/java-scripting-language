@@ -5,6 +5,7 @@ import com.zergatul.scripting.SingleLineTextRange;
 import com.zergatul.scripting.binding.BinderErrors;
 import com.zergatul.scripting.tests.compiler.helpers.FloatStorage;
 import com.zergatul.scripting.tests.compiler.helpers.IntStorage;
+import com.zergatul.scripting.tests.framework.ComparatorTest;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -14,7 +15,7 @@ import java.util.List;
 import static com.zergatul.scripting.tests.compiler.helpers.CompilerHelper.compile;
 import static com.zergatul.scripting.tests.compiler.helpers.CompilerHelper.getDiagnostics;
 
-public class ForEachLoopTests {
+public class ForEachLoopTests extends ComparatorTest {
 
     @BeforeEach
     public void clean() {
@@ -90,10 +91,9 @@ public class ForEachLoopTests {
                 let a = x;
                 """;
 
-        List<DiagnosticMessage> messages = getDiagnostics(ApiRoot.class, code);
-
-        Assertions.assertIterableEquals(messages, List.of(
-                new DiagnosticMessage(BinderErrors.NameDoesNotExist, new SingleLineTextRange(2, 9, 45, 1), "x")));
+        comparator.assertEquals(List.of(
+                new DiagnosticMessage(BinderErrors.NameDoesNotExist, new SingleLineTextRange(2, 9, 45, 1), "x")),
+                getDiagnostics(ApiRoot.class, code));
     }
 
     public static class ApiRoot {

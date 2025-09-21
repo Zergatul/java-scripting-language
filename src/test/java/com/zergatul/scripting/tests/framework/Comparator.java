@@ -2,10 +2,16 @@ package com.zergatul.scripting.tests.framework;
 
 import com.zergatul.scripting.DiagnosticMessage;
 import com.zergatul.scripting.InternalException;
+import com.zergatul.scripting.binding.nodes.BoundCompilationUnitNode;
+import com.zergatul.scripting.lexer.Token;
+import com.zergatul.scripting.lexer.TokenQueue;
 import com.zergatul.scripting.parser.nodes.CompilationUnitNode;
+import com.zergatul.scripting.symbols.SymbolRef;
+import com.zergatul.scripting.type.SType;
 import org.junit.jupiter.api.Assertions;
 
 import java.lang.reflect.Array;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -17,12 +23,22 @@ public class Comparator {
         this.registry = registry;
     }
 
+    public void assertEquals(BoundCompilationUnitNode expected, BoundCompilationUnitNode actual) {
+        assertEquals("unit", expected, actual);
+    }
+
     public void assertEquals(CompilationUnitNode expected, CompilationUnitNode actual) {
         assertEquals("unit", expected, actual);
     }
 
     public void assertEquals(List<DiagnosticMessage> expected, List<DiagnosticMessage> actual) {
         assertEquals("diagnostics", expected, actual);
+    }
+
+    public void assertEquals(List<Token> expected, TokenQueue actual) {
+        List<Token> actualList = new ArrayList<>();
+        actual.iterator().forEachRemaining(actualList::add);
+        assertEquals("tokens", expected, actualList);
     }
 
     private void assertEquals(String prefix, Object expected, Object actual) {
@@ -120,6 +136,15 @@ public class Comparator {
         if (clazz == String.class) {
             return true;
         }
-        return false;
+        if (clazz == Method.class) {
+            return true;
+        }
+        if (SType.class.isAssignableFrom(clazz)) {
+            return true;
+        }
+        if (SymbolRef.class.isAssignableFrom(clazz)) {
+            return true;
+        }
+        return clazz.isEnum();
     }
 }

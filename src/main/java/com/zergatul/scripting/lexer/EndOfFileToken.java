@@ -23,13 +23,4 @@ public class EndOfFileToken extends Token {
     public Token withLeadingTrivia(List<Trivia> trivia) {
         return new EndOfFileToken(merge(leadingTrivia, trivia), getRange());
     }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (obj instanceof EndOfFileToken other) {
-            return super.equals(other);
-        } else {
-            return false;
-        }
-    }
 }

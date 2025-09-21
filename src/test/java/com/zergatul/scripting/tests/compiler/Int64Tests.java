@@ -6,6 +6,7 @@ import com.zergatul.scripting.binding.BinderErrors;
 import com.zergatul.scripting.tests.compiler.helpers.BoolStorage;
 import com.zergatul.scripting.tests.compiler.helpers.Int64Storage;
 import com.zergatul.scripting.tests.compiler.helpers.StringStorage;
+import com.zergatul.scripting.tests.framework.ComparatorTest;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -15,7 +16,7 @@ import java.util.List;
 import static com.zergatul.scripting.tests.compiler.helpers.CompilerHelper.compile;
 import static com.zergatul.scripting.tests.compiler.helpers.CompilerHelper.getDiagnostics;
 
-public class Int64Tests {
+public class Int64Tests extends ComparatorTest {
 
     @BeforeEach
     public void clean() {
@@ -77,12 +78,9 @@ public class Int64Tests {
                 int64Storage.add(-9223372036854775809L);
                 """;
 
-        List<DiagnosticMessage> messages = getDiagnostics(ApiRoot.class, code);
-
-        Assertions.assertIterableEquals(
-                messages,
-                List.of(
-                        new DiagnosticMessage(BinderErrors.IntegerConstantTooSmall, new SingleLineTextRange(2, 18, 58, 21))));
+        comparator.assertEquals(List.of(
+                new DiagnosticMessage(BinderErrors.IntegerConstantTooSmall, new SingleLineTextRange(2, 18, 58, 21))),
+                getDiagnostics(ApiRoot.class, code));
     }
 
     @Test
@@ -92,12 +90,9 @@ public class Int64Tests {
                 int64Storage.add(9223372036854775808L);
                 """;
 
-        List<DiagnosticMessage> messages = getDiagnostics(ApiRoot.class, code);
-
-        Assertions.assertIterableEquals(
-                messages,
-                List.of(
-                        new DiagnosticMessage(BinderErrors.IntegerConstantTooLarge, new SingleLineTextRange(2, 18, 57, 20))));
+        comparator.assertEquals(List.of(
+                new DiagnosticMessage(BinderErrors.IntegerConstantTooLarge, new SingleLineTextRange(2, 18, 57, 20))),
+                getDiagnostics(ApiRoot.class, code));
     }
 
     @Test
@@ -126,12 +121,11 @@ public class Int64Tests {
                 int64Storage.add(x);
                 """;
 
-        List<DiagnosticMessage> messages = getDiagnostics(ApiRoot.class, code);
-        Assertions.assertIterableEquals(
-                messages,
-                List.of(new DiagnosticMessage(
-                        BinderErrors.IntegerConstantTooLarge,
-                        new SingleLineTextRange(1, 11, 10, 19))));
+        comparator.assertEquals(List.of(
+                new DiagnosticMessage(
+                    BinderErrors.IntegerConstantTooLarge,
+                    new SingleLineTextRange(1, 11, 10, 19))),
+                getDiagnostics(ApiRoot.class, code));
     }
 
     @Test

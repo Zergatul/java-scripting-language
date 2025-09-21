@@ -4,6 +4,7 @@ import com.zergatul.scripting.DiagnosticMessage;
 import com.zergatul.scripting.SingleLineTextRange;
 import com.zergatul.scripting.binding.BinderErrors;
 import com.zergatul.scripting.tests.compiler.helpers.*;
+import com.zergatul.scripting.tests.framework.ComparatorTest;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -13,7 +14,7 @@ import java.util.List;
 import static com.zergatul.scripting.tests.compiler.helpers.CompilerHelper.compile;
 import static com.zergatul.scripting.tests.compiler.helpers.CompilerHelper.getDiagnostics;
 
-public class ArrayTests {
+public class ArrayTests extends ComparatorTest {
 
     @BeforeEach
     public void clean() {
@@ -409,10 +410,9 @@ public class ArrayTests {
                 let a1 = [];
                 """;
 
-        List<DiagnosticMessage> messages = getDiagnostics(ApiRoot.class, code);
-
-        Assertions.assertIterableEquals(messages, List.of(
-                new DiagnosticMessage(BinderErrors.LetEmptyCollection, new SingleLineTextRange(1, 1, 0, 3))));
+        comparator.assertEquals(List.of(
+                new DiagnosticMessage(BinderErrors.LetEmptyCollection, new SingleLineTextRange(1, 1, 0, 3))),
+                getDiagnostics(ApiRoot.class, code));
     }
 
     @Test
@@ -421,10 +421,9 @@ public class ArrayTests {
                 let a1 = [1, 2.5, ];
                 """;
 
-        List<DiagnosticMessage> messages = getDiagnostics(ApiRoot.class, code);
-
-        Assertions.assertIterableEquals(messages, List.of(
-                new DiagnosticMessage(BinderErrors.CannotInferCollectionExpressionTypes, new SingleLineTextRange(1, 14, 13, 3), "int", 1, "float")));
+        comparator.assertEquals(List.of(
+                new DiagnosticMessage(BinderErrors.CannotInferCollectionExpressionTypes, new SingleLineTextRange(1, 14, 13, 3), "int", 1, "float")),
+                getDiagnostics(ApiRoot.class, code));
     }
 
     @Test
@@ -434,10 +433,9 @@ public class ArrayTests {
                 let a2 = a1 + "s";
                 """;
 
-        List<DiagnosticMessage> messages = getDiagnostics(ApiRoot.class, code);
-
-        Assertions.assertIterableEquals(messages, List.of(
-                new DiagnosticMessage(BinderErrors.BinaryOperatorNotDefined, new SingleLineTextRange(2, 10, 29, 8), "+", "int[]", "string")));
+        comparator.assertEquals(List.of(
+                new DiagnosticMessage(BinderErrors.BinaryOperatorNotDefined, new SingleLineTextRange(2, 10, 29, 8), "+", "int[]", "string")),
+                getDiagnostics(ApiRoot.class, code));
     }
 
     @Test
@@ -484,10 +482,9 @@ public class ArrayTests {
                 foreach (let x in []) {}
                 """;
 
-        List<DiagnosticMessage> messages = getDiagnostics(ApiRoot.class, code);
-
-        Assertions.assertIterableEquals(messages, List.of(
-                new DiagnosticMessage(BinderErrors.CannotIterate, new SingleLineTextRange(1, 19, 18, 2), "[]")));
+        comparator.assertEquals(List.of(
+                new DiagnosticMessage(BinderErrors.CannotIterate, new SingleLineTextRange(1, 19, 18, 2), "[]")),
+                getDiagnostics(ApiRoot.class, code));
     }
 
 //    @Test

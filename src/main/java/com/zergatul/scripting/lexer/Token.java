@@ -79,18 +79,6 @@ public class Token implements Locatable {
         return new Token(tokenType, leadingTrivia, merge(trailingTrivia, trivia), range);
     }
 
-    @Override
-    public boolean equals(Object obj) {
-        if (obj instanceof Token other) {
-            return  other.tokenType == tokenType &&
-                    Arrays.equals(other.leadingTrivia, leadingTrivia) &&
-                    Arrays.equals(other.trailingTrivia, trailingTrivia) &&
-                    other.range.equals(range);
-        } else {
-            return false;
-        }
-    }
-
     protected static Trivia[] merge(Trivia[] array1, List<Trivia> array2) {
         Trivia[] result = new Trivia[array1.length + array2.size()];
         System.arraycopy(array1, 0, result, 0, array1.length);

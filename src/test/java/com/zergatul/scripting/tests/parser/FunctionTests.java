@@ -1,10 +1,12 @@
 package com.zergatul.scripting.tests.parser;
 
+import com.zergatul.scripting.DiagnosticMessage;
 import com.zergatul.scripting.SingleLineTextRange;
 import com.zergatul.scripting.lexer.Token;
 import com.zergatul.scripting.lexer.TokenType;
 import com.zergatul.scripting.lexer.Trivia;
 import com.zergatul.scripting.lexer.ValueToken;
+import com.zergatul.scripting.parser.ParserErrors;
 import com.zergatul.scripting.parser.ParserOutput;
 import com.zergatul.scripting.parser.PredefinedType;
 import com.zergatul.scripting.parser.nodes.*;
@@ -83,5 +85,19 @@ public class FunctionTests extends ParserTestBase {
                 new StatementsListNode(List.of(), new SingleLineTextRange(1, 38, 37, 0)),
                 new SingleLineTextRange(1, 1, 0, 37)),
                 result.unit());
+    }
+
+    @Test
+    public void functionAfterVariableTest() {
+        ParserOutput result = parse("""
+                int x = 0;
+                int func()
+                """);
+        comparator.assertEquals(List.of(
+                new DiagnosticMessage(
+                        ParserErrors.SemicolonOrEqualExpected,
+                        new SingleLineTextRange(2, 9, 19, 1),
+                        "(")),
+                result.diagnostics().stream().limit(1).toList());
     }
 }

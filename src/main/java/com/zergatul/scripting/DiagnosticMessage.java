@@ -19,18 +19,6 @@ public class DiagnosticMessage {
     }
 
     @Override
-    public boolean equals(Object obj) {
-        if (obj instanceof DiagnosticMessage other) {
-            return  other.level == level &&
-                    other.code.equals(code) &&
-                    other.message.equals(message) &&
-                    other.range.equals(range);
-        } else {
-            return false;
-        }
-    }
-
-    @Override
     public String toString() {
         return message;
     }

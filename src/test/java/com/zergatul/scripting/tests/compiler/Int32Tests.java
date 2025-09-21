@@ -6,6 +6,7 @@ import com.zergatul.scripting.binding.BinderErrors;
 import com.zergatul.scripting.tests.compiler.helpers.BoolStorage;
 import com.zergatul.scripting.tests.compiler.helpers.IntStorage;
 import com.zergatul.scripting.tests.compiler.helpers.StringStorage;
+import com.zergatul.scripting.tests.framework.ComparatorTest;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -14,7 +15,7 @@ import java.util.List;
 
 import static com.zergatul.scripting.tests.compiler.helpers.CompilerHelper.*;
 
-public class Int32Tests {
+public class Int32Tests extends ComparatorTest {
 
     @BeforeEach
     public void clean() {
@@ -60,12 +61,9 @@ public class Int32Tests {
                 intStorage.add(-2147483649);
                 """;
 
-        List<DiagnosticMessage> messages = getDiagnostics(ApiRoot.class, code);
-
-        Assertions.assertIterableEquals(
-                messages,
-                List.of(
-                        new DiagnosticMessage(BinderErrors.IntegerConstantTooSmall, new SingleLineTextRange(2, 16, 44, 11))));
+        comparator.assertEquals(List.of(
+                new DiagnosticMessage(BinderErrors.IntegerConstantTooSmall, new SingleLineTextRange(2, 16, 44, 11))),
+                getDiagnostics(ApiRoot.class, code));
     }
 
     @Test
@@ -75,12 +73,9 @@ public class Int32Tests {
                 intStorage.add(2147483648);
                 """;
 
-        List<DiagnosticMessage> messages = getDiagnostics(ApiRoot.class, code);
-
-        Assertions.assertIterableEquals(
-                messages,
-                List.of(
-                        new DiagnosticMessage(BinderErrors.IntegerConstantTooLarge, new SingleLineTextRange(2, 16, 43, 10))));
+        comparator.assertEquals(List.of(
+                new DiagnosticMessage(BinderErrors.IntegerConstantTooLarge, new SingleLineTextRange(2, 16, 43, 10))),
+                getDiagnostics(ApiRoot.class, code));
     }
 
     @Test
@@ -112,13 +107,10 @@ public class Int32Tests {
                 intStorage.add(0x100000000);
                 """;
 
-        List<DiagnosticMessage> messages = getDiagnostics(ApiRoot.class, code);
-
-        Assertions.assertIterableEquals(
-                messages,
-                List.of(
-                        new DiagnosticMessage(BinderErrors.IntegerConstantTooLarge, new SingleLineTextRange(1, 16, 15, 11)),
-                        new DiagnosticMessage(BinderErrors.IntegerConstantTooLarge, new SingleLineTextRange(2, 16, 44, 11))));
+        comparator.assertEquals(List.of(
+                new DiagnosticMessage(BinderErrors.IntegerConstantTooLarge, new SingleLineTextRange(1, 16, 15, 11)),
+                new DiagnosticMessage(BinderErrors.IntegerConstantTooLarge, new SingleLineTextRange(2, 16, 44, 11))),
+                getDiagnostics(ApiRoot.class, code));
     }
 
     @Test

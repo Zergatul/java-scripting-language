@@ -7,6 +7,7 @@ import com.zergatul.scripting.tests.compiler.helpers.BoolStorage;
 import com.zergatul.scripting.tests.compiler.helpers.FloatStorage;
 import com.zergatul.scripting.tests.compiler.helpers.IntStorage;
 import com.zergatul.scripting.tests.compiler.helpers.StringStorage;
+import com.zergatul.scripting.tests.framework.ComparatorTest;
 import com.zergatul.scripting.type.CustomType;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -16,7 +17,7 @@ import java.util.List;
 
 import static com.zergatul.scripting.tests.compiler.helpers.CompilerHelper.*;
 
-public class MetaExpressionTests {
+public class MetaExpressionTests extends ComparatorTest {
 
     @BeforeEach
     public void clean() {
@@ -87,11 +88,9 @@ public class MetaExpressionTests {
                 let x = #type(1);
                 """;
 
-        List<DiagnosticMessage> messages = getDiagnostics(ApiRoot.class, code);
-        Assertions.assertIterableEquals(
-                messages,
-                List.of(
-                        new DiagnosticMessage(ParserErrors.TypeExpected, new SingleLineTextRange(1, 15, 14, 1), "1")));
+        comparator.assertEquals(List.of(
+                new DiagnosticMessage(ParserErrors.TypeExpected, new SingleLineTextRange(1, 15, 14, 1), "1")),
+                getDiagnostics(ApiRoot.class, code));
     }
 
     @Test

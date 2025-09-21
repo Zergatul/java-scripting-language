@@ -8,6 +8,7 @@ import com.zergatul.scripting.tests.compiler.helpers.FutureHelper;
 import com.zergatul.scripting.tests.compiler.helpers.Int64Storage;
 import com.zergatul.scripting.tests.compiler.helpers.IntStorage;
 import com.zergatul.scripting.tests.compiler.helpers.Run;
+import com.zergatul.scripting.tests.framework.ComparatorTest;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -19,7 +20,7 @@ import java.util.concurrent.CompletableFuture;
 import static com.zergatul.scripting.tests.compiler.helpers.CompilerHelper.compileAsync;
 import static com.zergatul.scripting.tests.compiler.helpers.CompilerHelper.getDiagnostics;
 
-public class AwaitTests {
+public class AwaitTests extends ComparatorTest {
 
     @BeforeEach
     public void clean() {
@@ -35,9 +36,9 @@ public class AwaitTests {
                 await futures.create();
                 """;
 
-        List<DiagnosticMessage> diagnostics = getDiagnostics(ApiRoot.class, code);
-        Assertions.assertIterableEquals(diagnostics, List.of(
-                new DiagnosticMessage(BinderErrors.AwaitInNonAsyncContext, new SingleLineTextRange(1, 1, 0, 5))));
+        comparator.assertEquals(List.of(
+                new DiagnosticMessage(BinderErrors.AwaitInNonAsyncContext, new SingleLineTextRange(1, 1, 0, 5))),
+                getDiagnostics(ApiRoot.class, code));
     }
 
     @Test

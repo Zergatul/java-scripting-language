@@ -8,6 +8,7 @@ import com.zergatul.scripting.tests.compiler.helpers.FloatStorage;
 import com.zergatul.scripting.tests.compiler.helpers.IntStorage;
 import com.zergatul.scripting.tests.compiler.helpers.Run;
 import com.zergatul.scripting.tests.compiler.helpers.StringStorage;
+import com.zergatul.scripting.tests.framework.ComparatorTest;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -17,7 +18,7 @@ import java.util.List;
 import static com.zergatul.scripting.tests.compiler.helpers.CompilerHelper.compile;
 import static com.zergatul.scripting.tests.compiler.helpers.CompilerHelper.getDiagnostics;
 
-public class FunctionTests {
+public class FunctionTests extends ComparatorTest {
 
     @BeforeEach
     public void clean() {
@@ -424,14 +425,11 @@ public class FunctionTests {
                 void f(int x, string x) {}
                 """;
 
-        List<DiagnosticMessage> messages = getDiagnostics(ApiRoot.class, code);
-
-        Assertions.assertIterableEquals(
-                messages,
-                List.of(new DiagnosticMessage(
-                        BinderErrors.SymbolAlreadyDeclared,
-                        new SingleLineTextRange(1, 22, 21, 1),
-                        "x")));
+        comparator.assertEquals(List.of(new DiagnosticMessage(
+                BinderErrors.SymbolAlreadyDeclared,
+                new SingleLineTextRange(1, 22, 21, 1),
+                "x")),
+                getDiagnostics(ApiRoot.class, code));
     }
 
     @Test
@@ -440,14 +438,11 @@ public class FunctionTests {
                 void f(let x) {}
                 """;
 
-        List<DiagnosticMessage> messages = getDiagnostics(ApiRoot.class, code);
-
-        Assertions.assertIterableEquals(
-                messages,
-                List.of(new DiagnosticMessage(
-                        ParserErrors.TypeExpected,
-                        new SingleLineTextRange(1, 8, 7, 3),
-                        "let")));
+        comparator.assertEquals(List.of(new DiagnosticMessage(
+                ParserErrors.TypeExpected,
+                new SingleLineTextRange(1, 8, 7, 3),
+                "let")),
+                getDiagnostics(ApiRoot.class, code));
     }
 
     @Test
@@ -474,14 +469,12 @@ public class FunctionTests {
                 int sum(int i1, int i2) => intStorage.add(i1 + i2);
                 """;
 
-        List<DiagnosticMessage> messages = getDiagnostics(ApiRoot.class, code);
-
-        Assertions.assertIterableEquals(
-                messages,
-                List.of(new DiagnosticMessage(
+        comparator.assertEquals(List.of(
+                new DiagnosticMessage(
                         BinderErrors.CannotImplicitlyConvert,
                         new SingleLineTextRange(1, 28, 27, 23),
-                        "void", "int")));
+                        "void", "int")),
+                getDiagnostics(ApiRoot.class, code));
     }
 
     public static class ApiRoot {
