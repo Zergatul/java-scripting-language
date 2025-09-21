@@ -3,7 +3,6 @@ package com.zergatul.scripting.binding.nodes;
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
 import com.zergatul.scripting.symbols.LocalVariable;
-import com.zergatul.scripting.NodeType;
 import com.zergatul.scripting.type.SType;
 
 import java.util.List;
@@ -14,7 +13,7 @@ public class BoundRefArgumentExpressionNode extends BoundExpressionNode {
     public final LocalVariable holder;
 
     public BoundRefArgumentExpressionNode(BoundNameExpressionNode name, LocalVariable holder, SType type, TextRange range) {
-        super(NodeType.REF_ARGUMENT_EXPRESSION, type, range);
+        super(BoundNodeType.REF_ARGUMENT_EXPRESSION, type, range);
         this.name = name;
         this.holder = holder;
     }

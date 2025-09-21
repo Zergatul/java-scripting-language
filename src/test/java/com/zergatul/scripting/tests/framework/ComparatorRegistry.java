@@ -43,9 +43,6 @@ public class ComparatorRegistry {
                 .register(InvalidNumberToken.class, builder -> builder
                         .extract("value", node -> node.value))
                 .register(EndOfFileToken.class, builder -> {})
-                .register(Node.class, builder -> builder
-                        .extract("nodeType", Node::getNodeType)
-                        .extract("range", Node::getRange))
                 .register(DiagnosticMessage.class, builder -> builder
                         .extract("level", node -> node.level)
                         .extract("message", node -> node.message)
@@ -163,6 +160,9 @@ public class ComparatorRegistry {
                         .extract("openParen", node -> node.openParen)
                         .extract("parameters", node -> node.parameters)
                         .extract("closeParen", node -> node.closeParen))
+                .register(ParserNode.class, builder -> builder
+                        .extract("nodeType", ParserNode::getNodeType)
+                        .extract("range", ParserNode::getRange))
                 .register(PredefinedTypeNode.class, builder -> builder
                         .extract("type", node -> node.type))
                 .register(ReturnStatementNode.class, builder -> builder
@@ -229,6 +229,9 @@ public class ComparatorRegistry {
                 .register(BoundNameExpressionNode.class, builder -> builder
                         .extract("value", node -> node.value)
                         .extract("symbolRef", node -> node.symbolRef))
+                .register(BoundNode.class, builder -> builder
+                        .extract("nodeType", BoundNode::getNodeType)
+                        .extract("range", BoundNode::getRange))
                 .register(BoundParameterListNode.class, builder -> builder
                         .extract("openParen", node -> node.openParen)
                         .extract("parameters", node -> node.parameters)

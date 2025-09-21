@@ -2,7 +2,6 @@ package com.zergatul.scripting.parser.nodes;
 
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.lexer.Token;
-import com.zergatul.scripting.NodeType;
 import com.zergatul.scripting.parser.ParserTreeVisitor;
 
 public class AssignmentStatementNode extends StatementNode {
@@ -13,7 +12,7 @@ public class AssignmentStatementNode extends StatementNode {
     public final Token semicolon;
 
     public AssignmentStatementNode(ExpressionNode left, AssignmentOperatorNode operator, ExpressionNode right, Token semicolon, TextRange range) {
-        super(NodeType.ASSIGNMENT_STATEMENT, range);
+        super(ParserNodeType.ASSIGNMENT_STATEMENT, range);
         this.left = left;
         this.operator = operator;
         this.right = right;

@@ -679,7 +679,7 @@ public class Parser {
                 NameExpressionNode name = new NameExpressionNode(identifier);
                 switch (current.getTokenType()) {
                     case SEMICOLON -> {
-                        if (type.getNodeType() == NodeType.LET_TYPE) {
+                        if (type.getNodeType() == ParserNodeType.LET_TYPE) {
                             addDiagnostic(ParserErrors.CannotUseLet, type);
                         }
                         return new VariableDeclarationNode(type, name, TextRange.combine(type, name));
@@ -737,20 +737,20 @@ public class Parser {
                 if (!canPostfix(expression1)) {
                     addDiagnostic(ParserErrors.CannotApplyIncDec, expression1);
                 }
-                return new PostfixStatementNode(NodeType.INCREMENT_STATEMENT, expression1, TextRange.combine(expression1, plusPlus));
+                return new PostfixStatementNode(ParserNodeType.INCREMENT_STATEMENT, expression1, TextRange.combine(expression1, plusPlus));
             } else if (current.is(TokenType.MINUS_MINUS)) {
                 Token minusMinus = advance();
                 if (!canPostfix(expression1)) {
                     addDiagnostic(ParserErrors.CannotApplyIncDec, expression1);
                 }
-                return new PostfixStatementNode(NodeType.DECREMENT_STATEMENT, expression1, TextRange.combine(expression1, minusMinus));
+                return new PostfixStatementNode(ParserNodeType.DECREMENT_STATEMENT, expression1, TextRange.combine(expression1, minusMinus));
             } else {
                 if (!canBeExpression) {
-                    NodeType nodeType = expression1.getNodeType();
+                    ParserNodeType nodeType = expression1.getNodeType();
                     boolean notAStatement =
-                            nodeType != NodeType.INVOCATION_EXPRESSION &&
-                            nodeType != NodeType.OBJECT_CREATION_EXPRESSION &&
-                            nodeType != NodeType.AWAIT_EXPRESSION;
+                            nodeType != ParserNodeType.INVOCATION_EXPRESSION &&
+                            nodeType != ParserNodeType.OBJECT_CREATION_EXPRESSION &&
+                            nodeType != ParserNodeType.AWAIT_EXPRESSION;
                     if (notAStatement) {
                         addDiagnostic(ParserErrors.NotAStatement, expression1);
                     }
@@ -777,7 +777,7 @@ public class Parser {
     }
 
     private boolean canPostfix(ExpressionNode expression) {
-        return expression.is(NodeType.NAME_EXPRESSION) || expression.is(NodeType.INDEX_EXPRESSION) || expression.is(NodeType.MEMBER_ACCESS_EXPRESSION);
+        return expression.is(ParserNodeType.NAME_EXPRESSION) || expression.is(ParserNodeType.INDEX_EXPRESSION) || expression.is(ParserNodeType.MEMBER_ACCESS_EXPRESSION);
     }
 
     private boolean isPossibleStatement() {
@@ -1816,9 +1816,6 @@ public class Parser {
 
         Token match = current;
         current = tokens.next();
-        while (isSkippable(current)) {
-            current = tokens.next();
-        }
         return match;
     }
 
@@ -1828,9 +1825,6 @@ public class Parser {
 
             Token match = current;
             current = tokens.next();
-            while (isSkippable(current)) {
-                current = tokens.next();
-            }
             return match;
         } else {
             switch (type) {
@@ -1856,21 +1850,7 @@ public class Parser {
     }
 
     private Token peek(int n) {
-        int shift = 1;
-        while (true) {
-            if (!isSkippable(tokens.peek(shift))) {
-                n--;
-                if (n == 0) {
-                    break;
-                }
-            }
-            shift++;
-        }
-        return tokens.peek(shift);
-    }
-
-    private boolean isSkippable(Token token) {
-        return token.is(TokenType.WHITESPACE) || token.is(TokenType.LINE_BREAK) || token.is(TokenType.COMMENT);
+        return tokens.peek(n);
     }
 
     private StatementNode withSemicolon(StatementNode statement) {

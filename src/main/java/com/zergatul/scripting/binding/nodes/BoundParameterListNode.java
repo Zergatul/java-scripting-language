@@ -3,7 +3,6 @@ package com.zergatul.scripting.binding.nodes;
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
 import com.zergatul.scripting.lexer.Token;
-import com.zergatul.scripting.NodeType;
 import com.zergatul.scripting.parser.nodes.ParameterListNode;
 
 import java.util.List;
@@ -20,7 +19,7 @@ public class BoundParameterListNode extends BoundNode {
     }
 
     public BoundParameterListNode(Token openParen, List<BoundParameterNode> parameters, Token closeParen, TextRange range) {
-        super(NodeType.PARAMETER_LIST, range);
+        super(BoundNodeType.PARAMETER_LIST, range);
         this.openParen = openParen;
         this.parameters = parameters;
         this.closeParen = closeParen;

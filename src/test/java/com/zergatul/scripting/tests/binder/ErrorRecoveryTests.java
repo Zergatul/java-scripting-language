@@ -2,7 +2,7 @@ package com.zergatul.scripting.tests.binder;
 
 import com.zergatul.scripting.DiagnosticMessage;
 import com.zergatul.scripting.MultiLineTextRange;
-import com.zergatul.scripting.NodeType;
+import com.zergatul.scripting.binding.nodes.BoundNodeType;
 import com.zergatul.scripting.SingleLineTextRange;
 import com.zergatul.scripting.binding.BinderErrors;
 import com.zergatul.scripting.binding.BinderOutput;
@@ -40,7 +40,7 @@ public class ErrorRecoveryTests extends BinderTestBase {
                 new DiagnosticMessage(ParserErrors.ExpressionOrCloseParenthesesExpected, new SingleLineTextRange(2, 1, 20, 0), "<EOF>"),
                 new DiagnosticMessage(ParserErrors.CommaOrCloseParenthesesExpected, new SingleLineTextRange(2, 1, 20, 0), "<EOF>"),
                 new DiagnosticMessage(ParserErrors.SemicolonExpected, new SingleLineTextRange(1, 19, 18, 1)),
-                new DiagnosticMessage(BinderErrors.NotFunction, new SingleLineTextRange(1, 11, 10, 8), NodeType.STRING_LITERAL)),
+                new DiagnosticMessage(BinderErrors.NotFunction, new SingleLineTextRange(1, 11, 10, 8), BoundNodeType.STRING_LITERAL)),
                 result.diagnostics());
     }
 

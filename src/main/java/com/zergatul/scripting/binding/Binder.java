@@ -4,7 +4,7 @@ import com.zergatul.scripting.*;
 import com.zergatul.scripting.binding.nodes.*;
 import com.zergatul.scripting.compiler.*;
 import com.zergatul.scripting.parser.AssignmentOperator;
-import com.zergatul.scripting.NodeType;
+import com.zergatul.scripting.binding.nodes.BoundNodeType;
 import com.zergatul.scripting.parser.ParserOutput;
 import com.zergatul.scripting.parser.nodes.*;
 import com.zergatul.scripting.symbols.*;
@@ -110,7 +110,7 @@ public class Binder {
         BoundNameExpressionNode name = new BoundNameExpressionNode(declaration.getSymbolRef(), functionNode.name.getRange());
 
         BoundStatementNode statement;
-        if (declaration.getReturnType() != SVoidType.instance && functionNode.body.getNodeType() == NodeType.EXPRESSION_STATEMENT) {
+        if (declaration.getReturnType() != SVoidType.instance && functionNode.body.is(ParserNodeType.EXPRESSION_STATEMENT)) {
             // rewrite to return statement
             ExpressionStatementNode expressionStatement = (ExpressionStatementNode) functionNode.body;
             BoundExpressionNode expression = bindExpression(expressionStatement.expression);
@@ -203,7 +203,7 @@ public class Binder {
         addParametersToContext(methodDeclaration.getParameters());
 
         BoundStatementNode body;
-        if (returnType != SVoidType.instance && methodNode.body.getNodeType() == NodeType.EXPRESSION_STATEMENT) {
+        if (returnType != SVoidType.instance && methodNode.body.is(ParserNodeType.EXPRESSION_STATEMENT)) {
             // rewrite to return statement
             ExpressionStatementNode expressionStatement = (ExpressionStatementNode) methodNode.body;
             BoundExpressionNode expression = bindExpression(expressionStatement.expression);
@@ -350,13 +350,13 @@ public class Binder {
         BoundTypeNode variableType;
         BoundExpressionNode expression;
 
-        if (variableDeclaration.type.getNodeType() == NodeType.LET_TYPE) {
+        if (variableDeclaration.type.is(ParserNodeType.LET_TYPE)) {
             if (variableDeclaration.expression != null) {
                 expression = bindExpression(variableDeclaration.expression);
-                if (expression.getNodeType() == NodeType.UNCONVERTED_LAMBDA) {
+                if (expression.getNodeType() == BoundNodeType.UNCONVERTED_LAMBDA) {
                     addDiagnostic(BinderErrors.LetUnboundLambda, variableDeclaration.type);
                 }
-                if (expression.getNodeType() == NodeType.EMPTY_COLLECTION_EXPRESSION) {
+                if (expression.getNodeType() == BoundNodeType.EMPTY_COLLECTION_EXPRESSION) {
                     addDiagnostic(BinderErrors.LetEmptyCollection, variableDeclaration.type);
                 }
             } else {
@@ -459,7 +459,7 @@ public class Binder {
 
         BoundExpressionNode iterable = bindExpression(statement.iterable);
         if (iterable.type instanceof SArrayType arrayType) {
-            if (statement.typeNode.getNodeType() == NodeType.LET_TYPE) {
+            if (statement.typeNode.is(ParserNodeType.LET_TYPE)) {
                 variableType = new BoundLetTypeNode(arrayType.getElementsType(), statement.typeNode.getRange());
             } else {
                 variableType = bindType(statement.typeNode);
@@ -470,7 +470,7 @@ public class Binder {
         } else {
             addDiagnostic(BinderErrors.CannotIterate, iterable, iterable.type.toString());
 
-            if (statement.typeNode.getNodeType() == NodeType.LET_TYPE) {
+            if (statement.typeNode.is(ParserNodeType.LET_TYPE)) {
                 variableType = new BoundLetTypeNode(SUnknown.instance, statement.typeNode.getRange());
             } else {
                 variableType = bindType(statement.typeNode);
@@ -547,7 +547,7 @@ public class Binder {
             addDiagnostic(BinderErrors.ExpressionCannotBeSet, expression);
         }
 
-        boolean isInc = statement.getNodeType() == NodeType.INCREMENT_STATEMENT;
+        boolean isInc = statement.is(ParserNodeType.INCREMENT_STATEMENT);
 
         SType type = expression.type;
         PostfixOperation operation = isInc ? type.increment() : type.decrement();
@@ -559,7 +559,11 @@ public class Binder {
                     type.toString());
         }
 
-        return new BoundPostfixStatementNode(statement.getNodeType(), expression, operation, statement.getRange());
+        return new BoundPostfixStatementNode(
+                isInc ? BoundNodeType.INCREMENT_STATEMENT : BoundNodeType.DECREMENT_STATEMENT,
+                expression,
+                operation,
+                statement.getRange());
     }
 
     private BoundExpressionNode bindExpression(ExpressionNode expression) {
@@ -760,7 +764,7 @@ public class Binder {
     private BoundExpressionNode bindInvocationExpression(InvocationExpressionNode invocation) {
         BoundExpressionNode callee = bindExpression(invocation.callee);
 
-        if (callee.getNodeType() == NodeType.METHOD_GROUP) {
+        if (callee.getNodeType() == BoundNodeType.METHOD_GROUP) {
             BoundMethodGroupExpressionNode methodGroup = (BoundMethodGroupExpressionNode) callee;
             BindInvocableArgsResult<MethodReference> result = bindInvocableArguments(
                     invocation.arguments,
@@ -831,112 +835,6 @@ public class Binder {
             addDiagnostic(BinderErrors.NotFunction, callee);
         }
         return new BoundInvalidExpressionNode(List.of(callee), invocation.getRange());
-
-        /*if (invocation.callee instanceof MemberAccessExpressionNode memberAccess) {
-            // method invocation
-            BoundExpressionNode objectReference = bindExpression(memberAccess.callee);
-            // get methods by name
-            List<MethodReference> methodReferences;
-            if (objectReference.type == SUnknown.instance) {
-                methodReferences = List.of(UnknownMethodReference.instance);
-            } else {
-                methodReferences = objectReference.type.getInstanceMethods()
-                        .stream()
-                        .filter(m -> m.getName().equals(memberAccess.name.value))
-                        .filter(m -> {
-                            if (m instanceof NativeMethodReference ref) {
-                                return context.isMethodVisible(ref.getUnderlying());
-                            } else {
-                                return true;
-                            }
-                        })
-                        .toList();
-            }
-
-            BindInvocableArgsResult<MethodReference> result = bindInvocableArguments(
-                    invocation.arguments,
-                    methodReferences,
-                    UnknownMethodReference.instance);
-            if (result.noInvocables) {
-                addDiagnostic(
-                        BinderErrors.MemberDoesNotExist,
-                        memberAccess.name,
-                        objectReference.type, memberAccess.name.value);
-            } else if (result.noOverload) {
-                addDiagnostic(
-                        BinderErrors.NoOverloadedMethods,
-                        invocation.callee,
-                        memberAccess.name.value, invocation.arguments.arguments.size());
-            }
-
-            BoundMethodNode methodNode = new BoundMethodNode(result.invocable, memberAccess.name.getRange());
-            return new BoundMethodInvocationExpressionNode(
-                    objectReference,
-                    methodNode,
-                    result.argumentsListNode,
-                    context.releaseRefVariables(),
-                    invocation.getRange());
-        }*/
-
-//        if (invocation.callee instanceof NameExpressionNode name) {
-//            // function invocation
-//            BoundExpressionNode boundExpr = bindNameExpression(name);
-//            if (boundExpr.getNodeType() == NodeType.FUNCTION_REFERENCE) {
-//                BoundFunctionReferenceNode functionReferenceNode = (BoundFunctionReferenceNode) boundExpr;
-//                SStaticFunction type = functionReferenceNode.getFunctionType();
-//
-//                BindInvocableArgsResult<Function> result = bindInvocableArguments(
-//                        invocation.arguments,
-//                        List.of(functionReferenceNode.getFunction()));
-//
-//                if (result.noOverload) {
-//                    addDiagnostic(
-//                            BinderErrors.ArgumentCountMismatch,
-//                            name,
-//                            name.value,
-//                            type.getParameters().size());
-//                }
-//
-//                return new BoundFunctionInvocationExpression(
-//                        functionReferenceNode,
-//                        type.getReturnType(),
-//                        result.argumentsListNode,
-//                        context.releaseRefVariables(),
-//                        invocation.getRange());
-//            }
-//
-//            if (boundExpr.getNodeType() == NodeType.NAME_EXPRESSION) {
-//                BoundNameExpressionNode boundName = (BoundNameExpressionNode) boundExpr;
-//                if (boundName.type instanceof SGenericFunction genericFunction) {
-//                    InvocableVariable invocable = new InvocableVariable(boundName.symbolRef.asVariable());
-//                    BindInvocableArgsResult<InvocableVariable> result = bindInvocableArguments(
-//                            invocation.arguments,
-//                            List.of(invocable));
-//
-//                    if (result.noOverload) {
-//                        addDiagnostic(
-//                                BinderErrors.ArgumentCountMismatch,
-//                                name,
-//                                name.value,
-//                                genericFunction.getParameters().size());
-//                    }
-//
-//                    return new BoundVariableInvocationExpression(boundName, result.argumentsListNode, invocation.getRange());
-//                }
-//            }
-//
-//            addDiagnostic(
-//                    BinderErrors.NotFunction,
-//                    name,
-//                    name.value);
-//            return new BoundInvalidExpressionNode(invocation.getRange());
-//        }
-//
-//        addDiagnostic(
-//                BinderErrors.InvalidCallee,
-//                invocation.callee,
-//                invocation.callee.getNodeType().toString());
-//        return new BoundInvalidExpressionNode(invocation.getRange());
     }
 
     private BoundExpressionNode bindUnconvertedLambda(BoundUnconvertedLambdaExpressionNode node, SFunction target) {
@@ -1078,7 +976,7 @@ public class Binder {
     }
 
     private BoundArrayCreationExpressionNode bindArrayCreationExpression(ArrayCreationExpressionNode expression) {
-        if (expression.typeNode.getNodeType() != NodeType.ARRAY_TYPE) {
+        if (expression.typeNode.isNot(ParserNodeType.ARRAY_TYPE)) {
             throw new InternalException();
         }
 
@@ -1088,7 +986,7 @@ public class Binder {
     }
 
     private BoundArrayInitializerExpressionNode bindArrayInitializerExpression(ArrayInitializerExpressionNode expression) {
-        if (expression.typeNode.getNodeType() != NodeType.ARRAY_TYPE) {
+        if (expression.typeNode.isNot(ParserNodeType.ARRAY_TYPE)) {
             throw new InternalException();
         }
 
@@ -1204,7 +1102,7 @@ public class Binder {
         }
 
         List<BoundExpressionNode> items = collection.items.stream().map(this::bindExpression).toList();
-        SType type = items.get(0).type;
+        SType type = items.getFirst().type;
         for (int i = 1; i < items.size(); i++) {
             if (!items.get(i).type.equals(type)) {
                 addDiagnostic(BinderErrors.CannotInferCollectionExpressionTypes, collection.items.get(i), type, i, items.get(i).type);
@@ -1306,7 +1204,7 @@ public class Binder {
 
     private BoundRefArgumentExpressionNode bindRefArgumentExpression(RefArgumentExpressionNode expression) {
         BoundExpressionNode boundExpressionNode = bindNameExpression(expression.name);
-        if (boundExpressionNode.getNodeType() != NodeType.NAME_EXPRESSION) {
+        if (boundExpressionNode.getNodeType() != BoundNodeType.NAME_EXPRESSION) {
             addDiagnostic(BinderErrors.InvalidRefExpression, expression);
             return new BoundRefArgumentExpressionNode(
                     new BoundNameExpressionNode(new InvalidSymbolRef(), expression.name.getRange()),
@@ -1453,7 +1351,7 @@ public class Binder {
             return new ConversionInfo(ConversionType.IMPLICIT_CAST, operation);
         }
 
-        if (expression.getNodeType() == NodeType.EMPTY_COLLECTION_EXPRESSION) {
+        if (expression.getNodeType() == BoundNodeType.EMPTY_COLLECTION_EXPRESSION) {
             if (type instanceof SArrayType) {
                 return new ConversionInfo(ConversionType.EMPTY_ARRAY);
             } else {
@@ -1461,7 +1359,7 @@ public class Binder {
             }
         }
 
-        if (expression.getNodeType() == NodeType.UNCONVERTED_LAMBDA) {
+        if (expression.getNodeType() == BoundNodeType.UNCONVERTED_LAMBDA) {
             SUnconvertedLambda lambdaType = (SUnconvertedLambda) expression.type;
             if (type instanceof SFunction function) {
                 if (function.getReturnType() == SVoidType.instance && !lambdaType.canBeAction()) {
@@ -1478,7 +1376,7 @@ public class Binder {
             return null;
         }
 
-        if (expression.getNodeType() == NodeType.FUNCTION_REFERENCE) {
+        if (expression.getNodeType() == BoundNodeType.FUNCTION_REFERENCE) {
             BoundFunctionReferenceNode functionReferenceNode = (BoundFunctionReferenceNode) expression;
             if (type instanceof SFunctionalInterface functionalInterface) {
                 if (functionReferenceNode.getFunctionType().matches(functionalInterface)) {
@@ -1497,7 +1395,7 @@ public class Binder {
             return null;
         }
 
-        if (expression.getNodeType() == NodeType.METHOD_GROUP) {
+        if (expression.getNodeType() == BoundNodeType.METHOD_GROUP) {
             BoundMethodGroupExpressionNode methodGroupExpressionNode = (BoundMethodGroupExpressionNode) expression;
             if (type instanceof SFunctionalInterface functionalInterface) {
                 for (MethodReference method : methodGroupExpressionNode.candidates) {
@@ -1624,7 +1522,7 @@ public class Binder {
                     functionType,
                     functionTypeNode.getRange());
         }
-        if (type.getNodeType() == NodeType.LET_TYPE) {
+        if (type.is(ParserNodeType.LET_TYPE)) {
             addDiagnostic(BinderErrors.LetInvalidContext, type);
             return new BoundInvalidTypeNode(type.getRange());
         }
@@ -1637,7 +1535,7 @@ public class Binder {
 
         // 1. process classes
         for (CompilationUnitMemberNode member : unit.members.members) {
-            if (member.getNodeType() == NodeType.CLASS_DECLARATION) {
+            if (member.is(ParserNodeType.CLASS_DECLARATION)) {
                 buildClassDeclaration((ClassNode) member);
             }
         }

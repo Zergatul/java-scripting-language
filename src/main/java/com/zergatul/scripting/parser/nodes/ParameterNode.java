@@ -1,7 +1,6 @@
 package com.zergatul.scripting.parser.nodes;
 
 import com.zergatul.scripting.TextRange;
-import com.zergatul.scripting.NodeType;
 import com.zergatul.scripting.parser.ParserTreeVisitor;
 
 public class ParameterNode extends ParserNode {
@@ -10,7 +9,7 @@ public class ParameterNode extends ParserNode {
     private final NameExpressionNode name;
 
     public ParameterNode(TypeNode type, NameExpressionNode name, TextRange range) {
-        super(NodeType.PARAMETER, range);
+        super(ParserNodeType.PARAMETER, range);
         this.type = type;
         this.name = name;
     }

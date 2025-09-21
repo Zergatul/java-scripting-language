@@ -2,7 +2,6 @@ package com.zergatul.scripting.parser.nodes;
 
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.lexer.Token;
-import com.zergatul.scripting.NodeType;
 import com.zergatul.scripting.parser.ParserTreeVisitor;
 
 import java.util.Objects;
@@ -23,7 +22,7 @@ public class VariableDeclarationNode extends StatementNode {
     }
 
     public VariableDeclarationNode(TypeNode type, NameExpressionNode name, ExpressionNode expression, Token semicolon, TextRange range) {
-        super(NodeType.VARIABLE_DECLARATION, range);
+        super(ParserNodeType.VARIABLE_DECLARATION, range);
         this.type = type;
         this.name = name;
         this.expression = expression;

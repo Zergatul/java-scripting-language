@@ -2,7 +2,6 @@ package com.zergatul.scripting.parser.nodes;
 
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.lexer.Token;
-import com.zergatul.scripting.NodeType;
 import com.zergatul.scripting.parser.ParserTreeVisitor;
 
 public class MetaTypeOfExpressionNode extends ExpressionNode {
@@ -13,7 +12,7 @@ public class MetaTypeOfExpressionNode extends ExpressionNode {
     public final Token closeParen;
 
     public MetaTypeOfExpressionNode(Token keyword, Token openParen, ExpressionNode expression, Token closeParen, TextRange range) {
-        super(NodeType.META_TYPE_OF_EXPRESSION, range);
+        super(ParserNodeType.META_TYPE_OF_EXPRESSION, range);
         this.keyword = keyword;
         this.openParen = openParen;
         this.expression = expression;

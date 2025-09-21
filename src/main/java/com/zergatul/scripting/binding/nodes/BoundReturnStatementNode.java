@@ -3,7 +3,6 @@ package com.zergatul.scripting.binding.nodes;
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
 import com.zergatul.scripting.lexer.Token;
-import com.zergatul.scripting.NodeType;
 
 import java.util.List;
 import java.util.Objects;
@@ -18,7 +17,7 @@ public class BoundReturnStatementNode extends BoundStatementNode {
     }
 
     public BoundReturnStatementNode(Token keyword, BoundExpressionNode expression, TextRange range) {
-        super(NodeType.RETURN_STATEMENT, range);
+        super(BoundNodeType.RETURN_STATEMENT, range);
         this.keyword = keyword;
         this.expression = expression;
     }

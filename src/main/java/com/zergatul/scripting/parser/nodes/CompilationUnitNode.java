@@ -1,7 +1,6 @@
 package com.zergatul.scripting.parser.nodes;
 
 import com.zergatul.scripting.TextRange;
-import com.zergatul.scripting.NodeType;
 import com.zergatul.scripting.parser.ParserTreeVisitor;
 
 public class CompilationUnitNode extends ParserNode {
@@ -10,7 +9,7 @@ public class CompilationUnitNode extends ParserNode {
     public final StatementsListNode statements;
 
     public CompilationUnitNode(CompilationUnitMembersListNode members, StatementsListNode statements, TextRange range) {
-        super(NodeType.COMPILATION_UNIT, range);
+        super(ParserNodeType.COMPILATION_UNIT, range);
         this.members = members;
         this.statements = statements;
     }

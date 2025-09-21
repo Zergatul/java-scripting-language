@@ -1,7 +1,6 @@
 package com.zergatul.scripting.parser.nodes;
 
 import com.zergatul.scripting.TextRange;
-import com.zergatul.scripting.NodeType;
 import com.zergatul.scripting.parser.ParserTreeVisitor;
 
 public class StaticReferenceNode extends ExpressionNode {
@@ -9,7 +8,7 @@ public class StaticReferenceNode extends ExpressionNode {
     public final TypeNode typeNode;
 
     public StaticReferenceNode(TypeNode typeNode, TextRange range) {
-        super(NodeType.STATIC_REFERENCE, range);
+        super(ParserNodeType.STATIC_REFERENCE, range);
         this.typeNode = typeNode;
     }
 

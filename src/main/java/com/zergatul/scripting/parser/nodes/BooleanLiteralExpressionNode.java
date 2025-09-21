@@ -1,7 +1,6 @@
 package com.zergatul.scripting.parser.nodes;
 
 import com.zergatul.scripting.TextRange;
-import com.zergatul.scripting.NodeType;
 import com.zergatul.scripting.parser.ParserTreeVisitor;
 
 public class BooleanLiteralExpressionNode extends ExpressionNode {
@@ -9,7 +8,7 @@ public class BooleanLiteralExpressionNode extends ExpressionNode {
     public final boolean value;
 
     public BooleanLiteralExpressionNode(boolean value, TextRange range) {
-        super(NodeType.BOOLEAN_LITERAL, range);
+        super(ParserNodeType.BOOLEAN_LITERAL, range);
         this.value = value;
     }
 

@@ -1,7 +1,6 @@
 package com.zergatul.scripting.parser.nodes;
 
 import com.zergatul.scripting.TextRange;
-import com.zergatul.scripting.NodeType;
 import com.zergatul.scripting.parser.ParserTreeVisitor;
 
 public class ClassFieldNode extends ClassMemberNode {
@@ -10,7 +9,7 @@ public class ClassFieldNode extends ClassMemberNode {
     public final NameExpressionNode name;
 
     public ClassFieldNode(TypeNode type, NameExpressionNode name, TextRange range) {
-        super(NodeType.CLASS_FIELD, range);
+        super(ParserNodeType.CLASS_FIELD, range);
         this.type = type;
         this.name = name;
     }

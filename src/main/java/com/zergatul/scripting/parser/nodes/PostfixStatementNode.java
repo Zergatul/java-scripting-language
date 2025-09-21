@@ -2,14 +2,13 @@ package com.zergatul.scripting.parser.nodes;
 
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.lexer.Token;
-import com.zergatul.scripting.NodeType;
 import com.zergatul.scripting.parser.ParserTreeVisitor;
 
 public class PostfixStatementNode extends StatementNode {
 
     public final ExpressionNode expression;
 
-    public PostfixStatementNode(NodeType nodeType, ExpressionNode expression, TextRange range) {
+    public PostfixStatementNode(ParserNodeType nodeType, ExpressionNode expression, TextRange range) {
         super(nodeType, range);
         this.expression = expression;
     }

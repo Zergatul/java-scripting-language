@@ -3,7 +3,6 @@ package com.zergatul.scripting.binding.nodes;
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
 import com.zergatul.scripting.lexer.Token;
-import com.zergatul.scripting.NodeType;
 import com.zergatul.scripting.parser.nodes.AssignmentStatementNode;
 
 import java.util.List;
@@ -24,7 +23,7 @@ public class BoundAssignmentStatementNode extends BoundStatementNode {
     }
 
     public BoundAssignmentStatementNode(BoundExpressionNode left, BoundAssignmentOperatorNode operator, BoundExpressionNode right, Token semicolon, TextRange range) {
-        super(NodeType.ASSIGNMENT_STATEMENT, range);
+        super(BoundNodeType.ASSIGNMENT_STATEMENT, range);
         this.left = left;
         this.operator = operator;
         this.right = right;

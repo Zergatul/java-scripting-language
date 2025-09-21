@@ -11,7 +11,7 @@ import com.zergatul.scripting.lexer.Lexer;
 import com.zergatul.scripting.lexer.LexerInput;
 import com.zergatul.scripting.lexer.LexerOutput;
 import com.zergatul.scripting.parser.AssignmentOperator;
-import com.zergatul.scripting.NodeType;
+import com.zergatul.scripting.binding.nodes.BoundNodeType;
 import com.zergatul.scripting.parser.Parser;
 import com.zergatul.scripting.parser.ParserOutput;
 import com.zergatul.scripting.runtime.AsyncStateMachine;
@@ -184,7 +184,7 @@ public class Compiler {
             }
 
             // add default constructor if we have zero constructors defined
-            if (classNode.members.stream().noneMatch(m -> m.getNodeType() == NodeType.CLASS_CONSTRUCTOR)) {
+            if (classNode.members.stream().noneMatch(m -> m.getNodeType() == BoundNodeType.CLASS_CONSTRUCTOR)) {
                 MethodVisitor constructorVisitor = innerWriter.visitMethod(ACC_PUBLIC, "<init>", Type.getMethodDescriptor(Type.VOID_TYPE), null, null);
                 constructorVisitor.visitCode();
                 constructorVisitor.visitVarInsn(ALOAD, 0);
@@ -461,7 +461,7 @@ public class Compiler {
 
         context.setClassName(className);
         for (BoundCompilationUnitMemberNode member : unit.members.members) {
-            if (member.getNodeType() == NodeType.STATIC_VARIABLE) {
+            if (member.getNodeType() == BoundNodeType.STATIC_VARIABLE) {
                 BoundStaticVariableNode field = (BoundStaticVariableNode) member;
                 context.addStaticSymbol(field.name.value, field.name.symbolRef);
             }
@@ -1045,7 +1045,7 @@ public class Compiler {
             for (BoundStatementNode statement : boundary.statements) {
                 compileStatement(nextMethodVisitor, nextMethodContext, statement);
             }
-            if (boundary.statements.isEmpty() || boundary.statements.get(boundary.statements.size() - 1).getNodeType() != NodeType.RETURN_STATEMENT) {
+            if (boundary.statements.isEmpty() || boundary.statements.get(boundary.statements.size() - 1).getNodeType() != BoundNodeType.RETURN_STATEMENT) {
                 nextMethodVisitor.visitJumpInsn(GOTO, loop);
             }
         }

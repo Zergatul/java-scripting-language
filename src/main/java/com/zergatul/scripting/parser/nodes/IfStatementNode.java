@@ -2,7 +2,6 @@ package com.zergatul.scripting.parser.nodes;
 
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.lexer.Token;
-import com.zergatul.scripting.NodeType;
 import com.zergatul.scripting.parser.ParserTreeVisitor;
 
 import java.util.Objects;
@@ -27,7 +26,7 @@ public class IfStatementNode extends StatementNode {
             StatementNode elseStatement,
             TextRange range
     ) {
-        super(NodeType.IF_STATEMENT, range);
+        super(ParserNodeType.IF_STATEMENT, range);
         this.ifToken = ifToken;
         this.openParen = openParen;
         this.closeParen = closeParen;

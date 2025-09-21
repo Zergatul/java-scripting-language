@@ -2,7 +2,6 @@ package com.zergatul.scripting.parser.nodes;
 
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.lexer.Token;
-import com.zergatul.scripting.NodeType;
 import com.zergatul.scripting.lexer.TokenType;
 import com.zergatul.scripting.parser.ParserTreeVisitor;
 
@@ -14,7 +13,7 @@ public class ModifiersNode extends ParserNode {
     public final List<Token> tokens;
 
     public ModifiersNode(List<Token> tokens, TextRange range) {
-        super(NodeType.MODIFIERS, range);
+        super(ParserNodeType.MODIFIERS, range);
         this.tokens = tokens;
     }
 

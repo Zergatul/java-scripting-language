@@ -1,7 +1,6 @@
 package com.zergatul.scripting.parser.nodes;
 
 import com.zergatul.scripting.TextRange;
-import com.zergatul.scripting.NodeType;
 import com.zergatul.scripting.parser.ParserTreeVisitor;
 
 import java.util.List;
@@ -12,7 +11,7 @@ public class CollectionExpressionNode extends ExpressionNode {
     public final List<ExpressionNode> items;
 
     public CollectionExpressionNode(List<ExpressionNode> items, TextRange range) {
-        super(NodeType.COLLECTION_EXPRESSION, range);
+        super(ParserNodeType.COLLECTION_EXPRESSION, range);
         this.items = items;
     }
 

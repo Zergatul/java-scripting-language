@@ -2,7 +2,6 @@ package com.zergatul.scripting.binding.nodes;
 
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
-import com.zergatul.scripting.NodeType;
 import com.zergatul.scripting.parser.nodes.FunctionNode;
 import com.zergatul.scripting.parser.nodes.ModifiersNode;
 import com.zergatul.scripting.symbols.LiftedVariable;
@@ -24,7 +23,7 @@ public class BoundFunctionNode extends BoundCompilationUnitMemberNode {
     }
 
     public BoundFunctionNode(ModifiersNode modifiers, boolean isAsync, BoundTypeNode returnType, BoundNameExpressionNode name, BoundParameterListNode parameters, BoundStatementNode body, List<LiftedVariable> lifted, TextRange range) {
-        super(NodeType.FUNCTION, range);
+        super(BoundNodeType.FUNCTION, range);
         this.modifiers = modifiers;
         this.isAsync = isAsync;
         this.returnType = returnType;

@@ -1,7 +1,6 @@
 package com.zergatul.scripting.parser.nodes;
 
 import com.zergatul.scripting.TextRange;
-import com.zergatul.scripting.NodeType;
 import com.zergatul.scripting.parser.ParserTreeVisitor;
 
 public class ObjectCreationExpressionNode extends ExpressionNode {
@@ -10,7 +9,7 @@ public class ObjectCreationExpressionNode extends ExpressionNode {
     public final ArgumentsListNode arguments;
 
     public ObjectCreationExpressionNode(TypeNode typeNode, ArgumentsListNode arguments, TextRange range) {
-        super(NodeType.OBJECT_CREATION_EXPRESSION, range);
+        super(ParserNodeType.OBJECT_CREATION_EXPRESSION, range);
         this.typeNode = typeNode;
         this.arguments = arguments;
     }

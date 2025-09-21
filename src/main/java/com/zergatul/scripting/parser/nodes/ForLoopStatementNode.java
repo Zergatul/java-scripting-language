@@ -2,7 +2,6 @@ package com.zergatul.scripting.parser.nodes;
 
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.lexer.Token;
-import com.zergatul.scripting.NodeType;
 import com.zergatul.scripting.parser.ParserTreeVisitor;
 
 import java.util.Objects;
@@ -17,7 +16,7 @@ public class ForLoopStatementNode extends StatementNode {
     public final StatementNode body;
 
     public ForLoopStatementNode(Token openParenthesis, StatementNode init, ExpressionNode condition, StatementNode update, Token closeParenthesis, StatementNode body, TextRange range) {
-        super(NodeType.FOR_LOOP_STATEMENT, range);
+        super(ParserNodeType.FOR_LOOP_STATEMENT, range);
         this.openParenthesis = openParenthesis;
         this.init = init;
         this.condition = condition;

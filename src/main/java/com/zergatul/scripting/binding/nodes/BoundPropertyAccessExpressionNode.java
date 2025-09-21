@@ -3,7 +3,6 @@ package com.zergatul.scripting.binding.nodes;
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
 import com.zergatul.scripting.lexer.Token;
-import com.zergatul.scripting.NodeType;
 import com.zergatul.scripting.type.PropertyReference;
 
 import java.util.List;
@@ -19,7 +18,7 @@ public class BoundPropertyAccessExpressionNode extends BoundExpressionNode {
     }
 
     public BoundPropertyAccessExpressionNode(BoundExpressionNode callee, Token dot, BoundPropertyNode property, TextRange range) {
-        super(NodeType.PROPERTY_ACCESS_EXPRESSION, property.property.getType(), range);
+        super(BoundNodeType.PROPERTY_ACCESS_EXPRESSION, property.property.getType(), range);
         this.callee = callee;
         this.dot = dot;
         this.property = property;

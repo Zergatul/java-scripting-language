@@ -1,7 +1,6 @@
 package com.zergatul.scripting.parser.nodes;
 
 import com.zergatul.scripting.TextRange;
-import com.zergatul.scripting.NodeType;
 import com.zergatul.scripting.parser.ParserTreeVisitor;
 
 public class TypeCastExpressionNode extends ExpressionNode {
@@ -10,7 +9,7 @@ public class TypeCastExpressionNode extends ExpressionNode {
     public final TypeNode type;
 
     public TypeCastExpressionNode(ExpressionNode expression, TypeNode type, TextRange range) {
-        super(NodeType.TYPE_CAST_EXPRESSION, range);
+        super(ParserNodeType.TYPE_CAST_EXPRESSION, range);
         this.expression = expression;
         this.type = type;
     }

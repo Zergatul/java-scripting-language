@@ -2,7 +2,6 @@ package com.zergatul.scripting.binding.nodes;
 
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
-import com.zergatul.scripting.NodeType;
 import com.zergatul.scripting.type.SType;
 
 import java.util.List;
@@ -10,7 +9,7 @@ import java.util.List;
 public class BoundPredefinedTypeNode extends BoundTypeNode {
 
     public BoundPredefinedTypeNode(SType type, TextRange range) {
-        super(NodeType.PREDEFINED_TYPE, type, range);
+        super(BoundNodeType.PREDEFINED_TYPE, type, range);
     }
 
     @Override

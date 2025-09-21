@@ -2,7 +2,6 @@ package com.zergatul.scripting.parser.nodes;
 
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.lexer.Token;
-import com.zergatul.scripting.NodeType;
 import com.zergatul.scripting.lexer.ValueToken;
 import com.zergatul.scripting.parser.ParserTreeVisitor;
 
@@ -17,7 +16,7 @@ public class FunctionTypeNode extends TypeNode {
     public final Token close;
 
     public FunctionTypeNode(ValueToken fn, Token open, List<TypeNode> parameterTypes, TypeNode returnTypeNode, Token close, TextRange range) {
-        super(NodeType.FUNCTION_TYPE, range);
+        super(ParserNodeType.FUNCTION_TYPE, range);
         this.fn = fn;
         this.open = open;
         this.parameterTypes = parameterTypes;

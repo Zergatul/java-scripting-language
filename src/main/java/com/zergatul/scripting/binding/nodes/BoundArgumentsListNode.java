@@ -2,7 +2,6 @@ package com.zergatul.scripting.binding.nodes;
 
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
-import com.zergatul.scripting.NodeType;
 
 import java.util.List;
 import java.util.Objects;
@@ -16,7 +15,7 @@ public class BoundArgumentsListNode extends BoundNode {
     }
 
     public BoundArgumentsListNode(List<BoundExpressionNode> arguments, TextRange range) {
-        super(NodeType.ARGUMENTS_LIST, range);
+        super(BoundNodeType.ARGUMENTS_LIST, range);
         this.arguments = arguments;
     }
 

@@ -1,7 +1,6 @@
 package com.zergatul.scripting.parser.nodes;
 
 import com.zergatul.scripting.TextRange;
-import com.zergatul.scripting.NodeType;
 import com.zergatul.scripting.parser.ParserTreeVisitor;
 
 public class ParenthesizedExpressionNode extends ExpressionNode {
@@ -9,7 +8,7 @@ public class ParenthesizedExpressionNode extends ExpressionNode {
     public final ExpressionNode inner;
 
     public ParenthesizedExpressionNode(ExpressionNode inner, TextRange range) {
-        super(NodeType.PARENTHESIZED_EXPRESSION, range);
+        super(ParserNodeType.PARENTHESIZED_EXPRESSION, range);
         this.inner = inner;
     }
 

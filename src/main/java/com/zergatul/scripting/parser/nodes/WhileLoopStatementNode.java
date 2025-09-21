@@ -2,7 +2,6 @@ package com.zergatul.scripting.parser.nodes;
 
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.lexer.Token;
-import com.zergatul.scripting.NodeType;
 import com.zergatul.scripting.parser.ParserTreeVisitor;
 
 public class WhileLoopStatementNode extends StatementNode {
@@ -14,7 +13,7 @@ public class WhileLoopStatementNode extends StatementNode {
     public final StatementNode body;
 
     public WhileLoopStatementNode(Token keyword, Token openParen, ExpressionNode condition, Token closeParen, StatementNode body, TextRange range) {
-        super(NodeType.WHILE_LOOP_STATEMENT, range);
+        super(ParserNodeType.WHILE_LOOP_STATEMENT, range);
         this.keyword = keyword;
         this.openParen = openParen;
         this.condition = condition;

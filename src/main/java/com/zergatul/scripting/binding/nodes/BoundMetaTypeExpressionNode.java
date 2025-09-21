@@ -3,7 +3,6 @@ package com.zergatul.scripting.binding.nodes;
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
 import com.zergatul.scripting.lexer.Token;
-import com.zergatul.scripting.NodeType;
 import com.zergatul.scripting.parser.nodes.MetaTypeExpressionNode;
 import com.zergatul.scripting.runtime.RuntimeType;
 import com.zergatul.scripting.type.SType;
@@ -22,7 +21,7 @@ public class BoundMetaTypeExpressionNode extends BoundExpressionNode {
     }
 
     public BoundMetaTypeExpressionNode(Token keyword, Token openParen, BoundTypeNode type, Token closeParen, TextRange range) {
-        super(NodeType.META_TYPE_EXPRESSION, SType.fromJavaType(RuntimeType.class), range);
+        super(BoundNodeType.META_TYPE_EXPRESSION, SType.fromJavaType(RuntimeType.class), range);
         this.keyword = keyword;
         this.openParen = openParen;
         this.type = type;

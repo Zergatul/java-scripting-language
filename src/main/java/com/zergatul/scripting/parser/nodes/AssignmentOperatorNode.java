@@ -2,7 +2,6 @@ package com.zergatul.scripting.parser.nodes;
 
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.parser.AssignmentOperator;
-import com.zergatul.scripting.NodeType;
 import com.zergatul.scripting.parser.ParserTreeVisitor;
 
 public class AssignmentOperatorNode extends ParserNode {
@@ -10,7 +9,7 @@ public class AssignmentOperatorNode extends ParserNode {
     public final AssignmentOperator operator;
 
     public AssignmentOperatorNode(AssignmentOperator operator, TextRange range) {
-        super(NodeType.ASSIGNMENT_OPERATOR, range);
+        super(ParserNodeType.ASSIGNMENT_OPERATOR, range);
         this.operator = operator;
     }
 

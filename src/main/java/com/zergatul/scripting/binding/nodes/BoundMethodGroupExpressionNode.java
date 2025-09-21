@@ -3,7 +3,6 @@ package com.zergatul.scripting.binding.nodes;
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
 import com.zergatul.scripting.lexer.Token;
-import com.zergatul.scripting.NodeType;
 import com.zergatul.scripting.type.MethodReference;
 import com.zergatul.scripting.type.SMethodGroup;
 
@@ -17,7 +16,7 @@ public class BoundMethodGroupExpressionNode extends BoundExpressionNode {
     public final BoundUnresolvedMethodNode method;
 
     public BoundMethodGroupExpressionNode(BoundExpressionNode callee, Token dot, List<MethodReference> candidates, BoundUnresolvedMethodNode method, TextRange range) {
-        super(NodeType.METHOD_GROUP, new SMethodGroup(), range);
+        super(BoundNodeType.METHOD_GROUP, new SMethodGroup(), range);
         this.callee = callee;
         this.dot = dot;
         this.candidates = candidates;

@@ -2,7 +2,6 @@ package com.zergatul.scripting.binding.nodes;
 
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
-import com.zergatul.scripting.NodeType;
 import com.zergatul.scripting.symbols.LiftedVariable;
 
 import java.util.List;
@@ -23,7 +22,7 @@ public class BoundStatementsListNode extends BoundStatementNode {
     }
 
     public BoundStatementsListNode(List<BoundVariableDeclarationNode> prepend, List<BoundStatementNode> statements, List<LiftedVariable> lifted, TextRange range) {
-        super(NodeType.STATEMENTS_LIST, range);
+        super(BoundNodeType.STATEMENTS_LIST, range);
         this.prepend = prepend;
         this.statements = statements;
         this.lifted = lifted;

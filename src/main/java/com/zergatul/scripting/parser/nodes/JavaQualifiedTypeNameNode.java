@@ -1,7 +1,6 @@
 package com.zergatul.scripting.parser.nodes;
 
 import com.zergatul.scripting.TextRange;
-import com.zergatul.scripting.NodeType;
 import com.zergatul.scripting.parser.ParserTreeVisitor;
 
 public class JavaQualifiedTypeNameNode extends ParserNode {
@@ -9,7 +8,7 @@ public class JavaQualifiedTypeNameNode extends ParserNode {
     public final String value;
 
     public JavaQualifiedTypeNameNode(String value, TextRange range) {
-        super(NodeType.JAVA_TYPE_NAME, range);
+        super(ParserNodeType.JAVA_TYPE_NAME, range);
         this.value = value;
     }
 

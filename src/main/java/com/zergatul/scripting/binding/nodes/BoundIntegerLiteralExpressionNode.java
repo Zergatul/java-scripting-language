@@ -2,7 +2,6 @@ package com.zergatul.scripting.binding.nodes;
 
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
-import com.zergatul.scripting.NodeType;
 import com.zergatul.scripting.type.SInt;
 
 import java.util.List;
@@ -16,7 +15,7 @@ public class BoundIntegerLiteralExpressionNode extends BoundExpressionNode {
     }
 
     public BoundIntegerLiteralExpressionNode(int value, TextRange range) {
-        super(NodeType.INTEGER_LITERAL, SInt.instance, range);
+        super(BoundNodeType.INTEGER_LITERAL, SInt.instance, range);
         this.value = value;
     }
 

@@ -706,7 +706,7 @@ public class Lexer {
     }
 
     private boolean isTriviaType(TokenType type) {
-        return type == TokenType.WHITESPACE || type == TokenType.LINE_BREAK || type == TokenType.SINGLE_LINE_COMMENT || type == TokenType.MULTI_LINE_COMMENT || type == TokenType.COMMENT;
+        return type == TokenType.WHITESPACE || type == TokenType.LINE_BREAK || type == TokenType.SINGLE_LINE_COMMENT || type == TokenType.MULTI_LINE_COMMENT;
     }
 
     private void advance() {

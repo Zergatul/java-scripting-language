@@ -2,7 +2,6 @@ package com.zergatul.scripting.parser.nodes;
 
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.lexer.Token;
-import com.zergatul.scripting.NodeType;
 import com.zergatul.scripting.parser.ParserTreeVisitor;
 
 public class JavaTypeNode extends TypeNode {
@@ -12,7 +11,7 @@ public class JavaTypeNode extends TypeNode {
     public final Token rBracket;
 
     public JavaTypeNode(Token lBracket, JavaQualifiedTypeNameNode name, Token rBracket, TextRange range) {
-        super(NodeType.JAVA_TYPE, range);
+        super(ParserNodeType.JAVA_TYPE, range);
         this.lBracket = lBracket;
         this.name = name;
         this.rBracket = rBracket;

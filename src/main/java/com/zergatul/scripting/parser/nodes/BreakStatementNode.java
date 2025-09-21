@@ -1,13 +1,12 @@
 package com.zergatul.scripting.parser.nodes;
 
 import com.zergatul.scripting.TextRange;
-import com.zergatul.scripting.NodeType;
 import com.zergatul.scripting.parser.ParserTreeVisitor;
 
 public class BreakStatementNode extends StatementNode {
 
     public BreakStatementNode(TextRange range) {
-        super(NodeType.BREAK_STATEMENT, range);
+        super(ParserNodeType.BREAK_STATEMENT, range);
     }
 
     @Override

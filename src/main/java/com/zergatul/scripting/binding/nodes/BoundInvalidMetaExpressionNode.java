@@ -2,7 +2,6 @@ package com.zergatul.scripting.binding.nodes;
 
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
-import com.zergatul.scripting.NodeType;
 import com.zergatul.scripting.type.SUnknown;
 
 import java.util.List;
@@ -10,7 +9,7 @@ import java.util.List;
 public class BoundInvalidMetaExpressionNode extends BoundExpressionNode {
 
     public BoundInvalidMetaExpressionNode(TextRange range) {
-        super(NodeType.META_INVALID_EXPRESSION, SUnknown.instance, range);
+        super(BoundNodeType.META_INVALID_EXPRESSION, SUnknown.instance, range);
     }
 
     @Override

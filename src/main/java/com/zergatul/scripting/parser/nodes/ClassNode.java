@@ -1,7 +1,6 @@
 package com.zergatul.scripting.parser.nodes;
 
 import com.zergatul.scripting.TextRange;
-import com.zergatul.scripting.NodeType;
 import com.zergatul.scripting.lexer.ValueToken;
 import com.zergatul.scripting.parser.ParserTreeVisitor;
 
@@ -17,7 +16,7 @@ public class ClassNode extends CompilationUnitMemberNode {
     }
 
     public ClassNode(ValueToken identifier, List<ClassMemberNode> members, TextRange range) {
-        super(NodeType.CLASS_DECLARATION, range);
+        super(ParserNodeType.CLASS_DECLARATION, range);
         this.name = new NameExpressionNode(identifier);
         this.members = members;
     }

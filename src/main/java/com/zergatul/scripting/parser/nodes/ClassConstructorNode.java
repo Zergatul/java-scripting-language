@@ -2,7 +2,6 @@ package com.zergatul.scripting.parser.nodes;
 
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.lexer.Token;
-import com.zergatul.scripting.NodeType;
 import com.zergatul.scripting.parser.ParserTreeVisitor;
 
 public class ClassConstructorNode extends ClassMemberNode {
@@ -12,7 +11,7 @@ public class ClassConstructorNode extends ClassMemberNode {
     public final StatementNode body;
 
     public ClassConstructorNode(Token keyword, ParameterListNode parameters, StatementNode body, TextRange range) {
-        super(NodeType.CLASS_CONSTRUCTOR, range);
+        super(ParserNodeType.CLASS_CONSTRUCTOR, range);
         this.keyword = keyword;
         this.parameters = parameters;
         this.body = body;

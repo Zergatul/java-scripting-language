@@ -7,7 +7,7 @@ import com.zergatul.scripting.type.SInt;
 import com.zergatul.scripting.visitors.AwaitVisitor;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
 import com.zergatul.scripting.binding.nodes.*;
-import com.zergatul.scripting.NodeType;
+import com.zergatul.scripting.binding.nodes.BoundNodeType;
 import com.zergatul.scripting.symbols.*;
 
 import java.util.ArrayList;
@@ -33,7 +33,7 @@ public class BinderTreeGenerator {
         List<BoundStatementNode> statements = currentBoundary.statements;
         boolean append =
                 statements.isEmpty() ||
-                statements.get(statements.size() - 1).getNodeType() != NodeType.GENERATOR_RETURN;
+                statements.get(statements.size() - 1).getNodeType() != BoundNodeType.GENERATOR_RETURN;
         if (append) {
             statements.add(new BoundGeneratorReturnNode(null));
         }
@@ -251,7 +251,7 @@ public class BinderTreeGenerator {
 
         makeCurrent(cont);
         add(new BoundPostfixStatementNode(
-                NodeType.INCREMENT_STATEMENT,
+                BoundNodeType.INCREMENT_STATEMENT,
                 new BoundNameExpressionNode(index),
                 SInt.instance.increment()));
 

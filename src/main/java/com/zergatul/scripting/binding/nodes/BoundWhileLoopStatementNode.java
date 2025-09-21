@@ -3,7 +3,6 @@ package com.zergatul.scripting.binding.nodes;
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
 import com.zergatul.scripting.lexer.Token;
-import com.zergatul.scripting.NodeType;
 import com.zergatul.scripting.parser.nodes.WhileLoopStatementNode;
 
 import java.util.List;
@@ -25,7 +24,7 @@ public class BoundWhileLoopStatementNode extends BoundStatementNode {
     }
 
     public BoundWhileLoopStatementNode(Token keyword, Token openParen, BoundExpressionNode condition, Token closeParen, BoundStatementNode body, TextRange range) {
-        super(NodeType.WHILE_LOOP_STATEMENT, range);
+        super(BoundNodeType.WHILE_LOOP_STATEMENT, range);
         this.keyword = keyword;
         this.openParen = openParen;
         this.condition = condition;

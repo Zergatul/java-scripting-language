@@ -2,14 +2,13 @@ package com.zergatul.scripting.binding.nodes;
 
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
-import com.zergatul.scripting.NodeType;
 
 import java.util.List;
 
 public class BoundInvalidStatementNode extends BoundStatementNode {
 
     public BoundInvalidStatementNode(TextRange range) {
-        super(NodeType.INVALID_STATEMENT, range);
+        super(BoundNodeType.INVALID_STATEMENT, range);
     }
 
     @Override

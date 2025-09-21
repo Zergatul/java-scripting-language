@@ -2,7 +2,6 @@ package com.zergatul.scripting.parser.nodes;
 
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.lexer.Token;
-import com.zergatul.scripting.NodeType;
 import com.zergatul.scripting.parser.ParserTreeVisitor;
 
 public class StaticVariableNode extends CompilationUnitMemberNode {
@@ -14,7 +13,7 @@ public class StaticVariableNode extends CompilationUnitMemberNode {
     public final ExpressionNode expression;
 
     public StaticVariableNode(Token keyword, TypeNode type, NameExpressionNode name, Token equal, ExpressionNode expression, TextRange range) {
-        super(NodeType.STATIC_VARIABLE, range);
+        super(ParserNodeType.STATIC_VARIABLE, range);
         this.keyword = keyword;
         this.type = type;
         this.name = name;

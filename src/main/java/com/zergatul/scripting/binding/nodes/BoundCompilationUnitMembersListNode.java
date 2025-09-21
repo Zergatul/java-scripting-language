@@ -2,7 +2,6 @@ package com.zergatul.scripting.binding.nodes;
 
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
-import com.zergatul.scripting.NodeType;
 
 import java.util.List;
 import java.util.Objects;
@@ -12,7 +11,7 @@ public class BoundCompilationUnitMembersListNode extends BoundNode {
     public final List<BoundCompilationUnitMemberNode> members;
 
     public BoundCompilationUnitMembersListNode(List<BoundCompilationUnitMemberNode> members, TextRange range) {
-        super(NodeType.COMPILATION_UNIT_MEMBERS, range);
+        super(BoundNodeType.COMPILATION_UNIT_MEMBERS, range);
         this.members = members;
     }
 

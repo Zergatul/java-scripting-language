@@ -2,7 +2,6 @@ package com.zergatul.scripting.parser.nodes;
 
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.lexer.Token;
-import com.zergatul.scripting.NodeType;
 import com.zergatul.scripting.parser.ParserTreeVisitor;
 
 import java.util.List;
@@ -15,7 +14,7 @@ public class LambdaExpressionNode extends ExpressionNode {
     public final StatementNode body;
 
     public LambdaExpressionNode(List<NameExpressionNode> parameters, Token arrow, StatementNode body, TextRange range) {
-        super(NodeType.LAMBDA_EXPRESSION, range);
+        super(ParserNodeType.LAMBDA_EXPRESSION, range);
         this.parameters = parameters;
         this.arrow = arrow;
         this.body = body;

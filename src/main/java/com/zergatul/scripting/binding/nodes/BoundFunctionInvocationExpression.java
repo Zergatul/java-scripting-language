@@ -3,7 +3,6 @@ package com.zergatul.scripting.binding.nodes;
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
 import com.zergatul.scripting.compiler.RefHolder;
-import com.zergatul.scripting.NodeType;
 import com.zergatul.scripting.type.SType;
 
 import java.util.List;
@@ -19,7 +18,7 @@ public class BoundFunctionInvocationExpression extends BoundExpressionNode {
     }
 
     public BoundFunctionInvocationExpression(BoundFunctionReferenceNode functionReferenceNode, SType type, BoundArgumentsListNode arguments, List<RefHolder> refVariables, TextRange range) {
-        super(NodeType.FUNCTION_INVOCATION, type, range);
+        super(BoundNodeType.FUNCTION_INVOCATION, type, range);
         this.functionReferenceNode = functionReferenceNode;
         this.arguments = arguments;
         this.refVariables = refVariables;

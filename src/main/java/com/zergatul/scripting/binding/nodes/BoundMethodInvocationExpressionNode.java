@@ -4,7 +4,6 @@ import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
 import com.zergatul.scripting.compiler.RefHolder;
 import com.zergatul.scripting.lexer.Token;
-import com.zergatul.scripting.NodeType;
 
 import java.util.List;
 import java.util.Objects;
@@ -18,7 +17,7 @@ public class BoundMethodInvocationExpressionNode extends BoundExpressionNode {
     public final List<RefHolder> refVariables;
 
     public BoundMethodInvocationExpressionNode(BoundExpressionNode objectReference, Token dot, BoundMethodNode method, BoundArgumentsListNode arguments, List<RefHolder> refVariables, TextRange range) {
-        super(NodeType.METHOD_INVOCATION_EXPRESSION, method.method.getReturn(), range);
+        super(BoundNodeType.METHOD_INVOCATION_EXPRESSION, method.method.getReturn(), range);
         this.objectReference = objectReference;
         this.dot = dot;
         this.method = method;

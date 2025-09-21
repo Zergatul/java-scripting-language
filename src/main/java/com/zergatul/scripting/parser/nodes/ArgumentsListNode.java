@@ -1,7 +1,6 @@
 package com.zergatul.scripting.parser.nodes;
 
 import com.zergatul.scripting.TextRange;
-import com.zergatul.scripting.NodeType;
 import com.zergatul.scripting.parser.ParserTreeVisitor;
 
 import java.util.List;
@@ -12,7 +11,7 @@ public class ArgumentsListNode extends ParserNode {
     public final List<ExpressionNode> arguments;
 
     public ArgumentsListNode(List<ExpressionNode> arguments, TextRange range) {
-        super(NodeType.ARGUMENTS_LIST, range);
+        super(ParserNodeType.ARGUMENTS_LIST, range);
         this.arguments = arguments;
     }
 

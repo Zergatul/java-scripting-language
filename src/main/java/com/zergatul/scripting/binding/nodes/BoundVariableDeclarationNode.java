@@ -3,7 +3,6 @@ package com.zergatul.scripting.binding.nodes;
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
 import com.zergatul.scripting.lexer.Token;
-import com.zergatul.scripting.NodeType;
 import com.zergatul.scripting.parser.nodes.VariableDeclarationNode;
 
 import java.util.List;
@@ -32,7 +31,7 @@ public class BoundVariableDeclarationNode extends BoundStatementNode {
     }
 
     public BoundVariableDeclarationNode(BoundTypeNode type, BoundNameExpressionNode name, BoundExpressionNode expression, Token semicolon, TextRange range) {
-        super(NodeType.VARIABLE_DECLARATION, range);
+        super(BoundNodeType.VARIABLE_DECLARATION, range);
         this.type = type;
         this.name = name;
         this.expression = expression;

@@ -1,7 +1,6 @@
 package com.zergatul.scripting.parser.nodes;
 
 import com.zergatul.scripting.TextRange;
-import com.zergatul.scripting.NodeType;
 import com.zergatul.scripting.parser.ParserTreeVisitor;
 
 public class ArrayCreationExpressionNode extends ExpressionNode {
@@ -10,7 +9,7 @@ public class ArrayCreationExpressionNode extends ExpressionNode {
     public final ExpressionNode lengthExpression;
 
     public ArrayCreationExpressionNode(TypeNode typeNode, ExpressionNode lengthExpression, TextRange range) {
-        super(NodeType.ARRAY_CREATION_EXPRESSION, range);
+        super(ParserNodeType.ARRAY_CREATION_EXPRESSION, range);
         this.typeNode = typeNode;
         this.lengthExpression = lengthExpression;
     }

@@ -1,7 +1,6 @@
 package com.zergatul.scripting.parser.nodes;
 
 import com.zergatul.scripting.TextRange;
-import com.zergatul.scripting.NodeType;
 import com.zergatul.scripting.parser.ParserTreeVisitor;
 
 import java.util.List;
@@ -12,7 +11,7 @@ public class BlockStatementNode extends StatementNode {
     public final List<StatementNode> statements;
 
     public BlockStatementNode(List<StatementNode> statements, TextRange range) {
-        super(NodeType.BLOCK_STATEMENT, range);
+        super(ParserNodeType.BLOCK_STATEMENT, range);
         this.statements = statements;
     }
 

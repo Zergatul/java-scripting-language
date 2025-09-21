@@ -2,7 +2,6 @@ package com.zergatul.scripting.parser.nodes;
 
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.lexer.Token;
-import com.zergatul.scripting.NodeType;
 import com.zergatul.scripting.parser.ParserTreeVisitor;
 
 public class ForEachLoopStatementNode extends StatementNode {
@@ -15,7 +14,7 @@ public class ForEachLoopStatementNode extends StatementNode {
     public final StatementNode body;
 
     public ForEachLoopStatementNode(Token openParen, TypeNode typeNode, NameExpressionNode name, ExpressionNode iterable, Token closeParen, StatementNode body, TextRange range) {
-        super(NodeType.FOREACH_LOOP_STATEMENT, range);
+        super(ParserNodeType.FOREACH_LOOP_STATEMENT, range);
         this.openParen = openParen;
         this.typeNode = typeNode;
         this.name = name;

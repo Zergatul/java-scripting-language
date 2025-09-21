@@ -4,7 +4,6 @@ import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
 import com.zergatul.scripting.symbols.MutableSymbolRef;
 import com.zergatul.scripting.symbols.Symbol;
-import com.zergatul.scripting.NodeType;
 import com.zergatul.scripting.symbols.SymbolRef;
 import com.zergatul.scripting.type.SType;
 
@@ -36,7 +35,7 @@ public class BoundNameExpressionNode extends BoundExpressionNode {
     }
 
     public BoundNameExpressionNode(SymbolRef symbolRef, SType type, String value, TextRange range) {
-        super(NodeType.NAME_EXPRESSION, type, range);
+        super(BoundNodeType.NAME_EXPRESSION, type, range);
         this.symbolRef = symbolRef;
         this.value = value;
 

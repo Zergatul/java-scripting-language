@@ -3,7 +3,7 @@ package com.zergatul.scripting.tests.completion.suggestions;
 import com.zergatul.scripting.binding.nodes.BoundCompilationUnitMemberNode;
 import com.zergatul.scripting.binding.nodes.BoundCompilationUnitNode;
 import com.zergatul.scripting.binding.nodes.BoundFunctionNode;
-import com.zergatul.scripting.NodeType;
+import com.zergatul.scripting.binding.nodes.BoundNodeType;
 import com.zergatul.scripting.symbols.Function;
 import com.zergatul.scripting.tests.completion.helpers.TestCompletionContext;
 import org.junit.jupiter.api.Assertions;
@@ -22,7 +22,7 @@ public class FunctionSuggestion extends Suggestion {
 
     private static Function extract(BoundCompilationUnitNode unit, String name) {
         for (BoundCompilationUnitMemberNode node : unit.members.members) {
-            if (node.getNodeType() == NodeType.FUNCTION) {
+            if (node.getNodeType() == BoundNodeType.FUNCTION) {
                 BoundFunctionNode function = (BoundFunctionNode) node;
                 if (function.name.value.equals(name)) {
                     return (Function) function.name.getSymbol();

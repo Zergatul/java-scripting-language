@@ -2,7 +2,6 @@ package com.zergatul.scripting.parser.nodes;
 
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.lexer.Token;
-import com.zergatul.scripting.NodeType;
 import com.zergatul.scripting.parser.ParserTreeVisitor;
 
 public class ExpressionStatementNode extends StatementNode {
@@ -10,7 +9,7 @@ public class ExpressionStatementNode extends StatementNode {
     public final ExpressionNode expression;
 
     public ExpressionStatementNode(ExpressionNode expression, TextRange range) {
-        super(NodeType.EXPRESSION_STATEMENT, range);
+        super(ParserNodeType.EXPRESSION_STATEMENT, range);
         this.expression = expression;
     }
 

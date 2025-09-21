@@ -3,7 +3,7 @@ package com.zergatul.scripting.completion;
 import com.zergatul.scripting.binding.BinderOutput;
 import com.zergatul.scripting.compiler.CompilationParameters;
 import com.zergatul.scripting.lexer.TokenType;
-import com.zergatul.scripting.NodeType;
+import com.zergatul.scripting.binding.nodes.BoundNodeType;
 
 import java.util.List;
 
@@ -19,7 +19,7 @@ public class ConstructorCompletionProvider<T> extends AbstractCompletionProvider
             return List.of();
         }
 
-        if (context.entry.node.getNodeType() == NodeType.CLASS_DECLARATION) {
+        if (context.entry.node.getNodeType() == BoundNodeType.CLASS_DECLARATION) {
             return List.of(factory.getKeywordSuggestion(TokenType.CONSTRUCTOR));
         }else {
             return List.of();

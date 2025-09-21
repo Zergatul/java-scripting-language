@@ -1,13 +1,12 @@
 package com.zergatul.scripting.parser.nodes;
 
 import com.zergatul.scripting.TextRange;
-import com.zergatul.scripting.NodeType;
 import com.zergatul.scripting.parser.ParserTreeVisitor;
 
 public class ContinueStatementNode extends StatementNode {
 
     public ContinueStatementNode(TextRange range) {
-        super(NodeType.CONTINUE_STATEMENT, range);
+        super(ParserNodeType.CONTINUE_STATEMENT, range);
     }
 
     @Override

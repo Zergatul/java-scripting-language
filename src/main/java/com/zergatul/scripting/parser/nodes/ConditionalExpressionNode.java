@@ -1,7 +1,6 @@
 package com.zergatul.scripting.parser.nodes;
 
 import com.zergatul.scripting.TextRange;
-import com.zergatul.scripting.NodeType;
 import com.zergatul.scripting.parser.ParserTreeVisitor;
 
 public class ConditionalExpressionNode extends ExpressionNode {
@@ -11,7 +10,7 @@ public class ConditionalExpressionNode extends ExpressionNode {
     public final ExpressionNode whenFalse;
 
     public ConditionalExpressionNode(ExpressionNode condition, ExpressionNode whenTrue, ExpressionNode whenFalse, TextRange range) {
-        super(NodeType.CONDITIONAL_EXPRESSION, range);
+        super(ParserNodeType.CONDITIONAL_EXPRESSION, range);
         this.condition = condition;
         this.whenTrue = whenTrue;
         this.whenFalse = whenFalse;

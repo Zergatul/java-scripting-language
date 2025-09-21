@@ -2,7 +2,6 @@ package com.zergatul.scripting.binding.nodes;
 
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
-import com.zergatul.scripting.NodeType;
 
 import java.util.List;
 
@@ -15,7 +14,7 @@ public class BoundExpressionStatementNode extends BoundStatementNode {
     }
 
     public BoundExpressionStatementNode(BoundExpressionNode expression, TextRange range) {
-        super(NodeType.EXPRESSION_STATEMENT, range);
+        super(BoundNodeType.EXPRESSION_STATEMENT, range);
         this.expression = expression;
     }
 

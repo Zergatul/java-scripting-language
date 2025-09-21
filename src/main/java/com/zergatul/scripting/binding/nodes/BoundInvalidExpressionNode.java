@@ -2,7 +2,6 @@ package com.zergatul.scripting.binding.nodes;
 
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
-import com.zergatul.scripting.NodeType;
 import com.zergatul.scripting.type.SUnknown;
 
 import java.util.List;
@@ -14,7 +13,7 @@ public class BoundInvalidExpressionNode extends BoundExpressionNode {
     // List<Symbol> candidateSymbols;
 
     public BoundInvalidExpressionNode(List<BoundExpressionNode> children, TextRange range) {
-        super(NodeType.INVALID_EXPRESSION, SUnknown.instance, range);
+        super(BoundNodeType.INVALID_EXPRESSION, SUnknown.instance, range);
         this.children = children;
     }
 

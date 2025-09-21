@@ -1,7 +1,6 @@
 package com.zergatul.scripting.parser.nodes;
 
 import com.zergatul.scripting.TextRange;
-import com.zergatul.scripting.NodeType;
 import com.zergatul.scripting.parser.ParserTreeVisitor;
 
 public class FunctionNode extends CompilationUnitMemberNode {
@@ -13,7 +12,7 @@ public class FunctionNode extends CompilationUnitMemberNode {
     public final StatementNode body;
 
     public FunctionNode(ModifiersNode modifiers, TypeNode returnType, NameExpressionNode name, ParameterListNode parameters, StatementNode body, TextRange range) {
-        super(NodeType.FUNCTION, range);
+        super(ParserNodeType.FUNCTION, range);
         this.modifiers = modifiers;
         this.returnType = returnType;
         this.name = name;

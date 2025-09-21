@@ -2,7 +2,6 @@ package com.zergatul.scripting.parser.nodes;
 
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.lexer.Token;
-import com.zergatul.scripting.NodeType;
 import com.zergatul.scripting.parser.ParserTreeVisitor;
 
 import java.util.List;
@@ -15,7 +14,7 @@ public class ParameterListNode extends ParserNode {
     public final Token closeParen;
 
     public ParameterListNode(Token openParen, List<ParameterNode> parameters, Token closeParen, TextRange range) {
-        super(NodeType.PARAMETER_LIST, range);
+        super(ParserNodeType.PARAMETER_LIST, range);
         this.openParen = openParen;
         this.parameters = parameters;
         this.closeParen = closeParen;

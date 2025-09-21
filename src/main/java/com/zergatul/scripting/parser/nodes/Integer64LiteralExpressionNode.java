@@ -1,7 +1,6 @@
 package com.zergatul.scripting.parser.nodes;
 
 import com.zergatul.scripting.TextRange;
-import com.zergatul.scripting.NodeType;
 import com.zergatul.scripting.lexer.ValueToken;
 import com.zergatul.scripting.parser.ParserTreeVisitor;
 
@@ -14,7 +13,7 @@ public class Integer64LiteralExpressionNode extends ExpressionNode {
     }
 
     public Integer64LiteralExpressionNode(String value, TextRange range) {
-        super(NodeType.INTEGER64_LITERAL, range);
+        super(ParserNodeType.INTEGER64_LITERAL, range);
         this.value = value;
     }
 

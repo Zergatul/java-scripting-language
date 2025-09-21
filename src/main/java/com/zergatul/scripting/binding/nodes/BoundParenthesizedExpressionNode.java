@@ -2,7 +2,6 @@ package com.zergatul.scripting.binding.nodes;
 
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
-import com.zergatul.scripting.NodeType;
 
 import java.util.List;
 
@@ -11,7 +10,7 @@ public class BoundParenthesizedExpressionNode extends BoundExpressionNode {
     public final BoundExpressionNode inner;
 
     public BoundParenthesizedExpressionNode(BoundExpressionNode inner, TextRange range) {
-        super(NodeType.PARENTHESIZED_EXPRESSION, inner.type, range);
+        super(BoundNodeType.PARENTHESIZED_EXPRESSION, inner.type, range);
         this.inner = inner;
     }
 

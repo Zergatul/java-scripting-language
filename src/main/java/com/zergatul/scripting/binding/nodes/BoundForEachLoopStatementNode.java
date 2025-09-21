@@ -3,7 +3,6 @@ package com.zergatul.scripting.binding.nodes;
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
 import com.zergatul.scripting.lexer.Token;
-import com.zergatul.scripting.NodeType;
 import com.zergatul.scripting.parser.nodes.ForEachLoopStatementNode;
 import com.zergatul.scripting.symbols.SymbolRef;
 
@@ -43,7 +42,7 @@ public class BoundForEachLoopStatementNode extends BoundStatementNode {
             SymbolRef length,
             TextRange range
     ) {
-        super(NodeType.FOREACH_LOOP_STATEMENT, range);
+        super(BoundNodeType.FOREACH_LOOP_STATEMENT, range);
         this.openParen = openParen;
         this.typeNode = typeNode;
         this.name = name;

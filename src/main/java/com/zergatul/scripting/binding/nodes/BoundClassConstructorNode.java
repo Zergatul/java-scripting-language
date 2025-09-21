@@ -2,7 +2,6 @@ package com.zergatul.scripting.binding.nodes;
 
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
-import com.zergatul.scripting.NodeType;
 import com.zergatul.scripting.type.SMethodFunction;
 
 import java.util.List;
@@ -14,7 +13,7 @@ public class BoundClassConstructorNode extends BoundClassMemberNode {
     public final BoundStatementNode body;
 
     public BoundClassConstructorNode(SMethodFunction functionType, BoundParameterListNode parameters, BoundStatementNode body, TextRange range) {
-        super(NodeType.CLASS_CONSTRUCTOR, range);
+        super(BoundNodeType.CLASS_CONSTRUCTOR, range);
         this.functionType = functionType;
         this.parameters = parameters;
         this.body = body;

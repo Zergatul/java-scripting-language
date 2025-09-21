@@ -2,7 +2,6 @@ package com.zergatul.scripting.binding.nodes;
 
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
-import com.zergatul.scripting.NodeType;
 import com.zergatul.scripting.type.PropertyReference;
 
 import java.util.List;
@@ -17,7 +16,7 @@ public class BoundPropertyNode extends BoundNode {
     }
 
     public BoundPropertyNode(String name, PropertyReference property, TextRange range) {
-        super(NodeType.PROPERTY, range);
+        super(BoundNodeType.PROPERTY, range);
         this.name = name;
         this.property = property;
     }

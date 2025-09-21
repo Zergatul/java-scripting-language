@@ -2,7 +2,6 @@ package com.zergatul.scripting.binding.nodes;
 
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
-import com.zergatul.scripting.NodeType;
 
 import java.util.List;
 import java.util.Objects;
@@ -20,7 +19,7 @@ public class BoundBlockStatementNode extends BoundStatementNode {
     }
 
     public BoundBlockStatementNode(List<BoundStatementNode> statements, TextRange range) {
-        super(NodeType.BLOCK_STATEMENT, range);
+        super(BoundNodeType.BLOCK_STATEMENT, range);
         this.statements = statements;
     }
 

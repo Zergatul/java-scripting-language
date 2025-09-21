@@ -2,7 +2,6 @@ package com.zergatul.scripting.binding.nodes;
 
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
-import com.zergatul.scripting.NodeType;
 import com.zergatul.scripting.type.ConstructorReference;
 
 import java.util.List;
@@ -14,7 +13,7 @@ public class BoundObjectCreationExpressionNode extends BoundExpressionNode {
     public final BoundArgumentsListNode arguments;
 
     public BoundObjectCreationExpressionNode(BoundTypeNode typeNode, ConstructorReference constructor, BoundArgumentsListNode arguments, TextRange range) {
-        super(NodeType.OBJECT_CREATION_EXPRESSION, typeNode.type, range);
+        super(BoundNodeType.OBJECT_CREATION_EXPRESSION, typeNode.type, range);
         this.typeNode = typeNode;
         this.constructor = constructor;
         this.arguments = arguments;

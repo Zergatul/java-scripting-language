@@ -2,7 +2,6 @@ package com.zergatul.scripting.binding.nodes;
 
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
-import com.zergatul.scripting.NodeType;
 
 import java.util.List;
 
@@ -12,7 +11,7 @@ public class BoundClassFieldNode extends BoundClassMemberNode {
     public final BoundNameExpressionNode name;
 
     public BoundClassFieldNode(BoundTypeNode typeNode, BoundNameExpressionNode name, TextRange range) {
-        super(NodeType.CLASS_FIELD, range);
+        super(BoundNodeType.CLASS_FIELD, range);
         this.typeNode = typeNode;
         this.name = name;
     }

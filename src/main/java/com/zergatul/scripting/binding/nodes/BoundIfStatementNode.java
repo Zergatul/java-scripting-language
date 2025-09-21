@@ -3,7 +3,6 @@ package com.zergatul.scripting.binding.nodes;
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
 import com.zergatul.scripting.lexer.Token;
-import com.zergatul.scripting.NodeType;
 import com.zergatul.scripting.parser.nodes.IfStatementNode;
 
 import java.util.List;
@@ -40,7 +39,7 @@ public class BoundIfStatementNode extends BoundStatementNode {
             BoundStatementNode elseStatement,
             TextRange range
     ) {
-        super(NodeType.IF_STATEMENT, range);
+        super(BoundNodeType.IF_STATEMENT, range);
         this.ifToken = ifToken;
         this.openParen = openParen;
         this.closeParen = closeParen;

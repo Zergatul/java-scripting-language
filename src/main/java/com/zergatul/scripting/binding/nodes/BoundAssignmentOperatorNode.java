@@ -3,7 +3,6 @@ package com.zergatul.scripting.binding.nodes;
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
 import com.zergatul.scripting.parser.AssignmentOperator;
-import com.zergatul.scripting.NodeType;
 
 import java.util.List;
 
@@ -16,7 +15,7 @@ public class BoundAssignmentOperatorNode extends BoundNode {
     }
 
     public BoundAssignmentOperatorNode(AssignmentOperator operator, TextRange range) {
-        super(NodeType.ASSIGNMENT_OPERATOR, range);
+        super(BoundNodeType.ASSIGNMENT_OPERATOR, range);
         this.operator = operator;
     }
 

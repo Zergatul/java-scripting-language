@@ -2,7 +2,6 @@ package com.zergatul.scripting.binding.nodes;
 
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
-import com.zergatul.scripting.NodeType;
 import com.zergatul.scripting.type.SUnknown;
 
 import java.util.List;
@@ -10,7 +9,7 @@ import java.util.List;
 public class BoundInvalidTypeNode extends BoundTypeNode {
 
     public BoundInvalidTypeNode(TextRange range) {
-        super(NodeType.INVALID_TYPE, SUnknown.instance, range);
+        super(BoundNodeType.INVALID_TYPE, SUnknown.instance, range);
     }
 
     @Override

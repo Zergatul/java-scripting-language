@@ -2,7 +2,6 @@ package com.zergatul.scripting.binding.nodes;
 
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
-import com.zergatul.scripting.NodeType;
 
 import java.util.List;
 
@@ -18,7 +17,7 @@ public class BoundAugmentedAssignmentStatementNode extends BoundStatementNode {
     }
 
     public BoundAugmentedAssignmentStatementNode(BoundExpressionNode left, BoundAssignmentOperatorNode assignmentOperator, BoundBinaryOperatorNode operator, BoundExpressionNode right, TextRange range) {
-        super(NodeType.AUGMENTED_ASSIGNMENT_STATEMENT, range);
+        super(BoundNodeType.AUGMENTED_ASSIGNMENT_STATEMENT, range);
         this.left = left;
         this.assignmentOperator = assignmentOperator;
         this.operator = operator;

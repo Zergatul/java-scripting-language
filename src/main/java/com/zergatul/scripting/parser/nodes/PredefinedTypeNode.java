@@ -1,7 +1,6 @@
 package com.zergatul.scripting.parser.nodes;
 
 import com.zergatul.scripting.TextRange;
-import com.zergatul.scripting.NodeType;
 import com.zergatul.scripting.parser.ParserTreeVisitor;
 import com.zergatul.scripting.parser.PredefinedType;
 
@@ -10,7 +9,7 @@ public class PredefinedTypeNode extends TypeNode {
     public final PredefinedType type;
 
     public PredefinedTypeNode(PredefinedType type, TextRange range) {
-        super(NodeType.PREDEFINED_TYPE, range);
+        super(ParserNodeType.PREDEFINED_TYPE, range);
         this.type = type;
     }
 

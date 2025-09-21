@@ -3,7 +3,7 @@ package com.zergatul.scripting.completion;
 import com.zergatul.scripting.binding.BinderOutput;
 import com.zergatul.scripting.compiler.CompilationParameters;
 import com.zergatul.scripting.lexer.TokenType;
-import com.zergatul.scripting.NodeType;
+import com.zergatul.scripting.binding.nodes.BoundNodeType;
 
 import java.util.List;
 
@@ -25,6 +25,6 @@ public class MetaExpressionsCompletionProvider<T> extends AbstractCompletionProv
     }
 
     private boolean insideInvalidMetaExpression(CompletionContext context) {
-        return context.entry != null && context.entry.node.getNodeType() == NodeType.META_INVALID_EXPRESSION;
+        return context.entry != null && context.entry.node.getNodeType() == BoundNodeType.META_INVALID_EXPRESSION;
     }
 }

@@ -1,13 +1,12 @@
 package com.zergatul.scripting.parser.nodes;
 
 import com.zergatul.scripting.TextRange;
-import com.zergatul.scripting.NodeType;
 import com.zergatul.scripting.parser.ParserTreeVisitor;
 
 public class InvalidExpressionNode extends ExpressionNode {
 
     public InvalidExpressionNode(TextRange range) {
-        super(NodeType.INVALID_EXPRESSION, range);
+        super(ParserNodeType.INVALID_EXPRESSION, range);
     }
 
     @Override
