@@ -1,18 +1,22 @@
 package com.zergatul.scripting.parser.nodes;
 
 import com.zergatul.scripting.TextRange;
+import com.zergatul.scripting.lexer.Token;
 import com.zergatul.scripting.parser.ParserTreeVisitor;
 
 import java.util.List;
-import java.util.Objects;
 
 public class CollectionExpressionNode extends ExpressionNode {
 
+    public final Token openBracket;
     public final List<ExpressionNode> items;
+    public final Token closeBracket;
 
-    public CollectionExpressionNode(List<ExpressionNode> items, TextRange range) {
+    public CollectionExpressionNode(Token openBracket, List<ExpressionNode> items, Token closeBracket, TextRange range) {
         super(ParserNodeType.COLLECTION_EXPRESSION, range);
+        this.openBracket = openBracket;
         this.items = items;
+        this.closeBracket = closeBracket;
     }
 
     @Override
@@ -24,16 +28,6 @@ public class CollectionExpressionNode extends ExpressionNode {
     public void acceptChildren(ParserTreeVisitor visitor) {
         for (ExpressionNode item : items) {
             item.accept(visitor);
-        }
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (obj instanceof CollectionExpressionNode other) {
-            return  Objects.equals(other.items, items) &&
-                    other.getRange().equals(getRange());
-        } else {
-            return false;
         }
     }
 }

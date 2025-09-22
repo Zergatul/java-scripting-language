@@ -7,10 +7,12 @@ import com.zergatul.scripting.parser.ParserTreeVisitor;
 public class ExpressionStatementNode extends StatementNode {
 
     public final ExpressionNode expression;
+    public final Token semicolon;
 
-    public ExpressionStatementNode(ExpressionNode expression, TextRange range) {
-        super(ParserNodeType.EXPRESSION_STATEMENT, range);
+    public ExpressionStatementNode(ExpressionNode expression, Token semicolon) {
+        super(ParserNodeType.EXPRESSION_STATEMENT, semicolon == null ? expression.getRange() : TextRange.combine(expression, semicolon));
         this.expression = expression;
+        this.semicolon = semicolon;
     }
 
     @Override
@@ -24,16 +26,7 @@ public class ExpressionStatementNode extends StatementNode {
     }
 
     @Override
-    public boolean equals(Object obj) {
-        if (obj instanceof ExpressionStatementNode other) {
-            return other.expression.equals(expression) && other.getRange().equals(getRange());
-        } else {
-            return false;
-        }
-    }
-
-    @Override
     public StatementNode updateWithSemicolon(Token semicolon) {
-        return new ExpressionStatementNode(expression, TextRange.combine(getRange(), semicolon.getRange()));
+        return new ExpressionStatementNode(expression, semicolon);
     }
 }

@@ -27,13 +27,4 @@ public class BinaryExpressionNode extends ExpressionNode {
         operator.accept(visitor);
         right.accept(visitor);
     }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (obj instanceof BinaryExpressionNode other) {
-            return other.left.equals(left) && other.operator.equals(operator) && other.right.equals(right);
-        } else {
-            return false;
-        }
-    }
 }

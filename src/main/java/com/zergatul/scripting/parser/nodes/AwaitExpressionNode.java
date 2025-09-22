@@ -24,13 +24,4 @@ public class AwaitExpressionNode extends ExpressionNode {
     public void acceptChildren(ParserTreeVisitor visitor) {
         expression.accept(visitor);
     }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (obj instanceof AwaitExpressionNode other) {
-            return other.expression.equals(expression) && other.getRange().equals(getRange());
-        } else {
-            return false;
-        }
-    }
 }

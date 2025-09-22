@@ -5,10 +5,12 @@ import com.zergatul.scripting.parser.ParserTreeVisitor;
 
 public class CharLiteralExpressionNode extends ExpressionNode {
 
+    public final ValueToken token;
     public final char value;
 
     public CharLiteralExpressionNode(ValueToken token) {
         super(ParserNodeType.CHAR_LITERAL, token.getRange());
+        this.token = token;
         this.value = token.value.charAt(0);
     }
 

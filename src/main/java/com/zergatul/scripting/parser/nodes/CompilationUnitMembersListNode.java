@@ -4,7 +4,6 @@ import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.parser.ParserTreeVisitor;
 
 import java.util.List;
-import java.util.Objects;
 
 public class CompilationUnitMembersListNode extends ParserNode {
 
@@ -24,15 +23,6 @@ public class CompilationUnitMembersListNode extends ParserNode {
     public void acceptChildren(ParserTreeVisitor visitor) {
         for (CompilationUnitMemberNode member : members) {
             member.accept(visitor);
-        }
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (obj instanceof CompilationUnitMembersListNode other) {
-            return Objects.equals(other.members, members) && other.getRange().equals(getRange());
-        } else {
-            return false;
         }
     }
 }

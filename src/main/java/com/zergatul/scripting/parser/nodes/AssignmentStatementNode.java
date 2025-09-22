@@ -32,15 +32,6 @@ public class AssignmentStatementNode extends StatementNode {
     }
 
     @Override
-    public boolean equals(Object obj) {
-        if (obj instanceof AssignmentStatementNode other) {
-            return other.left.equals(left) && other.operator.equals(operator) && other.right.equals(right) && other.semicolon.equals(semicolon);
-        } else {
-            return false;
-        }
-    }
-
-    @Override
     public StatementNode updateWithSemicolon(Token semicolon) {
         return new AssignmentStatementNode(left, operator, right, semicolon, TextRange.combine(getRange(), semicolon.getRange()));
     }

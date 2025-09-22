@@ -4,24 +4,32 @@ import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.lexer.Token;
 import com.zergatul.scripting.parser.ParserTreeVisitor;
 
-import java.util.Objects;
-
 public class ForLoopStatementNode extends StatementNode {
 
-    public final Token openParenthesis;
+    public final Token keyword;
+    public final Token openParen;
     public final StatementNode init;
     public final ExpressionNode condition;
     public final StatementNode update;
-    public final Token closeParenthesis;
+    public final Token closeParen;
     public final StatementNode body;
 
-    public ForLoopStatementNode(Token openParenthesis, StatementNode init, ExpressionNode condition, StatementNode update, Token closeParenthesis, StatementNode body, TextRange range) {
-        super(ParserNodeType.FOR_LOOP_STATEMENT, range);
-        this.openParenthesis = openParenthesis;
+    public ForLoopStatementNode(
+            Token keyword,
+            Token openParen,
+            StatementNode init,
+            ExpressionNode condition,
+            StatementNode update,
+            Token closeParen,
+            StatementNode body
+    ) {
+        super(ParserNodeType.FOR_LOOP_STATEMENT, TextRange.combine(keyword, body));
+        this.keyword = keyword;
+        this.openParen = openParen;
         this.init = init;
         this.condition = condition;
         this.update = update;
-        this.closeParenthesis = closeParenthesis;
+        this.closeParen = closeParen;
         this.body = body;
     }
 
@@ -38,20 +46,5 @@ public class ForLoopStatementNode extends StatementNode {
         }
         update.accept(visitor);
         body.accept(visitor);
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (obj instanceof ForLoopStatementNode other) {
-            return  other.openParenthesis.equals(openParenthesis) &&
-                    other.init.equals(init) &&
-                    Objects.equals(other.condition, condition) &&
-                    other.update.equals(update) &&
-                    other.closeParenthesis.equals(closeParenthesis) &&
-                    other.body.equals(body) &&
-                    other.getRange().equals(getRange());
-        } else {
-            return false;
-        }
     }
 }

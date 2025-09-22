@@ -14,8 +14,10 @@ import java.util.List;
 public class ParserDumper {
 
     private final StringBuilder sb = new StringBuilder();
+    private int indent;
 
     public String dump(ParserOutput output) {
+        indent = 0;
         sb.setLength(0);
         dump(output.unit());
         return sb.toString();
@@ -59,83 +61,222 @@ public class ParserDumper {
             case VOID_TYPE -> dump((VoidTypeNode) node);
             case INVALID_TYPE -> dump((InvalidTypeNode) node);
             case BINARY_OPERATOR -> dump((BinaryOperatorNode) node);
+            case PARAMETER -> dump((ParameterNode) node);
+            case ASSIGNMENT_OPERATOR -> dump((AssignmentOperatorNode) node);
+            case ASSIGNMENT_STATEMENT -> dump((AssignmentStatementNode) node);
             default -> throw new InternalException(node.getClass().getName());
         }
     }
 
-    private void dump(CompilationUnitNode node) {
-        sb.append("new CompilationUnitNode(");
-        dump(node.members);
-        sb.append(", ");
-        dump(node.statements);
-        sb.append(", ");
+    private void dump(ArrayInitializerExpressionNode node) {
+        fullLine("new ArrayInitializerExpressionNode(");
+        incIndent();
+        dump(node.keyword);
+        commaBreak();
+        dump(node.typeNode);
+        commaBreak();
+        dump(node.openBrace);
+        commaBreak();
+        dumpList(node.items);
+        commaBreak();
+        dump(node.closeBrace);
+        commaBreak();
+        dump(node.getRange());
+        sb.append(")");
+        decIndent();
+    }
+
+    private void dump(ArrayTypeNode node) {
+        fullLine("new ArrayTypeNode(");
+        incIndent();
+        dump(node.underlying);
+        commaBreak();
+        dump(node.openBracket);
+        commaBreak();
+        dump(node.closeBracket);
+        commaBreak();
+        dump(node.getRange());
+        sb.append(")");
+        decIndent();
+    }
+
+    private void dump(AssignmentOperatorNode node) {
+        fullLine("new AssignmentOperatorNode(");
+        incIndent();
+        dump(node.token);
+        commaBreak();
+        beginLine("AssignmentOperator." + node.operator.name());
+        commaBreak();
         dump(node.getRange());
         sb.append(")");
     }
 
-    private void dump(CompilationUnitMembersListNode node) {
-        sb.append("new CompilationUnitMembersListNode(");
-        dumpList(node.members);
-        sb.append(", ");
+    private void dump(AssignmentStatementNode node) {
+        fullLine("new AssignmentStatementNode(");
+        incIndent();
+        dump(node.left);
+        commaBreak();
+        dump(node.operator);
+        commaBreak();
+        dump(node.right);
+        commaBreak();
+        dump(node.semicolon);
+        commaBreak();
         dump(node.getRange());
         sb.append(")");
     }
 
-    private void dump(StatementsListNode node) {
-        sb.append("new StatementsListNode(");
-        dumpList(node.statements);
-        sb.append(", ");
+    private void dump(BinaryExpressionNode node) {
+        fullLine("new BinaryExpressionNode(");
+        incIndent();
+        dump(node.left);
+        commaBreak();
+        dump(node.operator);
+        commaBreak();
+        dump(node.right);
+        commaBreak();
         dump(node.getRange());
         sb.append(")");
+        decIndent();
     }
 
-    private void dump(FunctionNode node) {
-        sb.append("new FunctionNode(");
-        dump(node.modifiers);
-        sb.append(", ");
-        dump(node.returnType);
-        sb.append(", ");
-        dump(node.name);
-        sb.append(", ");
-        dump(node.parameters);
-        sb.append(", ");
-        dump(node.body);
-        sb.append(", ");
-        dump(node.getRange());
-        sb.append(")");
-    }
-
-    private void dump(ModifiersNode node) {
-        sb.append("new ModifiersNode(");
-        dumpTokens(node.tokens);
-        sb.append(", ");
-        dump(node.getRange());
-        sb.append(")");
-    }
-
-    private void dump(ParameterListNode node) {
-        sb.append("new ParameterListNode(");
-        dump(node.openParen);
-        sb.append(", ");
-        dumpList(node.parameters);
-        sb.append(", ");
-        dump(node.closeParen);
+    private void dump(BinaryOperatorNode node) {
+        beginLine("new BinaryOperatorNode(BinaryOperator.");
+        sb.append(node.operator.name());
         sb.append(", ");
         dump(node.getRange());
         sb.append(")");
     }
 
     private void dump(BlockStatementNode node) {
-        sb.append("new BlockStatementNode(");
-        dumpList(node.statements);
-        sb.append(", ");
-        dump(node.getRange());
+        if (node.statements.isEmpty()) {
+            beginLine("new BlockStatementNode(List.of(), ");
+            dump(node.getRange());
+            sb.append(")");
+        } else {
+            fullLine("new BlockStatementNode(");
+            dumpList(node.statements);
+            commaBreak();
+            dump(node.getRange());
+            sb.append(")");
+        }
+    }
+
+    private void dump(CompilationUnitNode node) {
+        fullLine("new CompilationUnitNode(");
+        incIndent();
+        dump(node.members);
+        commaBreak();
+        dump(node.statements);
+        commaBreak();
+        dump(node.end);
         sb.append(")");
     }
 
+    private void dump(CompilationUnitMembersListNode node) {
+        if (node.members.isEmpty()) {
+            beginLine("new CompilationUnitMembersListNode(List.of(), ");
+            dump(node.getRange());
+            sb.append(")");
+        } else {
+            beginLine("new CompilationUnitMembersListNode(");
+            incIndent();
+            dumpList(node.members);
+            commaBreak();
+            dump(node.getRange());
+            sb.append(")");
+            decIndent();
+        }
+    }
+
+
+
+    private void dump(FunctionNode node) {
+        fullLine("new FunctionNode(");
+        incIndent();
+        dump(node.modifiers);
+        commaBreak();
+        dump(node.returnType);
+        commaBreak();
+        dump(node.name);
+        commaBreak();
+        dump(node.parameters);
+        commaBreak();
+        dump(node.body);
+        commaBreak();
+        dump(node.getRange());
+        sb.append(")");
+        decIndent();
+    }
+
+    private void dump(ModifiersNode node) {
+        if (node.tokens.isEmpty()) {
+            beginLine("new ModifiersNode(List.of(), ");
+            dump(node.getRange());
+            sb.append(")");
+        } else {
+            fullLine("new ModifiersNode(");
+            incIndent();
+            dumpTokens(node.tokens);
+            commaBreak();
+            dump(node.getRange());
+            sb.append(")");
+            decIndent();
+        }
+    }
+
+
+
+
+
+    private void dump(ParameterListNode node) {
+        fullLine("new ParameterListNode(");
+        incIndent();
+        dump(node.openParen);
+        commaBreak();
+        dumpList(node.parameters);
+        commaBreak();
+        dump(node.closeParen);
+        commaBreak();
+        beginLine();
+        dump(node.getRange());
+        sb.append(")");
+        decIndent();
+    }
+
+    private void dump(ParameterNode node) {
+        fullLine("new ParameterNode(");
+        incIndent();
+        dump(node.getType());
+        commaBreak();
+        dump(node.getName());
+        commaBreak();
+        dump(node.getRange());
+        sb.append(')');
+        decIndent();
+    }
+
+    private void dump(StatementsListNode node) {
+        if (node.statements.isEmpty()) {
+            beginLine("new StatementsListNode(List.of(), ");
+            dump(node.getRange());
+            sb.append(")");
+        } else {
+            beginLine("new StatementsListNode(");
+            incIndent();
+            dumpList(node.statements);
+            sb.append(", ");
+            dump(node.getRange());
+            sb.append(")");
+            decIndent();
+        }
+    }
+
+
+
     private void dump(ForLoopStatementNode node) {
         sb.append("new ForLoopStatementNode(");
-        dump(node.openParenthesis);
+        dump(node.openParen);
         sb.append(", ");
         dump(node.init);
         sb.append(", ");
@@ -143,7 +284,7 @@ public class ParserDumper {
         sb.append(", ");
         dump(node.update);
         sb.append(", ");
-        dump(node.closeParenthesis);
+        dump(node.closeParen);
         sb.append(", ");
         dump(node.body);
         sb.append(", ");
@@ -224,26 +365,15 @@ public class ParserDumper {
     }
 
     private void dump(VariableDeclarationNode node) {
-        sb.append("new VariableDeclarationNode(");
+        fullLine("new VariableDeclarationNode(");
         dump(node.type);
-        sb.append(", ");
+        commaBreak();
         dump(node.name);
-        sb.append(", ");
-
-        if (node.expression != null) {
-            dump(node.expression);
-            sb.append(", ");
-        } else {
-            sb.append("null, ");
-        }
-
-        if (node.semicolon != null) {
-            dump(node.semicolon);
-            sb.append(", ");
-        } else {
-            sb.append("null, ");
-        }
-
+        commaBreak();
+        dump(node.expression);
+        commaBreak();
+        dump(node.semicolon);
+        commaBreak();
         dump(node.getRange());
         sb.append(")");
     }
@@ -264,17 +394,7 @@ public class ParserDumper {
         sb.append(")");
     }
 
-    private void dump(BinaryExpressionNode node) {
-        sb.append("new BinaryExpressionNode(");
-        dump(node.left);
-        sb.append(", ");
-        dump(node.operator);
-        sb.append(", ");
-        dump(node.right);
-        sb.append(", ");
-        dump(node.getRange());
-        sb.append(")");
-    }
+
 
     public void dump(MemberAccessExpressionNode node) {
         sb.append("new MemberAccessExpressionNode(");
@@ -288,25 +408,9 @@ public class ParserDumper {
         sb.append(")");
     }
 
-    public void dump(ArrayCreationExpressionNode node) {
-        sb.append("new ArrayCreationExpressionNode(");
-        dump(node.typeNode);
-        sb.append(", ");
-        dump(node.lengthExpression);
-        sb.append(", ");
-        dump(node.getRange());
-        sb.append(")");
-    }
 
-    public void dump(ArrayInitializerExpressionNode node) {
-        sb.append("new ArrayInitializerExpressionNode(");
-        dump(node.typeNode);
-        sb.append(", ");
-        dumpList(node.items);
-        sb.append(", ");
-        dump(node.getRange());
-        sb.append(")");
-    }
+
+
 
     private void dump(ObjectCreationExpressionNode node) {
         sb.append("new ObjectCreationExpressionNode(");
@@ -319,7 +423,7 @@ public class ParserDumper {
     }
 
     private void dump(IntegerLiteralExpressionNode node) {
-        sb.append("new IntegerLiteralExpressionNode(\"");
+        beginLine("new IntegerLiteralExpressionNode(\"");
         sb.append(node.value);
         sb.append("\", ");
         dump(node.getRange());
@@ -335,7 +439,7 @@ public class ParserDumper {
     }
 
     private void dump(NameExpressionNode node) {
-        sb.append("new NameExpressionNode(\"");
+        beginLine("new NameExpressionNode(\"");
         sb.append(node.value);
         sb.append("\", ");
         dump(node.getRange());
@@ -360,19 +464,29 @@ public class ParserDumper {
         sb.append(")");
     }
 
+    public void dump(ArrayCreationExpressionNode node) {
+        sb.append("new ArrayCreationExpressionNode(");
+        dump(node.keyword);
+        sb.append(", ");
+        dump(node.typeNode);
+        sb.append(", ");
+        dump(node.openBracket);
+        sb.append(", ");
+        dump(node.lengthExpression);
+        sb.append(", ");
+        dump(node.closeBracket);
+        sb.append(", ");
+        dump(node.getRange());
+        sb.append(")");
+    }
+
     private void dump(LetTypeNode node) {
         sb.append("new LetTypeNode(");
         dump(node.getRange());
         sb.append(")");
     }
 
-    private void dump(ArrayTypeNode node) {
-        sb.append("new ArrayTypeNode(");
-        dump(node.underlying);
-        sb.append(", ");
-        dump(node.getRange());
-        sb.append(")");
-    }
+
 
     private void dump(CustomTypeNode node) {
         sb.append("new CustomTypeNode(\"");
@@ -383,7 +497,7 @@ public class ParserDumper {
     }
 
     private void dump(PredefinedTypeNode node) {
-        sb.append("new PredefinedTypeNode(PredefinedType.");
+        beginLine("new PredefinedTypeNode(PredefinedType.");
         sb.append(node.type.toString());
         sb.append(", ");
         dump(node.getRange());
@@ -402,35 +516,31 @@ public class ParserDumper {
         sb.append(")");
     }
 
-    private void dump(BinaryOperatorNode node) {
-        sb.append("new BinaryOperatorNode(");
-        sb.append(node.operator.name());
-        sb.append(", ");
-        dump(node.getRange());
-        sb.append(")");
-    }
-
     private void dump(Token token) {
         if (token == null) {
-            sb.append("null");
+            fullLine("null");
         } else if (token.getClass() == Token.class) {
-            sb.append("new Token(TokenType.");
+            beginLine("new Token(TokenType.");
             sb.append(token.getTokenType().toString());
             sb.append(", ");
             dump(token.getRange());
             sb.append(")");
 
-            for (var trivia : token.getLeadingTrivia()) {
-                sb.append(".withLeadingTrivia(");
+            incIndent();
+            for (Trivia trivia : token.getLeadingTrivia()) {
+                sb.append("\n");
+                beginLine(".withLeadingTrivia(");
                 dump(trivia);
                 sb.append(")");
             }
 
-            for (var trivia : token.getTrailingTrivia()) {
-                sb.append(".withTrailingTrivia(");
+            for (Trivia trivia : token.getTrailingTrivia()) {
+                sb.append("\n");
+                beginLine(".withTrailingTrivia(");
                 dump(trivia);
                 sb.append(")");
             }
+            decIndent();
         } else {
             throw new InternalException();
         }
@@ -445,6 +555,8 @@ public class ParserDumper {
     }
 
     private void dump(TextRange range) {
+        beginNewLineIfRequired();
+
         if (range instanceof SingleLineTextRange single) {
             sb.append("new SingleLineTextRange(");
             sb.append(single.getLine1());
@@ -475,24 +587,76 @@ public class ParserDumper {
     }
 
     private void dumpTokens(List<Token> tokens) {
-        sb.append("List.of(");
+        boolean newLine = beginNewLineIfRequired();
+
+        endLine("List.of(");
+        if (newLine) incIndent();
         for (int i = 0; i < tokens.size(); i++) {
             dump(tokens.get(i));
             if (i < tokens.size() - 1) {
-                sb.append(", ");
+                commaBreak();
             }
         }
         sb.append(")");
+        if (newLine) decIndent();
     }
 
     private <T extends ParserNode> void dumpList(List<T> nodes) {
-        sb.append("List.of(");
+        boolean newLine = beginNewLineIfRequired();
+
+        endLine("List.of(");
+        if (newLine) incIndent();
         for (int i = 0; i < nodes.size(); i++) {
             dump(nodes.get(i));
             if (i < nodes.size() - 1) {
-                sb.append(", ");
+                commaBreak();
             }
         }
         sb.append(")");
+        if (newLine) decIndent();
+    }
+
+    private void beginLine() {
+        beginLine("");
+    }
+
+    private void beginLine(String value) {
+        sb.append(" ".repeat(indent));
+        sb.append(value);
+    }
+
+    private void endLine(String value) {
+        sb.append(value);
+        sb.append('\n');
+    }
+
+    private void fullLine(String value) {
+        sb.append(" ".repeat(indent));
+        sb.append(value);
+        sb.append('\n');
+    }
+
+    private void commaBreak() {
+        sb.append(",\n");
+    }
+
+    private boolean beginNewLineIfRequired() {
+        if (isNewLine()) {
+            beginLine();
+            return true;
+        }
+        return false;
+    }
+
+    private boolean isNewLine() {
+        return sb.charAt(sb.length() - 1) == '\n';
+    }
+
+    private void incIndent() {
+        indent += 8;
+    }
+
+    private void decIndent() {
+        indent -= 8;
     }
 }

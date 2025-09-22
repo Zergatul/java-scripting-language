@@ -1,15 +1,17 @@
 package com.zergatul.scripting.parser.nodes;
 
-import com.zergatul.scripting.TextRange;
+import com.zergatul.scripting.lexer.Token;
 import com.zergatul.scripting.parser.ParserTreeVisitor;
 import com.zergatul.scripting.parser.UnaryOperator;
 
 public class UnaryOperatorNode extends ParserNode {
 
+    public final Token token;
     public final UnaryOperator operator;
 
-    public UnaryOperatorNode(UnaryOperator operator, TextRange range) {
-        super(ParserNodeType.UNARY_OPERATOR, range);
+    public UnaryOperatorNode(Token token, UnaryOperator operator) {
+        super(ParserNodeType.UNARY_OPERATOR, token.getRange());
+        this.token = token;
         this.operator = operator;
     }
 
@@ -20,13 +22,4 @@ public class UnaryOperatorNode extends ParserNode {
 
     @Override
     public void acceptChildren(ParserTreeVisitor visitor) {}
-
-    @Override
-    public boolean equals(Object obj) {
-        if (obj instanceof UnaryOperatorNode other) {
-            return other.operator == operator && other.getRange().equals(getRange());
-        } else {
-            return false;
-        }
-    }
 }

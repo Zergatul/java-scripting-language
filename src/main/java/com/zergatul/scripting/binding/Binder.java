@@ -446,7 +446,7 @@ public class Binder {
 
         popScope();
 
-        return new BoundForLoopStatementNode(statement.openParenthesis, statement.closeParenthesis, init, condition, update, body, statement.getRange());
+        return new BoundForLoopStatementNode(statement.openParen, statement.closeParen, init, condition, update, body, statement.getRange());
     }
 
     private BoundForEachLoopStatementNode bindForEachLoopStatement(ForEachLoopStatementNode statement) {
@@ -605,7 +605,12 @@ public class Binder {
         return new BoundParenthesizedExpressionNode(bindExpression(parenthesizedExpression.inner), parenthesizedExpression.getRange());
     }
 
-    private BoundUnaryExpressionNode bindUnaryExpression(UnaryExpressionNode unary) {
+    private BoundExpressionNode bindUnaryExpression(UnaryExpressionNode unary) {
+        if (unary.operand.is(ParserNodeType.INTEGER_LITERAL)) {
+            IntegerLiteralExpressionNode literal = (IntegerLiteralExpressionNode) unary.operand;
+            return bindIntegerLiteralExpression(literal.withSign(unary.operator));
+        }
+
         BoundExpressionNode operand = bindExpression(unary.operand);
         UnaryOperation operation = operand.type.unary(unary.operator.operator);
         BoundUnaryOperatorNode operator;
@@ -976,10 +981,6 @@ public class Binder {
     }
 
     private BoundArrayCreationExpressionNode bindArrayCreationExpression(ArrayCreationExpressionNode expression) {
-        if (expression.typeNode.isNot(ParserNodeType.ARRAY_TYPE)) {
-            throw new InternalException();
-        }
-
         BoundTypeNode typeNode = bindType(expression.typeNode);
         BoundExpressionNode lengthExpression = convert(bindExpression(expression.lengthExpression), SInt.instance);
         return new BoundArrayCreationExpressionNode(typeNode, lengthExpression, expression.getRange());
@@ -1512,13 +1513,13 @@ public class Binder {
         }
         if (type instanceof FunctionTypeNode functionTypeNode) {
             BoundTypeNode returnTypeNode = bindType(functionTypeNode.returnTypeNode);
-            List<BoundTypeNode> parameterTypeNodes = functionTypeNode.parameterTypes.stream().map(this::bindType).toList();
+            List<BoundTypeNode> parameterTypeNodes = functionTypeNode.parameterTypes.getNodes().stream().map(this::bindType).toList();
             SGenericFunction functionType = context.getGenericFunction(returnTypeNode.type, parameterTypeNodes.stream().map(node -> node.type).toArray(SType[]::new));
             return new BoundFunctionTypeNode(
-                    functionTypeNode.open,
+                    functionTypeNode.openBracket,
                     returnTypeNode,
                     parameterTypeNodes,
-                    functionTypeNode.close,
+                    functionTypeNode.closeBracket,
                     functionType,
                     functionTypeNode.getRange());
         }

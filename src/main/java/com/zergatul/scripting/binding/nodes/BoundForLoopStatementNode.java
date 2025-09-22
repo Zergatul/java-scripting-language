@@ -40,7 +40,9 @@ public class BoundForLoopStatementNode extends BoundStatementNode {
         if (condition != null) {
             condition.accept(visitor);
         }
-        update.accept(visitor);
+        if (update != null) {
+            update.accept(visitor);
+        }
         body.accept(visitor);
     }
 

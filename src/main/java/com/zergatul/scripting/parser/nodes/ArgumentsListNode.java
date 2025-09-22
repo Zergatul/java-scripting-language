@@ -5,7 +5,6 @@ import com.zergatul.scripting.lexer.Token;
 import com.zergatul.scripting.parser.ParserTreeVisitor;
 
 import java.util.List;
-import java.util.Objects;
 
 public class ArgumentsListNode extends ParserNode {
 
@@ -29,15 +28,6 @@ public class ArgumentsListNode extends ParserNode {
     public void acceptChildren(ParserTreeVisitor visitor) {
         for (ExpressionNode expression : arguments) {
             expression.accept(visitor);
-        }
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (obj instanceof ArgumentsListNode other) {
-            return Objects.equals(other.arguments, arguments) && other.getRange().equals(getRange());
-        } else {
-            return false;
         }
     }
 }

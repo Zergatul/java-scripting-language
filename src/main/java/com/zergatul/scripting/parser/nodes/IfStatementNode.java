@@ -4,8 +4,6 @@ import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.lexer.Token;
 import com.zergatul.scripting.parser.ParserTreeVisitor;
 
-import java.util.Objects;
-
 public class IfStatementNode extends StatementNode {
 
     public final Token ifToken;
@@ -19,8 +17,8 @@ public class IfStatementNode extends StatementNode {
     public IfStatementNode(
             Token ifToken,
             Token openParen,
-            Token closeParen,
             ExpressionNode condition,
+            Token closeParen,
             StatementNode thenStatement,
             Token elseToken,
             StatementNode elseStatement,
@@ -47,22 +45,6 @@ public class IfStatementNode extends StatementNode {
         thenStatement.accept(visitor);
         if (elseStatement != null) {
             elseStatement.accept(visitor);
-        }
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (obj instanceof IfStatementNode other) {
-            return  other.ifToken.equals(ifToken) &&
-                    other.openParen.equals(openParen) &&
-                    other.condition.equals(condition) &&
-                    other.closeParen.equals(closeParen) &&
-                    other.thenStatement.equals(thenStatement) &&
-                    Objects.equals(other.elseToken, elseToken) &&
-                    Objects.equals(other.elseStatement, elseStatement) &&
-                    other.getRange().equals(getRange());
-        } else {
-            return false;
         }
     }
 }

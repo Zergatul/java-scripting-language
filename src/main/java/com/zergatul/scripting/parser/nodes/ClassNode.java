@@ -1,6 +1,7 @@
 package com.zergatul.scripting.parser.nodes;
 
 import com.zergatul.scripting.TextRange;
+import com.zergatul.scripting.lexer.Token;
 import com.zergatul.scripting.lexer.ValueToken;
 import com.zergatul.scripting.parser.ParserTreeVisitor;
 
@@ -8,17 +9,26 @@ import java.util.List;
 
 public class ClassNode extends CompilationUnitMemberNode {
 
+    public final Token keyword;
     public final NameExpressionNode name;
+    public final Token openBrace;
     public final List<ClassMemberNode> members;
+    public final Token closeBrace;
 
-    public ClassNode(ValueToken identifier, TextRange range) {
-        this(identifier, List.of(), range);
-    }
-
-    public ClassNode(ValueToken identifier, List<ClassMemberNode> members, TextRange range) {
+    public ClassNode(
+            Token keyword,
+            ValueToken identifier,
+            Token openBrace,
+            List<ClassMemberNode> members,
+            Token closeBrace,
+            TextRange range
+    ) {
         super(ParserNodeType.CLASS_DECLARATION, range);
+        this.keyword = keyword;
         this.name = new NameExpressionNode(identifier);
+        this.openBrace = openBrace;
         this.members = members;
+        this.closeBrace = closeBrace;
     }
 
     @Override

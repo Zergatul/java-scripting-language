@@ -8,12 +8,14 @@ public class ClassConstructorNode extends ClassMemberNode {
 
     public final Token keyword;
     public final ParameterListNode parameters;
+    public final Token arrow;
     public final StatementNode body;
 
-    public ClassConstructorNode(Token keyword, ParameterListNode parameters, StatementNode body, TextRange range) {
+    public ClassConstructorNode(Token keyword, ParameterListNode parameters, Token arrow, StatementNode body, TextRange range) {
         super(ParserNodeType.CLASS_CONSTRUCTOR, range);
         this.keyword = keyword;
         this.parameters = parameters;
+        this.arrow = arrow;
         this.body = body;
     }
 
