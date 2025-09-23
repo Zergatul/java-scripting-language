@@ -6,7 +6,6 @@ import com.zergatul.scripting.lexer.TokenType;
 import com.zergatul.scripting.parser.ParserTreeVisitor;
 
 import java.util.List;
-import java.util.Objects;
 
 public class ModifiersNode extends ParserNode {
 
@@ -28,13 +27,4 @@ public class ModifiersNode extends ParserNode {
 
     @Override
     public void acceptChildren(ParserTreeVisitor visitor) {}
-
-    @Override
-    public boolean equals(Object obj) {
-        if (obj instanceof ModifiersNode other) {
-            return Objects.equals(other.tokens, tokens);
-        } else {
-            return false;
-        }
-    }
 }

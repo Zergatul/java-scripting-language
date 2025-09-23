@@ -616,6 +616,10 @@ public class ParserDumper {
         if (newLine) decIndent();
     }
 
+    private <T extends ParserNode> void dumpList(SeparatedList<T> nodes) {
+        throw new InternalException();
+    }
+
     private void beginLine() {
         beginLine("");
     }

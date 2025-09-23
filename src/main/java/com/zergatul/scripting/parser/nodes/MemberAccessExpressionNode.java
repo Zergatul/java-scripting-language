@@ -10,8 +10,8 @@ public class MemberAccessExpressionNode extends ExpressionNode {
     public final Token dot;
     public final NameExpressionNode name;
 
-    public MemberAccessExpressionNode(ExpressionNode callee, Token dot, NameExpressionNode name, TextRange range) {
-        super(ParserNodeType.MEMBER_ACCESS_EXPRESSION, range);
+    public MemberAccessExpressionNode(ExpressionNode callee, Token dot, NameExpressionNode name) {
+        super(ParserNodeType.MEMBER_ACCESS_EXPRESSION, TextRange.combine(callee, name));
         this.callee = callee;
         this.dot = dot;
         this.name = name;
@@ -26,17 +26,5 @@ public class MemberAccessExpressionNode extends ExpressionNode {
     public void acceptChildren(ParserTreeVisitor visitor) {
         callee.accept(visitor);
         name.accept(visitor);
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (obj instanceof MemberAccessExpressionNode other) {
-            return  other.callee.equals(callee) &&
-                    other.dot.equals(dot) &&
-                    other.name.equals(name) &&
-                    other.getRange().equals(getRange());
-        } else {
-            return false;
-        }
     }
 }

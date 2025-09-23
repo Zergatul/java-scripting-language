@@ -6,15 +6,17 @@ import com.zergatul.scripting.parser.ParserTreeVisitor;
 
 public class JavaTypeNode extends TypeNode {
 
-    public final Token lBracket;
+    public final Token java;
+    public final Token openBracket;
     public final JavaQualifiedTypeNameNode name;
-    public final Token rBracket;
+    public final Token closeBracket;
 
-    public JavaTypeNode(Token lBracket, JavaQualifiedTypeNameNode name, Token rBracket, TextRange range) {
-        super(ParserNodeType.JAVA_TYPE, range);
-        this.lBracket = lBracket;
+    public JavaTypeNode(Token java, Token openBracket, JavaQualifiedTypeNameNode name, Token closeBracket) {
+        super(ParserNodeType.JAVA_TYPE, TextRange.combine(java, closeBracket));
+        this.java = java;
+        this.openBracket = openBracket;
         this.name = name;
-        this.rBracket = rBracket;
+        this.closeBracket = closeBracket;
     }
 
     @Override
@@ -25,17 +27,5 @@ public class JavaTypeNode extends TypeNode {
     @Override
     public void acceptChildren(ParserTreeVisitor visitor) {
         name.accept(visitor);
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (obj instanceof JavaTypeNode other) {
-            return  other.lBracket.equals(lBracket) &&
-                    other.name.equals(name) &&
-                    other.rBracket.equals(rBracket) &&
-                    other.getRange().equals(getRange());
-        } else {
-            return false;
-        }
     }
 }

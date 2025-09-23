@@ -2,21 +2,31 @@ package com.zergatul.scripting.binding.nodes;
 
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
+import com.zergatul.scripting.lexer.Token;
+import com.zergatul.scripting.parser.nodes.ArgumentsListNode;
 
 import java.util.List;
 import java.util.Objects;
 
 public class BoundArgumentsListNode extends BoundNode {
 
-    public final List<BoundExpressionNode> arguments;
+    public final Token openParen;
+    public final BoundSeparatedList<BoundExpressionNode> arguments;
+    public final Token closeParen;
 
-    public BoundArgumentsListNode(List<BoundExpressionNode> arguments) {
-        this(arguments, null);
+    public BoundArgumentsListNode(BoundSeparatedList<BoundExpressionNode> arguments) {
+        this(null, arguments, null, null);
     }
 
-    public BoundArgumentsListNode(List<BoundExpressionNode> arguments, TextRange range) {
+    public BoundArgumentsListNode(ArgumentsListNode node, BoundSeparatedList<BoundExpressionNode> arguments) {
+        this(node.openParen, arguments, node.closeParen, node.getRange());
+    }
+
+    public BoundArgumentsListNode(Token openParen, BoundSeparatedList<BoundExpressionNode> arguments, Token closeParen, TextRange range) {
         super(BoundNodeType.ARGUMENTS_LIST, range);
+        this.openParen = openParen;
         this.arguments = arguments;
+        this.closeParen = closeParen;
     }
 
     @Override
@@ -26,22 +36,13 @@ public class BoundArgumentsListNode extends BoundNode {
 
     @Override
     public void acceptChildren(BinderTreeVisitor visitor) {
-        for (BoundExpressionNode argument : arguments) {
+        for (BoundExpressionNode argument : arguments.getNodes()) {
             argument.accept(visitor);
         }
     }
 
     @Override
     public List<BoundNode> getChildren() {
-        return List.copyOf(arguments);
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (obj instanceof BoundArgumentsListNode other) {
-            return Objects.equals(other.arguments, arguments) && other.getRange().equals(getRange());
-        } else {
-            return false;
-        }
+        return List.copyOf(arguments.getNodes());
     }
 }

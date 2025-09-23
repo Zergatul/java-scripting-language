@@ -4,27 +4,19 @@ import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.lexer.Token;
 import com.zergatul.scripting.parser.ParserTreeVisitor;
 
-import java.util.Objects;
-
 public class VariableDeclarationNode extends StatementNode {
 
     public final TypeNode type;
     public final NameExpressionNode name;
+    public final Token equal;
     public final ExpressionNode expression;
     public final Token semicolon;
 
-    public VariableDeclarationNode(TypeNode type, NameExpressionNode name, TextRange range) {
-        this(type, name, null, null, range);
-    }
-
-    public VariableDeclarationNode(TypeNode type, NameExpressionNode name, ExpressionNode expression, TextRange range) {
-        this(type, name, expression, null, range);
-    }
-
-    public VariableDeclarationNode(TypeNode type, NameExpressionNode name, ExpressionNode expression, Token semicolon, TextRange range) {
-        super(ParserNodeType.VARIABLE_DECLARATION, range);
+    public VariableDeclarationNode(TypeNode type, NameExpressionNode name, Token equal, ExpressionNode expression, Token semicolon) {
+        super(ParserNodeType.VARIABLE_DECLARATION, TextRange.combine(type, semicolon));
         this.type = type;
         this.name = name;
+        this.equal = equal;
         this.expression = expression;
         this.semicolon = semicolon;
     }
@@ -36,7 +28,7 @@ public class VariableDeclarationNode extends StatementNode {
 
     @Override
     public boolean isOpen() {
-        return (semicolon != null && semicolon.isMissing()) || (expression != null && expression.isMissing()) || name.isMissing();
+        return (expression != null && expression.isMissing()) || name.isMissing();
     }
 
     @Override
@@ -49,20 +41,7 @@ public class VariableDeclarationNode extends StatementNode {
     }
 
     @Override
-    public boolean equals(Object obj) {
-        if (obj instanceof VariableDeclarationNode other) {
-            return  other.type.equals(type) &&
-                    other.name.equals(name) &&
-                    Objects.equals(other.expression, expression) &&
-                    Objects.equals(other.semicolon, semicolon) &&
-                    other.getRange().equals(getRange());
-        } else {
-            return false;
-        }
-    }
-
-    @Override
     public StatementNode updateWithSemicolon(Token semicolon) {
-        return new VariableDeclarationNode(type, name, expression, semicolon, TextRange.combine(getRange(), semicolon.getRange()));
+        return new VariableDeclarationNode(type, name, equal, expression, semicolon);
     }
 }

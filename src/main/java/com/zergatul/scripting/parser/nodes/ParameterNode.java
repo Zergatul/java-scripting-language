@@ -8,8 +8,8 @@ public class ParameterNode extends ParserNode {
     private final TypeNode type;
     private final NameExpressionNode name;
 
-    public ParameterNode(TypeNode type, NameExpressionNode name, TextRange range) {
-        super(ParserNodeType.PARAMETER, range);
+    public ParameterNode(TypeNode type, NameExpressionNode name) {
+        super(ParserNodeType.PARAMETER, TextRange.combine(type, name));
         this.type = type;
         this.name = name;
     }
@@ -31,14 +31,5 @@ public class ParameterNode extends ParserNode {
 
     public NameExpressionNode getName() {
         return name;
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (obj instanceof ParameterNode other) {
-            return other.type.equals(type) && other.name.equals(name) && other.getRange().equals(getRange());
-        } else {
-            return false;
-        }
     }
 }

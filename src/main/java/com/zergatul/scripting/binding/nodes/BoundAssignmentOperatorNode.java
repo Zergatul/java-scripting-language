@@ -2,20 +2,28 @@ package com.zergatul.scripting.binding.nodes;
 
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
+import com.zergatul.scripting.lexer.Token;
 import com.zergatul.scripting.parser.AssignmentOperator;
+import com.zergatul.scripting.parser.nodes.AssignmentOperatorNode;
 
 import java.util.List;
 
 public class BoundAssignmentOperatorNode extends BoundNode {
 
+    public final Token token;
     public final AssignmentOperator operator;
 
     public BoundAssignmentOperatorNode(AssignmentOperator operator) {
-        this(operator, null);
+        this(null, operator, null);
     }
 
-    public BoundAssignmentOperatorNode(AssignmentOperator operator, TextRange range) {
+    public BoundAssignmentOperatorNode(AssignmentOperatorNode node) {
+        this(node.token, node.operator, node.getRange());
+    }
+
+    public BoundAssignmentOperatorNode(Token token, AssignmentOperator operator, TextRange range) {
         super(BoundNodeType.ASSIGNMENT_OPERATOR, range);
+        this.token = token;
         this.operator = operator;
     }
 

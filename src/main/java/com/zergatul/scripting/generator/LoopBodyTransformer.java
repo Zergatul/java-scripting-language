@@ -44,14 +44,12 @@ public class LoopBodyTransformer {
     private BoundStatementNode transform(BoundBreakStatementNode node) {
         return new BoundBlockStatementNode(List.of(
                 new BoundSetGeneratorStateNode(end),
-                new BoundGeneratorContinueNode()
-        ), null);
+                new BoundGeneratorContinueNode()));
     }
 
     private BoundStatementNode transform(BoundContinueStatementNode node) {
         return new BoundBlockStatementNode(List.of(
                 new BoundSetGeneratorStateNode(begin),
-                new BoundGeneratorContinueNode()
-        ), null);
+                new BoundGeneratorContinueNode()));
     }
 }

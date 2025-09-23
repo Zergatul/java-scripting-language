@@ -418,7 +418,7 @@ public class ArrayTests extends ComparatorTest {
     @Test
     public void collectionExpressionCannotInferTypeTest() {
         String code = """
-                let a1 = [1, 2.5, ];
+                let a1 = [1, 2.5];
                 """;
 
         comparator.assertEquals(List.of(

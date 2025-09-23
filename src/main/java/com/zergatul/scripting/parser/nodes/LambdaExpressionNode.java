@@ -4,18 +4,25 @@ import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.lexer.Token;
 import com.zergatul.scripting.parser.ParserTreeVisitor;
 
-import java.util.List;
-import java.util.Objects;
-
 public class LambdaExpressionNode extends ExpressionNode {
 
-    public final List<NameExpressionNode> parameters;
+    public final Token openParen;
+    public final SeparatedList<NameExpressionNode> parameters;
+    public final Token closeParen;
     public final Token arrow;
     public final StatementNode body;
 
-    public LambdaExpressionNode(List<NameExpressionNode> parameters, Token arrow, StatementNode body, TextRange range) {
-        super(ParserNodeType.LAMBDA_EXPRESSION, range);
+    public LambdaExpressionNode(
+            Token openParen,
+            SeparatedList<NameExpressionNode> parameters,
+            Token closeParen,
+            Token arrow,
+            StatementNode body
+    ) {
+        super(ParserNodeType.LAMBDA_EXPRESSION, TextRange.combine(openParen != null ? openParen : parameters.getNodeAt(0), body));
+        this.openParen = openParen;
         this.parameters = parameters;
+        this.closeParen = closeParen;
         this.arrow = arrow;
         this.body = body;
     }
@@ -27,21 +34,9 @@ public class LambdaExpressionNode extends ExpressionNode {
 
     @Override
     public void acceptChildren(ParserTreeVisitor visitor) {
-        for (NameExpressionNode name : parameters) {
+        for (NameExpressionNode name : parameters.getNodes()) {
             name.accept(visitor);
         }
         body.accept(visitor);
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (obj instanceof LambdaExpressionNode other) {
-            return  Objects.equals(other.parameters, parameters) &&
-                    other.arrow.equals(arrow) &&
-                    other.body.equals(body) &&
-                    other.getRange().equals(getRange());
-        } else {
-            return false;
-        }
     }
 }

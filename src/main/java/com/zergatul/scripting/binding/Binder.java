@@ -2,6 +2,7 @@ package com.zergatul.scripting.binding;
 
 import com.zergatul.scripting.*;
 import com.zergatul.scripting.binding.nodes.*;
+import com.zergatul.scripting.binding.nodes.BoundSeparatedList;
 import com.zergatul.scripting.compiler.*;
 import com.zergatul.scripting.parser.AssignmentOperator;
 import com.zergatul.scripting.binding.nodes.BoundNodeType;
@@ -160,7 +161,7 @@ public class Binder {
         }
 
         popScope();
-        return new BoundClassNode(name, members, classNode.getRange());
+        return new BoundClassNode(classNode, name, members);
     }
 
     private BoundClassFieldNode bindClassField(ClassDeclaration classDeclaration, ClassFieldNode fieldNode) {
@@ -170,7 +171,7 @@ public class Binder {
         }
 
         BoundNameExpressionNode name = new BoundNameExpressionNode(fieldDeclaration.getSymbolRef(), fieldNode.name.getRange());
-        return new BoundClassFieldNode(fieldDeclaration.getTypeNode(), name, fieldNode.getRange());
+        return new BoundClassFieldNode(fieldNode, fieldDeclaration.getTypeNode(), name);
     }
 
     private BoundClassConstructorNode bindClassConstructor(ClassDeclaration classDeclaration, ClassConstructorNode constructorNode) {
@@ -185,10 +186,10 @@ public class Binder {
         popScope();
 
         return new BoundClassConstructorNode(
+                constructorNode,
                 (SMethodFunction) constructorDeclaration.getSymbolRef().get().getType(),
                 constructorDeclaration.getParameters(),
-                body,
-                constructorNode.getRange());
+                body);
     }
 
     private BoundClassMethodNode bindClassMethod(ClassDeclaration classDeclaration, ClassMethodNode methodNode) {
@@ -223,18 +224,18 @@ public class Binder {
 
         BoundNameExpressionNode name = new BoundNameExpressionNode(methodDeclaration.getSymbolRef(), methodNode.name.getRange());
         return new BoundClassMethodNode(
+                methodNode,
                 methodDeclaration.isAsync(),
                 (SMethodFunction) methodDeclaration.getSymbolRef().get().getType(),
                 methodDeclaration.getTypeNode(),
                 name,
                 methodDeclaration.getParameters(),
-                body,
-                methodNode.getRange());
+                body);
     }
 
     private BoundParameterListNode bindParameterList(ParameterListNode node) {
         List<BoundParameterNode> parameters = new ArrayList<>(node.parameters.size());
-        for (ParameterNode parameter : node.parameters) {
+        for (ParameterNode parameter : node.parameters.getNodes()) {
             BoundTypeNode type = bindType(parameter.getType());
             BoundNameExpressionNode name = new BoundNameExpressionNode(new ForwardSymbolRef(), type.type, parameter.getName().value, parameter.getName().getRange());
 
@@ -287,7 +288,7 @@ public class Binder {
         pushScope();
         List<BoundStatementNode> statements = block.statements.stream().map(this::bindStatement).toList();
         popScope();
-        return new BoundBlockStatementNode(statements, block.getRange());
+        return new BoundBlockStatementNode(block, statements);
     }
 
     private BoundStatementNode bindAssignmentStatement(AssignmentStatementNode statement) {
@@ -296,12 +297,12 @@ public class Binder {
             addDiagnostic(BinderErrors.ExpressionCannotBeSet, statement.left);
         }
 
-        BoundAssignmentOperatorNode operator = new BoundAssignmentOperatorNode(statement.operator.operator, statement.operator.getRange());
+        BoundAssignmentOperatorNode operator = new BoundAssignmentOperatorNode(statement.operator);
         BoundExpressionNode right = bindExpression(statement.right);
 
         if (operator.operator == AssignmentOperator.ASSIGNMENT) {
             right = convert(right, left.type);
-            return new BoundAssignmentStatementNode(left, operator, right, statement);
+            return new BoundAssignmentStatementNode(statement, left, operator, right);
         }
 
         BinaryOperation operation = left.type.binary(operator.operator.getBinaryOperator(), right.type);
@@ -339,11 +340,11 @@ public class Binder {
         }
 
         return new BoundAugmentedAssignmentStatementNode(
+                statement,
                 left,
                 operator,
-                new BoundBinaryOperatorNode(operation, operator.getRange()),
-                right,
-                statement.getRange());
+                operation,
+                right);
     }
 
     private BoundVariableDeclarationNode bindVariableDeclaration(VariableDeclarationNode variableDeclaration) {
@@ -523,7 +524,7 @@ public class Binder {
         if (!context.canBreak()) {
             addDiagnostic(BinderErrors.NoLoop, statement);
         }
-        return new BoundBreakStatementNode(statement.getRange());
+        return new BoundBreakStatementNode(statement);
     }
 
     private BoundContinueStatementNode bindContinueStatement(ContinueStatementNode statement) {
@@ -610,6 +611,10 @@ public class Binder {
             IntegerLiteralExpressionNode literal = (IntegerLiteralExpressionNode) unary.operand;
             return bindIntegerLiteralExpression(literal.withSign(unary.operator));
         }
+        if (unary.operand.is(ParserNodeType.INTEGER64_LITERAL)) {
+            Integer64LiteralExpressionNode literal = (Integer64LiteralExpressionNode) unary.operand;
+            return bindInteger64LiteralExpression(literal.withSign(unary.operator));
+        }
 
         BoundExpressionNode operand = bindExpression(unary.operand);
         UnaryOperation operation = operand.type.unary(unary.operator.operator);
@@ -632,8 +637,8 @@ public class Binder {
         BoundExpressionNode right = bindExpression(binary.right);
         BinaryOperation operation = left.type.binary(binary.operator.operator, right.type);
         if (operation != null) {
-            BoundBinaryOperatorNode operator = new BoundBinaryOperatorNode(operation, binary.operator.getRange());
-            return new BoundBinaryExpressionNode(left, operator, right, binary.getRange());
+            BoundBinaryOperatorNode operator = new BoundBinaryOperatorNode(binary.operator, operation);
+            return new BoundBinaryExpressionNode(binary, left, operator, right);
         } else {
             // try implicit cast arguments to each other and see if operator is defined
             if (!left.type.equals(right.type)) {
@@ -642,8 +647,8 @@ public class Binder {
                     operation = left.type.binary(binary.operator.operator, left.type);
                     if (operation != null) {
                         right = new BoundImplicitCastExpressionNode(right, cast, right.getRange());
-                        BoundBinaryOperatorNode operator = new BoundBinaryOperatorNode(operation, binary.operator.getRange());
-                        return new BoundBinaryExpressionNode(left, operator, right, binary.getRange());
+                        BoundBinaryOperatorNode operator = new BoundBinaryOperatorNode(binary.operator, operation);
+                        return new BoundBinaryExpressionNode(binary, left, operator, right);
                     }
                 }
 
@@ -652,8 +657,8 @@ public class Binder {
                     operation = right.type.binary(binary.operator.operator, right.type);
                     if (operation != null) {
                         left = new BoundImplicitCastExpressionNode(left, cast, left.getRange());
-                        BoundBinaryOperatorNode operator = new BoundBinaryOperatorNode(operation, binary.operator.getRange());
-                        return new BoundBinaryExpressionNode(left, operator, right, binary.getRange());
+                        BoundBinaryOperatorNode operator = new BoundBinaryOperatorNode(binary.operator, operation);
+                        return new BoundBinaryExpressionNode(binary, left, operator, right);
                     }
                 }
             }
@@ -664,8 +669,8 @@ public class Binder {
                     binary.operator.operator.toString(),
                     left.type.toString(),
                     right.type.toString());
-            BoundBinaryOperatorNode operator = new BoundBinaryOperatorNode(UndefinedBinaryOperation.instance, binary.operator.getRange());
-            return new BoundBinaryExpressionNode(left, operator, right, binary.getRange());
+            BoundBinaryOperatorNode operator = new BoundBinaryOperatorNode(binary.operator, UndefinedBinaryOperation.instance);
+            return new BoundBinaryExpressionNode(binary, left, operator, right);
         }
     }
 
@@ -682,7 +687,7 @@ public class Binder {
     }
 
     private BoundBooleanLiteralExpressionNode bindBooleanLiteralExpression(BooleanLiteralExpressionNode bool) {
-        return new BoundBooleanLiteralExpressionNode(bool.value, bool.getRange());
+        return new BoundBooleanLiteralExpressionNode(bool);
     }
 
     private BoundIntegerLiteralExpressionNode bindIntegerLiteralExpression(IntegerLiteralExpressionNode literal) {
@@ -747,7 +752,7 @@ public class Binder {
     }
 
     private BoundCharLiteralExpressionNode bindCharLiteralExpression(CharLiteralExpressionNode literal) {
-        return new BoundCharLiteralExpressionNode(literal.value, literal.getRange());
+        return new BoundCharLiteralExpressionNode(literal);
     }
 
     private BoundConditionalExpressionNode bindConditionalExpression(ConditionalExpressionNode expression) {
@@ -883,9 +888,9 @@ public class Binder {
 
         List<BoundParameterNode> parameters = new ArrayList<>();
         for (int i = 0; i < parametersCount; i++) {
-            NameExpressionNode name = node.parameters.get(i);
+            NameExpressionNode name = node.parameters.getNodeAt(i);
             SType type = actualParameterTypes[i];
-            SymbolRef symbolRef = context.addLocalParameter2(name.value, type, node.parameters.get(i).getRange());
+            SymbolRef symbolRef = context.addLocalParameter2(name.value, type, node.parameters.getNodeAt(i).getRange());
             TextRange range = name.getRange();
             BoundNameExpressionNode boundName = new BoundNameExpressionNode(symbolRef, range);
             parameters.add(new BoundParameterNode(boundName, type, range));
@@ -983,7 +988,7 @@ public class Binder {
     private BoundArrayCreationExpressionNode bindArrayCreationExpression(ArrayCreationExpressionNode expression) {
         BoundTypeNode typeNode = bindType(expression.typeNode);
         BoundExpressionNode lengthExpression = convert(bindExpression(expression.lengthExpression), SInt.instance);
-        return new BoundArrayCreationExpressionNode(typeNode, lengthExpression, expression.getRange());
+        return new BoundArrayCreationExpressionNode(expression, typeNode, lengthExpression);
     }
 
     private BoundArrayInitializerExpressionNode bindArrayInitializerExpression(ArrayInitializerExpressionNode expression) {
@@ -998,7 +1003,7 @@ public class Binder {
             items.add(convert(bindExpression(e), type.getElementsType()));
         }
 
-        return new BoundArrayInitializerExpressionNode(typeNode, items, expression.getRange());
+        return new BoundArrayInitializerExpressionNode(expression, typeNode, items);
     }
 
     private BoundObjectCreationExpressionNode bindObjectCreationExpressionNode(ObjectCreationExpressionNode expression) {
@@ -1033,7 +1038,7 @@ public class Binder {
     private <T extends Invocable> BindInvocableArgsResult<T> bindInvocableArguments(ArgumentsListNode argumentsListNode, List<T> candidates, T unknown) {
         int argumentsSize = argumentsListNode.arguments.size();
         List<BoundExpressionNode> arguments = new ArrayList<>(argumentsSize);
-        for (ExpressionNode node : argumentsListNode.arguments) {
+        for (ExpressionNode node : argumentsListNode.arguments.getNodes()) {
             arguments.add(bindExpression(node));
         }
 
@@ -1093,25 +1098,27 @@ public class Binder {
             }
         }
 
-        BoundArgumentsListNode boundArgumentsListNode = new BoundArgumentsListNode(arguments, argumentsListNode.getRange());
+        BoundArgumentsListNode boundArgumentsListNode = new BoundArgumentsListNode(
+                argumentsListNode,
+                BoundSeparatedList.from(argumentsListNode.arguments, arguments));
         return new BindInvocableArgsResult<>(matchedInvocable, boundArgumentsListNode, noInvocables, noOverloads);
     }
 
     private BoundExpressionNode bindCollectionExpression(CollectionExpressionNode collection) {
-        if (collection.items.isEmpty()) {
-            return new BoundEmptyCollectionExpressionNode(collection.getRange());
+        if (collection.list.size() == 0) {
+            return new BoundEmptyCollectionExpressionNode(collection);
         }
 
-        List<BoundExpressionNode> items = collection.items.stream().map(this::bindExpression).toList();
+        List<BoundExpressionNode> items = collection.list.getNodes().stream().map(this::bindExpression).toList();
         SType type = items.getFirst().type;
         for (int i = 1; i < items.size(); i++) {
             if (!items.get(i).type.equals(type)) {
-                addDiagnostic(BinderErrors.CannotInferCollectionExpressionTypes, collection.items.get(i), type, i, items.get(i).type);
+                addDiagnostic(BinderErrors.CannotInferCollectionExpressionTypes, collection.list.getNodeAt(i), type, i, items.get(i).type);
                 break;
             }
         }
 
-        return new BoundCollectionExpressionNode(new SArrayType(type), items, collection.getRange());
+        return new BoundCollectionExpressionNode(collection, new SArrayType(type), BoundSeparatedList.from(collection.list, items));
     }
 
     private BoundExpressionNode bindMemberAccessExpression(MemberAccessExpressionNode expression) {
@@ -1276,18 +1283,18 @@ public class Binder {
 
     private BoundAwaitExpressionNode bindAwaitExpression(AwaitExpressionNode node) {
         if (!context.isAsync()) {
-            addDiagnostic(BinderErrors.AwaitInNonAsyncContext, node.awaitToken);
+            addDiagnostic(BinderErrors.AwaitInNonAsyncContext, node.keyword);
         }
 
         BoundExpressionNode expression = bindExpression(node.expression);
         if (expression.type == SUnknown.instance) {
-            return new BoundAwaitExpressionNode(expression, SUnknown.instance, node.getRange());
+            return new BoundAwaitExpressionNode(node, expression, SUnknown.instance);
         }
         if (expression.type instanceof SFuture future) {
-            return new BoundAwaitExpressionNode(expression, future.getUnderlying(), node.getRange());
+            return new BoundAwaitExpressionNode(node, expression, future.getUnderlying());
         } else {
             addDiagnostic(BinderErrors.CannotAwaitNonFuture, expression);
-            return new BoundAwaitExpressionNode(expression, SUnknown.instance, node.getRange());
+            return new BoundAwaitExpressionNode(node, expression, SUnknown.instance);
         }
     }
 
@@ -1332,7 +1339,7 @@ public class Binder {
         }
 
         if (info.type() == ConversionType.EMPTY_ARRAY) {
-            return new BoundCollectionExpressionNode(type, List.of(), expression.getRange());
+            return new BoundCollectionExpressionNode((BoundEmptyCollectionExpressionNode) expression, type);
         }
 
         if (info.type() == ConversionType.LAMBDA_BINDING) {
@@ -1486,7 +1493,7 @@ public class Binder {
         }
         if (type instanceof ArrayTypeNode array) {
             BoundTypeNode underlying = bindType(array.underlying);
-            return new BoundArrayTypeNode(underlying, array.getRange());
+            return new BoundArrayTypeNode(array, underlying);
         }
         if (type instanceof RefTypeNode ref) {
             BoundTypeNode underlying = bindType(ref.underlying);
@@ -1501,14 +1508,14 @@ public class Binder {
                     clazz = null;
                 }
                 if (clazz != null) {
-                    return new BoundJavaTypeNode(java.lBracket, java.name, java.rBracket, new SClassType(clazz), java.getRange());
+                    return new BoundJavaTypeNode(java.openBracket, java.name, java.closeBracket, new SClassType(clazz), java.getRange());
                 } else {
                     addDiagnostic(BinderErrors.JavaTypeDoesNotExist, java, java.name.value);
-                    return new BoundJavaTypeNode(java.lBracket, java.name, java.rBracket, SUnknown.instance, java.getRange());
+                    return new BoundJavaTypeNode(java.openBracket, java.name, java.closeBracket, SUnknown.instance, java.getRange());
                 }
             } else {
                 addDiagnostic(BinderErrors.JavaTypeNotAllowed, java, context.getJavaTypeUsageError());
-                return new BoundJavaTypeNode(java.lBracket, java.name, java.rBracket, SUnknown.instance, java.getRange());
+                return new BoundJavaTypeNode(java.openBracket, java.name, java.closeBracket, SUnknown.instance, java.getRange());
             }
         }
         if (type instanceof FunctionTypeNode functionTypeNode) {

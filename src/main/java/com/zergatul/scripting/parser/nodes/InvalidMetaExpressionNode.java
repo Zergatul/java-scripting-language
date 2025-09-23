@@ -1,12 +1,15 @@
 package com.zergatul.scripting.parser.nodes;
 
-import com.zergatul.scripting.TextRange;
+import com.zergatul.scripting.lexer.Token;
 import com.zergatul.scripting.parser.ParserTreeVisitor;
 
 public class InvalidMetaExpressionNode extends ExpressionNode {
 
-    public InvalidMetaExpressionNode(TextRange range) {
-        super(ParserNodeType.META_INVALID_EXPRESSION, range);
+    public final Token token;
+
+    public InvalidMetaExpressionNode(Token token) {
+        super(ParserNodeType.META_INVALID_EXPRESSION, token.getRange());
+        this.token = token;
     }
 
     @Override

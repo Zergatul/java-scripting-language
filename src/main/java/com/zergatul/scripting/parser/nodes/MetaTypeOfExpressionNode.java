@@ -11,8 +11,8 @@ public class MetaTypeOfExpressionNode extends ExpressionNode {
     public final ExpressionNode expression;
     public final Token closeParen;
 
-    public MetaTypeOfExpressionNode(Token keyword, Token openParen, ExpressionNode expression, Token closeParen, TextRange range) {
-        super(ParserNodeType.META_TYPE_OF_EXPRESSION, range);
+    public MetaTypeOfExpressionNode(Token keyword, Token openParen, ExpressionNode expression, Token closeParen) {
+        super(ParserNodeType.META_TYPE_OF_EXPRESSION, TextRange.combine(keyword, closeParen));
         this.keyword = keyword;
         this.openParen = openParen;
         this.expression = expression;
@@ -27,18 +27,5 @@ public class MetaTypeOfExpressionNode extends ExpressionNode {
     @Override
     public void acceptChildren(ParserTreeVisitor visitor) {
         expression.accept(visitor);
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (obj instanceof MetaTypeOfExpressionNode other) {
-            return  other.keyword.equals(keyword) &&
-                    other.openParen.equals(openParen) &&
-                    other.expression.equals(expression) &&
-                    other.closeParen.equals(closeParen) &&
-                    other.getRange().equals(getRange());
-        } else {
-            return false;
-        }
     }
 }

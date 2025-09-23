@@ -33,4 +33,7 @@ public class ParserErrors {
     public static final ErrorCode CurlyBracketOrArrowExpected = new ErrorCode("C028", "{ or => expected, found %s");
     public static final ErrorCode ArrowExpected = new ErrorCode("C029", "=> expected");
     public static final ErrorCode NotAStatement = new ErrorCode("C030", "Not a statement");
+    public static final ErrorCode IdentifierOrCloseParenthesesExpected = new ErrorCode("C031", "Identifier or ) expected, found %s");
+    public static final ErrorCode TypeOrCloseParenthesesExpected = new ErrorCode("C022", "Type or ) expected, found '%s'");
+    public static final ErrorCode ExpressionOrCloseSquaredBracketExpected = new ErrorCode("C007", "Expression or ] expected, found %s");
 }

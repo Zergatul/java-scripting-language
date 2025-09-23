@@ -1,14 +1,17 @@
 package com.zergatul.scripting.parser.nodes;
 
 import com.zergatul.scripting.TextRange;
+import com.zergatul.scripting.lexer.Token;
 import com.zergatul.scripting.parser.ParserTreeVisitor;
 
 public class RefArgumentExpressionNode extends ExpressionNode {
 
+    public final Token keyword;
     public final NameExpressionNode name;
 
-    public RefArgumentExpressionNode(NameExpressionNode name, TextRange range) {
-        super(ParserNodeType.REF_ARGUMENT_EXPRESSION, range);
+    public RefArgumentExpressionNode(Token keyword, NameExpressionNode name) {
+        super(ParserNodeType.REF_ARGUMENT_EXPRESSION, TextRange.combine(keyword, name));
+        this.keyword = keyword;
         this.name = name;
     }
 

@@ -1,5 +1,7 @@
 package com.zergatul.scripting;
 
+import java.util.List;
+
 public abstract class TextRange {
 
     public abstract int getLine1();
@@ -159,6 +161,16 @@ public abstract class TextRange {
     }
 
     public abstract TextRange subRange(int skip);
+
+    public static <T extends Locatable> TextRange combine(List<T> list) {
+        if (list.isEmpty()) {
+            throw new InternalException();
+        }
+        if (list.size() == 1) {
+            return list.getFirst().getRange();
+        }
+        return combine(list.getFirst(), list.getLast());
+    }
 
     public static TextRange combine(TextRange range1, TextRange range2) {
         if (range1.getLine1() == range2.getLine2()) {

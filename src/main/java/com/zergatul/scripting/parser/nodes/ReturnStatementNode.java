@@ -4,17 +4,17 @@ import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.lexer.Token;
 import com.zergatul.scripting.parser.ParserTreeVisitor;
 
-import java.util.Objects;
-
 public class ReturnStatementNode extends StatementNode {
 
     public final Token keyword;
     public final ExpressionNode expression;
+    public final Token semicolon;
 
-    public ReturnStatementNode(Token keyword, ExpressionNode expression, TextRange range) {
-        super(ParserNodeType.RETURN_STATEMENT, range);
+    public ReturnStatementNode(Token keyword, ExpressionNode expression, Token semicolon) {
+        super(ParserNodeType.RETURN_STATEMENT, TextRange.combine(keyword, semicolon));
         this.keyword = keyword;
         this.expression = expression;
+        this.semicolon = semicolon;
     }
 
     @Override
@@ -26,17 +26,6 @@ public class ReturnStatementNode extends StatementNode {
     public void acceptChildren(ParserTreeVisitor visitor) {
         if (expression != null) {
             expression.accept(visitor);
-        }
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (obj instanceof ReturnStatementNode other) {
-            return  other.keyword.equals(keyword) &&
-                    Objects.equals(other.expression, expression) &&
-                    other.getRange().equals(getRange());
-        } else {
-            return false;
         }
     }
 }

@@ -7,10 +7,14 @@ import com.zergatul.scripting.parser.ParserTreeVisitor;
 public class PostfixStatementNode extends StatementNode {
 
     public final ExpressionNode expression;
+    public final Token operation;
+    public final Token semicolon;
 
-    public PostfixStatementNode(ParserNodeType nodeType, ExpressionNode expression, TextRange range) {
-        super(nodeType, range);
+    public PostfixStatementNode(ParserNodeType nodeType, ExpressionNode expression, Token operation, Token semicolon) {
+        super(nodeType, TextRange.combine(expression, semicolon != null ? semicolon : operation));
         this.expression = expression;
+        this.operation = operation;
+        this.semicolon = semicolon;
     }
 
     @Override
@@ -24,16 +28,7 @@ public class PostfixStatementNode extends StatementNode {
     }
 
     @Override
-    public boolean equals(Object obj) {
-        if (obj instanceof PostfixStatementNode other) {
-            return other.expression.equals(expression) && other.getRange().equals(getRange());
-        } else {
-            return false;
-        }
-    }
-
-    @Override
     public StatementNode updateWithSemicolon(Token semicolon) {
-        return new PostfixStatementNode(getNodeType(), expression, TextRange.combine(getRange(), semicolon.getRange()));
+        return new PostfixStatementNode(getNodeType(), expression, operation, semicolon);
     }
 }

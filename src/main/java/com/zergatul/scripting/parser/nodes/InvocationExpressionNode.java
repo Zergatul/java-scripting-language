@@ -24,15 +24,4 @@ public class InvocationExpressionNode extends ExpressionNode {
         callee.accept(visitor);
         arguments.accept(visitor);
     }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (obj instanceof InvocationExpressionNode other) {
-            return  other.callee.equals(callee) &&
-                    other.arguments.equals(arguments) &&
-                    other.getRange().equals(getRange());
-        } else {
-            return false;
-        }
-    }
 }

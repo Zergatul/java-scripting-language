@@ -18,7 +18,7 @@ public class BoundAssignmentStatementNode extends BoundStatementNode {
         this(left, operator, right, null, null);
     }
 
-    public BoundAssignmentStatementNode(BoundExpressionNode left, BoundAssignmentOperatorNode operator, BoundExpressionNode right, AssignmentStatementNode node) {
+    public BoundAssignmentStatementNode(AssignmentStatementNode node, BoundExpressionNode left, BoundAssignmentOperatorNode operator, BoundExpressionNode right) {
         this(left, operator, right, node.semicolon, node.getRange());
     }
 

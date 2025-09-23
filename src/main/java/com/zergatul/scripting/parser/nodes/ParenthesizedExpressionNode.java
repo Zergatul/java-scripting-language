@@ -1,15 +1,20 @@
 package com.zergatul.scripting.parser.nodes;
 
 import com.zergatul.scripting.TextRange;
+import com.zergatul.scripting.lexer.Token;
 import com.zergatul.scripting.parser.ParserTreeVisitor;
 
 public class ParenthesizedExpressionNode extends ExpressionNode {
 
+    public final Token openParen;
     public final ExpressionNode inner;
+    public final Token closeParen;
 
-    public ParenthesizedExpressionNode(ExpressionNode inner, TextRange range) {
-        super(ParserNodeType.PARENTHESIZED_EXPRESSION, range);
+    public ParenthesizedExpressionNode(Token openParen, ExpressionNode inner, Token closeParen) {
+        super(ParserNodeType.PARENTHESIZED_EXPRESSION, TextRange.combine(openParen, closeParen));
+        this.openParen = openParen;
         this.inner = inner;
+        this.closeParen = closeParen;
     }
 
     @Override
@@ -20,14 +25,5 @@ public class ParenthesizedExpressionNode extends ExpressionNode {
     @Override
     public void acceptChildren(ParserTreeVisitor visitor) {
         inner.accept(visitor);
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (obj instanceof ParenthesizedExpressionNode other) {
-            return other.inner.equals(inner) && other.getRange().equals(getRange());
-        } else {
-            return false;
-        }
     }
 }

@@ -564,7 +564,7 @@ public class Compiler {
                 BufferedMethodVisitor buffer = new BufferedMethodVisitor();
                 compileExpression(visitor, context, assignment.left);
                 compileExpression(buffer, context, assignment.right);
-                assignment.operator.operation.apply(visitor, buffer);
+                assignment.operation.apply(visitor, buffer);
 
                 BoundNameExpressionNode name = (BoundNameExpressionNode) assignment.left;
                 Variable variable = name.symbolRef.asVariable();
@@ -579,7 +579,7 @@ public class Compiler {
                 BufferedMethodVisitor buffer = new BufferedMethodVisitor();
                 indexExpression.operation.compileGet(visitor);
                 compileExpression(buffer, context, assignment.right);
-                assignment.operator.operation.apply(visitor, buffer);
+                assignment.operation.apply(visitor, buffer);
 
                 indexExpression.operation.compileSet(visitor);
             }
@@ -590,7 +590,7 @@ public class Compiler {
                 propertyAccess.property.property.compileGet(visitor);
                 BufferedMethodVisitor buffer = new BufferedMethodVisitor();
                 compileExpression(buffer, context, assignment.right);
-                assignment.operator.operation.apply(visitor, buffer);
+                assignment.operation.apply(visitor, buffer);
                 propertyAccess.property.property.compileSet(visitor);
             }
             default -> throw new InternalException("Not implemented.");
@@ -1511,7 +1511,7 @@ public class Compiler {
 
     private void compileMethodInvocationExpression(MethodVisitor visitor, CompilerContext context, BoundMethodInvocationExpressionNode invocation) {
         compileExpression(visitor, context, invocation.objectReference);
-        for (BoundExpressionNode expression : invocation.arguments.arguments) {
+        for (BoundExpressionNode expression : invocation.arguments.arguments.getNodes()) {
             compileExpression(visitor, context, expression);
         }
         invocation.method.method.compileInvoke(visitor);
@@ -1561,14 +1561,14 @@ public class Compiler {
     private void compileObjectCreationExpression(MethodVisitor visitor, CompilerContext context, BoundObjectCreationExpressionNode creation) {
         visitor.visitTypeInsn(NEW, creation.typeNode.type.getInternalName());
         visitor.visitInsn(DUP);
-        for (BoundExpressionNode expression : creation.arguments.arguments) {
+        for (BoundExpressionNode expression : creation.arguments.arguments.getNodes()) {
             compileExpression(visitor, context, expression);
         }
         creation.constructor.compileInvoke(visitor);
     }
 
     private void compileCollectionExpression(MethodVisitor visitor, CompilerContext context, BoundCollectionExpressionNode expression) {
-        visitor.visitLdcInsn(expression.items.size());
+        visitor.visitLdcInsn(expression.list.size());
 
         SArrayType arrayType = (SArrayType) expression.type;
         SType elementsType = arrayType.getElementsType();
@@ -1578,10 +1578,10 @@ public class Compiler {
             visitor.visitIntInsn(NEWARRAY, ((SPredefinedType) elementsType).getArrayTypeInst());
         }
 
-        for (int i = 0; i < expression.items.size(); i++) {
+        for (int i = 0; i < expression.list.size(); i++) {
             visitor.visitInsn(DUP);
             visitor.visitLdcInsn(i);
-            compileExpression(visitor, context, expression.items.get(i));
+            compileExpression(visitor, context, expression.list.getNodeAt(i));
             visitor.visitInsn(elementsType.getArrayStoreInst());
         }
     }
@@ -1751,7 +1751,7 @@ public class Compiler {
     }
 
     private void compileFunctionInvocationExpression(MethodVisitor visitor, CompilerContext context, BoundFunctionInvocationExpression expression) {
-        for (BoundExpressionNode argument : expression.arguments.arguments) {
+        for (BoundExpressionNode argument : expression.arguments.arguments.getNodes()) {
             compileExpression(visitor, context, argument);
         }
 
@@ -1770,7 +1770,7 @@ public class Compiler {
     private void compileVariableInvocation(MethodVisitor visitor, CompilerContext context, BoundObjectInvocationExpression expression) {
         compileExpression(visitor, context, expression.callee);
 
-        for (BoundExpressionNode argument : expression.arguments.arguments) {
+        for (BoundExpressionNode argument : expression.arguments.arguments.getNodes()) {
             compileExpression(visitor, context, argument);
         }
 
@@ -1827,7 +1827,7 @@ public class Compiler {
         BoundFunctionInvocationExpression invocation = new BoundFunctionInvocationExpression(
                 new BoundFunctionReferenceNode(node.name.value, node.name.symbolRef, node.name.getRange()),
                 type.getReturnType(),
-                new BoundArgumentsListNode(arguments));
+                new BoundArgumentsListNode(BoundSeparatedList.of(arguments)));
         BoundStatementNode statement = type.getReturnType() == SVoidType.instance ?
                 new BoundExpressionStatementNode(invocation) :
                 new BoundReturnStatementNode(invocation);

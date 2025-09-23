@@ -1,15 +1,17 @@
 package com.zergatul.scripting.parser.nodes;
 
-import com.zergatul.scripting.TextRange;
+import com.zergatul.scripting.lexer.Token;
 import com.zergatul.scripting.parser.ParserTreeVisitor;
 import com.zergatul.scripting.parser.PredefinedType;
 
 public class PredefinedTypeNode extends TypeNode {
 
+    public final Token token;
     public final PredefinedType type;
 
-    public PredefinedTypeNode(PredefinedType type, TextRange range) {
-        super(ParserNodeType.PREDEFINED_TYPE, range);
+    public PredefinedTypeNode(Token token, PredefinedType type) {
+        super(ParserNodeType.PREDEFINED_TYPE, token.getRange());
+        this.token = token;
         this.type = type;
     }
 
@@ -20,13 +22,4 @@ public class PredefinedTypeNode extends TypeNode {
 
     @Override
     public void acceptChildren(ParserTreeVisitor visitor) {}
-
-    @Override
-    public boolean equals(Object obj) {
-        if (obj instanceof PredefinedTypeNode other) {
-            return other.type == type;
-        } else {
-            return false;
-        }
-    }
 }

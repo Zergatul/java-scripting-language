@@ -34,6 +34,10 @@ public final class SeparatedList<T extends ParserNode> {
         return nodes;
     }
 
+    public List<Token> getCommas() {
+        return commas;
+    }
+
     public T getNodeAt(int i) {
         return nodes.get(i);
     }

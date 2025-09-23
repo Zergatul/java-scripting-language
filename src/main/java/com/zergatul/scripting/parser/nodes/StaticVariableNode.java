@@ -11,14 +11,16 @@ public class StaticVariableNode extends CompilationUnitMemberNode {
     public final NameExpressionNode name;
     public final Token equal;
     public final ExpressionNode expression;
+    public final Token semicolon;
 
-    public StaticVariableNode(Token keyword, TypeNode type, NameExpressionNode name, Token equal, ExpressionNode expression, TextRange range) {
-        super(ParserNodeType.STATIC_VARIABLE, range);
+    public StaticVariableNode(Token keyword, TypeNode type, NameExpressionNode name, Token equal, ExpressionNode expression, Token semicolon) {
+        super(ParserNodeType.STATIC_VARIABLE, TextRange.combine(keyword, semicolon));
         this.keyword = keyword;
         this.type = type;
         this.name = name;
         this.equal = equal;
         this.expression = expression;
+        this.semicolon = semicolon;
     }
 
     @Override

@@ -6,12 +6,12 @@ import com.zergatul.scripting.parser.ParserTreeVisitor;
 
 public class AwaitExpressionNode extends ExpressionNode {
 
-    public final Token awaitToken;
+    public final Token keyword;
     public final ExpressionNode expression;
 
-    public AwaitExpressionNode(Token awaitToken, ExpressionNode expression, TextRange range) {
+    public AwaitExpressionNode(Token keyword, ExpressionNode expression, TextRange range) {
         super(ParserNodeType.AWAIT_EXPRESSION, range);
-        this.awaitToken = awaitToken;
+        this.keyword = keyword;
         this.expression = expression;
     }
 

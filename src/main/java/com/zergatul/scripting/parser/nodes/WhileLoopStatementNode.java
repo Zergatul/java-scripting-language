@@ -12,8 +12,8 @@ public class WhileLoopStatementNode extends StatementNode {
     public final Token closeParen;
     public final StatementNode body;
 
-    public WhileLoopStatementNode(Token keyword, Token openParen, ExpressionNode condition, Token closeParen, StatementNode body, TextRange range) {
-        super(ParserNodeType.WHILE_LOOP_STATEMENT, range);
+    public WhileLoopStatementNode(Token keyword, Token openParen, ExpressionNode condition, Token closeParen, StatementNode body) {
+        super(ParserNodeType.WHILE_LOOP_STATEMENT, TextRange.combine(keyword, body));
         this.keyword = keyword;
         this.openParen = openParen;
         this.condition = condition;
@@ -30,19 +30,5 @@ public class WhileLoopStatementNode extends StatementNode {
     public void acceptChildren(ParserTreeVisitor visitor) {
         condition.accept(visitor);
         body.accept(visitor);
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (obj instanceof WhileLoopStatementNode other) {
-            return  other.keyword.equals(keyword) &&
-                    other.openParen.equals(openParen) &&
-                    other.condition.equals(condition) &&
-                    other.closeParen.equals(closeParen) &&
-                    other.body.equals(body) &&
-                    other.getRange().equals(getRange());
-        } else {
-            return false;
-        }
     }
 }

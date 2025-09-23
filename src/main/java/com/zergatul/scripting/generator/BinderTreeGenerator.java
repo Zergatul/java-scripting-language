@@ -296,7 +296,7 @@ public class BinderTreeGenerator {
         add(new BoundAugmentedAssignmentStatementNode(
                 node.left,
                 node.assignmentOperator,
-                node.operator,
+                node.operation,
                 expression));
     }
 
@@ -346,11 +346,11 @@ public class BinderTreeGenerator {
 
     private BoundExpressionNode rewriteAsync(BoundMethodInvocationExpressionNode node) {
         assert !isAsync(node.objectReference);
-        assert node.arguments.arguments.stream().anyMatch(this::isAsync);
+        assert node.arguments.arguments.getNodes().stream().anyMatch(this::isAsync);
 
         LiftedVariable[] variables = new LiftedVariable[node.arguments.arguments.size()];
         for (int i = 0; i < variables.length; i++) {
-            BoundExpressionNode argument = node.arguments.arguments.get(i);
+            BoundExpressionNode argument = node.arguments.arguments.getNodeAt(i);
             variables[i] = new LiftedVariable(new LocalVariable(null, argument.type, null));
             storeExpressionValue(variables[i], argument);
         }
@@ -359,7 +359,7 @@ public class BinderTreeGenerator {
                 node.objectReference,
                 node.dot,
                 node.method,
-                new BoundArgumentsListNode(Arrays.stream(variables).map(v -> (BoundExpressionNode) new BoundNameExpressionNode(v)).toList()),
+                new BoundArgumentsListNode(BoundSeparatedList.of(Arrays.stream(variables).map(v -> (BoundExpressionNode) new BoundNameExpressionNode(v)).toList())),
                 node.refVariables,
                 node.getRange());
     }

@@ -1,12 +1,15 @@
 package com.zergatul.scripting.parser.nodes;
 
-import com.zergatul.scripting.TextRange;
+import com.zergatul.scripting.lexer.Token;
 import com.zergatul.scripting.parser.ParserTreeVisitor;
 
 public class LetTypeNode extends TypeNode {
 
-    public LetTypeNode(TextRange range) {
-        super(ParserNodeType.LET_TYPE, range);
+    public final Token token;
+
+    public LetTypeNode(Token token) {
+        super(ParserNodeType.LET_TYPE, token.getRange());
+        this.token = token;
     }
 
     @Override
@@ -16,13 +19,4 @@ public class LetTypeNode extends TypeNode {
 
     @Override
     public void acceptChildren(ParserTreeVisitor visitor) {}
-
-    @Override
-    public boolean equals(Object obj) {
-        if (obj instanceof LetTypeNode other) {
-            return other.getRange().equals(getRange());
-        } else {
-            return false;
-        }
-    }
 }

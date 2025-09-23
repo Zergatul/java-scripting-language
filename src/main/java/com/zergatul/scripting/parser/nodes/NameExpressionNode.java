@@ -1,20 +1,17 @@
 package com.zergatul.scripting.parser.nodes;
 
-import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.lexer.ValueToken;
 import com.zergatul.scripting.parser.ParserTreeVisitor;
 
 public class NameExpressionNode extends ExpressionNode {
 
+    public final ValueToken token;
     public final String value;
 
-    public NameExpressionNode(ValueToken identifier) {
-        this(identifier.value, identifier.getRange());
-    }
-
-    public NameExpressionNode(String value, TextRange range) {
-        super(ParserNodeType.NAME_EXPRESSION, range);
-        this.value = value;
+    public NameExpressionNode(ValueToken token) {
+        super(ParserNodeType.NAME_EXPRESSION, token.getRange());
+        this.token = token;
+        this.value = token.value;
     }
 
     @Override
@@ -24,13 +21,4 @@ public class NameExpressionNode extends ExpressionNode {
 
     @Override
     public void acceptChildren(ParserTreeVisitor visitor) {}
-
-    @Override
-    public boolean equals(Object obj) {
-        if (obj instanceof NameExpressionNode other) {
-            return other.value.equals(value) && other.getRange().equals(getRange());
-        } else {
-            return false;
-        }
-    }
 }

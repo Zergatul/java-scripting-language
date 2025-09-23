@@ -8,8 +8,8 @@ public class UnaryExpressionNode extends ExpressionNode {
     public final UnaryOperatorNode operator;
     public final ExpressionNode operand;
 
-    public UnaryExpressionNode(UnaryOperatorNode operator, ExpressionNode operand, TextRange range) {
-        super(ParserNodeType.UNARY_EXPRESSION, range);
+    public UnaryExpressionNode(UnaryOperatorNode operator, ExpressionNode operand) {
+        super(ParserNodeType.UNARY_EXPRESSION, TextRange.combine(operator, operand));
         this.operator = operator;
         this.operand = operand;
     }
@@ -23,14 +23,5 @@ public class UnaryExpressionNode extends ExpressionNode {
     public void acceptChildren(ParserTreeVisitor visitor) {
         operator.accept(visitor);
         operand.accept(visitor);
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (obj instanceof UnaryExpressionNode other) {
-            return other.operator.equals(operator) && other.getRange().equals(getRange());
-        } else {
-            return false;
-        }
     }
 }

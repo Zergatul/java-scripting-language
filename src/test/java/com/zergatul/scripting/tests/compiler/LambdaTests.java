@@ -708,7 +708,7 @@ public class LambdaTests extends ComparatorTest {
 
         BoundExpressionStatementNode statement = (BoundExpressionStatementNode) binderOutput.unit().statements.statements.get(0);
         BoundMethodInvocationExpressionNode invocation = (BoundMethodInvocationExpressionNode) statement.expression;
-        List<BoundExpressionNode> arguments = invocation.arguments.arguments;
+        List<BoundExpressionNode> arguments = invocation.arguments.arguments.getNodes();
         Assertions.assertEquals(arguments.size(), 2);
 
         Assertions.assertEquals(arguments.get(0),
