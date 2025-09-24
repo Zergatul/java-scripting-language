@@ -83,22 +83,11 @@ public class BinderTreeGenerator {
     }
 
     private BoundForLoopStatementNode rewrite(BoundForLoopStatementNode node) {
-        return new BoundForLoopStatementNode(
-                node.lParen,
-                node.rParen,
-                node.init,
-                node.condition,
-                node.update,
-                rewriteStatementSync(node.body));
+        return node.withBody(rewriteStatementSync(node.body));
     }
 
     private BoundForEachLoopStatementNode rewrite(BoundForEachLoopStatementNode node) {
-        return new BoundForEachLoopStatementNode(
-                node.openParen, node.typeNode, node.name, node.iterable, node.closeParen,
-                rewriteStatementSync(node.body),
-                node.index,
-                node.length,
-                node.getRange());
+        return node.withBody(rewriteStatementSync(node.body));
     }
 
     private BoundWhileLoopStatementNode rewrite(BoundWhileLoopStatementNode node) {

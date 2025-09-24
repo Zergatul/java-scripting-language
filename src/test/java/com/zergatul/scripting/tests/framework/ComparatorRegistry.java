@@ -235,13 +235,13 @@ public class ComparatorRegistry {
                         .extract("members", node -> node.members))
                 .register(BoundCompilationUnitNode.class, builder -> builder
                         .extract("members", node -> node.members)
-                        .extract("statements", node -> node.statements))
+                        .extract("statements", node -> node.statements)
+                        .extract("end", node -> node.end))
                 .register(BoundExpressionNode.class, builder -> builder
                         .extract("type", node -> node.type))
                 .register(BoundExpressionStatementNode.class, builder -> builder
                         .extract("expression", node -> node.expression))
                 .register(BoundFunctionNode.class, builder -> builder
-                        .extract("isAsync", node -> node.isAsync)
                         .extract("modifiers", node -> node.modifiers)
                         .extract("returnType", node -> node.returnType)
                         .extract("name", node -> node.name)

@@ -3,29 +3,47 @@ package com.zergatul.scripting.binding.nodes;
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
 import com.zergatul.scripting.lexer.Token;
+import com.zergatul.scripting.parser.nodes.ForLoopStatementNode;
 
 import java.util.List;
 
 public class BoundForLoopStatementNode extends BoundStatementNode {
 
-    public final Token lParen;
-    public final Token rParen;
+    public final Token keyword;
+    public final Token openParen;
     public final BoundStatementNode init;
     public final BoundExpressionNode condition;
     public final BoundStatementNode update;
+    public final Token closeParen;
     public final BoundStatementNode body;
 
-    public BoundForLoopStatementNode(Token lParen, Token rParen, BoundStatementNode init, BoundExpressionNode condition, BoundStatementNode update, BoundStatementNode body) {
-        this(lParen, rParen, init, condition, update, body, null);
+    public BoundForLoopStatementNode(
+            ForLoopStatementNode node,
+            BoundStatementNode init,
+            BoundExpressionNode condition,
+            BoundStatementNode update,
+            BoundStatementNode body
+    ) {
+        this(node.keyword, node.openParen, init, condition, update, node.closeParen, body, node.getRange());
     }
 
-    public BoundForLoopStatementNode(Token lParen, Token rParen, BoundStatementNode init, BoundExpressionNode condition, BoundStatementNode update, BoundStatementNode body, TextRange range) {
+    public BoundForLoopStatementNode(
+            Token keyword,
+            Token openParen,
+            BoundStatementNode init,
+            BoundExpressionNode condition,
+            BoundStatementNode update,
+            Token closeParen,
+            BoundStatementNode body,
+            TextRange range
+    ) {
         super(BoundNodeType.FOR_LOOP_STATEMENT, range);
-        this.lParen = lParen;
-        this.rParen = rParen;
+        this.keyword = keyword;
+        this.openParen = openParen;
         this.init = init;
         this.condition = condition;
         this.update = update;
+        this.closeParen = closeParen;
         this.body = body;
     }
 
@@ -53,5 +71,9 @@ public class BoundForLoopStatementNode extends BoundStatementNode {
         } else {
             return List.of(init, update, body);
         }
+    }
+
+    public BoundForLoopStatementNode withBody(BoundStatementNode body) {
+        return new BoundForLoopStatementNode(keyword, openParen, init, condition, update, closeParen, body, getRange());
     }
 }

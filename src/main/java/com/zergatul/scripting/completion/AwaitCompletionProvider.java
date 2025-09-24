@@ -39,7 +39,7 @@ public class AwaitCompletionProvider<T> extends AbstractCompletionProvider<T> {
             }
             if (current.entry.node.getNodeType() == BoundNodeType.FUNCTION) {
                 BoundFunctionNode functionNode = (BoundFunctionNode) current.entry.node;
-                if (functionNode.isAsync) {
+                if (functionNode.isAsync()) {
                     return List.of(factory.getKeywordSuggestion(TokenType.AWAIT));
                 } else {
                     return List.of();

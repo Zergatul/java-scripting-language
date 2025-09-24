@@ -2,14 +2,23 @@ package com.zergatul.scripting.binding.nodes;
 
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
+import com.zergatul.scripting.lexer.Token;
+import com.zergatul.scripting.parser.nodes.LetTypeNode;
 import com.zergatul.scripting.type.SType;
 
 import java.util.List;
 
 public class BoundLetTypeNode extends BoundTypeNode {
 
-    public BoundLetTypeNode(SType type, TextRange range) {
+    public final Token token;
+
+    public BoundLetTypeNode(LetTypeNode node, SType type) {
+        this(node.token, type, node.getRange());
+    }
+
+    public BoundLetTypeNode(Token token, SType type, TextRange range) {
         super(BoundNodeType.LET_TYPE, type, range);
+        this.token = token;
     }
 
     @Override

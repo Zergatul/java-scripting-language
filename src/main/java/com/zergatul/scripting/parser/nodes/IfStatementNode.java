@@ -8,8 +8,8 @@ public class IfStatementNode extends StatementNode {
 
     public final Token ifToken;
     public final Token openParen;
-    public final Token closeParen;
     public final ExpressionNode condition;
+    public final Token closeParen;
     public final StatementNode thenStatement;
     public final Token elseToken;
     public final StatementNode elseStatement;
@@ -27,8 +27,8 @@ public class IfStatementNode extends StatementNode {
         super(ParserNodeType.IF_STATEMENT, range);
         this.ifToken = ifToken;
         this.openParen = openParen;
-        this.closeParen = closeParen;
         this.condition = condition;
+        this.closeParen = closeParen;
         this.thenStatement = thenStatement;
         this.elseToken = elseToken;
         this.elseStatement = elseStatement;

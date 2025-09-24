@@ -34,13 +34,4 @@ public class BoundInvalidExpressionNode extends BoundExpressionNode {
     public List<BoundNode> getChildren() {
         return List.of(children.toArray(BoundNode[]::new));
     }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (obj instanceof BoundInvalidExpressionNode other) {
-            return other.getRange().equals(getRange());
-        } else {
-            return false;
-        }
-    }
 }

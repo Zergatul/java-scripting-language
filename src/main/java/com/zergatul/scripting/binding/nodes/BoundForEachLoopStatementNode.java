@@ -10,9 +10,11 @@ import java.util.List;
 
 public class BoundForEachLoopStatementNode extends BoundStatementNode {
 
+    public final Token keyword;
     public final Token openParen;
     public final BoundTypeNode typeNode;
     public final BoundNameExpressionNode name;
+    public final Token in;
     public final BoundExpressionNode iterable;
     public final Token closeParen;
     public final BoundStatementNode body;
@@ -20,21 +22,23 @@ public class BoundForEachLoopStatementNode extends BoundStatementNode {
     public final SymbolRef length;
 
     public BoundForEachLoopStatementNode(
+            ForEachLoopStatementNode node,
             BoundTypeNode typeNode,
             BoundNameExpressionNode name,
             BoundExpressionNode iterable,
             BoundStatementNode body,
             SymbolRef index,
-            SymbolRef length,
-            ForEachLoopStatementNode node
+            SymbolRef length
     ) {
-        this(node.openParen, typeNode, name, iterable, node.closeParen, body, index, length, node.getRange());
+        this(node.keyword, node.openParen, typeNode, name, node.in, iterable, node.closeParen, body, index, length, node.getRange());
     }
 
     public BoundForEachLoopStatementNode(
+            Token keyword,
             Token openParen,
             BoundTypeNode typeNode,
             BoundNameExpressionNode name,
+            Token in,
             BoundExpressionNode iterable,
             Token closeParen,
             BoundStatementNode body,
@@ -43,9 +47,11 @@ public class BoundForEachLoopStatementNode extends BoundStatementNode {
             TextRange range
     ) {
         super(BoundNodeType.FOREACH_LOOP_STATEMENT, range);
+        this.keyword = keyword;
         this.openParen = openParen;
         this.typeNode = typeNode;
         this.name = name;
+        this.in = in;
         this.iterable = iterable;
         this.closeParen = closeParen;
         this.body = body;
@@ -69,5 +75,9 @@ public class BoundForEachLoopStatementNode extends BoundStatementNode {
     @Override
     public List<BoundNode> getChildren() {
         return List.of(typeNode, name, iterable, body);
+    }
+
+    public BoundForEachLoopStatementNode withBody(BoundStatementNode body) {
+        return new BoundForEachLoopStatementNode(keyword, openParen, typeNode, name, in, iterable, closeParen, body, index, length, getRange());
     }
 }

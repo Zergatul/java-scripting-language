@@ -2,20 +2,28 @@ package com.zergatul.scripting.binding.nodes;
 
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
+import com.zergatul.scripting.lexer.ValueToken;
+import com.zergatul.scripting.parser.nodes.IntegerLiteralExpressionNode;
 import com.zergatul.scripting.type.SInt;
 
 import java.util.List;
 
 public class BoundIntegerLiteralExpressionNode extends BoundExpressionNode {
 
+    public final ValueToken token;
     public final int value;
 
     public BoundIntegerLiteralExpressionNode(int value) {
-        this(value, null);
+        this(null, value, null);
     }
 
-    public BoundIntegerLiteralExpressionNode(int value, TextRange range) {
+    public BoundIntegerLiteralExpressionNode(IntegerLiteralExpressionNode node, int value) {
+        this(node.token, value, node.getRange());
+    }
+
+    public BoundIntegerLiteralExpressionNode(ValueToken token, int value, TextRange range) {
         super(BoundNodeType.INTEGER_LITERAL, SInt.instance, range);
+        this.token = token;
         this.value = value;
     }
 
@@ -30,14 +38,5 @@ public class BoundIntegerLiteralExpressionNode extends BoundExpressionNode {
     @Override
     public List<BoundNode> getChildren() {
         return List.of();
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (obj instanceof BoundIntegerLiteralExpressionNode other) {
-            return other.value == value && other.getRange().equals(getRange());
-        } else {
-            return false;
-        }
     }
 }

@@ -343,14 +343,14 @@ public class Compiler {
                     null);
             visitor.visitCode();
 
-            context = context.createStaticFunction(type.getReturnType(), function.isAsync);
+            context = context.createStaticFunction(type.getReturnType(), function.isAsync());
             processContextStart(visitor, context);
 
             for (BoundParameterNode parameter : function.parameters.parameters) {
                 context.setStackIndex((LocalVariable) parameter.getName().getSymbol());
             }
 
-            if (function.isAsync) {
+            if (function.isAsync()) {
                 compileAsyncBoundStatementList(visitor, context, new BoundStatementsListNode(List.of(function.body)));
             } else {
                 if (!function.lifted.isEmpty()) {
@@ -456,7 +456,7 @@ public class Compiler {
                     unit.statements.statements,
                     unit.statements.lifted,
                     unit.statements.getRange());
-            unit = new BoundCompilationUnitNode(unit.members, statements, unit.getRange());
+            unit = new BoundCompilationUnitNode(unit.members, statements, unit.end, unit.getRange());
         }
 
         context.setClassName(className);
@@ -1689,7 +1689,7 @@ public class Compiler {
             SType raw = rawParameters[i];
             SType actual = actualParameters[i];
             if (!raw.equals(actual)) {
-                BoundParameterNode parameter = expression.parameters.get(i);
+                BoundParameterNode parameter = expression.parameters.getNodeAt(i);
                 LocalVariable unboxed = parameter.getName().symbolRef.asLocalVariable();
                 lambdaContext.addLocalVariable(parameter.getName().symbolRef);
                 lambdaContext.setStackIndex(unboxed);
@@ -1704,7 +1704,7 @@ public class Compiler {
                 }
                 unboxed.compileStore(context, invokeVisitor);
             } else {
-                Variable variable = expression.parameters.get(i).getName().symbolRef.asVariable();
+                Variable variable = expression.parameters.getNodeAt(i).getName().symbolRef.asVariable();
                 LocalVariable localVariable;
                 if (variable instanceof LocalVariable) {
                     localVariable = (LocalVariable) variable;
@@ -1713,7 +1713,7 @@ public class Compiler {
                 } else {
                     throw new InternalException();
                 }
-                lambdaContext.addLocalVariable(expression.parameters.get(i).getName().symbolRef);
+                lambdaContext.addLocalVariable(expression.parameters.getNodeAt(i).getName().symbolRef);
                 localVariable.setStackIndex(paramStackIndexes[i]);
             }
         }
@@ -1825,16 +1825,15 @@ public class Compiler {
         }
 
         BoundFunctionInvocationExpression invocation = new BoundFunctionInvocationExpression(
-                new BoundFunctionReferenceNode(node.name.value, node.name.symbolRef, node.name.getRange()),
+                new BoundFunctionReferenceNode(node.name.token, node.name.value, node.name.symbolRef, node.name.getRange()),
                 type.getReturnType(),
                 new BoundArgumentsListNode(BoundSeparatedList.of(arguments)));
         BoundStatementNode statement = type.getReturnType() == SVoidType.instance ?
                 new BoundExpressionStatementNode(invocation) :
                 new BoundReturnStatementNode(invocation);
         BoundLambdaExpressionNode lambda = new BoundLambdaExpressionNode(
-                node.type,
-                parameters,
-                statement);
+                BoundSeparatedList.of(parameters), statement, node.type
+        );
         compileLambdaExpression(visitor, context, lambda);
     }
 

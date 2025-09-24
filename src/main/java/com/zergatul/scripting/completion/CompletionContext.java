@@ -213,7 +213,7 @@ public class CompletionContext {
             case STATEMENTS_LIST, BLOCK_STATEMENT -> true;
             case FOR_LOOP_STATEMENT -> {
                 BoundForLoopStatementNode loop = (BoundForLoopStatementNode) entry.node;
-                yield TextRange.isBetween(line, column, loop.rParen, loop.body);
+                yield TextRange.isBetween(line, column, loop.closeParen, loop.body);
             }
             case FOREACH_LOOP_STATEMENT -> {
                 BoundForEachLoopStatementNode loop = (BoundForEachLoopStatementNode) entry.node;
@@ -449,11 +449,11 @@ public class CompletionContext {
         }
         if (entry.node.getNodeType() == BoundNodeType.FOR_LOOP_STATEMENT) {
             BoundForLoopStatementNode statement = (BoundForLoopStatementNode) entry.node;
-            return  statement.lParen.getRange().isEmpty() &&
+            return  statement.openParen.getRange().isEmpty() &&
                     statement.init.getNodeType() == BoundNodeType.INVALID_STATEMENT &&
                     statement.condition.getRange().isEmpty() &&
                     statement.update.getNodeType() == BoundNodeType.INVALID_STATEMENT &&
-                    statement.rParen.getRange().isEmpty() &&
+                    statement.closeParen.getRange().isEmpty() &&
                     statement.body.getNodeType() == BoundNodeType.INVALID_STATEMENT;
         }
         if (entry.node.getNodeType() == BoundNodeType.FOREACH_LOOP_STATEMENT) {

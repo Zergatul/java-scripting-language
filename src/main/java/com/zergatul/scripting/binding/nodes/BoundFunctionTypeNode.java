@@ -3,23 +3,53 @@ package com.zergatul.scripting.binding.nodes;
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
 import com.zergatul.scripting.lexer.Token;
+import com.zergatul.scripting.lexer.ValueToken;
+import com.zergatul.scripting.parser.nodes.FunctionTypeNode;
 import com.zergatul.scripting.type.SGenericFunction;
 
 import java.util.List;
 
 public class BoundFunctionTypeNode extends BoundTypeNode {
 
-    public final Token open;
+    public final ValueToken fn;
+    public final Token openBracket;
+    public final Token openParen;
+    public final BoundSeparatedList<BoundTypeNode> parameterTypeNodes;
+    public final Token closeParen;
+    public final Token arrow;
     public final BoundTypeNode returnTypeNode;
-    public final List<BoundTypeNode> parameterTypeNodes;
-    public final Token close;
+    public final Token closeBracket;
 
-    public BoundFunctionTypeNode(Token open, BoundTypeNode returnTypeNode, List<BoundTypeNode> parameterTypeNodes, Token close, SGenericFunction functionType, TextRange range) {
+    public BoundFunctionTypeNode(
+            FunctionTypeNode node,
+            BoundSeparatedList<BoundTypeNode> parameterTypeNodes,
+            BoundTypeNode returnTypeNode,
+            SGenericFunction functionType
+    ) {
+        this(node.fn, node.openBracket, node.openParen, parameterTypeNodes, node.closeParen, node.arrow, returnTypeNode, node.closeBracket, functionType, node.getRange());
+    }
+
+    public BoundFunctionTypeNode(
+            ValueToken fn,
+            Token openBracket,
+            Token openParen,
+            BoundSeparatedList<BoundTypeNode> parameterTypeNodes,
+            Token closeParen,
+            Token arrow,
+            BoundTypeNode returnTypeNode,
+            Token closeBracket,
+            SGenericFunction functionType,
+            TextRange range
+    ) {
         super(BoundNodeType.FUNCTION_TYPE, functionType, range);
-        this.open = open;
-        this.returnTypeNode = returnTypeNode;
+        this.fn = fn;
+        this.openBracket = openBracket;
+        this.openParen = openParen;
         this.parameterTypeNodes = parameterTypeNodes;
-        this.close = close;
+        this.closeParen = closeParen;
+        this.arrow = arrow;
+        this.returnTypeNode = returnTypeNode;
+        this.closeBracket = closeBracket;
     }
 
     @Override

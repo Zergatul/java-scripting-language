@@ -2,6 +2,7 @@ package com.zergatul.scripting.binding.nodes;
 
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
+import com.zergatul.scripting.lexer.Token;
 import com.zergatul.scripting.symbols.Function;
 import com.zergatul.scripting.symbols.SymbolRef;
 import com.zergatul.scripting.type.SStaticFunction;
@@ -10,11 +11,13 @@ import java.util.List;
 
 public class BoundFunctionReferenceNode extends BoundExpressionNode {
 
+    public final Token token;
     public final String name;
     public final SymbolRef symbolRef;
 
-    public BoundFunctionReferenceNode(String name, SymbolRef symbolRef, TextRange range) {
+    public BoundFunctionReferenceNode(Token token, String name, SymbolRef symbolRef, TextRange range) {
         super(BoundNodeType.FUNCTION_REFERENCE, symbolRef.asFunction().getFunctionType(), range);
+        this.token = token;
         this.name = name;
         this.symbolRef = symbolRef;
     }

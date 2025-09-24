@@ -36,13 +36,4 @@ public class BoundCompilationUnitMembersListNode extends BoundNode {
     public List<BoundNode> getChildren() {
         return List.copyOf(members);
     }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (obj instanceof BoundCompilationUnitMembersListNode other) {
-            return Objects.equals(other.members, members);
-        } else {
-            return false;
-        }
-    }
 }

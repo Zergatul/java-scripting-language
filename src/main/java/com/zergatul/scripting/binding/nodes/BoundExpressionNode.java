@@ -19,8 +19,4 @@ public abstract class BoundExpressionNode extends BoundNode {
     public boolean canSet() {
         return false;
     }
-
-    protected boolean equals(BoundExpressionNode node1, BoundExpressionNode node2) {
-        return node1.type.equals(node2.type) && node1.getRange().equals(node2.getRange());
-    }
 }
