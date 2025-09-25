@@ -2,26 +2,25 @@ package com.zergatul.scripting.binding.nodes;
 
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
-import com.zergatul.scripting.lexer.Token;
 import com.zergatul.scripting.parser.nodes.ClassFieldNode;
 
 import java.util.List;
 
 public class BoundClassFieldNode extends BoundClassMemberNode {
 
+    public final ClassFieldNode syntaxNode;
     public final BoundTypeNode typeNode;
     public final BoundNameExpressionNode name;
-    public final Token semicolon;
 
     public BoundClassFieldNode(ClassFieldNode node, BoundTypeNode typeNode, BoundNameExpressionNode name) {
-        this(typeNode, name, node.semicolon, node.getRange());
+        this(node, typeNode, name, node.getRange());
     }
 
-    public BoundClassFieldNode(BoundTypeNode typeNode, BoundNameExpressionNode name, Token semicolon, TextRange range) {
+    public BoundClassFieldNode(ClassFieldNode node, BoundTypeNode typeNode, BoundNameExpressionNode name, TextRange range) {
         super(BoundNodeType.CLASS_FIELD, range);
+        this.syntaxNode = node;
         this.typeNode = typeNode;
         this.name = name;
-        this.semicolon = semicolon;
     }
 
     @Override

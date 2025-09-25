@@ -25,19 +25,19 @@ public class LoopStatementsCompletionProvider<T> extends AbstractCompletionProvi
             switch (context.entry.node.getNodeType()) {
                 case FOR_LOOP_STATEMENT -> {
                     BoundForLoopStatementNode loop = (BoundForLoopStatementNode) context.entry.node;
-                    if (!loop.closeParen.isMissing() && loop.closeParen.getRange().isBefore(context.line, context.column)) {
+                    if (!loop.syntaxNode.closeParen.isMissing() && loop.syntaxNode.closeParen.getRange().isBefore(context.line, context.column)) {
                         return getKeywords();
                     }
                 }
                 case FOREACH_LOOP_STATEMENT -> {
                     BoundForEachLoopStatementNode loop = (BoundForEachLoopStatementNode) context.entry.node;
-                    if (!loop.closeParen.isMissing() && loop.closeParen.getRange().isBefore(context.line, context.column)) {
+                    if (!loop.syntaxNode.closeParen.isMissing() && loop.syntaxNode.closeParen.getRange().isBefore(context.line, context.column)) {
                         return getKeywords();
                     }
                 }
                 case WHILE_LOOP_STATEMENT -> {
                     BoundWhileLoopStatementNode loop = (BoundWhileLoopStatementNode) context.entry.node;
-                    if (!loop.closeParen.isMissing() && loop.closeParen.getRange().isBefore(context.line, context.column)) {
+                    if (!loop.syntaxNode.closeParen.isMissing() && loop.syntaxNode.closeParen.getRange().isBefore(context.line, context.column)) {
                         return getKeywords();
                     }
                 }

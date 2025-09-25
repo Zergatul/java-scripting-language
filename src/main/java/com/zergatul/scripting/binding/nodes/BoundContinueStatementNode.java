@@ -2,24 +2,21 @@ package com.zergatul.scripting.binding.nodes;
 
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
-import com.zergatul.scripting.lexer.Token;
 import com.zergatul.scripting.parser.nodes.ContinueStatementNode;
 
 import java.util.List;
 
 public class BoundContinueStatementNode extends BoundStatementNode {
 
-    public final Token keyword;
-    public final Token semicolon;
+    public final ContinueStatementNode syntaxNode;
 
     public BoundContinueStatementNode(ContinueStatementNode node) {
-        this(node.keyword, node.semicolon, node.getRange());
+        this(node, node.getRange());
     }
 
-    public BoundContinueStatementNode(Token keyword, Token semicolon, TextRange range) {
+    public BoundContinueStatementNode(ContinueStatementNode node, TextRange range) {
         super(BoundNodeType.CONTINUE_STATEMENT, range);
-        this.keyword = keyword;
-        this.semicolon = semicolon;
+        this.syntaxNode = node;
     }
 
     @Override

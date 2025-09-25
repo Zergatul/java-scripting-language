@@ -2,31 +2,27 @@ package com.zergatul.scripting.binding.nodes;
 
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
-import com.zergatul.scripting.lexer.Token;
 import com.zergatul.scripting.parser.nodes.ArgumentsListNode;
 
 import java.util.List;
-import java.util.Objects;
 
 public class BoundArgumentsListNode extends BoundNode {
 
-    public final Token openParen;
-    public final BoundSeparatedList<BoundExpressionNode> arguments;
-    public final Token closeParen;
+    public final ArgumentsListNode syntaxNode;
+    public final List<BoundExpressionNode> arguments;
 
-    public BoundArgumentsListNode(BoundSeparatedList<BoundExpressionNode> arguments) {
-        this(null, arguments, null, null);
+    public BoundArgumentsListNode(List<BoundExpressionNode> arguments) {
+        this(null, arguments, null);
     }
 
-    public BoundArgumentsListNode(ArgumentsListNode node, BoundSeparatedList<BoundExpressionNode> arguments) {
-        this(node.openParen, arguments, node.closeParen, node.getRange());
+    public BoundArgumentsListNode(ArgumentsListNode node, List<BoundExpressionNode> arguments) {
+        this(node, arguments, node.getRange());
     }
 
-    public BoundArgumentsListNode(Token openParen, BoundSeparatedList<BoundExpressionNode> arguments, Token closeParen, TextRange range) {
+    public BoundArgumentsListNode(ArgumentsListNode node, List<BoundExpressionNode> arguments, TextRange range) {
         super(BoundNodeType.ARGUMENTS_LIST, range);
-        this.openParen = openParen;
+        this.syntaxNode = node;
         this.arguments = arguments;
-        this.closeParen = closeParen;
     }
 
     @Override
@@ -36,13 +32,13 @@ public class BoundArgumentsListNode extends BoundNode {
 
     @Override
     public void acceptChildren(BinderTreeVisitor visitor) {
-        for (BoundExpressionNode argument : arguments.getNodes()) {
+        for (BoundExpressionNode argument : arguments) {
             argument.accept(visitor);
         }
     }
 
     @Override
     public List<BoundNode> getChildren() {
-        return List.copyOf(arguments.getNodes());
+        return List.copyOf(arguments);
     }
 }

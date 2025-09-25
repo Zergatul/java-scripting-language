@@ -2,7 +2,6 @@ package com.zergatul.scripting.binding.nodes;
 
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
-import com.zergatul.scripting.lexer.Token;
 import com.zergatul.scripting.parser.nodes.CollectionExpressionNode;
 import com.zergatul.scripting.type.SType;
 
@@ -10,23 +9,21 @@ import java.util.List;
 
 public class BoundCollectionExpressionNode extends BoundExpressionNode {
 
-    public final Token openBracket;
-    public final BoundSeparatedList<BoundExpressionNode> list;
-    public final Token closeBracket;
+    public final CollectionExpressionNode syntaxNode;
+    public final List<BoundExpressionNode> list;
 
     public BoundCollectionExpressionNode(BoundEmptyCollectionExpressionNode node, SType type) {
-        this(type, node.openBracket, BoundSeparatedList.of(), node.closeBracket, node.getRange());
+        this(node.syntaxNode, type, List.of(), node.getRange());
     }
 
-    public BoundCollectionExpressionNode(CollectionExpressionNode node, SType type, BoundSeparatedList<BoundExpressionNode> list) {
-        this(type, node.openBracket, list, node.closeBracket, node.getRange());
+    public BoundCollectionExpressionNode(CollectionExpressionNode node, SType type, List<BoundExpressionNode> list) {
+        this(node, type, list, node.getRange());
     }
 
-    public BoundCollectionExpressionNode(SType type, Token openBracket, BoundSeparatedList<BoundExpressionNode> list, Token closeBracket, TextRange range) {
+    public BoundCollectionExpressionNode(CollectionExpressionNode node, SType type, List<BoundExpressionNode> list, TextRange range) {
         super(BoundNodeType.COLLECTION_EXPRESSION, type, range);
-        this.openBracket = openBracket;
+        this.syntaxNode = node;
         this.list = list;
-        this.closeBracket = closeBracket;
     }
 
     @Override
@@ -36,13 +33,13 @@ public class BoundCollectionExpressionNode extends BoundExpressionNode {
 
     @Override
     public void acceptChildren(BinderTreeVisitor visitor) {
-        for (BoundExpressionNode item : list.getNodes()) {
+        for (BoundExpressionNode item : list) {
             item.accept(visitor);
         }
     }
 
     @Override
     public List<BoundNode> getChildren() {
-        return List.copyOf(list.getNodes());
+        return List.copyOf(list);
     }
 }

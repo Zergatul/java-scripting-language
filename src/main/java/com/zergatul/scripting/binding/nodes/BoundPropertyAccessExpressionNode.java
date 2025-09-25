@@ -2,25 +2,29 @@ package com.zergatul.scripting.binding.nodes;
 
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
-import com.zergatul.scripting.lexer.Token;
+import com.zergatul.scripting.parser.nodes.MemberAccessExpressionNode;
 import com.zergatul.scripting.type.PropertyReference;
 
 import java.util.List;
 
 public class BoundPropertyAccessExpressionNode extends BoundExpressionNode {
 
+    public final MemberAccessExpressionNode syntaxNode;
     public final BoundExpressionNode callee;
-    public final Token dot;
     public final BoundPropertyNode property;
 
     public BoundPropertyAccessExpressionNode(BoundExpressionNode callee, PropertyReference property) {
-        this(callee, null, new BoundPropertyNode(null, property), null);
+        this(null, callee, new BoundPropertyNode(property), null);
     }
 
-    public BoundPropertyAccessExpressionNode(BoundExpressionNode callee, Token dot, BoundPropertyNode property, TextRange range) {
+    public BoundPropertyAccessExpressionNode(MemberAccessExpressionNode node, BoundExpressionNode callee, BoundPropertyNode property) {
+        this(node, callee, property, node.getRange());
+    }
+
+    public BoundPropertyAccessExpressionNode(MemberAccessExpressionNode node, BoundExpressionNode callee, BoundPropertyNode property, TextRange range) {
         super(BoundNodeType.PROPERTY_ACCESS_EXPRESSION, property.property.getType(), range);
+        this.syntaxNode = node;
         this.callee = callee;
-        this.dot = dot;
         this.property = property;
     }
 

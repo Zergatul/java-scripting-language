@@ -224,25 +224,23 @@ public class ComparatorRegistry {
                         .extract("body", node -> node.body))
                 /* Binder Nodes */
                 .register(BoundArgumentsListNode.class, builder -> builder
-                        .extract("openParen", node -> node.openParen)
-                        .extract("arguments", node -> node.arguments)
-                        .extract("closeParen", node -> node.closeParen))
+                        .extract("syntaxNode", node -> node.syntaxNode)
+                        .extract("arguments", node -> node.arguments))
                 .register(BoundBlockStatementNode.class, builder -> builder
-                        .extract("openBrace", node -> node.openBrace)
-                        .extract("statements", node -> node.statements)
-                        .extract("closeBrace", node -> node.closeBrace))
+                        .extract("syntaxNode", node -> node.syntaxNode)
+                        .extract("statements", node -> node.statements))
                 .register(BoundCompilationUnitMembersListNode.class, builder -> builder
                         .extract("members", node -> node.members))
                 .register(BoundCompilationUnitNode.class, builder -> builder
+                        .extract("", node -> node.syntaxNode)
                         .extract("members", node -> node.members)
-                        .extract("statements", node -> node.statements)
-                        .extract("end", node -> node.end))
+                        .extract("statements", node -> node.statements))
                 .register(BoundExpressionNode.class, builder -> builder
                         .extract("type", node -> node.type))
                 .register(BoundExpressionStatementNode.class, builder -> builder
                         .extract("expression", node -> node.expression))
                 .register(BoundFunctionNode.class, builder -> builder
-                        .extract("modifiers", node -> node.modifiers)
+                        .extract("syntaxNode", node -> node.syntaxNode)
                         .extract("returnType", node -> node.returnType)
                         .extract("name", node -> node.name)
                         .extract("parameters", node -> node.parameters)
@@ -252,12 +250,12 @@ public class ComparatorRegistry {
                         .extract("children", node -> node.children))
                 .register(BoundInvalidStatementNode.class, builder -> {})
                 .register(BoundLambdaExpressionNode.class, builder -> builder
+                        .extract("syntaxNode", node -> node.syntaxNode)
                         .extract("parameters", node -> node.parameters)
-                        .extract("arrow", node -> node.arrow)
                         .extract("body", node -> node.body))
                 .register(BoundMethodInvocationExpressionNode.class, builder -> builder
+                        .extract("syntaxNode", node -> node.syntaxNode)
                         .extract("objectReference", node -> node.objectReference)
-                        .extract("dot", node -> node.dot)
                         .extract("method", node -> node.method)
                         .extract("arguments", node -> node.arguments))
                 .register(BoundMethodNode.class, builder -> builder
@@ -269,24 +267,20 @@ public class ComparatorRegistry {
                         .extract("nodeType", BoundNode::getNodeType)
                         .extract("range", BoundNode::getRange))
                 .register(BoundParameterListNode.class, builder -> builder
-                        .extract("openParen", node -> node.openParen)
-                        .extract("parameters", node -> node.parameters)
-                        .extract("closeParen", node -> node.closeParen))
+                        .extract("syntaxNode", node -> node.syntaxNode)
+                        .extract("parameters", node -> node.parameters))
                 .register(BoundParameterNode.class, builder -> builder
                         .extract("name", BoundParameterNode::getName)
                         .extract("typeNode", BoundParameterNode::getTypeNode)
                         .extract("type", BoundParameterNode::getType))
                 .register(BoundPredefinedTypeNode.class, builder -> {})
                 .register(BoundReturnStatementNode.class, builder -> builder
-                        .extract("keyword", node -> node.keyword)
+                        .extract("syntaxNode", node -> node.syntaxNode)
                         .extract("expression", node -> node.expression))
                 .register(BoundStatementsListNode.class, builder -> builder
                         .extract("statements", node -> node.statements))
                 .register(BoundTypeNode.class, builder -> builder
                         .extract("type", node -> node.type))
-                .register(BoundSeparatedList.class, builder -> builder
-                        .extract("nodes", BoundSeparatedList::getNodes)
-                        .extract("commas", BoundSeparatedList::getCommas))
                 /* */
                 .register(NativeInstanceMethodReference.class, builder -> {})
                 .register(NativeMethodReference.class, builder -> builder

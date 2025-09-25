@@ -31,7 +31,7 @@ public class AwaitCompletionProvider<T> extends AbstractCompletionProvider<T> {
             }
             if (current.entry.node.getNodeType() == BoundNodeType.CLASS_METHOD) {
                 BoundClassMethodNode methodNode = (BoundClassMethodNode) current.entry.node;
-                if (methodNode.isAsync) {
+                if (methodNode.isAsync()) {
                     return List.of(factory.getKeywordSuggestion(TokenType.AWAIT));
                 } else {
                     return List.of();

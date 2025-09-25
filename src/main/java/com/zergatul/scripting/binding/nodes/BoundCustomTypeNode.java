@@ -2,18 +2,22 @@ package com.zergatul.scripting.binding.nodes;
 
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
-import com.zergatul.scripting.lexer.Token;
+import com.zergatul.scripting.parser.nodes.ParserNode;
 import com.zergatul.scripting.type.SType;
 
 import java.util.List;
 
 public class BoundCustomTypeNode extends BoundTypeNode {
 
-    public final Token token;
+    public final ParserNode syntaxNode;
 
-    public BoundCustomTypeNode(Token token, SType type, TextRange range) {
+    public BoundCustomTypeNode(ParserNode node, SType type) {
+        this(node, type, node.getRange());
+    }
+
+    public BoundCustomTypeNode(ParserNode node, SType type, TextRange range) {
         super(BoundNodeType.CUSTOM_TYPE, type, range);
-        this.token = token;
+        this.syntaxNode = node;
     }
 
     @Override

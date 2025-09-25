@@ -2,7 +2,6 @@ package com.zergatul.scripting.binding.nodes;
 
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
-import com.zergatul.scripting.lexer.Token;
 import com.zergatul.scripting.parser.nodes.ClassMethodNode;
 import com.zergatul.scripting.type.SMethodFunction;
 
@@ -10,44 +9,44 @@ import java.util.List;
 
 public class BoundClassMethodNode extends BoundClassMemberNode {
 
-    public final boolean isAsync;
+    public final ClassMethodNode syntaxNode;
     public final SMethodFunction functionType;
     public final BoundTypeNode typeNode;
     public final BoundNameExpressionNode name;
     public final BoundParameterListNode parameters;
-    public final Token arrow;
     public final BoundStatementNode body;
 
     public BoundClassMethodNode(
             ClassMethodNode node,
-            boolean isAsync,
             SMethodFunction functionType,
             BoundTypeNode typeNode,
             BoundNameExpressionNode name,
             BoundParameterListNode parameters,
             BoundStatementNode body
     ) {
-        this(isAsync, functionType, typeNode, name, parameters, node.arrow, body, node.getRange());
+        this(node, functionType, typeNode, name, parameters, body, node.getRange());
     }
 
     public BoundClassMethodNode(
-            boolean isAsync,
+            ClassMethodNode node,
             SMethodFunction functionType,
             BoundTypeNode typeNode,
             BoundNameExpressionNode name,
             BoundParameterListNode parameters,
-            Token arrow,
             BoundStatementNode body,
             TextRange range
     ) {
         super(BoundNodeType.CLASS_METHOD, range);
-        this.isAsync = isAsync;
+        this.syntaxNode = node;
         this.functionType = functionType;
         this.typeNode = typeNode;
         this.name = name;
         this.parameters = parameters;
-        this.arrow = arrow;
         this.body = body;
+    }
+
+    public boolean isAsync() {
+        return syntaxNode.modifiers.isAsync();
     }
 
     @Override

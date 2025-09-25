@@ -2,7 +2,6 @@ package com.zergatul.scripting.binding.nodes;
 
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
-import com.zergatul.scripting.lexer.Token;
 import com.zergatul.scripting.parser.nodes.NameExpressionNode;
 import com.zergatul.scripting.symbols.ImmutableSymbolRef;
 import com.zergatul.scripting.symbols.MutableSymbolRef;
@@ -14,7 +13,7 @@ import java.util.List;
 
 public class BoundNameExpressionNode extends BoundExpressionNode {
 
-    public final Token token;
+    public final NameExpressionNode syntaxNode;
     public final String value;
     public final SymbolRef symbolRef;
 
@@ -27,7 +26,7 @@ public class BoundNameExpressionNode extends BoundExpressionNode {
     }
 
     public BoundNameExpressionNode(NameExpressionNode node, Symbol symbol, SType type) {
-        this(node.token, new MutableSymbolRef(symbol), type, node.value, node.getRange());
+        this(node, new MutableSymbolRef(symbol), type, node.value, node.getRange());
     }
 
     public BoundNameExpressionNode(NameExpressionNode node, SymbolRef symbolRef) {
@@ -35,12 +34,12 @@ public class BoundNameExpressionNode extends BoundExpressionNode {
     }
 
     public BoundNameExpressionNode(NameExpressionNode node, SymbolRef symbolRef, SType type) {
-        this(node.token, symbolRef, type, node.value, node.getRange());
+        this(node, symbolRef, type, node.value, node.getRange());
     }
 
-    public BoundNameExpressionNode(Token token, SymbolRef symbolRef, SType type, String value, TextRange range) {
+    public BoundNameExpressionNode(NameExpressionNode node, SymbolRef symbolRef, SType type, String value, TextRange range) {
         super(BoundNodeType.NAME_EXPRESSION, type, range);
-        this.token = token;
+        this.syntaxNode = node;
         this.symbolRef = symbolRef;
         this.value = value;
 

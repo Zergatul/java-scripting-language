@@ -2,6 +2,7 @@ package com.zergatul.scripting.binding.nodes;
 
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
+import com.zergatul.scripting.parser.nodes.StatementsListNode;
 import com.zergatul.scripting.symbols.LiftedVariable;
 
 import java.util.List;
@@ -9,20 +10,22 @@ import java.util.Objects;
 
 public class BoundStatementsListNode extends BoundStatementNode {
 
+    public final StatementsListNode syntaxNode;
     public final List<BoundVariableDeclarationNode> prepend;
     public final List<BoundStatementNode> statements;
     public final List<LiftedVariable> lifted;
 
     public BoundStatementsListNode(List<BoundStatementNode> statements) {
-        this(statements, List.of(), null);
+        this(null, List.of(), statements, List.of(), null);
     }
 
-    public BoundStatementsListNode(List<BoundStatementNode> statements, List<LiftedVariable> lifted, TextRange range) {
-        this(List.of(), statements, lifted, range);
+    public BoundStatementsListNode(StatementsListNode node, List<BoundStatementNode> statements, List<LiftedVariable> lifted) {
+        this(node, List.of(), statements, lifted, node.getRange());
     }
 
-    public BoundStatementsListNode(List<BoundVariableDeclarationNode> prepend, List<BoundStatementNode> statements, List<LiftedVariable> lifted, TextRange range) {
+    public BoundStatementsListNode(StatementsListNode node, List<BoundVariableDeclarationNode> prepend, List<BoundStatementNode> statements, List<LiftedVariable> lifted, TextRange range) {
         super(BoundNodeType.STATEMENTS_LIST, range);
+        this.syntaxNode = node;
         this.prepend = prepend;
         this.statements = statements;
         this.lifted = lifted;
@@ -50,15 +53,7 @@ public class BoundStatementsListNode extends BoundStatementNode {
         return List.copyOf(statements);
     }
 
-    @Override
-    public boolean equals(Object obj) {
-        if (obj instanceof BoundStatementsListNode other) {
-            return  Objects.equals(other.prepend, prepend) &&
-                    Objects.equals(other.statements, statements) &&
-                    Objects.equals(other.lifted, lifted) &&
-                    other.getRange().equals(getRange());
-        } else {
-            return false;
-        }
+    public BoundStatementsListNode withPrepend(List<BoundVariableDeclarationNode> prepend) {
+        return new BoundStatementsListNode(syntaxNode, prepend, statements, lifted, getRange());
     }
 }

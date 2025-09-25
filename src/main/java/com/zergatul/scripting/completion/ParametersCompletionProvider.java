@@ -29,7 +29,7 @@ public class ParametersCompletionProvider<T> extends AbstractCompletionProvider<
             List<BoundParameterNode> parameterNodes = switch (current.entry.node.getNodeType()) {
                 case LAMBDA_EXPRESSION -> {
                     BoundLambdaExpressionNode lambda = (BoundLambdaExpressionNode) current.entry.node;
-                    yield lambda.parameters.getNodes();
+                    yield lambda.parameters;
                 }
                 case CLASS_CONSTRUCTOR -> {
                     BoundClassConstructorNode constructor = (BoundClassConstructorNode) current.entry.node;

@@ -2,7 +2,6 @@ package com.zergatul.scripting.binding.nodes;
 
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
-import com.zergatul.scripting.lexer.Token;
 import com.zergatul.scripting.parser.nodes.InvalidMetaExpressionNode;
 import com.zergatul.scripting.type.SUnknown;
 
@@ -10,15 +9,15 @@ import java.util.List;
 
 public class BoundInvalidMetaExpressionNode extends BoundExpressionNode {
 
-    public final Token token;
+    public final InvalidMetaExpressionNode syntaxNode;
 
     public BoundInvalidMetaExpressionNode(InvalidMetaExpressionNode node) {
-        this(node.token, node.getRange());
+        this(node, node.getRange());
     }
 
-    public BoundInvalidMetaExpressionNode(Token token, TextRange range) {
+    public BoundInvalidMetaExpressionNode(InvalidMetaExpressionNode node, TextRange range) {
         super(BoundNodeType.META_INVALID_EXPRESSION, SUnknown.instance, range);
-        this.token = token;
+        this.syntaxNode = node;
     }
 
     @Override

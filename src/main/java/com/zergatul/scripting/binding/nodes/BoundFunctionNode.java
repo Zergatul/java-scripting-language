@@ -2,20 +2,17 @@ package com.zergatul.scripting.binding.nodes;
 
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
-import com.zergatul.scripting.lexer.Token;
 import com.zergatul.scripting.parser.nodes.FunctionNode;
-import com.zergatul.scripting.parser.nodes.ModifiersNode;
 import com.zergatul.scripting.symbols.LiftedVariable;
 
 import java.util.List;
 
 public class BoundFunctionNode extends BoundCompilationUnitMemberNode {
 
-    public final ModifiersNode modifiers;
+    public final FunctionNode syntaxNode;
     public final BoundTypeNode returnType;
     public final BoundNameExpressionNode name;
     public final BoundParameterListNode parameters;
-    public final Token arrow;
     public final BoundStatementNode body;
     public final List<LiftedVariable> lifted;
 
@@ -27,31 +24,29 @@ public class BoundFunctionNode extends BoundCompilationUnitMemberNode {
             BoundStatementNode body,
             List<LiftedVariable> lifted
     ) {
-        this(node.modifiers, returnType, name, parameters, node.arrow, body, lifted, node.getRange());
+        this(node, returnType, name, parameters, body, lifted, node.getRange());
     }
 
     public BoundFunctionNode(
-            ModifiersNode modifiers,
+            FunctionNode node,
             BoundTypeNode returnType,
             BoundNameExpressionNode name,
             BoundParameterListNode parameters,
-            Token arrow,
             BoundStatementNode body,
             List<LiftedVariable> lifted,
             TextRange range
     ) {
         super(BoundNodeType.FUNCTION, range);
-        this.modifiers = modifiers;
+        this.syntaxNode = node;
         this.returnType = returnType;
         this.name = name;
         this.parameters = parameters;
-        this.arrow = arrow;
         this.body = body;
         this.lifted = lifted;
     }
 
     public boolean isAsync() {
-        return modifiers.isAsync();
+        return syntaxNode.modifiers.isAsync();
     }
 
     @Override

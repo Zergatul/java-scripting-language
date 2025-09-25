@@ -2,7 +2,6 @@ package com.zergatul.scripting.binding.nodes;
 
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
-import com.zergatul.scripting.lexer.Token;
 import com.zergatul.scripting.parser.nodes.IndexExpressionNode;
 import com.zergatul.scripting.type.operation.IndexOperation;
 
@@ -10,26 +9,24 @@ import java.util.List;
 
 public class BoundIndexExpressionNode extends BoundExpressionNode {
 
+    public final IndexExpressionNode syntaxNode;
     public final BoundExpressionNode callee;
-    public final Token openBracket;
     public final BoundExpressionNode index;
-    public final Token closeBracket;
     public final IndexOperation operation;
 
     public BoundIndexExpressionNode(BoundExpressionNode callee, BoundExpressionNode index, IndexOperation operation) {
-        this(callee, null, index, null, operation, null);
+        this(null, callee, index, operation, null);
     }
 
     public BoundIndexExpressionNode(IndexExpressionNode node, BoundExpressionNode callee, BoundExpressionNode index, IndexOperation operation) {
-        this(callee, node.openBracket, index, node.closeBracket, operation, node.getRange());
+        this(node, callee, index, operation, node.getRange());
     }
 
-    public BoundIndexExpressionNode(BoundExpressionNode callee, Token openBracket, BoundExpressionNode index, Token closeBracket, IndexOperation operation, TextRange range) {
+    public BoundIndexExpressionNode(IndexExpressionNode node, BoundExpressionNode callee, BoundExpressionNode index, IndexOperation operation, TextRange range) {
         super(BoundNodeType.INDEX_EXPRESSION, operation.returnType, range);
+        this.syntaxNode = node;
         this.callee = callee;
-        this.openBracket = openBracket;
         this.index = index;
-        this.closeBracket = closeBracket;
         this.operation = operation;
     }
 

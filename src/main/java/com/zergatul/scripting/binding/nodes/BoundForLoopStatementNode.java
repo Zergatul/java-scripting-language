@@ -2,19 +2,16 @@ package com.zergatul.scripting.binding.nodes;
 
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
-import com.zergatul.scripting.lexer.Token;
 import com.zergatul.scripting.parser.nodes.ForLoopStatementNode;
 
 import java.util.List;
 
 public class BoundForLoopStatementNode extends BoundStatementNode {
 
-    public final Token keyword;
-    public final Token openParen;
+    public final ForLoopStatementNode syntaxNode;
     public final BoundStatementNode init;
     public final BoundExpressionNode condition;
     public final BoundStatementNode update;
-    public final Token closeParen;
     public final BoundStatementNode body;
 
     public BoundForLoopStatementNode(
@@ -24,26 +21,22 @@ public class BoundForLoopStatementNode extends BoundStatementNode {
             BoundStatementNode update,
             BoundStatementNode body
     ) {
-        this(node.keyword, node.openParen, init, condition, update, node.closeParen, body, node.getRange());
+        this(node, init, condition, update, body, node.getRange());
     }
 
     public BoundForLoopStatementNode(
-            Token keyword,
-            Token openParen,
+            ForLoopStatementNode node,
             BoundStatementNode init,
             BoundExpressionNode condition,
             BoundStatementNode update,
-            Token closeParen,
             BoundStatementNode body,
             TextRange range
     ) {
         super(BoundNodeType.FOR_LOOP_STATEMENT, range);
-        this.keyword = keyword;
-        this.openParen = openParen;
+        this.syntaxNode = node;
         this.init = init;
         this.condition = condition;
         this.update = update;
-        this.closeParen = closeParen;
         this.body = body;
     }
 
@@ -74,6 +67,6 @@ public class BoundForLoopStatementNode extends BoundStatementNode {
     }
 
     public BoundForLoopStatementNode withBody(BoundStatementNode body) {
-        return new BoundForLoopStatementNode(keyword, openParen, init, condition, update, closeParen, body, getRange());
+        return new BoundForLoopStatementNode(syntaxNode, init, condition, update, body, getRange());
     }
 }

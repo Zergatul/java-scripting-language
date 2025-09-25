@@ -4,25 +4,47 @@ import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
 import com.zergatul.scripting.compiler.RefHolder;
 import com.zergatul.scripting.lexer.Token;
+import com.zergatul.scripting.parser.nodes.InvocationExpressionNode;
+import com.zergatul.scripting.parser.nodes.MemberAccessExpressionNode;
 
 import java.util.List;
-import java.util.Objects;
 
 public class BoundMethodInvocationExpressionNode extends BoundExpressionNode {
 
+    public final InvocationExpressionNode syntaxNode;
     public final BoundExpressionNode objectReference;
-    public final Token dot;
     public final BoundMethodNode method;
     public final BoundArgumentsListNode arguments;
     public final List<RefHolder> refVariables;
 
-    public BoundMethodInvocationExpressionNode(BoundExpressionNode objectReference, Token dot, BoundMethodNode method, BoundArgumentsListNode arguments, List<RefHolder> refVariables, TextRange range) {
+    public BoundMethodInvocationExpressionNode(
+            InvocationExpressionNode node,
+            BoundExpressionNode objectReference,
+            BoundMethodNode method,
+            BoundArgumentsListNode arguments,
+            List<RefHolder> refVariables
+    ) {
+        this(node, objectReference, method, arguments, refVariables, node.getRange());
+    }
+
+    public BoundMethodInvocationExpressionNode(
+            InvocationExpressionNode node,
+            BoundExpressionNode objectReference,
+            BoundMethodNode method,
+            BoundArgumentsListNode arguments,
+            List<RefHolder> refVariables,
+            TextRange range
+    ) {
         super(BoundNodeType.METHOD_INVOCATION_EXPRESSION, method.method.getReturn(), range);
+        this.syntaxNode = node;
         this.objectReference = objectReference;
-        this.dot = dot;
         this.method = method;
         this.arguments = arguments;
         this.refVariables = refVariables;
+    }
+
+    public Token getDotToken() {
+        return ((MemberAccessExpressionNode) syntaxNode.callee).dot;
     }
 
     @Override
@@ -40,19 +62,5 @@ public class BoundMethodInvocationExpressionNode extends BoundExpressionNode {
     @Override
     public List<BoundNode> getChildren() {
         return List.of(objectReference, method, arguments);
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (obj instanceof BoundMethodInvocationExpressionNode other) {
-            return  other.type.equals(type) &&
-                    other.objectReference.equals(objectReference) &&
-                    other.method.equals(method) &&
-                    other.arguments.equals(arguments) &&
-                    Objects.equals(other.refVariables, refVariables) &&
-                    other.getRange().equals(getRange());
-        } else {
-            return false;
-        }
     }
 }

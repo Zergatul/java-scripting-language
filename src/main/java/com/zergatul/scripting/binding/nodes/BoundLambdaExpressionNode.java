@@ -2,7 +2,6 @@ package com.zergatul.scripting.binding.nodes;
 
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
-import com.zergatul.scripting.lexer.Token;
 import com.zergatul.scripting.parser.nodes.LambdaExpressionNode;
 import com.zergatul.scripting.symbols.CapturedVariable;
 import com.zergatul.scripting.symbols.LiftedVariable;
@@ -13,38 +12,34 @@ import java.util.stream.Stream;
 
 public class BoundLambdaExpressionNode extends BoundExpressionNode {
 
-    public final Token openParen;
-    public final BoundSeparatedList<BoundParameterNode> parameters;
-    public final Token closeParen;
-    public final Token arrow;
+    public final LambdaExpressionNode syntaxNode;
+    public final List<BoundParameterNode> parameters;
     public final BoundStatementNode body;
     public final List<LiftedVariable> lifted;
     public final List<CapturedVariable> captured;
 
     public BoundLambdaExpressionNode(
-            BoundSeparatedList<BoundParameterNode> parameters,
+            List<BoundParameterNode> parameters,
             BoundStatementNode body,
             SType type
     ) {
-        this(null, parameters, null, null, body, type, List.of(), List.of(), null);
+        this(null, parameters, body, type, List.of(), List.of(), null);
     }
 
     public BoundLambdaExpressionNode(
             LambdaExpressionNode node,
-            BoundSeparatedList<BoundParameterNode> parameters,
+            List<BoundParameterNode> parameters,
             BoundStatementNode body,
             SType type,
             List<LiftedVariable> lifted,
             List<CapturedVariable> captured
     ) {
-        this(node.openParen, parameters, node.closeParen, node.arrow, body, type, lifted, captured, node.getRange());
+        this(node, parameters, body, type, lifted, captured, node.getRange());
     }
 
     public BoundLambdaExpressionNode(
-            Token openParen,
-            BoundSeparatedList<BoundParameterNode> parameters,
-            Token closeParen,
-            Token arrow,
+            LambdaExpressionNode node,
+            List<BoundParameterNode> parameters,
             BoundStatementNode body,
             SType type,
             List<LiftedVariable> lifted,
@@ -52,10 +47,8 @@ public class BoundLambdaExpressionNode extends BoundExpressionNode {
             TextRange range
     ) {
         super(BoundNodeType.LAMBDA_EXPRESSION, type, range);
-        this.openParen = openParen;
+        this.syntaxNode = node;
         this.parameters = parameters;
-        this.closeParen = closeParen;
-        this.arrow = arrow;
         this.body = body;
         this.lifted = lifted;
         this.captured = captured;
@@ -68,7 +61,7 @@ public class BoundLambdaExpressionNode extends BoundExpressionNode {
 
     @Override
     public void acceptChildren(BinderTreeVisitor visitor) {
-        for (BoundParameterNode parameter : parameters.getNodes()) {
+        for (BoundParameterNode parameter : parameters) {
             parameter.accept(visitor);
         }
         body.accept(visitor);
@@ -81,6 +74,6 @@ public class BoundLambdaExpressionNode extends BoundExpressionNode {
 
     @Override
     public List<BoundNode> getChildren() {
-        return Stream.concat(List.copyOf(parameters.getNodes()).stream(), Stream.of(body)).toList();
+        return Stream.concat(parameters.stream(), Stream.of(body)).toList();
     }
 }

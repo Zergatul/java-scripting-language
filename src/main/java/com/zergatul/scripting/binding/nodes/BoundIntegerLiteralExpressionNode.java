@@ -2,7 +2,6 @@ package com.zergatul.scripting.binding.nodes;
 
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
-import com.zergatul.scripting.lexer.ValueToken;
 import com.zergatul.scripting.parser.nodes.IntegerLiteralExpressionNode;
 import com.zergatul.scripting.type.SInt;
 
@@ -10,7 +9,7 @@ import java.util.List;
 
 public class BoundIntegerLiteralExpressionNode extends BoundExpressionNode {
 
-    public final ValueToken token;
+    public final IntegerLiteralExpressionNode syntaxNode;
     public final int value;
 
     public BoundIntegerLiteralExpressionNode(int value) {
@@ -18,12 +17,12 @@ public class BoundIntegerLiteralExpressionNode extends BoundExpressionNode {
     }
 
     public BoundIntegerLiteralExpressionNode(IntegerLiteralExpressionNode node, int value) {
-        this(node.token, value, node.getRange());
+        this(node, value, node.getRange());
     }
 
-    public BoundIntegerLiteralExpressionNode(ValueToken token, int value, TextRange range) {
+    public BoundIntegerLiteralExpressionNode(IntegerLiteralExpressionNode node, int value, TextRange range) {
         super(BoundNodeType.INTEGER_LITERAL, SInt.instance, range);
-        this.token = token;
+        this.syntaxNode = node;
         this.value = value;
     }
 

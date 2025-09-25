@@ -243,12 +243,12 @@ public class Compiler {
         MethodVisitor methodVisitor = writer.visitMethod(ACC_PUBLIC, methodNode.name.value, methodNode.functionType.getMethodDescriptor(), null, null);
         methodVisitor.visitCode();
 
-        context = context.createClassMethod(methodNode.functionType.getReturnType(), methodNode.isAsync);
+        context = context.createClassMethod(methodNode.functionType.getReturnType(), methodNode.isAsync());
         for (BoundParameterNode parameter : methodNode.parameters.parameters) {
             context.setStackIndex((LocalVariable) parameter.getName().getSymbol());
         }
 
-        if (methodNode.isAsync) {
+        if (methodNode.isAsync()) {
             compileAsyncBoundStatementList(methodVisitor, context, new BoundStatementsListNode(List.of(methodNode.body)));
         } else {
             compileStatement(methodVisitor, context, methodNode.body);
@@ -451,12 +451,7 @@ public class Compiler {
         }
 
         if (!prepend.isEmpty()) {
-            BoundStatementsListNode statements = new BoundStatementsListNode(
-                    prepend,
-                    unit.statements.statements,
-                    unit.statements.lifted,
-                    unit.statements.getRange());
-            unit = new BoundCompilationUnitNode(unit.members, statements, unit.end, unit.getRange());
+            unit = unit.withStatements(unit.statements.withPrepend(prepend));
         }
 
         context.setClassName(className);
@@ -1511,7 +1506,7 @@ public class Compiler {
 
     private void compileMethodInvocationExpression(MethodVisitor visitor, CompilerContext context, BoundMethodInvocationExpressionNode invocation) {
         compileExpression(visitor, context, invocation.objectReference);
-        for (BoundExpressionNode expression : invocation.arguments.arguments.getNodes()) {
+        for (BoundExpressionNode expression : invocation.arguments.arguments) {
             compileExpression(visitor, context, expression);
         }
         invocation.method.method.compileInvoke(visitor);
@@ -1561,7 +1556,7 @@ public class Compiler {
     private void compileObjectCreationExpression(MethodVisitor visitor, CompilerContext context, BoundObjectCreationExpressionNode creation) {
         visitor.visitTypeInsn(NEW, creation.typeNode.type.getInternalName());
         visitor.visitInsn(DUP);
-        for (BoundExpressionNode expression : creation.arguments.arguments.getNodes()) {
+        for (BoundExpressionNode expression : creation.arguments.arguments) {
             compileExpression(visitor, context, expression);
         }
         creation.constructor.compileInvoke(visitor);
@@ -1581,7 +1576,7 @@ public class Compiler {
         for (int i = 0; i < expression.list.size(); i++) {
             visitor.visitInsn(DUP);
             visitor.visitLdcInsn(i);
-            compileExpression(visitor, context, expression.list.getNodeAt(i));
+            compileExpression(visitor, context, expression.list.get(i));
             visitor.visitInsn(elementsType.getArrayStoreInst());
         }
     }
@@ -1689,7 +1684,7 @@ public class Compiler {
             SType raw = rawParameters[i];
             SType actual = actualParameters[i];
             if (!raw.equals(actual)) {
-                BoundParameterNode parameter = expression.parameters.getNodeAt(i);
+                BoundParameterNode parameter = expression.parameters.get(i);
                 LocalVariable unboxed = parameter.getName().symbolRef.asLocalVariable();
                 lambdaContext.addLocalVariable(parameter.getName().symbolRef);
                 lambdaContext.setStackIndex(unboxed);
@@ -1704,7 +1699,7 @@ public class Compiler {
                 }
                 unboxed.compileStore(context, invokeVisitor);
             } else {
-                Variable variable = expression.parameters.getNodeAt(i).getName().symbolRef.asVariable();
+                Variable variable = expression.parameters.get(i).getName().symbolRef.asVariable();
                 LocalVariable localVariable;
                 if (variable instanceof LocalVariable) {
                     localVariable = (LocalVariable) variable;
@@ -1713,7 +1708,7 @@ public class Compiler {
                 } else {
                     throw new InternalException();
                 }
-                lambdaContext.addLocalVariable(expression.parameters.getNodeAt(i).getName().symbolRef);
+                lambdaContext.addLocalVariable(expression.parameters.get(i).getName().symbolRef);
                 localVariable.setStackIndex(paramStackIndexes[i]);
             }
         }
@@ -1751,7 +1746,7 @@ public class Compiler {
     }
 
     private void compileFunctionInvocationExpression(MethodVisitor visitor, CompilerContext context, BoundFunctionInvocationExpression expression) {
-        for (BoundExpressionNode argument : expression.arguments.arguments.getNodes()) {
+        for (BoundExpressionNode argument : expression.arguments.arguments) {
             compileExpression(visitor, context, argument);
         }
 
@@ -1770,7 +1765,7 @@ public class Compiler {
     private void compileVariableInvocation(MethodVisitor visitor, CompilerContext context, BoundObjectInvocationExpression expression) {
         compileExpression(visitor, context, expression.callee);
 
-        for (BoundExpressionNode argument : expression.arguments.arguments.getNodes()) {
+        for (BoundExpressionNode argument : expression.arguments.arguments) {
             compileExpression(visitor, context, argument);
         }
 
@@ -1825,15 +1820,13 @@ public class Compiler {
         }
 
         BoundFunctionInvocationExpression invocation = new BoundFunctionInvocationExpression(
-                new BoundFunctionReferenceNode(node.name.token, node.name.value, node.name.symbolRef, node.name.getRange()),
+                new BoundFunctionReferenceNode(node.name.syntaxNode, node.name.symbolRef),
                 type.getReturnType(),
-                new BoundArgumentsListNode(BoundSeparatedList.of(arguments)));
+                new BoundArgumentsListNode(arguments));
         BoundStatementNode statement = type.getReturnType() == SVoidType.instance ?
                 new BoundExpressionStatementNode(invocation) :
                 new BoundReturnStatementNode(invocation);
-        BoundLambdaExpressionNode lambda = new BoundLambdaExpressionNode(
-                BoundSeparatedList.of(parameters), statement, node.type
-        );
+        BoundLambdaExpressionNode lambda = new BoundLambdaExpressionNode(parameters, statement, node.type);
         compileLambdaExpression(visitor, context, lambda);
     }
 

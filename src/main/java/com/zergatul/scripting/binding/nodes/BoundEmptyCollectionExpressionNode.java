@@ -2,7 +2,6 @@ package com.zergatul.scripting.binding.nodes;
 
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
-import com.zergatul.scripting.lexer.Token;
 import com.zergatul.scripting.parser.nodes.CollectionExpressionNode;
 import com.zergatul.scripting.type.SEmptyCollection;
 
@@ -10,17 +9,15 @@ import java.util.List;
 
 public class BoundEmptyCollectionExpressionNode extends BoundExpressionNode {
 
-    public final Token openBracket;
-    public final Token closeBracket;
+    public final CollectionExpressionNode syntaxNode;
 
     public BoundEmptyCollectionExpressionNode(CollectionExpressionNode node) {
-        this(node.openBracket, node.closeBracket, node.getRange());
+        this(node, node.getRange());
     }
 
-    public BoundEmptyCollectionExpressionNode(Token openBracket, Token closeBracket, TextRange range) {
+    public BoundEmptyCollectionExpressionNode(CollectionExpressionNode node, TextRange range) {
         super(BoundNodeType.EMPTY_COLLECTION_EXPRESSION, SEmptyCollection.instance, range);
-        this.openBracket = openBracket;
-        this.closeBracket = closeBracket;
+        this.syntaxNode = node;
     }
 
     @Override

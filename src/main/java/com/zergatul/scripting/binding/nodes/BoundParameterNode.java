@@ -60,13 +60,4 @@ public class BoundParameterNode extends BoundNode {
     public List<BoundNode> getChildren() {
         return typeNode == null ? List.of(name) : List.of(name, typeNode);
     }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (obj instanceof BoundParameterNode other) {
-            return other.name.equals(name) && Objects.equals(other.typeNode, typeNode) && other.type.equals(type);
-        } else {
-            return false;
-        }
-    }
 }
