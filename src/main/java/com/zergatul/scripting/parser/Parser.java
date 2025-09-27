@@ -1184,41 +1184,16 @@ public class Parser {
         }
 
         Token openBrace = advance(TokenType.LEFT_CURLY_BRACKET);
-        Token closeBrace;
+        SeparatedList<ExpressionNode> list = parseSeparatedList(
+                this::parseExpression,
+                this::isPossibleExpression,
+                () -> addDiagnostic(ParserErrors.ExpressionOrCloseBraceExpected, current, current.getRawValue(code)),
+                () -> addDiagnostic(ParserErrors.ExpressionExpected, current, current.getRawValue(code)),
+                () -> addDiagnostic(ParserErrors.CommaOrCloseCurlyBracketExpected, current, current.getRawValue(code)),
+                TokenType.RIGHT_CURLY_BRACKET);
+        Token closeBrace = advance(TokenType.RIGHT_CURLY_BRACKET);
 
-        List<ExpressionNode> items = new ArrayList<>();
-        boolean expectExpression = true;
-        while (true) {
-            if (current.is(TokenType.END_OF_FILE)) {
-                closeBrace = createMissingTokenAfterLast(TokenType.RIGHT_CURLY_BRACKET);
-                break;
-            }
-
-            if (current.is(TokenType.RIGHT_CURLY_BRACKET)) {
-                closeBrace = advance(TokenType.RIGHT_CURLY_BRACKET);
-                break;
-            }
-
-            if (expectExpression) {
-                if (isPossibleExpression()) {
-                    items.add(parseExpression());
-                } else {
-                    addDiagnostic(ParserErrors.ExpressionExpected, current, current.getRawValue(code));
-                }
-                expectExpression = false;
-            } else {
-                if (current.is(TokenType.COMMA)) {
-                    advance(TokenType.COMMA);
-                    expectExpression = true;
-                } else {
-                    closeBrace = createMissingTokenAfterLast(TokenType.RIGHT_CURLY_BRACKET);
-                    addDiagnostic(ParserErrors.CommaOrCloseCurlyBracketExpected, current);
-                    break;
-                }
-            }
-        }
-
-        return new ArrayInitializerExpressionNode(newToken, typeNode, openBrace, items, closeBrace, TextRange.combine(newToken, last));
+        return new ArrayInitializerExpressionNode(newToken, typeNode, openBrace, list, closeBrace, TextRange.combine(newToken, last));
     }
 
     private ExpressionNode parseObjectCreationExpression(Token keyword, TypeNode typeNode) {

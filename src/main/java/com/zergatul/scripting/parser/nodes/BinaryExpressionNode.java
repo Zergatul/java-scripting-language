@@ -1,7 +1,10 @@
 package com.zergatul.scripting.parser.nodes;
 
+import com.zergatul.scripting.Locatable;
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.parser.ParserTreeVisitor;
+
+import java.util.List;
 
 public class BinaryExpressionNode extends ExpressionNode {
 
@@ -26,5 +29,10 @@ public class BinaryExpressionNode extends ExpressionNode {
         left.accept(visitor);
         operator.accept(visitor);
         right.accept(visitor);
+    }
+
+    @Override
+    public List<Locatable> getChildNodes() {
+        return List.of(left, operator, right);
     }
 }

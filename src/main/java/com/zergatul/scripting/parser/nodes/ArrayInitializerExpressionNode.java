@@ -1,9 +1,11 @@
 package com.zergatul.scripting.parser.nodes;
 
+import com.zergatul.scripting.Locatable;
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.lexer.Token;
 import com.zergatul.scripting.parser.ParserTreeVisitor;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class ArrayInitializerExpressionNode extends ExpressionNode {
@@ -11,14 +13,14 @@ public class ArrayInitializerExpressionNode extends ExpressionNode {
     public final Token keyword;
     public final TypeNode typeNode;
     public final Token openBrace;
-    public final List<ExpressionNode> items;
+    public final SeparatedList<ExpressionNode> list;
     public final Token closeBrace;
 
     public ArrayInitializerExpressionNode(
             Token keyword,
             TypeNode typeNode,
             Token openBrace,
-            List<ExpressionNode> items,
+            SeparatedList<ExpressionNode> list,
             Token closeBrace,
             TextRange range
     ) {
@@ -26,7 +28,7 @@ public class ArrayInitializerExpressionNode extends ExpressionNode {
         this.keyword = keyword;
         this.typeNode = typeNode;
         this.openBrace = openBrace;
-        this.items = items;
+        this.list = list;
         this.closeBrace = closeBrace;
     }
 
@@ -37,8 +39,19 @@ public class ArrayInitializerExpressionNode extends ExpressionNode {
 
     @Override
     public void acceptChildren(ParserTreeVisitor visitor) {
-        for (ExpressionNode expression : items) {
+        for (ExpressionNode expression : list.getNodes()) {
             expression.accept(visitor);
         }
+    }
+
+    @Override
+    public List<Locatable> getChildNodes() {
+        List<Locatable> nodes = new ArrayList<>();
+        nodes.add(keyword);
+        nodes.add(typeNode);
+        nodes.add(openBrace);
+        nodes.addAll(list.getChildNodes());
+        nodes.add(closeBrace);
+        return nodes;
     }
 }

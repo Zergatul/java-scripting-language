@@ -1,8 +1,13 @@
 package com.zergatul.scripting.parser.nodes;
 
+import com.zergatul.scripting.Locatable;
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.lexer.Token;
 import com.zergatul.scripting.parser.ParserTreeVisitor;
+import org.jspecify.annotations.Nullable;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class ClassMethodNode extends ClassMemberNode {
 
@@ -10,6 +15,7 @@ public class ClassMethodNode extends ClassMemberNode {
     public final TypeNode type;
     public final NameExpressionNode name;
     public final ParameterListNode parameters;
+    @Nullable
     public final Token arrow;
     public final StatementNode body;
 
@@ -18,7 +24,7 @@ public class ClassMethodNode extends ClassMemberNode {
             TypeNode type,
             NameExpressionNode name,
             ParameterListNode parameters,
-            Token arrow,
+            @Nullable Token arrow,
             StatementNode body,
             TextRange range
     ) {
@@ -43,5 +49,18 @@ public class ClassMethodNode extends ClassMemberNode {
         name.accept(visitor);
         parameters.accept(visitor);
         body.accept(visitor);
+    }
+
+    @Override
+    public List<Locatable> getChildNodes() {
+        List<Locatable> nodes = new ArrayList<>();
+        nodes.add(modifiers);
+        nodes.add(type);
+        nodes.add(parameters);
+        if (arrow != null) {
+            nodes.add(arrow);
+        }
+        nodes.add(body);
+        return nodes;
     }
 }

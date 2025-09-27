@@ -1,10 +1,12 @@
 package com.zergatul.scripting.parser.nodes;
 
 import com.zergatul.scripting.InternalException;
+import com.zergatul.scripting.Locatable;
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.lexer.Token;
 import com.zergatul.scripting.parser.ParserTreeVisitor;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class BlockStatementNode extends StatementNode {
@@ -35,5 +37,14 @@ public class BlockStatementNode extends StatementNode {
         for (StatementNode statement : statements) {
             statement.accept(visitor);
         }
+    }
+
+    @Override
+    public List<Locatable> getChildNodes() {
+        List<Locatable> nodes = new ArrayList<>();
+        nodes.add(openBrace);
+        nodes.addAll(statements);
+        nodes.add(closeBrace);
+        return nodes;
     }
 }

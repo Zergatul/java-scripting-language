@@ -1,8 +1,11 @@
 package com.zergatul.scripting.parser.nodes;
 
+import com.zergatul.scripting.Locatable;
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.lexer.Token;
 import com.zergatul.scripting.parser.ParserTreeVisitor;
+
+import java.util.List;
 
 public class AssignmentStatementNode extends StatementNode {
 
@@ -29,6 +32,11 @@ public class AssignmentStatementNode extends StatementNode {
         left.accept(visitor);
         operator.accept(visitor);
         right.accept(visitor);
+    }
+
+    @Override
+    public List<Locatable> getChildNodes() {
+        return List.of(left, operator, right, semicolon);
     }
 
     @Override

@@ -77,7 +77,7 @@ public class ParserDumper {
         commaBreak();
         dump(node.openBrace);
         commaBreak();
-        dumpList(node.items);
+        dumpList(node.list);
         commaBreak();
         dump(node.closeBrace);
         commaBreak();

@@ -1,10 +1,12 @@
 package com.zergatul.scripting.parser.nodes;
 
+import com.zergatul.scripting.Locatable;
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.lexer.Token;
 import com.zergatul.scripting.lexer.ValueToken;
 import com.zergatul.scripting.parser.ParserTreeVisitor;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class ClassNode extends CompilationUnitMemberNode {
@@ -42,5 +44,16 @@ public class ClassNode extends CompilationUnitMemberNode {
         for (ClassMemberNode member : members) {
             member.accept(visitor);
         }
+    }
+
+    @Override
+    public List<Locatable> getChildNodes() {
+        List<Locatable> nodes = new ArrayList<>();
+        nodes.add(keyword);
+        nodes.add(name);
+        nodes.add(openBrace);
+        nodes.addAll(members);
+        nodes.add(closeBrace);
+        return nodes;
     }
 }
