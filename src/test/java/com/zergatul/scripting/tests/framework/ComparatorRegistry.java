@@ -63,7 +63,7 @@ public class ComparatorRegistry {
                         .extract("keyword", node -> node.keyword)
                         .extract("typeNode", node -> node.typeNode)
                         .extract("openBrace", node -> node.openBrace)
-                        .extract("items", node -> node.items)
+                        .extract("list", node -> node.list)
                         .extract("closeBrace", node -> node.closeBrace))
                 .register(ArrayTypeNode.class, builder -> builder
                         .extract("underlying", node -> node.underlying)
