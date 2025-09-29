@@ -1,4 +1,4 @@
-package com.zergatul.scripting.tests.codegen;
+package com.zergatul.scripting.tests.utility;
 
 import com.zergatul.scripting.InternalException;
 import com.zergatul.scripting.MultiLineTextRange;
@@ -11,14 +11,10 @@ import com.zergatul.scripting.parser.nodes.*;
 
 import java.util.List;
 
-public class ParserDumper {
-
-    private final StringBuilder sb = new StringBuilder();
-    private int indent;
+public class ParserDumper extends Dumper {
 
     public String dump(ParserOutput output) {
-        indent = 0;
-        sb.setLength(0);
+        reset();
         dump(output.unit());
         return sb.toString();
     }
@@ -189,8 +185,6 @@ public class ParserDumper {
         }
     }
 
-
-
     private void dump(FunctionNode node) {
         fullLine("new FunctionNode(");
         incIndent();
@@ -224,10 +218,6 @@ public class ParserDumper {
             decIndent();
         }
     }
-
-
-
-
 
     private void dump(ParameterListNode node) {
         fullLine("new ParameterListNode(");
@@ -265,7 +255,7 @@ public class ParserDumper {
             beginLine("new StatementsListNode(");
             incIndent();
             dumpList(node.statements);
-            sb.append(", ");
+            commaBreak();
             dump(node.getRange());
             sb.append(")");
             decIndent();
@@ -357,15 +347,18 @@ public class ParserDumper {
     }
 
     private void dump(ExpressionStatementNode node) {
-        sb.append("new ExpressionStatementNode(");
+        fullLine("new ExpressionStatementNode(");
+        incIndent();
         dump(node.expression);
-        sb.append(",");
-        dump(node.getRange());
+        commaBreak();
+        dump(node.semicolon);
         sb.append(")");
+        decIndent();
     }
 
     private void dump(VariableDeclarationNode node) {
         fullLine("new VariableDeclarationNode(");
+        incIndent();
         dump(node.type);
         commaBreak();
         dump(node.name);
@@ -376,6 +369,7 @@ public class ParserDumper {
         commaBreak();
         dump(node.getRange());
         sb.append(")");
+        decIndent();
     }
 
     private void dump(InvalidStatementNode node) {
@@ -385,32 +379,28 @@ public class ParserDumper {
     }
 
     public void dump(InvocationExpressionNode node) {
-        sb.append("new InvocationExpressionNode(");
+        fullLine("new InvocationExpressionNode(");
+        incIndent();
         dump(node.callee);
-        sb.append(", ");
+        commaBreak();
         dump(node.arguments);
-        sb.append(", ");
+        commaBreak();
         dump(node.getRange());
         sb.append(")");
+        decIndent();
     }
-
-
 
     public void dump(MemberAccessExpressionNode node) {
-        sb.append("new MemberAccessExpressionNode(");
+        fullLine("new MemberAccessExpressionNode(");
+        incIndent();
         dump(node.callee);
-        sb.append(", ");
+        commaBreak();
         dump(node.dot);
-        sb.append(", ");
+        commaBreak();
         dump(node.name);
-        sb.append(", ");
-        dump(node.getRange());
         sb.append(")");
+        decIndent();
     }
-
-
-
-
 
     private void dump(ObjectCreationExpressionNode node) {
         sb.append("new ObjectCreationExpressionNode(");
@@ -439,11 +429,11 @@ public class ParserDumper {
     }
 
     private void dump(NameExpressionNode node) {
-        beginLine("new NameExpressionNode(\"");
-        sb.append(node.value);
-        sb.append("\", ");
-        dump(node.getRange());
+        fullLine("new NameExpressionNode(");
+        incIndent();
+        dump(node.token);
         sb.append(")");
+        decIndent();
     }
 
     private void dump(InvalidExpressionNode node) {
@@ -453,14 +443,13 @@ public class ParserDumper {
     }
 
     private void dump(ArgumentsListNode node) {
-        sb.append("new ArgumentsListNode(");
+        fullLine("new ArgumentsListNode(");
+        incIndent();
         dump(node.openParen);
-        sb.append(", ");
+        commaBreak();
         dumpList(node.arguments);
-        sb.append(", ");
+        commaBreak();
         dump(node.closeParen);
-        sb.append(", ");
-        dump(node.getRange());
         sb.append(")");
     }
 
@@ -516,76 +505,6 @@ public class ParserDumper {
         sb.append(")");
     }
 
-    private void dump(Token token) {
-        if (token == null) {
-            fullLine("null");
-        } else if (token.getClass() == Token.class) {
-            beginLine("new Token(TokenType.");
-            sb.append(token.getTokenType().toString());
-            sb.append(", ");
-            dump(token.getRange());
-            sb.append(")");
-
-            incIndent();
-            for (Trivia trivia : token.getLeadingTrivia()) {
-                sb.append("\n");
-                beginLine(".withLeadingTrivia(");
-                dump(trivia);
-                sb.append(")");
-            }
-
-            for (Trivia trivia : token.getTrailingTrivia()) {
-                sb.append("\n");
-                beginLine(".withTrailingTrivia(");
-                dump(trivia);
-                sb.append(")");
-            }
-            decIndent();
-        } else {
-            throw new InternalException();
-        }
-    }
-
-    private void dump(Trivia trivia) {
-        sb.append("new Trivia(TokenType.");
-        sb.append(trivia.getTokenType().toString());
-        sb.append(", ");
-        dump(trivia.getRange());
-        sb.append(")");
-    }
-
-    private void dump(TextRange range) {
-        beginNewLineIfRequired();
-
-        if (range instanceof SingleLineTextRange single) {
-            sb.append("new SingleLineTextRange(");
-            sb.append(single.getLine1());
-            sb.append(", ");
-            sb.append(single.getColumn1());
-            sb.append(", ");
-            sb.append(single.getPosition());
-            sb.append(", ");
-            sb.append(single.getLength());
-            sb.append(")");
-        } else if (range instanceof MultiLineTextRange multi) {
-            sb.append("new MultiLineTextRange(");
-            sb.append(multi.getLine1());
-            sb.append(", ");
-            sb.append(multi.getColumn1());
-            sb.append(", ");
-            sb.append(multi.getLine2());
-            sb.append(", ");
-            sb.append(multi.getColumn2());
-            sb.append(", ");
-            sb.append(multi.getPosition());
-            sb.append(", ");
-            sb.append(multi.getLength());
-            sb.append(")");
-        } else {
-            throw new InternalException();
-        }
-    }
-
     private void dumpTokens(List<Token> tokens) {
         boolean newLine = beginNewLineIfRequired();
 
@@ -617,50 +536,24 @@ public class ParserDumper {
     }
 
     private <T extends ParserNode> void dumpList(SeparatedList<T> nodes) {
-        throw new InternalException();
-    }
-
-    private void beginLine() {
-        beginLine("");
-    }
-
-    private void beginLine(String value) {
-        sb.append(" ".repeat(indent));
-        sb.append(value);
-    }
-
-    private void endLine(String value) {
-        sb.append(value);
-        sb.append('\n');
-    }
-
-    private void fullLine(String value) {
-        sb.append(" ".repeat(indent));
-        sb.append(value);
-        sb.append('\n');
-    }
-
-    private void commaBreak() {
-        sb.append(",\n");
-    }
-
-    private boolean beginNewLineIfRequired() {
-        if (isNewLine()) {
-            beginLine();
-            return true;
+        if (nodes.size() == 0) {
+            beginLine("SeparatedList.of()");
+        } else {
+            endLine("SeparatedList.of(");
+            incIndent();
+            for (var item : nodes.getChildNodes()) {
+                if (item instanceof ParserNode node) {
+                    dump(node);
+                    continue;
+                }
+                if (item instanceof Token token) {
+                    dump(token);
+                    continue;
+                }
+                throw new InternalException();
+            }
+            sb.append(")");
+            decIndent();
         }
-        return false;
-    }
-
-    private boolean isNewLine() {
-        return sb.charAt(sb.length() - 1) == '\n';
-    }
-
-    private void incIndent() {
-        indent += 8;
-    }
-
-    private void decIndent() {
-        indent -= 8;
     }
 }

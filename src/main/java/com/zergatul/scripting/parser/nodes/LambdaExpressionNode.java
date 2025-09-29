@@ -1,8 +1,12 @@
 package com.zergatul.scripting.parser.nodes;
 
+import com.zergatul.scripting.Locatable;
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.lexer.Token;
 import com.zergatul.scripting.parser.ParserTreeVisitor;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class LambdaExpressionNode extends ExpressionNode {
 
@@ -38,5 +42,16 @@ public class LambdaExpressionNode extends ExpressionNode {
             name.accept(visitor);
         }
         body.accept(visitor);
+    }
+
+    @Override
+    public List<Locatable> getChildNodes() {
+        List<Locatable> nodes = new ArrayList<>();
+        nodes.add(openParen);
+        nodes.addAll(parameters.getChildNodes());
+        nodes.add(closeParen);
+        nodes.add(arrow);
+        nodes.add(body);
+        return nodes;
     }
 }

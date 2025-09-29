@@ -33,11 +33,12 @@ public class CommentTests extends LexerTestBase {
     public void singleLineCommentTest3() {
         LexerOutput result = lex("//abc\r[");
         comparator.assertEquals(List.of(), result.diagnostics());
-        comparator.assertEquals(List.of(
-                new Token(TokenType.LEFT_SQUARE_BRACKET, new SingleLineTextRange(2, 1, 6, 1))
-                        .withLeadingTrivia(new Trivia(TokenType.SINGLE_LINE_COMMENT, new SingleLineTextRange(1, 1, 0, 5)))
-                        .withLeadingTrivia(new Trivia(TokenType.LINE_BREAK, new SingleLineTextRange(1, 6,5, 1))),
-                new EndOfFileToken(new SingleLineTextRange(2, 2, 7, 0))),
+        comparator.assertEquals(
+                List.of(
+                        new Token(TokenType.LEFT_SQUARE_BRACKET, new SingleLineTextRange(2, 1, 6, 1))
+                                .withLeadingTrivia(new Trivia(TokenType.SINGLE_LINE_COMMENT, new SingleLineTextRange(1, 1, 0, 5)))
+                                .withLeadingTrivia(new Trivia(TokenType.LINE_BREAK, new MultiLineTextRange(1, 6, 2, 1, 5, 1))),
+                        new EndOfFileToken(new SingleLineTextRange(2, 2, 7, 0))),
                 result.tokens());
     }
 
@@ -45,11 +46,12 @@ public class CommentTests extends LexerTestBase {
     public void singleLineCommentTest4() {
         LexerOutput result = lex("//abc\r\n[");
         comparator.assertEquals(List.of(), result.diagnostics());
-        comparator.assertEquals(List.of(
-                new Token(TokenType.LEFT_SQUARE_BRACKET, new SingleLineTextRange(2, 1, 7, 1))
-                        .withLeadingTrivia(new Trivia(TokenType.SINGLE_LINE_COMMENT, new SingleLineTextRange(1, 1, 0, 5)))
-                        .withLeadingTrivia(new Trivia(TokenType.LINE_BREAK, new SingleLineTextRange(1, 6,5, 2))),
-                new EndOfFileToken(new SingleLineTextRange(2, 2, 8, 0))),
+        comparator.assertEquals(
+                List.of(
+                        new Token(TokenType.LEFT_SQUARE_BRACKET, new SingleLineTextRange(2, 1, 7, 1))
+                                .withLeadingTrivia(new Trivia(TokenType.SINGLE_LINE_COMMENT, new SingleLineTextRange(1, 1, 0, 5)))
+                                .withLeadingTrivia(new Trivia(TokenType.LINE_BREAK, new MultiLineTextRange(1, 6, 2, 1, 5, 2))),
+                        new EndOfFileToken(new SingleLineTextRange(2, 2, 8, 0))),
                 result.tokens());
     }
 
@@ -57,11 +59,12 @@ public class CommentTests extends LexerTestBase {
     public void singleLineCommentTest5() {
         LexerOutput result = lex("//abc\n[");
         comparator.assertEquals(List.of(), result.diagnostics());
-        comparator.assertEquals(List.of(
-                new Token(TokenType.LEFT_SQUARE_BRACKET, new SingleLineTextRange(2, 1, 6, 1))
-                        .withLeadingTrivia(new Trivia(TokenType.SINGLE_LINE_COMMENT, new SingleLineTextRange(1, 1, 0, 5)))
-                        .withLeadingTrivia(new Trivia(TokenType.LINE_BREAK, new SingleLineTextRange(1, 6,5, 1))),
-                new EndOfFileToken(new SingleLineTextRange(2, 2, 7, 0))),
+        comparator.assertEquals(
+                List.of(
+                        new Token(TokenType.LEFT_SQUARE_BRACKET, new SingleLineTextRange(2, 1, 6, 1))
+                                .withLeadingTrivia(new Trivia(TokenType.SINGLE_LINE_COMMENT, new SingleLineTextRange(1, 1, 0, 5)))
+                                .withLeadingTrivia(new Trivia(TokenType.LINE_BREAK, new MultiLineTextRange(1, 6, 2, 1, 5, 1))),
+                        new EndOfFileToken(new SingleLineTextRange(2, 2, 7, 0))),
                 result.tokens());
     }
 

@@ -1,8 +1,13 @@
 package com.zergatul.scripting.parser.nodes;
 
+import com.zergatul.scripting.Locatable;
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.lexer.Token;
 import com.zergatul.scripting.parser.ParserTreeVisitor;
+import org.jspecify.annotations.Nullable;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class IfStatementNode extends StatementNode {
 
@@ -11,7 +16,9 @@ public class IfStatementNode extends StatementNode {
     public final ExpressionNode condition;
     public final Token closeParen;
     public final StatementNode thenStatement;
+    @Nullable
     public final Token elseToken;
+    @Nullable
     public final StatementNode elseStatement;
 
     public IfStatementNode(
@@ -20,11 +27,14 @@ public class IfStatementNode extends StatementNode {
             ExpressionNode condition,
             Token closeParen,
             StatementNode thenStatement,
-            Token elseToken,
-            StatementNode elseStatement,
+            @Nullable Token elseToken,
+            @Nullable StatementNode elseStatement,
             TextRange range
     ) {
         super(ParserNodeType.IF_STATEMENT, range);
+
+        assert (elseToken != null) == (elseStatement != null);
+
         this.ifToken = ifToken;
         this.openParen = openParen;
         this.condition = condition;
@@ -46,5 +56,22 @@ public class IfStatementNode extends StatementNode {
         if (elseStatement != null) {
             elseStatement.accept(visitor);
         }
+    }
+
+    @Override
+    public List<Locatable> getChildNodes() {
+        List<Locatable> nodes = new ArrayList<>();
+        nodes.add(ifToken);
+        nodes.add(openParen);
+        nodes.add(condition);
+        nodes.add(closeParen);
+        nodes.add(thenStatement);
+        if (elseToken != null) {
+            nodes.add(elseToken);
+        }
+        if (elseStatement != null) {
+            nodes.add(elseStatement);
+        }
+        return nodes;
     }
 }

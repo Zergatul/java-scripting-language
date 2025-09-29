@@ -1,5 +1,6 @@
 package com.zergatul.scripting.parser.nodes;
 
+import com.zergatul.scripting.InternalException;
 import com.zergatul.scripting.Locatable;
 import com.zergatul.scripting.lexer.Token;
 
@@ -22,6 +23,28 @@ public final class SeparatedList<T extends ParserNode> {
     @SuppressWarnings("unchecked")
     public static <T extends ParserNode> SeparatedList<T> of() {
         return (SeparatedList<T>) EMPTY;
+    }
+
+    @SuppressWarnings("unchecked")
+    public static <T extends ParserNode> SeparatedList<T> of(Class<T> clazz, Locatable... params) {
+        SeparatedList<T> list = new SeparatedList<>();
+        for (int i = 0; i < params.length; i++) {
+            Locatable item = params[i];
+            if (i % 2 == 0) {
+                if (clazz.isInstance(item) && item instanceof ParserNode node) {
+                    list.add((T) node);
+                } else {
+                    throw new InternalException();
+                }
+            } else {
+                if (item instanceof Token token) {
+                    list.add(token);
+                } else {
+                    throw new InternalException();
+                }
+            }
+        }
+        return list;
     }
 
     public void add(T node) {

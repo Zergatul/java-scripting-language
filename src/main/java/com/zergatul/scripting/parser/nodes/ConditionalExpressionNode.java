@@ -1,8 +1,11 @@
 package com.zergatul.scripting.parser.nodes;
 
+import com.zergatul.scripting.Locatable;
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.lexer.Token;
 import com.zergatul.scripting.parser.ParserTreeVisitor;
+
+import java.util.List;
 
 public class ConditionalExpressionNode extends ExpressionNode {
 
@@ -38,5 +41,10 @@ public class ConditionalExpressionNode extends ExpressionNode {
         condition.accept(visitor);
         whenTrue.accept(visitor);
         whenFalse.accept(visitor);
+    }
+
+    @Override
+    public List<Locatable> getChildNodes() {
+        return List.of(condition, questionMark, whenTrue, colon, whenFalse);
     }
 }

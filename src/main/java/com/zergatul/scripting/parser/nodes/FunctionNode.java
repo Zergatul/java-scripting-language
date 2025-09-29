@@ -1,8 +1,13 @@
 package com.zergatul.scripting.parser.nodes;
 
+import com.zergatul.scripting.Locatable;
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.lexer.Token;
 import com.zergatul.scripting.parser.ParserTreeVisitor;
+import org.jspecify.annotations.Nullable;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class FunctionNode extends CompilationUnitMemberNode {
 
@@ -10,6 +15,7 @@ public class FunctionNode extends CompilationUnitMemberNode {
     public final TypeNode returnType;
     public final NameExpressionNode name;
     public final ParameterListNode parameters;
+    @Nullable
     public final Token arrow;
     public final StatementNode body;
 
@@ -18,7 +24,7 @@ public class FunctionNode extends CompilationUnitMemberNode {
             TypeNode returnType,
             NameExpressionNode name,
             ParameterListNode parameters,
-            Token arrow,
+            @Nullable Token arrow,
             StatementNode body
     ) {
         super(ParserNodeType.FUNCTION, TextRange.combine(modifiers, body));
@@ -42,5 +48,19 @@ public class FunctionNode extends CompilationUnitMemberNode {
         name.accept(visitor);
         parameters.accept(visitor);
         body.accept(visitor);
+    }
+
+    @Override
+    public List<Locatable> getChildNodes() {
+        List<Locatable> nodes = new ArrayList<>();
+        nodes.add(modifiers);
+        nodes.add(returnType);
+        nodes.add(name);
+        nodes.add(parameters);
+        if (arrow != null) {
+            nodes.add(arrow);
+        }
+        nodes.add(body);
+        return nodes;
     }
 }

@@ -1,6 +1,5 @@
 package com.zergatul.scripting.parser.nodes;
 
-import com.zergatul.annotations.NotNull;
 import com.zergatul.scripting.Locatable;
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.lexer.Token;
@@ -13,7 +12,7 @@ public abstract class ParserNode implements Locatable {
     private final ParserNodeType nodeType;
     private final TextRange range;
 
-    protected ParserNode(@NotNull ParserNodeType nodeType, @NotNull TextRange range) {
+    protected ParserNode(ParserNodeType nodeType, TextRange range) {
         this.nodeType = nodeType;
         this.range = range;
     }
@@ -43,14 +42,14 @@ public abstract class ParserNode implements Locatable {
 
     public abstract List<Locatable> getChildNodes();
 
-    public String asFullSource() {
+    public String asFullSource(String code) {
         StringBuilder builder = new StringBuilder();
         for (Locatable node : getChildNodes()) {
             if (node instanceof Token token) {
-                builder.append(token.asFullSource());
+                builder.append(token.asFullSource(code));
             }
             if (node instanceof ParserNode syntaxNode) {
-                builder.append(syntaxNode.asFullSource());
+                builder.append(syntaxNode.asFullSource(code));
             }
         }
         return builder.toString();

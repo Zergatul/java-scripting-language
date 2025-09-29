@@ -1,7 +1,10 @@
 package com.zergatul.scripting.parser.nodes;
 
+import com.zergatul.scripting.Locatable;
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.parser.ParserTreeVisitor;
+
+import java.util.List;
 
 public class InvocationExpressionNode extends ExpressionNode {
 
@@ -23,5 +26,10 @@ public class InvocationExpressionNode extends ExpressionNode {
     public void acceptChildren(ParserTreeVisitor visitor) {
         callee.accept(visitor);
         arguments.accept(visitor);
+    }
+
+    @Override
+    public List<Locatable> getChildNodes() {
+        return List.of(callee, arguments);
     }
 }

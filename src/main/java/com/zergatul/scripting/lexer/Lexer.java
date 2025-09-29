@@ -145,7 +145,7 @@ public class Lexer {
                                 advance();
                             }
 
-                            endComment(true, TokenType.SINGLE_LINE_COMMENT);
+                            endComment(TokenType.SINGLE_LINE_COMMENT);
                         }
                         case '*' -> {
                             trackBeginToken();
@@ -153,12 +153,12 @@ public class Lexer {
                             advance();
                             while (true) {
                                 if (current == -1) {
-                                    endComment(true, TokenType.MULTI_LINE_COMMENT);
+                                    endComment(TokenType.MULTI_LINE_COMMENT);
                                     break;
                                 } else if (current == '*' && next == '/') {
                                     advance();
                                     advance();
-                                    endComment(false, TokenType.MULTI_LINE_COMMENT);
+                                    endComment(TokenType.MULTI_LINE_COMMENT);
                                     break;
                                 } else if (current == '\n') {
                                     advance();
@@ -358,21 +358,22 @@ public class Lexer {
                     }
                 }
                 case '\n' -> {
-                    appendTrivia(TokenType.LINE_BREAK);
+                    trackBeginToken();
                     advance();
                     newLine();
+                    endToken(TokenType.LINE_BREAK);
                 }
                 case '\r' -> {
+                    trackBeginToken();
                     if (next == '\n') {
-                        trackBeginToken();
                         advance();
                         advance();
-                        endToken(TokenType.LINE_BREAK);
+                        newLine();
                     } else {
-                        appendTrivia(TokenType.LINE_BREAK);
                         advance();
+                        newLine();
                     }
-                    newLine();
+                    endToken(TokenType.LINE_BREAK);
                 }
                 case -1 -> {
                     break loop;
@@ -396,6 +397,7 @@ public class Lexer {
                         processNumber();
                     } else {
                         Token token = new Token(TokenType.INVALID, new SingleLineTextRange(line, column, position, 1));
+                        appendToken(token);
                         addDiagnostic(LexerErrors.UnexpectedSymbol, token, hex(current));
                         advance();
                     }
@@ -642,8 +644,8 @@ public class Lexer {
         appendToken(new Token(type, new SingleLineTextRange(line, column, position, 1)));
     }
 
-    private void appendTrivia(TokenType type) {
-        appendTrivia(new Trivia(type, new SingleLineTextRange(line, column, position, 1)));
+    private void appendLineBreakTrivia() {
+        appendTrivia(new Trivia(TokenType.LINE_BREAK, new MultiLineTextRange(line, column, line + 1, 1, position, 1)));
     }
 
     private void trackBeginToken() {
@@ -667,7 +669,7 @@ public class Lexer {
         }
     }
 
-    private void endComment(boolean ending, TokenType type) {
+    private void endComment(TokenType type) {
         TextRange range = beginLine == line ?
                 new SingleLineTextRange(beginLine, beginColumn, beginPosition, position - beginPosition) :
                 new MultiLineTextRange(beginLine, beginColumn, line, column, beginPosition, position - beginPosition);

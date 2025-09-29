@@ -18,12 +18,12 @@ public final class ValueToken extends Token {
     }
 
     @Override
-    public Token withLeadingTrivia(List<Trivia> trivia) {
+    public ValueToken withLeadingTrivia(List<Trivia> trivia) {
         return new ValueToken(getTokenType(), value, merge(leadingTrivia, trivia), trailingTrivia, getRange());
     }
 
     @Override
-    public Token withTrailingTrivia(Trivia trivia) {
+    public ValueToken withTrailingTrivia(Trivia trivia) {
         return new ValueToken(getTokenType(), value, leadingTrivia, merge(trailingTrivia, trivia), getRange());
     }
 }

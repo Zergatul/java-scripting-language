@@ -1,9 +1,12 @@
 package com.zergatul.scripting.parser.nodes;
 
 import com.zergatul.scripting.InternalException;
+import com.zergatul.scripting.Locatable;
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.lexer.Token;
 import com.zergatul.scripting.parser.ParserTreeVisitor;
+
+import java.util.List;
 
 public class InvalidStatementNode extends StatementNode {
 
@@ -21,6 +24,11 @@ public class InvalidStatementNode extends StatementNode {
 
     @Override
     public void acceptChildren(ParserTreeVisitor visitor) {}
+
+    @Override
+    public List<Locatable> getChildNodes() {
+        return List.of();
+    }
 
     @Override
     public StatementNode updateWithSemicolon(Token semicolon) {

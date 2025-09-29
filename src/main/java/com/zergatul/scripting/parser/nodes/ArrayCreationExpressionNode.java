@@ -1,6 +1,5 @@
 package com.zergatul.scripting.parser.nodes;
 
-import com.zergatul.annotations.NotNull;
 import com.zergatul.scripting.Locatable;
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.lexer.Token;
@@ -10,23 +9,18 @@ import java.util.List;
 
 public class ArrayCreationExpressionNode extends ExpressionNode {
 
-    @NotNull
     public final Token keyword;
-    @NotNull
     public final TypeNode typeNode;
-    @NotNull
     public final Token openBracket;
-    @NotNull
     public final ExpressionNode lengthExpression;
-    @NotNull
     public final Token closeBracket;
 
     public ArrayCreationExpressionNode(
-            @NotNull Token keyword,
-            @NotNull TypeNode typeNode,
-            @NotNull Token openBracket,
-            @NotNull ExpressionNode lengthExpression,
-            @NotNull Token closeBracket,
+            Token keyword,
+            TypeNode typeNode,
+            Token openBracket,
+            ExpressionNode lengthExpression,
+            Token closeBracket,
             TextRange range
     ) {
         super(ParserNodeType.ARRAY_CREATION_EXPRESSION, range);

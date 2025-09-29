@@ -1,18 +1,26 @@
 package com.zergatul.scripting.parser.nodes;
 
+import com.zergatul.scripting.Locatable;
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.lexer.Token;
 import com.zergatul.scripting.lexer.TokenType;
 import com.zergatul.scripting.lexer.ValueToken;
 import com.zergatul.scripting.parser.ParserTreeVisitor;
+import org.jspecify.annotations.Nullable;
+
+import java.util.List;
 
 public class Integer64LiteralExpressionNode extends ExpressionNode {
 
+    @Nullable
     public Token sign;
     public ValueToken token;
     public final String value;
 
-    public Integer64LiteralExpressionNode(Token sign, ValueToken token) {
+    public Integer64LiteralExpressionNode(
+            @Nullable Token sign,
+            ValueToken token
+    ) {
         super(ParserNodeType.INTEGER64_LITERAL, sign == null ? token.getRange() : TextRange.combine(sign, token));
         this.sign = sign;
         this.token = token;
@@ -30,6 +38,15 @@ public class Integer64LiteralExpressionNode extends ExpressionNode {
 
     @Override
     public void acceptChildren(ParserTreeVisitor visitor) {}
+
+    @Override
+    public List<Locatable> getChildNodes() {
+        if (sign != null) {
+            return List.of(sign, token);
+        } else {
+            return List.of(token);
+        }
+    }
 
     public Integer64LiteralExpressionNode withSign(UnaryOperatorNode operator) {
         return new Integer64LiteralExpressionNode(operator.token, token);

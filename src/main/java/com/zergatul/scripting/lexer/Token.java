@@ -14,7 +14,7 @@ public class Token implements Locatable {
     private final TokenType tokenType;
     protected final Trivia[] leadingTrivia;
     protected final Trivia[] trailingTrivia;
-    private final TextRange range;
+    protected final TextRange range;
 
     public Token(TokenType tokenType, TextRange range) {
         this(tokenType, List.of(), List.of(), range);
@@ -79,98 +79,20 @@ public class Token implements Locatable {
         return new Token(tokenType, leadingTrivia, merge(trailingTrivia, trivia), range);
     }
 
-    public String asFullSource() {
+    public String asFullSource(String code) {
         StringBuilder builder = new StringBuilder();
         for (var trivia : leadingTrivia) {
-            builder.append(trivia.asSource());
+            builder.append(trivia.asSource(code));
         }
-        builder.append(asFullSource());
+        builder.append(asSource(code));
         for (var trivia : trailingTrivia) {
-            builder.append(trivia.asSource());
+            builder.append(trivia.asSource(code));
         }
         return builder.toString();
     }
 
-    protected String asSource() {
-        return switch (tokenType) {
-            case LEFT_PARENTHESES -> "(";
-            case RIGHT_PARENTHESES -> ")";
-            case LEFT_SQUARE_BRACKET -> "[";
-            case RIGHT_SQUARE_BRACKET -> "]";
-            case LEFT_CURLY_BRACKET -> "{";
-            case RIGHT_CURLY_BRACKET -> "}";
-            case DOT -> ".";
-            case DOLLAR -> "$";
-            case COMMA -> ",";
-            case COLON -> ":";
-            case SEMICOLON -> ";";
-            case EXCLAMATION -> "!";
-            case AMPERSAND -> "&";
-            case PIPE -> "|";
-            case PLUS -> "+";
-            case PLUS_PLUS -> "++";
-            case MINUS -> "-";
-            case MINUS_MINUS -> "--";
-            case ASTERISK -> "*";
-            case SLASH -> "/";
-            case PERCENT -> "%";
-            case LESS -> "<";
-            case GREATER -> ">";
-            case FALSE -> "false";
-            case TRUE -> "true";
-            case END_OF_FILE -> "";
-            case EQUAL -> "=";
-            case QUESTION -> "?";
-            case BOOLEAN -> "boolean";
-            case INT8 -> "int8";
-            case INT16 -> "int16";
-            case INT -> "int";
-            case INT32 -> "int32";
-            case INT64 -> "int64";
-            case LONG -> "long";
-            case FLOAT32 -> "float32";
-            case FLOAT -> "float";
-            case FLOAT64 -> "float64";
-            case CHAR -> "char";
-            case NEW -> "new";
-            case EQUAL_EQUAL -> "==";
-            case EQUAL_GREATER -> "=>";
-            case EXCLAMATION_EQUAL -> "!=";
-            case AMPERSAND_AMPERSAND -> "&&";
-            case AMPERSAND_EQUAL -> "&=";
-            case PIPE_PIPE -> "||";
-            case PIPE_EQUAL -> "|=";
-            case LESS_EQUAL -> "<=";
-            case GREATER_EQUAL -> ">=";
-            case PLUS_EQUAL -> "+=";
-            case MINUS_EQUAL -> "-=";
-            case ASTERISK_EQUAL -> "*=";
-            case SLASH_EQUAL -> "/=";
-            case PERCENT_EQUAL -> "%=";
-            case IF -> "if";
-            case ELSE -> "else";
-            case RETURN -> "return";
-            case FOR -> "for";
-            case FOREACH -> "foreach";
-            case WHILE -> "while";
-            case BREAK -> "break";
-            case CONTINUE -> "continue";
-            case IN -> "in";
-            case STATIC -> "static";
-            case VOID -> "void";
-            case REF -> "ref";
-            case ASYNC -> "async";
-            case AWAIT -> "await";
-            case LET -> "let";
-            case IS -> "is";
-            case AS -> "as";
-            case META_TYPE -> "#type";
-            case META_TYPE_OF -> "$typeof";
-            case CLASS -> "class";
-            case CONSTRUCTOR -> "constructor";
-            case THIS -> "this";
-            default -> throw new InternalException();
-        };
+    public String asSource(String code) {
+        return code.substring(range.getPosition(), range.getPosition() + range.getLength());
     }
 
     protected static Trivia[] merge(Trivia[] array1, List<Trivia> array2) {

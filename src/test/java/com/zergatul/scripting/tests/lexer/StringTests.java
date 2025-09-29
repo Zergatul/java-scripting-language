@@ -1,6 +1,7 @@
 package com.zergatul.scripting.tests.lexer;
 
 import com.zergatul.scripting.DiagnosticMessage;
+import com.zergatul.scripting.MultiLineTextRange;
 import com.zergatul.scripting.SingleLineTextRange;
 import com.zergatul.scripting.lexer.*;
 import org.junit.jupiter.api.Test;
@@ -28,9 +29,9 @@ public class StringTests extends LexerTestBase {
                 new DiagnosticMessage(LexerErrors.NewlineInString, new SingleLineTextRange(1, 1, 0, 2))),
                 result.diagnostics());
         comparator.assertEquals(List.of(
-                new ValueToken(TokenType.STRING_LITERAL, "1", new SingleLineTextRange(1, 1, 0, 2))
-                        .withTrailingTrivia(new Trivia(TokenType.LINE_BREAK, new SingleLineTextRange(1, 3, 2, 1))),
-                new EndOfFileToken(new SingleLineTextRange(2, 1, 3, 0))),
+                        new ValueToken(TokenType.STRING_LITERAL, "1", new SingleLineTextRange(1, 1, 0, 2))
+                                .withTrailingTrivia(new Trivia(TokenType.LINE_BREAK, new MultiLineTextRange(1, 3, 2, 1, 2, 1))),
+                        new EndOfFileToken(new SingleLineTextRange(2, 1, 3, 0))),
                 result.tokens());
     }
 

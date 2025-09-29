@@ -1,9 +1,11 @@
 package com.zergatul.scripting.parser.nodes;
 
-import com.zergatul.scripting.InternalException;
+import com.zergatul.scripting.Locatable;
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.lexer.EndOfFileToken;
 import com.zergatul.scripting.parser.ParserTreeVisitor;
+
+import java.util.List;
 
 public class CompilationUnitNode extends ParserNode {
 
@@ -18,11 +20,6 @@ public class CompilationUnitNode extends ParserNode {
         this.end = end;
     }
 
-    public CompilationUnitNode(CompilationUnitMembersListNode members, StatementsListNode statements, TextRange range) {
-        super(ParserNodeType.COMPILATION_UNIT, range);
-        throw new InternalException();
-    }
-
     @Override
     public void accept(ParserTreeVisitor visitor) {
         visitor.explicitVisit(this);
@@ -32,5 +29,10 @@ public class CompilationUnitNode extends ParserNode {
     public void acceptChildren(ParserTreeVisitor visitor) {
         members.accept(visitor);
         statements.accept(visitor);
+    }
+
+    @Override
+    public List<Locatable> getChildNodes() {
+        return List.of(members, statements, end);
     }
 }

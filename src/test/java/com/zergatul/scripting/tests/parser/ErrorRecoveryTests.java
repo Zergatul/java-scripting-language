@@ -3,13 +3,9 @@ package com.zergatul.scripting.tests.parser;
 import com.zergatul.scripting.DiagnosticMessage;
 import com.zergatul.scripting.MultiLineTextRange;
 import com.zergatul.scripting.SingleLineTextRange;
-import com.zergatul.scripting.lexer.Token;
-import com.zergatul.scripting.lexer.TokenType;
-import com.zergatul.scripting.lexer.Trivia;
-import com.zergatul.scripting.parser.BinaryOperator;
+import com.zergatul.scripting.lexer.*;
 import com.zergatul.scripting.parser.ParserErrors;
 import com.zergatul.scripting.parser.ParserOutput;
-import com.zergatul.scripting.parser.PredefinedType;
 import com.zergatul.scripting.parser.nodes.*;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -29,33 +25,37 @@ public class ErrorRecoveryTests extends ParserTestBase {
                 new DiagnosticMessage(ParserErrors.NotAStatement, new SingleLineTextRange(1, 1, 0, 9)),
                 new DiagnosticMessage(ParserErrors.SemicolonExpected, new SingleLineTextRange(1, 9, 8, 1))),
                 result.diagnostics());
-//        comparator.assertEquals(new CompilationUnitNode(
-//                new CompilationUnitMembersListNode(List.of(),new SingleLineTextRange(1, 1, 0, 0)),
-//                new StatementsListNode(List.of(
-//                        new ExpressionStatementNode(
-//                                new MemberAccessExpressionNode(
-//                                        new NameExpressionNode("freeCam", new SingleLineTextRange(1, 1, 0, 7)),
-//                                        new Token(TokenType.DOT, new SingleLineTextRange(1, 8, 7, 1)),
-//                                        new NameExpressionNode("t", new SingleLineTextRange(1, 9, 8, 1)),
-//                                        new SingleLineTextRange(1, 1, 0, 9)),
-//                                new SingleLineTextRange(1, 1, 0, 9)),
-//                        new ExpressionStatementNode(
-//                                new InvocationExpressionNode(
-//                                        new MemberAccessExpressionNode(
-//                                                new NameExpressionNode("freeCam", new SingleLineTextRange(2, 1, 10, 7)),
-//                                                new Token(TokenType.DOT, new SingleLineTextRange(2, 8, 17, 1)),
-//                                                new NameExpressionNode("toggle", new SingleLineTextRange(2, 9, 18, 6)),
-//                                                new SingleLineTextRange(2, 1, 10, 14)),
-//                                        new ArgumentsListNode(
-//                                                new Token(TokenType.LEFT_PARENTHESES, new SingleLineTextRange(2, 15, 24, 1)),
-//                                                List.of(),
-//                                                new Token(TokenType.RIGHT_PARENTHESES, new SingleLineTextRange(2, 16, 25, 1)),
-//                                                new SingleLineTextRange(2, 15, 24, 2)),
-//                                        new SingleLineTextRange(2, 1, 10, 16)),
-//                                new SingleLineTextRange(2, 1, 10, 17))),
-//                        new MultiLineTextRange(1, 1, 2, 18, 0, 27)),
-//                new MultiLineTextRange(1, 1, 2, 18, 0, 27)),
-//                result.unit());
+        comparator.assertEquals(
+                new CompilationUnitNode(
+                        new CompilationUnitMembersListNode(List.of(), new SingleLineTextRange(1, 1, 0, 0)),
+                        new StatementsListNode(List.of(
+                                new ExpressionStatementNode(
+                                        new MemberAccessExpressionNode(
+                                                new NameExpressionNode(
+                                                        new ValueToken(TokenType.IDENTIFIER, "freeCam", new SingleLineTextRange(1, 1, 0, 7))),
+                                                new Token(TokenType.DOT, new SingleLineTextRange(1, 8, 7, 1)),
+                                                new NameExpressionNode(
+                                                        new ValueToken(TokenType.IDENTIFIER, "t", new SingleLineTextRange(1, 9, 8, 1))
+                                                                .withTrailingTrivia(new Trivia(TokenType.LINE_BREAK, new MultiLineTextRange(1, 10, 2, 1, 9, 1))))),
+                                        new Token(TokenType.SEMICOLON, new SingleLineTextRange(1, 10, 9, 0))),
+                                new ExpressionStatementNode(
+                                        new InvocationExpressionNode(
+                                                new MemberAccessExpressionNode(
+                                                        new NameExpressionNode(
+                                                                new ValueToken(TokenType.IDENTIFIER, "freeCam", new SingleLineTextRange(2, 1, 10, 7))),
+                                                        new Token(TokenType.DOT, new SingleLineTextRange(2, 8, 17, 1)),
+                                                        new NameExpressionNode(
+                                                                new ValueToken(TokenType.IDENTIFIER, "toggle", new SingleLineTextRange(2, 9, 18, 6)))),
+                                                new ArgumentsListNode(
+                                                        new Token(TokenType.LEFT_PARENTHESES, new SingleLineTextRange(2, 15, 24, 1)),
+                                                        SeparatedList.of(),
+                                                        new Token(TokenType.RIGHT_PARENTHESES, new SingleLineTextRange(2, 16, 25, 1))),
+                                                new SingleLineTextRange(2, 1, 10, 16)),
+                                        new Token(TokenType.SEMICOLON, new SingleLineTextRange(2, 17, 26, 1))
+                                                .withTrailingTrivia(new Trivia(TokenType.LINE_BREAK, new MultiLineTextRange(2, 18, 3, 1, 27, 1))))),
+                                new MultiLineTextRange(1, 1, 2, 18, 0, 27)),
+                        new EndOfFileToken(new SingleLineTextRange(3, 1, 28, 0))),
+                result.unit());
     }
 
     @Test
@@ -190,7 +190,8 @@ public class ErrorRecoveryTests extends ParserTestBase {
                 """);
 
         comparator.assertEquals(List.of(
-                new DiagnosticMessage(ParserErrors.CommaOrCloseCurlyBracketExpected, new SingleLineTextRange(1, 25, 24, 1))),
+                new DiagnosticMessage(ParserErrors.CommaOrCloseCurlyBracketExpected, new SingleLineTextRange(1, 25, 24, 1)),
+                new DiagnosticMessage(ParserErrors.CloseCurlyBracketExpected, new SingleLineTextRange(1, 25, 24, 1), ";")),
                 result.diagnostics());
 //        comparator.assertEquals(
 //                new CompilationUnitNode(

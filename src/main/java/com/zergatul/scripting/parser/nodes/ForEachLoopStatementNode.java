@@ -1,8 +1,11 @@
 package com.zergatul.scripting.parser.nodes;
 
+import com.zergatul.scripting.Locatable;
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.lexer.Token;
 import com.zergatul.scripting.parser.ParserTreeVisitor;
+
+import java.util.List;
 
 public class ForEachLoopStatementNode extends StatementNode {
 
@@ -47,5 +50,10 @@ public class ForEachLoopStatementNode extends StatementNode {
         name.accept(visitor);
         iterable.accept(visitor);
         body.accept(visitor);
+    }
+
+    @Override
+    public List<Locatable> getChildNodes() {
+        return List.of(keyword, openParen, typeNode, name, in, iterable, closeParen, body);
     }
 }

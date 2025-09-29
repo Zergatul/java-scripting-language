@@ -985,7 +985,7 @@ public class Binder {
         BoundTypeNode typeNode = bindType(expression.typeNode);
         SArrayType type = (SArrayType) typeNode.type;
         List<BoundExpressionNode> items = new ArrayList<>(expression.list.size());
-        for (ExpressionNode e : expression.list) {
+        for (ExpressionNode e : expression.list.getNodes()) {
             items.add(convert(bindExpression(e), type.getElementsType()));
         }
 

@@ -1,7 +1,10 @@
 package com.zergatul.scripting.parser.nodes;
 
+import com.zergatul.scripting.Locatable;
 import com.zergatul.scripting.lexer.ValueToken;
 import com.zergatul.scripting.parser.ParserTreeVisitor;
+
+import java.util.List;
 
 public class StringLiteralExpressionNode extends ExpressionNode {
 
@@ -21,4 +24,9 @@ public class StringLiteralExpressionNode extends ExpressionNode {
 
     @Override
     public void acceptChildren(ParserTreeVisitor visitor) {}
+
+    @Override
+    public List<Locatable> getChildNodes() {
+        return List.of(token);
+    }
 }

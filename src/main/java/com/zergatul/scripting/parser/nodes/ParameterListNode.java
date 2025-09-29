@@ -1,8 +1,12 @@
 package com.zergatul.scripting.parser.nodes;
 
+import com.zergatul.scripting.Locatable;
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.lexer.Token;
 import com.zergatul.scripting.parser.ParserTreeVisitor;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class ParameterListNode extends ParserNode {
 
@@ -27,6 +31,15 @@ public class ParameterListNode extends ParserNode {
         for (ParameterNode parameter : parameters.getNodes()) {
             parameter.accept(visitor);
         }
+    }
+
+    @Override
+    public List<Locatable> getChildNodes() {
+        List<Locatable> nodes = new ArrayList<>();
+        nodes.add(openParen);
+        nodes.addAll(parameters.getChildNodes());
+        nodes.add(closeParen);
+        return nodes;
     }
 
     public boolean hasParentheses() {
