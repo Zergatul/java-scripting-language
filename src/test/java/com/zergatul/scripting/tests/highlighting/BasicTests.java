@@ -72,6 +72,28 @@ public class BasicTests extends ComparatorTest {
                 highlight(code));
     }
 
+    @Test
+    public void genericFunctionTest1() {
+        String code = """
+                fn<int => int> func = (x) =>
+                """;
+        comparator.assertSemanticEquals(
+                List.of(
+                        new SemanticToken(SemanticTokenType.KEYWORD, new SingleLineTextRange(1, 1, 0, 2)),
+                        new SemanticToken(SemanticTokenType.BRACKET, new SingleLineTextRange(1, 3, 2, 1)),
+                        new SemanticToken(SemanticTokenType.KEYWORD, new SingleLineTextRange(1, 4, 3, 3)),
+                        new SemanticToken(SemanticTokenType.ARROW, new SingleLineTextRange(1, 8, 7, 2)),
+                        new SemanticToken(SemanticTokenType.KEYWORD, new SingleLineTextRange(1, 11, 10, 3)),
+                        new SemanticToken(SemanticTokenType.BRACKET, new SingleLineTextRange(1, 14, 13, 1)),
+                        new SemanticToken(SemanticTokenType.IDENTIFIER, new SingleLineTextRange(1, 16, 15, 4)),
+                        new SemanticToken(SemanticTokenType.OPERATOR, new SingleLineTextRange(1, 21, 20, 1)),
+                        new SemanticToken(SemanticTokenType.BRACKET, new SingleLineTextRange(1, 23, 22, 1)),
+                        new SemanticToken(SemanticTokenType.IDENTIFIER, new SingleLineTextRange(1, 24, 23, 1)),
+                        new SemanticToken(SemanticTokenType.BRACKET, new SingleLineTextRange(1, 25, 24, 1)),
+                        new SemanticToken(SemanticTokenType.ARROW, new SingleLineTextRange(1, 27, 26, 2))),
+                highlight(code));
+    }
+
     protected List<SemanticToken> highlight(String code) {
         LexerOutput lexerOutput = new Lexer(new LexerInput(code)).lex();
         ParserOutput parserOutput = new Parser(lexerOutput).parse();

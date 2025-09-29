@@ -365,8 +365,8 @@ public class HighlightingProvider {
     }
 
     private void process(BoundFunctionTypeNode node) {
-        process(node.syntaxNode.fn);
-        process(node.syntaxNode.openBracket);
+        result.add(new SemanticToken(KEYWORD, node.syntaxNode.fn.getRange()));
+        result.add(new SemanticToken(BRACKET, node.syntaxNode.openBracket.getRange()));
         if (node.syntaxNode.openParen != null) {
             process(node.syntaxNode.openParen);
         }
@@ -376,7 +376,7 @@ public class HighlightingProvider {
         }
         process(node.syntaxNode.arrow);
         process(node.returnTypeNode);
-        process(node.syntaxNode.closeBracket);
+        result.add(new SemanticToken(BRACKET, node.syntaxNode.closeBracket.getRange()));
     }
 
     private void process(BoundGeneratorContinueNode node) {
@@ -514,7 +514,9 @@ public class HighlightingProvider {
     }
 
     private void process(BoundParameterNode node) {
-        process(node.getTypeNode());
+        if (node.getTypeNode() != null) {
+            process(node.getTypeNode());
+        }
         process(node.getName());
     }
 
