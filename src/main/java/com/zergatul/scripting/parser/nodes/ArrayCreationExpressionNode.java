@@ -20,10 +20,9 @@ public class ArrayCreationExpressionNode extends ExpressionNode {
             TypeNode typeNode,
             Token openBracket,
             ExpressionNode lengthExpression,
-            Token closeBracket,
-            TextRange range
+            Token closeBracket
     ) {
-        super(ParserNodeType.ARRAY_CREATION_EXPRESSION, range);
+        super(ParserNodeType.ARRAY_CREATION_EXPRESSION, TextRange.combine(keyword, closeBracket));
         this.keyword = keyword;
         this.typeNode = typeNode;
         this.openBracket = openBracket;

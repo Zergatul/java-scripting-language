@@ -3,6 +3,8 @@ package com.zergatul.scripting.binding;
 import com.zergatul.scripting.*;
 import com.zergatul.scripting.binding.nodes.*;
 import com.zergatul.scripting.compiler.*;
+import com.zergatul.scripting.lexer.Token;
+import com.zergatul.scripting.lexer.TokenType;
 import com.zergatul.scripting.parser.AssignmentOperator;
 import com.zergatul.scripting.binding.nodes.BoundNodeType;
 import com.zergatul.scripting.parser.ParserOutput;
@@ -780,7 +782,7 @@ public class Binder {
                         methodGroup.method.name, invocation.arguments.arguments.size());
             }
 
-            BoundMethodNode methodNode = new BoundMethodNode(methodGroup.getNameSyntaxNode(), result.invocable);
+            BoundMethodNode methodNode = new BoundMethodNode(methodGroup.syntaxNode.name, result.invocable);
             return new BoundMethodInvocationExpressionNode(
                     invocation,
                     methodGroup.callee,
@@ -934,7 +936,10 @@ public class Binder {
                     .toList();
             if (!methods.isEmpty()) {
                 return new BoundMethodGroupExpressionNode(
-                        name,
+                        new MemberAccessExpressionNode(
+                                new ThisExpressionNode(new Token(TokenType.THIS, name.getRange().getStart())),
+                                new Token(TokenType.DOT, name.getRange().getStart()),
+                                name),
                         new BoundThisExpressionNode(null, context.getClassType(), name.getRange().getStart()),
                         methods,
                         new BoundUnresolvedMethodNode(name));
@@ -946,7 +951,8 @@ public class Binder {
         }).findFirst();
         if (optional.isPresent()) {
             SType type = SType.fromJavaType(optional.get());
-            BoundCustomTypeNode typeNode = new BoundCustomTypeNode(name, type, name.getRange());
+            CustomTypeNode custom = new CustomTypeNode(name.token);
+            BoundCustomTypeNode typeNode = new BoundCustomTypeNode(custom, type, name.getRange());
             return new BoundStaticReferenceExpression(name, typeNode, new SStaticTypeReference(type));
         }
 

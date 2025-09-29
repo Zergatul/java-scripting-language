@@ -23,7 +23,7 @@ public class LambdaExpressionNode extends ExpressionNode {
             Token arrow,
             StatementNode body
     ) {
-        super(ParserNodeType.LAMBDA_EXPRESSION, TextRange.combine(openParen != null ? openParen : parameters.getNodeAt(0), body));
+        super(ParserNodeType.LAMBDA_EXPRESSION, TextRange.combine(openParen, body));
         this.openParen = openParen;
         this.parameters = parameters;
         this.closeParen = closeParen;

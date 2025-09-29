@@ -21,7 +21,8 @@ public abstract class Dumper {
 
     protected void dump(Token token) {
         if (token == null) {
-            fullLine("null");
+            beginNewLineIfRequired();
+            sb.append("null");
         } else if (token.getClass() == Token.class) {
             dumpToken(token);
         } else if (token.getClass() == ValueToken.class) {

@@ -3,6 +3,7 @@ package com.zergatul.scripting.tests.framework;
 import com.zergatul.scripting.DiagnosticMessage;
 import com.zergatul.scripting.InternalException;
 import com.zergatul.scripting.binding.nodes.BoundCompilationUnitNode;
+import com.zergatul.scripting.highlighting.SemanticToken;
 import com.zergatul.scripting.lexer.Token;
 import com.zergatul.scripting.lexer.TokenQueue;
 import com.zergatul.scripting.parser.nodes.CompilationUnitNode;
@@ -39,6 +40,10 @@ public class Comparator {
         List<Token> actualList = new ArrayList<>();
         actual.iterator().forEachRemaining(actualList::add);
         assertEquals("tokens", expected, actualList);
+    }
+
+    public void assertSemanticEquals(List<SemanticToken> expected, List<SemanticToken> actual) {
+        assertEquals("tokens", expected, actual);
     }
 
     private void assertEquals(String prefix, Object expected, Object actual) {

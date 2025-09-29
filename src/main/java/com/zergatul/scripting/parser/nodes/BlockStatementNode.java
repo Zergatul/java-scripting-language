@@ -1,6 +1,5 @@
 package com.zergatul.scripting.parser.nodes;
 
-import com.zergatul.scripting.InternalException;
 import com.zergatul.scripting.Locatable;
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.lexer.Token;
@@ -15,16 +14,11 @@ public class BlockStatementNode extends StatementNode {
     public final List<StatementNode> statements;
     public final Token closeBrace;
 
-    public BlockStatementNode(Token openBrace, List<StatementNode> statements, Token closeBrace, TextRange range) {
-        super(ParserNodeType.BLOCK_STATEMENT, range);
+    public BlockStatementNode(Token openBrace, List<StatementNode> statements, Token closeBrace) {
+        super(ParserNodeType.BLOCK_STATEMENT, TextRange.combine(openBrace, closeBrace));
         this.openBrace = openBrace;
         this.statements = statements;
         this.closeBrace = closeBrace;
-    }
-
-    public BlockStatementNode(List<StatementNode> statements, TextRange range) {
-        super(ParserNodeType.BLOCK_STATEMENT, range);
-        throw new InternalException();
     }
 
     @Override

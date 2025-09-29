@@ -3,22 +3,24 @@ package com.zergatul.scripting.binding.nodes;
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
 import com.zergatul.scripting.parser.nodes.ForLoopStatementNode;
+import org.jspecify.annotations.Nullable;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class BoundForLoopStatementNode extends BoundStatementNode {
 
     public final ForLoopStatementNode syntaxNode;
-    public final BoundStatementNode init;
-    public final BoundExpressionNode condition;
-    public final BoundStatementNode update;
+    @Nullable public final BoundStatementNode init;
+    @Nullable public final BoundExpressionNode condition;
+    @Nullable public final BoundStatementNode update;
     public final BoundStatementNode body;
 
     public BoundForLoopStatementNode(
             ForLoopStatementNode node,
-            BoundStatementNode init,
-            BoundExpressionNode condition,
-            BoundStatementNode update,
+            @Nullable BoundStatementNode init,
+            @Nullable BoundExpressionNode condition,
+            @Nullable BoundStatementNode update,
             BoundStatementNode body
     ) {
         this(node, init, condition, update, body, node.getRange());
@@ -26,9 +28,9 @@ public class BoundForLoopStatementNode extends BoundStatementNode {
 
     public BoundForLoopStatementNode(
             ForLoopStatementNode node,
-            BoundStatementNode init,
-            BoundExpressionNode condition,
-            BoundStatementNode update,
+            @Nullable BoundStatementNode init,
+            @Nullable BoundExpressionNode condition,
+            @Nullable BoundStatementNode update,
             BoundStatementNode body,
             TextRange range
     ) {
@@ -47,7 +49,9 @@ public class BoundForLoopStatementNode extends BoundStatementNode {
 
     @Override
     public void acceptChildren(BinderTreeVisitor visitor) {
-        init.accept(visitor);
+        if (init != null) {
+            init.accept(visitor);
+        }
         if (condition != null) {
             condition.accept(visitor);
         }
@@ -59,11 +63,18 @@ public class BoundForLoopStatementNode extends BoundStatementNode {
 
     @Override
     public List<BoundNode> getChildren() {
-        if (condition != null) {
-            return List.of(init, condition, update, body);
-        } else {
-            return List.of(init, update, body);
+        List<BoundNode> nodes = new ArrayList<>();
+        if (init != null) {
+            nodes.add(init);
         }
+        if (condition != null) {
+            nodes.add(condition);
+        }
+        if (update != null) {
+            nodes.add(update);
+        }
+        nodes.add(body);
+        return nodes;
     }
 
     public BoundForLoopStatementNode withBody(BoundStatementNode body) {

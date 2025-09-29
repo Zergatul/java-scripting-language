@@ -12,8 +12,7 @@ public class PostfixStatementNode extends StatementNode {
 
     public final ExpressionNode expression;
     public final Token operation;
-    @Nullable
-    public final Token semicolon;
+    @Nullable public final Token semicolon;
 
     public PostfixStatementNode(
             ParserNodeType nodeType,

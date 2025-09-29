@@ -19,7 +19,11 @@ public class BoundArgumentsListNode extends BoundNode {
         this(node, arguments, node.getRange());
     }
 
-    public BoundArgumentsListNode(ArgumentsListNode node, List<BoundExpressionNode> arguments, TextRange range) {
+    public BoundArgumentsListNode(
+            ArgumentsListNode node,
+            List<BoundExpressionNode> arguments,
+            TextRange range
+    ) {
         super(BoundNodeType.ARGUMENTS_LIST, range);
         this.syntaxNode = node;
         this.arguments = arguments;

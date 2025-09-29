@@ -87,7 +87,7 @@ public class Parser {
         }
 
         Token closeBrace = advance(TokenType.RIGHT_CURLY_BRACKET);
-        return new BlockStatementNode(openBrace, statements, closeBrace, TextRange.combine(openBrace, closeBrace));
+        return new BlockStatementNode(openBrace, statements, closeBrace);
     }
 
     private BlockStatementNode createMissingBlockStatement() {
@@ -95,8 +95,7 @@ public class Parser {
         return new BlockStatementNode(
                 new Token(TokenType.LEFT_CURLY_BRACKET, range),
                 List.of(),
-                new Token(TokenType.RIGHT_CURLY_BRACKET, range),
-                range);
+                new Token(TokenType.RIGHT_CURLY_BRACKET, range));
     }
 
     private IfStatementNode parseIfStatement() {
@@ -170,50 +169,51 @@ public class Parser {
 
     private ForLoopStatementNode parseForLoopStatement() {
         Token keyword = advance(TokenType.FOR);
-        Token lParen = advance(TokenType.LEFT_PARENTHESES);
+        Token openParen = advance(TokenType.LEFT_PARENTHESES);
 
-        if (lParen.getRange().isEmpty()) {
+        if (openParen.getRange().isEmpty()) {
             // assume entire statement is missing
+            TextRange range = createMissingTokenRangeAfterLast();
             return new ForLoopStatementNode(
                     keyword,
-                    lParen,
-                    createMissingInvalidStatement(),
-                    new InvalidExpressionNode(createMissingTokenRangeAfterLast()),
-                    createMissingInvalidStatement(),
-                    createMissingTokenAfterLast(TokenType.RIGHT_PARENTHESES),
-                    createMissingInvalidStatement());
+                    openParen,
+                    new InvalidStatementNode(range),
+                    new Token(TokenType.SEMICOLON, range),
+                    new InvalidExpressionNode(range),
+                    new Token(TokenType.SEMICOLON, range),
+                    new InvalidStatementNode(range),
+                    new Token(TokenType.RIGHT_PARENTHESES, range),
+                    new InvalidStatementNode(range));
         }
 
-        StatementNode init;
-        if (current.is(TokenType.SEMICOLON)) {
-            init = new EmptyStatementNode(advance(TokenType.SEMICOLON));
-        } else {
-            if (isPossibleSimpleStatement()) {
-                init = parseSimpleStatement();
+        StatementNode init = null;
+        if (current.isNot(TokenType.SEMICOLON)) {
+            if (isPossibleSimpleStatementOrDeclaration()) {
+                init = parseSimpleStatementOrDeclaration();
             } else {
                 addDiagnostic(ParserErrors.SimpleStatementExpected, current, current.getRawValue(code));
                 init = new InvalidStatementNode(createMissingTokenRangeBeforeCurrent());
             }
-            advance(TokenType.SEMICOLON);
         }
 
+        Token semicolon1 = advance(TokenType.SEMICOLON);
+
         ExpressionNode condition = null;
-        if (current.is(TokenType.SEMICOLON)) {
-            advance();
-        } else {
+        if (current.isNot(TokenType.SEMICOLON)) {
             if (isPossibleExpression()) {
                 condition = parseExpression();
             } else {
                 addDiagnostic(ParserErrors.ExpressionExpected, current, current.getRawValue(code));
             }
-            advance(TokenType.SEMICOLON);
         }
+
+        Token semicolon2 = advance(TokenType.SEMICOLON);
 
         StatementNode update;
         if (current.is(TokenType.RIGHT_PARENTHESES)) {
             update = null;
         } else {
-            if (isPossibleSimpleStatement() && !isPossibleDeclaration()) {
+            if (isPossibleSimpleStatementNotDeclaration()) {
                 update = parseSimpleStatementNotDeclaration(false);
             } else {
                 addDiagnostic(ParserErrors.SimpleStatementExpected, current, current.getRawValue(code));
@@ -221,7 +221,7 @@ public class Parser {
             }
         }
 
-        Token rParen = advance(TokenType.RIGHT_PARENTHESES);
+        Token closeParen = advance(TokenType.RIGHT_PARENTHESES);
         StatementNode body;
         if (isPossibleStatement()) {
             body = parseStatement();
@@ -230,7 +230,7 @@ public class Parser {
             body = new InvalidStatementNode(createMissingTokenRangeBeforeCurrent());
         }
 
-        return new ForLoopStatementNode(keyword, lParen, init, condition, update, rParen, body);
+        return new ForLoopStatementNode(keyword, openParen, init, semicolon1, condition, semicolon2, update, closeParen, body);
     }
 
     private ForEachLoopStatementNode parseForEachLoopStatement() {
@@ -350,7 +350,7 @@ public class Parser {
         return new EmptyStatementNode(semicolon);
     }
 
-    private StatementNode parseSimpleStatement() {
+    private StatementNode parseSimpleStatementOrDeclaration() {
         if (isPossibleDeclaration()) {
             return parseVariableDeclaration();
         } else {
@@ -835,7 +835,7 @@ public class Parser {
         }
     }
 
-    private boolean isPossibleSimpleStatement() {
+    private boolean isPossibleSimpleStatementOrDeclaration() {
         switch (current.getTokenType()) {
             case BOOLEAN:
             case INT8:
@@ -859,6 +859,10 @@ public class Parser {
         }
     }
 
+    private boolean isPossibleSimpleStatementNotDeclaration() {
+        return isPossibleSimpleStatementOrDeclaration() && !isPossibleDeclaration();
+    }
+
     private StatementNode parseStatement() {
         return switch (current.getTokenType()) {
             case LEFT_CURLY_BRACKET -> parseBlockStatement();
@@ -870,11 +874,11 @@ public class Parser {
             case BREAK -> parseBreakStatement();
             case CONTINUE -> parseContinueStatement();
             case SEMICOLON -> parseEmptyStatement();
-            case BOOLEAN, INT8, INT16, INT, INT32, INT64, LONG, FLOAT32, FLOAT, FLOAT64, STRING, CHAR, IDENTIFIER, LEFT_PARENTHESES -> withSemicolon(parseSimpleStatement());
+            case BOOLEAN, INT8, INT16, INT, INT32, INT64, LONG, FLOAT32, FLOAT, FLOAT64, STRING, CHAR, IDENTIFIER, LEFT_PARENTHESES -> withSemicolon(parseSimpleStatementOrDeclaration());
             case LET -> withSemicolon(parseVariableDeclaration());
             default -> {
                 if (isPossibleExpression()) {
-                    yield withSemicolon(parseSimpleStatement());
+                    yield withSemicolon(parseSimpleStatementOrDeclaration());
                 } else {
                     throw new InternalException("Cannot parse statement.");
                 }
@@ -1110,8 +1114,8 @@ public class Parser {
                 }
                 yield isPossibleLambdaExpression() ? parseLambdaExpression() : new NameExpressionNode((ValueToken) advance());
             }
-            case FALSE -> new BooleanLiteralExpressionNode(current, false, advance().getRange());
-            case TRUE -> new BooleanLiteralExpressionNode(current, true, advance().getRange());
+            case FALSE -> new BooleanLiteralExpressionNode(advance(), false);
+            case TRUE -> new BooleanLiteralExpressionNode(advance(), true);
             case INTEGER_LITERAL -> new IntegerLiteralExpressionNode(null, (ValueToken) advance());
             case INTEGER64_LITERAL -> new Integer64LiteralExpressionNode(null, (ValueToken) advance());
             case FLOAT_LITERAL -> new FloatLiteralExpressionNode((ValueToken) advance());
@@ -1174,8 +1178,7 @@ public class Parser {
                 typeNode,
                 openBracket,
                 lengthExpression,
-                closeBracket,
-                TextRange.combine(newToken, last));
+                closeBracket);
     }
 
     private ExpressionNode parseArrayInitializerExpression(Token newToken, TypeNode typeNode) {
@@ -1256,7 +1259,7 @@ public class Parser {
         if (current.is(TokenType.LEFT_CURLY_BRACKET)) {
             statement = parseBlockStatement();
         } else {
-            if (isPossibleSimpleStatement() && !isPossibleDeclaration()) {
+            if (isPossibleSimpleStatementNotDeclaration()) {
                 statement = parseSimpleStatementNotDeclaration(true);
             } else {
                 statement = new InvalidStatementNode(createMissingTokenRangeBeforeCurrent());

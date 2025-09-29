@@ -1,8 +1,6 @@
 package com.zergatul.scripting.parser.nodes;
 
-import com.zergatul.scripting.InternalException;
 import com.zergatul.scripting.Locatable;
-import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.lexer.Token;
 import com.zergatul.scripting.parser.ParserTreeVisitor;
 
@@ -13,15 +11,10 @@ public class BooleanLiteralExpressionNode extends ExpressionNode {
     public final Token token;
     public final boolean value;
 
-    public BooleanLiteralExpressionNode(Token token, boolean value, TextRange range) {
-        super(ParserNodeType.BOOLEAN_LITERAL, range);
+    public BooleanLiteralExpressionNode(Token token, boolean value) {
+        super(ParserNodeType.BOOLEAN_LITERAL, token.getRange());
         this.token = token;
         this.value = value;
-    }
-
-    public BooleanLiteralExpressionNode(boolean value, TextRange range) {
-        super(ParserNodeType.BOOLEAN_LITERAL, range);
-        throw new InternalException();
     }
 
     @Override

@@ -5,7 +5,6 @@ import com.zergatul.scripting.binding.BinderTreeVisitor;
 import com.zergatul.scripting.type.SType;
 
 import java.util.List;
-import java.util.Objects;
 
 public class BoundParameterNode extends BoundNode {
 

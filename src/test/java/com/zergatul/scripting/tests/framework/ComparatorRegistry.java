@@ -2,10 +2,12 @@ package com.zergatul.scripting.tests.framework;
 
 import com.zergatul.scripting.*;
 import com.zergatul.scripting.binding.nodes.*;
+import com.zergatul.scripting.highlighting.SemanticToken;
 import com.zergatul.scripting.lexer.*;
 import com.zergatul.scripting.parser.nodes.*;
 import com.zergatul.scripting.type.NativeInstanceMethodReference;
 import com.zergatul.scripting.type.NativeMethodReference;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -48,6 +50,9 @@ public class ComparatorRegistry {
                         .extract("message", node -> node.message)
                         .extract("code", node -> node.code)
                         .extract("range", node -> node.range))
+                .register(SemanticToken.class, builder -> builder
+                        .extract("type", node -> node.type())
+                        .extract("range", node -> node.range()))
                 /* Parser Nodes */
                 .register(ArgumentsListNode.class, builder -> builder
                         .extract("openParen", node -> node.openParen)
@@ -115,7 +120,9 @@ public class ComparatorRegistry {
                         .extract("keyword", node -> node.keyword)
                         .extract("openParen", node -> node.openParen)
                         .extract("init", node -> node.init)
+                        .extract("semicolon1", node -> node.semicolon1)
                         .extract("condition", node -> node.condition)
+                        .extract("semicolon2", node -> node.semicolon2)
                         .extract("update", node -> node.update)
                         .extract("closeParen", node -> node.closeParen)
                         .extract("body", node -> node.body))
@@ -149,9 +156,10 @@ public class ComparatorRegistry {
                         .extract("tokens", node -> node.tokens)
                         .extract("value", node -> node.value))
                 .register(JavaTypeNode.class, builder -> builder
-                        .extract("lBracket", node -> node.openBracket)
+                        .extract("java", node -> node.java)
+                        .extract("openBracket", node -> node.openBracket)
                         .extract("name", node -> node.name)
-                        .extract("rBracket", node -> node.closeBracket))
+                        .extract("closeBracket", node -> node.closeBracket))
                 .register(LambdaExpressionNode.class, builder -> builder
                         .extract("openParen", node -> node.openParen)
                         .extract("parameters", node -> node.parameters)
@@ -194,14 +202,20 @@ public class ComparatorRegistry {
                         .extract("nodeType", ParserNode::getNodeType)
                         .extract("range", ParserNode::getRange))
                 .register(PredefinedTypeNode.class, builder -> builder
+                        .extract("token", node -> node.token)
                         .extract("type", node -> node.type))
                 .register(ReturnStatementNode.class, builder -> builder
                         .extract("keyword", node -> node.keyword)
-                        .extract("expression", node -> node.expression))
+                        .extract("expression", node -> node.expression)
+                        .extract("semicolon", node -> node.semicolon))
+                .register(SeparatedList.class, builder -> builder
+                        .extract("nodes", SeparatedList::getNodes)
+                        .extract("commas", SeparatedList::getCommas))
                 .register(StatementsListNode.class, builder -> builder
                         .extract("statements", node -> node.statements))
                 .register(TypeTestExpressionNode.class, builder -> builder
                         .extract("expression", node -> node.expression)
+                        .extract("keyword", node -> node.keyword)
                         .extract("type", node -> node.type))
                 .register(UnaryExpressionNode.class, builder -> builder
                         .extract("operator", node -> node.operator)
@@ -305,7 +319,7 @@ public class ComparatorRegistry {
         // Add in top-down order: Object -> ... -> concrete
         List<Class<?>> lineage = new ArrayList<>();
         Class<?> c = concrete;
-        while (c != null) { lineage.add(0, c); c = c.getSuperclass(); }
+        while (c != null) { lineage.addFirst(c); c = c.getSuperclass(); }
         for (Class<?> k : lineage) {
             List<LabeledExtractor<?, ?>> xs = map.get(k);
             if (xs != null) {
@@ -328,20 +342,13 @@ public class ComparatorRegistry {
             this.type = type;
         }
 
-        public <R> Builder<T> extract(String label, Function<T, R> fn) {
+        public <R> Builder<T> extract(String label, Function<T, @Nullable R> fn) {
             local.add(LabeledExtractor.of(label, fn));
             return this;
         }
 
-        /** You can also pass pre-labeled extractors if you want to reuse them. */
-        public Builder<T> extract(LabeledExtractor<T, ?> extractor) {
-            local.add(extractor);
-            return this;
-        }
-
-        public ComparatorRegistry register() {
+        public void register() {
             registry.map.computeIfAbsent(type, k -> new ArrayList<>()).addAll(local);
-            return registry;
         }
     }
 }

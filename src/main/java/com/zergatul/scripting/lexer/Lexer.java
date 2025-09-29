@@ -8,11 +8,11 @@ import java.util.List;
 public class Lexer {
 
     private final String code;
+    private final List<Line> lines;
     private final List<DiagnosticMessage> diagnostics;
     private final List<Token> list;
     private final List<Trivia> triviaBuffer;
     private int position;
-    private int previous;
     private int current;
     private int next;
     private int line;
@@ -23,6 +23,7 @@ public class Lexer {
 
     public Lexer(LexerInput input) {
         this.code = input.code();
+        this.lines = new ArrayList<>();
         this.diagnostics = new ArrayList<>();
 
         this.list = new ArrayList<>();
@@ -30,7 +31,6 @@ public class Lexer {
         this.line = 1;
         this.column = 0;
         this.position = -1;
-        this.previous = -1;
         this.current = -1;
         this.next = charAt(0);
         advance();
@@ -162,15 +162,16 @@ public class Lexer {
                                     break;
                                 } else if (current == '\n') {
                                     advance();
-                                    newLine();
+                                    newLine(1);
                                 } else if (current == '\r') {
                                     if (next == '\n') {
                                         advance();
                                         advance();
+                                        newLine(2);
                                     } else {
                                         advance();
+                                        newLine(1);
                                     }
-                                    newLine();
                                 } else {
                                     advance();
                                 }
@@ -360,7 +361,7 @@ public class Lexer {
                 case '\n' -> {
                     trackBeginToken();
                     advance();
-                    newLine();
+                    newLine(1);
                     endToken(TokenType.LINE_BREAK);
                 }
                 case '\r' -> {
@@ -368,10 +369,10 @@ public class Lexer {
                     if (next == '\n') {
                         advance();
                         advance();
-                        newLine();
+                        newLine(2);
                     } else {
                         advance();
-                        newLine();
+                        newLine(1);
                     }
                     endToken(TokenType.LINE_BREAK);
                 }
@@ -407,7 +408,7 @@ public class Lexer {
 
         appendToken(new EndOfFileToken(new SingleLineTextRange(line, column, position, 0)));
 
-        return new LexerOutput(code, new TokenQueue(list), diagnostics);
+        return new LexerOutput(code, lines, new TokenQueue(list), diagnostics);
     }
 
     private void processNumber() {
@@ -717,16 +718,22 @@ public class Lexer {
         }
 
         position++;
-        previous = current;
         current = next;
         next = charAt(position + 1);
 
         column++;
     }
 
-    private void newLine() {
+    private void newLine(int lineBreakLen) {
         line++;
         column = 1;
+
+        if (lines.isEmpty()) {
+            lines.add(new Line(0, position - lineBreakLen, position));
+        } else {
+            int lastEndPos = lines.getLast().endPosition();
+            lines.add(new Line(lastEndPos, position - lastEndPos - lineBreakLen, position));
+        }
     }
 
     private int charAt(int index) {

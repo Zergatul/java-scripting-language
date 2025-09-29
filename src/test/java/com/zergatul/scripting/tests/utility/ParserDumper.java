@@ -1,11 +1,7 @@
 package com.zergatul.scripting.tests.utility;
 
 import com.zergatul.scripting.InternalException;
-import com.zergatul.scripting.MultiLineTextRange;
-import com.zergatul.scripting.SingleLineTextRange;
-import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.lexer.Token;
-import com.zergatul.scripting.lexer.Trivia;
 import com.zergatul.scripting.parser.ParserOutput;
 import com.zergatul.scripting.parser.nodes.*;
 
@@ -21,6 +17,7 @@ public class ParserDumper extends Dumper {
 
     private void dump(ParserNode node) {
         if (node == null) {
+            beginNewLineIfRequired();
             sb.append("null");
             return;
         }
@@ -60,6 +57,12 @@ public class ParserDumper extends Dumper {
             case PARAMETER -> dump((ParameterNode) node);
             case ASSIGNMENT_OPERATOR -> dump((AssignmentOperatorNode) node);
             case ASSIGNMENT_STATEMENT -> dump((AssignmentStatementNode) node);
+            case UNARY_EXPRESSION -> dump((UnaryExpressionNode) node);
+            case META_TYPE_EXPRESSION -> dump((MetaTypeExpressionNode) node);
+            case META_TYPE_OF_EXPRESSION -> dump((MetaTypeOfExpressionNode) node);
+            case JAVA_TYPE -> dump((JavaTypeNode) node);
+            case LAMBDA_EXPRESSION -> dump((LambdaExpressionNode) node);
+            case TYPE_TEST_EXPRESSION -> dump((TypeTestExpressionNode) node);
             default -> throw new InternalException(node.getClass().getName());
         }
     }
@@ -73,7 +76,7 @@ public class ParserDumper extends Dumper {
         commaBreak();
         dump(node.openBrace);
         commaBreak();
-        dumpList(node.list);
+        dumpList(ExpressionNode.class, node.list);
         commaBreak();
         dump(node.closeBrace);
         commaBreak();
@@ -105,6 +108,7 @@ public class ParserDumper extends Dumper {
         commaBreak();
         dump(node.getRange());
         sb.append(")");
+        decIndent();
     }
 
     private void dump(AssignmentStatementNode node) {
@@ -120,6 +124,7 @@ public class ParserDumper extends Dumper {
         commaBreak();
         dump(node.getRange());
         sb.append(")");
+        decIndent();
     }
 
     private void dump(BinaryExpressionNode node) {
@@ -137,25 +142,26 @@ public class ParserDumper extends Dumper {
     }
 
     private void dump(BinaryOperatorNode node) {
-        beginLine("new BinaryOperatorNode(BinaryOperator.");
+        fullLine("new BinaryOperatorNode(");
+        incIndent();
+        dump(node.token);
+        commaBreak();
+        beginLine("BinaryOperator.");
         sb.append(node.operator.name());
-        sb.append(", ");
-        dump(node.getRange());
         sb.append(")");
+        decIndent();
     }
 
     private void dump(BlockStatementNode node) {
-        if (node.statements.isEmpty()) {
-            beginLine("new BlockStatementNode(List.of(), ");
-            dump(node.getRange());
-            sb.append(")");
-        } else {
-            fullLine("new BlockStatementNode(");
-            dumpList(node.statements);
-            commaBreak();
-            dump(node.getRange());
-            sb.append(")");
-        }
+        fullLine("new BlockStatementNode(");
+        incIndent();
+        dump(node.openBrace);
+        commaBreak();
+        dumpList(node.statements);
+        commaBreak();
+        dump(node.closeBrace);
+        sb.append(")");
+        decIndent();
     }
 
     private void dump(CompilationUnitNode node) {
@@ -196,9 +202,9 @@ public class ParserDumper extends Dumper {
         commaBreak();
         dump(node.parameters);
         commaBreak();
-        dump(node.body);
+        dump(node.arrow);
         commaBreak();
-        dump(node.getRange());
+        dump(node.body);
         sb.append(")");
         decIndent();
     }
@@ -224,12 +230,9 @@ public class ParserDumper extends Dumper {
         incIndent();
         dump(node.openParen);
         commaBreak();
-        dumpList(node.parameters);
+        dumpList(ParameterNode.class, node.parameters);
         commaBreak();
         dump(node.closeParen);
-        commaBreak();
-        beginLine();
-        dump(node.getRange());
         sb.append(")");
         decIndent();
     }
@@ -240,8 +243,6 @@ public class ParserDumper extends Dumper {
         dump(node.getType());
         commaBreak();
         dump(node.getName());
-        commaBreak();
-        dump(node.getRange());
         sb.append(')');
         decIndent();
     }
@@ -262,88 +263,95 @@ public class ParserDumper extends Dumper {
         }
     }
 
-
-
     private void dump(ForLoopStatementNode node) {
-        sb.append("new ForLoopStatementNode(");
+        fullLine("new ForLoopStatementNode(");
+        incIndent();
+        dump(node.keyword);
+        commaBreak();
         dump(node.openParen);
-        sb.append(", ");
+        commaBreak();
         dump(node.init);
-        sb.append(", ");
+        commaBreak();
         dump(node.condition);
-        sb.append(", ");
+        commaBreak();
         dump(node.update);
-        sb.append(", ");
+        commaBreak();
         dump(node.closeParen);
-        sb.append(", ");
+        commaBreak();
         dump(node.body);
-        sb.append(", ");
-        dump(node.getRange());
         sb.append(")");
+        decIndent();
     }
 
     private void dump(ForEachLoopStatementNode node) {
-        sb.append("new ForEachLoopStatementNode(");
+        fullLine("new ForEachLoopStatementNode(");
+        incIndent();
+        dump(node.keyword);
+        commaBreak();
         dump(node.openParen);
-        sb.append(", ");
+        commaBreak();
         dump(node.typeNode);
-        sb.append(", ");
+        commaBreak();
         dump(node.name);
-        sb.append(", ");
+        commaBreak();
+        dump(node.in);
+        commaBreak();
         dump(node.iterable);
-        sb.append(", ");
+        commaBreak();
         dump(node.closeParen);
-        sb.append(", ");
+        commaBreak();
         dump(node.body);
-        sb.append(", ");
-        dump(node.getRange());
         sb.append(")");
     }
 
     private void dump(WhileLoopStatementNode node) {
-        sb.append("new WhileLoopStatementNode(");
+        fullLine("new WhileLoopStatementNode(");
+        incIndent();
         dump(node.keyword);
-        sb.append(", ");
+        commaBreak();
         dump(node.openParen);
-        sb.append(", ");
+        commaBreak();
         dump(node.condition);
-        sb.append(", ");
+        commaBreak();
         dump(node.closeParen);
-        sb.append(", ");
+        commaBreak();
         dump(node.body);
-        sb.append(", ");
-        dump(node.getRange());
         sb.append(")");
+        decIndent();
     }
 
     private void dump(IfStatementNode node) {
-        sb.append("new IfStatementNode(");
+        fullLine("new IfStatementNode(");
+        incIndent();
         dump(node.ifToken);
-        sb.append(", ");
+        commaBreak();
         dump(node.openParen);
-        sb.append(", ");
-        dump(node.closeParen);
-        sb.append(", ");
+        commaBreak();
         dump(node.condition);
-        sb.append(", ");
+        commaBreak();
+        dump(node.closeParen);
+        commaBreak();
         dump(node.thenStatement);
-        sb.append(", ");
+        commaBreak();
         dump(node.elseToken);
-        sb.append(", ");
+        commaBreak();
         dump(node.elseStatement);
-        sb.append(", ");
+        commaBreak();
         dump(node.getRange());
         sb.append(")");
+        decIndent();
     }
 
     private void dump(ReturnStatementNode node) {
-        sb.append("new ReturnStatementNode(");
+        fullLine("new ReturnStatementNode(");
+        incIndent();
         dump(node.keyword);
-        sb.append(", ");
+        commaBreak();
         dump(node.expression);
-        sb.append(", ");
-        dump(node.getRange());
+        commaBreak();
+        dump(node.semicolon);
         sb.append(")");
+        decIndent();
     }
 
     private void dump(ExpressionStatementNode node) {
@@ -363,17 +371,17 @@ public class ParserDumper extends Dumper {
         commaBreak();
         dump(node.name);
         commaBreak();
+        dump(node.equal);
+        commaBreak();
         dump(node.expression);
         commaBreak();
         dump(node.semicolon);
-        commaBreak();
-        dump(node.getRange());
         sb.append(")");
         decIndent();
     }
 
     private void dump(InvalidStatementNode node) {
-        sb.append("new InvalidStatementNode(");
+        beginLine("new InvalidStatementNode(");
         dump(node.getRange());
         sb.append(")");
     }
@@ -403,29 +411,35 @@ public class ParserDumper extends Dumper {
     }
 
     private void dump(ObjectCreationExpressionNode node) {
-        sb.append("new ObjectCreationExpressionNode(");
+        fullLine("new ObjectCreationExpressionNode(");
+        incIndent();
+        dump(node.keyword);
+        commaBreak();
         dump(node.typeNode);
-        sb.append(", ");
+        commaBreak();
         dump(node.arguments);
-        sb.append(", ");
-        dump(node.getRange());
         sb.append(")");
+        decIndent();
     }
 
     private void dump(IntegerLiteralExpressionNode node) {
-        beginLine("new IntegerLiteralExpressionNode(\"");
-        sb.append(node.value);
-        sb.append("\", ");
-        dump(node.getRange());
+        fullLine("new IntegerLiteralExpressionNode(");
+        incIndent();
+        dump(node.sign);
+        commaBreak();
+        dump(node.token);
         sb.append(")");
+        decIndent();
     }
 
     private void dump(BooleanLiteralExpressionNode node) {
-        sb.append("new BooleanLiteralExpressionNode(");
-        sb.append(node.value);
-        sb.append(", ");
-        dump(node.getRange());
+        fullLine("new BooleanLiteralExpressionNode(");
+        incIndent();
+        dump(node.token);
+        commaBreak();
+        beginLine(String.valueOf(node.value));
         sb.append(")");
+        decIndent();
     }
 
     private void dump(NameExpressionNode node) {
@@ -437,7 +451,7 @@ public class ParserDumper extends Dumper {
     }
 
     private void dump(InvalidExpressionNode node) {
-        sb.append("new InvalidExpressionNode(");
+        beginLine("new InvalidExpressionNode(");
         dump(node.getRange());
         sb.append(")");
     }
@@ -447,62 +461,167 @@ public class ParserDumper extends Dumper {
         incIndent();
         dump(node.openParen);
         commaBreak();
-        dumpList(node.arguments);
+        dumpList(ExpressionNode.class, node.arguments);
         commaBreak();
         dump(node.closeParen);
         sb.append(")");
     }
 
     public void dump(ArrayCreationExpressionNode node) {
-        sb.append("new ArrayCreationExpressionNode(");
+        fullLine("new ArrayCreationExpressionNode(");
+        incIndent();
         dump(node.keyword);
-        sb.append(", ");
+        commaBreak();
         dump(node.typeNode);
-        sb.append(", ");
+        commaBreak();
         dump(node.openBracket);
-        sb.append(", ");
+        commaBreak();
         dump(node.lengthExpression);
-        sb.append(", ");
+        commaBreak();
         dump(node.closeBracket);
-        sb.append(", ");
-        dump(node.getRange());
         sb.append(")");
+        decIndent();
     }
 
     private void dump(LetTypeNode node) {
-        sb.append("new LetTypeNode(");
-        dump(node.getRange());
+        fullLine("new LetTypeNode(");
+        dump(node.token);
         sb.append(")");
     }
 
-
-
     private void dump(CustomTypeNode node) {
-        sb.append("new CustomTypeNode(\"");
-        sb.append(node.value);
-        sb.append("\", ");
-        dump(node.getRange());
+        fullLine("new CustomTypeNode(");
+        incIndent();
+        dump(node.token);
         sb.append(")");
+        decIndent();
     }
 
     private void dump(PredefinedTypeNode node) {
-        beginLine("new PredefinedTypeNode(PredefinedType.");
-        sb.append(node.type.toString());
-        sb.append(", ");
-        dump(node.getRange());
+        fullLine("new PredefinedTypeNode(");
+        incIndent();
+        dump(node.token);
+        commaBreak();
+        beginLine("PredefinedType.");
+        sb.append(node.type);
         sb.append(")");
+        decIndent();
     }
 
     private void dump(VoidTypeNode node) {
-        sb.append("new VoidTypeNode(");
-        dump(node.getRange());
+        fullLine("new VoidTypeNode(");
+        incIndent();
+        dump(node.token);
         sb.append(")");
+        decIndent();
     }
 
     private void dump(InvalidTypeNode node) {
-        sb.append("new InvalidTypeNode(");
-        dump(node.getRange());
+        fullLine("new InvalidTypeNode(");
+        incIndent();
+        dump(node.token);
         sb.append(")");
+        decIndent();
+    }
+
+    private void dump(UnaryExpressionNode node) {
+        fullLine("new UnaryExpressionNode(");
+        incIndent();
+        dump(node.operator);
+        commaBreak();
+        dump(node.operand);
+        sb.append(")");
+        decIndent();
+    }
+
+    private void dump(UnaryOperatorNode node) {
+        fullLine("new UnaryOperatorNode(");
+        incIndent();
+        dump(node.token);
+        commaBreak();
+        beginLine("UnaryOperator." + node.operator.name());
+        sb.append(")");
+        decIndent();
+    }
+
+    private void dump(MetaTypeExpressionNode node) {
+        fullLine("new MetaTypeExpressionNode(");
+        incIndent();
+        dump(node.keyword);
+        commaBreak();
+        dump(node.openParen);
+        commaBreak();
+        dump(node.type);
+        commaBreak();
+        dump(node.closeParen);
+        sb.append(")");
+        decIndent();
+    }
+
+    private void dump(MetaTypeOfExpressionNode node) {
+        fullLine("new MetaTypeOfExpressionNode(");
+        incIndent();
+        dump(node.keyword);
+        commaBreak();
+        dump(node.openParen);
+        commaBreak();
+        dump(node.expression);
+        commaBreak();
+        dump(node.closeParen);
+        sb.append(")");
+        decIndent();
+    }
+
+    private void dump(JavaTypeNode node) {
+        fullLine("new JavaTypeNode(");
+        incIndent();
+        dump(node.java);
+        commaBreak();
+        dump(node.openBracket);
+        commaBreak();
+        dump(node.name);
+        commaBreak();
+        dump(node.closeBracket);
+        sb.append(")");
+        decIndent();
+    }
+
+    private void dump(JavaQualifiedTypeNameNode node) {
+        beginLine("new JavaQualifiedTypeNameNode(");
+        incIndent();
+        dumpTokens(node.tokens);
+        commaBreak();
+        beginLine("\"" + node.value + "\"");
+        sb.append(")");
+        decIndent();
+    }
+
+    private void dump(LambdaExpressionNode node) {
+        fullLine("new LambdaExpressionNode(");
+        incIndent();
+        dump(node.openParen);
+        commaBreak();
+        dumpList(NameExpressionNode.class, node.parameters);
+        commaBreak();
+        dump(node.closeParen);
+        commaBreak();
+        dump(node.arrow);
+        commaBreak();
+        dump(node.body);
+        sb.append(")");
+        decIndent();
+    }
+
+    private void dump(TypeTestExpressionNode node) {
+        fullLine("new TypeTestExpressionNode(");
+        incIndent();
+        dump(node.expression);
+        commaBreak();
+        dump(node.keyword);
+        commaBreak();
+        dump(node.type);
+        sb.append(")");
+        decIndent();
     }
 
     private void dumpTokens(List<Token> tokens) {
@@ -522,6 +641,10 @@ public class ParserDumper extends Dumper {
 
     private <T extends ParserNode> void dumpList(List<T> nodes) {
         boolean newLine = beginNewLineIfRequired();
+        if (nodes.isEmpty()) {
+            sb.append("List.of()");
+            return;
+        }
 
         endLine("List.of(");
         if (newLine) incIndent();
@@ -535,13 +658,15 @@ public class ParserDumper extends Dumper {
         if (newLine) decIndent();
     }
 
-    private <T extends ParserNode> void dumpList(SeparatedList<T> nodes) {
+    private <T extends ParserNode> void dumpList(Class<T> clazz, SeparatedList<T> nodes) {
         if (nodes.size() == 0) {
             beginLine("SeparatedList.of()");
         } else {
-            endLine("SeparatedList.of(");
+            fullLine("SeparatedList.of(");
             incIndent();
+            beginLine(clazz.getSimpleName() + ".class");
             for (var item : nodes.getChildNodes()) {
+                commaBreak();
                 if (item instanceof ParserNode node) {
                     dump(node);
                     continue;

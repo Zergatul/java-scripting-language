@@ -2,15 +2,16 @@ package com.zergatul.scripting.binding.nodes;
 
 import com.zergatul.scripting.*;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
+import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 
 public abstract class BoundNode implements Locatable {
 
     private final BoundNodeType nodeType;
-    private final TextRange range;
+    @Nullable private final TextRange range;
 
-    protected BoundNode(BoundNodeType nodeType, TextRange range) {
+    protected BoundNode(BoundNodeType nodeType, @Nullable TextRange range) {
         this.nodeType = nodeType;
         this.range = range;
     }
@@ -19,6 +20,7 @@ public abstract class BoundNode implements Locatable {
         return nodeType;
     }
 
+    @Nullable
     public TextRange getRange() {
         return this.range;
     }
