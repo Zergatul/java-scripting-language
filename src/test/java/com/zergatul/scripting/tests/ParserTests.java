@@ -768,6 +768,25 @@ public class ParserTests {
                 new DiagnosticMessage(ParserErrors.NotAStatement, new SingleLineTextRange(1, 1, 0, 8))));
     }
 
+    @Test
+    public void unfinishedMemberTest() {
+        ParserOutput result = parse("""
+                class Region {
+                    void
+                }
+                """);
+        Assertions.assertFalse(result.diagnostics().isEmpty());
+    }
+
+//    @Test
+//    public void unfinishedMemberTest2() {
+//        ParserOutput result = parse("""
+//                class Region {
+//                }
+//                """);
+//        Assertions.assertFalse(result.diagnostics().isEmpty());
+//    }
+
     private ParserOutput parse(String code) {
         return new Parser(new Lexer(new LexerInput(code)).lex()).parse();
     }

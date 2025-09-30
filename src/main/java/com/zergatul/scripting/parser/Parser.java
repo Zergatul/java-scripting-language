@@ -535,7 +535,15 @@ public class Parser {
     private ClassMethodNode parseClassMethod() {
         ModifiersNode modifiersNode = parseModifiers();
         TypeNode typeNode = parseTypeOrVoidNode();
-        IdentifierToken identifier = (IdentifierToken) advance();
+
+        IdentifierToken identifier;
+        if (current.type == TokenType.IDENTIFIER) {
+            identifier = (IdentifierToken) advance();
+        } else {
+            addDiagnostic(ParserErrors.IdentifierExpected, current, current.getRawValue(code));
+            identifier = new IdentifierToken("", createMissingTokenRange());
+        }
+
         return parseClassMethod(modifiersNode, typeNode, identifier);
     }
 
