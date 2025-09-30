@@ -109,11 +109,7 @@ public class Binder {
 
         BoundStatementNode statement;
         if (declaration.getReturnType() != SVoidType.instance && functionNode.body.is(ParserNodeType.EXPRESSION_STATEMENT)) {
-            // rewrite to return statement
-            ExpressionStatementNode expressionStatement = (ExpressionStatementNode) functionNode.body;
-            BoundExpressionNode expression = bindExpression(expressionStatement.expression);
-            BoundExpressionNode converted = convert(expression, declaration.getReturnType());
-            statement = new BoundReturnStatementNode(null, converted, functionNode.body.getRange());
+            statement = rewriteAsReturnStatement((ExpressionStatementNode) functionNode.body, declaration.getReturnType());
         } else {
             statement = bindStatement(functionNode.body);
         }
@@ -201,11 +197,7 @@ public class Binder {
 
         BoundStatementNode body;
         if (returnType != SVoidType.instance && methodNode.body.is(ParserNodeType.EXPRESSION_STATEMENT)) {
-            // rewrite to return statement
-            ExpressionStatementNode expressionStatement = (ExpressionStatementNode) methodNode.body;
-            BoundExpressionNode expression = bindExpression(expressionStatement.expression);
-            BoundExpressionNode converted = convert(expression, returnType);
-            body = new BoundReturnStatementNode(null, converted, methodNode.body.getRange());
+            body = rewriteAsReturnStatement((ExpressionStatementNode) methodNode.body, returnType);
         } else {
             body = bindStatement(methodNode.body);
         }
@@ -887,11 +879,8 @@ public class Binder {
         }
 
         BoundStatementNode statement;
-        if (functionType.isFunction() && node.body instanceof ExpressionStatementNode expressionStatement) {
-            // rewrite to return statement
-            BoundExpressionNode expression = bindExpression(expressionStatement.expression);
-            BoundExpressionNode converted = convert(expression, actualReturnType);
-            statement = new BoundReturnStatementNode(null, converted, node.body.getRange());
+        if (functionType.isFunction() && node.body.is(ParserNodeType.EXPRESSION_STATEMENT)) {
+            statement = rewriteAsReturnStatement((ExpressionStatementNode) node.body, actualReturnType);
         } else {
             statement = bindStatement(node.body);
         }
@@ -1518,6 +1507,16 @@ public class Binder {
         }
 
         throw new InternalException();
+    }
+
+    private BoundReturnStatementNode rewriteAsReturnStatement(ExpressionStatementNode expressionStatement, SType returnType) {
+        BoundExpressionNode expression = bindExpression(expressionStatement.expression);
+        BoundExpressionNode converted = convert(expression, returnType);
+        ReturnStatementNode syntaxNode = new ReturnStatementNode(
+                new Token(TokenType.RETURN, expression.getRange().getStart()),
+                new InvalidExpressionNode(expression.getRange().getStart()),
+                new Token(TokenType.SEMICOLON, expression.getRange().getEnd()));
+        return new BoundReturnStatementNode(syntaxNode, converted, expressionStatement.getRange());
     }
 
     private void buildDeclarationTable(CompilationUnitNode unit) {
