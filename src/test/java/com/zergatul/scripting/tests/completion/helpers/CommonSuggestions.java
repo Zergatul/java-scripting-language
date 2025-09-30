@@ -33,6 +33,7 @@ public class CommonSuggestions {
             types,
             new KeywordSuggestion(TokenType.FALSE),
             new KeywordSuggestion(TokenType.TRUE),
+            new KeywordSuggestion(TokenType.NEW),
             new KeywordSuggestion(TokenType.META_TYPE),
             new KeywordSuggestion(TokenType.META_TYPE_OF));
 

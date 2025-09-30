@@ -104,6 +104,7 @@ public class ClassTests {
                         statements,
                         new ClassSuggestion(context, "Class"),
                         new ThisSuggestion(context, "Class"),
+                        MethodSuggestion.getInstance(context, "Class", "method"),
                         new StaticConstantSuggestion(context, "intStorage"),
                         LocalVariableSuggestion.getParameter(context, "x"),
                         LocalVariableSuggestion.getParameter(context, "y")));
@@ -123,6 +124,31 @@ public class ClassTests {
                 }
                 """,
                 context -> List.of(
+                        PropertySuggestion.getInstance(context, "Class", "a"),
+                        PropertySuggestion.getInstance(context, "Class", "b"),
+                        MethodSuggestion.getInstance(context, "Class", "method1"),
+                        MethodSuggestion.getInstance(context, "Class", "method2"),
+                        MethodSuggestion.getInstance(context, "Class", "method3")));
+    }
+
+    @Test
+    public void fieldSuggestionTest() {
+        assertSuggestions("""
+                class Class {
+                    int a;
+                    float b;
+                    void method1(int x, int y) {}
+                    void method2(string s) {}
+                    void method3() {
+                        <cursor>
+                    }
+                }
+                """,
+                context -> Lists.of(
+                        statements,
+                        new StaticConstantSuggestion(context, "intStorage"),
+                        new ClassSuggestion(context, "Class"),
+                        new ThisSuggestion(context, "Class"),
                         PropertySuggestion.getInstance(context, "Class", "a"),
                         PropertySuggestion.getInstance(context, "Class", "b"),
                         MethodSuggestion.getInstance(context, "Class", "method1"),

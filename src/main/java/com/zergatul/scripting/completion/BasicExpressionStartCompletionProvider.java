@@ -6,16 +6,19 @@ import com.zergatul.scripting.lexer.TokenType;
 
 import java.util.List;
 
-public class TrueFalseCompletionProvider<T> extends AbstractCompletionProvider<T> {
+public class BasicExpressionStartCompletionProvider<T> extends AbstractCompletionProvider<T> {
 
-    public TrueFalseCompletionProvider(SuggestionFactory<T> factory) {
+    public BasicExpressionStartCompletionProvider(SuggestionFactory<T> factory) {
         super(factory);
     }
 
     @Override
     public List<T> provide(CompilationParameters parameters, BinderOutput output, CompletionContext context) {
         if (context.canExpression()) {
-            return List.of(factory.getKeywordSuggestion(TokenType.FALSE), factory.getKeywordSuggestion(TokenType.TRUE));
+            return List.of(
+                    factory.getKeywordSuggestion(TokenType.FALSE),
+                    factory.getKeywordSuggestion(TokenType.TRUE),
+                    factory.getKeywordSuggestion(TokenType.NEW));
         } else {
             return List.of();
         }

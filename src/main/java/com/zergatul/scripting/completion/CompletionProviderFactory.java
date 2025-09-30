@@ -32,7 +32,8 @@ public class CompletionProviderFactory<T> {
                 new LoopStatementsCompletionProvider<>(factory),
                 new LoopVariablesCompletionProvider<>(factory),
                 new ThisCompletionProvider<>(factory),
-                new TrueFalseCompletionProvider<>(factory));
+                new ClassMembersCompletionProvider<>(factory),
+                new BasicExpressionStartCompletionProvider<>(factory));
     }
 
     public List<T> getSuggestions(CompilationParameters parameters, BinderOutput output, int line, int column) {
