@@ -158,7 +158,8 @@ public class ComparatorRegistry {
                         .extract("sign", node -> node.sign)
                         .extract("token", node -> node.token)
                         .extract("value", node -> node.value))
-                .register(InvalidExpressionNode.class, builder -> {})
+                .register(InvalidExpressionNode.class, builder -> builder
+                        .extract("nodes", node -> node.nodes))
                 .register(InvalidStatementNode.class, builder -> {})
                 .register(InvalidTypeNode.class, builder -> builder
                         .extract("token", node -> node.token))

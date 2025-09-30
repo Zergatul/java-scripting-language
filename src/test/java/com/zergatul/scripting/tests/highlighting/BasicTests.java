@@ -148,6 +148,35 @@ public class BasicTests extends ComparatorTest {
                 highlight(code));
     }
 
+    @Test
+    public void newExpressionTest1() {
+        String code = """
+                let x = new
+                """;
+        comparator.assertSemanticEquals(
+                List.of(
+                        new SemanticToken(SemanticTokenType.KEYWORD, new SingleLineTextRange(1, 1, 0, 3)),
+                        new SemanticToken(SemanticTokenType.IDENTIFIER, new SingleLineTextRange(1, 5, 4, 1)),
+                        new SemanticToken(SemanticTokenType.OPERATOR, new SingleLineTextRange(1, 7, 6, 1)),
+                        new SemanticToken(SemanticTokenType.KEYWORD, new SingleLineTextRange(1, 9, 8, 3))),
+                highlight(code));
+    }
+
+    @Test
+    public void newExpressionTest2() {
+        String code = """
+                let x = new X
+                """;
+        comparator.assertSemanticEquals(
+                List.of(
+                        new SemanticToken(SemanticTokenType.KEYWORD, new SingleLineTextRange(1, 1, 0, 3)),
+                        new SemanticToken(SemanticTokenType.IDENTIFIER, new SingleLineTextRange(1, 5, 4, 1)),
+                        new SemanticToken(SemanticTokenType.OPERATOR, new SingleLineTextRange(1, 7, 6, 1)),
+                        new SemanticToken(SemanticTokenType.KEYWORD, new SingleLineTextRange(1, 9, 8, 3)),
+                        new SemanticToken(SemanticTokenType.IDENTIFIER, new SingleLineTextRange(1, 13, 12, 1))),
+                highlight(code));
+    }
+
     protected List<SemanticToken> highlight(String code) {
         LexerOutput lexerOutput = new Lexer(new LexerInput(code)).lex();
         ParserOutput parserOutput = new Parser(lexerOutput).parse();

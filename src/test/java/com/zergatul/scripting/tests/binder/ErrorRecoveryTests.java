@@ -171,6 +171,32 @@ public class ErrorRecoveryTests extends BinderTestBase {
 //                result.unit());
     }
 
+    @Test
+    public void newExpressionTest1() {
+        BinderOutput result = bind("""
+                let x = new
+                """);
+
+        comparator.assertEquals(
+                List.of(
+                        new DiagnosticMessage(ParserErrors.OpenNewExpression, new SingleLineTextRange(1, 9, 8, 3)),
+                        new DiagnosticMessage(ParserErrors.SemicolonExpected, new SingleLineTextRange(1, 9, 8, 3))),
+                result.diagnostics());
+    }
+
+    @Test
+    public void newExpressionTest2() {
+        BinderOutput result = bind("""
+                let x = new X
+                """);
+
+        comparator.assertEquals(
+                List.of(
+                        new DiagnosticMessage(ParserErrors.InvalidNewExpression, new SingleLineTextRange(2, 1, 14, 0)),
+                        new DiagnosticMessage(ParserErrors.SemicolonExpected, new SingleLineTextRange(1, 13, 12, 1))),
+                result.diagnostics());
+    }
+
     private BinderOutput bind(String code) {
         return bind(ApiRoot.class, code);
     }

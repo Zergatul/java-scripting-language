@@ -424,6 +424,9 @@ public class HighlightingProvider {
     }
 
     private void process(BoundInvalidExpressionNode node) {
+        if (node.syntaxNode != null) {
+            processRaw(node.syntaxNode);
+        }
         for (BoundExpressionNode expression : node.children) {
             process(expression);
         }

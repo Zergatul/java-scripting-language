@@ -517,12 +517,7 @@ public class Parser {
             return true;
         }
 
-        LookAhead ahead = new LookAhead();
-        try {
-            return tryAdvanceType();
-        } finally {
-            ahead.rollback();
-        }
+        return isPossibleType();
     }
 
     private ClassMemberNode parseClassMemberNode() {
@@ -1171,6 +1166,12 @@ public class Parser {
 
     private ExpressionNode parseNewExpression() {
         Token keyword = advance(TokenType.NEW);
+
+        if (!isPossibleType()) {
+            addDiagnostic(ParserErrors.OpenNewExpression, keyword);
+            return new InvalidExpressionNode(List.of(keyword));
+        }
+
         TypeNode typeNode = parseTypeNode();
 
         if (current.is(TokenType.LEFT_SQUARE_BRACKET)) {
@@ -1181,7 +1182,7 @@ public class Parser {
             return parseObjectCreationExpression(keyword, typeNode);
         } else {
             addDiagnostic(ParserErrors.InvalidNewExpression, current);
-            return new InvalidExpressionNode(TextRange.combine(keyword, current));
+            return new InvalidExpressionNode(List.of(keyword, typeNode));
         }
     }
 
@@ -1652,6 +1653,15 @@ public class Parser {
                 arrow,
                 returnTypeNode,
                 closeBracket);
+    }
+
+    private boolean isPossibleType() {
+        LookAhead ahead = new LookAhead();
+        try {
+            return tryAdvanceType();
+        } finally {
+            ahead.rollback();
+        }
     }
 
     private boolean tryAdvanceType() {

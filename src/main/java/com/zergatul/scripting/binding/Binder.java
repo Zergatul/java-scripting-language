@@ -1292,7 +1292,7 @@ public class Binder {
     }
 
     private BoundInvalidExpressionNode bindInvalidExpression(InvalidExpressionNode expression) {
-        return new BoundInvalidExpressionNode(List.of(), expression.getRange());
+        return new BoundInvalidExpressionNode(expression, List.of(), expression.getRange());
     }
 
     private BoundExpressionNode convert(BoundExpressionNode expression, SType type) {
