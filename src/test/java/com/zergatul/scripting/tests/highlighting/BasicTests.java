@@ -6,12 +6,14 @@ import com.zergatul.scripting.binding.BinderOutput;
 import com.zergatul.scripting.compiler.CompilationParametersBuilder;
 import com.zergatul.scripting.highlighting.HighlightingProvider;
 import com.zergatul.scripting.highlighting.SemanticToken;
+import com.zergatul.scripting.highlighting.SemanticTokenModifier;
 import com.zergatul.scripting.highlighting.SemanticTokenType;
 import com.zergatul.scripting.lexer.Lexer;
 import com.zergatul.scripting.lexer.LexerInput;
 import com.zergatul.scripting.lexer.LexerOutput;
 import com.zergatul.scripting.parser.Parser;
 import com.zergatul.scripting.parser.ParserOutput;
+import com.zergatul.scripting.symbols.Function;
 import com.zergatul.scripting.tests.framework.ComparatorTest;
 import org.junit.jupiter.api.Test;
 
@@ -45,7 +47,7 @@ public class BasicTests extends ComparatorTest {
                 """;
         comparator.assertSemanticEquals(
                 List.of(
-                        new SemanticToken(SemanticTokenType.KEYWORD, new SingleLineTextRange(1, 1, 0, 3)),
+                        new SemanticToken(SemanticTokenType.KEYWORD, List.of(SemanticTokenModifier.PREDEFINED_TYPE), new SingleLineTextRange(1, 1, 0, 3)),
                         new SemanticToken(SemanticTokenType.IDENTIFIER, new SingleLineTextRange(1, 5, 4, 1)),
                         new SemanticToken(SemanticTokenType.SEPARATOR, new SingleLineTextRange(1, 6, 5, 1)),
                         new SemanticToken(SemanticTokenType.COMMENT, new SingleLineTextRange(1, 8, 7, 2)),
@@ -53,7 +55,7 @@ public class BasicTests extends ComparatorTest {
                         new SemanticToken(SemanticTokenType.COMMENT, new SingleLineTextRange(3, 1, 16, 5)),
                         new SemanticToken(SemanticTokenType.COMMENT, new SingleLineTextRange(4, 1, 22, 5)),
                         new SemanticToken(SemanticTokenType.COMMENT, new SingleLineTextRange(5, 1, 28, 2)),
-                        new SemanticToken(SemanticTokenType.KEYWORD, new SingleLineTextRange(5, 4, 31, 3)),
+                        new SemanticToken(SemanticTokenType.KEYWORD, List.of(SemanticTokenModifier.PREDEFINED_TYPE), new SingleLineTextRange(5, 4, 31, 3)),
                         new SemanticToken(SemanticTokenType.IDENTIFIER, new SingleLineTextRange(5, 8, 35, 1)),
                         new SemanticToken(SemanticTokenType.SEPARATOR, new SingleLineTextRange(5, 9, 36, 1))),
                 highlight(code));
@@ -81,16 +83,16 @@ public class BasicTests extends ComparatorTest {
                 List.of(
                         new SemanticToken(SemanticTokenType.KEYWORD, new SingleLineTextRange(1, 1, 0, 2)),
                         new SemanticToken(SemanticTokenType.BRACKET, new SingleLineTextRange(1, 3, 2, 1)),
-                        new SemanticToken(SemanticTokenType.KEYWORD, new SingleLineTextRange(1, 4, 3, 3)),
-                        new SemanticToken(SemanticTokenType.ARROW, new SingleLineTextRange(1, 8, 7, 2)),
-                        new SemanticToken(SemanticTokenType.KEYWORD, new SingleLineTextRange(1, 11, 10, 3)),
+                        new SemanticToken(SemanticTokenType.KEYWORD, List.of(SemanticTokenModifier.PREDEFINED_TYPE), new SingleLineTextRange(1, 4, 3, 3)),
+                        new SemanticToken(SemanticTokenType.OPERATOR, new SingleLineTextRange(1, 8, 7, 2)),
+                        new SemanticToken(SemanticTokenType.KEYWORD, List.of(SemanticTokenModifier.PREDEFINED_TYPE), new SingleLineTextRange(1, 11, 10, 3)),
                         new SemanticToken(SemanticTokenType.BRACKET, new SingleLineTextRange(1, 14, 13, 1)),
                         new SemanticToken(SemanticTokenType.IDENTIFIER, new SingleLineTextRange(1, 16, 15, 4)),
                         new SemanticToken(SemanticTokenType.OPERATOR, new SingleLineTextRange(1, 21, 20, 1)),
                         new SemanticToken(SemanticTokenType.BRACKET, new SingleLineTextRange(1, 23, 22, 1)),
                         new SemanticToken(SemanticTokenType.IDENTIFIER, new SingleLineTextRange(1, 24, 23, 1)),
                         new SemanticToken(SemanticTokenType.BRACKET, new SingleLineTextRange(1, 25, 24, 1)),
-                        new SemanticToken(SemanticTokenType.ARROW, new SingleLineTextRange(1, 27, 26, 2))),
+                        new SemanticToken(SemanticTokenType.OPERATOR, new SingleLineTextRange(1, 27, 26, 2))),
                 highlight(code));
     }
 
@@ -103,16 +105,16 @@ public class BasicTests extends ComparatorTest {
                 List.of(
                         new SemanticToken(SemanticTokenType.KEYWORD, new SingleLineTextRange(1, 1, 0, 2)),
                         new SemanticToken(SemanticTokenType.BRACKET, new SingleLineTextRange(1, 3, 2, 1)),
-                        new SemanticToken(SemanticTokenType.KEYWORD, new SingleLineTextRange(1, 4, 3, 3)),
-                        new SemanticToken(SemanticTokenType.ARROW, new SingleLineTextRange(1, 8, 7, 2)),
-                        new SemanticToken(SemanticTokenType.KEYWORD, new SingleLineTextRange(1, 11, 10, 3)),
+                        new SemanticToken(SemanticTokenType.KEYWORD, List.of(SemanticTokenModifier.PREDEFINED_TYPE), new SingleLineTextRange(1, 4, 3, 3)),
+                        new SemanticToken(SemanticTokenType.OPERATOR, new SingleLineTextRange(1, 8, 7, 2)),
+                        new SemanticToken(SemanticTokenType.KEYWORD, List.of(SemanticTokenModifier.PREDEFINED_TYPE), new SingleLineTextRange(1, 11, 10, 3)),
                         new SemanticToken(SemanticTokenType.BRACKET, new SingleLineTextRange(1, 14, 13, 1)),
                         new SemanticToken(SemanticTokenType.IDENTIFIER, new SingleLineTextRange(1, 16, 15, 4)),
                         new SemanticToken(SemanticTokenType.OPERATOR, new SingleLineTextRange(1, 21, 20, 1)),
                         new SemanticToken(SemanticTokenType.BRACKET, new SingleLineTextRange(1, 23, 22, 1)),
                         new SemanticToken(SemanticTokenType.IDENTIFIER, new SingleLineTextRange(1, 24, 23, 1)),
                         new SemanticToken(SemanticTokenType.BRACKET, new SingleLineTextRange(1, 25, 24, 1)),
-                        new SemanticToken(SemanticTokenType.ARROW, new SingleLineTextRange(1, 27, 26, 2)),
+                        new SemanticToken(SemanticTokenType.OPERATOR, new SingleLineTextRange(1, 27, 26, 2)),
                         new SemanticToken(SemanticTokenType.IDENTIFIER, new SingleLineTextRange(1, 30, 29, 1))),
                 highlight(code));
     }
@@ -130,7 +132,7 @@ public class BasicTests extends ComparatorTest {
         comparator.assertSemanticEquals(
                 List.of(
                         new SemanticToken(SemanticTokenType.KEYWORD, new SingleLineTextRange(1, 1, 0, 5)),
-                        new SemanticToken(SemanticTokenType.IDENTIFIER, new SingleLineTextRange(1, 7, 6, 6)),
+                        new SemanticToken(SemanticTokenType.TYPE, new SingleLineTextRange(1, 7, 6, 6)),
                         new SemanticToken(SemanticTokenType.BRACKET, new SingleLineTextRange(1, 14, 13, 1)),
                         new SemanticToken(SemanticTokenType.KEYWORD, new SingleLineTextRange(2, 5, 19, 11)),
                         new SemanticToken(SemanticTokenType.BRACKET, new SingleLineTextRange(2, 16, 30, 1)),
@@ -138,7 +140,7 @@ public class BasicTests extends ComparatorTest {
                         new SemanticToken(SemanticTokenType.BRACKET, new SingleLineTextRange(2, 19, 33, 1)),
                         new SemanticToken(SemanticTokenType.METHOD, new SingleLineTextRange(3, 9, 43, 3)),
                         new SemanticToken(SemanticTokenType.BRACKET, new SingleLineTextRange(4, 5, 51, 1)),
-                        new SemanticToken(SemanticTokenType.KEYWORD, new SingleLineTextRange(5, 5, 57, 4)),
+                        new SemanticToken(SemanticTokenType.KEYWORD, List.of(SemanticTokenModifier.PREDEFINED_TYPE), new SingleLineTextRange(5, 5, 57, 4)),
                         new SemanticToken(SemanticTokenType.IDENTIFIER, new SingleLineTextRange(5, 10, 62, 3)),
                         new SemanticToken(SemanticTokenType.BRACKET, new SingleLineTextRange(5, 13, 65, 1)),
                         new SemanticToken(SemanticTokenType.BRACKET, new SingleLineTextRange(5, 14, 66, 1)),
@@ -161,12 +163,12 @@ public class BasicTests extends ComparatorTest {
         comparator.assertSemanticEquals(
                 List.of(
                         new SemanticToken(SemanticTokenType.KEYWORD, new SingleLineTextRange(1, 1, 0, 5)),
-                        new SemanticToken(SemanticTokenType.IDENTIFIER, new SingleLineTextRange(1, 7, 6, 6)),
+                        new SemanticToken(SemanticTokenType.TYPE, new SingleLineTextRange(1, 7, 6, 6)),
                         new SemanticToken(SemanticTokenType.BRACKET, new SingleLineTextRange(1, 14, 13, 1)),
-                        new SemanticToken(SemanticTokenType.KEYWORD, new SingleLineTextRange(2, 5, 19, 3)),
+                        new SemanticToken(SemanticTokenType.KEYWORD, List.of(SemanticTokenModifier.PREDEFINED_TYPE), new SingleLineTextRange(2, 5, 19, 3)),
                         new SemanticToken(SemanticTokenType.IDENTIFIER, new SingleLineTextRange(2, 9, 23, 1)),
                         new SemanticToken(SemanticTokenType.SEPARATOR, new SingleLineTextRange(2, 10, 24, 1)),
-                        new SemanticToken(SemanticTokenType.KEYWORD, new SingleLineTextRange(3, 5, 30, 4)),
+                        new SemanticToken(SemanticTokenType.KEYWORD, List.of(SemanticTokenModifier.PREDEFINED_TYPE), new SingleLineTextRange(3, 5, 30, 4)),
                         new SemanticToken(SemanticTokenType.IDENTIFIER, new SingleLineTextRange(3, 10, 35, 6)),
                         new SemanticToken(SemanticTokenType.BRACKET, new SingleLineTextRange(3, 16, 41, 1)),
                         new SemanticToken(SemanticTokenType.BRACKET, new SingleLineTextRange(3, 17, 42, 1)),
@@ -194,7 +196,7 @@ public class BasicTests extends ComparatorTest {
                         new SemanticToken(SemanticTokenType.KEYWORD, new SingleLineTextRange(1, 1, 0, 3)),
                         new SemanticToken(SemanticTokenType.IDENTIFIER, new SingleLineTextRange(1, 5, 4, 1)),
                         new SemanticToken(SemanticTokenType.OPERATOR, new SingleLineTextRange(1, 7, 6, 1)),
-                        new SemanticToken(SemanticTokenType.KEYWORD, new SingleLineTextRange(1, 9, 8, 3))),
+                        new SemanticToken(SemanticTokenType.KEYWORD, List.of(SemanticTokenModifier.OPERATOR_LIKE), new SingleLineTextRange(1, 9, 8, 3))),
                 highlight(code));
     }
 
@@ -208,8 +210,78 @@ public class BasicTests extends ComparatorTest {
                         new SemanticToken(SemanticTokenType.KEYWORD, new SingleLineTextRange(1, 1, 0, 3)),
                         new SemanticToken(SemanticTokenType.IDENTIFIER, new SingleLineTextRange(1, 5, 4, 1)),
                         new SemanticToken(SemanticTokenType.OPERATOR, new SingleLineTextRange(1, 7, 6, 1)),
-                        new SemanticToken(SemanticTokenType.KEYWORD, new SingleLineTextRange(1, 9, 8, 3)),
-                        new SemanticToken(SemanticTokenType.IDENTIFIER, new SingleLineTextRange(1, 13, 12, 1))),
+                        new SemanticToken(SemanticTokenType.KEYWORD, List.of(SemanticTokenModifier.OPERATOR_LIKE), new SingleLineTextRange(1, 9, 8, 3)),
+                        new SemanticToken(SemanticTokenType.TYPE, new SingleLineTextRange(1, 13, 12, 1))),
+                highlight(code));
+    }
+
+    @Test
+    public void whileLoopTest() {
+        String code = """
+                while (true) ;
+                """;
+        comparator.assertSemanticEquals(
+                List.of(
+                        new SemanticToken(SemanticTokenType.KEYWORD, new SingleLineTextRange(1, 1, 0, 5)),
+                        new SemanticToken(SemanticTokenType.BRACKET, new SingleLineTextRange(1, 7, 6, 1)),
+                        new SemanticToken(SemanticTokenType.KEYWORD, List.of(SemanticTokenModifier.VALUE), new SingleLineTextRange(1, 8, 7, 4)),
+                        new SemanticToken(SemanticTokenType.BRACKET, new SingleLineTextRange(1, 12, 11, 1)),
+                        new SemanticToken(SemanticTokenType.SEPARATOR, new SingleLineTextRange(1, 14, 13, 1))),
+                highlight(code));
+    }
+
+    @Test
+    public void externalTest() {
+        String code = """
+                api.test();
+                """;
+        comparator.assertSemanticEquals(
+                List.of(
+                        new SemanticToken(SemanticTokenType.IDENTIFIER, List.of(SemanticTokenModifier.EXTERNAL, SemanticTokenModifier.STATIC), new SingleLineTextRange(1, 1, 0, 3)),
+                        new SemanticToken(SemanticTokenType.SEPARATOR, new SingleLineTextRange(1, 4, 3, 1)),
+                        new SemanticToken(SemanticTokenType.METHOD, new SingleLineTextRange(1, 5, 4, 4)),
+                        new SemanticToken(SemanticTokenType.BRACKET, new SingleLineTextRange(1, 9, 8, 1)),
+                        new SemanticToken(SemanticTokenType.BRACKET, new SingleLineTextRange(1, 10, 9, 1)),
+                        new SemanticToken(SemanticTokenType.SEPARATOR, new SingleLineTextRange(1, 11, 10, 1))),
+                highlight(code));
+    }
+
+    @Test
+    public void staticVariableTest() {
+        String code = """
+                static int x;
+                x = 0;
+                """;
+        comparator.assertSemanticEquals(
+                List.of(
+                        new SemanticToken(SemanticTokenType.KEYWORD, new SingleLineTextRange(1, 1, 0, 6)),
+                        new SemanticToken(SemanticTokenType.KEYWORD, List.of(SemanticTokenModifier.PREDEFINED_TYPE), new SingleLineTextRange(1, 8, 7, 3)),
+                        new SemanticToken(SemanticTokenType.IDENTIFIER, List.of(SemanticTokenModifier.STATIC), new SingleLineTextRange(1, 12, 11, 1)),
+                        new SemanticToken(SemanticTokenType.SEPARATOR, new SingleLineTextRange(1, 13, 12, 1)),
+                        new SemanticToken(SemanticTokenType.IDENTIFIER, List.of(SemanticTokenModifier.STATIC), new SingleLineTextRange(2, 1, 14, 1)),
+                        new SemanticToken(SemanticTokenType.OPERATOR, new SingleLineTextRange(2, 3, 16, 1)),
+                        new SemanticToken(SemanticTokenType.NUMBER, new SingleLineTextRange(2, 5, 18, 1))),
+                highlight(code));
+    }
+
+    @Test
+    public void functionTest() {
+        String code = """
+                void func(){}
+                func();
+                """;
+        comparator.assertSemanticEquals(
+                List.of(
+                        new SemanticToken(SemanticTokenType.KEYWORD, List.of(SemanticTokenModifier.PREDEFINED_TYPE), new SingleLineTextRange(1, 1, 0, 4)),
+                        new SemanticToken(SemanticTokenType.IDENTIFIER, List.of(SemanticTokenModifier.FUNCTION), new SingleLineTextRange(1, 6, 5, 4)),
+                        new SemanticToken(SemanticTokenType.BRACKET, new SingleLineTextRange(1, 10, 9, 1)),
+                        new SemanticToken(SemanticTokenType.BRACKET, new SingleLineTextRange(1, 11, 10, 1)),
+                        new SemanticToken(SemanticTokenType.BRACKET, new SingleLineTextRange(1, 12, 11, 1)),
+                        new SemanticToken(SemanticTokenType.BRACKET, new SingleLineTextRange(1, 13, 12, 1)),
+                        new SemanticToken(SemanticTokenType.IDENTIFIER, List.of(SemanticTokenModifier.FUNCTION), new SingleLineTextRange(2, 1, 14, 4)),
+                        new SemanticToken(SemanticTokenType.BRACKET, new SingleLineTextRange(2, 5, 18, 1)),
+                        new SemanticToken(SemanticTokenType.BRACKET, new SingleLineTextRange(2, 6, 19, 1)),
+                        new SemanticToken(SemanticTokenType.SEPARATOR, new SingleLineTextRange(2, 7, 20, 1))),
                 highlight(code));
     }
 

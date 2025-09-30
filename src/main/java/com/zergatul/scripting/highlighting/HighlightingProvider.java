@@ -5,11 +5,12 @@ import com.zergatul.scripting.binding.BinderOutput;
 import com.zergatul.scripting.binding.nodes.*;
 import com.zergatul.scripting.lexer.*;
 import com.zergatul.scripting.parser.nodes.*;
+import com.zergatul.scripting.symbols.Function;
+import com.zergatul.scripting.symbols.StaticFieldConstantStaticVariable;
+import com.zergatul.scripting.symbols.StaticVariable;
 
 import java.util.ArrayList;
 import java.util.List;
-
-import static com.zergatul.scripting.highlighting.SemanticTokenType.*;
 
 public class HighlightingProvider {
 
@@ -116,7 +117,7 @@ public class HighlightingProvider {
             case UNRESOLVED_METHOD -> process((BoundUnresolvedMethodNode) node);
             case VARIABLE_DECLARATION -> process((BoundVariableDeclarationNode) node);
             case VOID_TYPE -> process((BoundVoidTypeNode) node);
-            case WHILE_LOOP_STATEMENT -> process(node);
+            case WHILE_LOOP_STATEMENT -> process((BoundWhileLoopStatementNode) node);
         }
     }
 
@@ -212,7 +213,7 @@ public class HighlightingProvider {
 
     private void process(BoundClassNode node) {
         process(node.syntaxNode.keyword);
-        process(node.name);
+        process(node.name.syntaxNode.token, SemanticTokenType.TYPE);
         process(node.syntaxNode.openBrace);
         for (BoundClassMemberNode member : node.members) {
             process(member);
@@ -273,7 +274,7 @@ public class HighlightingProvider {
     }
 
     private void process(BoundCustomTypeNode node) {
-        result.add(new SemanticToken(TYPE, node.getRange()));
+        process(node.syntaxNode.token, SemanticTokenType.TYPE);
     }
 
     private void process(BoundPostfixStatementNode node) {
@@ -361,12 +362,12 @@ public class HighlightingProvider {
     }
 
     private void process(BoundFunctionReferenceNode node) {
-        process(node.syntaxNode.token);
+        process(node.syntaxNode.token, SemanticTokenType.IDENTIFIER, List.of(SemanticTokenModifier.FUNCTION));
     }
 
     private void process(BoundFunctionTypeNode node) {
-        result.add(new SemanticToken(KEYWORD, node.syntaxNode.fn.getRange()));
-        result.add(new SemanticToken(BRACKET, node.syntaxNode.openBracket.getRange()));
+        process(node.syntaxNode.fn, SemanticTokenType.KEYWORD);
+        process(node.syntaxNode.openBracket, SemanticTokenType.BRACKET);
         if (node.syntaxNode.openParen != null) {
             process(node.syntaxNode.openParen);
         }
@@ -376,7 +377,7 @@ public class HighlightingProvider {
         }
         process(node.syntaxNode.arrow);
         process(node.returnTypeNode);
-        result.add(new SemanticToken(BRACKET, node.syntaxNode.closeBracket.getRange()));
+        process(node.syntaxNode.closeBracket, SemanticTokenType.BRACKET);
     }
 
     private void process(BoundGeneratorContinueNode node) {
@@ -439,15 +440,21 @@ public class HighlightingProvider {
             process(let.token);
             return;
         }
-
-        result.add(new SemanticToken(TYPE, node.getRange()));
+        if (node.syntaxNode instanceof CustomTypeNode custom) {
+            process(custom.token, SemanticTokenType.TYPE);
+            return;
+        }
+        if (node.syntaxNode instanceof InvalidTypeNode invalid) {
+            process(invalid.token, SemanticTokenType.TYPE);
+            return;
+        }
     }
 
     private void process(BoundJavaTypeNode node) {
-        result.add(new SemanticToken(TYPE, node.syntaxNode.java.getRange()));
+        process(node.syntaxNode.java, SemanticTokenType.TYPE);
         process(node.syntaxNode.openBracket);
         for (Token token : node.syntaxNode.name.tokens) {
-            result.add(new SemanticToken(TYPE, token.getRange()));
+            process(token, SemanticTokenType.TYPE);
         }
         process(node.syntaxNode.closeBracket);
     }
@@ -483,7 +490,7 @@ public class HighlightingProvider {
     }
 
     private void process(BoundMethodNode node) {
-        result.add(new SemanticToken(METHOD, node.syntaxNode.token.getRange()));
+        process(node.syntaxNode.token, SemanticTokenType.METHOD);
     }
 
     private void process(BoundMethodGroupExpressionNode node) {
@@ -502,6 +509,18 @@ public class HighlightingProvider {
     }
 
     private void process(BoundNameExpressionNode node) {
+        if (node.getSymbol() instanceof StaticFieldConstantStaticVariable) {
+            process(node.syntaxNode.token, SemanticTokenType.IDENTIFIER, List.of(SemanticTokenModifier.EXTERNAL, SemanticTokenModifier.STATIC));
+            return;
+        }
+        if (node.getSymbol() instanceof StaticVariable) {
+            process(node.syntaxNode.token, SemanticTokenType.IDENTIFIER, List.of(SemanticTokenModifier.STATIC));
+            return;
+        }
+        if (node.getSymbol() instanceof Function) {
+            process(node.syntaxNode.token, SemanticTokenType.IDENTIFIER, List.of(SemanticTokenModifier.FUNCTION));
+            return;
+        }
         process(node.syntaxNode.token);
     }
 
@@ -540,7 +559,7 @@ public class HighlightingProvider {
     }
 
     private void process(BoundPropertyNode node) {
-        result.add(new SemanticToken(PROPERTY, node.syntaxNode.token.getRange()));
+        process(node.syntaxNode.token, SemanticTokenType.PROPERTY);
     }
 
     private void process(BoundPropertyAccessExpressionNode node) {
@@ -636,7 +655,7 @@ public class HighlightingProvider {
     }
 
     private void process(BoundUnresolvedMethodNode node) {
-        result.add(new SemanticToken(METHOD, node.syntaxNode.token.getRange()));
+        process(node.syntaxNode.token, SemanticTokenType.METHOD);
     }
 
     private void process(BoundVariableDeclarationNode node) {
@@ -655,7 +674,21 @@ public class HighlightingProvider {
         process(node.syntaxNode.token);
     }
 
+    private void process(BoundWhileLoopStatementNode node) {
+        process(node.syntaxNode.keyword);
+        process(node.syntaxNode.openParen);
+        process(node.condition);
+        process(node.syntaxNode.closeParen);
+        process(node.body);
+    }
+
     private void processRaw(ParserNode node) {
+        if (node.is(ParserNodeType.CUSTOM_TYPE)) {
+            CustomTypeNode custom = (CustomTypeNode) node;
+            process(custom.token, SemanticTokenType.TYPE);
+            return;
+        }
+
         for (Locatable locatable : node.getChildNodes()) {
             if (locatable instanceof Token token) {
                 process(token);
@@ -698,24 +731,46 @@ public class HighlightingProvider {
 
         if (!token.isMissing() && !token.is(TokenType.INVALID)) {
             SemanticTokenType type = switch (token.getTokenType()) {
-                case IDENTIFIER -> IDENTIFIER;
+                case IDENTIFIER -> SemanticTokenType.IDENTIFIER;
                 case LEFT_PARENTHESES, LEFT_CURLY_BRACKET, LEFT_SQUARE_BRACKET, RIGHT_PARENTHESES, RIGHT_CURLY_BRACKET,
-                     RIGHT_SQUARE_BRACKET -> BRACKET;
-                case DOT, DOLLAR, COMMA, SEMICOLON, COLON -> SEPARATOR;
+                     RIGHT_SQUARE_BRACKET -> SemanticTokenType.BRACKET;
+                case DOT, DOLLAR, COMMA, SEMICOLON, COLON -> SemanticTokenType.SEPARATOR;
                 case PLUS, PLUS_PLUS, PLUS_EQUAL, MINUS, MINUS_MINUS, MINUS_EQUAL, ASTERISK, ASTERISK_EQUAL, SLASH,
                      SLASH_EQUAL, PERCENT, PERCENT_EQUAL, AMPERSAND, AMPERSAND_AMPERSAND, AMPERSAND_EQUAL, PIPE, PIPE_PIPE,
                      PIPE_EQUAL, EQUAL, EQUAL_EQUAL, GREATER, GREATER_EQUAL, LESS, LESS_EQUAL, EXCLAMATION,
-                     EXCLAMATION_EQUAL, QUESTION -> OPERATOR;
-                case EQUAL_GREATER -> ARROW;
+                     EXCLAMATION_EQUAL, QUESTION, EQUAL_GREATER -> SemanticTokenType.OPERATOR;
                 case BOOLEAN, INT8, INT16, INT, INT32, INT64, LONG, CHAR, FLOAT32, FLOAT, FLOAT64, STRING, IF, ELSE, BREAK,
                      CONTINUE, WHILE, FOR, FOREACH, FALSE, TRUE, IN, NEW, REF, RETURN, STATIC, VOID, ASYNC, AWAIT, LET, IS,
-                     AS, META_UNKNOWN, META_TYPE, META_TYPE_OF, CLASS, CONSTRUCTOR, THIS -> KEYWORD;
-                case INTEGER_LITERAL, INTEGER64_LITERAL, FLOAT_LITERAL, INVALID_NUMBER -> NUMBER;
-                case CHAR_LITERAL, STRING_LITERAL -> STRING;
+                     AS, META_UNKNOWN, META_TYPE, META_TYPE_OF, CLASS, CONSTRUCTOR, THIS -> SemanticTokenType.KEYWORD;
+                case INTEGER_LITERAL, INTEGER64_LITERAL, FLOAT_LITERAL, INVALID_NUMBER -> SemanticTokenType.NUMBER;
+                case CHAR_LITERAL, STRING_LITERAL -> SemanticTokenType.STRING;
                 case LINE_BREAK, WHITESPACE, SINGLE_LINE_COMMENT, MULTI_LINE_COMMENT, END_OF_FILE, INVALID -> throw new InternalException();
             };
-            result.add(new SemanticToken(type, token.getRange()));
+            List<SemanticTokenModifier> modifiers = switch (token.getTokenType()) {
+                case VOID, BOOLEAN, INT8, INT16, INT, INT32, INT64, LONG, CHAR, FLOAT32, FLOAT, FLOAT64, STRING -> List.of(SemanticTokenModifier.PREDEFINED_TYPE);
+                case AS, IS, NEW, AWAIT -> List.of(SemanticTokenModifier.OPERATOR_LIKE);
+                case ASYNC -> List.of(SemanticTokenModifier.ASYNC);
+                case FALSE, TRUE -> List.of(SemanticTokenModifier.VALUE);
+                default -> List.of();
+            };
+            result.add(new SemanticToken(type, modifiers, token.getRange()));
         }
+
+        for (Trivia trivia : token.getTrailingTrivia()) {
+            process(trivia);
+        }
+    }
+
+    private void process(Token token, SemanticTokenType type) {
+        process(token, type, List.of());
+    }
+
+    private void process(Token token, SemanticTokenType type, List<SemanticTokenModifier> modifiers) {
+        for (Trivia trivia : token.getLeadingTrivia()) {
+            process(trivia);
+        }
+
+        result.add(new SemanticToken(type, modifiers, token.getRange()));
 
         for (Trivia trivia : token.getTrailingTrivia()) {
             process(trivia);
@@ -724,18 +779,18 @@ public class HighlightingProvider {
 
     private void process(Trivia trivia) {
         if (trivia.is(TokenType.SINGLE_LINE_COMMENT)) {
-            result.add(new SemanticToken(COMMENT, trivia.getRange()));
+            result.add(new SemanticToken(SemanticTokenType.COMMENT, trivia.getRange()));
         }
         if (trivia.is(TokenType.MULTI_LINE_COMMENT)) {
             TextRange range = trivia.getRange();
             while (true) {
                 if (range instanceof SingleLineTextRange) {
-                    result.add(new SemanticToken(COMMENT, range));
+                    result.add(new SemanticToken(SemanticTokenType.COMMENT, range));
                     break;
                 }
 
                 Line line = lines.get(range.getLine1() - 1);
-                result.add(new SemanticToken(COMMENT,
+                result.add(new SemanticToken(SemanticTokenType.COMMENT,
                         new SingleLineTextRange(
                                 range.getLine1(),
                                 range.getColumn1(),

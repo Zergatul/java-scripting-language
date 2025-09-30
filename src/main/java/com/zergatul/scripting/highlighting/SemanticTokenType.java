@@ -9,7 +9,6 @@ public enum SemanticTokenType {
     BRACKET,
     SEPARATOR,
     OPERATOR,
-    ARROW,
     NUMBER,
     STRING,
     COMMENT

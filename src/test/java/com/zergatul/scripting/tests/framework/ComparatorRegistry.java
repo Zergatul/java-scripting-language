@@ -52,6 +52,7 @@ public class ComparatorRegistry {
                         .extract("range", node -> node.range))
                 .register(SemanticToken.class, builder -> builder
                         .extract("type", SemanticToken::type)
+                        .extract("modifiers", SemanticToken::modifiers)
                         .extract("range", SemanticToken::range))
                 /* Parser Nodes */
                 .register(ArgumentsListNode.class, builder -> builder
