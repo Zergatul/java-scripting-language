@@ -2,6 +2,7 @@ package com.zergatul.scripting.completion;
 
 import com.zergatul.scripting.binding.BinderOutput;
 import com.zergatul.scripting.binding.nodes.BoundIfStatementNode;
+import com.zergatul.scripting.binding.nodes.BoundStatementNode;
 import com.zergatul.scripting.compiler.CompilationParameters;
 import com.zergatul.scripting.lexer.TokenType;
 
@@ -23,6 +24,15 @@ public class ElseKeywordCompletionProvider<T> extends AbstractCompletionProvider
             case STATEMENTS_LIST, BLOCK_STATEMENT -> {
                 if (context.prev instanceof BoundIfStatementNode ifStatement && ifStatement.elseStatement == null) {
                     return List.of(factory.getKeywordSuggestion(TokenType.ELSE));
+                }
+            }
+            default -> {
+                if (context.entry.isSingleWordStatementStart(context.line, context.column)) {
+                    CompletionContext statementContext = context.closestStatement(output);
+                    BoundStatementNode prevStatement = statementContext.getPreviousStatement(output);
+                    if (prevStatement instanceof BoundIfStatementNode ifStatement && ifStatement.elseStatement == null) {
+                        return List.of(factory.getKeywordSuggestion(TokenType.ELSE));
+                    }
                 }
             }
         }

@@ -483,7 +483,7 @@ public class HighlightingProvider {
     }
 
     private void process(BoundMethodNode node) {
-        process(node.syntaxNode.token);
+        result.add(new SemanticToken(METHOD, node.syntaxNode.token.getRange()));
     }
 
     private void process(BoundMethodGroupExpressionNode node) {
@@ -540,7 +540,7 @@ public class HighlightingProvider {
     }
 
     private void process(BoundPropertyNode node) {
-        process(node.syntaxNode.token);
+        result.add(new SemanticToken(PROPERTY, node.syntaxNode.token.getRange()));
     }
 
     private void process(BoundPropertyAccessExpressionNode node) {
@@ -636,7 +636,7 @@ public class HighlightingProvider {
     }
 
     private void process(BoundUnresolvedMethodNode node) {
-        process(node.syntaxNode.token);
+        result.add(new SemanticToken(METHOD, node.syntaxNode.token.getRange()));
     }
 
     private void process(BoundVariableDeclarationNode node) {

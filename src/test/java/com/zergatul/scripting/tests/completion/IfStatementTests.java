@@ -122,6 +122,17 @@ public class IfStatementTests {
                         new StaticConstantSuggestion(context, "intStorage")));
     }
 
+    @Test
+    public void elseTest4() {
+        assertSuggestions("""
+                if (false) intStorage.add(1); el<cursor>
+                """,
+                context -> Lists.of(
+                        statements,
+                        new KeywordSuggestion(TokenType.ELSE),
+                        new StaticConstantSuggestion(context, "intStorage")));
+    }
+
     private void assertSuggestions(String code, Function<TestCompletionContext, List<Suggestion>> expectedFactory) {
         CompletionTestHelper.assertSuggestions(ApiRoot.class, code, expectedFactory);
     }

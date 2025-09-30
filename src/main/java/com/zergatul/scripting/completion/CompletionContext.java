@@ -6,6 +6,9 @@ import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.BinderOutput;
 import com.zergatul.scripting.binding.nodes.*;
 import com.zergatul.scripting.binding.nodes.BoundNodeType;
+import com.zergatul.scripting.lexer.Token;
+import com.zergatul.scripting.lexer.TokenType;
+import com.zergatul.scripting.parser.nodes.CustomTypeNode;
 
 import java.util.List;
 
@@ -170,6 +173,38 @@ public class CompletionContext {
         }
     }
 
+    public BoundStatementNode getPreviousStatement(BinderOutput output) {
+        CompletionContext context = closestStatement(output);
+        if (context == null) {
+            return null;
+        }
+
+        CompletionContext parent = context.up();
+        if (parent.entry == null) {
+            return null;
+        }
+
+        if (parent.entry.node.is(BoundNodeType.STATEMENTS_LIST)) {
+            BoundStatementsListNode list = (BoundStatementsListNode) parent.entry.node;
+            for (int i = 1; i < list.statements.size(); i++) {
+                if (list.statements.get(i) == context.entry.node) {
+                    return list.statements.get(i - 1);
+                }
+            }
+        }
+
+        if (parent.entry.node.is(BoundNodeType.BLOCK_STATEMENT)) {
+            BoundBlockStatementNode block = (BoundBlockStatementNode) parent.entry.node;
+            for (int i = 1; i < block.statements.size(); i++) {
+                if (block.statements.get(i) == context.entry.node) {
+                    return block.statements.get(i - 1);
+                }
+            }
+        }
+
+        return null;
+    }
+
     private boolean canUnitMemberInternal() {
         if (type == ContextType.NO_CODE) {
             return true;
@@ -206,7 +241,7 @@ public class CompletionContext {
 
         // handle cases like this:
         // i<cursor>
-        if (isSingleWordStatementStart(entry, line, column)) {
+        if (entry.isSingleWordStatementStart(line, column)) {
             return true;
         }
         return switch (entry.node.getNodeType()) {
@@ -394,6 +429,19 @@ public class CompletionContext {
 
             case INVALID_TYPE, PREDEFINED_TYPE, CUSTOM_TYPE -> true;
 
+            case INVALID_EXPRESSION -> {
+                BoundInvalidExpressionNode invalidExpression = (BoundInvalidExpressionNode) entry.node;
+                if (invalidExpression.syntaxNode != null) {
+                    if (invalidExpression.syntaxNode.nodes.size() == 1 && invalidExpression.syntaxNode.nodes.getFirst() instanceof Token token) {
+                        yield token.is(TokenType.NEW) && token.getRange().isBefore(line, column);
+                    }
+                    if (invalidExpression.syntaxNode.nodes.size() == 2 && invalidExpression.syntaxNode.nodes.getLast() instanceof CustomTypeNode custom) {
+                        yield custom.getRange().containsOrEnds(line, column);
+                    }
+                }
+                yield false;
+            }
+
             default -> canStatement();
         };
     }
@@ -423,59 +471,6 @@ public class CompletionContext {
 
             default -> false;
         };
-    }
-
-    private static boolean isSingleWordStatementStart(SearchEntry entry, int line, int column) {
-        if (entry.node.getNodeType() == BoundNodeType.NAME_EXPRESSION) {
-            if (entry.parent.node.getNodeType() == BoundNodeType.EXPRESSION_STATEMENT) {
-                if (entry.node.getRange().containsOrEnds(line, column)) {
-                    return true;
-                }
-            }
-        }
-        if (entry.node.getNodeType() == BoundNodeType.PREDEFINED_TYPE) {
-            if (entry.parent.node.getNodeType() == BoundNodeType.VARIABLE_DECLARATION) {
-                BoundVariableDeclarationNode declaration = (BoundVariableDeclarationNode) entry.parent.node;
-                return declaration.name.value.isEmpty() && declaration.expression == null;
-            }
-        }
-        if (entry.node.getNodeType() == BoundNodeType.IF_STATEMENT) {
-            BoundIfStatementNode statement = (BoundIfStatementNode) entry.node;
-            return  statement.syntaxNode.openParen.getRange().isEmpty() &&
-                    statement.condition.getRange().isEmpty() &&
-                    statement.syntaxNode.closeParen.getRange().isEmpty() &&
-                    statement.thenStatement.getNodeType() == BoundNodeType.INVALID_STATEMENT &&
-                    statement.elseStatement == null;
-        }
-        if (entry.node.getNodeType() == BoundNodeType.FOR_LOOP_STATEMENT) {
-            BoundForLoopStatementNode statement = (BoundForLoopStatementNode) entry.node;
-            return  statement.syntaxNode.openParen.getRange().isEmpty() &&
-                    statement.init.getNodeType() == BoundNodeType.INVALID_STATEMENT &&
-                    statement.condition.getRange().isEmpty() &&
-                    statement.update.getNodeType() == BoundNodeType.INVALID_STATEMENT &&
-                    statement.syntaxNode.closeParen.getRange().isEmpty() &&
-                    statement.body.getNodeType() == BoundNodeType.INVALID_STATEMENT;
-        }
-        if (entry.node.getNodeType() == BoundNodeType.FOREACH_LOOP_STATEMENT) {
-            BoundForEachLoopStatementNode statement = (BoundForEachLoopStatementNode) entry.node;
-            return  statement.syntaxNode.openParen.getRange().isEmpty() &&
-                    statement.typeNode.getNodeType() == BoundNodeType.INVALID_TYPE &&
-                    statement.name.value.isEmpty() &&
-                    statement.iterable.getNodeType() == BoundNodeType.INVALID_EXPRESSION &&
-                    statement.syntaxNode.closeParen.getRange().isEmpty() &&
-                    statement.body.getNodeType() == BoundNodeType.INVALID_STATEMENT;
-        }
-        if (entry.node.getNodeType() == BoundNodeType.WHILE_LOOP_STATEMENT) {
-            BoundWhileLoopStatementNode statement = (BoundWhileLoopStatementNode) entry.node;
-            return  statement.condition.getRange().isEmpty() &&
-                    statement.body.getNodeType() == BoundNodeType.INVALID_STATEMENT;
-        }
-        if (entry.node.getNodeType() == BoundNodeType.RETURN_STATEMENT) {
-            BoundReturnStatementNode statement = (BoundReturnStatementNode) entry.node;
-            return  statement.syntaxNode.keyword.getRange().containsOrEnds(line, column) &&
-                    (statement.expression == null || statement.expression.getNodeType() == BoundNodeType.INVALID_EXPRESSION);
-        }
-        return false;
     }
 
     private static CompletionContext getAtLastContext(BoundCompilationUnitNode unit, int line, int column) {
