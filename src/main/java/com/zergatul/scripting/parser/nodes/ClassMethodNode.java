@@ -15,8 +15,7 @@ public class ClassMethodNode extends ClassMemberNode {
     public final TypeNode type;
     public final NameExpressionNode name;
     public final ParameterListNode parameters;
-    @Nullable
-    public final Token arrow;
+    @Nullable public final Token arrow;
     public final StatementNode body;
 
     public ClassMethodNode(
@@ -25,10 +24,9 @@ public class ClassMethodNode extends ClassMemberNode {
             NameExpressionNode name,
             ParameterListNode parameters,
             @Nullable Token arrow,
-            StatementNode body,
-            TextRange range
+            StatementNode body
     ) {
-        super(ParserNodeType.CLASS_METHOD, range);
+        super(ParserNodeType.CLASS_METHOD, TextRange.combine(modifiers, body));
         this.modifiers = modifiers;
         this.type = type;
         this.name = name;

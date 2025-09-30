@@ -38,4 +38,5 @@ public class ParserErrors {
     public static final ErrorCode ExpressionOrCloseSquaredBracketExpected = new ErrorCode("C033", "Expression or ] expected, found %s");
     public static final ErrorCode ExpressionOrCloseBraceExpected = new ErrorCode("C034", "Expression or } expected, found %s");
     public static final ErrorCode CommaOrCloseBraceExpected = new ErrorCode("C035", "'}' or ',' expected");
+    public static final ErrorCode ClassMemberExpected = new ErrorCode("C036", "Class member expected, found '%s'");
 }

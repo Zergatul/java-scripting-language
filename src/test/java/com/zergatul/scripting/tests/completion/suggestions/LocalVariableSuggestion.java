@@ -85,7 +85,7 @@ public class LocalVariableSuggestion extends Suggestion {
         @Override
         public void visit(BoundParameterNode node) {
             if (result == null && node.getName().value.equals(name)) {
-                result = (LocalVariable) node.getName().getSymbol();
+                result = node.getName().symbolRef.asLocalVariableExpanded();
             }
         }
     }

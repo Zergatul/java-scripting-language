@@ -472,8 +472,7 @@ public class Parser {
                     identifier,
                     new Token(TokenType.LEFT_CURLY_BRACKET, range),
                     List.of(),
-                    new Token(TokenType.RIGHT_CURLY_BRACKET, range),
-                    TextRange.combine(keyword, identifier));
+                    new Token(TokenType.RIGHT_CURLY_BRACKET, range));
         }
 
         ValueToken identifier = (ValueToken) advance();
@@ -484,8 +483,7 @@ public class Parser {
                     identifier,
                     openBrace,
                     List.of(),
-                    createMissingTokenAfterLast(TokenType.RIGHT_SQUARE_BRACKET),
-                    TextRange.combine(keyword, openBrace));
+                    createMissingTokenAfterLast(TokenType.RIGHT_SQUARE_BRACKET));
         }
 
         List<ClassMemberNode> members = new ArrayList<>();
@@ -496,11 +494,35 @@ public class Parser {
             if (current.is(TokenType.RIGHT_CURLY_BRACKET)) {
                 break;
             }
-            members.add(parseClassMemberNode());
+            if (isPossibleClassMemberNode()) {
+                members.add(parseClassMemberNode());
+            } else {
+                Token token = advance();
+                addDiagnostic(ParserErrors.ClassMemberExpected, token, token.getRawValue(code));
+            }
         }
 
         Token closeBrace = advance(TokenType.RIGHT_CURLY_BRACKET);
-        return new ClassNode(keyword, identifier, openBrace, members, closeBrace, TextRange.combine(keyword, closeBrace));
+        return new ClassNode(keyword, identifier, openBrace, members, closeBrace);
+    }
+
+    private boolean isPossibleClassMemberNode() {
+        if (current.is(TokenType.VOID)) {
+            return true;
+        }
+        if (current.is(TokenType.ASYNC)) {
+            return true;
+        }
+        if (current.is(TokenType.CONSTRUCTOR)) {
+            return true;
+        }
+
+        LookAhead ahead = new LookAhead();
+        try {
+            return tryAdvanceType();
+        } finally {
+            ahead.rollback();
+        }
     }
 
     private ClassMemberNode parseClassMemberNode() {
@@ -573,7 +595,15 @@ public class Parser {
     private ClassMethodNode parseClassMethod() {
         ModifiersNode modifiersNode = parseModifiers();
         TypeNode typeNode = parseTypeOrVoidNode();
-        ValueToken identifier = (ValueToken) advance();
+
+        ValueToken identifier;
+        if (current.is(TokenType.IDENTIFIER)) {
+            identifier = (ValueToken) advance();
+        } else {
+            addDiagnostic(ParserErrors.IdentifierExpected, current, current.getRawValue(code));
+            identifier = createMissingIdentifierAfterLast();
+        }
+
         return parseClassMethod(modifiersNode, typeNode, identifier);
     }
 
@@ -603,8 +633,7 @@ public class Parser {
                 new NameExpressionNode(identifier),
                 parameters,
                 arrow,
-                body,
-                TextRange.combine(modifiersNode, body));
+                body);
     }
 
     private FunctionNode parseFunction() {

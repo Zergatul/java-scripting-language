@@ -14,10 +14,8 @@ public class StaticVariableNode extends CompilationUnitMemberNode {
     public final Token keyword;
     public final TypeNode type;
     public final NameExpressionNode name;
-    @Nullable
-    public final Token equal;
-    @Nullable
-    public final ExpressionNode expression;
+    @Nullable public final Token equal;
+    @Nullable public final ExpressionNode expression;
     public final Token semicolon;
 
     public StaticVariableNode(

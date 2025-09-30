@@ -23,6 +23,8 @@ public class ParserDumper extends Dumper {
         }
 
         switch (node.getNodeType()) {
+            case CLASS_DECLARATION -> dump((ClassNode) node);
+            case CLASS_METHOD -> dump((ClassMethodNode) node);
             case COMPILATION_UNIT -> dump((CompilationUnitNode) node);
             case FUNCTION -> dump((FunctionNode) node);
             case MODIFIERS -> dump((ModifiersNode) node);
@@ -162,6 +164,38 @@ public class ParserDumper extends Dumper {
         dump(node.closeBrace);
         sb.append(")");
         decIndent();
+    }
+
+    private void dump(ClassMethodNode node) {
+        fullLine("new ClassMethodNode(");
+        incIndent();
+        dump(node.modifiers);
+        commaBreak();
+        dump(node.type);
+        commaBreak();
+        dump(node.name);
+        commaBreak();
+        dump(node.parameters);
+        commaBreak();
+        dump(node.arrow);
+        commaBreak();
+        dump(node.body);
+        sb.append(")");
+    }
+
+    private void dump(ClassNode node) {
+        fullLine("new ClassNode(");
+        incIndent();
+        dump(node.keyword);
+        commaBreak();
+        dump(node.name.token);
+        commaBreak();
+        dump(node.openBrace);
+        commaBreak();
+        dumpList(node.members);
+        commaBreak();
+        dump(node.closeBrace);
+        sb.append(")");
     }
 
     private void dump(CompilationUnitNode node) {

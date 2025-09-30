@@ -52,7 +52,7 @@ public class ParametersCompletionProvider<T> extends AbstractCompletionProvider<
                     if (name == null || name.isEmpty()) {
                         continue;
                     }
-                    suggestions.add(factory.getLocalVariableSuggestion(parameter.getName().symbolRef.asLocalVariable()));
+                    suggestions.add(factory.getLocalVariableSuggestion(parameter.getName().symbolRef.asLocalVariableExpanded()));
                 }
             }
         }

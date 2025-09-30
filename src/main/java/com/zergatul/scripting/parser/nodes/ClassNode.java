@@ -22,10 +22,9 @@ public class ClassNode extends CompilationUnitMemberNode {
             ValueToken identifier,
             Token openBrace,
             List<ClassMemberNode> members,
-            Token closeBrace,
-            TextRange range
+            Token closeBrace
     ) {
-        super(ParserNodeType.CLASS_DECLARATION, range);
+        super(ParserNodeType.CLASS_DECLARATION, TextRange.combine(keyword, closeBrace));
         this.keyword = keyword;
         this.name = new NameExpressionNode(identifier);
         this.openBrace = openBrace;

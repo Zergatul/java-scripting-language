@@ -51,8 +51,8 @@ public class ComparatorRegistry {
                         .extract("code", node -> node.code)
                         .extract("range", node -> node.range))
                 .register(SemanticToken.class, builder -> builder
-                        .extract("type", node -> node.type())
-                        .extract("range", node -> node.range()))
+                        .extract("type", SemanticToken::type)
+                        .extract("range", SemanticToken::range))
                 /* Parser Nodes */
                 .register(ArgumentsListNode.class, builder -> builder
                         .extract("openParen", node -> node.openParen)
@@ -96,6 +96,19 @@ public class ComparatorRegistry {
                 .register(BooleanLiteralExpressionNode.class, builder -> builder
                         .extract("token", node -> node.token)
                         .extract("value", node -> node.value))
+                .register(ClassMethodNode.class, builder -> builder
+                        .extract("modifiers", node -> node.modifiers)
+                        .extract("type", node -> node.type)
+                        .extract("name", node -> node.name)
+                        .extract("parameters", node -> node.parameters)
+                        .extract("arrow", node -> node.arrow)
+                        .extract("body", node -> node.body))
+                .register(ClassNode.class, builder -> builder
+                        .extract("keyword", node -> node.keyword)
+                        .extract("name", node -> node.name)
+                        .extract("openBrace", node -> node.openBrace)
+                        .extract("members", node -> node.members)
+                        .extract("closeBrace", node -> node.closeBrace))
                 .register(CompilationUnitMembersListNode.class, builder -> builder
                         .extract("members", node -> node.members))
                 .register(CompilationUnitNode.class, builder -> builder
