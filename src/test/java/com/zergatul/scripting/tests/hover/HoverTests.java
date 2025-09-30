@@ -5,6 +5,7 @@ import com.zergatul.scripting.binding.Binder;
 import com.zergatul.scripting.binding.BinderOutput;
 import com.zergatul.scripting.compiler.CompilationParameters;
 import com.zergatul.scripting.compiler.CompilationParametersBuilder;
+import com.zergatul.scripting.highlighting.SemanticTokenType;
 import com.zergatul.scripting.hover.HoverProvider;
 import com.zergatul.scripting.hover.Theme;
 import com.zergatul.scripting.lexer.Lexer;
@@ -192,7 +193,7 @@ public class HoverTests {
     private static class TestTheme extends Theme {
 
         @Override
-        public String getTokenColor(TokenType type) {
+        public String getTokenColor(SemanticTokenType type) {
             return TOKEN_COLOR;
         }
 

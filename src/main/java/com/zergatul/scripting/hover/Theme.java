@@ -1,9 +1,9 @@
 package com.zergatul.scripting.hover;
 
-import com.zergatul.scripting.lexer.TokenType;
+import com.zergatul.scripting.highlighting.SemanticTokenType;
 
 public abstract class Theme {
-    public abstract String getTokenColor(TokenType type);
+    public abstract String getTokenColor(SemanticTokenType type);
     public abstract String getPredefinedTypeColor();
     public abstract String getTypeColor();
     public abstract String getMethodColor();

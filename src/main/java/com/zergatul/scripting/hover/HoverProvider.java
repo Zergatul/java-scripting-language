@@ -3,6 +3,7 @@ package com.zergatul.scripting.hover;
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.BinderOutput;
 import com.zergatul.scripting.binding.nodes.*;
+import com.zergatul.scripting.highlighting.SemanticTokenType;
 import com.zergatul.scripting.lexer.TokenType;
 import com.zergatul.scripting.symbols.*;
 import com.zergatul.scripting.type.*;
@@ -184,7 +185,7 @@ public class HoverProvider {
         if (type instanceof SPredefinedType) {
             return predefinedType(type.toString());
         } else if (type instanceof SArrayType array) {
-            return type(array.getElementsType()) + span(theme.getTokenColor(TokenType.LEFT_SQUARE_BRACKET), "[]");
+            return type(array.getElementsType()) + span(theme.getTokenColor(SemanticTokenType.BRACKET), "[]");
         } else if (type instanceof SFunctionalInterface func) {
             StringBuilder sb = new StringBuilder();
             sb.append(span(theme.getTypeColor(),"Lambda<"));
