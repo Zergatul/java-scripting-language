@@ -462,11 +462,35 @@ public class Parser {
             if (current.type == TokenType.RIGHT_CURLY_BRACKET) {
                 break;
             }
-            members.add(parseClassMemberNode());
+            if (isPossibleClassMemberNode()) {
+                members.add(parseClassMemberNode());
+            } else {
+                Token token = advance();
+                addDiagnostic(ParserErrors.ClassMemberExpected, token, token.getRawValue(code));
+            }
         }
 
         Token closeBracket = advance(TokenType.RIGHT_CURLY_BRACKET);
         return new ClassNode(identifier, members, TextRange.combine(classToken, closeBracket));
+    }
+
+    private boolean isPossibleClassMemberNode() {
+        if (current.type == TokenType.VOID) {
+            return true;
+        }
+        if (current.type == TokenType.ASYNC) {
+            return true;
+        }
+        if (current.type == TokenType.CONSTRUCTOR) {
+            return true;
+        }
+
+        LookAhead ahead = new LookAhead();
+        try {
+            return tryAdvanceType();
+        } finally {
+            ahead.rollback();
+        }
     }
 
     private ClassMemberNode parseClassMemberNode() {

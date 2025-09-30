@@ -778,14 +778,15 @@ public class ParserTests {
         Assertions.assertFalse(result.diagnostics().isEmpty());
     }
 
-//    @Test
-//    public void unfinishedMemberTest2() {
-//        ParserOutput result = parse("""
-//                class Region {
-//                }
-//                """);
-//        Assertions.assertFalse(result.diagnostics().isEmpty());
-//    }
+    @Test
+    public void unfinishedMemberTest2() {
+        ParserOutput result = parse("""
+                class Region {
+                    void Check())
+                }
+                """);
+        Assertions.assertFalse(result.diagnostics().isEmpty());
+    }
 
     private ParserOutput parse(String code) {
         return new Parser(new Lexer(new LexerInput(code)).lex()).parse();
