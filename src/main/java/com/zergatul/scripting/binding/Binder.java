@@ -913,10 +913,15 @@ public class Binder {
         if (context.isClassMethod()) {
             PropertyReference property = context.getClassType().getInstanceProperty(name.value);
             if (property != null) {
+                TextRange ephemeralRange = name.getRange().getStart();
+                ThisExpressionNode ephemeralThis = new ThisExpressionNode(new Token(TokenType.THIS, ephemeralRange));
                 return new BoundPropertyAccessExpressionNode(
-                        null,
+                        new MemberAccessExpressionNode(
+                                ephemeralThis,
+                                new Token(TokenType.DOT, ephemeralRange),
+                                name),
                         new BoundThisExpressionNode(
-                                new ThisExpressionNode(new Token(TokenType.THIS, name.getRange().getStart())),
+                                ephemeralThis,
                                 context.getClassType(),
                                 name.getRange().getStart()),
                         new BoundPropertyNode(name, property),
