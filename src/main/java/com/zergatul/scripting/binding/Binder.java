@@ -915,7 +915,10 @@ public class Binder {
             if (property != null) {
                 return new BoundPropertyAccessExpressionNode(
                         null,
-                        new BoundThisExpressionNode(null, context.getClassType(), name.getRange().getStart()),
+                        new BoundThisExpressionNode(
+                                new ThisExpressionNode(new Token(TokenType.THIS, name.getRange().getStart())),
+                                context.getClassType(),
+                                name.getRange().getStart()),
                         new BoundPropertyNode(name, property),
                         name.getRange());
             }
@@ -929,7 +932,10 @@ public class Binder {
                                 new ThisExpressionNode(new Token(TokenType.THIS, name.getRange().getStart())),
                                 new Token(TokenType.DOT, name.getRange().getStart()),
                                 name),
-                        new BoundThisExpressionNode(null, context.getClassType(), name.getRange().getStart()),
+                        new BoundThisExpressionNode(
+                                new ThisExpressionNode(new Token(TokenType.THIS, name.getRange().getStart())),
+                                context.getClassType(),
+                                name.getRange().getStart()),
                         methods,
                         new BoundUnresolvedMethodNode(name));
             }
