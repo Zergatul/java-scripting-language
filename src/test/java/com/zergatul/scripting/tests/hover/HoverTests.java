@@ -180,6 +180,19 @@ public class HoverTests {
                 hover);
     }
 
+    @Test
+    public void functionTest() {
+        HoverProvider.HoverResponse hover = getHover("""
+                void func(int abc){}
+                func();
+                """, 2, 1);
+        Assertions.assertEquals(
+                new HoverProvider.HoverResponse(
+                        List.of("(function) void func(int abc)"),
+                        new SingleLineTextRange(2, 1, 21, 4)),
+                hover);
+    }
+
     private static HoverProvider.HoverResponse getHover(String code, int line, int column) {
         return getHover(code, ApiRoot.class, Runnable.class, line, column);
     }

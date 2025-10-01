@@ -66,38 +66,38 @@ public class HoverProvider {
             case NAME_EXPRESSION -> {
                 BoundNameExpressionNode name = (BoundNameExpressionNode) node;
                 if (name.getSymbol() instanceof ExternalParameter external) {
-                    String line = formatDescription("(external parameter)") + " " + formatType(external.getType()) + " " + formatDescription(external.getName());
+                    String line = formatDescription("(external parameter)") + " " + formatType(external.getType()) + " " + formatIdentifier(external.getName());
                     yield new HoverResponse(line, range);
                 } else if (name.getSymbol() instanceof LocalParameter local) {
-                    String line = formatDescription("(parameter)") + " " + formatType(local.getType()) + " " + formatDescription(local.getName());
+                    String line = formatDescription("(parameter)") + " " + formatType(local.getType()) + " " + formatIdentifier(local.getName());
                     yield new HoverResponse(line, range);
                 } else if (name.getSymbol() instanceof LocalRefParameter local) {
-                    String line = formatDescription("(parameter)") + " " + formatPredefinedType("ref") + " " + formatType(local.getType()) + " " + formatDescription(local.getName());
+                    String line = formatDescription("(parameter)") + " " + formatPredefinedType("ref") + " " + formatType(local.getType()) + " " + formatIdentifier(local.getName());
                     yield new HoverResponse(line, range);
                 } else if (name.getSymbol() instanceof LocalVariable local) {
-                    String line = formatDescription("(local variable)") + " " + formatType(local.getType()) + " " + formatDescription(local.getName());
+                    String line = formatDescription("(local variable)") + " " + formatType(local.getType()) + " " + formatIdentifier(local.getName());
                     yield new HoverResponse(line, range);
                 } else if (name.getSymbol() instanceof StaticFieldConstantStaticVariable field) {
-                    String line = formatDescription("(external static constant)") + " " + formatType(field.getType()) + " " + formatDescription(field.getName());
+                    String line = formatDescription("(external static constant)") + " " + formatType(field.getType()) + " " + formatIdentifier(field.getName());
                     yield new HoverResponse(line, range);
                 } else if (name.getSymbol() instanceof StaticVariable staticVariable) {
-                    String line = formatDescription("(static variable)") + " " + formatType(staticVariable.getType()) + " " + formatDescription(staticVariable.getName());
+                    String line = formatDescription("(static variable)") + " " + formatType(staticVariable.getType()) + " " + formatIdentifier(staticVariable.getName());
                     yield new HoverResponse(line, range);
                 } else if (name.getSymbol() instanceof Function function) {
                     SStaticFunction type = function.getFunctionType();
                     StringBuilder sb = new StringBuilder();
                     sb.append(formatType(type.getReturnType())).append(' ');
                     sb.append(formatMethod(function.getName()));
-                    sb.append(formatDescription("("));
+                    sb.append(formatBrackets("("));
                     List<MethodParameter> parameters = type.getParameters();
                     for (int i = 0; i < parameters.size(); i++) {
                         sb.append(formatType(parameters.get(i).type())).append(' ');
                         sb.append(formatParameter(parameters.get(i).name()));
                         if (i < parameters.size() - 1) {
-                            sb.append(formatDescription(", "));
+                            sb.append(", ");
                         }
                     }
-                    sb.append(formatDescription(")"));
+                    sb.append(formatBrackets(")"));
                     yield new HoverResponse(sb.toString(), range);
                 } else {
                     yield null;
@@ -112,18 +112,9 @@ public class HoverProvider {
                 StringBuilder sb = new StringBuilder();
                 sb.append(formatType(methodReference.getReturn())).append(' ');
                 sb.append(formatType(methodReference.getOwner()));
-                sb.append(formatDescription("."));
+                sb.append(".");
                 sb.append(formatMethod(methodReference.getName()));
-                sb.append(formatDescription("("));
-                List<MethodParameter> parameters = methodReference.getParameters();
-                for (int i = 0; i < parameters.size(); i++) {
-                    sb.append(formatType(parameters.get(i).type())).append(' ');
-                    sb.append(formatParameter(parameters.get(i).name()));
-                    if (i < parameters.size() - 1) {
-                        sb.append(formatDescription(", "));
-                    }
-                }
-                sb.append(formatDescription(")"));
+                sb.append(formatMethodParameters(methodReference.getParameters()));
 
                 List<String> lines = new ArrayList<>();
                 lines.add(sb.toString());
@@ -140,13 +131,19 @@ public class HoverProvider {
                     yield null;
                 }
                 BoundPropertyAccessExpressionNode access = (BoundPropertyAccessExpressionNode) chain.get(1);
-                String line = formatDescription("(property)") + " " + formatType(property.getType()) + " " + formatType(access.callee.type) + "." + formatDescription(property.getName());
+                String line = formatDescription("(property)") + " " + formatType(property.getType()) + " " + formatType(access.callee.type) + "." + formatIdentifier(property.getName());
                 yield new HoverResponse(line, range);
             }
             case BINARY_OPERATOR -> {
                 BoundBinaryOperatorNode operator = (BoundBinaryOperatorNode) node;
                 BinaryOperation operation = operator.operation;
-                String line = formatType(operation.type) + " " + formatDescription(operation.operator.toString()) + formatDescription("(") + formatType(operation.getLeft()) + " " + formatParameter("left") + formatDescription(",") + " " + formatType(operation.getRight()) + " " + formatParameter("right") + formatDescription(")");
+                String line = formatType(operation.type) + " " + formatDescription(operation.operator.toString()) + formatBrackets("(") + formatType(operation.getLeft()) + " " + formatParameter("left") + "," + " " + formatType(operation.getRight()) + " " + formatParameter("right") + formatBrackets(")");
+                yield new HoverResponse(line, range);
+            }
+            case FUNCTION_REFERENCE -> {
+                BoundFunctionReferenceNode reference = (BoundFunctionReferenceNode) node;
+                SFunction functionType = (SFunction) reference.type;
+                String line = formatDescription("(function)") + " " + formatType(functionType.getReturnType()) + " " + formatIdentifier(reference.name) + formatMethodParameters(functionType.getParameters());
                 yield new HoverResponse(line, range);
             }
             default -> null;
@@ -240,8 +237,22 @@ public class HoverProvider {
         return text;
     }
 
-    protected String formatDescription(String text) {
+    protected String formatIdentifier(String text) {
         return text;
+    }
+
+    protected String formatMethodParameters(List<MethodParameter> parameters) {
+        StringBuilder sb = new StringBuilder();
+        sb.append(formatBrackets("("));
+        for (int i = 0; i < parameters.size(); i++) {
+            sb.append(formatType(parameters.get(i).type())).append(' ');
+            sb.append(formatParameter(parameters.get(i).name()));
+            if (i < parameters.size() - 1) {
+                sb.append(", ");
+            }
+        }
+        sb.append(formatBrackets(")"));
+        return sb.toString();
     }
 
     protected String formatParameter(String text) {
@@ -249,6 +260,10 @@ public class HoverProvider {
     }
 
     protected String formatBrackets(String text) {
+        return text;
+    }
+
+    protected String formatDescription(String text) {
         return text;
     }
 
