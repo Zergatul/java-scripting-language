@@ -13,7 +13,6 @@ import com.zergatul.scripting.lexer.LexerInput;
 import com.zergatul.scripting.lexer.LexerOutput;
 import com.zergatul.scripting.parser.Parser;
 import com.zergatul.scripting.parser.ParserOutput;
-import com.zergatul.scripting.symbols.Function;
 import com.zergatul.scripting.tests.framework.ComparatorTest;
 import org.junit.jupiter.api.Test;
 
@@ -282,6 +281,60 @@ public class BasicTests extends ComparatorTest {
                         new SemanticToken(SemanticTokenType.BRACKET, new SingleLineTextRange(2, 5, 18, 1)),
                         new SemanticToken(SemanticTokenType.BRACKET, new SingleLineTextRange(2, 6, 19, 1)),
                         new SemanticToken(SemanticTokenType.SEPARATOR, new SingleLineTextRange(2, 7, 20, 1))),
+                highlight(code));
+    }
+
+    @Test
+    public void unfinishedStaticVariableTest1() {
+        String code = """
+                static in
+                api.test();
+                """;
+        comparator.assertSemanticEquals(
+                List.of(
+                        new SemanticToken(SemanticTokenType.KEYWORD, new SingleLineTextRange(1, 1, 0, 6)),
+                        new SemanticToken(SemanticTokenType.TYPE, new SingleLineTextRange(1, 8, 7, 2)),
+                        new SemanticToken(SemanticTokenType.IDENTIFIER, List.of(SemanticTokenModifier.STATIC), new SingleLineTextRange(2, 1, 10, 3)),
+                        new SemanticToken(SemanticTokenType.IDENTIFIER, new SingleLineTextRange(2, 5, 14, 4)),
+                        new SemanticToken(SemanticTokenType.BRACKET, new SingleLineTextRange(2, 9, 18, 1)),
+                        new SemanticToken(SemanticTokenType.BRACKET, new SingleLineTextRange(2, 10, 19, 1)),
+                        new SemanticToken(SemanticTokenType.SEPARATOR, new SingleLineTextRange(2, 11, 20, 1))),
+                highlight(code));
+    }
+
+    @Test
+    public void unfinishedStaticVariableTest2() {
+        String code = """
+                static int x =
+                boolean show = true;
+                """;
+        comparator.assertSemanticEquals(
+                List.of(
+                        new SemanticToken(SemanticTokenType.KEYWORD, new SingleLineTextRange(1, 1, 0, 6)),
+                        new SemanticToken(SemanticTokenType.KEYWORD, List.of(SemanticTokenModifier.PREDEFINED_TYPE), new SingleLineTextRange(1, 8, 7, 3)),
+                        new SemanticToken(SemanticTokenType.IDENTIFIER, List.of(SemanticTokenModifier.STATIC), new SingleLineTextRange(1, 12, 11, 1)),
+                        new SemanticToken(SemanticTokenType.OPERATOR, new SingleLineTextRange(1, 14, 13, 1)),
+                        new SemanticToken(SemanticTokenType.KEYWORD, List.of(SemanticTokenModifier.PREDEFINED_TYPE), new SingleLineTextRange(2, 1, 15, 7)),
+                        new SemanticToken(SemanticTokenType.IDENTIFIER, new SingleLineTextRange(2, 9, 23, 4)),
+                        new SemanticToken(SemanticTokenType.OPERATOR, new SingleLineTextRange(2, 14, 28, 1)),
+                        new SemanticToken(SemanticTokenType.KEYWORD, List.of(SemanticTokenModifier.VALUE), new SingleLineTextRange(2, 16, 30, 4))),
+                highlight(code));
+    }
+
+    @Test
+    public void unfinishedFunctionTest() {
+        String code = """
+                void
+                api.test();
+                """;
+        comparator.assertSemanticEquals(
+                List.of(
+                        new SemanticToken(SemanticTokenType.KEYWORD, List.of(SemanticTokenModifier.PREDEFINED_TYPE), new SingleLineTextRange(1, 1, 0, 4)),
+                        new SemanticToken(SemanticTokenType.IDENTIFIER, List.of(SemanticTokenModifier.FUNCTION), new SingleLineTextRange(2, 1, 5, 3)),
+                        new SemanticToken(SemanticTokenType.IDENTIFIER, new SingleLineTextRange(2, 5, 9, 4)),
+                        new SemanticToken(SemanticTokenType.BRACKET, new SingleLineTextRange(2, 9, 13, 1)),
+                        new SemanticToken(SemanticTokenType.BRACKET, new SingleLineTextRange(2, 10, 14, 1)),
+                        new SemanticToken(SemanticTokenType.SEPARATOR, new SingleLineTextRange(2, 11, 15, 1))),
                 highlight(code));
     }
 

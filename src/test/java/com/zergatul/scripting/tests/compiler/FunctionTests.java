@@ -477,6 +477,17 @@ public class FunctionTests extends ComparatorTest {
                 getDiagnostics(ApiRoot.class, code));
     }
 
+    @Test
+    public void externalNameConflictTest() {
+        String code = """
+                void run(){}
+                """;
+
+        comparator.assertEquals(List.of(
+                        new DiagnosticMessage(BinderErrors.SymbolAlreadyDeclared, new SingleLineTextRange(1, 6, 5, 3), "run")),
+                getDiagnostics(ApiRoot.class, code));
+    }
+
     public static class ApiRoot {
         public static IntStorage intStorage;
         public static FloatStorage floatStorage;

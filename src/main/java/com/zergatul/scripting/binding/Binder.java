@@ -826,7 +826,8 @@ public class Binder {
         if (callee.type != SUnknown.instance) {
             addDiagnostic(BinderErrors.NotFunction, callee);
         }
-        return new BoundInvalidExpressionNode(List.of(callee), invocation.getRange());
+
+        return new BoundInvalidExpressionNode(List.of(callee), List.of(invocation.arguments), invocation.getRange());
     }
 
     private BoundExpressionNode bindUnconvertedLambda(BoundUnconvertedLambdaExpressionNode node, SFunction target) {
@@ -1297,7 +1298,7 @@ public class Binder {
     }
 
     private BoundInvalidExpressionNode bindInvalidExpression(InvalidExpressionNode expression) {
-        return new BoundInvalidExpressionNode(expression, List.of(), expression.getRange());
+        return new BoundInvalidExpressionNode(expression, List.of(), List.of(), expression.getRange());
     }
 
     private BoundExpressionNode convert(BoundExpressionNode expression, SType type) {
@@ -1577,7 +1578,7 @@ public class Binder {
     private void buildStaticFieldDeclaration(StaticVariableNode fieldNode) {
         String name = fieldNode.name.value;
         boolean hasError = false;
-        if (!name.isEmpty() && declarationTable.hasSymbol(name)) {
+        if (!name.isEmpty() && (declarationTable.hasSymbol(name) || context.hasSymbol(name))) {
             hasError = true;
             addDiagnostic(BinderErrors.SymbolAlreadyDeclared, fieldNode.name, name);
         }
@@ -1591,7 +1592,7 @@ public class Binder {
     private void buildFunctionDeclaration(FunctionNode functionNode) {
         String name = functionNode.name.value;
         boolean hasError = false;
-        if (!name.isEmpty() && declarationTable.hasSymbol(name)) {
+        if (!name.isEmpty() && (declarationTable.hasSymbol(name) || context.hasSymbol(name))) {
             hasError = true;
             addDiagnostic(BinderErrors.SymbolAlreadyDeclared, functionNode.name, name);
         }

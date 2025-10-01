@@ -2,6 +2,7 @@ package com.zergatul.scripting.tests.compiler;
 
 import com.zergatul.scripting.DiagnosticMessage;
 import com.zergatul.scripting.SingleLineTextRange;
+import com.zergatul.scripting.binding.BinderErrors;
 import com.zergatul.scripting.parser.ParserErrors;
 import com.zergatul.scripting.tests.compiler.helpers.*;
 import com.zergatul.scripting.tests.framework.ComparatorTest;
@@ -171,6 +172,17 @@ public class StaticVariableTests extends ComparatorTest {
 
         comparator.assertEquals(List.of(
                 new DiagnosticMessage(ParserErrors.TypeExpected, new SingleLineTextRange(1, 8, 7, 3), "let")),
+                getDiagnostics(ApiRoot.class, code));
+    }
+
+    @Test
+    public void externalNameConflictTest() {
+        String code = """
+                static int run = 1;
+                """;
+
+        comparator.assertEquals(List.of(
+                        new DiagnosticMessage(BinderErrors.SymbolAlreadyDeclared, new SingleLineTextRange(1, 12, 11, 3), "run")),
                 getDiagnostics(ApiRoot.class, code));
     }
 

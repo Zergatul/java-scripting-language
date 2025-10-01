@@ -431,6 +431,9 @@ public class HighlightingProvider {
         for (BoundExpressionNode expression : node.children) {
             process(expression);
         }
+        for (ParserNode syntaxNode : node.unboundNodes) {
+            processRaw(syntaxNode);
+        }
     }
 
     private void process(BoundInvalidStatementNode node) {}

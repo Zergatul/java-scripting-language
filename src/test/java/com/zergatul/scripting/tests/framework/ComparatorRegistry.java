@@ -276,7 +276,9 @@ public class ComparatorRegistry {
                         .extract("body", node -> node.body)
                         .extract("lifted", node -> node.lifted))
                 .register(BoundInvalidExpressionNode.class, builder -> builder
-                        .extract("children", node -> node.children))
+                        .extract("syntaxNode", node -> node.syntaxNode)
+                        .extract("children", node -> node.children)
+                        .extract("unboundNodes", node -> node.unboundNodes))
                 .register(BoundInvalidStatementNode.class, builder -> {})
                 .register(BoundLambdaExpressionNode.class, builder -> builder
                         .extract("syntaxNode", node -> node.syntaxNode)
