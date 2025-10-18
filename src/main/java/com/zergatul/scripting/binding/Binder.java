@@ -614,7 +614,11 @@ public class Binder {
         return new BoundUnaryExpressionNode(unary, operator, operand);
     }
 
-    private BoundBinaryExpressionNode bindBinaryExpression(BinaryExpressionNode binary) {
+    private BoundExpressionNode bindBinaryExpression(BinaryExpressionNode binary) {
+        if (binary.operator.token.is(TokenType.IN)) {
+            return bindInExpression(binary);
+        }
+
         BoundExpressionNode left = bindExpression(binary.left);
         BoundExpressionNode right = bindExpression(binary.right);
         BinaryOperation operation = left.type.binary(binary.operator.operator, right.type);
@@ -666,6 +670,42 @@ public class Binder {
         BoundExpressionNode expression = bindExpression(test.expression);
         BoundTypeNode type = bindType(test.type);
         return new BoundTypeCastExpressionNode(test, expression, type);
+    }
+
+    private BoundExpressionNode bindInExpression(BinaryExpressionNode binary) {
+        BoundExpressionNode left = bindExpression(binary.left);
+        BoundExpressionNode right = bindExpression(binary.right);
+
+        if (left.type == SUnknown.instance || right.type == SUnknown.instance) {
+            return new BoundInExpressionNode(binary, left, right, UnknownMethodReference.instance);
+        }
+
+        List<MethodReference> methods = right.type.getInstanceMethods();
+        for (MethodReference method : methods) {
+            if (!method.getName().equals("contains")) {
+                continue;
+            }
+            if (method.getReturn() != SBoolean.instance) {
+                continue;
+            }
+            List<SType> parameters = method.getParameterTypes();
+            if (parameters.size() != 1) {
+                continue;
+            }
+            SType parameter = parameters.getFirst();
+            if (parameter.equals(left.type)) {
+                return new BoundInExpressionNode(binary, left, right, method);
+            }
+        }
+
+        // TODO: check with casts as second priority
+
+        addDiagnostic(
+                BinderErrors.CannotUseInOperator,
+                binary,
+                right.type.toString(),
+                left.type.toString());
+        return new BoundInExpressionNode(binary, left, right, UnknownMethodReference.instance);
     }
 
     private BoundBooleanLiteralExpressionNode bindBooleanLiteralExpression(BooleanLiteralExpressionNode bool) {

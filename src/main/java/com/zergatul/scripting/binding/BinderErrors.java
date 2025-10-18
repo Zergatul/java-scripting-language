@@ -52,6 +52,7 @@ public class BinderErrors {
     public static final ErrorCode InvalidRefExpression = new ErrorCode("B048", "Invalid ref expression");
     public static final ErrorCode LetUnboundLambda = new ErrorCode("B049", "Cannot assign lambda to 'let' variable");
     public static final ErrorCode ArgumentCountMismatch2 = new ErrorCode("B050", "Function expects %d arguments");
+    public static final ErrorCode CannotUseInOperator = new ErrorCode("B051", "Cannot use 'in' operator, since type '%s' does not have defined method 'contains' with parameter of type '%s' and return type 'boolean'");
 
     public static final ErrorCode InternalError = new ErrorCode("B999", "Internal error: %s");
 }

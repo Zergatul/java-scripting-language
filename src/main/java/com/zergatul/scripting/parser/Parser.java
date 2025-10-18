@@ -961,6 +961,7 @@ public class Parser {
                 case GREATER_EQUAL -> BinaryOperator.GREATER_EQUALS;
                 case IS -> BinaryOperator.IS;
                 case AS -> BinaryOperator.AS;
+                case IN -> BinaryOperator.IN;
                 default -> null;
             };
             if (binary == null) {

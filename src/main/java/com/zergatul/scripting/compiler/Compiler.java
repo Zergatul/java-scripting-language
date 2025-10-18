@@ -1178,6 +1178,7 @@ public class Compiler {
             case PARENTHESIZED_EXPRESSION -> compileExpression(visitor, context, ((BoundParenthesizedExpressionNode) expression).inner);
             case UNARY_EXPRESSION -> compileUnaryExpression(visitor, context, (BoundUnaryExpressionNode) expression);
             case BINARY_EXPRESSION -> compileBinaryExpression(visitor, context, (BoundBinaryExpressionNode) expression);
+            case IN_EXPRESSION -> compileInExpression(visitor, context, (BoundInExpressionNode) expression);
             case TYPE_TEST_EXPRESSION -> compileTypeTestExpression(visitor, context, (BoundTypeTestExpressionNode) expression);
             case TYPE_CAST_EXPRESSION -> compileTypeCastExpression(visitor, context, (BoundTypeCastExpressionNode) expression);
             case CONDITIONAL_EXPRESSION -> compileConditionalExpression(visitor, context, (BoundConditionalExpressionNode) expression);
@@ -1240,6 +1241,12 @@ public class Compiler {
         compileExpression(visitor, context, expression.left);
         compileExpression(buffer, context, expression.right);
         expression.operator.operation.apply(visitor, buffer);
+    }
+
+    private void compileInExpression(MethodVisitor visitor, CompilerContext context, BoundInExpressionNode expression) {
+        compileExpression(visitor, context, expression.right);
+        compileExpression(visitor, context, expression.left);
+        expression.method.compileInvoke(visitor);
     }
 
     private void compileTypeTestExpression(MethodVisitor visitor, CompilerContext context, BoundTypeTestExpressionNode test) {
