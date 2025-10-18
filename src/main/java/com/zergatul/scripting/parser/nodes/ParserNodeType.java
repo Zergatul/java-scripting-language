@@ -72,4 +72,5 @@ public enum ParserNodeType {
     THIS_EXPRESSION,
     MODIFIERS,
     FUNCTION_TYPE,
+    EXTENSION_DECLARATION,
 }

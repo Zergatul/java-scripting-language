@@ -2,6 +2,7 @@ package com.zergatul.scripting.type;
 
 import com.zergatul.scripting.InternalException;
 import com.zergatul.scripting.compiler.BufferedMethodVisitor;
+import com.zergatul.scripting.compiler.CompilerContext;
 import com.zergatul.scripting.parser.BinaryOperator;
 import com.zergatul.scripting.runtime.StringUtils;
 import com.zergatul.scripting.type.operation.BinaryOperation;
@@ -141,9 +142,9 @@ public class SString extends SPredefinedType {
         Optional<MethodReference> toString = other.getToStringMethod();
         return toString.map(methodReference -> new BinaryOperation(BinaryOperator.PLUS, SString.instance, SString.instance, SUnknown.instance) {
             @Override
-            public void apply(MethodVisitor left, BufferedMethodVisitor right) {
-                methodReference.compileInvoke(right);
-                ADD_STRING.apply(left, right);
+            public void apply(MethodVisitor left, BufferedMethodVisitor right, CompilerContext context) {
+                methodReference.compileInvoke(right, context);
+                ADD_STRING.apply(left, right, context);
             }
         });
     }
@@ -152,9 +153,9 @@ public class SString extends SPredefinedType {
         Optional<MethodReference> toString = other.getToStringMethod();
         return toString.map(methodReference -> new BinaryOperation(BinaryOperator.PLUS, SString.instance, SUnknown.instance, SString.instance) {
             @Override
-            public void apply(MethodVisitor left, BufferedMethodVisitor right) {
-                methodReference.compileInvoke(left);
-                ADD_STRING.apply(left, right);
+            public void apply(MethodVisitor left, BufferedMethodVisitor right, CompilerContext context) {
+                methodReference.compileInvoke(left, context);
+                ADD_STRING.apply(left, right, context);
             }
         });
     }
@@ -163,7 +164,7 @@ public class SString extends SPredefinedType {
 
     private static final BinaryOperation ADD_STRING = new BinaryOperation(BinaryOperator.PLUS, SString.instance, SString.instance, SString.instance) {
         @Override
-        public void apply(MethodVisitor left, BufferedMethodVisitor right) {
+        public void apply(MethodVisitor left, BufferedMethodVisitor right, CompilerContext context) {
             // stack = ..., left
             left.visitTypeInsn(NEW, Type.getInternalName(StringBuilder.class));
             // stack = ..., left, builder
@@ -205,7 +206,7 @@ public class SString extends SPredefinedType {
 
     private static final BinaryOperation ADD_CHAR = new BinaryOperation(BinaryOperator.PLUS, SString.instance, SString.instance, SChar.instance) {
         @Override
-        public void apply(MethodVisitor left, BufferedMethodVisitor right) {
+        public void apply(MethodVisitor left, BufferedMethodVisitor right, CompilerContext context) {
             // stack = ..., left
             left.visitTypeInsn(NEW, Type.getInternalName(StringBuilder.class));
             // stack = ..., left, builder
@@ -247,7 +248,7 @@ public class SString extends SPredefinedType {
 
     private static final BinaryOperation EQUALS_STRING = new BinaryOperation(BinaryOperator.EQUALS, SBoolean.instance, SString.instance, SString.instance) {
         @Override
-        public void apply(MethodVisitor left, BufferedMethodVisitor right) {
+        public void apply(MethodVisitor left, BufferedMethodVisitor right, CompilerContext context) {
             right.release(left);
             left.visitMethodInsn(
                     INVOKESTATIC,
@@ -260,8 +261,8 @@ public class SString extends SPredefinedType {
 
     private static final BinaryOperation NOT_EQUALS_STRING = new BinaryOperation(BinaryOperator.NOT_EQUALS, SBoolean.instance, SString.instance, SString.instance) {
         @Override
-        public void apply(MethodVisitor left, BufferedMethodVisitor right) {
-            SString.EQUALS_STRING.apply(left, right);
+        public void apply(MethodVisitor left, BufferedMethodVisitor right, CompilerContext context) {
+            SString.EQUALS_STRING.apply(left, right, context);
             SBoolean.instance.not().apply(left);
         }
     };
@@ -326,7 +327,7 @@ public class SString extends SPredefinedType {
         }
 
         @Override
-        public void compileInvoke(MethodVisitor visitor) {
+        public void compileInvoke(MethodVisitor visitor, CompilerContext context) {
             visitor.visitMethodInsn(
                     INVOKEVIRTUAL,
                     Type.getInternalName(String.class),
@@ -380,7 +381,7 @@ public class SString extends SPredefinedType {
         }
 
         @Override
-        public void compileInvoke(MethodVisitor visitor) {
+        public void compileInvoke(MethodVisitor visitor, CompilerContext context) {
             visitor.visitFieldInsn(
                     GETSTATIC,
                     Type.getInternalName(Locale.class),
@@ -418,7 +419,7 @@ public class SString extends SPredefinedType {
         }
 
         @Override
-        public void compileInvoke(MethodVisitor visitor) {
+        public void compileInvoke(MethodVisitor visitor, CompilerContext context) {
             visitor.visitFieldInsn(
                     GETSTATIC,
                     Type.getInternalName(Locale.class),
@@ -488,7 +489,7 @@ public class SString extends SPredefinedType {
         }
 
         @Override
-        public void compileInvoke(MethodVisitor visitor) {
+        public void compileInvoke(MethodVisitor visitor, CompilerContext context) {
             visitor.visitMethodInsn(
                     INVOKEVIRTUAL,
                     Type.getInternalName(String.class),

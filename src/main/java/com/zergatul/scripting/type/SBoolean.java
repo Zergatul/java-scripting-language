@@ -2,6 +2,7 @@ package com.zergatul.scripting.type;
 
 import com.zergatul.scripting.Lazy;
 import com.zergatul.scripting.compiler.BufferedMethodVisitor;
+import com.zergatul.scripting.compiler.CompilerContext;
 import com.zergatul.scripting.parser.BinaryOperator;
 import com.zergatul.scripting.parser.UnaryOperator;
 import com.zergatul.scripting.runtime.BooleanReference;
@@ -207,7 +208,7 @@ public class SBoolean extends SPredefinedType {
 
     private static final Lazy<BinaryOperation> BOOLEAN_OR = new Lazy<>(() -> new BinaryOperation(BinaryOperator.BOOLEAN_OR, SBoolean.instance, SBoolean.instance, SBoolean.instance) {
         @Override
-        public void apply(MethodVisitor left, BufferedMethodVisitor right) {
+        public void apply(MethodVisitor left, BufferedMethodVisitor right, CompilerContext context) {
             Label returnTrue = new Label();
             Label end = new Label();
             left.visitJumpInsn(IFNE, returnTrue);
@@ -221,7 +222,7 @@ public class SBoolean extends SPredefinedType {
 
     private static final Lazy<BinaryOperation> BOOLEAN_AND = new Lazy<>(() -> new BinaryOperation(BinaryOperator.BOOLEAN_AND, SBoolean.instance, SBoolean.instance, SBoolean.instance) {
         @Override
-        public void apply(MethodVisitor left, BufferedMethodVisitor right) {
+        public void apply(MethodVisitor left, BufferedMethodVisitor right, CompilerContext context) {
             Label returnFalse = new Label();
             Label end = new Label();
             left.visitJumpInsn(IFEQ, returnFalse);

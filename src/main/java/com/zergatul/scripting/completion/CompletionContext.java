@@ -245,15 +245,19 @@ public class CompletionContext {
             return true;
         }
         return switch (entry.node.getNodeType()) {
+
             case STATEMENTS_LIST, BLOCK_STATEMENT -> true;
+
             case FOR_LOOP_STATEMENT -> {
                 BoundForLoopStatementNode loop = (BoundForLoopStatementNode) entry.node;
                 yield TextRange.isBetween(line, column, loop.syntaxNode.closeParen, loop.body);
             }
+
             case FOREACH_LOOP_STATEMENT -> {
                 BoundForEachLoopStatementNode loop = (BoundForEachLoopStatementNode) entry.node;
                 yield TextRange.isBetween(line, column, loop.syntaxNode.closeParen, loop.body);
             }
+
             case IF_STATEMENT -> {
                 BoundIfStatementNode ifStatementNode = (BoundIfStatementNode) entry.node;
                 if (ifStatementNode.syntaxNode.elseToken != null) {
@@ -285,6 +289,7 @@ public class CompletionContext {
                 }
                 yield false;
             }
+
             default -> {
                 // handle: <cursor>(expr).method();
                 if (entry.node instanceof BoundExpressionNode) {
@@ -319,6 +324,25 @@ public class CompletionContext {
         }
 
         return switch (entry.node.getNodeType()) {
+
+            case CLASS_METHOD -> {
+                BoundClassMethodNode methodNode = (BoundClassMethodNode) entry.node;
+                if (methodNode.syntaxNode.arrow != null) {
+                    yield methodNode.syntaxNode.arrow.getRange().isBefore(line, column);
+                } else {
+                    yield false;
+                }
+            }
+
+            case EXTENSION_METHOD -> {
+                BoundExtensionMethodNode methodNode = (BoundExtensionMethodNode) entry.node;
+                if (methodNode.syntaxNode.arrow != null) {
+                    yield methodNode.syntaxNode.arrow.getRange().isBefore(line, column);
+                } else {
+                    yield false;
+                }
+            }
+
             case STATIC_VARIABLE -> {
                 BoundStaticVariableNode variableNode = (BoundStaticVariableNode) entry.node;
                 if (variableNode.syntaxNode.equal == null) {
@@ -327,6 +351,7 @@ public class CompletionContext {
                     yield variableNode.syntaxNode.equal.getRange().isBefore(line, column);
                 }
             }
+
             case IF_STATEMENT -> {
                 BoundIfStatementNode statement = (BoundIfStatementNode) entry.node;
                 // if (<cursor> <condition>
@@ -340,15 +365,21 @@ public class CompletionContext {
                 BoundAssignmentStatementNode statement = (BoundAssignmentStatementNode) entry.node;
                 yield statement.operator.getRange().isBefore(line, column);
             }
-            case ARGUMENTS_LIST -> true;
+
+            case ARGUMENTS_LIST, BINARY_EXPRESSION, IN_EXPRESSION -> true;
+
+            case BINARY_OPERATOR -> entry.node.getRange().isBefore(line, column);
+
             case LAMBDA_EXPRESSION -> {
                 BoundLambdaExpressionNode lambda = (BoundLambdaExpressionNode) entry.node;
                 yield lambda.isOpen() && lambda.syntaxNode.arrow.getRange().isBefore(line, column);
             }
+
             case META_TYPE_OF_EXPRESSION -> {
                 BoundMetaTypeOfExpressionNode meta = (BoundMetaTypeOfExpressionNode) entry.node;
                 yield TextRange.isBetween(line, column, meta.syntaxNode.openParen, meta.syntaxNode.closeParen);
             }
+
             case NAME_EXPRESSION -> {
                 yield switch (entry.parent.node.getNodeType()) {
                     case VARIABLE_DECLARATION -> {
@@ -359,9 +390,11 @@ public class CompletionContext {
                     default -> true;
                 };
             }
+
             case ASSIGNMENT_OPERATOR -> {
                 yield up().canExpression();
             }
+
             default -> canStatement();
         };
     }
@@ -376,6 +409,14 @@ public class CompletionContext {
         }
 
         return switch (entry.node.getNodeType()) {
+            case EXTENSION_DECLARATION -> {
+                BoundExtensionNode extension = (BoundExtensionNode) entry.node;
+                if (TextRange.isBetween(line, column, extension.syntaxNode.openParen, extension.syntaxNode.closeParen)) {
+                    yield true;
+                }
+                yield TextRange.isBetween(line, column, extension.syntaxNode.openBrace, extension.syntaxNode.closeBrace);
+            }
+
             case STATIC_VARIABLE -> {
                 BoundStaticVariableNode variable = (BoundStaticVariableNode) entry.node;
                 if (variable.type.isMissing()) {
@@ -468,6 +509,11 @@ public class CompletionContext {
             }
 
             case CLASS_DECLARATION -> true;
+
+            case EXTENSION_DECLARATION -> {
+                BoundExtensionNode extension = (BoundExtensionNode) entry.node;
+                yield TextRange.isBetween(line, column, extension.syntaxNode.openBrace, extension.syntaxNode.closeBrace);
+            }
 
             default -> false;
         };

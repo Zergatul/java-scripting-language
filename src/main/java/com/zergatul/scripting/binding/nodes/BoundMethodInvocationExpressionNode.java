@@ -4,6 +4,7 @@ import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
 import com.zergatul.scripting.compiler.RefHolder;
 import com.zergatul.scripting.lexer.Token;
+import com.zergatul.scripting.parser.SyntaxFactory;
 import com.zergatul.scripting.parser.nodes.InvocationExpressionNode;
 import com.zergatul.scripting.parser.nodes.MemberAccessExpressionNode;
 
@@ -16,6 +17,15 @@ public class BoundMethodInvocationExpressionNode extends BoundExpressionNode {
     public final BoundMethodNode method;
     public final BoundArgumentsListNode arguments;
     public final List<RefHolder> refVariables;
+
+    public BoundMethodInvocationExpressionNode(
+            BoundExpressionNode objectReference,
+            BoundMethodNode method,
+            BoundArgumentsListNode arguments,
+            List<RefHolder> refVariables
+    ) {
+        this(SyntaxFactory.missingInvocationExpression(), objectReference, method, arguments, refVariables, TextRange.MISSING);
+    }
 
     public BoundMethodInvocationExpressionNode(
             InvocationExpressionNode node,

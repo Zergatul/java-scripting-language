@@ -1,5 +1,6 @@
 package com.zergatul.scripting.type;
 
+import com.zergatul.scripting.compiler.CompilerContext;
 import org.objectweb.asm.MethodVisitor;
 
 import java.util.List;
@@ -34,7 +35,7 @@ public class DeclaredMethodReference extends MethodReference {
     }
 
     @Override
-    public void compileInvoke(MethodVisitor visitor) {
+    public void compileInvoke(MethodVisitor visitor, CompilerContext context) {
         visitor.visitMethodInsn(
                 INVOKEVIRTUAL,
                 owner.getInternalName(),

@@ -2,6 +2,7 @@ package com.zergatul.scripting.type.operation;
 
 import com.zergatul.scripting.Lazy;
 import com.zergatul.scripting.compiler.BufferedMethodVisitor;
+import com.zergatul.scripting.compiler.CompilerContext;
 import com.zergatul.scripting.parser.BinaryOperator;
 import com.zergatul.scripting.type.SBoolean;
 import com.zergatul.scripting.type.SUnknown;
@@ -25,7 +26,7 @@ public class ReferenceTypeOperations {
         }
 
         @Override
-        public void apply(MethodVisitor left, BufferedMethodVisitor right) {
+        public void apply(MethodVisitor left, BufferedMethodVisitor right, CompilerContext context) {
             right.release(left);
             Label elseLabel = new Label();
             Label endLabel = new Label();

@@ -200,7 +200,7 @@ public class ErrorRecoveryTests extends ParserTestBase {
                                                                 .withTrailingTrivia(new Trivia(TokenType.WHITESPACE, new SingleLineTextRange(1, 16, 15, 1))),
                                                         BinaryOperator.BOOLEAN_OR),
                                                 new InvalidExpressionNode(new SingleLineTextRange(1, 17, 16, 0)),
-                                                new SingleLineTextRange(1, 8, 7, 8)),
+                                                new SingleLineTextRange(1, 8, 7, 9)),
                                         new Token(TokenType.SEMICOLON, new SingleLineTextRange(1, 17, 16, 1))
                                                 .withTrailingTrivia(new Trivia(TokenType.LINE_BREAK, new MultiLineTextRange(1, 18, 2, 1, 17, 1))))),
                                 new SingleLineTextRange(1, 1, 0, 17)),

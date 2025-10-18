@@ -11,8 +11,7 @@ import java.util.List;
 public class ExpressionStatementNode extends StatementNode {
 
     public final ExpressionNode expression;
-    @Nullable
-    public final Token semicolon;
+    @Nullable public final Token semicolon;
 
     public ExpressionStatementNode(
             ExpressionNode expression,
@@ -31,6 +30,11 @@ public class ExpressionStatementNode extends StatementNode {
     @Override
     public void acceptChildren(ParserTreeVisitor visitor) {
         expression.accept(visitor);
+    }
+
+    @Override
+    public boolean isOpen() {
+        return expression.isOpen();
     }
 
     @Override

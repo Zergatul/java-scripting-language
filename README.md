@@ -13,6 +13,8 @@ It is lightweight, async-friendly, and designed to interop with Java APIs where 
 - [Hello World](#hello-world)
 - [Basic Types](#basic-types)
 - [Variables](#variables)
+- [Expressions](#expressions)
+    - [`in` operator](#in-operator)
 - [Arrays](#arrays)
 - [Static Variables](#static-variables)
 - [Control Flow](#control-flow)
@@ -30,6 +32,7 @@ It is lightweight, async-friendly, and designed to interop with Java APIs where 
 - [null](#null)
 - [Reflection](#reflection)
 - [Classes](#classes)
+- [Extensions](#extensions)
 - [Java Interop](#java-interop)
 - [Limitations](#limitations)
 - [Comparison Table](#comparison-table)
@@ -58,6 +61,22 @@ Language is not well adapted for using `int8`/`int16`/`float32`. If you can you 
 int x;        // will have value 0 assigned implicitly
 float f = 11.25;
 let s = "qq"; // variable "s" will have "string" type
+```
+
+### Expressions
+Supported binary operators: `+`, `-`, `*`, `/`, `%`, `&&`, `||`, `==`, `!=`, `<`, `>`, `<=`, `>=`, `&`, `|`, `is`, `as`, `in`
+
+Supported unary operators: `+`, `-`, `!`
+
+#### `in` operator
+`in` operator is just a syntactic sugar for `contains` method that returns `boolean` and accepts single argument. You can also declare extension `contains` method and `in` operator will for this:
+```c#
+extension(int) {
+    boolean contains(int value) => value.toString() in this.toString();
+}
+
+boolean b1 = 12 in 123; // true, equivalent: "123".contains("12")
+boolean b2 = 34 in 123; // false, equivalent: "123".contains("34")
 ```
 
 ### Arrays
@@ -382,6 +401,37 @@ Limitations:
 - static members are not supported
 - inheritance is not supported
 - generics not supported
+
+### Extensions
+Extensions should be defined in the beginning of the script, before all script statements.
+Extension blocks can only have methods inside.
+
+```c#
+extension(int) {
+    int next() => this + 1;
+    int more(int x) => this + x;
+}
+
+int a = (10).next(); // 11
+int b = a.more(5);   // 16
+```
+
+```c#
+extension(int[]) {
+    boolean contains(int value) {
+        for (int i = 0; i < this.length; i++) {
+            if (this[i] == value) {
+                return true;
+            }
+        }
+        return false;
+    }
+}
+
+boolean b1 = 1 in [1, 2, 3]; // true
+boolean b2 = 4 in [1, 2, 3]; // false
+```
+
 
 ### Java Interop
 Generic type syntax is not supported.

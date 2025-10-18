@@ -1,13 +1,16 @@
 package com.zergatul.scripting.binding.nodes;
 
+import com.zergatul.scripting.InternalException;
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
+import com.zergatul.scripting.parser.SyntaxFactory;
 import com.zergatul.scripting.parser.nodes.NameExpressionNode;
 import com.zergatul.scripting.symbols.ImmutableSymbolRef;
 import com.zergatul.scripting.symbols.MutableSymbolRef;
 import com.zergatul.scripting.symbols.Symbol;
 import com.zergatul.scripting.symbols.SymbolRef;
 import com.zergatul.scripting.type.SType;
+import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 
@@ -22,7 +25,7 @@ public class BoundNameExpressionNode extends BoundExpressionNode {
     }
 
     public BoundNameExpressionNode(SymbolRef symbolRef) {
-        this(null, symbolRef, symbolRef.get().getType(), symbolRef.get().getName(), null);
+        this(SyntaxFactory.missingNameExpression(), symbolRef, symbolRef.get().getType(), symbolRef.get().getName(), TextRange.MISSING);
     }
 
     public BoundNameExpressionNode(NameExpressionNode node, Symbol symbol, SType type) {
@@ -43,13 +46,24 @@ public class BoundNameExpressionNode extends BoundExpressionNode {
         this.symbolRef = symbolRef;
         this.value = value;
 
-        if (symbolRef != null) {
-            symbolRef.addReference(this);
-        }
+        symbolRef.addReference(this);
     }
 
+    @Nullable
     public Symbol getSymbol() {
         return symbolRef.get();
+    }
+
+    public Symbol getSymbolOrThrow() {
+        Symbol symbol = getSymbol();
+        if (symbol == null) {
+            throw new InternalException();
+        }
+        return symbol;
+    }
+
+    public SType getType() {
+        return getSymbolOrThrow().getType();
     }
 
     @Override

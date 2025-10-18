@@ -1,5 +1,6 @@
 package com.zergatul.scripting.binding.nodes;
 
+import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
 
 import java.util.List;
@@ -7,7 +8,7 @@ import java.util.List;
 public class BoundGeneratorContinueNode extends BoundStatementNode {
 
     public BoundGeneratorContinueNode() {
-        super(BoundNodeType.GENERATOR_CONTINUE, null);
+        super(BoundNodeType.GENERATOR_CONTINUE, TextRange.MISSING);
     }
 
     @Override

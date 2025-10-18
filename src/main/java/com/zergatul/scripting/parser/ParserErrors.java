@@ -40,4 +40,6 @@ public class ParserErrors {
     public static final ErrorCode CommaOrCloseBraceExpected = new ErrorCode("C035", "'}' or ',' expected");
     public static final ErrorCode ClassMemberExpected = new ErrorCode("C036", "Class member expected, found '%s'");
     public static final ErrorCode OpenNewExpression = new ErrorCode("C037", "A new expression requires type");
+    public static final ErrorCode ExtensionOnlyMethodsAllowed = new ErrorCode("C038", "Only methods are allowed inside extension block");
+    public static final ErrorCode ExtensionMethodExpected = new ErrorCode("C039", "Extension method expected, found '%s'");
 }

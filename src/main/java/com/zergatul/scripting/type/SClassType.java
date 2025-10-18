@@ -5,6 +5,7 @@ import com.zergatul.scripting.InternalException;
 import com.zergatul.scripting.Lazy;
 import com.zergatul.scripting.Setter;
 import com.zergatul.scripting.compiler.BufferedMethodVisitor;
+import com.zergatul.scripting.compiler.CompilerContext;
 import com.zergatul.scripting.parser.BinaryOperator;
 import com.zergatul.scripting.type.operation.BinaryOperation;
 import org.objectweb.asm.Label;
@@ -12,8 +13,6 @@ import org.objectweb.asm.MethodVisitor;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
-import java.lang.reflect.Type;
-import java.lang.reflect.TypeVariable;
 import java.util.Arrays;
 import java.util.List;
 
@@ -184,7 +183,7 @@ public class SClassType extends SType {
         }
 
         @Override
-        public void apply(MethodVisitor left, BufferedMethodVisitor right) {
+        public void apply(MethodVisitor left, BufferedMethodVisitor right, CompilerContext context) {
             right.release(left);
             Label elseLabel = new Label();
             Label endLabel = new Label();

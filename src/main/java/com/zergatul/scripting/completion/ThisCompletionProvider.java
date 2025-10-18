@@ -3,6 +3,8 @@ package com.zergatul.scripting.completion;
 import com.zergatul.scripting.InternalException;
 import com.zergatul.scripting.binding.BinderOutput;
 import com.zergatul.scripting.binding.nodes.BoundClassNode;
+import com.zergatul.scripting.binding.nodes.BoundExpressionNode;
+import com.zergatul.scripting.binding.nodes.BoundExtensionNode;
 import com.zergatul.scripting.compiler.CompilationParameters;
 import com.zergatul.scripting.binding.nodes.BoundNodeType;
 import com.zergatul.scripting.symbols.ClassSymbol;
@@ -32,6 +34,14 @@ public class ThisCompletionProvider<T> extends AbstractCompletionProvider<T> {
                     BoundClassNode classNode = (BoundClassNode) current.entry.node;
                     ClassSymbol symbol = classNode.name.symbolRef.asClass();
                     return List.of(factory.getThisSuggestion(symbol.getDeclaredType()));
+                }
+                if (nodeType == BoundNodeType.EXTENSION_METHOD) {
+                    current = current.up();
+                    if (current.entry.node.getNodeType() != BoundNodeType.EXTENSION_DECLARATION) {
+                        throw new InternalException();
+                    }
+                    BoundExtensionNode extensionNode = (BoundExtensionNode) current.entry.node;
+                    return List.of(factory.getThisSuggestion(extensionNode.typeNode.type));
                 }
             }
         }

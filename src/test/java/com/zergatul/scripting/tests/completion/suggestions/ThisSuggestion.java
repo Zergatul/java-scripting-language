@@ -2,17 +2,17 @@ package com.zergatul.scripting.tests.completion.suggestions;
 
 import com.zergatul.scripting.tests.completion.helpers.SuggestionHelper;
 import com.zergatul.scripting.tests.completion.helpers.TestCompletionContext;
-import com.zergatul.scripting.type.SDeclaredType;
+import com.zergatul.scripting.type.SType;
 
 public class ThisSuggestion extends Suggestion {
 
-    private final SDeclaredType type;
+    private final SType type;
 
     public ThisSuggestion(TestCompletionContext context, String name) {
         this(SuggestionHelper.extractClassType(context, name));
     }
 
-    public ThisSuggestion(SDeclaredType type) {
+    public ThisSuggestion(SType type) {
         this.type = type;
     }
 

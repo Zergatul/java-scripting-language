@@ -2,6 +2,7 @@ package com.zergatul.scripting.binding.nodes;
 
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
+import com.zergatul.scripting.parser.SyntaxFactory;
 import com.zergatul.scripting.parser.nodes.ExpressionStatementNode;
 
 import java.util.List;
@@ -12,7 +13,7 @@ public class BoundExpressionStatementNode extends BoundStatementNode {
     public final BoundExpressionNode expression;
 
     public BoundExpressionStatementNode(BoundExpressionNode expression) {
-        this(null, expression, null);
+        this(SyntaxFactory.missingExpressionStatement(), expression, TextRange.MISSING);
     }
 
     public BoundExpressionStatementNode(ExpressionStatementNode node, BoundExpressionNode expression) {

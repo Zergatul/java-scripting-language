@@ -1,16 +1,18 @@
 package com.zergatul.scripting.binding.nodes;
 
 import com.zergatul.scripting.InternalException;
+import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
+import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 
 public class BoundGeneratorReturnNode extends BoundStatementNode {
 
-    public final BoundExpressionNode expression;
+    @Nullable public final BoundExpressionNode expression;
 
-    public BoundGeneratorReturnNode(BoundExpressionNode expression) {
-        super(BoundNodeType.GENERATOR_RETURN, null);
+    public BoundGeneratorReturnNode(@Nullable BoundExpressionNode expression) {
+        super(BoundNodeType.GENERATOR_RETURN, TextRange.MISSING);
         this.expression = expression;
     }
 

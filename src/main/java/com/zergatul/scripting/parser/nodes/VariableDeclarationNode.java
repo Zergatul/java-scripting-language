@@ -42,7 +42,7 @@ public class VariableDeclarationNode extends StatementNode {
 
     @Override
     public boolean isOpen() {
-        return (expression != null && expression.isMissing()) || name.isMissing();
+        return (expression != null && expression.isOpen()) || name.isMissing();
     }
 
     @Override

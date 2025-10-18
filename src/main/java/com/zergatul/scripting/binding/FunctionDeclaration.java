@@ -6,7 +6,7 @@ import com.zergatul.scripting.symbols.SymbolRef;
 import com.zergatul.scripting.type.SStaticFunction;
 import com.zergatul.scripting.type.SType;
 
-public class FunctionDeclaration extends Declaration {
+public class FunctionDeclaration extends NamedDeclaration {
 
     private final boolean isAsync;
     private final BoundTypeNode returnTypeNode;

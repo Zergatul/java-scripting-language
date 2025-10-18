@@ -2,6 +2,7 @@ package com.zergatul.scripting.binding.nodes;
 
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
+import com.zergatul.scripting.parser.SyntaxFactory;
 import com.zergatul.scripting.parser.nodes.MemberAccessExpressionNode;
 import com.zergatul.scripting.type.PropertyReference;
 
@@ -14,7 +15,7 @@ public class BoundPropertyAccessExpressionNode extends BoundExpressionNode {
     public final BoundPropertyNode property;
 
     public BoundPropertyAccessExpressionNode(BoundExpressionNode callee, PropertyReference property) {
-        this(null, callee, new BoundPropertyNode(property), null);
+        this(SyntaxFactory.missingMemberAccessExpression(), callee, new BoundPropertyNode(property), TextRange.MISSING);
     }
 
     public BoundPropertyAccessExpressionNode(MemberAccessExpressionNode node, BoundExpressionNode callee, BoundPropertyNode property) {

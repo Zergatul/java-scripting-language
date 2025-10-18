@@ -55,6 +55,32 @@ public class InOperatorTests extends ComparatorTest {
                 getDiagnostics(ApiRoot.class, code));
     }
 
+    @Test
+    public void extensionMethodTest() {
+        String code = """
+                extension(int[]) {
+                    boolean contains(int value) {
+                        for (int i = 0; i < this.length; i++) {
+                            if (this[i] == value) {
+                                return true;
+                            }
+                        }
+                        return false;
+                    }
+                }
+                
+                boolStorage.add(1 in [1, 2, 3]);
+                boolStorage.add(2 in [1, 2, 3]);
+                boolStorage.add(3 in [1, 2, 3]);
+                boolStorage.add(4 in [1, 2, 3]);
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(ApiRoot.boolStorage.list, List.of(true, true, true, false));
+    }
+
     public static class ApiRoot {
         public static BoolStorage boolStorage;
         public static IntStorage intStorage;

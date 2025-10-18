@@ -3,6 +3,7 @@ package com.zergatul.scripting.binding.nodes;
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
 import com.zergatul.scripting.parser.nodes.StaticVariableNode;
+import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 
@@ -11,13 +12,24 @@ public class BoundStaticVariableNode extends BoundCompilationUnitMemberNode {
     public final StaticVariableNode syntaxNode;
     public final BoundTypeNode type;
     public final BoundNameExpressionNode name;
-    public final BoundExpressionNode expression;
+    @Nullable public final BoundExpressionNode expression;
 
-    public BoundStaticVariableNode(StaticVariableNode node, BoundTypeNode type, BoundNameExpressionNode name, BoundExpressionNode expression) {
+    public BoundStaticVariableNode(
+            StaticVariableNode node,
+            BoundTypeNode type,
+            BoundNameExpressionNode name,
+            @Nullable BoundExpressionNode expression
+    ) {
         this(node, type, name, expression, node.getRange());
     }
 
-    public BoundStaticVariableNode(StaticVariableNode node, BoundTypeNode type, BoundNameExpressionNode name, BoundExpressionNode expression, TextRange range) {
+    public BoundStaticVariableNode(
+            StaticVariableNode node,
+            BoundTypeNode type,
+            BoundNameExpressionNode name,
+            @Nullable BoundExpressionNode expression,
+            TextRange range
+    ) {
         super(BoundNodeType.STATIC_VARIABLE, range);
         this.syntaxNode = node;
         this.type = type;

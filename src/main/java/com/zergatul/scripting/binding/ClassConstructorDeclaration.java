@@ -3,7 +3,7 @@ package com.zergatul.scripting.binding;
 import com.zergatul.scripting.binding.nodes.BoundParameterListNode;
 import com.zergatul.scripting.symbols.SymbolRef;
 
-public class ClassConstructorDeclaration extends Declaration {
+public class ClassConstructorDeclaration extends NamedDeclaration {
 
     private final BoundParameterListNode parameters;
     private final boolean hasError;

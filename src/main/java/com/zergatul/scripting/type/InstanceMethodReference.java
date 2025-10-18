@@ -1,9 +1,9 @@
 package com.zergatul.scripting.type;
 
+import com.zergatul.scripting.compiler.CompilerContext;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Type;
 
-import java.util.Arrays;
 import java.util.List;
 
 import static org.objectweb.asm.Opcodes.INVOKEVIRTUAL;
@@ -45,7 +45,7 @@ public class InstanceMethodReference extends MethodReference {
     }
 
     @Override
-    public void compileInvoke(MethodVisitor visitor) {
+    public void compileInvoke(MethodVisitor visitor, CompilerContext context) {
         visitor.visitMethodInsn(
                 INVOKEVIRTUAL,
                 Type.getInternalName(ownerClass),

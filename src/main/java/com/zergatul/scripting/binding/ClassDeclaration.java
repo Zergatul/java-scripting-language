@@ -1,7 +1,7 @@
 package com.zergatul.scripting.binding;
 
+import com.zergatul.scripting.InternalException;
 import com.zergatul.scripting.binding.nodes.BoundParameterNode;
-import com.zergatul.scripting.binding.nodes.BoundTypeNode;
 import com.zergatul.scripting.parser.nodes.ClassConstructorNode;
 import com.zergatul.scripting.parser.nodes.ClassFieldNode;
 import com.zergatul.scripting.parser.nodes.ClassMethodNode;
@@ -9,12 +9,11 @@ import com.zergatul.scripting.symbols.ClassSymbol;
 import com.zergatul.scripting.symbols.SymbolRef;
 import com.zergatul.scripting.type.SDeclaredType;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class ClassDeclaration extends Declaration {
+public class ClassDeclaration extends NamedDeclaration {
 
     private final SDeclaredType classType;
     private final Map<ClassFieldNode, ClassFieldDeclaration> fieldNodeMap = new HashMap<>();
@@ -43,15 +42,27 @@ public class ClassDeclaration extends Declaration {
     }
 
     public ClassFieldDeclaration getFieldDeclaration(ClassFieldNode node) {
-        return fieldNodeMap.get(node);
+        ClassFieldDeclaration declaration = fieldNodeMap.get(node);
+        if (declaration == null) {
+            throw new InternalException();
+        }
+        return declaration;
     }
 
     public ClassConstructorDeclaration getConstructorDeclaration(ClassConstructorNode node) {
-        return constructorNodeMap.get(node);
+        ClassConstructorDeclaration declaration = constructorNodeMap.get(node);
+        if (declaration == null) {
+            throw new InternalException();
+        }
+        return declaration;
     }
 
     public ClassMethodDeclaration getMethodDeclaration(ClassMethodNode node) {
-        return methodNodeMap.get(node);
+        ClassMethodDeclaration declaration = methodNodeMap.get(node);
+        if (declaration == null) {
+            throw new InternalException();
+        }
+        return declaration;
     }
 
     public boolean hasMember(String name) {
@@ -84,7 +95,7 @@ public class ClassDeclaration extends Declaration {
         return false;
     }
 
-    public boolean hasMethod(BoundTypeNode typeNode, String name, List<BoundParameterNode> parameters) {
+    public boolean hasMethod(String name, List<BoundParameterNode> parameters) {
         for (ClassMethodDeclaration declaration : methodNodeMap.values()) {
             if (!name.equals(declaration.getName())) {
                 continue;

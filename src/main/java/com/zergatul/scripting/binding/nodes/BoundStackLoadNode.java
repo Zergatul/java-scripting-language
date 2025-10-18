@@ -1,5 +1,6 @@
 package com.zergatul.scripting.binding.nodes;
 
+import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
 import com.zergatul.scripting.type.SType;
 
@@ -10,7 +11,7 @@ public class BoundStackLoadNode extends BoundExpressionNode {
     public final int index;
 
     public BoundStackLoadNode(int index, SType type) {
-        super(BoundNodeType.STACK_LOAD, type, null);
+        super(BoundNodeType.STACK_LOAD, type, TextRange.MISSING);
         this.index = index;
     }
 

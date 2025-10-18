@@ -2,6 +2,7 @@ package com.zergatul.scripting.type;
 
 import com.zergatul.scripting.Lazy;
 import com.zergatul.scripting.compiler.BufferedMethodVisitor;
+import com.zergatul.scripting.compiler.CompilerContext;
 import com.zergatul.scripting.parser.BinaryOperator;
 import com.zergatul.scripting.parser.UnaryOperator;
 import com.zergatul.scripting.runtime.Int8Reference;
@@ -355,7 +356,7 @@ public class SInt8 extends SPredefinedType {
         }
 
         @Override
-        public void apply(MethodVisitor left, BufferedMethodVisitor right) {
+        public void apply(MethodVisitor left, BufferedMethodVisitor right, CompilerContext context) {
             right.release(left);
             Label elseLabel = new Label();
             Label endLabel = new Label();

@@ -2,6 +2,7 @@ package com.zergatul.scripting.binding.nodes;
 
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
+import com.zergatul.scripting.parser.SyntaxFactory;
 import com.zergatul.scripting.parser.nodes.UnaryExpressionNode;
 
 import java.util.List;
@@ -13,7 +14,7 @@ public class BoundUnaryExpressionNode extends BoundExpressionNode {
     public final BoundExpressionNode operand;
 
     public BoundUnaryExpressionNode(BoundUnaryOperatorNode operator, BoundExpressionNode operand) {
-        this(null, operator, operand, null);
+        this(SyntaxFactory.missingUnaryExpression(), operator, operand, TextRange.MISSING);
     }
 
     public BoundUnaryExpressionNode(UnaryExpressionNode node, BoundUnaryOperatorNode operator, BoundExpressionNode operand) {

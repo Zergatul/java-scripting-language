@@ -46,10 +46,6 @@ public class BoundMethodGroupExpressionNode extends BoundExpressionNode {
 
     @Override
     public List<BoundNode> getChildren() {
-        if (callee == null) {
-            return List.of(method);
-        } else {
-            return List.of(callee, method);
-        }
+        return List.of(callee, method);
     }
 }

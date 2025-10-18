@@ -2,6 +2,7 @@ package com.zergatul.scripting.binding.nodes;
 
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
+import com.zergatul.scripting.parser.SyntaxFactory;
 import com.zergatul.scripting.parser.nodes.IndexExpressionNode;
 import com.zergatul.scripting.type.operation.IndexOperation;
 
@@ -15,7 +16,7 @@ public class BoundIndexExpressionNode extends BoundExpressionNode {
     public final IndexOperation operation;
 
     public BoundIndexExpressionNode(BoundExpressionNode callee, BoundExpressionNode index, IndexOperation operation) {
-        this(null, callee, index, operation, null);
+        this(SyntaxFactory.missingIndexExpression(), callee, index, operation, TextRange.MISSING);
     }
 
     public BoundIndexExpressionNode(IndexExpressionNode node, BoundExpressionNode callee, BoundExpressionNode index, IndexOperation operation) {

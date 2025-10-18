@@ -193,6 +193,48 @@ public class HoverTests {
                 hover);
     }
 
+    @Test
+    public void methodTest() {
+        HoverProvider.HoverResponse hover = getHover("""
+                "".contains("");
+                """, 1, 4);
+        Assertions.assertEquals(
+                new HoverProvider.HoverResponse(
+                        List.of("boolean string.contains(string str)"),
+                        new SingleLineTextRange(1, 4, 3, 8)),
+                hover);
+    }
+
+    @Test
+    public void extensionTest1() {
+        HoverProvider.HoverResponse hover = getHover("""
+                extension(int) {
+                    int next() => this + 1;
+                }
+                """, 2, 20);
+        Assertions.assertEquals(
+                new HoverProvider.HoverResponse(
+                        List.of("int this"),
+                        new SingleLineTextRange(2, 19, 35, 4)),
+                hover);
+    }
+
+    @Test
+    public void extensionTest2() {
+        HoverProvider.HoverResponse hover = getHover("""
+                extension(int) {
+                    int next() => this + 1;
+                }
+                
+                (0).next();
+                """, 5, 6);
+        Assertions.assertEquals(
+                new HoverProvider.HoverResponse(
+                        List.of("(extension) int int.next()"),
+                        new SingleLineTextRange(5, 5, 52, 4)),
+                hover);
+    }
+
     private static HoverProvider.HoverResponse getHover(String code, int line, int column) {
         return getHover(code, ApiRoot.class, Runnable.class, line, column);
     }

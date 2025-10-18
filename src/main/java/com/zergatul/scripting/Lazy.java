@@ -1,7 +1,10 @@
 package com.zergatul.scripting;
 
+import org.jspecify.annotations.NullUnmarked;
+
 import java.util.function.Supplier;
 
+@NullUnmarked
 public class Lazy<T> {
 
     private Supplier<T> supplier;

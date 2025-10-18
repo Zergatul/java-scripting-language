@@ -20,6 +20,7 @@ public class CompilerContext {
     private final List<SymbolRef> anonymousLocalSymbols = new ArrayList<>();
     private final boolean isClassRoot;
     private final SDeclaredType classType;
+    private final SType extensionType;
     private final boolean isClassMethod;
     private final boolean isFunctionRoot;
     private final boolean isGenericFunction;
@@ -49,12 +50,14 @@ public class CompilerContext {
             boolean isAsync,
             boolean isClassRoot,
             SDeclaredType classType,
+            SType extensionType,
             boolean isClassMethod
     ) {
         this.root = parent == null ? this : parent.root;
         this.parent = parent;
         this.isClassRoot = isClassRoot;
         this.classType = classType;
+        this.extensionType = extensionType;
         this.isFunctionRoot = isFunctionRoot;
         this.isGenericFunction = isGenericFunction;
         this.returnType = returnType;
@@ -187,6 +190,7 @@ public class CompilerContext {
         return new Builder()
                 .setParent(this)
                 .setClassType(this.classType)
+                .setExtensionType(this.extensionType)
                 .setClassMethod(this.isClassMethod)
                 .setInitialStackIndex(stack.get())
                 .setGenericFunction(isGenericFunction)
@@ -231,10 +235,29 @@ public class CompilerContext {
         return new Builder()
                 .setParent(this)
                 .setClassType(classType)
+                .setExtensionType(extensionType)
                 .setClassMethod(true)
                 .setFunctionRoot(true)
                 .setReturnType(returnType)
                 .setInitialStackIndex(1)
+                .setAsync(isAsync)
+                .build();
+    }
+
+    public CompilerContext createExtension(SType type) {
+        return new Builder()
+                .setParent(this)
+                .setClassRoot(true)
+                .setExtensionType(type)
+                .build();
+    }
+
+    public CompilerContext createExtensionMethod(SType returnType, boolean isAsync) {
+        return new Builder()
+                .setParent(this)
+                .setExtensionType(extensionType)
+                .setFunctionRoot(true)
+                .setReturnType(returnType)
                 .setAsync(isAsync)
                 .build();
     }
@@ -255,12 +278,28 @@ public class CompilerContext {
         return isClassMethod;
     }
 
+    public boolean isDeclaredClass() {
+        return getClassRootContext().classType != null;
+    }
+
+    public boolean isExtension() {
+        return getClassRootContext().extensionType != null;
+    }
+
     public SType getClassType() {
         if (classType == null) {
             throw new InternalException();
         }
 
         return classType;
+    }
+
+    public SType getExtensionType() {
+        if (extensionType == null) {
+            throw new InternalException();
+        }
+
+        return extensionType;
     }
 
     public Collection<SymbolRef> getStaticSymbols() {
@@ -305,7 +344,7 @@ public class CompilerContext {
                         prev = current;
                     }
 
-                    return functions.get(0).localSymbols.get(name);
+                    return functions.getFirst().localSymbols.get(name);
                 }
             }
             if (context.isFunctionRoot) {
@@ -580,6 +619,7 @@ public class CompilerContext {
         private CompilerContext parent;
         private boolean isClassRoot;
         private SDeclaredType classType;
+        private SType extensionType;
         private boolean isClassMethod;
         public SType returnType;
         public boolean isAsync;
@@ -599,6 +639,11 @@ public class CompilerContext {
 
         public Builder setClassType(SDeclaredType value) {
             this.classType = value;
+            return this;
+        }
+
+        public Builder setExtensionType(SType value) {
+            this.extensionType = value;
             return this;
         }
 
@@ -642,6 +687,7 @@ public class CompilerContext {
                     isAsync,
                     isClassRoot,
                     classType,
+                    extensionType,
                     isClassMethod);
         }
     }

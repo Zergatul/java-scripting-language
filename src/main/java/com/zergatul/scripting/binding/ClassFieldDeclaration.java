@@ -3,7 +3,7 @@ package com.zergatul.scripting.binding;
 import com.zergatul.scripting.binding.nodes.BoundTypeNode;
 import com.zergatul.scripting.symbols.SymbolRef;
 
-public class ClassFieldDeclaration extends Declaration {
+public class ClassFieldDeclaration extends NamedDeclaration {
 
     private final BoundTypeNode typeNode;
     private final boolean hasError;

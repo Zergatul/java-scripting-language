@@ -3,13 +3,14 @@ package com.zergatul.scripting.binding.nodes;
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
 import com.zergatul.scripting.type.SType;
+import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 
 public class BoundParameterNode extends BoundNode {
 
     private final BoundNameExpressionNode name;
-    private final BoundTypeNode typeNode;
+    @Nullable private final BoundTypeNode typeNode;
     private final SType type;
 
     public BoundParameterNode(BoundNameExpressionNode name, BoundTypeNode typeNode, TextRange range) {
@@ -20,7 +21,7 @@ public class BoundParameterNode extends BoundNode {
     }
 
     public BoundParameterNode(BoundNameExpressionNode name, SType type) {
-        this(name, type, null);
+        this(name, type, TextRange.MISSING);
     }
 
     public BoundParameterNode(BoundNameExpressionNode name, SType type, TextRange range) {
@@ -47,6 +48,7 @@ public class BoundParameterNode extends BoundNode {
         return name;
     }
 
+    @Nullable
     public BoundTypeNode getTypeNode() {
         return typeNode;
     }

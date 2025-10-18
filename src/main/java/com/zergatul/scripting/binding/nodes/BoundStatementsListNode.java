@@ -2,11 +2,11 @@ package com.zergatul.scripting.binding.nodes;
 
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
+import com.zergatul.scripting.parser.SyntaxFactory;
 import com.zergatul.scripting.parser.nodes.StatementsListNode;
 import com.zergatul.scripting.symbols.LiftedVariable;
 
 import java.util.List;
-import java.util.Objects;
 
 public class BoundStatementsListNode extends BoundStatementNode {
 
@@ -16,7 +16,7 @@ public class BoundStatementsListNode extends BoundStatementNode {
     public final List<LiftedVariable> lifted;
 
     public BoundStatementsListNode(List<BoundStatementNode> statements) {
-        this(null, List.of(), statements, List.of(), null);
+        this(SyntaxFactory.missingStatementsList(), List.of(), statements, List.of(), TextRange.MISSING);
     }
 
     public BoundStatementsListNode(StatementsListNode node, List<BoundStatementNode> statements, List<LiftedVariable> lifted) {

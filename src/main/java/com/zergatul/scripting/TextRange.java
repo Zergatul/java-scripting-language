@@ -4,6 +4,8 @@ import java.util.List;
 
 public abstract class TextRange {
 
+    public static final TextRange MISSING = new MissingTextRange();
+
     public abstract int getLine1();
     public abstract int getColumn1();
     public abstract int getLine2();
@@ -173,6 +175,10 @@ public abstract class TextRange {
     }
 
     public static TextRange combine(TextRange range1, TextRange range2) {
+        if (range1 == MISSING || range2 == MISSING) {
+            return MISSING;
+        }
+
         if (range1.getLine1() == range2.getLine2()) {
             return new SingleLineTextRange(
                     range1.getLine1(),
@@ -200,5 +206,43 @@ public abstract class TextRange {
 
     public static TextRange between(Locatable locatable1, Locatable locatable2) {
         return combine(locatable1.getRange().getEnd(), locatable2.getRange().getStart());
+    }
+
+    private static final class MissingTextRange extends TextRange {
+
+        @Override
+        public int getLine1() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public int getColumn1() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public int getLine2() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public int getColumn2() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public int getPosition() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public int getLength() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public TextRange subRange(int skip) {
+            throw new UnsupportedOperationException();
+        }
     }
 }

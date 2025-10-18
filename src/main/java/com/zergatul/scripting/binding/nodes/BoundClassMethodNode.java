@@ -3,6 +3,7 @@ package com.zergatul.scripting.binding.nodes;
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
 import com.zergatul.scripting.parser.nodes.ClassMethodNode;
+import com.zergatul.scripting.symbols.LiftedVariable;
 import com.zergatul.scripting.type.SMethodFunction;
 
 import java.util.List;
@@ -15,6 +16,7 @@ public class BoundClassMethodNode extends BoundClassMemberNode {
     public final BoundNameExpressionNode name;
     public final BoundParameterListNode parameters;
     public final BoundStatementNode body;
+    public final List<LiftedVariable> lifted;
 
     public BoundClassMethodNode(
             ClassMethodNode node,
@@ -22,9 +24,10 @@ public class BoundClassMethodNode extends BoundClassMemberNode {
             BoundTypeNode typeNode,
             BoundNameExpressionNode name,
             BoundParameterListNode parameters,
-            BoundStatementNode body
+            BoundStatementNode body,
+            List<LiftedVariable> lifted
     ) {
-        this(node, functionType, typeNode, name, parameters, body, node.getRange());
+        this(node, functionType, typeNode, name, parameters, body, lifted, node.getRange());
     }
 
     public BoundClassMethodNode(
@@ -34,6 +37,7 @@ public class BoundClassMethodNode extends BoundClassMemberNode {
             BoundNameExpressionNode name,
             BoundParameterListNode parameters,
             BoundStatementNode body,
+            List<LiftedVariable> lifted,
             TextRange range
     ) {
         super(BoundNodeType.CLASS_METHOD, range);
@@ -43,6 +47,7 @@ public class BoundClassMethodNode extends BoundClassMemberNode {
         this.name = name;
         this.parameters = parameters;
         this.body = body;
+        this.lifted = lifted;
     }
 
     public boolean isAsync() {

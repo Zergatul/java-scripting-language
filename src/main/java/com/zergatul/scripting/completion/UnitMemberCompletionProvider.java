@@ -17,7 +17,8 @@ public class UnitMemberCompletionProvider<T> extends AbstractCompletionProvider<
         if (context.canUnitMember()) {
             return List.of(
                     factory.getKeywordSuggestion(TokenType.STATIC),
-                    factory.getKeywordSuggestion(TokenType.CLASS));
+                    factory.getKeywordSuggestion(TokenType.CLASS),
+                    factory.getKeywordSuggestion(TokenType.EXTENSION));
         } else {
             return List.of();
         }

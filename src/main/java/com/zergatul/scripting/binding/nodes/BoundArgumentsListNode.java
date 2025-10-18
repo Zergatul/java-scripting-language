@@ -2,6 +2,7 @@ package com.zergatul.scripting.binding.nodes;
 
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
+import com.zergatul.scripting.parser.SyntaxFactory;
 import com.zergatul.scripting.parser.nodes.ArgumentsListNode;
 
 import java.util.List;
@@ -12,7 +13,7 @@ public class BoundArgumentsListNode extends BoundNode {
     public final List<BoundExpressionNode> arguments;
 
     public BoundArgumentsListNode(List<BoundExpressionNode> arguments) {
-        this(null, arguments, null);
+        this(SyntaxFactory.missingArgumentList(), arguments, TextRange.MISSING);
     }
 
     public BoundArgumentsListNode(ArgumentsListNode node, List<BoundExpressionNode> arguments) {

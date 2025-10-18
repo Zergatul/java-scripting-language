@@ -103,13 +103,23 @@ public class HoverProvider {
                     yield null;
                 }
             }
+            case THIS_EXPRESSION -> {
+                BoundThisExpressionNode expression = (BoundThisExpressionNode) node;
+                String line = formatType(expression.type) + " " + formatPredefinedType("this");
+                yield new HoverResponse(line, range);
+            }
             case METHOD -> {
                 BoundMethodNode methodNode = (BoundMethodNode) node;
                 MethodReference methodReference = methodNode.method;
                 if (methodReference instanceof UnknownMethodReference) {
                     yield null;
                 }
+
                 StringBuilder sb = new StringBuilder();
+                if (methodReference instanceof ExtensionMethodReference) {
+                    sb.append(formatDescription("(extension)")).append(' ');
+                }
+
                 sb.append(formatType(methodReference.getReturn())).append(' ');
                 sb.append(formatType(methodReference.getOwner()));
                 sb.append(".");

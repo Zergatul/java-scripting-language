@@ -2,6 +2,7 @@ package com.zergatul.scripting.binding.nodes;
 
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
+import com.zergatul.scripting.parser.SyntaxFactory;
 import com.zergatul.scripting.parser.nodes.UnaryOperatorNode;
 import com.zergatul.scripting.type.operation.UnaryOperation;
 
@@ -13,7 +14,7 @@ public class BoundUnaryOperatorNode extends BoundNode {
     public final UnaryOperation operation;
 
     public BoundUnaryOperatorNode(UnaryOperation operation) {
-        this(null, operation, null);
+        this(SyntaxFactory.missingUnaryOperator(), operation, TextRange.MISSING);
     }
 
     public BoundUnaryOperatorNode(UnaryOperatorNode node, UnaryOperation operation) {

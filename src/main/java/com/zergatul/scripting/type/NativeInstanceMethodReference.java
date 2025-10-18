@@ -1,5 +1,6 @@
 package com.zergatul.scripting.type;
 
+import com.zergatul.scripting.compiler.CompilerContext;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Type;
 
@@ -14,7 +15,7 @@ public class NativeInstanceMethodReference extends NativeMethodReference {
     }
 
     @Override
-    public void compileInvoke(MethodVisitor visitor) {
+    public void compileInvoke(MethodVisitor visitor, CompilerContext context) {
         visitor.visitMethodInsn(
                 method.getDeclaringClass().isInterface() ? INVOKEINTERFACE : INVOKEVIRTUAL,
                 Type.getInternalName(method.getDeclaringClass()),

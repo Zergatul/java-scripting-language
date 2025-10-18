@@ -4,6 +4,7 @@ import com.zergatul.scripting.Locatable;
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.lexer.Token;
 import com.zergatul.scripting.parser.ParserTreeVisitor;
+import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 
@@ -12,9 +13,15 @@ public class AssignmentStatementNode extends StatementNode {
     public final ExpressionNode left;
     public final AssignmentOperatorNode operator;
     public final ExpressionNode right;
-    public final Token semicolon;
+    @Nullable public final Token semicolon;
 
-    public AssignmentStatementNode(ExpressionNode left, AssignmentOperatorNode operator, ExpressionNode right, Token semicolon, TextRange range) {
+    public AssignmentStatementNode(
+            ExpressionNode left,
+            AssignmentOperatorNode operator,
+            ExpressionNode right,
+            @Nullable Token semicolon,
+            TextRange range
+    ) {
         super(ParserNodeType.ASSIGNMENT_STATEMENT, range);
         this.left = left;
         this.operator = operator;
@@ -36,7 +43,11 @@ public class AssignmentStatementNode extends StatementNode {
 
     @Override
     public List<Locatable> getChildNodes() {
-        return List.of(left, operator, right, semicolon);
+        if (semicolon != null) {
+            return List.of(left, operator, right, semicolon);
+        } else {
+            return List.of(left, operator, right);
+        }
     }
 
     @Override

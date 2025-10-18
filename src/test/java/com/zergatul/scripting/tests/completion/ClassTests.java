@@ -156,6 +156,24 @@ public class ClassTests {
                         MethodSuggestion.getInstance(context, "Class", "method3")));
     }
 
+    @Test
+    public void arrowMethodTest() {
+        assertSuggestions("""
+                class Class {
+                    int a;
+                    void method(int x) => <cursor>
+                }
+                """,
+                context -> Lists.of(
+                        expressions,
+                        new StaticConstantSuggestion(context, "intStorage"),
+                        new ClassSuggestion(context, "Class"),
+                        new ThisSuggestion(context, "Class"),
+                        PropertySuggestion.getInstance(context, "Class", "a"),
+                        MethodSuggestion.getInstance(context, "Class", "method"),
+                        LocalVariableSuggestion.getParameter(context, "x")));
+    }
+
     // TODO: constructor calls?
 
     private void assertSuggestions(String code, Function<TestCompletionContext, List<Suggestion>> expectedFactory) {

@@ -1,6 +1,7 @@
 package com.zergatul.scripting.type.operation;
 
 import com.zergatul.scripting.compiler.BufferedMethodVisitor;
+import com.zergatul.scripting.compiler.CompilerContext;
 import com.zergatul.scripting.parser.BinaryOperator;
 import com.zergatul.scripting.type.SType;
 import org.objectweb.asm.MethodVisitor;
@@ -28,5 +29,5 @@ public abstract class BinaryOperation {
         return right;
     }
 
-    public abstract void apply(MethodVisitor left, BufferedMethodVisitor right);
+    public abstract void apply(MethodVisitor left, BufferedMethodVisitor right, CompilerContext context);
 }

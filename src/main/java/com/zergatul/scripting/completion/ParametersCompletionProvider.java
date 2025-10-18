@@ -39,6 +39,10 @@ public class ParametersCompletionProvider<T> extends AbstractCompletionProvider<
                     BoundClassMethodNode method = (BoundClassMethodNode) current.entry.node;
                     yield method.parameters.parameters;
                 }
+                case EXTENSION_METHOD -> {
+                    BoundExtensionMethodNode method = (BoundExtensionMethodNode) current.entry.node;
+                    yield method.parameters.parameters;
+                }
                 case FUNCTION -> {
                     BoundFunctionNode function = (BoundFunctionNode) current.entry.node;
                     yield function.parameters.parameters;

@@ -2,6 +2,7 @@ package com.zergatul.scripting.binding.nodes;
 
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
+import com.zergatul.scripting.parser.SyntaxFactory;
 import com.zergatul.scripting.parser.nodes.AssignmentStatementNode;
 import com.zergatul.scripting.type.operation.BinaryOperation;
 
@@ -16,7 +17,7 @@ public class BoundAugmentedAssignmentStatementNode extends BoundStatementNode {
     public final BoundExpressionNode right;
 
     public BoundAugmentedAssignmentStatementNode(BoundExpressionNode left, BoundAssignmentOperatorNode assignmentOperator, BinaryOperation operation, BoundExpressionNode right) {
-        this(null, left, assignmentOperator, operation, right, null);
+        this(SyntaxFactory.missingAssignmentStatement(), left, assignmentOperator, operation, right, TextRange.MISSING);
     }
 
     public BoundAugmentedAssignmentStatementNode(AssignmentStatementNode node, BoundExpressionNode left, BoundAssignmentOperatorNode assignmentOperator, BinaryOperation operation, BoundExpressionNode right) {

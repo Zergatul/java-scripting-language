@@ -129,6 +129,11 @@ public abstract class ParserTreeVisitor {
         node.acceptChildren(this);
     }
 
+    public void explicitVisit(ExtensionNode node) {
+        visit(node);
+        node.acceptChildren(this);
+    }
+
     public void explicitVisit(FloatLiteralExpressionNode node) {
         visit(node);
         node.acceptChildren(this);
@@ -369,6 +374,7 @@ public abstract class ParserTreeVisitor {
     public void visit(CustomTypeNode node) {}
     public void visit(EmptyStatementNode node) {}
     public void visit(ExpressionStatementNode node) {}
+    public void visit(ExtensionNode node) {}
     public void visit(FloatLiteralExpressionNode node) {}
     public void visit(ForEachLoopStatementNode node) {}
     public void visit(ForLoopStatementNode node) {}

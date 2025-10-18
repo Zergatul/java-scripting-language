@@ -2,7 +2,6 @@ package com.zergatul.scripting.tests.completion;
 
 import com.zergatul.scripting.tests.compiler.helpers.IntStorage;
 import com.zergatul.scripting.tests.completion.helpers.CompletionTestHelper;
-import com.zergatul.scripting.tests.completion.helpers.Lists;
 import com.zergatul.scripting.tests.completion.helpers.TestCompletionContext;
 import com.zergatul.scripting.tests.completion.suggestions.MethodSuggestion;
 import com.zergatul.scripting.tests.completion.suggestions.Suggestion;

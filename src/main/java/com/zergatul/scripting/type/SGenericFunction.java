@@ -35,6 +35,11 @@ public class SGenericFunction extends SFunction {
     }
 
     @Override
+    public Type getAsmType() {
+        return Type.getObjectType(internalName);
+    }
+
+    @Override
     public String getDescriptor() {
         if (internalName == null) {
             throw new InternalException();

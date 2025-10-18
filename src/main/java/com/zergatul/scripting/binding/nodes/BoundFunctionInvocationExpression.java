@@ -3,6 +3,7 @@ package com.zergatul.scripting.binding.nodes;
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
 import com.zergatul.scripting.compiler.RefHolder;
+import com.zergatul.scripting.parser.SyntaxFactory;
 import com.zergatul.scripting.parser.nodes.InvocationExpressionNode;
 import com.zergatul.scripting.type.SType;
 
@@ -16,7 +17,7 @@ public class BoundFunctionInvocationExpression extends BoundExpressionNode {
     public final List<RefHolder> refVariables;
 
     public BoundFunctionInvocationExpression(BoundFunctionReferenceNode functionReferenceNode, SType type, BoundArgumentsListNode arguments) {
-        this(null, functionReferenceNode, type, arguments, List.of(), null);
+        this(SyntaxFactory.missingInvocationExpression(), functionReferenceNode, type, arguments, List.of(), TextRange.MISSING);
     }
 
     public BoundFunctionInvocationExpression(

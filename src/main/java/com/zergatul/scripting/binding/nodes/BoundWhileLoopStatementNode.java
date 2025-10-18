@@ -2,6 +2,7 @@ package com.zergatul.scripting.binding.nodes;
 
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
+import com.zergatul.scripting.parser.SyntaxFactory;
 import com.zergatul.scripting.parser.nodes.WhileLoopStatementNode;
 
 import java.util.List;
@@ -13,7 +14,7 @@ public class BoundWhileLoopStatementNode extends BoundStatementNode {
     public final BoundStatementNode body;
 
     public BoundWhileLoopStatementNode(BoundExpressionNode condition, BoundStatementNode body) {
-        this(null, condition, body, null);
+        this(SyntaxFactory.missingWhileLoopStatement(), condition, body, TextRange.MISSING);
     }
 
     public BoundWhileLoopStatementNode(BoundExpressionNode condition, BoundStatementNode body, WhileLoopStatementNode node) {

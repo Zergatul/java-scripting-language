@@ -2,6 +2,7 @@ package com.zergatul.scripting.type;
 
 import com.zergatul.scripting.Lazy;
 import com.zergatul.scripting.compiler.BufferedMethodVisitor;
+import com.zergatul.scripting.compiler.CompilerContext;
 import com.zergatul.scripting.parser.BinaryOperator;
 import com.zergatul.scripting.parser.PostfixOperator;
 import com.zergatul.scripting.parser.UnaryOperator;
@@ -328,14 +329,14 @@ public class SInt extends SPredefinedType {
 
     private static final Lazy<MethodReference> METHOD_TO_INT8 = new Lazy<>(() -> new NoArgsByteCodeMethodReference(instance, SInt8.instance, "toInt8") {
         @Override
-        public void compileInvoke(MethodVisitor visitor) {
+        public void compileInvoke(MethodVisitor visitor, CompilerContext context) {
             visitor.visitInsn(I2B);
         }
     });
 
     private static final Lazy<MethodReference> METHOD_TO_INT16 = new Lazy<>(() -> new NoArgsByteCodeMethodReference(instance, SInt16.instance, "toInt16") {
         @Override
-        public void compileInvoke(MethodVisitor visitor) {
+        public void compileInvoke(MethodVisitor visitor, CompilerContext context) {
             visitor.visitInsn(I2S);
         }
     });
@@ -383,7 +384,7 @@ public class SInt extends SPredefinedType {
         }
 
         @Override
-        public void apply(MethodVisitor left, BufferedMethodVisitor right) {
+        public void apply(MethodVisitor left, BufferedMethodVisitor right, CompilerContext context) {
             right.release(left);
             Label elseLabel = new Label();
             Label endLabel = new Label();

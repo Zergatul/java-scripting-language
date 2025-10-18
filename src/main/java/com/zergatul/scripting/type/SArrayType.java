@@ -2,6 +2,7 @@ package com.zergatul.scripting.type;
 
 import com.zergatul.scripting.Lazy;
 import com.zergatul.scripting.compiler.BufferedMethodVisitor;
+import com.zergatul.scripting.compiler.CompilerContext;
 import com.zergatul.scripting.parser.BinaryOperator;
 import com.zergatul.scripting.runtime.ArrayUtils;
 import com.zergatul.scripting.type.operation.BinaryOperation;
@@ -127,6 +128,11 @@ public class SArrayType extends SType {
         return underlying.toString() + "[]";
     }
 
+    @Override
+    public String asMethodPart() {
+        return "array$" + underlying.asMethodPart() + "$";
+    }
+
     private static final Lazy<PropertyReference> PROP_LENGTH = new Lazy<>(() -> new PropertyReference() {
 
         @Override
@@ -162,7 +168,7 @@ public class SArrayType extends SType {
         }
 
         @Override
-        public void apply(MethodVisitor left, BufferedMethodVisitor right) {
+        public void apply(MethodVisitor left, BufferedMethodVisitor right, CompilerContext context) {
             right.release(left);
             boolean isPrimitive = ((SArrayType) type).getElementsType().getJavaClass().isPrimitive();
             Class<?> arrayClass = isPrimitive ? type.getJavaClass() : Object[].class;
@@ -186,7 +192,7 @@ public class SArrayType extends SType {
         }
 
         @Override
-        public void apply(MethodVisitor left, BufferedMethodVisitor right) {
+        public void apply(MethodVisitor left, BufferedMethodVisitor right, CompilerContext context) {
             right.release(left);
             boolean isPrimitive = ((SArrayType) type).getElementsType().getJavaClass().isPrimitive();
             Class<?> clazz = isPrimitive ? type.getJavaClass() : Object[].class;

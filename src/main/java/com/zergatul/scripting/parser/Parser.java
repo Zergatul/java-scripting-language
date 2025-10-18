@@ -33,6 +33,8 @@ public class Parser {
         while (!current.is(TokenType.END_OF_FILE)) {
             if (current.is(TokenType.STATIC)) {
                 members.add(parseStaticVariable());
+            } else if (current.is(TokenType.EXTENSION)) {
+                members.add(parseExtension());
             } else if (current.is(TokenType.CLASS)) {
                 members.add(parseClass());
             } else if (isPossibleFunction()) {
@@ -458,6 +460,95 @@ public class Parser {
                 return new StaticVariableNode(keyword, type, name, null, null, semicolon);
             }
         }
+    }
+
+    private ExtensionNode parseExtension() {
+        Token keyword = advance(TokenType.EXTENSION);
+
+        if (current.isNot(TokenType.LEFT_PARENTHESES)) {
+            addDiagnostic(ParserErrors.LeftParenthesisExpected, current, current.getRawValue(code));
+            TextRange range = createMissingTokenRangeBeforeCurrent();
+            return new ExtensionNode(
+                    keyword,
+                    new Token(TokenType.LEFT_PARENTHESES, range),
+                    new InvalidTypeNode(createMissingIdentifier(range)),
+                    new Token(TokenType.RIGHT_PARENTHESES, range),
+                    new Token(TokenType.LEFT_CURLY_BRACKET, range),
+                    List.of(),
+                    new Token(TokenType.RIGHT_CURLY_BRACKET, range));
+        }
+
+        Token openParen = advance(TokenType.LEFT_PARENTHESES);
+
+        if (!isPossibleType()) {
+            addDiagnostic(ParserErrors.TypeExpected, current, current.getRawValue(code));
+            Token closeParen = current.is(TokenType.RIGHT_PARENTHESES) ? advance(TokenType.RIGHT_PARENTHESES) : null;
+            TextRange range = createMissingTokenRangeBeforeCurrent();
+            return new ExtensionNode(
+                    keyword,
+                    openParen,
+                    new InvalidTypeNode(createMissingIdentifier(range)),
+                    closeParen != null ? closeParen : new Token(TokenType.RIGHT_PARENTHESES, range),
+                    new Token(TokenType.LEFT_CURLY_BRACKET, range),
+                    List.of(),
+                    new Token(TokenType.RIGHT_CURLY_BRACKET, range));
+        }
+
+        TypeNode typeNode = parseTypeNode();
+
+        if (current.isNot(TokenType.RIGHT_PARENTHESES)) {
+            addDiagnostic(ParserErrors.RightParenthesisExpected, current, current.getRawValue(code));
+            TextRange range = createMissingTokenRangeBeforeCurrent();
+            return new ExtensionNode(
+                    keyword,
+                    openParen,
+                    typeNode,
+                    new Token(TokenType.RIGHT_PARENTHESES, range),
+                    new Token(TokenType.LEFT_CURLY_BRACKET, range),
+                    List.of(),
+                    new Token(TokenType.RIGHT_CURLY_BRACKET, range));
+        }
+
+        Token closeParen = advance(TokenType.RIGHT_PARENTHESES);
+
+        if (current.isNot(TokenType.LEFT_CURLY_BRACKET)) {
+            addDiagnostic(ParserErrors.OpenCurlyBracketExpected, current, current.getRawValue(code));
+            TextRange range = createMissingTokenRangeBeforeCurrent();
+            return new ExtensionNode(
+                    keyword,
+                    openParen,
+                    typeNode,
+                    closeParen,
+                    new Token(TokenType.LEFT_CURLY_BRACKET, range),
+                    List.of(),
+                    new Token(TokenType.RIGHT_CURLY_BRACKET, range));
+        }
+
+        Token openBrace = advance(TokenType.LEFT_CURLY_BRACKET);
+
+        List<ClassMethodNode> methods = new ArrayList<>();
+        while (true) {
+            if (current.is(TokenType.END_OF_FILE)) {
+                break;
+            }
+            if (current.is(TokenType.RIGHT_CURLY_BRACKET)) {
+                break;
+            }
+            if (isPossibleClassMemberNode()) {
+                ClassMemberNode member = parseClassMemberNode();
+                if (member.is(ParserNodeType.CLASS_METHOD)) {
+                    methods.add((ClassMethodNode) member);
+                } else {
+                    addDiagnostic(ParserErrors.ExtensionOnlyMethodsAllowed, member);
+                }
+            } else {
+                Token token = advance();
+                addDiagnostic(ParserErrors.ExtensionMethodExpected, token, token.getRawValue(code));
+            }
+        }
+
+        Token closeBrace = advance(TokenType.RIGHT_CURLY_BRACKET);
+        return new ExtensionNode(keyword, openParen, typeNode, closeParen, openBrace, methods, closeBrace);
     }
 
     private ClassNode parseClass() {
@@ -987,14 +1078,12 @@ public class Parser {
                 left = new BinaryExpressionNode(
                         left,
                         new BinaryOperatorNode(binaryToken, binary),
-                        right,
-                        TextRange.combine(left, right));
+                        right);
             } else {
                 left = new BinaryExpressionNode(
                         left,
                         new BinaryOperatorNode(binaryToken, binary),
-                        new InvalidExpressionNode(createMissingTokenRangeBeforeCurrent()),
-                        TextRange.combine(left, binaryToken));
+                        new InvalidExpressionNode(createMissingTokenRangeBeforeCurrent()));
                 addDiagnostic(ParserErrors.ExpressionExpected, current, current.getRawValue(code));
                 break;
             }

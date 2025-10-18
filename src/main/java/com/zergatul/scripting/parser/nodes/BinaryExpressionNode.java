@@ -12,6 +12,10 @@ public class BinaryExpressionNode extends ExpressionNode {
     public final BinaryOperatorNode operator;
     public final ExpressionNode right;
 
+    public BinaryExpressionNode(ExpressionNode left, BinaryOperatorNode operator, ExpressionNode right) {
+        this(left, operator, right, TextRange.combine(left, right));
+    }
+
     public BinaryExpressionNode(ExpressionNode left, BinaryOperatorNode operator, ExpressionNode right, TextRange range) {
         super(ParserNodeType.BINARY_EXPRESSION, range);
         this.left = left;
@@ -29,6 +33,11 @@ public class BinaryExpressionNode extends ExpressionNode {
         left.accept(visitor);
         operator.accept(visitor);
         right.accept(visitor);
+    }
+
+    @Override
+    public boolean isOpen() {
+        return right.isOpen();
     }
 
     @Override

@@ -2,7 +2,9 @@ package com.zergatul.scripting.binding.nodes;
 
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
+import com.zergatul.scripting.parser.SyntaxFactory;
 import com.zergatul.scripting.parser.nodes.IfStatementNode;
+import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 
@@ -11,17 +13,22 @@ public class BoundIfStatementNode extends BoundStatementNode {
     public final IfStatementNode syntaxNode;
     public final BoundExpressionNode condition;
     public final BoundStatementNode thenStatement;
-    public final BoundStatementNode elseStatement;
+    @Nullable public final BoundStatementNode elseStatement;
 
     public BoundIfStatementNode(BoundExpressionNode condition, BoundStatementNode thenStatement) {
-        this(null, condition, thenStatement, null, null);
+        this(SyntaxFactory.missingIfStatement(), condition, thenStatement, null, TextRange.MISSING);
     }
 
     public BoundIfStatementNode(BoundExpressionNode condition, BoundStatementNode thenStatement, BoundStatementNode elseStatement) {
-        this(null, condition, thenStatement, elseStatement, null);
+        this(SyntaxFactory.missingIfStatement(), condition, thenStatement, elseStatement, TextRange.MISSING);
     }
 
-    public BoundIfStatementNode(IfStatementNode node, BoundExpressionNode condition, BoundStatementNode thenStatement, BoundStatementNode elseStatement) {
+    public BoundIfStatementNode(
+            IfStatementNode node,
+            BoundExpressionNode condition,
+            BoundStatementNode thenStatement,
+            @Nullable BoundStatementNode elseStatement
+    ) {
         this(node, condition, thenStatement, elseStatement, node.getRange());
     }
 
@@ -29,7 +36,7 @@ public class BoundIfStatementNode extends BoundStatementNode {
             IfStatementNode node,
             BoundExpressionNode condition,
             BoundStatementNode thenStatement,
-            BoundStatementNode elseStatement,
+            @Nullable BoundStatementNode elseStatement,
             TextRange range
     ) {
         super(BoundNodeType.IF_STATEMENT, range);

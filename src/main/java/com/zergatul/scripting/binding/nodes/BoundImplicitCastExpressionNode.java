@@ -12,7 +12,7 @@ public class BoundImplicitCastExpressionNode extends BoundExpressionNode {
     public final CastOperation operation;
 
     public BoundImplicitCastExpressionNode(BoundExpressionNode operand, CastOperation operation) {
-        this(operand, operation, null);
+        this(operand, operation, TextRange.MISSING);
     }
 
     public BoundImplicitCastExpressionNode(BoundExpressionNode operand, CastOperation operation, TextRange range) {

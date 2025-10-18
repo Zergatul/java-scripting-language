@@ -170,7 +170,7 @@ public class ClassTests extends ComparatorTest {
         program.run();
 
         Assertions.assertEquals(ApiRoot.objectStorage.list.size(), 1);
-        Assertions.assertEquals(ApiRoot.objectStorage.list.get(0).getClass().getSimpleName(), "Class");
+        Assertions.assertEquals(ApiRoot.objectStorage.list.getFirst().getClass().getSimpleName(), "Class");
     }
 
     @Test
@@ -638,6 +638,49 @@ public class ClassTests extends ComparatorTest {
         program.run();
 
         Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(196, 2744, 16, 20, 36));
+    }
+
+    @Test
+    public void captureVariablesConstructorTest() {
+        String code = """
+            class Class {
+                fn<int => int> func;
+                constructor(int factor) {
+                    int add = 8;
+                    func = x => x * factor + add;
+                }
+            }
+            
+            let c = new Class(5);
+            intStorage.add(c.func(4));
+            """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(28));
+    }
+
+    @Test
+    public void captureVariablesMethodTest() {
+        String code = """
+            class Class {
+                fn<int => int> func;
+                void create(int factor) {
+                    int add = 8;
+                    func = x => x * factor + add;
+                }
+            }
+            
+            let c = new Class();
+            c.create(5);
+            intStorage.add(c.func(4));
+            """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(28));
     }
 
     public static class ApiRoot {

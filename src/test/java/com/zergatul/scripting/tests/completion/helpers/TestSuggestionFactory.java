@@ -34,7 +34,7 @@ public class TestSuggestionFactory implements SuggestionFactory<Suggestion> {
     }
 
     @Override
-    public Suggestion getThisSuggestion(SDeclaredType type) {
+    public Suggestion getThisSuggestion(SType type) {
         return new ThisSuggestion(type);
     }
 

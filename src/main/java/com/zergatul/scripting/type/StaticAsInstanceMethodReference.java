@@ -1,6 +1,7 @@
 package com.zergatul.scripting.type;
 
 import com.zergatul.scripting.MethodDescription;
+import com.zergatul.scripting.compiler.CompilerContext;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Type;
 
@@ -109,7 +110,7 @@ public class StaticAsInstanceMethodReference extends MethodReference {
     }
 
     @Override
-    public void compileInvoke(MethodVisitor visitor) {
+    public void compileInvoke(MethodVisitor visitor, CompilerContext context) {
         visitor.visitMethodInsn(
                 INVOKESTATIC,
                 Type.getInternalName(ownerClass),

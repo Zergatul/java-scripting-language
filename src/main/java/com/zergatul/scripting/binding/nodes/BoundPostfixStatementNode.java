@@ -2,6 +2,7 @@ package com.zergatul.scripting.binding.nodes;
 
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
+import com.zergatul.scripting.parser.SyntaxFactory;
 import com.zergatul.scripting.parser.nodes.PostfixStatementNode;
 import com.zergatul.scripting.type.operation.PostfixOperation;
 
@@ -14,7 +15,7 @@ public class BoundPostfixStatementNode extends BoundStatementNode {
     public final PostfixOperation operation;
 
     public BoundPostfixStatementNode(BoundNodeType nodeType, BoundExpressionNode expression, PostfixOperation operation) {
-        this(null, nodeType, expression, operation, null);
+        this(SyntaxFactory.missingPostfixStatement(), nodeType, expression, operation, TextRange.MISSING);
     }
 
     public BoundPostfixStatementNode(PostfixStatementNode node, BoundNodeType nodeType, BoundExpressionNode expression, PostfixOperation operation) {

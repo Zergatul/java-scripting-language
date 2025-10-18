@@ -11,6 +11,7 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 import java.util.function.Function;
 
+import static com.zergatul.scripting.tests.completion.helpers.CommonSuggestions.expressions;
 import static com.zergatul.scripting.tests.completion.helpers.CommonSuggestions.types;
 
 public class ExpressionTests {
@@ -42,6 +43,48 @@ public class ExpressionTests {
                 let x = new a<cursor>
                 """,
                 context -> types);
+    }
+
+    @Test
+    public void binaryExpressionTest1() {
+        assertSuggestions("""
+                let x = 1 + <cursor>
+                """,
+                context -> Lists.of(
+                        expressions,
+                        new StaticConstantSuggestion(context, "intStorage")));
+    }
+
+    @Test
+    public void binaryExpressionTest2() {
+        assertSuggestions("""
+                let x = 1 + <cursor>
+                let y = 2;
+                """,
+                context -> Lists.of(
+                        expressions,
+                        new StaticConstantSuggestion(context, "intStorage")));
+    }
+
+    @Test
+    public void inExpressionTest1() {
+        assertSuggestions("""
+                let x = 1 in <cursor>
+                """,
+                context -> Lists.of(
+                        expressions,
+                        new StaticConstantSuggestion(context, "intStorage")));
+    }
+
+    @Test
+    public void inExpressionTest2() {
+        assertSuggestions("""
+                let x = 1 in <cursor>
+                let y = 2;
+                """,
+                context -> Lists.of(
+                        expressions,
+                        new StaticConstantSuggestion(context, "intStorage")));
     }
 
     private void assertSuggestions(String code, Function<TestCompletionContext, List<Suggestion>> expectedFactory) {

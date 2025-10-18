@@ -6,6 +6,8 @@ import java.util.List;
 
 public final class ValueToken extends Token {
 
+    public static final ValueToken MISSING = new ValueToken(TokenType.IDENTIFIER, "", TextRange.MISSING);
+
     public final String value;
 
     public ValueToken(TokenType tokenType, String value, TextRange range) {

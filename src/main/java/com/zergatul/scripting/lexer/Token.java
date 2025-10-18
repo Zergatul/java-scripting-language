@@ -9,6 +9,8 @@ import java.util.List;
 
 public class Token implements Locatable {
 
+    public static final Token MISSING = new Token(TokenType.IDENTIFIER, TextRange.MISSING);
+
     protected static final Trivia[] EMPTY_TRIVIA = new Trivia[0];
 
     private final TokenType tokenType;

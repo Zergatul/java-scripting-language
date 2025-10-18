@@ -2,6 +2,7 @@ package com.zergatul.scripting.binding.nodes;
 
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
+import com.zergatul.scripting.parser.SyntaxFactory;
 import com.zergatul.scripting.parser.nodes.BinaryOperatorNode;
 import com.zergatul.scripting.type.operation.BinaryOperation;
 
@@ -13,7 +14,7 @@ public class BoundBinaryOperatorNode extends BoundNode {
     public final BinaryOperation operation;
 
     public BoundBinaryOperatorNode(BinaryOperation operation) {
-        this(null, operation, null);
+        this(SyntaxFactory.missingBinaryOperator(), operation, TextRange.MISSING);
     }
 
     public BoundBinaryOperatorNode(BinaryOperatorNode node, BinaryOperation operation) {

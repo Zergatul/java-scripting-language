@@ -2,6 +2,7 @@ package com.zergatul.scripting.binding.nodes;
 
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
+import com.zergatul.scripting.parser.SyntaxFactory;
 import com.zergatul.scripting.parser.nodes.NameExpressionNode;
 import com.zergatul.scripting.type.PropertyReference;
 
@@ -14,7 +15,7 @@ public class BoundPropertyNode extends BoundNode {
     public final PropertyReference property;
 
     public BoundPropertyNode(PropertyReference property) {
-        this(null, null, property, null);
+        this(SyntaxFactory.missingNameExpression(), "", property, TextRange.MISSING);
     }
 
     public BoundPropertyNode(NameExpressionNode node, PropertyReference property) {

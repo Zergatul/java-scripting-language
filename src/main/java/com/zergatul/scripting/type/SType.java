@@ -255,6 +255,18 @@ public abstract class SType {
         throw new InternalException();
     }
 
+    public String asMethodPart() {
+        StringBuilder builder = new StringBuilder();
+        for (char ch : toString().toCharArray()) {
+            if (Character.isJavaIdentifierPart(ch)) {
+                builder.append(ch);
+            } else {
+                builder.append('_');
+            }
+        }
+        return builder.toString();
+    }
+
     public static SType fromJavaType(java.lang.reflect.Type type) {
         if (type instanceof TypeVariable<?> typeVariable) {
             return fromJavaType(typeVariable.getBounds()[0]);

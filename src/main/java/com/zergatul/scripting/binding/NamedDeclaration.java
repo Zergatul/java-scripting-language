@@ -2,12 +2,12 @@ package com.zergatul.scripting.binding;
 
 import com.zergatul.scripting.symbols.SymbolRef;
 
-public abstract class Declaration {
+public abstract class NamedDeclaration {
 
     private final String name;
     private final SymbolRef symbolRef;
 
-    protected Declaration(String name, SymbolRef symbolRef) {
+    protected NamedDeclaration(String name, SymbolRef symbolRef) {
         this.name = name;
         this.symbolRef = symbolRef;
     }

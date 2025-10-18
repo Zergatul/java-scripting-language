@@ -345,12 +345,10 @@ public class BinderTreeGenerator {
         }
 
         return new BoundMethodInvocationExpressionNode(
-                null,
                 node.objectReference,
                 node.method,
                 new BoundArgumentsListNode(Arrays.stream(variables).map(v -> (BoundExpressionNode) new BoundNameExpressionNode(v)).toList()),
-                node.refVariables,
-                null);
+                node.refVariables);
     }
 
     private BoundExpressionNode rewriteAsync(BoundUnaryExpressionNode node) {

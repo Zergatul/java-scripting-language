@@ -6,4 +6,9 @@ public abstract class ExpressionNode extends ParserNode {
     protected ExpressionNode(ParserNodeType nodeType, TextRange range) {
         super(nodeType, range);
     }
+
+    @Override
+    public boolean isOpen() {
+        return isMissing();
+    }
 }

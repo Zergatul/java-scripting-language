@@ -2,6 +2,7 @@ package com.zergatul.scripting.binding.nodes;
 
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
+import com.zergatul.scripting.parser.SyntaxFactory;
 import com.zergatul.scripting.parser.nodes.BinaryExpressionNode;
 
 import java.util.List;
@@ -14,7 +15,7 @@ public class BoundBinaryExpressionNode extends BoundExpressionNode {
     public final BoundExpressionNode right;
 
     public BoundBinaryExpressionNode(BoundExpressionNode left, BoundBinaryOperatorNode operator, BoundExpressionNode right) {
-        this(null, left, operator, right, null);
+        this(SyntaxFactory.missingBinaryExpression(), left, operator, right, TextRange.MISSING);
     }
 
     public BoundBinaryExpressionNode(BinaryExpressionNode node, BoundExpressionNode left, BoundBinaryOperatorNode operator, BoundExpressionNode right) {

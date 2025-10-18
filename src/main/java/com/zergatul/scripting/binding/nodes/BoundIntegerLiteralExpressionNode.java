@@ -2,6 +2,7 @@ package com.zergatul.scripting.binding.nodes;
 
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
+import com.zergatul.scripting.parser.SyntaxFactory;
 import com.zergatul.scripting.parser.nodes.IntegerLiteralExpressionNode;
 import com.zergatul.scripting.type.SInt;
 
@@ -13,7 +14,7 @@ public class BoundIntegerLiteralExpressionNode extends BoundExpressionNode {
     public final int value;
 
     public BoundIntegerLiteralExpressionNode(int value) {
-        this(null, value, null);
+        this(SyntaxFactory.missingIntegerLiteralExpression(), value, TextRange.MISSING);
     }
 
     public BoundIntegerLiteralExpressionNode(IntegerLiteralExpressionNode node, int value) {

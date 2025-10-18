@@ -2,6 +2,7 @@ package com.zergatul.scripting.binding.nodes;
 
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
+import com.zergatul.scripting.parser.SyntaxFactory;
 import com.zergatul.scripting.parser.nodes.LambdaExpressionNode;
 import com.zergatul.scripting.symbols.CapturedVariable;
 import com.zergatul.scripting.symbols.LiftedVariable;
@@ -23,7 +24,7 @@ public class BoundLambdaExpressionNode extends BoundExpressionNode {
             BoundStatementNode body,
             SType type
     ) {
-        this(null, parameters, body, type, List.of(), List.of(), null);
+        this(SyntaxFactory.missingLambdaExpression(), parameters, body, type, List.of(), List.of(), TextRange.MISSING);
     }
 
     public BoundLambdaExpressionNode(

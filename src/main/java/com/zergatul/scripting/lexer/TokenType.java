@@ -91,5 +91,6 @@ public enum TokenType {
     META_TYPE_OF,
     CLASS,
     CONSTRUCTOR,
-    THIS
+    THIS,
+    EXTENSION,
 }

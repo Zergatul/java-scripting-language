@@ -2,34 +2,48 @@ package com.zergatul.scripting.binding.nodes;
 
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
+import com.zergatul.scripting.parser.SyntaxFactory;
 import com.zergatul.scripting.parser.nodes.VariableDeclarationNode;
+import org.jspecify.annotations.Nullable;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class BoundVariableDeclarationNode extends BoundStatementNode {
 
     public final VariableDeclarationNode syntaxNode;
-    public final BoundTypeNode type;
+    @Nullable public final BoundTypeNode type;
     public final BoundNameExpressionNode name;
-    public final BoundExpressionNode expression;
+    @Nullable public final BoundExpressionNode expression;
 
     public BoundVariableDeclarationNode(BoundNameExpressionNode name) {
-        this(null, null, name, null, null);
+        this(SyntaxFactory.missingVariableDeclaration(), null, name, null, TextRange.MISSING);
     }
 
     public BoundVariableDeclarationNode(BoundNameExpressionNode name, BoundExpressionNode expression) {
-        this(null, null, name, expression, null);
+        this(SyntaxFactory.missingVariableDeclaration(), null, name, expression, TextRange.MISSING);
     }
 
     public BoundVariableDeclarationNode(BoundTypeNode type, BoundNameExpressionNode name, BoundExpressionNode expression, TextRange range) {
-        this(null, type, name, expression, range);
+        this(SyntaxFactory.missingVariableDeclaration(), type, name, expression, range);
     }
 
-    public BoundVariableDeclarationNode(VariableDeclarationNode node, BoundTypeNode type, BoundNameExpressionNode name, BoundExpressionNode expression) {
+    public BoundVariableDeclarationNode(
+            VariableDeclarationNode node,
+            BoundTypeNode type,
+            BoundNameExpressionNode name,
+            @Nullable BoundExpressionNode expression
+    ) {
         this(node, type, name, expression, node.getRange());
     }
 
-    public BoundVariableDeclarationNode(VariableDeclarationNode node, BoundTypeNode type, BoundNameExpressionNode name, BoundExpressionNode expression, TextRange range) {
+    public BoundVariableDeclarationNode(
+            VariableDeclarationNode node,
+            @Nullable BoundTypeNode type,
+            BoundNameExpressionNode name,
+            @Nullable BoundExpressionNode expression,
+            TextRange range
+    ) {
         super(BoundNodeType.VARIABLE_DECLARATION, range);
         this.syntaxNode = node;
         this.type = type;
@@ -56,15 +70,19 @@ public class BoundVariableDeclarationNode extends BoundStatementNode {
 
     @Override
     public boolean isOpen() {
-        return syntaxNode.semicolon == null || syntaxNode.semicolon.isMissing();
+        return syntaxNode.semicolon.isMissing();
     }
 
     @Override
     public List<BoundNode> getChildren() {
-        if (expression != null) {
-            return List.of(type, name, expression);
-        } else {
-            return List.of(type, name);
+        List<BoundNode> children = new ArrayList<>();
+        if (type != null) {
+            children.add(type);
         }
+        children.add(name);
+        if (expression != null) {
+            children.add(expression);
+        }
+        return children;
     }
 }

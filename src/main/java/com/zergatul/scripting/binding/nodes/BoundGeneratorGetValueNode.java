@@ -1,5 +1,6 @@
 package com.zergatul.scripting.binding.nodes;
 
+import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
 import com.zergatul.scripting.type.SType;
 
@@ -8,7 +9,7 @@ import java.util.List;
 public class BoundGeneratorGetValueNode extends BoundExpressionNode {
 
     public BoundGeneratorGetValueNode(SType type) {
-        super(BoundNodeType.GENERATOR_GET_VALUE, type, null);
+        super(BoundNodeType.GENERATOR_GET_VALUE, type, TextRange.MISSING);
     }
 
     @Override
