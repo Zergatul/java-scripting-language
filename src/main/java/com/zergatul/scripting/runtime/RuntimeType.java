@@ -5,7 +5,7 @@ import com.zergatul.scripting.type.CustomType;
 import com.zergatul.scripting.type.SType;
 
 @CustomType(name = "Type")
-public class RuntimeType {
+public final class RuntimeType {
 
     private final Class<?> clazz;
 

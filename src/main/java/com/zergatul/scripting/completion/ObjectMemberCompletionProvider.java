@@ -7,6 +7,7 @@ import com.zergatul.scripting.compiler.CompilationParameters;
 import com.zergatul.scripting.compiler.JavaInteropPolicy;
 import com.zergatul.scripting.type.NativeMethodReference;
 import com.zergatul.scripting.type.SType;
+import com.zergatul.scripting.type.SUnknown;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -45,6 +46,10 @@ public class ObjectMemberCompletionProvider<T> extends AbstractCompletionProvide
     }
 
     private List<T> getMembers(BinderOutput output, CompilationParameters parameters, SType type) {
+        if (type == SUnknown.instance) {
+            return List.of();
+        }
+
         List<T> suggestions = new ArrayList<>();
 
         type.getInstanceProperties()

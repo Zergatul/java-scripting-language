@@ -6,11 +6,13 @@ import com.zergatul.scripting.parser.BinaryOperator;
 import com.zergatul.scripting.parser.UnaryOperator;
 import com.zergatul.scripting.runtime.*;
 import com.zergatul.scripting.type.operation.*;
+import org.jspecify.annotations.Nullable;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Type;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.TypeVariable;
+import java.lang.reflect.WildcardType;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -18,6 +20,7 @@ import java.util.concurrent.CompletableFuture;
 public abstract class SType {
 
     public abstract Class<?> getJavaClass();
+    public abstract boolean hasDefaultValue();
     public abstract void storeDefaultValue(MethodVisitor visitor);
     public abstract int getLoadInst();
     public abstract int getStoreInst();
@@ -64,6 +67,11 @@ public abstract class SType {
         }
     }
 
+    public boolean isAbstract() {
+        return false;
+    }
+
+    @Nullable
     public BinaryOperation add(SType other) {
         if (other == SString.instance) {
             Optional<BinaryOperation> operation = SString.instance.genericLeftAdd(this);
@@ -75,62 +83,77 @@ public abstract class SType {
         return null;
     }
 
+    @Nullable
     public BinaryOperation subtract(SType other) {
         return null;
     }
 
+    @Nullable
     public BinaryOperation multiply(SType other) {
         return null;
     }
 
+    @Nullable
     public BinaryOperation divide(SType other) {
         return null;
     }
 
+    @Nullable
     public BinaryOperation modulo(SType other) {
         return null;
     }
 
+    @Nullable
     public BinaryOperation lessThan(SType other) {
         return null;
     }
 
+    @Nullable
     public BinaryOperation greaterThan(SType other) {
         return null;
     }
 
+    @Nullable
     public BinaryOperation lessEquals(SType other) {
         return null;
     }
 
+    @Nullable
     public BinaryOperation greaterEquals(SType other) {
         return null;
     }
 
+    @Nullable
     public BinaryOperation equalsOp(SType other) {
         return null;
     }
 
+    @Nullable
     public BinaryOperation notEqualsOp(SType other) {
         return null;
     }
 
+    @Nullable
     public BinaryOperation bitwiseAnd(SType other) {
         return null;
     }
 
+    @Nullable
     public BinaryOperation bitwiseOr(SType other) {
         return null;
     }
 
+    @Nullable
     public BinaryOperation booleanAnd(SType other) {
         return null;
     }
 
+    @Nullable
     public BinaryOperation booleanOr(SType other) {
         return null;
     }
 
+    @Nullable
     public BinaryOperation binary(BinaryOperator operator, SType other) {
         return switch (operator) {
             case PLUS -> add(other);
@@ -152,18 +175,22 @@ public abstract class SType {
         };
     }
 
+    @Nullable
     public UnaryOperation plus() {
         return null;
     }
 
+    @Nullable
     public UnaryOperation minus() {
         return null;
     }
 
+    @Nullable
     public UnaryOperation not() {
         return null;
     }
 
+    @Nullable
     public UnaryOperation unary(UnaryOperator operator) {
         return switch (operator) {
             case PLUS -> plus();
@@ -172,18 +199,22 @@ public abstract class SType {
         };
     }
 
+    @Nullable
     public PostfixOperation increment() {
         return null;
     }
 
+    @Nullable
     public PostfixOperation decrement() {
         return null;
     }
 
+    @Nullable
     protected CastOperation implicitCastTo(SType other) {
         return null;
     }
 
+    @Nullable
     public static CastOperation implicitCastTo(SType src, SType dst) {
         if (src == SUnknown.instance || dst == SUnknown.instance) {
             return EmptyCastOperation.instance;
@@ -195,6 +226,7 @@ public abstract class SType {
         return List.of();
     }
 
+    @Nullable
     public IndexOperation index(SType type) {
         return null;
     }
@@ -215,6 +247,7 @@ public abstract class SType {
         return List.of();
     }
 
+    @Nullable
     public PropertyReference getInstanceProperty(String name) {
         return null;
     }
@@ -231,6 +264,7 @@ public abstract class SType {
                 .findFirst();
     }
 
+    @Nullable
     public Class<?> getBoxedVersion() {
         return null;
     }
@@ -247,6 +281,7 @@ public abstract class SType {
         visitor.visitLdcInsn(Type.getType(getJavaClass()));
     }
 
+    @Nullable
     public SByReference getReferenceType() {
         return null;
     }
@@ -286,6 +321,10 @@ public abstract class SType {
             }
 
             return new SClassType((Class<?>) parameterized.getRawType());
+        }
+
+        if (type instanceof WildcardType wildcard) {
+            return fromJavaType(wildcard.getUpperBounds()[0]);
         }
 
         if (type instanceof Class<?> clazz) {
@@ -331,6 +370,9 @@ public abstract class SType {
             if (clazz.isArray()) {
                 return new SArrayType(fromJavaType(clazz.getComponentType()));
             }
+            if (clazz == Object.class) {
+                return SJavaObject.instance;
+            }
             if (InterfaceHelper.isFuncInterface(clazz)) {
                 return SFunctionalInterface.from(clazz);
             }
@@ -340,6 +382,6 @@ public abstract class SType {
             return new SClassType(clazz);
         }
 
-        return null;
+        throw new InternalException();
     }
 }

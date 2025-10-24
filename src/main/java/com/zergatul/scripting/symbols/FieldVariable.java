@@ -2,6 +2,7 @@ package com.zergatul.scripting.symbols;
 
 import com.zergatul.scripting.compiler.CompilerContext;
 import com.zergatul.scripting.compiler.StackHelper;
+import com.zergatul.scripting.type.SJavaObject;
 import com.zergatul.scripting.type.SType;
 import org.objectweb.asm.MethodVisitor;
 
@@ -26,7 +27,7 @@ public class FieldVariable extends Variable {
     @Override
     public void compileStore(CompilerContext context, MethodVisitor visitor) {
         visitor.visitVarInsn(ALOAD, 0);
-        StackHelper.swap(visitor, context, getType(), SType.fromJavaType(Object.class));
+        StackHelper.swap(visitor, context, getType(), SJavaObject.instance);
         visitor.visitFieldInsn(PUTFIELD, className, fieldName, getType().getDescriptor());
     }
 

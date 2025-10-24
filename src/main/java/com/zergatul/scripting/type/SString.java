@@ -41,6 +41,11 @@ public class SString extends SPredefinedType {
     }
 
     @Override
+    public boolean hasDefaultValue() {
+        return true;
+    }
+
+    @Override
     public void storeDefaultValue(MethodVisitor visitor) {
         visitor.visitLdcInsn("");
     }

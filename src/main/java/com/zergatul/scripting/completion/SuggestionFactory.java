@@ -15,6 +15,7 @@ public interface SuggestionFactory<T> {
     T getCustomTypeSuggestion(Class<?> clazz);
     T getClassSuggestion(ClassSymbol clazz);
     T getThisSuggestion(SType type);
+    T getBaseSuggestion(SType type);
     T getPropertySuggestion(PropertyReference property);
     T getMethodSuggestion(MethodReference method);
     T getStaticConstantSuggestion(StaticFieldConstantStaticVariable variable);

@@ -40,6 +40,11 @@ public class SFloat extends SPredefinedType {
     }
 
     @Override
+    public boolean hasDefaultValue() {
+        return true;
+    }
+
+    @Override
     public void storeDefaultValue(MethodVisitor visitor) {
         visitor.visitLdcInsn(0.0);
     }
@@ -235,7 +240,7 @@ public class SFloat extends SPredefinedType {
     private static final Lazy<BinaryOperation> NOT_EQUALS = new Lazy<>(() ->
             new FloatComparisonOperation(BinaryOperator.NOT_EQUALS, IF_ICMPNE));
 
-    private static final Lazy<CastOperation> TO_OBJECT = new Lazy<>(() -> new CastOperation(SType.fromJavaType(Object.class)) {
+    private static final Lazy<CastOperation> TO_OBJECT = new Lazy<>(() -> new CastOperation(SJavaObject.instance) {
         @Override
         public void apply(MethodVisitor visitor) {
             SFloat.instance.compileBoxing(visitor);

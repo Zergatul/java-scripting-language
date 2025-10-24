@@ -39,6 +39,7 @@ public class HighlightingProvider {
             case ASSIGNMENT_STATEMENT -> process((BoundAssignmentStatementNode) node);
             case AUGMENTED_ASSIGNMENT_STATEMENT -> process((BoundAugmentedAssignmentStatementNode) node);
             case AWAIT_EXPRESSION -> process((BoundAwaitExpressionNode) node);
+            case BASE_METHOD_INVOCATION_EXPRESSION -> process((BoundBaseMethodInvocationExpressionNode) node);
             case BINARY_EXPRESSION -> process((BoundBinaryExpressionNode) node);
             case BINARY_OPERATOR -> process((BoundBinaryOperatorNode) node);
             case BLOCK_STATEMENT -> process((BoundBlockStatementNode) node);
@@ -53,6 +54,7 @@ public class HighlightingProvider {
             case COMPILATION_UNIT -> process((BoundCompilationUnitNode) node);
             case COMPILATION_UNIT_MEMBERS -> process((BoundCompilationUnitMembersListNode) node);
             case CONDITIONAL_EXPRESSION -> process((BoundConditionalExpressionNode) node);
+            case CONSTRUCTOR_INITIALIZER -> process((BoundConstructorInitializerNode) node);
             case CONTINUE_STATEMENT -> process((BoundContinueStatementNode) node);
             case CONVERSION -> process((BoundConversionNode) node);
             case CUSTOM_TYPE -> process((BoundCustomTypeNode) node);
@@ -60,6 +62,8 @@ public class HighlightingProvider {
             case EMPTY_COLLECTION_EXPRESSION -> process((BoundEmptyCollectionExpressionNode) node);
             case EMPTY_STATEMENT -> process((BoundEmptyStatementNode) node);
             case EXPRESSION_STATEMENT -> process((BoundExpressionStatementNode) node);
+            case EXTENSION_DECLARATION -> process((BoundExtensionNode) node);
+            case EXTENSION_METHOD -> process((BoundExtensionMethodNode) node);
             case FLOAT_LITERAL -> process((BoundFloatLiteralExpressionNode) node);
             case FOREACH_LOOP_STATEMENT -> process((BoundForEachLoopStatementNode) node);
             case FOR_LOOP_STATEMENT -> process((BoundForLoopStatementNode) node);
@@ -163,12 +167,21 @@ public class HighlightingProvider {
         process(node.left);
         process(node.syntaxNode.operator.token);
         process(node.right);
-        process(node.syntaxNode.semicolon);
+        if (node.syntaxNode.semicolon != null) {
+            process(node.syntaxNode.semicolon);
+        }
     }
 
     private void process(BoundAwaitExpressionNode node) {
         process(node.syntaxNode.keyword);
         process(node.expression);
+    }
+
+    private void process(BoundBaseMethodInvocationExpressionNode node) {
+        process(node.getBaseExpressionSyntaxNode().token);
+        process(((MemberAccessExpressionNode) node.syntaxNode.callee).dot);
+        process(node.method);
+        process(node.arguments);
     }
 
     private void process(BoundBinaryExpressionNode node) {
@@ -205,6 +218,12 @@ public class HighlightingProvider {
     private void process(BoundClassConstructorNode node) {
         process(node.syntaxNode.keyword);
         process(node.parameters);
+        if (node.syntaxNode.colon != null) {
+            process(node.syntaxNode.colon);
+        }
+        if (node.syntaxNode.initializer != null) {
+            process(node.initializer);
+        }
         if (node.syntaxNode.arrow != null) {
             process(node.syntaxNode.arrow);
         }
@@ -214,6 +233,12 @@ public class HighlightingProvider {
     private void process(BoundClassNode node) {
         process(node.syntaxNode.keyword);
         process(node.name.syntaxNode.token, SemanticTokenType.TYPE);
+        if (node.syntaxNode.colon != null) {
+            process(node.syntaxNode.colon);
+        }
+        if (node.baseTypeNode != null) {
+            process(node.baseTypeNode);
+        }
         process(node.syntaxNode.openBrace);
         for (BoundClassMemberNode member : node.members) {
             process(member);
@@ -264,6 +289,11 @@ public class HighlightingProvider {
         process(node.whenFalse);
     }
 
+    private void process(BoundConstructorInitializerNode node) {
+        process(node.syntaxNode.keyword);
+        process(node.arguments);
+    }
+
     private void process(BoundContinueStatementNode node) {
         process(node.syntaxNode.keyword);
         process(node.syntaxNode.semicolon);
@@ -306,6 +336,29 @@ public class HighlightingProvider {
         if (node.syntaxNode.semicolon != null) {
             process(node.syntaxNode.semicolon);
         }
+    }
+
+    private void process(BoundExtensionNode node) {
+        process(node.syntaxNode.keyword);
+        process(node.syntaxNode.openParen);
+        process(node.typeNode);
+        process(node.syntaxNode.closeParen);
+        process(node.syntaxNode.openBrace);
+        for (BoundExtensionMethodNode method : node.methods) {
+            process(method);
+        }
+        process(node.syntaxNode.closeBrace);
+    }
+
+    private void process(BoundExtensionMethodNode node) {
+        process(node.syntaxNode.modifiers);
+        process(node.typeNode);
+        process(node.name);
+        process(node.parameters);
+        if (node.syntaxNode.arrow != null) {
+            process(node.syntaxNode.arrow);
+        }
+        process(node.body);
     }
 
     private void process(BoundFloatLiteralExpressionNode node) {
@@ -744,7 +797,8 @@ public class HighlightingProvider {
                      EXCLAMATION_EQUAL, QUESTION, EQUAL_GREATER -> SemanticTokenType.OPERATOR;
                 case BOOLEAN, INT8, INT16, INT, INT32, INT64, LONG, CHAR, FLOAT32, FLOAT, FLOAT64, STRING, IF, ELSE, BREAK,
                      CONTINUE, WHILE, FOR, FOREACH, FALSE, TRUE, IN, NEW, REF, RETURN, STATIC, VOID, ASYNC, AWAIT, LET, IS,
-                     AS, META_UNKNOWN, META_TYPE, META_TYPE_OF, CLASS, CONSTRUCTOR, THIS, EXTENSION -> SemanticTokenType.KEYWORD;
+                     AS, META_UNKNOWN, META_TYPE, META_TYPE_OF, CLASS, CONSTRUCTOR, THIS, EXTENSION, ABSTRACT, VIRTUAL,
+                     OVERRIDE, BASE -> SemanticTokenType.KEYWORD;
                 case INTEGER_LITERAL, INTEGER64_LITERAL, FLOAT_LITERAL, INVALID_NUMBER -> SemanticTokenType.NUMBER;
                 case CHAR_LITERAL, STRING_LITERAL -> SemanticTokenType.STRING;
                 case LINE_BREAK, WHITESPACE, SINGLE_LINE_COMMENT, MULTI_LINE_COMMENT, END_OF_FILE, INVALID -> throw new InternalException();

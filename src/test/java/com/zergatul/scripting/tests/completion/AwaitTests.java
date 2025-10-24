@@ -7,6 +7,8 @@ import com.zergatul.scripting.tests.completion.helpers.CompletionTestHelper;
 import com.zergatul.scripting.tests.completion.helpers.Lists;
 import com.zergatul.scripting.tests.completion.helpers.TestCompletionContext;
 import com.zergatul.scripting.tests.completion.suggestions.*;
+import com.zergatul.scripting.type.SJavaObject;
+import com.zergatul.scripting.type.SType;
 import com.zergatul.scripting.type.SVoidType;
 import org.junit.jupiter.api.Test;
 
@@ -53,6 +55,7 @@ public class AwaitTests {
                         statements,
                         new StaticConstantSuggestion(context, "intStorage"),
                         new ThisSuggestion(context, "MyClass"),
+                        new BaseSuggestion(SJavaObject.instance),
                         new ClassSuggestion(context, "MyClass")));
     }
 
@@ -67,6 +70,7 @@ public class AwaitTests {
                         statements,
                         new StaticConstantSuggestion(context, "intStorage"),
                         new ThisSuggestion(context, "MyClass"),
+                        new BaseSuggestion(SJavaObject.instance),
                         new ClassSuggestion(context, "MyClass")));
     }
 
@@ -81,6 +85,7 @@ public class AwaitTests {
                         statements,
                         new StaticConstantSuggestion(context, "intStorage"),
                         new ThisSuggestion(context, "MyClass"),
+                        new BaseSuggestion(SJavaObject.instance),
                         new ClassSuggestion(context, "MyClass"),
                         MethodSuggestion.getInstance(context, "MyClass", "method")));
     }
@@ -97,6 +102,7 @@ public class AwaitTests {
                         new KeywordSuggestion(TokenType.AWAIT),
                         new StaticConstantSuggestion(context, "intStorage"),
                         new ThisSuggestion(context, "MyClass"),
+                        new BaseSuggestion(SJavaObject.instance),
                         new ClassSuggestion(context, "MyClass"),
                         MethodSuggestion.getInstance(context, "MyClass", "method")));
     }

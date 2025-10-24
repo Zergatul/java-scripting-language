@@ -21,6 +21,11 @@ public class DeclaredConstructorReference extends ConstructorReference {
     }
 
     @Override
+    public SType getOwner() {
+        return classType;
+    }
+
+    @Override
     public void compileInvoke(MethodVisitor visitor) {
         visitor.visitMethodInsn(
                 INVOKESPECIAL,

@@ -23,6 +23,14 @@ public abstract class MethodReference extends MemberReference implements Invocab
         return Optional.empty();
     }
 
+    public boolean isVirtual() {
+        return false;
+    }
+
+    public boolean isFinal() {
+        return false;
+    }
+
     public abstract void compileInvoke(MethodVisitor visitor, CompilerContext context);
 
     public List<SType> getParameterTypes() {
@@ -42,6 +50,20 @@ public abstract class MethodReference extends MemberReference implements Invocab
             return false;
         }
         if (!this.getReturn().equals(other.getReturnType())) {
+            return false;
+        }
+        for (int i = 0; i < parameters1.size(); i++) {
+            if (!parameters1.get(i).type().equals(parameters2.get(i).type())) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    public boolean parametersMatch(SFunction other) {
+        List<MethodParameter> parameters1 = getParameters();
+        List<MethodParameter> parameters2 = other.getParameters();
+        if (parameters1.size() != parameters2.size()) {
             return false;
         }
         for (int i = 0; i < parameters1.size(); i++) {

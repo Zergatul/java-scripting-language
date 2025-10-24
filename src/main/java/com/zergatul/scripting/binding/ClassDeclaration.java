@@ -2,12 +2,14 @@ package com.zergatul.scripting.binding;
 
 import com.zergatul.scripting.InternalException;
 import com.zergatul.scripting.binding.nodes.BoundParameterNode;
+import com.zergatul.scripting.binding.nodes.BoundTypeNode;
 import com.zergatul.scripting.parser.nodes.ClassConstructorNode;
 import com.zergatul.scripting.parser.nodes.ClassFieldNode;
 import com.zergatul.scripting.parser.nodes.ClassMethodNode;
 import com.zergatul.scripting.symbols.ClassSymbol;
 import com.zergatul.scripting.symbols.SymbolRef;
 import com.zergatul.scripting.type.SDeclaredType;
+import org.jspecify.annotations.Nullable;
 
 import java.util.HashMap;
 import java.util.List;
@@ -19,10 +21,16 @@ public class ClassDeclaration extends NamedDeclaration {
     private final Map<ClassFieldNode, ClassFieldDeclaration> fieldNodeMap = new HashMap<>();
     private final Map<ClassConstructorNode, ClassConstructorDeclaration> constructorNodeMap = new HashMap<>();
     private final Map<ClassMethodNode, ClassMethodDeclaration> methodNodeMap = new HashMap<>();
+    @Nullable private BoundTypeNode baseTypeNode;
 
     public ClassDeclaration(String name, SymbolRef symbolRef) {
         super(name, symbolRef);
         this.classType = ((ClassSymbol) symbolRef.get()).getDeclaredType();
+    }
+
+    public void setBaseType(BoundTypeNode typeNode) {
+        baseTypeNode = typeNode;
+        classType.setBaseType(typeNode.type);
     }
 
     public void addField(ClassFieldNode node, ClassFieldDeclaration declaration) {
@@ -38,7 +46,12 @@ public class ClassDeclaration extends NamedDeclaration {
     }
 
     public SDeclaredType getDeclaredType() {
-        return this.classType;
+        return classType;
+    }
+
+    @Nullable
+    public BoundTypeNode getBaseTypeNode() {
+        return baseTypeNode;
     }
 
     public ClassFieldDeclaration getFieldDeclaration(ClassFieldNode node) {

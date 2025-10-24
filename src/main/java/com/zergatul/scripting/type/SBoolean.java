@@ -42,6 +42,11 @@ public class SBoolean extends SPredefinedType {
     }
 
     @Override
+    public boolean hasDefaultValue() {
+        return true;
+    }
+
+    @Override
     public void storeDefaultValue(MethodVisitor visitor) {
         visitor.visitInsn(ICONST_0);
     }
@@ -179,7 +184,7 @@ public class SBoolean extends SPredefinedType {
         return "boolean";
     }
 
-    private static final Lazy<CastOperation> TO_OBJECT = new Lazy<>(() -> new CastOperation(SType.fromJavaType(Object.class)) {
+    private static final Lazy<CastOperation> TO_OBJECT = new Lazy<>(() -> new CastOperation(SJavaObject.instance) {
         @Override
         public void apply(MethodVisitor visitor) {
             SBoolean.instance.compileBoxing(visitor);

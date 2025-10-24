@@ -286,7 +286,7 @@ public class CompilerContext {
         return getClassRootContext().extensionType != null;
     }
 
-    public SType getClassType() {
+    public SDeclaredType getClassType() {
         if (classType == null) {
             throw new InternalException();
         }

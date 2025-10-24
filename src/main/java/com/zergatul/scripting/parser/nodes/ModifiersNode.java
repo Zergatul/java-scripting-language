@@ -5,6 +5,7 @@ import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.lexer.Token;
 import com.zergatul.scripting.lexer.TokenType;
 import com.zergatul.scripting.parser.ParserTreeVisitor;
+import com.zergatul.scripting.type.MemberModifiers;
 
 import java.util.List;
 
@@ -21,6 +22,31 @@ public class ModifiersNode extends ParserNode {
         return tokens.stream().anyMatch(t -> t.is(TokenType.ASYNC));
     }
 
+    public boolean isAbstract() {
+        return tokens.stream().anyMatch(t -> t.is(TokenType.ABSTRACT));
+    }
+
+    public boolean isOverride() {
+        return tokens.stream().anyMatch(t -> t.is(TokenType.OVERRIDE));
+    }
+
+    public boolean isVirtual() {
+        return tokens.stream().anyMatch(t -> t.is(TokenType.VIRTUAL));
+    }
+
+    public boolean isFinal() {
+        return !isAbstract() && !isOverride() && !isVirtual();
+    }
+
+    public boolean hasMethodModifiers() {
+        for (Token token : tokens) {
+            switch (token.getTokenType()) {
+                case ASYNC, ABSTRACT, OVERRIDE, VIRTUAL: return true;
+            }
+        }
+        return false;
+    }
+
     @Override
     public void accept(ParserTreeVisitor visitor) {
         visitor.explicitVisit(this);
@@ -32,5 +58,9 @@ public class ModifiersNode extends ParserNode {
     @Override
     public List<Locatable> getChildNodes() {
         return List.copyOf(tokens);
+    }
+
+    public MemberModifiers toMemberModifiers() {
+        return new MemberModifiers(isAsync(), isAbstract(), isVirtual(), isOverride(), false);
     }
 }

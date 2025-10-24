@@ -3,6 +3,9 @@ package com.zergatul.scripting.hover;
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.BinderOutput;
 import com.zergatul.scripting.binding.nodes.*;
+import com.zergatul.scripting.parser.nodes.BaseExpressionNode;
+import com.zergatul.scripting.parser.nodes.ParserNode;
+import com.zergatul.scripting.parser.nodes.ParserNodeType;
 import com.zergatul.scripting.symbols.*;
 import com.zergatul.scripting.type.*;
 import com.zergatul.scripting.type.operation.BinaryOperation;
@@ -23,10 +26,10 @@ public class HoverProvider {
     public HoverResponse get(BinderOutput output, int line, int column) {
         List<BoundNode> chain = new ArrayList<>();
         findChain(chain, output.unit(), line, column);
-        return get(chain);
+        return get(chain, line, column);
     }
 
-    private HoverResponse get(List<BoundNode> chain) {
+    private HoverResponse get(List<BoundNode> chain, int line, int column) {
         if (chain.isEmpty()) {
             return null;
         }
@@ -66,23 +69,23 @@ public class HoverProvider {
             case NAME_EXPRESSION -> {
                 BoundNameExpressionNode name = (BoundNameExpressionNode) node;
                 if (name.getSymbol() instanceof ExternalParameter external) {
-                    String line = formatDescription("(external parameter)") + " " + formatType(external.getType()) + " " + formatIdentifier(external.getName());
-                    yield new HoverResponse(line, range);
+                    String text = formatDescription("(external parameter)") + " " + formatType(external.getType()) + " " + formatIdentifier(external.getName());
+                    yield new HoverResponse(text, range);
                 } else if (name.getSymbol() instanceof LocalParameter local) {
-                    String line = formatDescription("(parameter)") + " " + formatType(local.getType()) + " " + formatIdentifier(local.getName());
-                    yield new HoverResponse(line, range);
+                    String text = formatDescription("(parameter)") + " " + formatType(local.getType()) + " " + formatIdentifier(local.getName());
+                    yield new HoverResponse(text, range);
                 } else if (name.getSymbol() instanceof LocalRefParameter local) {
-                    String line = formatDescription("(parameter)") + " " + formatPredefinedType("ref") + " " + formatType(local.getType()) + " " + formatIdentifier(local.getName());
-                    yield new HoverResponse(line, range);
+                    String text = formatDescription("(parameter)") + " " + formatPredefinedType("ref") + " " + formatType(local.getType()) + " " + formatIdentifier(local.getName());
+                    yield new HoverResponse(text, range);
                 } else if (name.getSymbol() instanceof LocalVariable local) {
-                    String line = formatDescription("(local variable)") + " " + formatType(local.getType()) + " " + formatIdentifier(local.getName());
-                    yield new HoverResponse(line, range);
+                    String text = formatDescription("(local variable)") + " " + formatType(local.getType()) + " " + formatIdentifier(local.getName());
+                    yield new HoverResponse(text, range);
                 } else if (name.getSymbol() instanceof StaticFieldConstantStaticVariable field) {
-                    String line = formatDescription("(external static constant)") + " " + formatType(field.getType()) + " " + formatIdentifier(field.getName());
-                    yield new HoverResponse(line, range);
+                    String text = formatDescription("(external static constant)") + " " + formatType(field.getType()) + " " + formatIdentifier(field.getName());
+                    yield new HoverResponse(text, range);
                 } else if (name.getSymbol() instanceof StaticVariable staticVariable) {
-                    String line = formatDescription("(static variable)") + " " + formatType(staticVariable.getType()) + " " + formatIdentifier(staticVariable.getName());
-                    yield new HoverResponse(line, range);
+                    String text = formatDescription("(static variable)") + " " + formatType(staticVariable.getType()) + " " + formatIdentifier(staticVariable.getName());
+                    yield new HoverResponse(text, range);
                 } else if (name.getSymbol() instanceof Function function) {
                     SStaticFunction type = function.getFunctionType();
                     StringBuilder sb = new StringBuilder();
@@ -105,8 +108,8 @@ public class HoverProvider {
             }
             case THIS_EXPRESSION -> {
                 BoundThisExpressionNode expression = (BoundThisExpressionNode) node;
-                String line = formatType(expression.type) + " " + formatPredefinedType("this");
-                yield new HoverResponse(line, range);
+                String text = formatType(expression.type) + " " + formatPredefinedType("this");
+                yield new HoverResponse(text, range);
             }
             case METHOD -> {
                 BoundMethodNode methodNode = (BoundMethodNode) node;
@@ -141,21 +144,64 @@ public class HoverProvider {
                     yield null;
                 }
                 BoundPropertyAccessExpressionNode access = (BoundPropertyAccessExpressionNode) chain.get(1);
-                String line = formatDescription("(property)") + " " + formatType(property.getType()) + " " + formatType(access.callee.type) + "." + formatIdentifier(property.getName());
-                yield new HoverResponse(line, range);
+                String text = formatDescription("(property)") + " " + formatType(property.getType()) + " " + formatType(access.callee.type) + "." + formatIdentifier(property.getName());
+                yield new HoverResponse(text, range);
             }
             case BINARY_OPERATOR -> {
                 BoundBinaryOperatorNode operator = (BoundBinaryOperatorNode) node;
                 BinaryOperation operation = operator.operation;
-                String line = formatType(operation.type) + " " + formatDescription(operation.operator.toString()) + formatBrackets("(") + formatType(operation.getLeft()) + " " + formatParameter("left") + "," + " " + formatType(operation.getRight()) + " " + formatParameter("right") + formatBrackets(")");
-                yield new HoverResponse(line, range);
+                String text = formatType(operation.type) + " " + formatDescription(operation.operator.toString()) + formatBrackets("(") + formatType(operation.getLeft()) + " " + formatParameter("left") + "," + " " + formatType(operation.getRight()) + " " + formatParameter("right") + formatBrackets(")");
+                yield new HoverResponse(text, range);
             }
             case FUNCTION_REFERENCE -> {
                 BoundFunctionReferenceNode reference = (BoundFunctionReferenceNode) node;
                 SFunction functionType = (SFunction) reference.type;
-                String line = formatDescription("(function)") + " " + formatType(functionType.getReturnType()) + " " + formatIdentifier(reference.name) + formatMethodParameters(functionType.getParameters());
-                yield new HoverResponse(line, range);
+                String text = formatDescription("(function)") + " " + formatType(functionType.getReturnType()) + " " + formatIdentifier(reference.name) + formatMethodParameters(functionType.getParameters());
+                yield new HoverResponse(text, range);
             }
+
+            case BASE_METHOD_INVOCATION_EXPRESSION -> {
+                BoundBaseMethodInvocationExpressionNode invocationExpression = (BoundBaseMethodInvocationExpressionNode) node;
+                BaseExpressionNode baseExpression = invocationExpression.getBaseExpressionSyntaxNode();
+                if (baseExpression.getRange().contains(line, column)) {
+                    BoundClassNode classNode = closestNodeOfType(chain, BoundNodeType.CLASS_DECLARATION, BoundClassNode.class);
+                    if (classNode != null) {
+                        SDeclaredType classType = (SDeclaredType) classNode.name.getSymbolOrThrow().getType();
+                        String text = formatType(classType.getActualBaseType()) + " " + formatPredefinedType("base");
+                        yield new HoverResponse(text, baseExpression.getRange());
+                    }
+                }
+                yield null;
+            }
+
+            case CONSTRUCTOR_INITIALIZER -> {
+                BoundConstructorInitializerNode initializer = (BoundConstructorInitializerNode) node;
+                if (initializer.syntaxNode.keyword.getRange().contains(line, column)) {
+                    String text =
+                            formatKeyword("constructor") + " " +
+                            formatType(initializer.constructor.getOwner()) +
+                            formatMethodParameters(initializer.constructor.getParameters());
+                    yield new HoverResponse(text, initializer.syntaxNode.keyword.getRange());
+                }
+
+                yield null;
+            }
+
+            case INVALID_EXPRESSION -> {
+                BoundInvalidExpressionNode invalidExpression = (BoundInvalidExpressionNode) node;
+                for (ParserNode syntaxNode : invalidExpression.unboundNodes) {
+                    if (syntaxNode.is(ParserNodeType.BASE_EXPRESSION) && syntaxNode.getRange().contains(line, column)) {
+                        BoundClassNode classNode = closestNodeOfType(chain, BoundNodeType.CLASS_DECLARATION, BoundClassNode.class);
+                        if (classNode != null) {
+                            SDeclaredType classType = (SDeclaredType) classNode.name.getSymbolOrThrow().getType();
+                            String text = formatType(classType.getActualBaseType()) + " " + formatPredefinedType("base");
+                            yield new HoverResponse(text, syntaxNode.getRange());
+                        }
+                    }
+                }
+                yield null;
+            }
+
             default -> null;
         };
     }
@@ -182,6 +228,10 @@ public class HoverProvider {
 
     protected HoverResponse getStringHover(TextRange range) {
         return new HoverResponse(List.of(formatPredefinedType("string"), formatDescription(documentationProvider.getTypeDocs(SString.instance))), range);
+    }
+
+    protected String formatKeyword(String keyword) {
+        return keyword;
     }
 
     protected String formatType(SType type) {
@@ -286,6 +336,15 @@ public class HoverProvider {
             }
             chain.add(node);
         }
+    }
+
+    private static <T extends BoundNode> T closestNodeOfType(List<BoundNode> chain, BoundNodeType type, Class<T> clazz) {
+        for (var node : chain) {
+            if (node.is(type)) {
+                return clazz.cast(node);
+            }
+        }
+        return null;
     }
 
     public record HoverResponse(List<String> content, TextRange range) {

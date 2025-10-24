@@ -37,6 +37,17 @@ public class LambdaTests {
     }
 
     @Test
+    public void unfinishedNameExpressionTest() {
+        assertSuggestions("""
+                run.onString(str => a<cursor>);
+                """,
+                context -> Lists.of(
+                        expressions,
+                        LocalVariableSuggestion.getParameter(context, "str"),
+                        new StaticConstantSuggestion(context, "run")));
+    }
+
+    @Test
     public void variableCapturingTest() {
         assertSuggestions("""
                 let xa = 123;

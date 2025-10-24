@@ -54,7 +54,7 @@ debug.write("Hello World!");
 - `string`
 
 Unsigned integer types are not supported.
-Language is not well adapted for using `int8`/`int16`/`float32`. If you can you should better use `int` and `float` instead.
+Language is not well adapted for using `int8`/`int16`/`float32`. If you can, you should better use `int` and `float` instead.
 
 ### Variables
 ```c#
@@ -356,7 +356,7 @@ if (type == #type(string)) {
 
 ### Classes
 Classes should be defined in the beginning of the script, before all script statements.
-Class can have fields, constructors, methods. Class without constructors receive implicit parameterless constructor:
+Class can have fields, constructors, methods. Class without constructors receives implicit parameterless constructor:
 ```c#
 class MyClass {
     int x;
@@ -396,10 +396,43 @@ class MyClass {
 
 Async methods supported.
 
+Inheritance supported:
+```c#
+class BaseClass {
+    virtual int calc() => 12;
+}
+class ChildClass : BaseClass {
+    override int calc() => base.calc() + 3;
+}
+```
+Using `virtual`/`override` is required for polymorphism. Methods/fields shadowing is not allowed.
+
+You can also extend Java classes:
+```c#
+class MyList : Java<java.util.Vector> {
+    void add(int value) => base.add(value);
+    int get2(int index) => base.get(index) as int;
+}
+class FakeList : Java<java.util.Vector> {
+    override int size() => 0;
+}
+```
+
+Constructor initializers:
+```c#
+class BaseClass {
+    constructor(int value) {}
+}
+class ChildClass : BaseClass {
+    constructor(int a, int b) : base(a + b) {}
+    constructor(int a, int b, int c) : this(a, b + c) {}
+}
+```
+
 Limitations:
-- access modifiers (private/public/etc) are not supported
+- access modifiers (private/public/etc.) are not supported
+- abstract classes not supported
 - static members are not supported
-- inheritance is not supported
 - generics not supported
 
 ### Extensions
@@ -457,9 +490,9 @@ debug.write(str);
 - Java interop with parameterized types (generics) is not supported
 
 ### Comparison Table
-| C# | Scripting Language |
-|---|---|
-| `var` | `let` |
-| `(int)x` | `x as int` |
-| `x as int` | Not supported (only cast syntax exists) |
-| `x is ClassA` | `x is ClassA` |
+| C#            | Scripting Language                      |
+|---------------|-----------------------------------------|
+| `var`         | `let`                                   |
+| `(int)x`      | `x as int`                              |
+| `x as int`    | Not supported (only cast syntax exists) |
+| `x is ClassA` | `x is ClassA`                           |

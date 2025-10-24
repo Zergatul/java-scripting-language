@@ -4,6 +4,7 @@ import com.zergatul.scripting.DiagnosticMessage;
 import com.zergatul.scripting.InternalException;
 import com.zergatul.scripting.binding.nodes.BoundCompilationUnitNode;
 import com.zergatul.scripting.highlighting.SemanticToken;
+import com.zergatul.scripting.hover.HoverProvider;
 import com.zergatul.scripting.lexer.Token;
 import com.zergatul.scripting.lexer.TokenQueue;
 import com.zergatul.scripting.parser.nodes.CompilationUnitNode;
@@ -40,6 +41,10 @@ public class Comparator {
         List<Token> actualList = new ArrayList<>();
         actual.iterator().forEachRemaining(actualList::add);
         assertEquals("tokens", expected, actualList);
+    }
+
+    public void assertEquals(HoverProvider.HoverResponse expected, HoverProvider.HoverResponse actual) {
+        assertEquals("hover", expected, actual);
     }
 
     public void assertSemanticEquals(List<SemanticToken> expected, List<SemanticToken> actual) {

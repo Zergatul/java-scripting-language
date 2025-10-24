@@ -44,6 +44,11 @@ public abstract class BinderTreeVisitor {
         node.acceptChildren(this);
     }
 
+    public void explicitVisit(BoundBaseMethodInvocationExpressionNode node) {
+        visit(node);
+        node.acceptChildren(this);
+    }
+
     public void explicitVisit(BoundBinaryExpressionNode node) {
         visit(node);
         node.acceptChildren(this);
@@ -110,6 +115,11 @@ public abstract class BinderTreeVisitor {
     }
 
     public void explicitVisit(BoundConditionalExpressionNode node) {
+        visit(node);
+        node.acceptChildren(this);
+    }
+
+    public void explicitVisit(BoundConstructorInitializerNode node) {
         visit(node);
         node.acceptChildren(this);
     }
@@ -392,6 +402,7 @@ public abstract class BinderTreeVisitor {
     public void visit(BoundAssignmentStatementNode node) {}
     public void visit(BoundAugmentedAssignmentStatementNode node) {}
     public void visit(BoundAwaitExpressionNode node) {}
+    public void visit(BoundBaseMethodInvocationExpressionNode node) {}
     public void visit(BoundBinaryExpressionNode node) {}
     public void visit(BoundBinaryOperatorNode node) {}
     public void visit(BoundBlockStatementNode node) {}
@@ -403,6 +414,7 @@ public abstract class BinderTreeVisitor {
     public void visit(BoundCompilationUnitNode node) {}
     public void visit(BoundCompilationUnitMembersListNode node) {}
     public void visit(BoundConditionalExpressionNode node) {}
+    public void visit(BoundConstructorInitializerNode node) {}
     public void visit(BoundContinueStatementNode node) {}
     public void visit(BoundConversionNode node) {}
     public void visit(BoundCustomTypeNode node) {}

@@ -3,6 +3,7 @@ package com.zergatul.scripting.tests.framework;
 import com.zergatul.scripting.*;
 import com.zergatul.scripting.binding.nodes.*;
 import com.zergatul.scripting.highlighting.SemanticToken;
+import com.zergatul.scripting.hover.HoverProvider;
 import com.zergatul.scripting.lexer.*;
 import com.zergatul.scripting.parser.nodes.*;
 import com.zergatul.scripting.type.NativeInstanceMethodReference;
@@ -54,6 +55,9 @@ public class ComparatorRegistry {
                         .extract("type", SemanticToken::type)
                         .extract("modifiers", SemanticToken::modifiers)
                         .extract("range", SemanticToken::range))
+                .register(HoverProvider.HoverResponse.class, builder -> builder
+                        .extract("content", HoverProvider.HoverResponse::content)
+                        .extract("range", HoverProvider.HoverResponse::range))
                 /* Parser Nodes */
                 .register(ArgumentsListNode.class, builder -> builder
                         .extract("openParen", node -> node.openParen)
@@ -107,6 +111,8 @@ public class ComparatorRegistry {
                 .register(ClassNode.class, builder -> builder
                         .extract("keyword", node -> node.keyword)
                         .extract("name", node -> node.name)
+                        .extract("colon", node -> node.colon)
+                        .extract("baseTypeNode", node -> node.baseTypeNode)
                         .extract("openBrace", node -> node.openBrace)
                         .extract("members", node -> node.members)
                         .extract("closeBrace", node -> node.closeBrace))

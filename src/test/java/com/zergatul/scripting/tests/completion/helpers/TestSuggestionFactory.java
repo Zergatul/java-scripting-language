@@ -6,7 +6,6 @@ import com.zergatul.scripting.symbols.*;
 import com.zergatul.scripting.tests.completion.suggestions.*;
 import com.zergatul.scripting.type.MethodReference;
 import com.zergatul.scripting.type.PropertyReference;
-import com.zergatul.scripting.type.SDeclaredType;
 import com.zergatul.scripting.type.SType;
 
 import java.util.List;
@@ -36,6 +35,11 @@ public class TestSuggestionFactory implements SuggestionFactory<Suggestion> {
     @Override
     public Suggestion getThisSuggestion(SType type) {
         return new ThisSuggestion(type);
+    }
+
+    @Override
+    public Suggestion getBaseSuggestion(SType type) {
+        return new BaseSuggestion(type);
     }
 
     @Override

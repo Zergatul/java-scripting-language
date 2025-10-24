@@ -23,6 +23,11 @@ public class SFuture extends SType {
     }
 
     @Override
+    public boolean hasDefaultValue() {
+        return false;
+    }
+
+    @Override
     public void storeDefaultValue(MethodVisitor visitor) {
         throw new InternalException();
     }

@@ -104,6 +104,23 @@ public class ExtensionTests {
                         MethodSuggestion.getExtension(context, SInt.instance, "print")));
     }
 
+    @Test
+    public void arrowNameExpressionTest() {
+        assertSuggestions("""
+                class ClassA {
+                    void method() {}
+                }
+                extension(ClassA) {
+                    void aaa() => t<cursor>
+                }
+                """,
+                context -> Lists.of(
+                        expressions,
+                        new ThisSuggestion(context, "ClassA"),
+                        new ClassSuggestion(context, "ClassA"),
+                        new StaticConstantSuggestion(context, "intStorage")));
+    }
+
     private void assertSuggestions(String code, Function<TestCompletionContext, List<Suggestion>> expectedFactory) {
         CompletionTestHelper.assertSuggestions(ApiRoot.class, code, expectedFactory);
     }

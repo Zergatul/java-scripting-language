@@ -11,6 +11,8 @@ public abstract class ConstructorReference implements Invocable {
         return Optional.empty();
     }
 
+    public abstract SType getOwner();
+
     public abstract void compileInvoke(MethodVisitor visitor);
     public abstract List<MethodParameter> getParameters();
 

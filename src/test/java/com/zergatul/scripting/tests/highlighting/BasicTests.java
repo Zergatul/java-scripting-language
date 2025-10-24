@@ -338,6 +338,95 @@ public class BasicTests extends ComparatorTest {
                 highlight(code));
     }
 
+    @Test
+    public void classInheritanceTest() {
+        String code = """
+                class ClassA {}
+                class ClassB : ClassA {
+                    constructor() : base() {}
+                }
+                """;
+        comparator.assertSemanticEquals(
+                List.of(
+                        new SemanticToken(SemanticTokenType.KEYWORD, new SingleLineTextRange(1, 1, 0, 5)),
+                        new SemanticToken(SemanticTokenType.TYPE, new SingleLineTextRange(1, 7, 6, 6)),
+                        new SemanticToken(SemanticTokenType.BRACKET, new SingleLineTextRange(1, 14, 13, 1)),
+                        new SemanticToken(SemanticTokenType.BRACKET, new SingleLineTextRange(1, 15, 14, 1)),
+                        new SemanticToken(SemanticTokenType.KEYWORD, new SingleLineTextRange(2, 1, 16, 5)),
+                        new SemanticToken(SemanticTokenType.TYPE, new SingleLineTextRange(2, 7, 22, 6)),
+                        new SemanticToken(SemanticTokenType.SEPARATOR, new SingleLineTextRange(2, 14, 29, 1)),
+                        new SemanticToken(SemanticTokenType.TYPE, new SingleLineTextRange(2, 16, 31, 6)),
+                        new SemanticToken(SemanticTokenType.BRACKET, new SingleLineTextRange(2, 23, 38, 1)),
+                        new SemanticToken(SemanticTokenType.KEYWORD, new SingleLineTextRange(3, 5, 44, 11)),
+                        new SemanticToken(SemanticTokenType.BRACKET, new SingleLineTextRange(3, 16, 55, 1)),
+                        new SemanticToken(SemanticTokenType.BRACKET, new SingleLineTextRange(3, 17, 56, 1)),
+                        new SemanticToken(SemanticTokenType.SEPARATOR, new SingleLineTextRange(3, 19, 58, 1)),
+                        new SemanticToken(SemanticTokenType.KEYWORD, new SingleLineTextRange(3, 21, 60, 4)),
+                        new SemanticToken(SemanticTokenType.BRACKET, new SingleLineTextRange(3, 25, 64, 1)),
+                        new SemanticToken(SemanticTokenType.BRACKET, new SingleLineTextRange(3, 26, 65, 1)),
+                        new SemanticToken(SemanticTokenType.BRACKET, new SingleLineTextRange(3, 28, 67, 1)),
+                        new SemanticToken(SemanticTokenType.BRACKET, new SingleLineTextRange(3, 29, 68, 1)),
+                        new SemanticToken(SemanticTokenType.BRACKET, new SingleLineTextRange(4, 1, 70, 1))),
+                highlight(code));
+    }
+
+    @Test
+    public void baseMethodClassTest() {
+        String code = """
+                class ClassA {
+                    void method() {
+                        base.toString();
+                    }
+                }
+                """;
+        comparator.assertSemanticEquals(
+                List.of(
+                        new SemanticToken(SemanticTokenType.KEYWORD, new SingleLineTextRange(1, 1, 0, 5)),
+                        new SemanticToken(SemanticTokenType.TYPE, new SingleLineTextRange(1, 7, 6, 6)),
+                        new SemanticToken(SemanticTokenType.BRACKET, new SingleLineTextRange(1, 14, 13, 1)),
+                        new SemanticToken(SemanticTokenType.KEYWORD, List.of(SemanticTokenModifier.PREDEFINED_TYPE), new SingleLineTextRange(2, 5, 19, 4)),
+                        new SemanticToken(SemanticTokenType.IDENTIFIER, new SingleLineTextRange(2, 10, 24, 6)),
+                        new SemanticToken(SemanticTokenType.BRACKET, new SingleLineTextRange(2, 16, 30, 1)),
+                        new SemanticToken(SemanticTokenType.BRACKET, new SingleLineTextRange(2, 17, 31, 1)),
+                        new SemanticToken(SemanticTokenType.BRACKET, new SingleLineTextRange(2, 19, 33, 1)),
+                        new SemanticToken(SemanticTokenType.KEYWORD, new SingleLineTextRange(3, 9, 43, 4)),
+                        new SemanticToken(SemanticTokenType.SEPARATOR, new SingleLineTextRange(3, 13, 47, 1)),
+                        new SemanticToken(SemanticTokenType.METHOD, new SingleLineTextRange(3, 14, 48, 8)),
+                        new SemanticToken(SemanticTokenType.BRACKET, new SingleLineTextRange(3, 22, 56, 1)),
+                        new SemanticToken(SemanticTokenType.BRACKET, new SingleLineTextRange(3, 23, 57, 1)),
+                        new SemanticToken(SemanticTokenType.SEPARATOR, new SingleLineTextRange(3, 24, 58, 1)),
+                        new SemanticToken(SemanticTokenType.BRACKET, new SingleLineTextRange(4, 5, 64, 1)),
+                        new SemanticToken(SemanticTokenType.BRACKET, new SingleLineTextRange(5, 1, 66, 1))),
+                highlight(code));
+    }
+
+    @Test
+    public void extensionBlockTest() {
+        String code = """
+                extension(int) {
+                    int aaa() => this + 10;
+                }
+                """;
+        comparator.assertSemanticEquals(
+                List.of(
+                        new SemanticToken(SemanticTokenType.KEYWORD, new SingleLineTextRange(1, 1, 0, 9)),
+                        new SemanticToken(SemanticTokenType.BRACKET, new SingleLineTextRange(1, 10, 9, 1)),
+                        new SemanticToken(SemanticTokenType.KEYWORD, List.of(SemanticTokenModifier.PREDEFINED_TYPE), new SingleLineTextRange(1, 11, 10, 3)),
+                        new SemanticToken(SemanticTokenType.BRACKET, new SingleLineTextRange(1, 14, 13, 1)),
+                        new SemanticToken(SemanticTokenType.BRACKET, new SingleLineTextRange(1, 16, 15, 1)),
+                        new SemanticToken(SemanticTokenType.KEYWORD, List.of(SemanticTokenModifier.PREDEFINED_TYPE), new SingleLineTextRange(2, 5, 21, 3)),
+                        new SemanticToken(SemanticTokenType.IDENTIFIER, new SingleLineTextRange(2, 9, 25, 3)),
+                        new SemanticToken(SemanticTokenType.BRACKET, new SingleLineTextRange(2, 12, 28, 1)),
+                        new SemanticToken(SemanticTokenType.BRACKET, new SingleLineTextRange(2, 13, 29, 1)),
+                        new SemanticToken(SemanticTokenType.OPERATOR, new SingleLineTextRange(2, 15, 31, 2)),
+                        new SemanticToken(SemanticTokenType.KEYWORD, new SingleLineTextRange(2, 18, 34, 4)),
+                        new SemanticToken(SemanticTokenType.OPERATOR, new SingleLineTextRange(2, 23, 39, 1)),
+                        new SemanticToken(SemanticTokenType.NUMBER, new SingleLineTextRange(2, 25, 41, 2)),
+                        new SemanticToken(SemanticTokenType.SEPARATOR, new SingleLineTextRange(2, 27, 43, 1)),
+                        new SemanticToken(SemanticTokenType.BRACKET, new SingleLineTextRange(3, 1, 45, 1))),
+                highlight(code));
+    }
+
     protected List<SemanticToken> highlight(String code) {
         LexerOutput lexerOutput = new Lexer(new LexerInput(code)).lex();
         ParserOutput parserOutput = new Parser(lexerOutput).parse();

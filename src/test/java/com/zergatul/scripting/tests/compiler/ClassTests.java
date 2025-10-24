@@ -683,6 +683,18 @@ public class ClassTests extends ComparatorTest {
         Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(28));
     }
 
+    @Test
+    public void defaultValueTest() {
+        String code = """
+                class Class {}
+                Class c;
+                """;
+
+        comparator.assertEquals(List.of(
+                        new DiagnosticMessage(BinderErrors.NoDefaultValue, new SingleLineTextRange(2, 1, 15, 8), "Class")),
+                getDiagnostics(ApiRoot.class, code));
+    }
+
     public static class ApiRoot {
         public static IntStorage intStorage;
         public static StringStorage stringStorage;

@@ -16,7 +16,15 @@ public class SearchEntry {
         if (node.getNodeType() == BoundNodeType.NAME_EXPRESSION) {
             if (parent.node.getNodeType() == BoundNodeType.EXPRESSION_STATEMENT) {
                 if (node.getRange().containsOrEnds(line, column)) {
-                    return true;
+                    // check if we are inside simple statement after arrow
+                    boolean isSimpleStatement = switch (parent.parent.node.getNodeType()) {
+                        case CLASS_CONSTRUCTOR -> ((BoundClassConstructorNode) parent.parent.node).syntaxNode.arrow != null;
+                        case CLASS_METHOD -> ((BoundClassMethodNode) parent.parent.node).syntaxNode.arrow != null;
+                        case EXTENSION_METHOD -> ((BoundExtensionMethodNode) parent.parent.node).syntaxNode.arrow != null;
+                        case LAMBDA_EXPRESSION -> true;
+                        default -> false;
+                    };
+                    return !isSimpleStatement;
                 }
             }
         }

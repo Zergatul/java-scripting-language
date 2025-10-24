@@ -584,7 +584,11 @@ public class Lexer {
             case "class" -> TokenType.CLASS;
             case "constructor" -> TokenType.CONSTRUCTOR;
             case "this" -> TokenType.THIS;
+            case "base" -> TokenType.BASE;
             case "extension" -> TokenType.EXTENSION;
+            case "abstract" -> TokenType.ABSTRACT;
+            case "virtual" -> TokenType.VIRTUAL;
+            case "override" -> TokenType.OVERRIDE;
             default -> null;
         };
         TextRange range = getCurrentTokenRange();

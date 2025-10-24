@@ -42,4 +42,6 @@ public class ParserErrors {
     public static final ErrorCode OpenNewExpression = new ErrorCode("C037", "A new expression requires type");
     public static final ErrorCode ExtensionOnlyMethodsAllowed = new ErrorCode("C038", "Only methods are allowed inside extension block");
     public static final ErrorCode ExtensionMethodExpected = new ErrorCode("C039", "Extension method expected, found '%s'");
+    public static final ErrorCode DuplicateModifier = new ErrorCode("C040", "Duplicate '%s' modifier");
+    public static final ErrorCode InvalidConstructorInitializer = new ErrorCode("C041", "'base' or 'this' expected");
 }

@@ -43,6 +43,11 @@ public class SInt8 extends SPredefinedType {
     }
 
     @Override
+    public boolean hasDefaultValue() {
+        return true;
+    }
+
+    @Override
     public void storeDefaultValue(MethodVisitor visitor) {
         visitor.visitInsn(ICONST_0);
     }
@@ -312,7 +317,7 @@ public class SInt8 extends SPredefinedType {
         public void apply(MethodVisitor visitor) {}
     });
 
-    private static final Lazy<CastOperation> TO_OBJECT = new Lazy<>(() -> new CastOperation(SType.fromJavaType(Object.class)) {
+    private static final Lazy<CastOperation> TO_OBJECT = new Lazy<>(() -> new CastOperation(SJavaObject.instance) {
         @Override
         public void apply(MethodVisitor visitor) {
             SInt8.instance.compileBoxing(visitor);

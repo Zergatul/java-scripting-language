@@ -54,6 +54,18 @@ public class BinderErrors {
     public static final ErrorCode ArgumentCountMismatch2 = new ErrorCode("B050", "Function expects %d arguments");
     public static final ErrorCode CannotUseInOperator = new ErrorCode("B051", "Cannot use 'in' operator, since type '%s' does not have defined method 'contains' with parameter of type '%s' and return type 'boolean'");
     public static final ErrorCode ExtensionMethodAlreadyDeclared = new ErrorCode("B052", "Extension method with the same signature already declared");
+    public static final ErrorCode BaseClassNoParameterlessConstructor = new ErrorCode("B053", "Base class does not have parameterless constructor");
+    public static final ErrorCode BaseClassAlreadyHasMember = new ErrorCode("B054", "Base class has member with the same name.");
+    public static final ErrorCode MethodOverrideReturnMismatch = new ErrorCode("B055", "Base class has method with the same name and parameters, but different return type");
+    public static final ErrorCode OverrideMissing = new ErrorCode("B056", "Method with the same signature is defined in the base class. Did you miss 'override'?");
+    public static final ErrorCode NonVirtualOverride = new ErrorCode("B057", "Only 'abstract' or 'virtual' methods can have 'override'. Did you miss 'virtual' in the base class?");
+    public static final ErrorCode BaseInvalidContext = new ErrorCode("B058", "'base' is invalid in this context");
+    public static final ErrorCode CannotInstantiateAbstractClass = new ErrorCode("B059", "Cannot instantiate abstract class");
+    public static final ErrorCode BaseInvalidUse = new ErrorCode("B060", "'base' is only allowed for method calls");
+    public static final ErrorCode CannotOverrideFinal = new ErrorCode("B061", "Cannot override final method");
+    public static final ErrorCode NoConstructors = new ErrorCode("B062", "No constructors exist for '%s'");
+    public static final ErrorCode ClassCircularInheritance = new ErrorCode("B063", "Class circular inheritance");
+    public static final ErrorCode NoDefaultValue = new ErrorCode("B064", "Type '%s' does not have default value, please assign value for this variable");
 
     public static final ErrorCode InternalError = new ErrorCode("B999", "Internal error: %s");
 }

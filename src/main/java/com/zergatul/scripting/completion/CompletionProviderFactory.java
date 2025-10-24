@@ -16,6 +16,7 @@ public class CompletionProviderFactory<T> {
                 new UnitMemberCompletionProvider<>(factory),
                 new StaticConstantsCompletionProvider<>(factory),
                 new ConstructorCompletionProvider<>(factory),
+                new ModifiersCompletionProvider<>(factory),
                 new AsyncCompletionProvider<>(factory),
                 new AwaitCompletionProvider<>(factory),
                 new TypesCompletionProvider<>(factory),
@@ -33,7 +34,9 @@ public class CompletionProviderFactory<T> {
                 new LoopVariablesCompletionProvider<>(factory),
                 new ThisCompletionProvider<>(factory),
                 new ClassMembersCompletionProvider<>(factory),
-                new BasicExpressionStartCompletionProvider<>(factory));
+                new BasicExpressionStartCompletionProvider<>(factory),
+                new BaseClassCompletionProvider<>(factory),
+                new BaseMethodsCompletionProvider<>(factory));
     }
 
     public List<T> getSuggestions(CompilationParameters parameters, BinderOutput output, int line, int column) {

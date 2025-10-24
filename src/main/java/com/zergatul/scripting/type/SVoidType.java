@@ -18,6 +18,11 @@ public class SVoidType extends SPredefinedType {
     }
 
     @Override
+    public boolean hasDefaultValue() {
+        throw new IllegalStateException();
+    }
+
+    @Override
     public void storeDefaultValue(MethodVisitor visitor) {
         throw new IllegalStateException();
     }

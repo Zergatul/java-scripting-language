@@ -13,6 +13,7 @@ public class BoundClassConstructorNode extends BoundClassMemberNode {
     public final ClassConstructorNode syntaxNode;
     public final SMethodFunction functionType;
     public final BoundParameterListNode parameters;
+    public final BoundConstructorInitializerNode initializer;
     public final BoundStatementNode body;
     public final List<LiftedVariable> lifted;
 
@@ -20,16 +21,18 @@ public class BoundClassConstructorNode extends BoundClassMemberNode {
             ClassConstructorNode node,
             SMethodFunction functionType,
             BoundParameterListNode parameters,
+            BoundConstructorInitializerNode initializer,
             BoundStatementNode body,
             List<LiftedVariable> lifted
     ) {
-        this(node, functionType, parameters, body, lifted, node.getRange());
+        this(node, functionType, parameters, initializer, body, lifted, node.getRange());
     }
 
     public BoundClassConstructorNode(
             ClassConstructorNode node,
             SMethodFunction functionType,
             BoundParameterListNode parameters,
+            BoundConstructorInitializerNode initializer,
             BoundStatementNode body,
             List<LiftedVariable> lifted,
             TextRange range
@@ -38,6 +41,7 @@ public class BoundClassConstructorNode extends BoundClassMemberNode {
         this.syntaxNode = node;
         this.functionType = functionType;
         this.parameters = parameters;
+        this.initializer = initializer;
         this.body = body;
         this.lifted = lifted;
     }
@@ -50,11 +54,16 @@ public class BoundClassConstructorNode extends BoundClassMemberNode {
     @Override
     public void acceptChildren(BinderTreeVisitor visitor) {
         parameters.accept(visitor);
+        initializer.accept(visitor);
         body.accept(visitor);
     }
 
     @Override
     public List<BoundNode> getChildren() {
-        return List.of(parameters, body);
+        if (initializer.getRange() != TextRange.MISSING) {
+            return List.of(parameters, initializer, body);
+        } else {
+            return List.of(parameters, body);
+        }
     }
 }

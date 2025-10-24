@@ -18,6 +18,11 @@ public class NativeConstructorReference extends ConstructorReference {
         this.constructor = constructor;
     }
 
+    @Override
+    public SType getOwner() {
+        return SType.fromJavaType(constructor.getDeclaringClass());
+    }
+
     public void compileInvoke(MethodVisitor visitor) {
         visitor.visitMethodInsn(
                 INVOKESPECIAL,

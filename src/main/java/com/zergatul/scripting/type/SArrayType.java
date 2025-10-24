@@ -7,6 +7,7 @@ import com.zergatul.scripting.parser.BinaryOperator;
 import com.zergatul.scripting.runtime.ArrayUtils;
 import com.zergatul.scripting.type.operation.BinaryOperation;
 import com.zergatul.scripting.type.operation.IndexOperation;
+import org.jspecify.annotations.Nullable;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Type;
 
@@ -62,6 +63,11 @@ public class SArrayType extends SType {
     }
 
     @Override
+    public boolean hasDefaultValue() {
+        return true;
+    }
+
+    @Override
     public void storeDefaultValue(MethodVisitor visitor) {
         visitor.visitInsn(ICONST_0);
         if (underlying.isReference()) {
@@ -77,6 +83,7 @@ public class SArrayType extends SType {
     }
 
     @Override
+    @Nullable
     public PropertyReference getInstanceProperty(String name) {
         return switch (name) {
             case "length" -> PROP_LENGTH.value();
@@ -90,6 +97,7 @@ public class SArrayType extends SType {
     }
 
     @Override
+    @Nullable
     public IndexOperation index(SType type) {
         if (type == SInt.instance) {
             return new ArrayIndexOperation(getElementsType());
@@ -113,6 +121,7 @@ public class SArrayType extends SType {
     }
 
     @Override
+    @Nullable
     public BinaryOperation add(SType other) {
         if (other.equals(underlying)) {
             return new AddElementOperation(this);

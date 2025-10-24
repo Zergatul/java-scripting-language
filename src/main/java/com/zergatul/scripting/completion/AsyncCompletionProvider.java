@@ -20,9 +20,6 @@ public class AsyncCompletionProvider<T> extends AbstractCompletionProvider<T> {
         if (context.canUnitMember()) {
             return List.of(factory.getKeywordSuggestion(TokenType.ASYNC));
         }
-        if (context.entry != null && context.entry.node.getNodeType() == BoundNodeType.CLASS_DECLARATION) {
-            return List.of(factory.getKeywordSuggestion(TokenType.ASYNC));
-        }
         if (context.entry != null && context.entry.node.getNodeType() == BoundNodeType.EXTENSION_DECLARATION) {
             BoundExtensionNode extension = (BoundExtensionNode) context.entry.node;
             if (TextRange.isBetween(context.line, context.column, extension.syntaxNode.openBrace, extension.syntaxNode.closeBrace)) {

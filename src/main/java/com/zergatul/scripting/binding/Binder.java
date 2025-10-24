@@ -9,6 +9,7 @@ import com.zergatul.scripting.parser.AssignmentOperator;
 import com.zergatul.scripting.binding.nodes.BoundNodeType;
 import com.zergatul.scripting.parser.BinaryOperator;
 import com.zergatul.scripting.parser.ParserOutput;
+import com.zergatul.scripting.parser.SyntaxFactory;
 import com.zergatul.scripting.parser.nodes.*;
 import com.zergatul.scripting.symbols.*;
 import com.zergatul.scripting.type.*;
@@ -147,8 +148,21 @@ public class Binder {
             });
         }
 
+        // add default constructor if we have zero constructors defined
+        ConstructorReference defaultBaseConstructor = null;
+        if (members.stream().noneMatch(m -> m.getNodeType() == BoundNodeType.CLASS_CONSTRUCTOR)) {
+            SType baseType = declaration.getDeclaredType().getActualBaseType();
+            if (baseType != SUnknown.instance) {
+                defaultBaseConstructor = baseType.getConstructors().stream().filter(c -> c.getParameters().isEmpty()).findFirst().orElse(null);
+                if (defaultBaseConstructor == null) {
+                    addDiagnostic(BinderErrors.BaseClassNoParameterlessConstructor, classNode.name);
+                }
+            }
+        }
+
         popScope();
-        return new BoundClassNode(classNode, name, members);
+
+        return new BoundClassNode(classNode, name, declaration.getBaseTypeNode(), members, defaultBaseConstructor);
     }
 
     private BoundClassFieldNode bindClassField(ClassDeclaration classDeclaration, ClassFieldNode fieldNode) {
@@ -162,17 +176,75 @@ public class Binder {
         ClassConstructorDeclaration constructorDeclaration = classDeclaration.getConstructorDeclaration(constructorNode);
 
         pushConstructorScope();
+
         addParametersToContext(constructorDeclaration.getParameters());
+        BoundConstructorInitializerNode initializer = bindConstructorInitializer(constructorNode);
         BoundStatementNode body = bindStatement(constructorNode.body);
         List<LiftedVariable> lifted = context.getLifted();
+
         popScope();
 
         return new BoundClassConstructorNode(
                 constructorNode,
                 (SMethodFunction) constructorDeclaration.getSymbolRef().get().getType(),
                 constructorDeclaration.getParameters(),
+                initializer,
                 body,
                 lifted);
+    }
+
+    private BoundConstructorInitializerNode bindConstructorInitializer(ClassConstructorNode constructorNode) {
+        if (constructorNode.initializer != null) {
+            boolean isBaseCall;
+            if (constructorNode.initializer.keyword.is(TokenType.THIS)) {
+                isBaseCall = false;
+            } else if (constructorNode.initializer.keyword.is(TokenType.BASE)) {
+                isBaseCall = true;
+            } else {
+                throw new InternalException();
+            }
+
+            SType constructorOwner = isBaseCall ? context.getClassType().getActualBaseType() : context.getClassType();
+            BindInvocableArgsResult<ConstructorReference> result = bindInvocableArguments(
+                    constructorNode.initializer.arguments,
+                    constructorOwner.getConstructors(),
+                    UnknownConstructorReference.instance);
+
+            if (result.noInvocables) {
+                addDiagnostic(
+                        BinderErrors.NoConstructors,
+                        constructorNode.initializer,
+                        constructorOwner.toString());
+            } else if (result.noOverload) {
+                addDiagnostic(
+                        BinderErrors.NoOverloadedConstructors,
+                        constructorNode.initializer,
+                        constructorOwner.toString(), constructorNode.initializer.arguments.arguments.size());
+            }
+
+            return new BoundConstructorInitializerNode(
+                    constructorNode.initializer,
+                    result.argumentsListNode,
+                    result.invocable);
+        } else {
+            SType baseType = context.getClassType().getActualBaseType();
+            ConstructorReference constructor = baseType.getConstructors().stream()
+                    .filter(c -> c.getParameters().isEmpty())
+                    .findFirst()
+                    .orElse(null);
+            if (constructor != null) {
+                return new BoundConstructorInitializerNode(
+                        SyntaxFactory.missingConstructorInitializer(),
+                        new BoundArgumentsListNode(SyntaxFactory.missingArgumentList(), List.of()),
+                        constructor);
+            } else {
+                addDiagnostic(BinderErrors.BaseClassNoParameterlessConstructor, constructorNode.keyword);
+                return new BoundConstructorInitializerNode(
+                        SyntaxFactory.missingConstructorInitializer(),
+                        new BoundArgumentsListNode(SyntaxFactory.missingArgumentList(), List.of()),
+                        UnknownConstructorReference.instance);
+            }
+        }
     }
 
     private BoundClassMethodNode bindClassMethod(ClassDeclaration classDeclaration, ClassMethodNode methodNode) {
@@ -402,6 +474,9 @@ public class Binder {
             if (variableDeclaration.expression != null) {
                 expression = convert(bindExpression(variableDeclaration.expression), variableType.type);
             } else {
+                if (!variableType.type.hasDefaultValue()) {
+                    addDiagnostic(BinderErrors.NoDefaultValue, variableDeclaration, variableType.type.toString());
+                }
                 expression = null;
             }
         }
@@ -614,6 +689,7 @@ public class Binder {
             case INVOCATION_EXPRESSION -> bindInvocationExpression((InvocationExpressionNode) expression);
             case NAME_EXPRESSION -> bindNameExpression((NameExpressionNode) expression);
             case THIS_EXPRESSION -> bindThisExpression((ThisExpressionNode) expression);
+            case BASE_EXPRESSION -> bindBaseExpression((BaseExpressionNode) expression);
             case STATIC_REFERENCE -> bindStaticReferenceExpression((StaticReferenceNode) expression);
             case MEMBER_ACCESS_EXPRESSION -> bindMemberAccessExpression((MemberAccessExpressionNode) expression);
             case REF_ARGUMENT_EXPRESSION -> bindRefArgumentExpression((RefArgumentExpressionNode) expression);
@@ -841,6 +917,10 @@ public class Binder {
     }
 
     private BoundExpressionNode bindInvocationExpression(InvocationExpressionNode invocation) {
+        if (invocation.callee instanceof MemberAccessExpressionNode memberAccessNode && memberAccessNode.callee.is(ParserNodeType.BASE_EXPRESSION)) {
+            return bindBaseMethodCall(invocation);
+        }
+
         BoundExpressionNode callee = bindExpression(invocation.callee);
 
         if (callee.getNodeType() == BoundNodeType.METHOD_GROUP) {
@@ -915,6 +995,56 @@ public class Binder {
         }
 
         return new BoundInvalidExpressionNode(List.of(callee), List.of(invocation.arguments), invocation.getRange());
+    }
+
+    private BoundExpressionNode bindBaseMethodCall(InvocationExpressionNode invocation) {
+        MemberAccessExpressionNode memberAccessNode = (MemberAccessExpressionNode) invocation.callee;
+        BaseExpressionNode baseNode = (BaseExpressionNode) memberAccessNode.callee;
+
+        if (!context.isClassMethod() || !context.isDeclaredClass()) {
+            addDiagnostic(BinderErrors.BaseInvalidContext, baseNode);
+            // TODO: add parameters
+            return new BoundInvalidExpressionNode(List.of(), List.of(invocation), invocation.getRange());
+        }
+
+        String methodName = memberAccessNode.name.value;
+        SType actualBaseType = context.getClassType().getActualBaseType();
+
+        // intentionally skip extension methods
+        List<MethodReference> candidates = actualBaseType.getInstanceMethods().stream()
+                .filter(m -> m.getName().equals(methodName))
+                .toList();
+        if (candidates.isEmpty()) {
+            addDiagnostic(
+                    BinderErrors.MemberDoesNotExist,
+                    memberAccessNode.name,
+                    actualBaseType.toString(), methodName);
+            // TODO: add parameters
+            return new BoundInvalidExpressionNode(List.of(), List.of(invocation), invocation.getRange());
+        }
+
+        BindInvocableArgsResult<MethodReference> result = bindInvocableArguments(
+                invocation.arguments,
+                candidates,
+                UnknownMethodReference.instance);
+        if (result.noInvocables) {
+            addDiagnostic(
+                    BinderErrors.MemberDoesNotExist,
+                    memberAccessNode.name,
+                    actualBaseType.toString(), methodName);
+        } else if (result.noOverload) {
+            addDiagnostic(
+                    BinderErrors.NoOverloadedMethods,
+                    memberAccessNode,
+                    methodName, invocation.arguments.arguments.size());
+        }
+
+        BoundMethodNode methodNode = new BoundMethodNode(memberAccessNode.name, result.invocable);
+        return new BoundBaseMethodInvocationExpressionNode(
+                invocation,
+                methodNode,
+                result.argumentsListNode,
+                context.releaseRefVariables());
     }
 
     private BoundExpressionNode bindUnconvertedLambda(BoundUnconvertedLambdaExpressionNode node, SFunction target) {
@@ -998,7 +1128,7 @@ public class Binder {
             }
         }
 
-        if (context.isClassMethod()) {
+        if (context.isClassMethod() && !context.isExtension()) {
             PropertyReference property = context.getClassType().getInstanceProperty(name.value);
             if (property != null) {
                 TextRange ephemeralRange = name.getRange().getStart();
@@ -1066,6 +1196,11 @@ public class Binder {
         }
     }
 
+    private BoundExpressionNode bindBaseExpression(BaseExpressionNode expression) {
+        addDiagnostic(BinderErrors.BaseInvalidUse, expression);
+        return new BoundInvalidExpressionNode(List.of(), List.of(expression), expression.getRange());
+    }
+
     private BoundStaticReferenceExpression bindStaticReferenceExpression(StaticReferenceNode node) {
         BoundTypeNode typeNode = bindType(node.typeNode);
         return new BoundStaticReferenceExpression(node, typeNode, new SStaticTypeReference(typeNode.type));
@@ -1094,6 +1229,12 @@ public class Binder {
 
     private BoundObjectCreationExpressionNode bindObjectCreationExpressionNode(ObjectCreationExpressionNode expression) {
         BoundTypeNode typeNode = bindType(expression.typeNode);
+
+        if (typeNode.type.isAbstract()) {
+            addDiagnostic(
+                    BinderErrors.CannotInstantiateAbstractClass,
+                    expression);
+        }
 
         BindInvocableArgsResult<ConstructorReference> result = bindInvocableArguments(
                 expression.arguments,
@@ -1640,29 +1781,47 @@ public class Binder {
     private BoundReturnStatementNode rewriteAsReturnStatement(ExpressionStatementNode expressionStatement, SType returnType) {
         BoundExpressionNode expression = bindExpression(expressionStatement.expression);
         BoundExpressionNode converted = convert(expression, returnType);
+        Token semicolon = expressionStatement.semicolon;
+        if (semicolon == null) {
+            semicolon = new Token(TokenType.SEMICOLON, expression.getRange().getEnd());
+        }
         ReturnStatementNode syntaxNode = new ReturnStatementNode(
                 new Token(TokenType.RETURN, expression.getRange().getStart()),
                 new InvalidExpressionNode(expression.getRange().getStart()),
-                new Token(TokenType.SEMICOLON, expression.getRange().getEnd()));
+                semicolon);
         return new BoundReturnStatementNode(syntaxNode, converted, expressionStatement.getRange());
     }
 
     private void buildDeclarationTable(CompilationUnitNode unit) {
-        // 1. process classes
+        // process classes
         for (CompilationUnitMemberNode member : unit.members.members) {
             if (member.is(ParserNodeType.CLASS_DECLARATION)) {
                 buildClassDeclaration((ClassNode) member);
             }
         }
 
-        // 2. process extensions
+        // process inheritance
+        declarationTable.forEachClassDeclaration((classNode, classDeclaration) -> {
+            if (classNode.baseTypeNode != null) {
+                classDeclaration.setBaseType(bindType(classNode.baseTypeNode));
+
+                SType baseType = classDeclaration.getDeclaredType().getBaseType();
+                assert baseType != null;
+                if (baseType.isInstanceOf(classDeclaration.getDeclaredType())) {
+                    classDeclaration.getDeclaredType().clearBaseType();
+                    addDiagnostic(BinderErrors.ClassCircularInheritance, classNode.baseTypeNode);
+                }
+            }
+        });
+
+        // process extensions
         for (CompilationUnitMemberNode member : unit.members.members) {
             if (member.is(ParserNodeType.EXTENSION_DECLARATION)) {
                 buildExtensionDeclaration((ExtensionNode) member);
             }
         }
 
-        // 3. process static variables and functions
+        // process static variables and functions
         for (CompilationUnitMemberNode member : unit.members.members) {
             switch (member.getNodeType()) {
                 case CLASS_DECLARATION, EXTENSION_DECLARATION -> {}
@@ -1672,8 +1831,8 @@ public class Binder {
             }
         }
 
-        // 4. process class members
-        declarationTable.forEachClassDeclaration(((classNode, classDeclaration) -> {
+        // process class members
+        declarationTable.forEachClassDeclaration((classNode, classDeclaration) -> {
             for (ClassMemberNode classMember : classNode.members) {
                 switch (classMember.getNodeType()) {
                     case CLASS_FIELD -> buildClassFieldDeclaration(classDeclaration, (ClassFieldNode) classMember);
@@ -1682,14 +1841,14 @@ public class Binder {
                     default -> throw new InternalException();
                 }
             }
-        }));
+        });
 
-        // 5. process extension methods
-        declarationTable.forEachExtension(((extensionNode, extensionDeclaration) -> {
+        // process extension methods
+        declarationTable.forEachExtension((extensionNode, extensionDeclaration) -> {
             for (ClassMethodNode methodNode : extensionNode.methods) {
                 buildExtensionMethodDeclaration(extensionDeclaration, methodNode);
             }
-        }));
+        });
     }
 
     private void buildClassDeclaration(ClassNode classNode) {
@@ -1757,6 +1916,14 @@ public class Binder {
             hasError = true;
             addDiagnostic(BinderErrors.MemberAlreadyDeclared, classFieldNode.name, fieldName);
         } else {
+            SType baseType = classDeclaration.getDeclaredType().getBaseType();
+            if (baseType != null && baseType.getInstanceProperty(fieldName) != null) {
+                addDiagnostic(BinderErrors.BaseClassAlreadyHasMember, classFieldNode.name);
+            }
+            if (baseType != null && baseType.getInstanceMethods().stream().anyMatch(m -> m.getName().equals(fieldName))) {
+                addDiagnostic(BinderErrors.BaseClassAlreadyHasMember, classFieldNode.name);
+            }
+
             classDeclaration.getDeclaredType().addField(typeNode.type, fieldName);
         }
 
@@ -1796,7 +1963,29 @@ public class Binder {
             hasError = true;
             addDiagnostic(BinderErrors.MethodAlreadyDeclared, methodNode.name);
         } else {
-            classDeclaration.getDeclaredType().addMethod(functionType, methodName);
+            SType baseType = classDeclaration.getDeclaredType().getActualBaseType();
+            if (baseType.getInstanceProperty(methodName) != null) {
+                addDiagnostic(BinderErrors.BaseClassAlreadyHasMember, methodNode.name);
+            }
+            MethodReference overrideCandidateBaseMethod = baseType.getInstanceMethods().stream()
+                    .filter(m -> m.getName().equals(methodName) && m.parametersMatch(functionType))
+                    .findFirst()
+                    .orElse(null);
+            if (overrideCandidateBaseMethod != null) {
+                if (!overrideCandidateBaseMethod.getReturn().equals(actualReturnType)) {
+                    addDiagnostic(BinderErrors.MethodOverrideReturnMismatch, methodNode.name);
+                } else {
+                    if (!methodNode.modifiers.isOverride()) {
+                        addDiagnostic(BinderErrors.OverrideMissing, methodNode.name);
+                    } else if (!overrideCandidateBaseMethod.isVirtual()) {
+                        addDiagnostic(BinderErrors.NonVirtualOverride, methodNode.name);
+                    } else if (overrideCandidateBaseMethod.isFinal()) {
+                        addDiagnostic(BinderErrors.CannotOverrideFinal, methodNode.name);
+                    }
+                }
+            }
+
+            classDeclaration.getDeclaredType().addMethod(methodNode.modifiers.toMemberModifiers(), functionType, methodName);
         }
 
         SymbolRef symbolRef = new ImmutableSymbolRef(new MethodSymbol(methodName, functionType, methodNode.name.getRange()));

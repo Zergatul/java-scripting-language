@@ -19,7 +19,6 @@ public class ParametersCompletionProvider<T> extends AbstractCompletionProvider<
             return List.of();
         }
 
-
         List<T> suggestions = new ArrayList<>();
         for (CompletionContext current = context; current != null; current = current.up()) {
             if (current.entry == null) {

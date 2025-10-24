@@ -33,7 +33,9 @@ public class ThisCompletionProvider<T> extends AbstractCompletionProvider<T> {
                     }
                     BoundClassNode classNode = (BoundClassNode) current.entry.node;
                     ClassSymbol symbol = classNode.name.symbolRef.asClass();
-                    return List.of(factory.getThisSuggestion(symbol.getDeclaredType()));
+                    return List.of(
+                            factory.getThisSuggestion(symbol.getDeclaredType()),
+                            factory.getBaseSuggestion(symbol.getDeclaredType().getActualBaseType()));
                 }
                 if (nodeType == BoundNodeType.EXTENSION_METHOD) {
                     current = current.up();

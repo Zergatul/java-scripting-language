@@ -35,6 +35,8 @@ public class ClassTests extends ParserTestBase {
                                                 .withTrailingTrivia(new Trivia(TokenType.WHITESPACE, new SingleLineTextRange(1, 6, 5, 1))),
                                         new ValueToken(TokenType.IDENTIFIER, "Region", new SingleLineTextRange(1, 7, 6, 6))
                                                 .withTrailingTrivia(new Trivia(TokenType.WHITESPACE, new SingleLineTextRange(1, 13, 12, 1))),
+                                        null,
+                                        null,
                                         new Token(TokenType.LEFT_CURLY_BRACKET, new SingleLineTextRange(1, 14, 13, 1))
                                                 .withTrailingTrivia(new Trivia(TokenType.LINE_BREAK, new MultiLineTextRange(1, 15, 2, 1, 14, 1))),
                                         List.of(
@@ -85,6 +87,8 @@ public class ClassTests extends ParserTestBase {
                                                 .withTrailingTrivia(new Trivia(TokenType.WHITESPACE, new SingleLineTextRange(1, 6, 5, 1))),
                                         new ValueToken(TokenType.IDENTIFIER, "Region", new SingleLineTextRange(1, 7, 6, 6))
                                                 .withTrailingTrivia(new Trivia(TokenType.WHITESPACE, new SingleLineTextRange(1, 13, 12, 1))),
+                                        null,
+                                        null,
                                         new Token(TokenType.LEFT_CURLY_BRACKET, new SingleLineTextRange(1, 14, 13, 1))
                                                 .withTrailingTrivia(new Trivia(TokenType.LINE_BREAK, new MultiLineTextRange(1, 15, 2, 1, 14, 1))),
                                         List.of(
@@ -111,5 +115,19 @@ public class ClassTests extends ParserTestBase {
                         new StatementsListNode(List.of(), new SingleLineTextRange(3, 2, 34, 0)),
                         new EndOfFileToken(new SingleLineTextRange(4, 1, 35, 0))),
                 result.unit());
+    }
+
+    @Test
+    public void duplicateModifierTest() {
+        ParserOutput result = parse("""
+                class Class {
+                    async async void method() {}
+                }
+                """);
+
+        comparator.assertEquals(
+                List.of(
+                        new DiagnosticMessage(ParserErrors.DuplicateModifier, new SingleLineTextRange(2, 11, 24, 5), "async")),
+                result.diagnostics());
     }
 }

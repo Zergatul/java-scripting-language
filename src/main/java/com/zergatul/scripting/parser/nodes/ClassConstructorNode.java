@@ -13,13 +13,16 @@ public class ClassConstructorNode extends ClassMemberNode {
 
     public final Token keyword;
     public final ParameterListNode parameters;
-    @Nullable
-    public final Token arrow;
+    @Nullable public final Token colon;
+    @Nullable public final ConstructorInitializerNode initializer;
+    @Nullable public final Token arrow;
     public final StatementNode body;
 
     public ClassConstructorNode(
             Token keyword,
             ParameterListNode parameters,
+            @Nullable Token colon,
+            @Nullable ConstructorInitializerNode initializer,
             @Nullable Token arrow,
             StatementNode body,
             TextRange range
@@ -27,6 +30,8 @@ public class ClassConstructorNode extends ClassMemberNode {
         super(ParserNodeType.CLASS_CONSTRUCTOR, range);
         this.keyword = keyword;
         this.parameters = parameters;
+        this.colon = colon;
+        this.initializer = initializer;
         this.arrow = arrow;
         this.body = body;
     }
@@ -39,6 +44,9 @@ public class ClassConstructorNode extends ClassMemberNode {
     @Override
     public void acceptChildren(ParserTreeVisitor visitor) {
         parameters.accept(visitor);
+        if (initializer != null) {
+            initializer.accept(visitor);
+        }
         body.accept(visitor);
     }
 
@@ -47,6 +55,12 @@ public class ClassConstructorNode extends ClassMemberNode {
         List<Locatable> nodes = new ArrayList<>();
         nodes.add(keyword);
         nodes.add(parameters);
+        if (colon != null) {
+            nodes.add(colon);
+        }
+        if (initializer != null) {
+            nodes.add(initializer);
+        }
         if (arrow != null) {
             nodes.add(arrow);
         }

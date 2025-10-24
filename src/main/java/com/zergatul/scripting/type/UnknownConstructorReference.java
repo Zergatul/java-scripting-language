@@ -12,6 +12,11 @@ public class UnknownConstructorReference extends ConstructorReference {
     private UnknownConstructorReference() {}
 
     @Override
+    public SType getOwner() {
+        throw new InternalException();
+    }
+
+    @Override
     public void compileInvoke(MethodVisitor visitor) {
         throw new InternalException();
     }

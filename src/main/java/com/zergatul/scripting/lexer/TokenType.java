@@ -92,5 +92,9 @@ public enum TokenType {
     CLASS,
     CONSTRUCTOR,
     THIS,
+    BASE,
     EXTENSION,
+    ABSTRACT,
+    VIRTUAL,
+    OVERRIDE,
 }

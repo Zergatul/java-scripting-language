@@ -8,11 +8,11 @@ import com.zergatul.scripting.compiler.BufferedMethodVisitor;
 import com.zergatul.scripting.compiler.CompilerContext;
 import com.zergatul.scripting.parser.BinaryOperator;
 import com.zergatul.scripting.type.operation.BinaryOperation;
+import org.jspecify.annotations.Nullable;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 
-import java.lang.reflect.Field;
-import java.lang.reflect.Modifier;
+import java.lang.reflect.*;
 import java.util.Arrays;
 import java.util.List;
 
@@ -29,6 +29,16 @@ public class SClassType extends SType {
     @Override
     public Class<?> getJavaClass() {
         return this.clazz;
+    }
+
+    @Override
+    public boolean isAbstract() {
+        return Modifier.isAbstract(clazz.getModifiers());
+    }
+
+    @Override
+    public boolean hasDefaultValue() {
+        return false;
     }
 
     @Override
@@ -67,6 +77,15 @@ public class SClassType extends SType {
     }
 
     @Override
+    public boolean isInstanceOf(SType other) {
+        if (other instanceof SDeclaredType) {
+            return false;
+        }
+        return super.isInstanceOf(other);
+    }
+
+    @Override
+    @Nullable
     public BinaryOperation equalsOp(SType other) {
         if (other.isReference()) {
             return EQUALS.value();
@@ -76,6 +95,7 @@ public class SClassType extends SType {
     }
 
     @Override
+    @Nullable
     public BinaryOperation notEqualsOp(SType other) {
         if (other.isReference()) {
             return NOT_EQUALS.value();
@@ -103,6 +123,7 @@ public class SClassType extends SType {
     }
 
     @Override
+    @Nullable
     public PropertyReference getInstanceProperty(String name) {
         try {
             Field field = clazz.getDeclaredField(name);

@@ -22,6 +22,7 @@ public class CompletionContext {
     public final int column;
 
     private final Lazy<Boolean> canUnitMemberLazy = new Lazy<>(this::canUnitMemberInternal);
+    private final Lazy<Boolean> canClassMemberLazy = new Lazy<>(this::canClassMemberInternal);
     private final Lazy<Boolean> canStatementLazy = new Lazy<>(this::canStatementInternal);
     private final Lazy<Boolean> canExpressionLazy = new Lazy<>(this::canExpressionInternal);
     private final Lazy<Boolean> canTypeLazy = new Lazy<>(this::canTypeInternal);
@@ -129,6 +130,10 @@ public class CompletionContext {
         return canUnitMemberLazy.value();
     }
 
+    public boolean canClassMember() {
+        return canClassMemberLazy.value();
+    }
+
     public boolean canStatement() {
         return canStatementLazy.value();
     }
@@ -218,6 +223,19 @@ public class CompletionContext {
         if (type == ContextType.WITHIN) {
             return entry.node.getNodeType() == BoundNodeType.COMPILATION_UNIT;
         }
+        return false;
+    }
+
+    private boolean canClassMemberInternal() {
+        if (entry == null) {
+            return false;
+        }
+
+        if (entry.node.getNodeType() == BoundNodeType.CLASS_DECLARATION) {
+            BoundClassNode classNode = (BoundClassNode) entry.node;
+            return TextRange.isBetween(line, column, classNode.syntaxNode.openBrace, classNode.syntaxNode.closeBrace);
+        }
+
         return false;
     }
 
@@ -466,9 +484,11 @@ public class CompletionContext {
                 yield false;
             }
 
-            case CLASS_DECLARATION -> true;
+            case CLASS_DECLARATION -> canClassMember();
 
-            case INVALID_TYPE, PREDEFINED_TYPE, CUSTOM_TYPE -> true;
+            case INVALID_TYPE, PREDEFINED_TYPE, CUSTOM_TYPE -> {
+                yield entry.parent.node.isNot(BoundNodeType.CLASS_DECLARATION);
+            }
 
             case INVALID_EXPRESSION -> {
                 BoundInvalidExpressionNode invalidExpression = (BoundInvalidExpressionNode) entry.node;
@@ -508,7 +528,7 @@ public class CompletionContext {
                 yield false;
             }
 
-            case CLASS_DECLARATION -> true;
+            case CLASS_DECLARATION -> canClassMember();
 
             case EXTENSION_DECLARATION -> {
                 BoundExtensionNode extension = (BoundExtensionNode) entry.node;

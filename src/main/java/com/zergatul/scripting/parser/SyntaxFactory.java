@@ -36,6 +36,10 @@ public final class SyntaxFactory {
         return NODES.value().blockStatement;
     }
 
+    public static ConstructorInitializerNode missingConstructorInitializer() {
+        return NODES.value().constructorInitializer;
+    }
+
     public static ExpressionNode missingExpression() {
         return NODES.value().expression;
     }
@@ -122,6 +126,7 @@ public final class SyntaxFactory {
 
         public final AssignmentStatementNode assignmentStatement;
         public final BinaryExpressionNode binaryExpression;
+        public final ConstructorInitializerNode constructorInitializer;
         public final ExpressionStatementNode expressionStatement;
         public final IfStatementNode ifStatement;
         public final IndexExpressionNode indexExpression;
@@ -149,6 +154,7 @@ public final class SyntaxFactory {
 
             assignmentStatement = new AssignmentStatementNode(expression, assignmentOperator, expression, null, TextRange.MISSING);
             binaryExpression = new BinaryExpressionNode(expression, binaryOperator, expression);
+            constructorInitializer = new ConstructorInitializerNode(Token.MISSING, argumentsList);
             expressionStatement = new ExpressionStatementNode(expression, null);
             ifStatement = new IfStatementNode(Token.MISSING, Token.MISSING, expression, Token.MISSING, blockStatement, null, null, TextRange.MISSING);
             indexExpression = new IndexExpressionNode(expression, Token.MISSING, expression, Token.MISSING);

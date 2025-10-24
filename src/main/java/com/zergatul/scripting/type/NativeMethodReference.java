@@ -3,6 +3,7 @@ package com.zergatul.scripting.type;
 import com.zergatul.scripting.MethodDescription;
 
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.lang.reflect.Parameter;
 import java.util.ArrayList;
 import java.util.List;
@@ -50,6 +51,16 @@ public abstract class NativeMethodReference extends MethodReference {
     public Optional<String> getDescription() {
         MethodDescription description = method.getAnnotation(MethodDescription.class);
         return description != null ? Optional.of(description.value()) : Optional.empty();
+    }
+
+    @Override
+    public boolean isVirtual() {
+        return !Modifier.isFinal(method.getModifiers());
+    }
+
+    @Override
+    public boolean isFinal() {
+        return Modifier.isFinal(method.getModifiers());
     }
 
     @Override
