@@ -1741,7 +1741,7 @@ public class Binder {
                 if (context.isJavaTypeUsageAllowed()) {
                     Class<?> clazz;
                     try {
-                        clazz = Class.forName(java.name.value, false, ClassLoader.getSystemClassLoader());
+                        clazz = Class.forName(java.name.value, false, context.getJavaTypeClassLoader());
                     } catch (ClassNotFoundException e) {
                         clazz = null;
                     }

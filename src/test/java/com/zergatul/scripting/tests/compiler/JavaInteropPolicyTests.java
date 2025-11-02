@@ -45,6 +45,11 @@ public class JavaInteropPolicyTests extends ComparatorTest {
                     public String getJavaTypeUsageError() {
                         throw new AssertionError();
                     }
+
+                    @Override
+                    public ClassLoader getClassLoader() {
+                        throw new AssertionError();
+                    }
                 }));
     }
 
@@ -77,6 +82,11 @@ public class JavaInteropPolicyTests extends ComparatorTest {
                     @Override
                     public String getJavaTypeUsageError() {
                         return "error msg";
+                    }
+
+                    @Override
+                    public ClassLoader getClassLoader() {
+                        return Thread.currentThread().getContextClassLoader();
                     }
                 }));
     }

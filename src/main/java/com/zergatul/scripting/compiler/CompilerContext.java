@@ -570,6 +570,10 @@ public class CompilerContext {
         return root.policy == null || root.policy.isJavaTypeUsageAllowed();
     }
 
+    public ClassLoader getJavaTypeClassLoader() {
+        return root.policy == null ? Thread.currentThread().getContextClassLoader() : root.policy.getClassLoader();
+    }
+
     public String getJavaTypeUsageError() {
         return root.policy.getJavaTypeUsageError();
     }

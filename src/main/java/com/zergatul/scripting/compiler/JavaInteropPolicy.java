@@ -6,4 +6,5 @@ public abstract class JavaInteropPolicy {
     public abstract boolean isMethodVisible(Method method);
     public abstract boolean isJavaTypeUsageAllowed();
     public abstract String getJavaTypeUsageError();
+    public abstract ClassLoader getClassLoader();
 }

@@ -64,10 +64,10 @@ public class SFunctionalInterface extends SFunction {
                         if (actual instanceof WildcardType wildcard) {
                             return ((TypeVariable<?>) wildcard.getLowerBounds()[0]).getBounds()[0];
                         } else {
-                            return (Class<?>) actual;
+                            return actual;
                         }
                     } else {
-                        return (Class<?>) t;
+                        return t;
                     }
                 })
                 .map(SType::fromJavaType)
