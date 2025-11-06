@@ -58,6 +58,7 @@ public class HighlightingProvider {
             case CONTINUE_STATEMENT -> process((BoundContinueStatementNode) node);
             case CONVERSION -> process((BoundConversionNode) node);
             case CUSTOM_TYPE -> process((BoundCustomTypeNode) node);
+            case DECLARED_CLASS_TYPE -> process((BoundDeclaredClassTypeNode) node);
             case DECREMENT_STATEMENT -> process((BoundPostfixStatementNode) node);
             case EMPTY_COLLECTION_EXPRESSION -> process((BoundEmptyCollectionExpressionNode) node);
             case EMPTY_STATEMENT -> process((BoundEmptyStatementNode) node);
@@ -304,6 +305,10 @@ public class HighlightingProvider {
     }
 
     private void process(BoundCustomTypeNode node) {
+        process(node.syntaxNode.token, SemanticTokenType.TYPE);
+    }
+
+    private void process(BoundDeclaredClassTypeNode node) {
         process(node.syntaxNode.token, SemanticTokenType.TYPE);
     }
 

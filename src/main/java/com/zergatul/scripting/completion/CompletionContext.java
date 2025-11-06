@@ -486,7 +486,7 @@ public class CompletionContext {
 
             case CLASS_DECLARATION -> canClassMember();
 
-            case INVALID_TYPE, PREDEFINED_TYPE, CUSTOM_TYPE -> {
+            case INVALID_TYPE, PREDEFINED_TYPE, CUSTOM_TYPE, DECLARED_CLASS_TYPE -> {
                 yield entry.parent.node.isNot(BoundNodeType.CLASS_DECLARATION);
             }
 

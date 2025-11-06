@@ -169,7 +169,7 @@ public class Binder {
         ClassFieldDeclaration fieldDeclaration = classDeclaration.getFieldDeclaration(fieldNode);
 
         BoundNameExpressionNode name = new BoundNameExpressionNode(fieldNode.name, fieldDeclaration.getSymbolRef());
-        return new BoundClassFieldNode(fieldNode, fieldDeclaration.getTypeNode(), name);
+        return new BoundClassFieldNode(fieldNode, fieldDeclaration.getPropertyReference(), fieldDeclaration.getTypeNode(), name);
     }
 
     private BoundClassConstructorNode bindClassConstructor(ClassDeclaration classDeclaration, ClassConstructorNode constructorNode) {
@@ -187,6 +187,7 @@ public class Binder {
         return new BoundClassConstructorNode(
                 constructorNode,
                 (SMethodFunction) constructorDeclaration.getSymbolRef().get().getType(),
+                constructorDeclaration.getConstructorReference(),
                 constructorDeclaration.getParameters(),
                 initializer,
                 body,
@@ -276,6 +277,7 @@ public class Binder {
         return new BoundClassMethodNode(
                 methodNode,
                 (SMethodFunction) methodDeclaration.getSymbolRef().get().getType(),
+                methodDeclaration.getMethodReference(),
                 methodDeclaration.getTypeNode(),
                 name,
                 methodDeclaration.getParameters(),
@@ -298,7 +300,7 @@ public class Binder {
     }
 
     private BoundExtensionMethodNode bindExtensionMethod(ExtensionDeclaration declaration, ClassMethodNode methodNode) {
-        ExtensionMethodDeclaration methodDeclaration = declaration.getMethodDeclaration(methodNode);
+        ClassMethodDeclaration methodDeclaration = declaration.getMethodDeclaration(methodNode);
 
         SType returnType = methodDeclaration.getTypeNode().type;
 
@@ -490,7 +492,7 @@ public class Binder {
                     variableDeclaration.name,
                     variableDeclaration.name.value);
         } else {
-            LocalVariable variable = new LocalVariable(variableDeclaration.name.value, variableType.type, variableDeclaration.getRange());
+            LocalVariable variable = new LocalVariable(variableDeclaration.name.value, variableType.type, TextRange.combine(variableDeclaration.type, variableDeclaration.name));
             symbolRef = new MutableSymbolRef(variable);
             context.addLocalVariable(symbolRef);
         }
@@ -1706,7 +1708,7 @@ public class Binder {
                 SymbolRef symbolRef = getSymbol(custom.value);
                 if (symbolRef != null) {
                     if (symbolRef.get() instanceof ClassSymbol) {
-                        yield new BoundCustomTypeNode(custom, symbolRef.get().getType());
+                        yield new BoundDeclaredClassTypeNode(custom, symbolRef);
                     } else {
                         addDiagnostic(BinderErrors.IdentifierIsNotType, type, custom.value);
                         yield new BoundInvalidTypeNode(custom);
@@ -1858,7 +1860,7 @@ public class Binder {
         }
 
         SDeclaredType declaredType = new SDeclaredType(name);
-        ClassSymbol classSymbol = new ClassSymbol(name, declaredType, classNode.name.getRange());
+        ClassSymbol classSymbol = new ClassSymbol(name, declaredType, TextRange.combine(classNode.keyword, classNode.name));
         declarationTable.addClass(name, classNode, new ClassDeclaration(name, new ImmutableSymbolRef(classSymbol)));
     }
 
@@ -1896,7 +1898,7 @@ public class Binder {
         SStaticFunction functionType = new SStaticFunction(
                 actualReturnType,
                 parameters.parameters.stream().map(pn -> new MethodParameter(pn.getName().value, pn.getType())).toArray(MethodParameter[]::new));
-        SymbolRef symbolRef = new ImmutableSymbolRef(new Function(name, functionType, functionNode.name.getRange()));
+        SymbolRef symbolRef = new ImmutableSymbolRef(new Function(name, functionType, TextRange.combine(functionNode.modifiers, functionNode.parameters)));
         declarationTable.addFunction(functionNode, new FunctionDeclaration(
                 name,
                 symbolRef,
@@ -1912,6 +1914,7 @@ public class Binder {
         BoundTypeNode typeNode = bindType(classFieldNode.type);
 
         boolean hasError = false;
+        PropertyReference propertyRef = UnknownPropertyReference.instance;
         if (classDeclaration.hasMember(fieldName)) {
             hasError = true;
             addDiagnostic(BinderErrors.MemberAlreadyDeclared, classFieldNode.name, fieldName);
@@ -1924,11 +1927,11 @@ public class Binder {
                 addDiagnostic(BinderErrors.BaseClassAlreadyHasMember, classFieldNode.name);
             }
 
-            classDeclaration.getDeclaredType().addField(typeNode.type, fieldName);
+            propertyRef = classDeclaration.getDeclaredType().addField(typeNode.type, fieldName);
         }
 
-        SymbolRef symbolRef = new ImmutableSymbolRef(new ClassPropertySymbol(fieldName, typeNode.type, classFieldNode.name.getRange()));
-        classDeclaration.addField(classFieldNode, new ClassFieldDeclaration(fieldName, symbolRef, typeNode, hasError));
+        SymbolRef symbolRef = new ImmutableSymbolRef(new ClassPropertySymbol(fieldName, typeNode.type, TextRange.combine(classFieldNode.type, classFieldNode.name)));
+        classDeclaration.addField(classFieldNode, new ClassFieldDeclaration(fieldName, symbolRef, typeNode, propertyRef, hasError));
     }
 
     private void buildClassConstructorDeclaration(ClassDeclaration classDeclaration, ClassConstructorNode constructorNode) {
@@ -1936,15 +1939,16 @@ public class Binder {
         SMethodFunction functionType = new SMethodFunction(SVoidType.instance, parameters.parameters.stream().map(pn -> new MethodParameter(pn.getName().value, pn.getType())).toArray(MethodParameter[]::new));
 
         boolean hasError = false;
+        ConstructorReference constructorRef = UnknownConstructorReference.instance;
         if (classDeclaration.hasConstructor(parameters.parameters)) {
             hasError = true;
             addDiagnostic(BinderErrors.ConstructorAlreadyDeclared, constructorNode.keyword);
         } else {
-            classDeclaration.getDeclaredType().addConstructor(functionType);
+            constructorRef = classDeclaration.getDeclaredType().addConstructor(functionType);
         }
 
         SymbolRef symbolRef = new ImmutableSymbolRef(new ConstructorSymbol(functionType, constructorNode.keyword.getRange()));
-        classDeclaration.addConstructor(constructorNode, new ClassConstructorDeclaration(symbolRef, parameters, hasError));
+        classDeclaration.addConstructor(constructorNode, new ClassConstructorDeclaration(symbolRef, parameters, constructorRef, hasError));
     }
 
     private void buildClassMethodDeclaration(ClassDeclaration classDeclaration, ClassMethodNode methodNode) {
@@ -1956,6 +1960,7 @@ public class Binder {
         SMethodFunction functionType = new SMethodFunction(actualReturnType, parameters.parameters.stream().map(pn -> new MethodParameter(pn.getName().value, pn.getType())).toArray(MethodParameter[]::new));
 
         boolean hasError = false;
+        MethodReference methodRef = UnknownMethodReference.instance;
         if (classDeclaration.hasField(methodName)) {
             hasError = true;
             addDiagnostic(BinderErrors.MemberAlreadyDeclared, methodNode.name, methodName);
@@ -1985,11 +1990,11 @@ public class Binder {
                 }
             }
 
-            classDeclaration.getDeclaredType().addMethod(methodNode.modifiers.toMemberModifiers(), functionType, methodName);
+            methodRef = classDeclaration.getDeclaredType().addMethod(methodNode.modifiers.toMemberModifiers(), functionType, methodName);
         }
 
-        SymbolRef symbolRef = new ImmutableSymbolRef(new MethodSymbol(methodName, functionType, methodNode.name.getRange()));
-        classDeclaration.addMethod(methodNode, new ClassMethodDeclaration(methodName, symbolRef, isAsync, typeNode, parameters, hasError));
+        SymbolRef symbolRef = new ImmutableSymbolRef(new MethodSymbol(methodName, functionType, TextRange.combine(methodNode.modifiers, methodNode.parameters)));
+        classDeclaration.addMethod(methodNode, new ClassMethodDeclaration(methodName, symbolRef, isAsync, typeNode, parameters, methodRef, hasError));
     }
 
     private void buildExtensionMethodDeclaration(ExtensionDeclaration extensionDeclaration, ClassMethodNode methodNode) {
@@ -2003,7 +2008,7 @@ public class Binder {
         SType baseType = extensionDeclaration.getBaseType();
 
         boolean hasError = false;
-        MethodReference methodReference = UnknownMethodReference.instance;
+        MethodReference methodRef = UnknownMethodReference.instance;
         if (baseType.getInstanceProperty(methodName) != null) {
             hasError = true;
             addDiagnostic(BinderErrors.MemberAlreadyDeclared, methodNode.name, methodName);
@@ -2016,12 +2021,12 @@ public class Binder {
         } else {
             String internalMethodName = declarationTable.generateExtensionMethodInternalName(baseType, methodName);
             ExtensionMethodReference extMethodReference = new ExtensionMethodReference(baseType, methodName, functionType, internalMethodName);
-            methodReference = extMethodReference;
+            methodRef = extMethodReference;
             declarationTable.addExtensionMethod(extMethodReference);
         }
 
-        SymbolRef symbolRef = new ImmutableSymbolRef(new MethodSymbol(methodName, functionType, methodNode.name.getRange()));
-        extensionDeclaration.addMethod(methodNode, new ExtensionMethodDeclaration(methodName, symbolRef, isAsync, typeNode, parameters, methodReference, hasError));
+        SymbolRef symbolRef = new ImmutableSymbolRef(new MethodSymbol(methodName, functionType, TextRange.combine(methodNode.modifiers, methodNode.parameters)));
+        extensionDeclaration.addMethod(methodNode, new ClassMethodDeclaration(methodName, symbolRef, isAsync, typeNode, parameters, methodRef, hasError));
     }
 
     private boolean hasInstanceMethod(SType type, String name, List<BoundParameterNode> parameters) {

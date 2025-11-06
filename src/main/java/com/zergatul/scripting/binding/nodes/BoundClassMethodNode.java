@@ -4,6 +4,7 @@ import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
 import com.zergatul.scripting.parser.nodes.ClassMethodNode;
 import com.zergatul.scripting.symbols.LiftedVariable;
+import com.zergatul.scripting.type.MethodReference;
 import com.zergatul.scripting.type.SMethodFunction;
 
 import java.util.List;
@@ -12,6 +13,7 @@ public class BoundClassMethodNode extends BoundClassMemberNode {
 
     public final ClassMethodNode syntaxNode;
     public final SMethodFunction functionType;
+    public final MethodReference method;
     public final BoundTypeNode typeNode;
     public final BoundNameExpressionNode name;
     public final BoundParameterListNode parameters;
@@ -21,18 +23,20 @@ public class BoundClassMethodNode extends BoundClassMemberNode {
     public BoundClassMethodNode(
             ClassMethodNode node,
             SMethodFunction functionType,
+            MethodReference method,
             BoundTypeNode typeNode,
             BoundNameExpressionNode name,
             BoundParameterListNode parameters,
             BoundStatementNode body,
             List<LiftedVariable> lifted
     ) {
-        this(node, functionType, typeNode, name, parameters, body, lifted, node.getRange());
+        this(node, functionType, method, typeNode, name, parameters, body, lifted, node.getRange());
     }
 
     public BoundClassMethodNode(
             ClassMethodNode node,
             SMethodFunction functionType,
+            MethodReference method,
             BoundTypeNode typeNode,
             BoundNameExpressionNode name,
             BoundParameterListNode parameters,
@@ -43,6 +47,7 @@ public class BoundClassMethodNode extends BoundClassMemberNode {
         super(BoundNodeType.CLASS_METHOD, range);
         this.syntaxNode = node;
         this.functionType = functionType;
+        this.method = method;
         this.typeNode = typeNode;
         this.name = name;
         this.parameters = parameters;

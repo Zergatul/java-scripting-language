@@ -34,6 +34,7 @@ public enum BoundNodeType {
     NAME_EXPRESSION,
     PREDEFINED_TYPE,
     CUSTOM_TYPE,
+    DECLARED_CLASS_TYPE,
     LET_TYPE,
     REF_TYPE,
     INVALID_TYPE,

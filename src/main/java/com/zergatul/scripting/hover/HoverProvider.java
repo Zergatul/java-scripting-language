@@ -48,6 +48,7 @@ public class HoverProvider {
             case FLOAT_LITERAL -> getFloat64Hover(range);
             case STRING_LITERAL -> getStringHover(range);
             case CUSTOM_TYPE -> new HoverResponse(formatType(((BoundCustomTypeNode) node).type), range);
+            case DECLARED_CLASS_TYPE -> new HoverResponse(formatType(((BoundDeclaredClassTypeNode) node).type), range);
             case PREDEFINED_TYPE -> {
                 SType type = ((BoundPredefinedTypeNode) node).type;
                 if (type == SBoolean.instance) {

@@ -3,22 +3,36 @@ package com.zergatul.scripting.binding.nodes;
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
 import com.zergatul.scripting.parser.nodes.ClassFieldNode;
+import com.zergatul.scripting.type.PropertyReference;
 
 import java.util.List;
 
 public class BoundClassFieldNode extends BoundClassMemberNode {
 
     public final ClassFieldNode syntaxNode;
+    public final PropertyReference property;
     public final BoundTypeNode typeNode;
     public final BoundNameExpressionNode name;
 
-    public BoundClassFieldNode(ClassFieldNode node, BoundTypeNode typeNode, BoundNameExpressionNode name) {
-        this(node, typeNode, name, node.getRange());
+    public BoundClassFieldNode(
+            ClassFieldNode node,
+            PropertyReference property,
+            BoundTypeNode typeNode,
+            BoundNameExpressionNode name
+    ) {
+        this(node, property, typeNode, name, node.getRange());
     }
 
-    public BoundClassFieldNode(ClassFieldNode node, BoundTypeNode typeNode, BoundNameExpressionNode name, TextRange range) {
+    public BoundClassFieldNode(
+            ClassFieldNode node,
+            PropertyReference property,
+            BoundTypeNode typeNode,
+            BoundNameExpressionNode name,
+            TextRange range
+    ) {
         super(BoundNodeType.CLASS_FIELD, range);
         this.syntaxNode = node;
+        this.property = property;
         this.typeNode = typeNode;
         this.name = name;
     }

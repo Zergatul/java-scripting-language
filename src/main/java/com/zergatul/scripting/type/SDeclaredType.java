@@ -35,20 +35,27 @@ public class SDeclaredType extends SType {
         this.clazz = clazz;
     }
 
-    public void addField(SType type, String name) {
-        properties.add(new DeclaredFieldReference(this, type, name));
+    public DeclaredFieldReference addField(SType type, String name) {
+        DeclaredFieldReference property = new DeclaredFieldReference(this, type, name);
+        properties.add(property);
+        return property;
     }
 
-    public void addConstructor(SMethodFunction function) {
+    public DeclaredConstructorReference addConstructor(SMethodFunction function) {
         if (hasDefaultConstructor) {
             constructors.clear();
             hasDefaultConstructor = false;
         }
-        constructors.add(new DeclaredConstructorReference(this, function));
+
+        DeclaredConstructorReference constructor = new DeclaredConstructorReference(this, function);
+        constructors.add(constructor);
+        return constructor;
     }
 
-    public void addMethod(MemberModifiers modifiers, SMethodFunction functionType, String name) {
-        methods.add(new DeclaredMethodReference(this, modifiers, name, functionType));
+    public DeclaredMethodReference addMethod(MemberModifiers modifiers, SMethodFunction functionType, String name) {
+        DeclaredMethodReference method = new DeclaredMethodReference(this, modifiers, name, functionType);
+        methods.add(method);
+        return method;
     }
 
     @Nullable

@@ -3,6 +3,7 @@ package com.zergatul.scripting.binding.nodes;
 import com.zergatul.scripting.*;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public abstract class BoundNode implements Locatable {
@@ -37,5 +38,23 @@ public abstract class BoundNode implements Locatable {
 
     public boolean isOpen() {
         return false;
+    }
+
+    public List<BoundNode> find(int line, int column) {
+        List<BoundNode> chain = new ArrayList<>();
+        findInternal(chain, line, column);
+        return chain.reversed();
+    }
+
+    private void findInternal(List<BoundNode> chain, int line, int column) {
+        if (getRange().contains(line, column)) {
+            chain.add(this);
+            for (BoundNode child : getChildren()) {
+                if (child.getRange().contains(line, column)) {
+                    child.findInternal(chain, line, column);
+                    return;
+                }
+            }
+        }
     }
 }

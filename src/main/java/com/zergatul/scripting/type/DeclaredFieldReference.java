@@ -46,4 +46,8 @@ public class DeclaredFieldReference extends PropertyReference {
     public void compileSet(MethodVisitor visitor) {
         visitor.visitFieldInsn(PUTFIELD, owner.getInternalName(), name, type.getDescriptor());
     }
+
+    public SDeclaredType getOwner() {
+        return owner;
+    }
 }

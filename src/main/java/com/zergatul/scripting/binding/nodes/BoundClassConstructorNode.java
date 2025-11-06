@@ -4,6 +4,7 @@ import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
 import com.zergatul.scripting.parser.nodes.ClassConstructorNode;
 import com.zergatul.scripting.symbols.LiftedVariable;
+import com.zergatul.scripting.type.ConstructorReference;
 import com.zergatul.scripting.type.SMethodFunction;
 
 import java.util.List;
@@ -12,6 +13,7 @@ public class BoundClassConstructorNode extends BoundClassMemberNode {
 
     public final ClassConstructorNode syntaxNode;
     public final SMethodFunction functionType;
+    public final ConstructorReference constructor;
     public final BoundParameterListNode parameters;
     public final BoundConstructorInitializerNode initializer;
     public final BoundStatementNode body;
@@ -20,17 +22,19 @@ public class BoundClassConstructorNode extends BoundClassMemberNode {
     public BoundClassConstructorNode(
             ClassConstructorNode node,
             SMethodFunction functionType,
+            ConstructorReference constructor,
             BoundParameterListNode parameters,
             BoundConstructorInitializerNode initializer,
             BoundStatementNode body,
             List<LiftedVariable> lifted
     ) {
-        this(node, functionType, parameters, initializer, body, lifted, node.getRange());
+        this(node, functionType, constructor, parameters, initializer, body, lifted, node.getRange());
     }
 
     public BoundClassConstructorNode(
             ClassConstructorNode node,
             SMethodFunction functionType,
+            ConstructorReference constructor,
             BoundParameterListNode parameters,
             BoundConstructorInitializerNode initializer,
             BoundStatementNode body,
@@ -40,6 +44,7 @@ public class BoundClassConstructorNode extends BoundClassMemberNode {
         super(BoundNodeType.CLASS_CONSTRUCTOR, range);
         this.syntaxNode = node;
         this.functionType = functionType;
+        this.constructor = constructor;
         this.parameters = parameters;
         this.initializer = initializer;
         this.body = body;

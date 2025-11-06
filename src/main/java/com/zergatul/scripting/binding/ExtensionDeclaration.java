@@ -13,13 +13,13 @@ import java.util.Map;
 public class ExtensionDeclaration {
 
     private final BoundTypeNode typeNode;
-    private final Map<ClassMethodNode, ExtensionMethodDeclaration> methodNodeMap = new HashMap<>();
+    private final Map<ClassMethodNode, ClassMethodDeclaration> methodNodeMap = new HashMap<>();
 
     public ExtensionDeclaration(BoundTypeNode typeNode) {
         this.typeNode = typeNode;
     }
 
-    public void addMethod(ClassMethodNode node, ExtensionMethodDeclaration declaration) {
+    public void addMethod(ClassMethodNode node, ClassMethodDeclaration declaration) {
         methodNodeMap.put(node, declaration);
     }
 
@@ -31,8 +31,8 @@ public class ExtensionDeclaration {
         return typeNode.type;
     }
 
-    public ExtensionMethodDeclaration getMethodDeclaration(ClassMethodNode node) {
-        ExtensionMethodDeclaration declaration = methodNodeMap.get(node);
+    public ClassMethodDeclaration getMethodDeclaration(ClassMethodNode node) {
+        ClassMethodDeclaration declaration = methodNodeMap.get(node);
         if (declaration == null) {
             throw new InternalException();
         }
