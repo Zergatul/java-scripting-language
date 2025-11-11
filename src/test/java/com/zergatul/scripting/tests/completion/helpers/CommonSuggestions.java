@@ -16,7 +16,8 @@ public class CommonSuggestions {
             new KeywordSuggestion(TokenType.STATIC),
             new KeywordSuggestion(TokenType.VOID),
             new KeywordSuggestion(TokenType.CLASS),
-            new KeywordSuggestion(TokenType.EXTENSION));
+            new KeywordSuggestion(TokenType.EXTENSION),
+            new KeywordSuggestion(TokenType.TYPEALIAS));
 
     public static final List<Suggestion> types = List.of(
             new TypeSuggestion(SBoolean.instance),

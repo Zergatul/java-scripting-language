@@ -4,6 +4,11 @@ import com.zergatul.scripting.binding.nodes.*;
 
 public abstract class BinderTreeVisitor {
 
+    public void explicitVisit(BoundAliasedTypeNode node) {
+        visit(node);
+        node.acceptChildren(this);
+    }
+
     public void explicitVisit(BoundArgumentsListNode node) {
         visit(node);
         node.acceptChildren(this);
@@ -354,7 +359,17 @@ public abstract class BinderTreeVisitor {
         node.acceptChildren(this);
     }
 
+    public void explicitVisit(BoundSymbolNode node) {
+        visit(node);
+        node.acceptChildren(this);
+    }
+
     public void explicitVisit(BoundThisExpressionNode node) {
+        visit(node);
+        node.acceptChildren(this);
+    }
+
+    public void explicitVisit(BoundTypeAliasNode node) {
         visit(node);
         node.acceptChildren(this);
     }
@@ -399,6 +414,7 @@ public abstract class BinderTreeVisitor {
         node.acceptChildren(this);
     }
 
+    public void visit(BoundAliasedTypeNode node) {}
     public void visit(BoundArgumentsListNode node) {}
     public void visit(BoundArrayCreationExpressionNode node) {}
     public void visit(BoundArrayInitializerExpressionNode node) {}
@@ -469,7 +485,9 @@ public abstract class BinderTreeVisitor {
     public void visit(BoundStaticVariableNode node) {}
     public void visit(BoundStaticReferenceExpression node) {}
     public void visit(BoundStringLiteralExpressionNode node) {}
+    public void visit(BoundSymbolNode node) {}
     public void visit(BoundThisExpressionNode node) {}
+    public void visit(BoundTypeAliasNode node) {}
     public void visit(BoundTypeCastExpressionNode node) {}
     public void visit(BoundTypeTestExpressionNode node) {}
     public void visit(BoundUnaryExpressionNode node) {}

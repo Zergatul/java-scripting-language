@@ -132,6 +132,7 @@ public class Compiler {
                 case FUNCTION -> functions.add((BoundFunctionNode) member);
                 case CLASS_DECLARATION -> classes.add((BoundClassNode) member);
                 case EXTENSION_DECLARATION -> extensions.add((BoundExtensionNode) member);
+                case TYPE_ALIAS -> {}
                 default -> throw new InternalException();
             }
         }

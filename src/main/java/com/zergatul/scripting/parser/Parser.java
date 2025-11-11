@@ -37,6 +37,8 @@ public class Parser {
                 members.add(parseExtension());
             } else if (current.is(TokenType.CLASS)) {
                 members.add(parseClass());
+            } else if (current.is(TokenType.TYPEALIAS)) {
+                members.add(parseTypeAlias());
             } else if (isPossibleFunction()) {
                 members.add(parseFunction());
             } else {
@@ -750,6 +752,52 @@ public class Parser {
                 parameters,
                 arrow,
                 body);
+    }
+
+    private TypeAliasNode parseTypeAlias() {
+        Token keyword = advance(TokenType.TYPEALIAS);
+
+        if (current.isNot(TokenType.IDENTIFIER)) {
+            addDiagnostic(ParserErrors.IdentifierExpected, current, current.getRawValue(code));
+            TextRange range = createMissingTokenRangeBeforeCurrent();
+            return new TypeAliasNode(
+                    keyword,
+                    new ValueToken(TokenType.IDENTIFIER, "", range),
+                    new Token(TokenType.EQUAL, range),
+                    new InvalidTypeNode(new ValueToken(TokenType.IDENTIFIER, "", range)),
+                    new Token(TokenType.SEMICOLON, range));
+        }
+
+        ValueToken identifier = (ValueToken) advance();
+
+        if (current.isNot(TokenType.EQUAL)) {
+            addDiagnostic(ParserErrors.EqualExpected, current, current.getRawValue(code));
+            TextRange range = createMissingTokenRangeBeforeCurrent();
+            return new TypeAliasNode(
+                    keyword,
+                    identifier,
+                    new Token(TokenType.EQUAL, range),
+                    new InvalidTypeNode(new ValueToken(TokenType.IDENTIFIER, "", range)),
+                    new Token(TokenType.SEMICOLON, range));
+        }
+
+        Token equal = advance(TokenType.EQUAL);
+
+        if (!isPossibleType()) {
+            addDiagnostic(ParserErrors.TypeExpected, current, current.getRawValue(code));
+            TextRange range = createMissingTokenRangeBeforeCurrent();
+            return new TypeAliasNode(
+                    keyword,
+                    identifier,
+                    equal,
+                    new InvalidTypeNode(new ValueToken(TokenType.IDENTIFIER, "", range)),
+                    new Token(TokenType.SEMICOLON, range));
+        }
+
+        TypeNode typeNode = parseTypeNode();
+        Token semicolon = advance(TokenType.SEMICOLON);
+
+        return new TypeAliasNode(keyword, identifier, equal, typeNode, semicolon);
     }
 
     private FunctionNode parseFunction() {

@@ -305,6 +305,35 @@ public class HoverTests extends ComparatorTest {
                 hover);
     }
 
+    @Test
+    public void typeAliasTest1() {
+        HoverProvider.HoverResponse hover = getHover("""
+                typealias Int = int;
+                Int i = 123;
+                """, 2, 1);
+        comparator.assertEquals(
+                new HoverProvider.HoverResponse(
+                        List.of("typealias Int = int"),
+                        new SingleLineTextRange(2, 1, 21, 3)),
+                hover);
+    }
+
+    @Test
+    public void typeAliasTest2() {
+        HoverProvider.HoverResponse hover = getHover("""
+                typealias Int1 = Int2;
+                typealias Int2 = Int3;
+                typealias Int3 = Int4;
+                typealias Int4 = int;
+                Int1 i = 123;
+                """, 5, 1);
+        comparator.assertEquals(
+                new HoverProvider.HoverResponse(
+                        List.of("typealias Int1 = int"),
+                        new SingleLineTextRange(5, 1, 91, 4)),
+                hover);
+    }
+
     private static HoverProvider.HoverResponse getHover(String code, int line, int column) {
         return getHover(code, ApiRoot.class, Runnable.class, line, column);
     }

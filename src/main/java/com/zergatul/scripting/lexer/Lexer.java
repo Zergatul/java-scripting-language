@@ -589,6 +589,7 @@ public class Lexer {
             case "abstract" -> TokenType.ABSTRACT;
             case "virtual" -> TokenType.VIRTUAL;
             case "override" -> TokenType.OVERRIDE;
+            case "typealias" -> TokenType.TYPEALIAS;
             default -> null;
         };
         TextRange range = getCurrentTokenRange();
@@ -648,10 +649,6 @@ public class Lexer {
 
     private void appendToken(TokenType type) {
         appendToken(new Token(type, new SingleLineTextRange(line, column, position, 1)));
-    }
-
-    private void appendLineBreakTrivia() {
-        appendTrivia(new Trivia(TokenType.LINE_BREAK, new MultiLineTextRange(line, column, line + 1, 1, position, 1)));
     }
 
     private void trackBeginToken() {

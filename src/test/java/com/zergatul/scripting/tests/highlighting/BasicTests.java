@@ -427,6 +427,25 @@ public class BasicTests extends ComparatorTest {
                 highlight(code));
     }
 
+    @Test
+    public void typeAliasTest() {
+        String code = """
+                typealias Int = int;
+                Int x;
+                """;
+        comparator.assertSemanticEquals(
+                List.of(
+                        new SemanticToken(SemanticTokenType.KEYWORD, new SingleLineTextRange(1, 1, 0, 9)),
+                        new SemanticToken(SemanticTokenType.TYPE, new SingleLineTextRange(1, 11, 10, 3)),
+                        new SemanticToken(SemanticTokenType.OPERATOR, new SingleLineTextRange(1, 15, 14, 1)),
+                        new SemanticToken(SemanticTokenType.KEYWORD, List.of(SemanticTokenModifier.PREDEFINED_TYPE), new SingleLineTextRange(1, 17, 16, 3)),
+                        new SemanticToken(SemanticTokenType.SEPARATOR, new SingleLineTextRange(1, 20, 19, 1)),
+                        new SemanticToken(SemanticTokenType.TYPE, new SingleLineTextRange(2, 1, 21, 3)),
+                        new SemanticToken(SemanticTokenType.IDENTIFIER, new SingleLineTextRange(2, 5, 25, 1)),
+                        new SemanticToken(SemanticTokenType.SEPARATOR, new SingleLineTextRange(2, 6, 26, 1))),
+                highlight(code));
+    }
+
     protected List<SemanticToken> highlight(String code) {
         LexerOutput lexerOutput = new Lexer(new LexerInput(code)).lex();
         ParserOutput parserOutput = new Parser(lexerOutput).parse();

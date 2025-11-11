@@ -31,6 +31,7 @@ public class HighlightingProvider {
 
     private void process(BoundNode node) {
         switch (node.getNodeType()) {
+            case ALIASED_TYPE -> process((BoundAliasedTypeNode) node);
             case ARGUMENTS_LIST -> process((BoundArgumentsListNode) node);
             case ARRAY_CREATION_EXPRESSION -> process((BoundArrayCreationExpressionNode) node);
             case ARRAY_INITIALIZER_EXPRESSION -> process((BoundArrayInitializerExpressionNode) node);
@@ -113,7 +114,9 @@ public class HighlightingProvider {
             case STATIC_REFERENCE -> process((BoundStaticReferenceExpression) node);
             case STATIC_VARIABLE -> process((BoundStaticVariableNode) node);
             case STRING_LITERAL -> process((BoundStringLiteralExpressionNode) node);
+            case SYMBOL -> process((BoundSymbolNode) node);
             case THIS_EXPRESSION -> process((BoundThisExpressionNode) node);
+            case TYPE_ALIAS -> process((BoundTypeAliasNode) node);
             case TYPE_CAST_EXPRESSION -> process((BoundTypeCastExpressionNode) node);
             case TYPE_TEST_EXPRESSION -> process((BoundTypeTestExpressionNode) node);
             case UNARY_EXPRESSION -> process((BoundUnaryExpressionNode) node);
@@ -124,6 +127,10 @@ public class HighlightingProvider {
             case VOID_TYPE -> process((BoundVoidTypeNode) node);
             case WHILE_LOOP_STATEMENT -> process((BoundWhileLoopStatementNode) node);
         }
+    }
+
+    private void process(BoundAliasedTypeNode node) {
+        process(node.syntaxNode.token, SemanticTokenType.TYPE);
     }
 
     private void process(BoundArgumentsListNode node) {
@@ -686,8 +693,20 @@ public class HighlightingProvider {
         process(node.syntaxNode.token);
     }
 
+    private void process(BoundSymbolNode node) {
+
+    }
+
     private void process(BoundThisExpressionNode node) {
         process(node.syntaxNode.token);
+    }
+
+    private void process(BoundTypeAliasNode node) {
+        process(node.syntaxNode.keyword);
+        process(node.name.token, SemanticTokenType.TYPE);
+        process(node.syntaxNode.equal);
+        process(node.typeNode);
+        process(node.syntaxNode.semicolon);
     }
 
     private void process(BoundTypeCastExpressionNode node) {
@@ -803,7 +822,7 @@ public class HighlightingProvider {
                 case BOOLEAN, INT8, INT16, INT, INT32, INT64, LONG, CHAR, FLOAT32, FLOAT, FLOAT64, STRING, IF, ELSE, BREAK,
                      CONTINUE, WHILE, FOR, FOREACH, FALSE, TRUE, IN, NEW, REF, RETURN, STATIC, VOID, ASYNC, AWAIT, LET, IS,
                      AS, META_UNKNOWN, META_TYPE, META_TYPE_OF, CLASS, CONSTRUCTOR, THIS, EXTENSION, ABSTRACT, VIRTUAL,
-                     OVERRIDE, BASE -> SemanticTokenType.KEYWORD;
+                     OVERRIDE, BASE, TYPEALIAS -> SemanticTokenType.KEYWORD;
                 case INTEGER_LITERAL, INTEGER64_LITERAL, FLOAT_LITERAL, INVALID_NUMBER -> SemanticTokenType.NUMBER;
                 case CHAR_LITERAL, STRING_LITERAL -> SemanticTokenType.STRING;
                 case LINE_BREAK, WHITESPACE, SINGLE_LINE_COMMENT, MULTI_LINE_COMMENT, END_OF_FILE, INVALID -> throw new InternalException();

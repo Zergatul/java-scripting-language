@@ -6,6 +6,7 @@ import com.zergatul.scripting.symbols.*;
 import com.zergatul.scripting.tests.completion.suggestions.*;
 import com.zergatul.scripting.type.MethodReference;
 import com.zergatul.scripting.type.PropertyReference;
+import com.zergatul.scripting.type.SAliasType;
 import com.zergatul.scripting.type.SType;
 
 import java.util.List;
@@ -30,6 +31,11 @@ public class TestSuggestionFactory implements SuggestionFactory<Suggestion> {
     @Override
     public Suggestion getClassSuggestion(ClassSymbol clazz) {
         return new ClassSuggestion(clazz);
+    }
+
+    @Override
+    public Suggestion getTypeAliasSuggestion(SAliasType type) {
+        return new TypeAliasSuggestion(type);
     }
 
     @Override

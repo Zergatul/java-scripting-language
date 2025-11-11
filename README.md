@@ -34,6 +34,7 @@ It is lightweight, async-friendly, and designed to interop with Java APIs where 
 - [Classes](#classes)
 - [Extensions](#extensions)
 - [Java Interop](#java-interop)
+- [Type Aliases](#type-aliases)
 - [Limitations](#limitations)
 - [Comparison Table](#comparison-table)
 
@@ -482,6 +483,29 @@ debug.write(table.get(false).toString()); // 100
 let obj = table.get("qq"); // type: Java<java.lang.Object>
 let str = obj as string;   // cast to string
 debug.write(str);
+```
+
+### Type Aliases
+Type aliases should be defined in the beginning of the script, before all script statements.
+Example:
+```c#
+typealias str = string;
+void log(str s) => debug.write(s);
+
+str x1 = "s1";
+log(x1);
+string x2 = "s2";
+log(x2);
+```
+
+The most useful case for it is Java interop:
+```c#
+typealias Minecraft = Java<net.minecraft.client.Minecraft>;
+typealias LocalPlayer = java<net.minecraft.client.player.LocalPlayer>;
+typealias ClientLevel = java<net.minecraft.client.multiplayer.ClientLevel>;
+
+LocalPlayer player = Minecraft.instance.player;
+ClientLevel level = Minecraft.instance.level;
 ```
 
 ### Limitations

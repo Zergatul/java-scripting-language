@@ -486,6 +486,11 @@ public class CompletionContext {
 
             case CLASS_DECLARATION -> canClassMember();
 
+            case TYPE_ALIAS -> {
+                BoundTypeAliasNode typeAliasNode = (BoundTypeAliasNode) entry.node;
+                yield TextRange.isBetween(line, column, typeAliasNode.syntaxNode.equal, typeAliasNode.syntaxNode.semicolon);
+            }
+
             case INVALID_TYPE, PREDEFINED_TYPE, CUSTOM_TYPE, DECLARED_CLASS_TYPE -> {
                 yield entry.parent.node.isNot(BoundNodeType.CLASS_DECLARATION);
             }

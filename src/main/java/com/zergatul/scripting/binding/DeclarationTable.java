@@ -17,11 +17,13 @@ public class DeclarationTable {
     private final Map<String, StaticVariableDeclaration> staticVariables = new HashMap<>();
     private final Map<String, FunctionDeclaration> functions = new HashMap<>();
     private final Map<String, ClassDeclaration> classes = new HashMap<>();
+    private final Map<String, TypeAliasDeclaration> typeAliases = new HashMap<>();
     private final List<ExtensionDeclaration> extensions = new ArrayList<>();
 
     private final Map<StaticVariableNode, StaticVariableDeclaration> staticVariableNodeMap = new HashMap<>();
     private final Map<FunctionNode, FunctionDeclaration> functionNodeMap = new HashMap<>();
     private final Map<ClassNode, ClassDeclaration> classNodeMap = new HashMap<>();
+    private final Map<TypeAliasNode, TypeAliasDeclaration> typeAliasNodeMap = new HashMap<>();
     private final Map<ExtensionNode, ExtensionDeclaration> extensionNodeMap = new HashMap<>();
 
     private final List<ExtensionMethodReference> extensionMethods = new ArrayList<>();
@@ -47,6 +49,13 @@ public class DeclarationTable {
             classes.put(name, declaration);
         }
         classNodeMap.put(classNode, declaration);
+    }
+
+    public void addTypeAlias(String name, TypeAliasNode typeAliasNode, TypeAliasDeclaration declaration) {
+        if (!name.isEmpty() && !typeAliases.containsKey(name)) {
+            typeAliases.put(name, declaration);
+        }
+        typeAliasNodeMap.put(typeAliasNode, declaration);
     }
 
     public void addExtension(ExtensionNode extensionNode, ExtensionDeclaration declaration) {
@@ -76,6 +85,14 @@ public class DeclarationTable {
 
     public ClassDeclaration getClassDeclaration(ClassNode classNode) {
         ClassDeclaration declaration = classNodeMap.get(classNode);
+        if (declaration == null) {
+            throw new InternalException();
+        }
+        return declaration;
+    }
+
+    public TypeAliasDeclaration getTypeAliasDeclaration(TypeAliasNode typeAliasNode) {
+        TypeAliasDeclaration declaration = typeAliasNodeMap.get(typeAliasNode);
         if (declaration == null) {
             throw new InternalException();
         }
@@ -118,6 +135,9 @@ public class DeclarationTable {
     public SymbolRef getSymbol(String name) {
         if (classes.containsKey(name)) {
             return classes.get(name).getSymbolRef();
+        }
+        if (typeAliases.containsKey(name)) {
+            return typeAliases.get(name).getSymbolRef();
         }
         if (functions.containsKey(name)) {
             return functions.get(name).getSymbolRef();

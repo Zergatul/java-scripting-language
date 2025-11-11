@@ -3,6 +3,7 @@ package com.zergatul.scripting.completion;
 import com.zergatul.scripting.binding.BinderOutput;
 import com.zergatul.scripting.binding.nodes.BoundClassNode;
 import com.zergatul.scripting.binding.nodes.BoundCompilationUnitMemberNode;
+import com.zergatul.scripting.binding.nodes.BoundTypeAliasNode;
 import com.zergatul.scripting.compiler.CompilationParameters;
 import com.zergatul.scripting.binding.nodes.BoundNodeType;
 import com.zergatul.scripting.symbols.ClassSymbol;
@@ -51,6 +52,12 @@ public class TypesCompletionProvider<T> extends AbstractCompletionProvider<T> {
                 BoundClassNode classNode = (BoundClassNode) memberNode;
                 if (!classNode.name.value.isEmpty()) {
                     suggestions.add(factory.getClassSuggestion((ClassSymbol) classNode.name.getSymbol()));
+                }
+            }
+            if (memberNode.getNodeType() == BoundNodeType.TYPE_ALIAS) {
+                BoundTypeAliasNode typeAliasNode = (BoundTypeAliasNode) memberNode;
+                if (!typeAliasNode.name.token.value.isEmpty()) {
+                    suggestions.add(factory.getTypeAliasSuggestion(typeAliasNode.getAliasType()));
                 }
             }
         }
