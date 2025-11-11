@@ -97,4 +97,5 @@ public enum TokenType {
     ABSTRACT,
     VIRTUAL,
     OVERRIDE,
+    TYPEALIAS,
 }

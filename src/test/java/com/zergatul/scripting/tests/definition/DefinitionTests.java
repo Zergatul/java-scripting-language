@@ -173,6 +173,27 @@ public class DefinitionTests extends ComparatorTest {
                 new SingleLineTextRange(2, 5, 21, 10));
     }
 
+    @Test
+    public void typeAliasTest1() {
+        checkDefinition("""
+                typealias Int1 = Int2;
+                typealias Int2 = int;
+                Int1 a;
+                """,
+                3, 1,
+                new SingleLineTextRange(1, 1, 0, 14));
+    }
+
+    @Test
+    public void typeAliasTest2() {
+        checkDefinition("""
+                typealias Int1 = Int2;
+                typealias Int2 = int;
+                """,
+                1, 19,
+                new SingleLineTextRange(2, 1, 23, 14));
+    }
+
     private void checkDefinition(String code, int line, int column, TextRange expected) {
         CompilationParameters parameters = new CompilationParametersBuilder()
                 .setRoot(ApiRoot.class)

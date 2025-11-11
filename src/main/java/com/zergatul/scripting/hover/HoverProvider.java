@@ -47,6 +47,16 @@ public class HoverProvider {
             case CHAR_LITERAL -> getCharHover(range);
             case FLOAT_LITERAL -> getFloat64Hover(range);
             case STRING_LITERAL -> getStringHover(range);
+
+            case ALIASED_TYPE -> {
+                BoundAliasedTypeNode aliasedTypeNode = (BoundAliasedTypeNode) node;
+                String text =
+                        formatKeyword("typealias") + " " +
+                        formatType(aliasedTypeNode.syntaxNode.value) + " = " +
+                        formatType(aliasedTypeNode.getSymbol().getAliasType().getFinalType());
+                yield new HoverResponse(text, range);
+            }
+
             case CUSTOM_TYPE -> new HoverResponse(formatType(((BoundCustomTypeNode) node).type), range);
             case DECLARED_CLASS_TYPE -> new HoverResponse(formatType(((BoundDeclaredClassTypeNode) node).type), range);
             case PREDEFINED_TYPE -> {

@@ -10,6 +10,7 @@ import org.jspecify.annotations.Nullable;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Type;
 
+import java.lang.reflect.GenericArrayType;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.TypeVariable;
 import java.lang.reflect.WildcardType;
@@ -325,6 +326,10 @@ public abstract class SType {
 
         if (type instanceof WildcardType wildcard) {
             return fromJavaType(wildcard.getUpperBounds()[0]);
+        }
+
+        if (type instanceof GenericArrayType genericArray) {
+            return new SArrayType(fromJavaType(genericArray.getGenericComponentType()));
         }
 
         if (type instanceof Class<?> clazz) {

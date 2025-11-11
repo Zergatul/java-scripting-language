@@ -62,6 +62,7 @@ public class Binder {
                 case FUNCTION -> bindFunction((FunctionNode) member);
                 case CLASS_DECLARATION -> bindClass((ClassNode) member);
                 case EXTENSION_DECLARATION -> bindExtension((ExtensionNode) member);
+                case TYPE_ALIAS -> bindTypeAlias((TypeAliasNode) member);
                 default -> throw new InternalException();
             });
         }
@@ -334,6 +335,11 @@ public class Binder {
                 methodDeclaration.getParameters(),
                 body,
                 lifted);
+    }
+
+    private BoundTypeAliasNode bindTypeAlias(TypeAliasNode typeAliasNode) {
+        TypeAliasDeclaration declaration = declarationTable.getTypeAliasDeclaration(typeAliasNode);
+        return declaration.getBound();
     }
 
     private BoundParameterListNode bindParameterList(ParameterListNode node) {
@@ -1125,6 +1131,10 @@ public class Binder {
         if (symbolRef != null) {
             if (symbolRef.get() instanceof Function) {
                 return new BoundFunctionReferenceNode(name, symbolRef);
+            } else if (symbolRef.get() instanceof TypeAliasSymbol typeAliasSymbol) {
+                CustomTypeNode custom = new CustomTypeNode(name.token);
+                BoundAliasedTypeNode typeNode = new BoundAliasedTypeNode(custom, symbolRef);
+                return new BoundStaticReferenceExpression(name, typeNode, new SStaticTypeReference(typeNode.type));
             } else {
                 return new BoundNameExpressionNode(name, symbolRef);
             }
@@ -1709,6 +1719,8 @@ public class Binder {
                 if (symbolRef != null) {
                     if (symbolRef.get() instanceof ClassSymbol) {
                         yield new BoundDeclaredClassTypeNode(custom, symbolRef);
+                    } if (symbolRef.get() instanceof TypeAliasSymbol) {
+                        yield new BoundAliasedTypeNode(custom, symbolRef);
                     } else {
                         addDiagnostic(BinderErrors.IdentifierIsNotType, type, custom.value);
                         yield new BoundInvalidTypeNode(custom);
@@ -1802,6 +1814,16 @@ public class Binder {
             }
         }
 
+        // process type aliases
+        for (CompilationUnitMemberNode member : unit.members.members) {
+            if (member.is(ParserNodeType.TYPE_ALIAS)) {
+                buildTypeAliasDeclaration((TypeAliasNode) member);
+            }
+        }
+
+        // resolve type aliases
+        resolveTypeAliases();
+
         // process inheritance
         declarationTable.forEachClassDeclaration((classNode, classDeclaration) -> {
             if (classNode.baseTypeNode != null) {
@@ -1826,7 +1848,7 @@ public class Binder {
         // process static variables and functions
         for (CompilationUnitMemberNode member : unit.members.members) {
             switch (member.getNodeType()) {
-                case CLASS_DECLARATION, EXTENSION_DECLARATION -> {}
+                case CLASS_DECLARATION, EXTENSION_DECLARATION, TYPE_ALIAS -> {}
                 case STATIC_VARIABLE -> buildStaticFieldDeclaration((StaticVariableNode) member);
                 case FUNCTION -> buildFunctionDeclaration((FunctionNode) member);
                 default -> throw new InternalException();
@@ -1862,6 +1884,81 @@ public class Binder {
         SDeclaredType declaredType = new SDeclaredType(name);
         ClassSymbol classSymbol = new ClassSymbol(name, declaredType, TextRange.combine(classNode.keyword, classNode.name));
         declarationTable.addClass(name, classNode, new ClassDeclaration(name, new ImmutableSymbolRef(classSymbol)));
+    }
+
+    private void buildTypeAliasDeclaration(TypeAliasNode typeAliasNode) {
+        String name = typeAliasNode.name.value;
+        if (!name.isEmpty() && declarationTable.hasSymbol(name)) {
+            addDiagnostic(BinderErrors.SymbolAlreadyDeclared, typeAliasNode.name, name);
+        }
+
+        SymbolRef symbolRef = new ImmutableSymbolRef(new TypeAliasSymbol(name, TextRange.combine(typeAliasNode.keyword, typeAliasNode.name)));
+        declarationTable.addTypeAlias(name, typeAliasNode, new TypeAliasDeclaration(name, symbolRef));
+    }
+
+    private void resolveTypeAliases() {
+        List<TypeAliasNode> unresolved = new ArrayList<>();
+        for (CompilationUnitMemberNode member : unit.members.members) {
+            if (member.is(ParserNodeType.TYPE_ALIAS)) {
+                unresolved.add((TypeAliasNode) member);
+            }
+        }
+
+        while (!unresolved.isEmpty()) {
+            Iterator<TypeAliasNode> iterator = unresolved.iterator();
+            while (iterator.hasNext()) {
+                TypeAliasNode current = iterator.next();
+                TypeAliasDeclaration declaration = declarationTable.getTypeAliasDeclaration(current);
+                TypeAliasSymbol symbol = declaration.getSymbol();
+                SAliasType aliasType = symbol.getAliasType();
+
+                // get symbol ref if it is pointing to another alias
+                TypeAliasSymbol linkedAliasSymbolRef = null;
+                if (current.typeNode.is(ParserNodeType.CUSTOM_TYPE)) {
+                    CustomTypeNode customTypeNode = (CustomTypeNode) current.typeNode;
+                    SymbolRef symbolRef = getSymbol(customTypeNode.value);
+                    if (symbolRef instanceof ImmutableSymbolRef immutableSymbolRef && immutableSymbolRef.get() instanceof TypeAliasSymbol linked) {
+                        linkedAliasSymbolRef = linked;
+                    }
+                }
+
+                if (linkedAliasSymbolRef != null) {
+                    SAliasType linkedAliasType = linkedAliasSymbolRef.getAliasType();
+                    if (aliasType.isFormingLoop(linkedAliasType)) {
+                        addDiagnostic(BinderErrors.TypeAliasLoop, current);
+                        iterator.remove();
+
+                        BoundSymbolNode symbolNode = new BoundSymbolNode(current.name, declaration.getSymbolRef());
+                        BoundTypeNode boundTypeNode = new BoundInvalidTypeNode((CustomTypeNode) current.typeNode);
+                        BoundTypeAliasNode boundTypeAliasNode = new BoundTypeAliasNode(current, symbolNode, boundTypeNode);
+                        declaration.setBound(boundTypeAliasNode);
+
+                        aliasType.setUnderlying(SUnknown.instance);
+
+                        continue;
+                    }
+
+                    aliasType.setUnderlying(linkedAliasType);
+
+                    if (aliasType.canBeResolved()) {
+                        BoundSymbolNode symbolNode = new BoundSymbolNode(current.name, declaration.getSymbolRef());
+                        BoundTypeNode boundTypeNode = bindType(current.typeNode);
+                        BoundTypeAliasNode boundTypeAliasNode = new BoundTypeAliasNode(current, symbolNode, boundTypeNode);
+                        declaration.setBound(boundTypeAliasNode);
+
+                        iterator.remove();
+                    }
+                } else {
+                    BoundSymbolNode symbolNode = new BoundSymbolNode(current.name, declaration.getSymbolRef());
+                    BoundTypeNode boundTypeNode = bindType(current.typeNode);
+                    BoundTypeAliasNode boundTypeAliasNode = new BoundTypeAliasNode(current, symbolNode, boundTypeNode);
+                    declaration.setBound(boundTypeAliasNode);
+                    aliasType.setUnderlying(boundTypeNode.type);
+
+                    iterator.remove();
+                }
+            }
+        }
     }
 
     private void buildExtensionDeclaration(ExtensionNode extensionNode) {

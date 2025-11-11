@@ -42,7 +42,7 @@ public class BinderErrors {
     public static final ErrorCode RefTypeNotSupported = new ErrorCode("B038", "ref type for '%s' is not supported");
     public static final ErrorCode JavaTypeDoesNotExist = new ErrorCode("B039", "Java type '%s' does not exist");
     public static final ErrorCode JavaTypeNotAllowed = new ErrorCode("B040", "%s");
-    public static final ErrorCode IdentifierIsNotType = new ErrorCode("B041", "'%s' is not type");
+    public static final ErrorCode IdentifierIsNotType = new ErrorCode("B041", "'%s' is not a type");
     public static final ErrorCode MemberAlreadyDeclared = new ErrorCode("B042", "Member named '%s' already exists");
     public static final ErrorCode ConstructorAlreadyDeclared = new ErrorCode("B043", "Constructor with the same parameters already declared");
     public static final ErrorCode MethodAlreadyDeclared = new ErrorCode("B044", "Method with the same signature already declared");
@@ -66,6 +66,7 @@ public class BinderErrors {
     public static final ErrorCode NoConstructors = new ErrorCode("B062", "No constructors exist for '%s'");
     public static final ErrorCode ClassCircularInheritance = new ErrorCode("B063", "Class circular inheritance");
     public static final ErrorCode NoDefaultValue = new ErrorCode("B064", "Type '%s' does not have default value, please assign value for this variable");
+    public static final ErrorCode TypeAliasLoop = new ErrorCode("B065", "Loop in type aliases");
 
     public static final ErrorCode InternalError = new ErrorCode("B999", "Internal error: %s");
 }

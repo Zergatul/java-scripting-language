@@ -35,6 +35,11 @@ public class DefinitionProvider {
                 yield symbol.getDefinition();
             }
 
+            case ALIASED_TYPE -> {
+                BoundAliasedTypeNode aliasedTypeNode = (BoundAliasedTypeNode) node;
+                yield aliasedTypeNode.getSymbol().getDefinition();
+            }
+
             case DECLARED_CLASS_TYPE -> {
                 BoundDeclaredClassTypeNode declaredClassTypeNode = (BoundDeclaredClassTypeNode) node;
                 BoundNode parent = chain.get(1);

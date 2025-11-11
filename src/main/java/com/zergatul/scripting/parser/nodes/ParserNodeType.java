@@ -75,4 +75,5 @@ public enum ParserNodeType {
     FUNCTION_TYPE,
     EXTENSION_DECLARATION,
     CONSTRUCTOR_INITIALIZER,
+    TYPE_ALIAS,
 }
