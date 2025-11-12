@@ -40,6 +40,7 @@ public class CompilerContext {
     private int lastEmittedLine;
     private final List<SGenericFunction> genericFunctions;
     private Label startLabel;
+    private ClassLoaderContext classLoaderContext;
 
     private CompilerContext(
             CompilerContext parent,
@@ -208,11 +209,11 @@ public class CompilerContext {
                 .build();
     }
 
-    public CompilerContext createFunction(SType returnType, boolean isAsync) {
-        return createFunction(returnType, isAsync, false);
+    public CompilerContext createInstanceMethod(SType returnType, boolean isAsync) {
+        return createInstanceMethod(returnType, isAsync, false);
     }
 
-    public CompilerContext createFunction(SType returnType, boolean isAsync, boolean generic) {
+    public CompilerContext createInstanceMethod(SType returnType, boolean isAsync, boolean generic) {
         return new Builder()
                 .setParent(this)
                 .setInitialStackIndex(1)
@@ -465,16 +466,6 @@ public class CompilerContext {
         return root.className;
     }
 
-    public String getCurrentClassName() {
-        CompilerContext current = this;
-        while (true) {
-            if (current.className != null) {
-                return current.className;
-            }
-            current = current.parent;
-        }
-    }
-
     public List<LiftedVariable> getLifted() {
         return lifted;
     }
@@ -588,6 +579,26 @@ public class CompilerContext {
 
     public void setLastEmittedLine(int line) {
         getFunctionContext().lastEmittedLine = line;
+    }
+
+    public void setClassLoaderContext(ClassLoaderContext classLoaderContext) {
+        this.classLoaderContext = classLoaderContext;
+    }
+
+    public Class<?> defineClass(String name, byte[] code) {
+        if (root.classLoaderContext == null) {
+            throw new InternalException();
+        }
+
+        return root.classLoaderContext.defineClass(name, code);
+    }
+
+    public int getNextUniqueIndex() {
+        if (root.classLoaderContext == null) {
+            throw new InternalException();
+        }
+
+        return root.classLoaderContext.getNextUniqueIndex();
     }
 
     private void insertLocalVariable(SymbolRef variableRef) {

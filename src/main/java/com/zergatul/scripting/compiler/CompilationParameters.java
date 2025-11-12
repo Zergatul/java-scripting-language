@@ -23,7 +23,7 @@ public class CompilationParameters {
     private final SType asyncReturnType;
     private final List<Class<?>> customTypes;
     private final JavaInteropPolicy policy;
-    private final String classNamePrefix;
+    private final String mainClassName;
     private final String sourceFile;
 
     private final boolean emitLineNumbers;
@@ -36,7 +36,7 @@ public class CompilationParameters {
             SType asyncReturnType,
             List<Class<?>> customTypes,
             JavaInteropPolicy policy,
-            String classNamePrefix,
+            String mainClassName,
             String sourceFile,
             boolean emitLineNumbers,
             boolean emitVariableNames,
@@ -56,7 +56,7 @@ public class CompilationParameters {
         this.asyncReturnType = asyncReturnType;
         this.customTypes = addPredefinedTypes(customTypes);
         this.policy = policy;
-        this.classNamePrefix = classNamePrefix;
+        this.mainClassName = mainClassName;
         this.sourceFile = sourceFile;
         this.emitLineNumbers = emitLineNumbers;
         this.emitVariableNames = emitVariableNames;
@@ -67,8 +67,8 @@ public class CompilationParameters {
                 .forEach(f -> addStaticVariable(new StaticFieldConstantStaticVariable(f.getName(), f)));
     }
 
-    public String getClassNamePrefix() {
-        return classNamePrefix;
+    public String getMainClassName() {
+        return mainClassName != null ? mainClassName : "Script";
     }
 
     public String getSourceFile() {
