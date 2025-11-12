@@ -37,7 +37,7 @@ public class LineNumberTests {
             program.run();
         } catch (ArrayIndexOutOfBoundsException exception) {
             assertStackTrace(exception, List.of(
-                    new StackTraceElement("com.zergatul.scripting.dynamic.DynamicClass_1", "run", "<TestScript>", 2)));
+                    new StackTraceElement("com.zergatul.scripting.dynamic.Script", "run", "<TestScript>", 2)));
             return;
         }
 
@@ -59,8 +59,8 @@ public class LineNumberTests {
             program.run();
         } catch (ArrayIndexOutOfBoundsException exception) {
             assertStackTrace(exception, List.of(
-                    new StackTraceElement("com.zergatul.scripting.dynamic.DynamicClass_1", "foo", "<TestScript>", 2),
-                    new StackTraceElement("com.zergatul.scripting.dynamic.DynamicClass_1", "run", "<TestScript>", 6)));
+                    new StackTraceElement("com.zergatul.scripting.dynamic.Script", "foo", "<TestScript>", 2),
+                    new StackTraceElement("com.zergatul.scripting.dynamic.Script", "run", "<TestScript>", 6)));
             return;
         }
 
@@ -81,13 +81,13 @@ public class LineNumberTests {
             program.run();
         } catch (ArrayIndexOutOfBoundsException exception) {
             assertStackTrace(exception, List.of(
-                    new StackTraceElement("com.zergatul.scripting.dynamic.DynamicClass_1", "sum", "<TestScript>", 2),
-                    new StackTraceElement("com.zergatul.scripting.dynamic.DynamicClass_1", "sum", "<TestScript>", 2),
-                    new StackTraceElement("com.zergatul.scripting.dynamic.DynamicClass_1", "sum", "<TestScript>", 2),
-                    new StackTraceElement("com.zergatul.scripting.dynamic.DynamicClass_1", "sum", "<TestScript>", 2),
-                    new StackTraceElement("com.zergatul.scripting.dynamic.DynamicClass_1", "sum", "<TestScript>", 2),
-                    new StackTraceElement("com.zergatul.scripting.dynamic.DynamicClass_1", "sum", "<TestScript>", 2),
-                    new StackTraceElement("com.zergatul.scripting.dynamic.DynamicClass_1", "run", "<TestScript>", 5)));
+                    new StackTraceElement("com.zergatul.scripting.dynamic.Script", "sum", "<TestScript>", 2),
+                    new StackTraceElement("com.zergatul.scripting.dynamic.Script", "sum", "<TestScript>", 2),
+                    new StackTraceElement("com.zergatul.scripting.dynamic.Script", "sum", "<TestScript>", 2),
+                    new StackTraceElement("com.zergatul.scripting.dynamic.Script", "sum", "<TestScript>", 2),
+                    new StackTraceElement("com.zergatul.scripting.dynamic.Script", "sum", "<TestScript>", 2),
+                    new StackTraceElement("com.zergatul.scripting.dynamic.Script", "sum", "<TestScript>", 2),
+                    new StackTraceElement("com.zergatul.scripting.dynamic.Script", "run", "<TestScript>", 5)));
             return;
         }
 
@@ -108,7 +108,7 @@ public class LineNumberTests {
         } catch (ArrayIndexOutOfBoundsException exception) {
             assertStackTrace(exception, List.of(
                     new StackTraceElement("com.zergatul.scripting.tests.compiler.LineNumberTests$LambdasApi", "reduce", "LineNumberTests.java", 0),
-                    new StackTraceElement("com.zergatul.scripting.dynamic.DynamicClass_1", "run", "<TestScript>", 2)));
+                    new StackTraceElement("com.zergatul.scripting.dynamic.Script", "run", "<TestScript>", 2)));
             return;
         }
 
@@ -130,7 +130,7 @@ public class LineNumberTests {
             assertStackTrace(exception, List.of(
                     new StackTraceElement("com.zergatul.scripting.dynamic.DynamicLambdaClass_3", "accept", "<TestScript>", 3),
                     new StackTraceElement("com.zergatul.scripting.tests.compiler.LineNumberTests$LambdasApi", "iterate", "LineNumberTests.java", 0),
-                    new StackTraceElement("com.zergatul.scripting.dynamic.DynamicClass_1", "run", "<TestScript>", 2)));
+                    new StackTraceElement("com.zergatul.scripting.dynamic.Script", "run", "<TestScript>", 2)));
             return;
         }
 
@@ -176,16 +176,13 @@ public class LineNumberTests {
 
     private static boolean stackTraceElementsEqual(StackTraceElement actual, StackTraceElement expected) {
         if (!Objects.equals(actual.getClassName(), expected.getClassName())) {
-            boolean isDynamicClass =
-                    actual.getClassName().startsWith("com.zergatul.scripting.dynamic.DynamicClass_") &&
-                    expected.getClassName().startsWith("com.zergatul.scripting.dynamic.DynamicClass_");
             boolean isDynamicLambda =
                     actual.getClassName().startsWith("com.zergatul.scripting.dynamic.DynamicLambdaClass_") &&
                     expected.getClassName().startsWith("com.zergatul.scripting.dynamic.DynamicLambdaClass_");
             boolean isStateMachine =
                     actual.getClassName().startsWith("com.zergatul.scripting.dynamic.DynamicAsyncStateMachine_") &&
                     expected.getClassName().startsWith("com.zergatul.scripting.dynamic.DynamicAsyncStateMachine_");
-            if (!isDynamicClass && !isDynamicLambda && !isStateMachine) {
+            if (!isDynamicLambda && !isStateMachine) {
                 return false;
             }
         }

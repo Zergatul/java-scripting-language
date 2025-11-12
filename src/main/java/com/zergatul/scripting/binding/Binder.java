@@ -2168,7 +2168,7 @@ public class Binder {
     }
 
     private void pushFunctionScope(SType returnType, boolean isAsync) {
-        context = context.createFunction(returnType, isAsync);
+        context = context.createInstanceMethod(returnType, isAsync);
     }
 
     private void pushStaticFunctionScope(SType returnType, boolean isAsync) {

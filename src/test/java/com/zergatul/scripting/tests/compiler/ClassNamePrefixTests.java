@@ -12,12 +12,11 @@ public class ClassNamePrefixTests {
     public void basicTest() {
         Compiler compiler = new Compiler(new CompilationParametersBuilder()
                 .setRoot(ApiRoot.class)
-                .setClassNamePrefix("TestPrefix")
+                .setMainClassName("TestScript")
                 .build());
         CompilationResult result = compiler.compile("");
         Assertions.assertNull(result.getDiagnostics());
-        Assertions.assertTrue(result.getProgram().getClass().getName()
-                .matches("^com\\.zergatul\\.scripting\\.dynamic\\.TestPrefix(\\d+)$"));
+        Assertions.assertEquals("com.zergatul.scripting.dynamic.TestScript", result.getProgram().getClass().getName());
     }
 
     public static class ApiRoot { }

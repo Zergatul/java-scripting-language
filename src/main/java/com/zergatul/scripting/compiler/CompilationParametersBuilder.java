@@ -13,7 +13,7 @@ public class CompilationParametersBuilder {
     private SType asyncReturnType;
     private List<Class<?>> customTypes;
     private JavaInteropPolicy policy;
-    private String classNamePrefix;
+    private String mainClassName;
     private String sourceFile;
     private boolean emitLineNumbers;
     private boolean emitVariableNames;
@@ -60,8 +60,8 @@ public class CompilationParametersBuilder {
         return this;
     }
 
-    public CompilationParametersBuilder setClassNamePrefix(String classNamePrefix) {
-        this.classNamePrefix = classNamePrefix;
+    public CompilationParametersBuilder setMainClassName(String mainClassName) {
+        this.mainClassName = mainClassName;
         return this;
     }
 
@@ -92,7 +92,7 @@ public class CompilationParametersBuilder {
                 asyncReturnType,
                 customTypes,
                 policy,
-                classNamePrefix,
+                mainClassName,
                 sourceFile,
                 emitLineNumbers,
                 emitVariableNames,

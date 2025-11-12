@@ -34,14 +34,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.objectweb.asm.Opcodes.*;
 
 public class Compiler {
-
-    private static final AtomicInteger counter = new AtomicInteger(0);
-    private static final DynamicCompilerClassLoader classLoader = new DynamicCompilerClassLoader();
 
     private final CompilationParameters parameters;
 
@@ -72,10 +68,7 @@ public class Compiler {
 
         ClassWriter writer = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
         emitSourceFile(writer);
-        String name =
-                "com/zergatul/scripting/dynamic/" +
-                (parameters.getClassNamePrefix() != null ? parameters.getClassNamePrefix() : "DynamicClass_") +
-                counter.incrementAndGet();
+        String name = "com/zergatul/scripting/dynamic/" + parameters.getMainClassName();
         writer.visit(
                 V1_8,
                 ACC_PUBLIC,
@@ -85,13 +78,14 @@ public class Compiler {
                 new String[] { Type.getInternalName(parameters.getFunctionalInterface()) });
 
         CompilerContext context = parameters.getContext();
+        context.setClassLoaderContext(new ClassLoaderContext());
         context.setClassName(name);
 
         context.copyGenericFunctionsFrom(output.context());
 
         compileCompilationUnitMembers(unit, writer, context);
         buildEmptyConstructor(writer);
-        buildMainMethod(unit, writer, name);
+        buildMainMethod(unit, writer, name, context);
 
         writer.visitEnd();
 
@@ -99,7 +93,7 @@ public class Compiler {
         saveClassFile(name, bytecode);
 
         @SuppressWarnings("unchecked")
-        Class<T> dynamic = (Class<T>) classLoader.defineClass(name.replace('/', '.'), bytecode);
+        Class<T> dynamic = (Class<T>) context.defineClass(name.replace('/', '.'), bytecode);
         return createInstance(dynamic);
     }
 
@@ -138,7 +132,7 @@ public class Compiler {
         }
 
         // have to be compiled first, because JVM requires parent classes/interfaces to be defined before defining child
-        compileGenericFunctions(context.getGenericFunctions());
+        compileGenericFunctions(context.getGenericFunctions(), context);
         compileClasses(classes, writer, context);
         compileExtensions(extensions, writer, context);
         compileStaticVariables(fields, writer, context);
@@ -204,7 +198,7 @@ public class Compiler {
             byte[] bytecode = innerWriter.toByteArray();
             saveClassFile(name, bytecode);
 
-            Class<?> innerClass = classLoader.defineClass(name.replace('/', '.'), bytecode);
+            Class<?> innerClass = context.defineClass(name.replace('/', '.'), bytecode);
             classNode.getDeclaredType().setJavaClass(innerClass);
         }
     }
@@ -334,9 +328,9 @@ public class Compiler {
         }
     }
 
-    private void compileGenericFunctions(List<SGenericFunction> functions) {
+    private void compileGenericFunctions(List<SGenericFunction> functions, CompilerContext context) {
         for (SGenericFunction function : functions) {
-            String name = "com/zergatul/scripting/dynamic/GenericFunction_" + counter.incrementAndGet();
+            String name = "com/zergatul/scripting/dynamic/GenericFunction_" + context.getNextUniqueIndex();
             function.setInternalName(name);
 
             ClassWriter writer = new ClassWriter(0);
@@ -362,7 +356,7 @@ public class Compiler {
             byte[] bytecode = writer.toByteArray();
             saveClassFile(shortName, bytecode);
 
-            Class<?> interfaceClass = classLoader.defineClass(function.getInternalName().replace('/', '.'), bytecode);
+            Class<?> interfaceClass = context.defineClass(function.getInternalName().replace('/', '.'), bytecode);
             function.setJavaClass(interfaceClass);
         }
     }
@@ -478,7 +472,7 @@ public class Compiler {
         return constructorDescriptor;
     }
 
-    private void buildMainMethod(BoundCompilationUnitNode unit, ClassWriter writer, String className) {
+    private void buildMainMethod(BoundCompilationUnitNode unit, ClassWriter writer, String className, CompilerContext context1) {
         Class<?> functionalInterface = parameters.getFunctionalInterface();
         if (!functionalInterface.isInterface()) {
             throw new InternalException();
@@ -493,7 +487,7 @@ public class Compiler {
         MethodVisitor visitor = writer.visitMethod(ACC_PUBLIC, method.getName(), Type.getMethodDescriptor(method), null, null);
         visitor.visitCode();
 
-        CompilerContext context = parameters.getContext();
+        CompilerContext context = context1.createInstanceMethod(parameters.getReturnType(), parameters.isAsync());
         context.reserveStack(1 + method.getParameterCount()); // assuming all parameters size = 1
 
         processContextStart(visitor, context);
@@ -521,14 +515,6 @@ public class Compiler {
 
         if (!prepend.isEmpty()) {
             unit = unit.withStatements(unit.statements.withPrepend(prepend));
-        }
-
-        context.setClassName(className);
-        for (BoundCompilationUnitMemberNode member : unit.members.members) {
-            if (member.getNodeType() == BoundNodeType.STATIC_VARIABLE) {
-                BoundStaticVariableNode field = (BoundStaticVariableNode) member;
-                context.addStaticSymbol(field.name.value, field.name.symbolRef);
-            }
         }
 
         if (parameters.isAsync()) {
@@ -890,7 +876,7 @@ public class Compiler {
     private void compileClosureClass(MethodVisitor parentVisitor, CompilerContext parentContext, List<LiftedVariable> variables) {
         ClassWriter writer = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
         emitSourceFile(writer);
-        String name = "com/zergatul/scripting/dynamic/DynamicClosure_" + counter.incrementAndGet();
+        String name = "com/zergatul/scripting/dynamic/DynamicClosure_" + parentContext.getNextUniqueIndex();
         writer.visit(
                 V1_8,
                 ACC_PUBLIC,
@@ -921,7 +907,7 @@ public class Compiler {
         byte[] bytecode = writer.toByteArray();
         saveClassFile(name, bytecode);
 
-        Class<?> closureClass = classLoader.defineClass(name.replace('/', '.'), bytecode);
+        Class<?> closureClass = parentContext.defineClass(name.replace('/', '.'), bytecode);
 
         // create instance of closure class
         parentVisitor.visitTypeInsn(NEW, name);
@@ -1000,7 +986,7 @@ public class Compiler {
 
         ClassWriter writer = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
         emitSourceFile(writer);
-        String name = "com/zergatul/scripting/dynamic/DynamicAsyncStateMachine_" + counter.incrementAndGet();
+        String name = "com/zergatul/scripting/dynamic/DynamicAsyncStateMachine_" + context.getNextUniqueIndex();
         writer.visit(
                 V1_8,
                 ACC_PUBLIC,
@@ -1073,7 +1059,7 @@ public class Compiler {
                 null,
                 null);
 
-        CompilerContext nextMethodContext = context.createFunction(SType.fromJavaType(CompletableFuture.class), false);
+        CompilerContext nextMethodContext = context.createInstanceMethod(SType.fromJavaType(CompletableFuture.class), false);
         nextMethodContext.setAsyncStateMachineClassName(name);
         if (parameterVisitor.hasThisLocalVariable()) {
             nextMethodContext.setAsyncThisFieldName(parameterVisitor.getParameters().getFirst().getFieldName());
@@ -1137,7 +1123,7 @@ public class Compiler {
         byte[] bytecode = writer.toByteArray();
         saveClassFile(name, bytecode);
 
-        classLoader.defineClass(name.replace('/', '.'), bytecode);
+        context.defineClass(name.replace('/', '.'), bytecode);
 
         /**/
         parentVisitor.visitTypeInsn(NEW, name);
@@ -1719,7 +1705,7 @@ public class Compiler {
 
         ClassWriter writer = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
         emitSourceFile(writer);
-        String name = "com/zergatul/scripting/dynamic/DynamicLambdaClass_" + counter.incrementAndGet();
+        String name = "com/zergatul/scripting/dynamic/DynamicLambdaClass_" + context.getNextUniqueIndex();
         writer.visit(
                 V1_8,
                 ACC_PUBLIC,
@@ -1753,7 +1739,7 @@ public class Compiler {
                 null);
         invokeVisitor.visitCode();
 
-        CompilerContext lambdaContext = context.createFunction(actualReturnType, false, !actualReturnType.equals(rawReturnType));
+        CompilerContext lambdaContext = context.createInstanceMethod(actualReturnType, false, !actualReturnType.equals(rawReturnType));
         lambdaContext.setClassName(name);
 
         processContextStart(invokeVisitor, lambdaContext);
@@ -1832,7 +1818,7 @@ public class Compiler {
         byte[] bytecode = writer.toByteArray();
         saveClassFile(name, bytecode);
 
-        classLoader.defineClass(name.replace('/', '.'), bytecode);
+        context.defineClass(name.replace('/', '.'), bytecode);
 
         visitor.visitTypeInsn(NEW, name);
         visitor.visitInsn(DUP);
@@ -1905,7 +1891,7 @@ public class Compiler {
         SStaticFunction type = function.getFunctionType();
         List<BoundParameterNode> parameters = new ArrayList<>(type.getParameters().size());
         List<LocalVariable> variables = new ArrayList<>(type.getParameters().size());
-        CompilerContext lambdaContext = context.createFunction(type.getReturnType(), false, true);
+        CompilerContext lambdaContext = context.createInstanceMethod(type.getReturnType(), false, true);
         for (SType parameterType : type.getParameterTypes()) {
             SymbolRef symbolRef = lambdaContext.addLocalVariable("p" + variables.size(), parameterType, null);
             LocalVariable variable = symbolRef.asLocalVariable();
