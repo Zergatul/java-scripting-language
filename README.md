@@ -501,8 +501,8 @@ log(x2);
 The most useful case for it is Java interop:
 ```c#
 typealias Minecraft = Java<net.minecraft.client.Minecraft>;
-typealias LocalPlayer = java<net.minecraft.client.player.LocalPlayer>;
-typealias ClientLevel = java<net.minecraft.client.multiplayer.ClientLevel>;
+typealias LocalPlayer = Java<net.minecraft.client.player.LocalPlayer>;
+typealias ClientLevel = Java<net.minecraft.client.multiplayer.ClientLevel>;
 
 LocalPlayer player = Minecraft.instance.player;
 ClientLevel level = Minecraft.instance.level;

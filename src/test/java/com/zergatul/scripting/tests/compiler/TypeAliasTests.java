@@ -71,6 +71,22 @@ public class TypeAliasTests extends ComparatorTest {
     }
 
     @Test
+    public void javaTypeStaticMemberTest() {
+        String code = """
+                typealias Class1 = Java<com.zergatul.scripting.tests.compiler.TypeAliasTests$Class1>;
+                typealias Class2 = Java<com.zergatul.scripting.tests.compiler.TypeAliasTests$Class2>;
+                
+                stringStorage.add(Class1.FIELD_S);
+                stringStorage.add(Class1.staticMethod());
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(ApiRoot.stringStorage.list, List.of("Str", "Static"));
+    }
+
+    @Test
     public void selfReferenceTest() {
         String code = """
                 typealias MyType = MyType;
@@ -102,9 +118,17 @@ public class TypeAliasTests extends ComparatorTest {
 
     @SuppressWarnings("unused")
     public static class Class1 {
+
+        public final static String FIELD_S = "Str";
+
+        public static String staticMethod() {
+            return "Static";
+        }
+
         public String getValue() {
             return "Value1";
         }
+
     }
 
     @SuppressWarnings("unused")

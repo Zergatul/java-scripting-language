@@ -1131,6 +1131,10 @@ public class Binder {
         if (symbolRef != null) {
             if (symbolRef.get() instanceof Function) {
                 return new BoundFunctionReferenceNode(name, symbolRef);
+            } else if (symbolRef.get() instanceof TypeAliasSymbol typeAliasSymbol) {
+                CustomTypeNode custom = new CustomTypeNode(name.token);
+                BoundAliasedTypeNode typeNode = new BoundAliasedTypeNode(custom, symbolRef);
+                return new BoundStaticReferenceExpression(name, typeNode, new SStaticTypeReference(typeNode.type));
             } else {
                 return new BoundNameExpressionNode(name, symbolRef);
             }
