@@ -1,20 +1,22 @@
 package com.zergatul.scripting.tests.compiler;
 
-import com.zergatul.scripting.Getter;
-import com.zergatul.scripting.IndexGetter;
-import com.zergatul.scripting.Setter;
+import com.zergatul.scripting.*;
+import com.zergatul.scripting.binding.BinderErrors;
 import com.zergatul.scripting.tests.compiler.helpers.*;
+import com.zergatul.scripting.tests.framework.ComparatorTest;
 import com.zergatul.scripting.type.CustomType;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
-import static com.zergatul.scripting.tests.compiler.helpers.CompilerHelper.compileWithCustomType;
+import static com.zergatul.scripting.tests.compiler.helpers.CompilerHelper.*;
 
-public class CustomTypeTests {
+public class CustomTypeTests extends ComparatorTest {
 
     @BeforeEach
     public void clean() {
@@ -59,7 +61,7 @@ public class CustomTypeTests {
     }
 
     @Test
-    public void indexersTest() {
+    public void indexGetterTest() {
         String code = """
                 let tester = api.getIndexTester();
                 intStorage.add(tester["a"]);
@@ -75,6 +77,71 @@ public class CustomTypeTests {
 
         Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(1, 2, 4));
         Assertions.assertIterableEquals(ApiRoot.stringStorage.list, List.of("15129", "99.75", "21"));
+    }
+
+    @Test
+    public void indexSetterTest() {
+        String code = """
+                let collection = new NameValueCollection();
+                collection["a"] = "apple";
+                collection["b"] = "banana";
+                collection["c"] = "coconut";
+                stringStorage.add(collection["b"]);
+                stringStorage.add(collection["a"]);
+                stringStorage.add(collection["c"]);
+                """;
+
+        Runnable program = compileWithCustomType(ApiRoot.class, NameValueCollection.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(ApiRoot.stringStorage.list, List.of("banana", "apple", "coconut"));
+    }
+
+    @Test
+    public void cannotInstantiateAbstractClassTest() {
+        String code = """
+                let instance = new AbstractClass();
+                """;
+
+        comparator.assertEquals(
+                List.of(
+                        new DiagnosticMessage(
+                                BinderErrors.CannotInstantiateAbstractClass,
+                                new SingleLineTextRange(1, 16, 15, 19))),
+                getDiagnostics(ApiRoot.class, code, AbstractClass.class));
+    }
+
+    @Test
+    public void staticMembersTest() {
+        String code = """
+                intStorage.add(ChildClass.FIELD2);
+                intStorage.add(ChildClass.method2());
+                """;
+
+        Runnable program = compileWithCustomTypes(ApiRoot.class, code, BaseClass.class, ChildClass.class);
+        program.run();
+
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(456, 567));
+    }
+
+    @Test
+    public void cannotUseBaseStaticMembersTest() {
+        String code = """
+                intStorage.add(ChildClass.FIELD1);
+                intStorage.add(ChildClass.method1());
+                """;
+
+        comparator.assertEquals(
+                List.of(
+                        new DiagnosticMessage(
+                                BinderErrors.MemberDoesNotExist,
+                                new SingleLineTextRange(1, 27, 26, 6),
+                                "ChildClass", "FIELD1"),
+                        new DiagnosticMessage(
+                                BinderErrors.MemberDoesNotExist,
+                                new SingleLineTextRange(2, 27, 61, 7),
+                                "ChildClass", "method1")),
+                getDiagnostics(ApiRoot.class, code, BaseClass.class, ChildClass.class));
     }
 
     public static class ApiRoot {
@@ -168,6 +235,46 @@ public class CustomTypeTests {
         @IndexGetter
         public String arrayIndexer(int[] value) {
             return Integer.toString(Arrays.stream(value).sum());
+        }
+    }
+
+    @SuppressWarnings("unused")
+    @CustomType(name = "NameValueCollection")
+    public static class NameValueCollection {
+
+        private final Map<String, String> map = new HashMap<>();
+
+        @IndexGetter
+        public String getByIndex(String index) {
+            return map.get(index);
+        }
+
+        @IndexSetter
+        public void setByIndex(String index, String value) {
+            map.put(index, value);
+        }
+    }
+
+    @CustomType(name = "AbstractClass")
+    public static abstract class AbstractClass {}
+
+    @CustomType(name = "BaseClass")
+    public static class BaseClass {
+
+        public static final int FIELD1 = 234;
+
+        public static int method1() {
+            return 345;
+        }
+    }
+
+    @CustomType(name = "ChildClass")
+    public static class ChildClass extends BaseClass {
+
+        public static final int FIELD2 = 456;
+
+        public static int method2() {
+            return 567;
         }
     }
 }

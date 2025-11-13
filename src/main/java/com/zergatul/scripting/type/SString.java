@@ -287,11 +287,6 @@ public class SString extends SPredefinedType {
                     Type.getMethodDescriptor(Type.CHAR_TYPE, Type.INT_TYPE),
                     false);
         }
-
-        @Override
-        public void compileSet(MethodVisitor visitor) {
-            throw new InternalException();
-        }
     };
 
     private static final MethodReference METHOD_SUBSTRING_INT = new InstanceMethodReference(

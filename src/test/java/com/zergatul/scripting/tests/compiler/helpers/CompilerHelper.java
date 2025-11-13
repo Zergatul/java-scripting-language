@@ -30,6 +30,16 @@ public class CompilerHelper {
         return result.getDiagnostics();
     }
 
+    public static List<DiagnosticMessage> getDiagnostics(Class<?> api, String code, Class<?>... customTypes) {
+        Compiler compiler = new Compiler(new CompilationParametersBuilder()
+                .setRoot(api)
+                .addCustomTypes(List.of(customTypes))
+                .build());
+        CompilationResult result = compiler.compile(code);
+        Assertions.assertNull(result.getProgram());
+        return result.getDiagnostics();
+    }
+
     public static AsyncRunnable compileAsync(Class<?> api, String code) {
         Compiler compiler = new Compiler(new CompilationParametersBuilder()
                 .setRoot(api)

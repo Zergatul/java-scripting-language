@@ -4,6 +4,7 @@ import com.zergatul.scripting.*;
 import com.zergatul.scripting.type.operation.BinaryOperation;
 import com.zergatul.scripting.type.operation.IndexOperation;
 import com.zergatul.scripting.type.operation.ReferenceTypeOperations;
+import org.jspecify.annotations.Nullable;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Type;
 
@@ -18,10 +19,11 @@ public class SCustomType extends SType {
 
     private final Class<?> clazz;
     private final CustomType annotation;
-    private final Lazy<List<PropertyReference>> properties;
+    private final Lazy<List<PropertyReference>> instanceProperties;
     private final Lazy<List<MethodReference>> instanceMethods;
-    private final Lazy<List<MethodReference>> staticMethods;
     private final Lazy<List<IndexOperation>> indexes;
+    private final Lazy<List<MethodReference>> staticMethods;
+    private final Lazy<List<PropertyReference>> staticProperties;
 
     public SCustomType(Class<?> clazz) {
         CustomType annotation = clazz.getAnnotation(CustomType.class);
@@ -31,10 +33,11 @@ public class SCustomType extends SType {
 
         this.clazz = clazz;
         this.annotation = annotation;
-        this.properties = new Lazy<>(this::loadProperties);
+        this.instanceProperties = new Lazy<>(this::loadInstanceProperties);
         this.instanceMethods = new Lazy<>(this::loadInstanceMethods);
-        this.staticMethods = new Lazy<>(this::loadStaticMethods);
         this.indexes = new Lazy<>(this::loadIndexes);
+        this.staticMethods = new Lazy<>(this::loadStaticMethods);
+        this.staticProperties = new Lazy<>(this::loadStaticProperties);
     }
 
     @Override
@@ -110,6 +113,11 @@ public class SCustomType extends SType {
     }
 
     @Override
+    public boolean isAbstract() {
+        return Modifier.isAbstract(clazz.getModifiers());
+    }
+
+    @Override
     public List<ConstructorReference> getConstructors() {
         return Arrays.stream(clazz.getConstructors())
                 .map(NativeConstructorReference::new)
@@ -119,12 +127,13 @@ public class SCustomType extends SType {
 
     @Override
     public List<PropertyReference> getInstanceProperties() {
-        return properties.value();
+        return instanceProperties.value();
     }
 
     @Override
+    @Nullable
     public PropertyReference getInstanceProperty(String name) {
-        return properties.value().stream().filter(p -> p.getName().equals(name)).findFirst().orElse(null);
+        return instanceProperties.value().stream().filter(p -> p.getName().equals(name)).findFirst().orElse(null);
     }
 
     @Override
@@ -138,11 +147,22 @@ public class SCustomType extends SType {
     }
 
     @Override
+    public List<PropertyReference> getStaticProperties() {
+        return Arrays.stream(clazz.getDeclaredFields())
+                .filter(m -> Modifier.isPublic(m.getModifiers()))
+                .filter(m -> Modifier.isStatic(m.getModifiers()))
+                .map(StaticFieldPropertyReference::new)
+                .map(r -> (PropertyReference) r)
+                .toList();
+    }
+
+    @Override
     public List<SType> supportedIndexers() {
         return indexes.value().stream().map(o -> o.indexType).toList();
     }
 
     @Override
+    @Nullable
     public IndexOperation index(SType type) {
         return indexes.value().stream().filter(o -> o.indexType.equals(type)).findFirst().orElse(null);
     }
@@ -152,7 +172,7 @@ public class SCustomType extends SType {
         return annotation.name();
     }
 
-    private List<PropertyReference> loadProperties() {
+    private List<PropertyReference> loadInstanceProperties() {
         List<PropertyReference> list = new ArrayList<>();
 
         for (Field field : clazz.getDeclaredFields()) {
@@ -212,13 +232,65 @@ public class SCustomType extends SType {
                 .filter(m -> !m.isAnnotationPresent(Getter.class))
                 .filter(m -> !m.isAnnotationPresent(Setter.class))
                 .filter(m -> !m.isAnnotationPresent(IndexGetter.class))
+                .filter(m -> !m.isAnnotationPresent(IndexSetter.class))
                 .map(NativeInstanceMethodReference::new)
                 .map(r -> (MethodReference) r)
                 .toList();
     }
 
+    private List<IndexOperation> loadIndexes() {
+        List<IndexOperation> operations = new ArrayList<>();
+        for (Method getterMethod : clazz.getMethods()) {
+            if (Modifier.isStatic(getterMethod.getModifiers())) {
+                continue;
+            }
+            if (!Modifier.isPublic(getterMethod.getModifiers())) {
+                continue;
+            }
+            if (getterMethod.getDeclaringClass() == Object.class) {
+                continue;
+            }
+
+            if (!getterMethod.isAnnotationPresent(IndexGetter.class)) {
+                continue;
+            }
+
+            if (getterMethod.getParameterCount() != 1) {
+                throw new InternalException(String.format("Method %s has invalid @IndexGetter. It should have only 1 parameter.", getterMethod.getName()));
+            }
+            if (getterMethod.getReturnType() == void.class) {
+                throw new InternalException(String.format("Method %s has invalid @IndexGetter. It cannot return void.", getterMethod.getName()));
+            }
+            SType indexType = SType.fromJavaType(getterMethod.getParameters()[0].getType());
+            SType returnType = SType.fromJavaType(getterMethod.getReturnType());
+            if (operations.stream().anyMatch(o -> o.indexType.equals(indexType))) {
+                throw new InternalException(String.format("Method %s has invalid @IndexGetter. @IndexGetter for type %s already defined.", getterMethod.getName(), indexType.toString()));
+            }
+
+            // find corresponding setter
+            Method setterMethod = Arrays.stream(this.clazz.getMethods())
+                    .filter(m -> !Modifier.isStatic(m.getModifiers()))
+                    .filter(m -> Modifier.isPublic(m.getModifiers()))
+                    .filter(m -> m.getDeclaringClass() != Object.class)
+                    .filter(m -> m.isAnnotationPresent(IndexSetter.class))
+                    .filter(m -> {
+                        if (m.getParameterCount() != 2) {
+                            return false;
+                        }
+                        Class<?>[] parameters = m.getParameterTypes();
+                        return SType.fromJavaType(parameters[0]).equals(indexType) && SType.fromJavaType(parameters[1]).equals(returnType);
+                    })
+                    .findFirst()
+                    .orElse(null);
+
+            operations.add(new MethodIndexOperation(getterMethod, setterMethod, indexType, returnType));
+        }
+
+        return operations;
+    }
+
     private List<MethodReference> loadStaticMethods() {
-        return Arrays.stream(this.clazz.getMethods())
+        return Arrays.stream(this.clazz.getDeclaredMethods())
                 .filter(m -> Modifier.isPublic(m.getModifiers()))
                 .filter(m -> Modifier.isStatic(m.getModifiers()))
                 .filter(m -> m.getDeclaringClass() != Object.class)
@@ -229,36 +301,20 @@ public class SCustomType extends SType {
                 .toList();
     }
 
-    private List<IndexOperation> loadIndexes() {
-        List<IndexOperation> operations = new ArrayList<>();
-        for (Method method : clazz.getMethods()) {
-            if (Modifier.isStatic(method.getModifiers())) {
+    private List<PropertyReference> loadStaticProperties() {
+        List<PropertyReference> list = new ArrayList<>();
+
+        for (Field field : clazz.getDeclaredFields()) {
+            if (!Modifier.isStatic(field.getModifiers())) {
                 continue;
             }
-            if (!Modifier.isPublic(method.getModifiers())) {
+            if (!Modifier.isPublic(field.getModifiers())) {
                 continue;
             }
-            if (method.getDeclaringClass() == Object.class) {
-                continue;
-            }
-            IndexGetter getter = method.getAnnotation(IndexGetter.class);
-            if (getter != null) {
-                if (method.getParameterCount() != 1) {
-                    throw new InternalException(String.format("Method %s has invalid @IndexGetter. It should have only 1 parameter.", method.getName()));
-                }
-                if (method.getReturnType() == void.class) {
-                    throw new InternalException(String.format("Method %s has invalid @IndexGetter. It cannot return void.", method.getName()));
-                }
-                SType indexType = SType.fromJavaType(method.getParameters()[0].getType());
-                SType returnType = SType.fromJavaType(method.getReturnType());
-                if (operations.stream().anyMatch(o -> o.indexType.equals(indexType))) {
-                    throw new InternalException(String.format("Method %s has invalid @IndexGetter. @IndexGetter for type %s already defined.", method.getName(), indexType.toString()));
-                }
-                operations.add(new MethodIndexOperation(method, indexType, returnType));
-            }
+            list.add(new StaticFieldPropertyReference(field));
         }
 
-        return operations;
+        return list;
     }
 
     private void validateProperty(Method getter, Method setter) {
@@ -289,11 +345,20 @@ public class SCustomType extends SType {
 
     private static class MethodIndexOperation extends IndexOperation {
 
-        private final Method method;
+        private final Method getterMethod;
 
-        public MethodIndexOperation(Method method, SType indexType, SType returnType) {
+        @Nullable
+        private final Method setterMethod;
+
+        public MethodIndexOperation(
+                Method getterMethod,
+                @Nullable Method setterMethod,
+                SType indexType,
+                SType returnType
+        ) {
             super(indexType, returnType);
-            this.method = method;
+            this.getterMethod = getterMethod;
+            this.setterMethod = setterMethod;
         }
 
         @Override
@@ -302,18 +367,32 @@ public class SCustomType extends SType {
         }
 
         @Override
+        public boolean canSet() {
+            return setterMethod != null;
+        }
+
+        @Override
         public void compileGet(MethodVisitor visitor) {
             visitor.visitMethodInsn(
                     INVOKEVIRTUAL,
-                    Type.getInternalName(method.getDeclaringClass()),
-                    method.getName(),
-                    Type.getMethodDescriptor(method),
+                    Type.getInternalName(getterMethod.getDeclaringClass()),
+                    getterMethod.getName(),
+                    Type.getMethodDescriptor(getterMethod),
                     false);
         }
 
         @Override
         public void compileSet(MethodVisitor visitor) {
-            throw new InternalException();
+            if (setterMethod == null) {
+                throw new InternalException();
+            }
+
+            visitor.visitMethodInsn(
+                    INVOKEVIRTUAL,
+                    Type.getInternalName(setterMethod.getDeclaringClass()),
+                    setterMethod.getName(),
+                    Type.getMethodDescriptor(setterMethod),
+                    false);
         }
     }
 }
