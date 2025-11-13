@@ -1,10 +1,9 @@
 package com.zergatul.scripting.tests.compiler;
 
-import com.zergatul.scripting.Getter;
-import com.zergatul.scripting.IndexGetter;
-import com.zergatul.scripting.IndexSetter;
-import com.zergatul.scripting.Setter;
+import com.zergatul.scripting.*;
+import com.zergatul.scripting.binding.BinderErrors;
 import com.zergatul.scripting.tests.compiler.helpers.*;
+import com.zergatul.scripting.tests.framework.ComparatorTest;
 import com.zergatul.scripting.type.CustomType;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -16,8 +15,9 @@ import java.util.List;
 import java.util.Map;
 
 import static com.zergatul.scripting.tests.compiler.helpers.CompilerHelper.compileWithCustomType;
+import static com.zergatul.scripting.tests.compiler.helpers.CompilerHelper.getDiagnostics;
 
-public class CustomTypeTests {
+public class CustomTypeTests extends ComparatorTest {
 
     @BeforeEach
     public void clean() {
@@ -96,6 +96,20 @@ public class CustomTypeTests {
         program.run();
 
         Assertions.assertIterableEquals(ApiRoot.stringStorage.list, List.of("banana", "apple", "coconut"));
+    }
+
+    @Test
+    public void cannotInstantiateAbstractClassTest() {
+        String code = """
+                let instance = new AbstractClass();
+                """;
+
+        comparator.assertEquals(
+                List.of(
+                        new DiagnosticMessage(
+                                BinderErrors.CannotInstantiateAbstractClass,
+                                new SingleLineTextRange(1, 16, 15, 19))),
+                getDiagnostics(ApiRoot.class, AbstractClass.class, code));
     }
 
     public static class ApiRoot {
@@ -208,4 +222,7 @@ public class CustomTypeTests {
             map.put(index, value);
         }
     }
+
+    @CustomType(name = "AbstractClass")
+    public static abstract class AbstractClass {}
 }

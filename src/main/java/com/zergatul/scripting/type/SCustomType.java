@@ -111,6 +111,11 @@ public class SCustomType extends SType {
     }
 
     @Override
+    public boolean isAbstract() {
+        return Modifier.isAbstract(clazz.getModifiers());
+    }
+
+    @Override
     public List<ConstructorReference> getConstructors() {
         return Arrays.stream(clazz.getConstructors())
                 .map(NativeConstructorReference::new)
