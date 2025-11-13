@@ -14,8 +14,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static com.zergatul.scripting.tests.compiler.helpers.CompilerHelper.compileWithCustomType;
-import static com.zergatul.scripting.tests.compiler.helpers.CompilerHelper.getDiagnostics;
+import static com.zergatul.scripting.tests.compiler.helpers.CompilerHelper.*;
 
 public class CustomTypeTests extends ComparatorTest {
 
@@ -109,7 +108,40 @@ public class CustomTypeTests extends ComparatorTest {
                         new DiagnosticMessage(
                                 BinderErrors.CannotInstantiateAbstractClass,
                                 new SingleLineTextRange(1, 16, 15, 19))),
-                getDiagnostics(ApiRoot.class, AbstractClass.class, code));
+                getDiagnostics(ApiRoot.class, code, AbstractClass.class));
+    }
+
+    @Test
+    public void staticMembersTest() {
+        String code = """
+                intStorage.add(ChildClass.FIELD2);
+                intStorage.add(ChildClass.method2());
+                """;
+
+        Runnable program = compileWithCustomTypes(ApiRoot.class, code, BaseClass.class, ChildClass.class);
+        program.run();
+
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(456, 567));
+    }
+
+    @Test
+    public void cannotUseBaseStaticMembersTest() {
+        String code = """
+                intStorage.add(ChildClass.FIELD1);
+                intStorage.add(ChildClass.method1());
+                """;
+
+        comparator.assertEquals(
+                List.of(
+                        new DiagnosticMessage(
+                                BinderErrors.MemberDoesNotExist,
+                                new SingleLineTextRange(1, 27, 26, 6),
+                                "ChildClass", "FIELD1"),
+                        new DiagnosticMessage(
+                                BinderErrors.MemberDoesNotExist,
+                                new SingleLineTextRange(2, 27, 61, 7),
+                                "ChildClass", "method1")),
+                getDiagnostics(ApiRoot.class, code, BaseClass.class, ChildClass.class));
     }
 
     public static class ApiRoot {
@@ -225,4 +257,24 @@ public class CustomTypeTests extends ComparatorTest {
 
     @CustomType(name = "AbstractClass")
     public static abstract class AbstractClass {}
+
+    @CustomType(name = "BaseClass")
+    public static class BaseClass {
+
+        public static final int FIELD1 = 234;
+
+        public static int method1() {
+            return 345;
+        }
+    }
+
+    @CustomType(name = "ChildClass")
+    public static class ChildClass extends BaseClass {
+
+        public static final int FIELD2 = 456;
+
+        public static int method2() {
+            return 567;
+        }
+    }
 }

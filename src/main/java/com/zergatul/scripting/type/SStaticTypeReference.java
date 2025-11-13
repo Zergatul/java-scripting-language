@@ -23,4 +23,9 @@ public class SStaticTypeReference extends SSyntheticType {
     public List<PropertyReference> getInstanceProperties() {
         return underlying.getStaticProperties();
     }
+
+    @Override
+    public String toString() {
+        return underlying.toString();
+    }
 }

@@ -30,10 +30,10 @@ public class CompilerHelper {
         return result.getDiagnostics();
     }
 
-    public static List<DiagnosticMessage> getDiagnostics(Class<?> api, Class<?> custom, String code) {
+    public static List<DiagnosticMessage> getDiagnostics(Class<?> api, String code, Class<?>... customTypes) {
         Compiler compiler = new Compiler(new CompilationParametersBuilder()
                 .setRoot(api)
-                .addCustomType(custom)
+                .addCustomTypes(List.of(customTypes))
                 .build());
         CompilationResult result = compiler.compile(code);
         Assertions.assertNull(result.getProgram());

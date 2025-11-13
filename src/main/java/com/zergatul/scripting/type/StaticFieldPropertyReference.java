@@ -6,7 +6,6 @@ import org.objectweb.asm.Type;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 
-import static org.objectweb.asm.Opcodes.GETFIELD;
 import static org.objectweb.asm.Opcodes.GETSTATIC;
 
 public class StaticFieldPropertyReference extends PropertyReference {

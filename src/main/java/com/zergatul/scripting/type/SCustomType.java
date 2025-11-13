@@ -19,10 +19,11 @@ public class SCustomType extends SType {
 
     private final Class<?> clazz;
     private final CustomType annotation;
-    private final Lazy<List<PropertyReference>> properties;
+    private final Lazy<List<PropertyReference>> instanceProperties;
     private final Lazy<List<MethodReference>> instanceMethods;
-    private final Lazy<List<MethodReference>> staticMethods;
     private final Lazy<List<IndexOperation>> indexes;
+    private final Lazy<List<MethodReference>> staticMethods;
+    private final Lazy<List<PropertyReference>> staticProperties;
 
     public SCustomType(Class<?> clazz) {
         CustomType annotation = clazz.getAnnotation(CustomType.class);
@@ -32,10 +33,11 @@ public class SCustomType extends SType {
 
         this.clazz = clazz;
         this.annotation = annotation;
-        this.properties = new Lazy<>(this::loadProperties);
+        this.instanceProperties = new Lazy<>(this::loadInstanceProperties);
         this.instanceMethods = new Lazy<>(this::loadInstanceMethods);
-        this.staticMethods = new Lazy<>(this::loadStaticMethods);
         this.indexes = new Lazy<>(this::loadIndexes);
+        this.staticMethods = new Lazy<>(this::loadStaticMethods);
+        this.staticProperties = new Lazy<>(this::loadStaticProperties);
     }
 
     @Override
@@ -125,13 +127,13 @@ public class SCustomType extends SType {
 
     @Override
     public List<PropertyReference> getInstanceProperties() {
-        return properties.value();
+        return instanceProperties.value();
     }
 
     @Override
     @Nullable
     public PropertyReference getInstanceProperty(String name) {
-        return properties.value().stream().filter(p -> p.getName().equals(name)).findFirst().orElse(null);
+        return instanceProperties.value().stream().filter(p -> p.getName().equals(name)).findFirst().orElse(null);
     }
 
     @Override
@@ -142,6 +144,16 @@ public class SCustomType extends SType {
     @Override
     public List<MethodReference> getStaticMethods() {
         return staticMethods.value();
+    }
+
+    @Override
+    public List<PropertyReference> getStaticProperties() {
+        return Arrays.stream(clazz.getDeclaredFields())
+                .filter(m -> Modifier.isPublic(m.getModifiers()))
+                .filter(m -> Modifier.isStatic(m.getModifiers()))
+                .map(StaticFieldPropertyReference::new)
+                .map(r -> (PropertyReference) r)
+                .toList();
     }
 
     @Override
@@ -160,7 +172,7 @@ public class SCustomType extends SType {
         return annotation.name();
     }
 
-    private List<PropertyReference> loadProperties() {
+    private List<PropertyReference> loadInstanceProperties() {
         List<PropertyReference> list = new ArrayList<>();
 
         for (Field field : clazz.getDeclaredFields()) {
@@ -226,18 +238,6 @@ public class SCustomType extends SType {
                 .toList();
     }
 
-    private List<MethodReference> loadStaticMethods() {
-        return Arrays.stream(this.clazz.getMethods())
-                .filter(m -> Modifier.isPublic(m.getModifiers()))
-                .filter(m -> Modifier.isStatic(m.getModifiers()))
-                .filter(m -> m.getDeclaringClass() != Object.class)
-                .filter(m -> !m.isAnnotationPresent(Getter.class))
-                .filter(m -> !m.isAnnotationPresent(Setter.class))
-                .map(NativeStaticMethodReference::new)
-                .map(r -> (MethodReference) r)
-                .toList();
-    }
-
     private List<IndexOperation> loadIndexes() {
         List<IndexOperation> operations = new ArrayList<>();
         for (Method getterMethod : clazz.getMethods()) {
@@ -287,6 +287,34 @@ public class SCustomType extends SType {
         }
 
         return operations;
+    }
+
+    private List<MethodReference> loadStaticMethods() {
+        return Arrays.stream(this.clazz.getDeclaredMethods())
+                .filter(m -> Modifier.isPublic(m.getModifiers()))
+                .filter(m -> Modifier.isStatic(m.getModifiers()))
+                .filter(m -> m.getDeclaringClass() != Object.class)
+                .filter(m -> !m.isAnnotationPresent(Getter.class))
+                .filter(m -> !m.isAnnotationPresent(Setter.class))
+                .map(NativeStaticMethodReference::new)
+                .map(r -> (MethodReference) r)
+                .toList();
+    }
+
+    private List<PropertyReference> loadStaticProperties() {
+        List<PropertyReference> list = new ArrayList<>();
+
+        for (Field field : clazz.getDeclaredFields()) {
+            if (!Modifier.isStatic(field.getModifiers())) {
+                continue;
+            }
+            if (!Modifier.isPublic(field.getModifiers())) {
+                continue;
+            }
+            list.add(new StaticFieldPropertyReference(field));
+        }
+
+        return list;
     }
 
     private void validateProperty(Method getter, Method setter) {
