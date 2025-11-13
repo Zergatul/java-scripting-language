@@ -2,6 +2,7 @@ package com.zergatul.scripting.tests.compiler;
 
 import com.zergatul.scripting.Getter;
 import com.zergatul.scripting.IndexGetter;
+import com.zergatul.scripting.IndexSetter;
 import com.zergatul.scripting.Setter;
 import com.zergatul.scripting.tests.compiler.helpers.*;
 import com.zergatul.scripting.type.CustomType;
@@ -10,7 +11,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static com.zergatul.scripting.tests.compiler.helpers.CompilerHelper.compileWithCustomType;
 
@@ -59,7 +62,7 @@ public class CustomTypeTests {
     }
 
     @Test
-    public void indexersTest() {
+    public void indexGetterTest() {
         String code = """
                 let tester = api.getIndexTester();
                 intStorage.add(tester["a"]);
@@ -75,6 +78,24 @@ public class CustomTypeTests {
 
         Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(1, 2, 4));
         Assertions.assertIterableEquals(ApiRoot.stringStorage.list, List.of("15129", "99.75", "21"));
+    }
+
+    @Test
+    public void indexSetterTest() {
+        String code = """
+                let collection = new NameValueCollection();
+                collection["a"] = "apple";
+                collection["b"] = "banana";
+                collection["c"] = "coconut";
+                stringStorage.add(collection["b"]);
+                stringStorage.add(collection["a"]);
+                stringStorage.add(collection["c"]);
+                """;
+
+        Runnable program = compileWithCustomType(ApiRoot.class, NameValueCollection.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(ApiRoot.stringStorage.list, List.of("banana", "apple", "coconut"));
     }
 
     public static class ApiRoot {
@@ -168,6 +189,23 @@ public class CustomTypeTests {
         @IndexGetter
         public String arrayIndexer(int[] value) {
             return Integer.toString(Arrays.stream(value).sum());
+        }
+    }
+
+    @SuppressWarnings("unused")
+    @CustomType(name = "NameValueCollection")
+    public static class NameValueCollection {
+
+        private final Map<String, String> map = new HashMap<>();
+
+        @IndexGetter
+        public String getByIndex(String index) {
+            return map.get(index);
+        }
+
+        @IndexSetter
+        public void setByIndex(String index, String value) {
+            map.put(index, value);
         }
     }
 }

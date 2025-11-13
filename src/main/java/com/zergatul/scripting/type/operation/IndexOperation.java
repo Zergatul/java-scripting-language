@@ -1,5 +1,6 @@
 package com.zergatul.scripting.type.operation;
 
+import com.zergatul.scripting.InternalException;
 import com.zergatul.scripting.type.SType;
 import org.objectweb.asm.MethodVisitor;
 
@@ -22,8 +23,12 @@ public abstract class IndexOperation {
     }
 
     // assumes [..., callee, index] on stack
-    public abstract void compileGet(MethodVisitor visitor);
+    public void compileGet(MethodVisitor visitor) {
+        throw new InternalException();
+    }
 
     // assumes [..., callee, index, value] on stack
-    public abstract void compileSet(MethodVisitor visitor);
+    public void compileSet(MethodVisitor visitor) {
+        throw new InternalException();
+    }
 }
