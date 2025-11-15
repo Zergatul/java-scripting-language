@@ -334,20 +334,35 @@ public class BinderTreeGenerator {
     }
 
     private BoundExpressionNode rewriteAsync(BoundMethodInvocationExpressionNode node) {
-        assert !isAsync(node.objectReference);
-        assert node.arguments.arguments.stream().anyMatch(this::isAsync);
+        boolean isObjectReferenceAsync = isAsync(node.objectReference);
+        boolean isArgumentsAsync = node.arguments.arguments.stream().anyMatch(this::isAsync);
 
-        LiftedVariable[] variables = new LiftedVariable[node.arguments.arguments.size()];
-        for (int i = 0; i < variables.length; i++) {
-            BoundExpressionNode argument = node.arguments.arguments.get(i);
-            variables[i] = new LiftedVariable(new LocalVariable(null, argument.type, null));
-            storeExpressionValue(variables[i], argument);
+        BoundExpressionNode objectRef;
+        if (isObjectReferenceAsync) {
+            LiftedVariable var = new LiftedVariable(new LocalVariable(null, node.objectReference.type, null));
+            storeExpressionValue(var, node.objectReference);
+            objectRef = new BoundNameExpressionNode(var);
+        } else {
+            objectRef = node.objectReference;
+        }
+
+        BoundArgumentsListNode arguments;
+        if (isArgumentsAsync) {
+            LiftedVariable[] variables = new LiftedVariable[node.arguments.arguments.size()];
+            for (int i = 0; i < variables.length; i++) {
+                BoundExpressionNode argument = node.arguments.arguments.get(i);
+                variables[i] = new LiftedVariable(new LocalVariable(null, argument.type, null));
+                storeExpressionValue(variables[i], argument);
+            }
+            arguments = new BoundArgumentsListNode(Arrays.stream(variables).map(v -> (BoundExpressionNode) new BoundNameExpressionNode(v)).toList());
+        } else {
+            arguments = node.arguments;
         }
 
         return new BoundMethodInvocationExpressionNode(
-                node.objectReference,
+                objectRef,
                 node.method,
-                new BoundArgumentsListNode(Arrays.stream(variables).map(v -> (BoundExpressionNode) new BoundNameExpressionNode(v)).toList()),
+                arguments,
                 node.refVariables);
     }
 

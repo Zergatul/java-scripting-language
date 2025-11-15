@@ -4,10 +4,7 @@ import com.zergatul.scripting.AsyncRunnable;
 import com.zergatul.scripting.DiagnosticMessage;
 import com.zergatul.scripting.SingleLineTextRange;
 import com.zergatul.scripting.binding.BinderErrors;
-import com.zergatul.scripting.tests.compiler.helpers.FutureHelper;
-import com.zergatul.scripting.tests.compiler.helpers.Int64Storage;
-import com.zergatul.scripting.tests.compiler.helpers.IntStorage;
-import com.zergatul.scripting.tests.compiler.helpers.Run;
+import com.zergatul.scripting.tests.compiler.helpers.*;
 import com.zergatul.scripting.tests.framework.ComparatorTest;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -27,6 +24,7 @@ public class AwaitTests extends ComparatorTest {
         ApiRoot.futures = new FutureHelper();
         ApiRoot.intStorage = new IntStorage();
         ApiRoot.longStorage = new Int64Storage();
+        ApiRoot.stringStorage = new StringStorage();
         ApiRoot.run = new Run();
     }
 
@@ -1150,10 +1148,27 @@ public class AwaitTests extends ComparatorTest {
         Assertions.assertTrue(future.isDone());
     }
 
+    @Test
+    public void methodInvocationAwaitObjectTest() {
+        String code = """
+                stringStorage.add((await futures.createBool()).toString());
+                """;
+
+        AsyncRunnable program = compileAsync(ApiRoot.class, code);
+        CompletableFuture<?> future = program.run();
+
+        Assertions.assertFalse(future.isDone());
+
+        ApiRoot.futures.getBool(0).complete(false);
+        Assertions.assertIterableEquals(ApiRoot.stringStorage.list, List.of("false"));
+        Assertions.assertTrue(future.isDone());
+    }
+
     public static class ApiRoot {
         public static FutureHelper futures;
         public static IntStorage intStorage;
         public static Int64Storage longStorage;
+        public static StringStorage stringStorage;
         public static Run run;
     }
 }
