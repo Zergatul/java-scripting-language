@@ -288,6 +288,19 @@ public class FloatTests {
         Assertions.assertIterableEquals(ApiRoot.floatStorage.list, List.of(12.5));
     }
 
+    @Test
+    public void literalWithDotTest() {
+        String code = """
+                stringStorage.add(.5.toString());
+                stringStorage.add(10.5.toString());
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(ApiRoot.stringStorage.list, List.of("0.5", "10.5"));
+    }
+
     public static class ApiRoot {
         public static BoolStorage boolStorage;
         public static FloatStorage floatStorage;

@@ -433,7 +433,7 @@ public class Lexer {
                     if (isNumber(current)) {
                         mantisIntegers++;
                         advance();
-                    } else if (current == '.') {
+                    } else if (current == '.' && isNumber(next)) {
                         hasDecimalPoint = true;
                         state = NumberParseState.MANTIS_DECIMALS;
                         advance();
@@ -488,7 +488,7 @@ public class Lexer {
         }
 
         // check for improper chars after number
-        while (current == '.' || isIdentifier(current)) {
+        while (isIdentifier(current)) {
             isValid = false;
             advance();
         }

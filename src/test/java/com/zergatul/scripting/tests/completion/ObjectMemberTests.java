@@ -4,6 +4,7 @@ import com.zergatul.scripting.tests.completion.helpers.CompletionTestHelper;
 import com.zergatul.scripting.tests.completion.helpers.Lists;
 import com.zergatul.scripting.tests.completion.helpers.TestCompletionContext;
 import com.zergatul.scripting.tests.completion.suggestions.*;
+import com.zergatul.scripting.type.SFloat;
 import com.zergatul.scripting.type.SInt;
 import com.zergatul.scripting.type.SType;
 import org.junit.jupiter.api.Test;
@@ -174,6 +175,28 @@ public class ObjectMemberTests {
                 """,
                 context -> List.of(
                         MethodSuggestion.getInstance(SType.fromJavaType(SomeApi.class), "doSomething")));
+    }
+
+    @Test
+    public void integerLiteralTest() {
+        assertSuggestions("""
+                let a = 1.<cursor>
+                """,
+                context -> List.of(
+                        MethodSuggestion.getInstance(SInt.instance, "toInt8"),
+                        MethodSuggestion.getInstance(SInt.instance, "toInt16"),
+                        MethodSuggestion.getInstance(SInt.instance, "toString"),
+                        MethodSuggestion.getInstance(SInt.instance, "toStandardString")));
+    }
+
+    @Test
+    public void floatLiteralTest() {
+        assertSuggestions("""
+                let a = 0.1.<cursor>
+                """,
+                context -> List.of(
+                        MethodSuggestion.getInstance(SFloat.instance, "toString"),
+                        MethodSuggestion.getInstance(SFloat.instance, "toStandardString")));
     }
 
     private void assertSuggestions(String code, Function<TestCompletionContext, List<Suggestion>> expectedFactory) {

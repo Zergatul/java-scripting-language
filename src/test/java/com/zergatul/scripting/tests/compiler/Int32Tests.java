@@ -465,6 +465,19 @@ public class Int32Tests extends ComparatorTest {
                 List.of(2010, 2010));
     }
 
+    @Test
+    public void literalWithDotTest() {
+        String code = """
+                let x = 10.toString();
+                stringStorage.add(x);
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(ApiRoot.stringStorage.list, List.of("10"));
+    }
+
     public static class ApiRoot {
         public static BoolStorage boolStorage;
         public static IntStorage intStorage;

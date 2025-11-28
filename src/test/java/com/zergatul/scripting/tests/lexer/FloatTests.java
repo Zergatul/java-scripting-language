@@ -10,11 +10,33 @@ import java.util.List;
 public class FloatTests extends LexerTestBase {
 
     @Test
-    public void floatTest1() {
-        LexerOutput result = lex("1.,.1,0.0,.1e+1,1e-2,1e3");
+    public void dotTest1() {
+        LexerOutput result = lex("1.");
         comparator.assertEquals(List.of(), result.diagnostics());
         comparator.assertEquals(List.of(
-                new ValueToken(TokenType.FLOAT_LITERAL, "1.", new SingleLineTextRange(1, 1, 0, 2)),
+                        new ValueToken(TokenType.INTEGER_LITERAL, "1", new SingleLineTextRange(1, 1, 0, 1)),
+                        new Token(TokenType.DOT, new SingleLineTextRange(1, 2, 1, 1)),
+                        new EndOfFileToken(new SingleLineTextRange(1, 3, 2, 0))),
+                result.tokens());
+    }
+
+    @Test
+    public void dotTest2() {
+        LexerOutput result = lex(".1.");
+        comparator.assertEquals(List.of(), result.diagnostics());
+        comparator.assertEquals(List.of(
+                        new ValueToken(TokenType.FLOAT_LITERAL, ".1", new SingleLineTextRange(1, 1, 0, 2)),
+                        new Token(TokenType.DOT, new SingleLineTextRange(1, 3, 2, 1)),
+                        new EndOfFileToken(new SingleLineTextRange(1, 4, 3, 0))),
+                result.tokens());
+    }
+
+    @Test
+    public void floatTest1() {
+        LexerOutput result = lex("aa,.1,0.0,.1e+1,1e-2,1e3");
+        comparator.assertEquals(List.of(), result.diagnostics());
+        comparator.assertEquals(List.of(
+                new ValueToken(TokenType.IDENTIFIER, "aa", new SingleLineTextRange(1, 1, 0, 2)),
                 new Token(TokenType.COMMA, new SingleLineTextRange(1, 3, 2, 1)),
                 new ValueToken(TokenType.FLOAT_LITERAL, ".1", new SingleLineTextRange(1, 4, 3, 2)),
                 new Token(TokenType.COMMA, new SingleLineTextRange(1, 6, 5, 1)),
@@ -32,7 +54,6 @@ public class FloatTests extends LexerTestBase {
     @Test
     public void floatTest2() {
         String[] invalidNumbers = {
-                ".1.",
                 "1e",
                 "1e+3m",
                 "1x"
