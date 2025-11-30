@@ -62,7 +62,12 @@ public class SFunctionalInterface extends SFunction {
                     if (t instanceof TypeVariable<?> typeVariable) {
                         java.lang.reflect.Type actual = actualArgs[findTypeParamIndex(classTypeParams, typeVariable.getName())];
                         if (actual instanceof WildcardType wildcard) {
-                            return ((TypeVariable<?>) wildcard.getLowerBounds()[0]).getBounds()[0];
+                            java.lang.reflect.Type bound = wildcard.getLowerBounds()[0];
+                            if (bound instanceof Class<?> clazz1) {
+                                return clazz1;
+                            } else {
+                                return ((TypeVariable<?>) bound).getBounds()[0];
+                            }
                         } else {
                             return actual;
                         }
