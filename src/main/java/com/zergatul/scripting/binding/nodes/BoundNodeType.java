@@ -97,4 +97,5 @@ public enum BoundNodeType {
     CONSTRUCTOR_INITIALIZER,
     TYPE_ALIAS,
     SYMBOL,
+    NULL_EXPRESSION,
 }

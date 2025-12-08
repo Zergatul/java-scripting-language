@@ -1286,6 +1286,7 @@ public class Parser {
                 }
                 yield isPossibleLambdaExpression() ? parseLambdaExpression() : new NameExpressionNode((ValueToken) advance());
             }
+            case NULL -> new NullExpressionNode(advance());
             case FALSE -> new BooleanLiteralExpressionNode(advance(), false);
             case TRUE -> new BooleanLiteralExpressionNode(advance(), true);
             case INTEGER_LITERAL -> new IntegerLiteralExpressionNode(null, (ValueToken) advance());
@@ -1472,6 +1473,7 @@ public class Parser {
 
     private boolean isPossibleExpression() {
         switch (current.getTokenType()) {
+            case NULL:
             case FALSE:
             case TRUE:
             case LEFT_PARENTHESES:

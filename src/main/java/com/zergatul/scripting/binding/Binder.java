@@ -472,6 +472,9 @@ public class Binder {
                 if (expression.getNodeType() == BoundNodeType.EMPTY_COLLECTION_EXPRESSION) {
                     addDiagnostic(BinderErrors.LetEmptyCollection, variableDeclaration.type);
                 }
+                if (expression.type == SNull.instance) {
+                    addDiagnostic(BinderErrors.LetNull, variableDeclaration.type);
+                }
             } else {
                 TextRange range = variableDeclaration.name.getRange();
                 expression = new BoundInvalidExpressionNode(List.of(), new SingleLineTextRange(range.getLine1(), range.getColumn1(), range.getPosition(), 0));
@@ -681,6 +684,7 @@ public class Binder {
 
     private BoundExpressionNode bindExpression(ExpressionNode expression) {
         return switch (expression.getNodeType()) {
+            case NULL_EXPRESSION -> bindNullExpression((NullExpressionNode) expression);
             case BOOLEAN_LITERAL -> bindBooleanLiteralExpression((BooleanLiteralExpressionNode) expression);
             case INTEGER_LITERAL -> bindIntegerLiteralExpression((IntegerLiteralExpressionNode) expression);
             case INTEGER64_LITERAL -> bindInteger64LiteralExpression((Integer64LiteralExpressionNode) expression);
@@ -837,6 +841,10 @@ public class Binder {
                 right.type.toString(),
                 left.type.toString());
         return new BoundInExpressionNode(binary, left, right, UnknownMethodReference.instance);
+    }
+
+    private BoundNullExpressionNode bindNullExpression(NullExpressionNode expression) {
+        return new BoundNullExpressionNode(expression);
     }
 
     private BoundBooleanLiteralExpressionNode bindBooleanLiteralExpression(BooleanLiteralExpressionNode bool) {

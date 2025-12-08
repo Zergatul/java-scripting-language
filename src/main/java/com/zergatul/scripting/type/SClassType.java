@@ -87,6 +87,10 @@ public class SClassType extends SType {
     @Override
     @Nullable
     public BinaryOperation equalsOp(SType other) {
+        if (other.isSyntheticType()) {
+            return null;
+        }
+
         if (other.isReference()) {
             return EQUALS.value();
         } else {
@@ -97,6 +101,10 @@ public class SClassType extends SType {
     @Override
     @Nullable
     public BinaryOperation notEqualsOp(SType other) {
+        if (other.isSyntheticType()) {
+            return null;
+        }
+
         if (other.isReference()) {
             return NOT_EQUALS.value();
         } else {

@@ -1224,6 +1224,7 @@ public class Compiler {
     private void compileExpression(MethodVisitor visitor, CompilerContext context, BoundExpressionNode expression) {
         emitLineNumber(visitor, context, expression);
         switch (expression.getNodeType()) {
+            case NULL_EXPRESSION -> compileNull(visitor);
             case BOOLEAN_LITERAL -> compileBooleanLiteral(visitor, (BoundBooleanLiteralExpressionNode) expression);
             case INTEGER_LITERAL -> compileIntegerLiteral(visitor, (BoundIntegerLiteralExpressionNode) expression);
             case INTEGER64_LITERAL -> compileInteger64Literal(visitor, (BoundInteger64LiteralExpressionNode) expression);
@@ -1261,6 +1262,10 @@ public class Compiler {
             case META_TYPE_OF_EXPRESSION -> compileMetaTypeOfExpression(visitor, context, (BoundMetaTypeOfExpressionNode) expression);
             default -> throw new InternalException();
         }
+    }
+
+    private void compileNull(MethodVisitor visitor) {
+        visitor.visitInsn(ACONST_NULL);
     }
 
     private void compileBooleanLiteral(MethodVisitor visitor, BoundBooleanLiteralExpressionNode literal) {

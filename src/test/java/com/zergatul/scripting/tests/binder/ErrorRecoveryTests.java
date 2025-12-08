@@ -197,6 +197,20 @@ public class ErrorRecoveryTests extends BinderTestBase {
                 result.diagnostics());
     }
 
+    @Test
+    public void equalsToUndefinedVariableTest() {
+        BinderOutput result = bind("""
+                typealias JString = Java<java.lang.String>;
+                JString var = "";
+                if (var == abc) {}
+                """);
+
+        comparator.assertEquals(
+                List.of(
+                        new DiagnosticMessage(BinderErrors.NameDoesNotExist, new SingleLineTextRange(3, 12, 73, 3), "abc")),
+                result.diagnostics());
+    }
+
     private BinderOutput bind(String code) {
         return bind(ApiRoot.class, code);
     }

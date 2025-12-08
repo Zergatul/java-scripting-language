@@ -590,6 +590,7 @@ public class Lexer {
             case "virtual" -> TokenType.VIRTUAL;
             case "override" -> TokenType.OVERRIDE;
             case "typealias" -> TokenType.TYPEALIAS;
+            case "null" -> TokenType.NULL;
             default -> null;
         };
         TextRange range = getCurrentTokenRange();

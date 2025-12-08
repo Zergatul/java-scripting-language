@@ -98,4 +98,5 @@ public enum TokenType {
     VIRTUAL,
     OVERRIDE,
     TYPEALIAS,
+    NULL,
 }

@@ -12,6 +12,7 @@ It is lightweight, async-friendly, and designed to interop with Java APIs where 
 # Short list of supported features
 - [Hello World](#hello-world)
 - [Basic Types](#basic-types)
+    - [string](#string)
 - [Variables](#variables)
 - [Expressions](#expressions)
     - [`in` operator](#in-operator)
@@ -56,6 +57,37 @@ debug.write("Hello World!");
 
 Unsigned integer types are not supported.
 Language is not well adapted for using `int8`/`int16`/`float32`. If you can, you should better use `int` and `float` instead.
+
+#### string
+The built-in `string` type is directly backed by `java.lang.String` on the JVM.
+- At runtime, a value of type `string` is a normal Java `java.lang.String` instance.
+- The language adds its own conveniences on top of it:
+    - Indexer: `s[i]` instead of `s.charAt(i)`
+    - Read-only length property: `s.length`
+- Because of this, you should treat `string` as the canonical text type in this language.
+
+For low-level interop you can still expose the raw Java type, e.g.:
+```c#
+typealias JString = Java<java.lang.String>;
+```
+
+Both `string` and `Java<java.lang.String>` share the same underlying Java class. All type checks and casts (`is` / `as`) are based on that underlying Java class, so they are compatible:
+```c#
+Java<java.lang.Object> obj = ...;
+
+if (obj is string) {
+    // true if obj actually contains a java.lang.String
+}
+
+if (obj is JString) {
+    // also true in the same case
+}
+
+string s1 = obj as string;
+JString s2 = obj as JString;
+```
+
+Use `string` for normal scripting and only use `Java<java.lang.String>` (or its alias) when you specifically need to call Java APIs that require an explicit `java.lang.String` type or you are doing low-level reflection.
 
 ### Variables
 ```c#
@@ -333,17 +365,16 @@ if (x is ItemStack) {
 This works for basic types like `int`, `string`, for defined classes, and for Java interop types, like `Java<java.lang.Object>`.
 
 ### null
-There is no `null` keyword in the language. If you have to check if some value is null, you can use `is` expression:
+It is advised that APIs to be used from scripting language should not return or expect `null`.
+This way it should be more beginner-friendly to not get NullReferenceException.
+But for Java interop you most likely have to work with `null` a lot.
+
 ```c#
-let possiblyNull = getSomething();
-if (possiblyNull is ExpectedType) {
-    // possiblyNull != null
-} else {
-    // possiblyNull == null
+string s = null;
+if (s == null) {
+    debug.write("s is null");
 }
 ```
-
-Normally APIs to be used from scripting language should not return or expect `null`. There is no simple way to assign/pass `null` value.
 
 ### Reflection
 ```c#

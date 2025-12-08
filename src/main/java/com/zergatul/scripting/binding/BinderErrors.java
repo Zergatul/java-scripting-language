@@ -67,6 +67,7 @@ public class BinderErrors {
     public static final ErrorCode ClassCircularInheritance = new ErrorCode("B063", "Class circular inheritance");
     public static final ErrorCode NoDefaultValue = new ErrorCode("B064", "Type '%s' does not have default value, please assign value for this variable");
     public static final ErrorCode TypeAliasLoop = new ErrorCode("B065", "Loop in type aliases");
+    public static final ErrorCode LetNull = new ErrorCode("B066", "Cannot infer variable type from 'null'");
 
     public static final ErrorCode InternalError = new ErrorCode("B999", "Internal error: %s");
 }
