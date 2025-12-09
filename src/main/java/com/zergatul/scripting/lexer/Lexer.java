@@ -349,6 +349,7 @@ public class Lexer {
                     }
                     String value = getCurrentTokenValue();
                     switch (value) {
+                        case "#cast" -> appendToken(new Token(TokenType.META_CAST, getCurrentTokenRange()));
                         case "#type" -> appendToken(new Token(TokenType.META_TYPE, getCurrentTokenRange()));
                         case "#typeof" -> appendToken(new Token(TokenType.META_TYPE_OF, getCurrentTokenRange()));
                         default -> {

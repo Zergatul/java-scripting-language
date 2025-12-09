@@ -1258,6 +1258,7 @@ public class Compiler {
             case GENERATOR_GET_VALUE -> compileGeneratorGetValue(visitor, context, (BoundGeneratorGetValueNode) expression);
             case STACK_LOAD -> compileStackLoad(visitor, (BoundStackLoadNode) expression);
             case FUNCTION_AS_LAMBDA -> compileFunctionAsLambda(visitor, context, (BoundFunctionAsLambdaExpressionNode) expression);
+            case META_CAST_EXPRESSION -> compileMetaCastExpression(visitor, context, (BoundMetaCastExpressionNode) expression);
             case META_TYPE_EXPRESSION -> compileMetaTypeExpression(visitor, (BoundMetaTypeExpressionNode) expression);
             case META_TYPE_OF_EXPRESSION -> compileMetaTypeOfExpression(visitor, context, (BoundMetaTypeOfExpressionNode) expression);
             default -> throw new InternalException();
@@ -1319,7 +1320,12 @@ public class Compiler {
         if (test.type.type.isReference()) {
             visitor.visitTypeInsn(INSTANCEOF, Type.getInternalName(test.type.type.getJavaClass()));
         } else {
-            visitor.visitTypeInsn(INSTANCEOF, Type.getInternalName(test.type.type.getBoxedVersion()));
+            Class<?> boxed = test.type.type.getBoxedVersion();
+            if (boxed == null) {
+                throw new InternalException();
+            }
+
+            visitor.visitTypeInsn(INSTANCEOF, Type.getInternalName(boxed));
         }
     }
 
@@ -1329,15 +1335,46 @@ public class Compiler {
             test.expression.type.compileBoxing(visitor);
         }
 
+        String referenceTypeInternalName;
         if (test.type.type.isReference()) {
-            visitor.visitTypeInsn(CHECKCAST, Type.getInternalName(test.type.type.getJavaClass()));
+            referenceTypeInternalName = Type.getInternalName(test.type.type.getJavaClass());
         } else {
-            visitor.visitTypeInsn(CHECKCAST, Type.getInternalName(test.type.type.getBoxedVersion()));
+            Class<?> boxed = test.type.type.getBoxedVersion();
+            if (boxed == null) {
+                throw new InternalException();
+            }
+            referenceTypeInternalName = Type.getInternalName(boxed);
         }
 
+        Label canCastLabel = new Label();
+        Label endLabel = new Label();
+
+        // ..., expr
+        visitor.visitInsn(DUP); // expression on the stack is always 1 stack size, because if it's not we box possible long/double value
+        // ..., expr, expr
+        visitor.visitTypeInsn(INSTANCEOF, referenceTypeInternalName);
+        // ..., expr, bool
+        visitor.visitJumpInsn(IFNE, canCastLabel);
+        // ..., expr
+        visitor.visitInsn(POP);
+        // ...
+        if (test.type.type.isReference()) {
+            visitor.visitInsn(ACONST_NULL);
+        } else {
+            test.type.type.storeDefaultValue(visitor);
+        }
+        // ..., NULL/default
+        visitor.visitJumpInsn(GOTO, endLabel);
+
+        visitor.visitLabel(canCastLabel);
+        // ..., expr
+        visitor.visitTypeInsn(CHECKCAST, referenceTypeInternalName);
+        // ..., casted_expr
         if (!test.type.type.isReference()) {
             test.type.type.compileUnboxing(visitor);
         }
+
+        visitor.visitLabel(endLabel);
     }
 
     private void compileConditionalExpression(MethodVisitor visitor, CompilerContext context, BoundConditionalExpressionNode expression) {
@@ -1921,6 +1958,29 @@ public class Compiler {
                 new BoundReturnStatementNode(invocation);
         BoundLambdaExpressionNode lambda = new BoundLambdaExpressionNode(parameters, statement, node.type);
         compileLambdaExpression(visitor, context, lambda);
+    }
+
+    private void compileMetaCastExpression(MethodVisitor visitor, CompilerContext context, BoundMetaCastExpressionNode node) {
+        compileExpression(visitor, context, node.expression);
+
+        if (!node.expression.type.isReference()) {
+            node.expression.type.compileBoxing(visitor);
+        }
+
+        if (node.type.type.isReference()) {
+            visitor.visitTypeInsn(CHECKCAST, Type.getInternalName(node.type.type.getJavaClass()));
+        } else {
+            Class<?> boxed = node.type.type.getBoxedVersion();
+            if (boxed == null) {
+                throw new InternalException();
+            }
+
+            visitor.visitTypeInsn(CHECKCAST, Type.getInternalName(boxed));
+        }
+
+        if (!node.type.type.isReference()) {
+            node.type.type.compileUnboxing(visitor);
+        }
     }
 
     private void compileMetaTypeExpression(MethodVisitor visitor, BoundMetaTypeExpressionNode node) {

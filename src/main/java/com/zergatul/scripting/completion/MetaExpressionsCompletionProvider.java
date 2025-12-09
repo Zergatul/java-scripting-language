@@ -17,6 +17,7 @@ public class MetaExpressionsCompletionProvider<T> extends AbstractCompletionProv
     public List<T> provide(CompilationParameters parameters, BinderOutput output, CompletionContext context) {
         if (context.canExpression() || insideInvalidMetaExpression(context)) {
             return List.of(
+                    factory.getKeywordSuggestion(TokenType.META_CAST),
                     factory.getKeywordSuggestion(TokenType.META_TYPE),
                     factory.getKeywordSuggestion(TokenType.META_TYPE_OF));
         } else {

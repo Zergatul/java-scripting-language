@@ -393,6 +393,11 @@ public class CompletionContext {
                 yield lambda.isOpen() && lambda.syntaxNode.arrow.getRange().isBefore(line, column);
             }
 
+            case META_CAST_EXPRESSION -> {
+                BoundMetaCastExpressionNode meta = (BoundMetaCastExpressionNode) entry.node;
+                yield TextRange.isBetween2(line, column, meta.syntaxNode.openParen, meta.syntaxNode.comma);
+            }
+
             case META_TYPE_OF_EXPRESSION -> {
                 BoundMetaTypeOfExpressionNode meta = (BoundMetaTypeOfExpressionNode) entry.node;
                 yield TextRange.isBetween(line, column, meta.syntaxNode.openParen, meta.syntaxNode.closeParen);
@@ -452,6 +457,11 @@ public class CompletionContext {
                     }
                 }
                 yield false;
+            }
+
+            case META_CAST_EXPRESSION -> {
+                BoundMetaCastExpressionNode meta = (BoundMetaCastExpressionNode) entry.node;
+                yield TextRange.isBetween(line, column, meta.syntaxNode.comma, meta.syntaxNode.closeParen);
             }
 
             case META_TYPE_EXPRESSION -> {

@@ -1299,6 +1299,7 @@ public class Parser {
             case LEFT_SQUARE_BRACKET -> parseCollectionExpression();
             case BOOLEAN, INT8, INT16, INT, INT32, INT64, LONG, CHAR, FLOAT32, FLOAT, FLOAT64, STRING -> parseStaticReference();
             case META_UNKNOWN -> new InvalidMetaExpressionNode(advance());
+            case META_CAST -> parseMetaCastExpression();
             case META_TYPE -> parseMetaTypeExpression();
             case META_TYPE_OF -> parseMetaTypeOfExpression();
             case THIS -> new ThisExpressionNode(advance());
@@ -1455,6 +1456,52 @@ public class Parser {
         return new StaticReferenceNode(typeNode, typeNode.getRange());
     }
 
+    private MetaCastExpressionNode parseMetaCastExpression() {
+        Token keyword = advance(TokenType.META_CAST);
+        Token openParen = advance(TokenType.LEFT_PARENTHESES);
+        if (openParen.isMissing()) {
+            TextRange range = createMissingTokenRangeBeforeCurrent();
+            return new MetaCastExpressionNode(
+                    keyword,
+                    openParen,
+                    new InvalidExpressionNode(range),
+                    new Token(TokenType.COMMA, range),
+                    new InvalidTypeNode(createMissingIdentifier(range)),
+                    new Token(TokenType.RIGHT_PARENTHESES, range));
+        }
+
+        ExpressionNode expression;
+        if (isPossibleExpression()) {
+            expression = parseExpression();
+        } else {
+            addDiagnostic(ParserErrors.ExpressionExpected, current, current.getRawValue(code));
+            expression = new InvalidExpressionNode(createMissingTokenRangeBeforeCurrent());
+        }
+
+        Token comma = advance(TokenType.COMMA);
+        if (comma.isMissing()) {
+            TextRange range = createMissingTokenRangeBeforeCurrent();
+            return new MetaCastExpressionNode(
+                    keyword,
+                    openParen,
+                    expression,
+                    comma,
+                    new InvalidTypeNode(createMissingIdentifier(range)),
+                    new Token(TokenType.RIGHT_PARENTHESES, range));
+        }
+
+        TypeNode typeNode;
+        if (isPossibleType()) {
+            typeNode = parseTypeNode();
+        } else {
+            addDiagnostic(ParserErrors.TypeExpected, current, current.getRawValue(code));
+            typeNode = new InvalidTypeNode(createMissingIdentifier(createMissingTokenRangeBeforeCurrent()));
+        }
+
+        Token closeParen = advance(TokenType.RIGHT_PARENTHESES);
+        return new MetaCastExpressionNode(keyword, openParen, expression, comma, typeNode, closeParen);
+    }
+
     private MetaTypeExpressionNode parseMetaTypeExpression() {
         Token keyword = advance(TokenType.META_TYPE);
         Token openParen = advance(TokenType.LEFT_PARENTHESES);
@@ -1502,6 +1549,7 @@ public class Parser {
             case EXCLAMATION:
             case AWAIT:
             case META_UNKNOWN:
+            case META_CAST:
             case META_TYPE:
             case META_TYPE_OF:
             case THIS:
@@ -2064,6 +2112,7 @@ public class Parser {
                 case COLON -> addDiagnostic(ParserErrors.ColonExpected, last);
                 case IN -> addDiagnostic(ParserErrors.InExpected, current);
                 case EQUAL_GREATER -> addDiagnostic(ParserErrors.ArrowExpected, current);
+                case COMMA -> addDiagnostic(ParserErrors.CommaExpected, current, current.getRawValue(code));
                 default -> throw new RuntimeException("Not implemented");
             }
 

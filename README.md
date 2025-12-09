@@ -364,6 +364,30 @@ if (x is ItemStack) {
 
 This works for basic types like `int`, `string`, for defined classes, and for Java interop types, like `Java<java.lang.Object>`.
 
+`as`-expression features:
+- if expression result can't be cast to target type, it evaluates as default value:
+  ```c#
+  let x = 1 as float; // 1 is int, it can't be cast to float, x is set 0.0
+  let y = new Java<java.lang.Object>() as string; // y is set to null
+  ```
+- transparently handles value types and their boxed variants:
+  ```c#
+  typealias Object = Java<java.lang.Object>;
+  typealias Integer = Java<java.lang.Integer>;
+
+  Object getInt() => 10;
+
+  let a = getInt() as int; // a is 10, unboxed
+  let b = 20 as Integer;   // b is 20, boxed
+  ```
+
+Use `#cast(<expr>, <type>)` expression for strong check cast. If expression can't be cast to type, `ClassCastException` is thrown.
+```c#
+typealias Object = Java<java.lang.Object>;
+Object getInt() => 10;
+let x = #cast(getInt(), int); // x is 10
+```
+
 ### null
 It is advised that APIs to be used from scripting language should not return or expect `null`.
 This way it should be more beginner-friendly to not get NullReferenceException.
@@ -545,9 +569,9 @@ ClientLevel level = Minecraft.instance.level;
 - Java interop with parameterized types (generics) is not supported
 
 ### Comparison Table
-| C#            | Scripting Language                      |
-|---------------|-----------------------------------------|
-| `var`         | `let`                                   |
-| `(int)x`      | `x as int`                              |
-| `x as int`    | Not supported (only cast syntax exists) |
-| `x is ClassA` | `x is ClassA`                           |
+| C#            | Scripting Language |
+|---------------|--------------------|
+| `var`         | `let`              |
+| `(int)x`      | `#cast(x, int)`    |
+| `x as int`    | `x as int`         |
+| `x is ClassA` | `x is ClassA`      |

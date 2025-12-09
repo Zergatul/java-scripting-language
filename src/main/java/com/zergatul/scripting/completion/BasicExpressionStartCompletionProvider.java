@@ -16,6 +16,7 @@ public class BasicExpressionStartCompletionProvider<T> extends AbstractCompletio
     public List<T> provide(CompilationParameters parameters, BinderOutput output, CompletionContext context) {
         if (context.canExpression()) {
             return List.of(
+                    factory.getKeywordSuggestion(TokenType.NULL),
                     factory.getKeywordSuggestion(TokenType.FALSE),
                     factory.getKeywordSuggestion(TokenType.TRUE),
                     factory.getKeywordSuggestion(TokenType.NEW));

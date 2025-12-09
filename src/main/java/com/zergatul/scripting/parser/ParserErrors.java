@@ -45,4 +45,6 @@ public class ParserErrors {
     public static final ErrorCode DuplicateModifier = new ErrorCode("C040", "Duplicate '%s' modifier");
     public static final ErrorCode InvalidConstructorInitializer = new ErrorCode("C041", "'base' or 'this' expected");
     public static final ErrorCode EqualExpected = new ErrorCode("C042", "= expected, found %s");
+    public static final ErrorCode OpenParenthesisExpected = new ErrorCode("C043", "( expected, found %s");
+    public static final ErrorCode CommaExpected = new ErrorCode("C044", ", expected, found %s");
 }

@@ -712,6 +712,7 @@ public class Binder {
             case LAMBDA_EXPRESSION -> bindLambdaExpression((LambdaExpressionNode) expression);
             case AWAIT_EXPRESSION -> bindAwaitExpression((AwaitExpressionNode) expression);
             case META_INVALID_EXPRESSION -> bindInvalidMetaExpression((InvalidMetaExpressionNode) expression);
+            case META_CAST_EXPRESSION -> bindMetaCastExpression((MetaCastExpressionNode) expression);
             case META_TYPE_EXPRESSION -> bindMetaTypeExpression((MetaTypeExpressionNode) expression);
             case META_TYPE_OF_EXPRESSION -> bindMetaTypeOfExpression((MetaTypeOfExpressionNode) expression);
             case INVALID_EXPRESSION -> bindInvalidExpression((InvalidExpressionNode) expression);
@@ -1368,6 +1369,15 @@ public class Binder {
 
     private BoundExpressionNode bindMemberAccessExpression(MemberAccessExpressionNode expression) {
         BoundExpressionNode callee = bindExpression(expression.callee);
+
+        if (callee.type == SNull.instance) {
+            addDiagnostic(BinderErrors.CannotAccessNullMembers, expression.dot);
+            return new BoundPropertyAccessExpressionNode(
+                    expression,
+                    callee,
+                    new BoundPropertyNode(expression.name, UnknownPropertyReference.instance));
+        }
+
         if (callee.type instanceof SStaticTypeReference staticType) {
             PropertyReference property = staticType.getUnderlying().getStaticProperties().stream()
                     .filter(p -> p.getName().equals(expression.name.value))
@@ -1548,6 +1558,12 @@ public class Binder {
 
     private BoundInvalidMetaExpressionNode bindInvalidMetaExpression(InvalidMetaExpressionNode expression) {
         return new BoundInvalidMetaExpressionNode(expression);
+    }
+
+    private BoundMetaCastExpressionNode bindMetaCastExpression(MetaCastExpressionNode meta) {
+        BoundExpressionNode expression = bindExpression(meta.expression);
+        BoundTypeNode type = bindType(meta.type);
+        return new BoundMetaCastExpressionNode(meta, expression, type);
     }
 
     private BoundMetaTypeExpressionNode bindMetaTypeExpression(MetaTypeExpressionNode meta) {

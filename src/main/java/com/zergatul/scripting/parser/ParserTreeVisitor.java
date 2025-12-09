@@ -234,6 +234,11 @@ public abstract class ParserTreeVisitor {
         node.acceptChildren(this);
     }
 
+    public void explicitVisit(MetaCastExpressionNode node) {
+        visit(node);
+        node.acceptChildren(this);
+    }
+
     public void explicitVisit(MetaTypeExpressionNode node) {
         visit(node);
         node.acceptChildren(this);
@@ -405,6 +410,7 @@ public abstract class ParserTreeVisitor {
     public void visit(LambdaExpressionNode node) {}
     public void visit(LetTypeNode node) {}
     public void visit(MemberAccessExpressionNode node) {}
+    public void visit(MetaCastExpressionNode node) {}
     public void visit(MetaTypeExpressionNode node) {}
     public void visit(MetaTypeOfExpressionNode node) {}
     public void visit(ModifiersNode node) {}

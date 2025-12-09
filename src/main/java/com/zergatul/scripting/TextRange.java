@@ -138,7 +138,7 @@ public abstract class TextRange {
         if (line > range2.getLine1()) {
             return false;
         }
-        if (line == range2.getLine1() && column > range2.getColumn2()) {
+        if (line == range2.getLine1() && column > range2.getColumn1()) {
             return false;
         }
         return true;

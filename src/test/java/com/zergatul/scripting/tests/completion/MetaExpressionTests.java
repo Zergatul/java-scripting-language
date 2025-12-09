@@ -20,6 +20,7 @@ public class MetaExpressionTests {
                 let x = #<cursor>
                 """,
                 context -> List.of(
+                        new KeywordSuggestion(TokenType.META_CAST),
                         new KeywordSuggestion(TokenType.META_TYPE),
                         new KeywordSuggestion(TokenType.META_TYPE_OF)));
     }
@@ -38,6 +39,38 @@ public class MetaExpressionTests {
                 let x = #typeof(<cursor>)
                 """,
                 context -> expressions);
+    }
+
+    @Test
+    public void metaCastExpressionTest1() {
+        assertSuggestions("""
+                let x = #cast(<cursor>)
+                """,
+                context -> expressions);
+    }
+
+    @Test
+    public void metaCastExpressionTest2() {
+        assertSuggestions("""
+                let x = #cast(1,<cursor>)
+                """,
+                context -> types);
+    }
+
+    @Test
+    public void metaCastExpressionTest3() {
+        assertSuggestions("""
+                let x = #cast(<cursor>
+                """,
+                context -> expressions);
+    }
+
+    @Test
+    public void metaCastExpressionTest4() {
+        assertSuggestions("""
+                let x = #cast(1,<cursor>
+                """,
+                context -> types);
     }
 
     private void assertSuggestions(String code, Function<TestCompletionContext, List<Suggestion>> expectedFactory) {

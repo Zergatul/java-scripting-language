@@ -1,12 +1,13 @@
 package com.zergatul.scripting.tests.compiler;
 
-import com.zergatul.scripting.tests.compiler.helpers.BoolStorage;
-import com.zergatul.scripting.tests.compiler.helpers.IntStorage;
+import com.zergatul.scripting.tests.compiler.helpers.*;
 import com.zergatul.scripting.type.CustomType;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import static com.zergatul.scripting.tests.compiler.helpers.CompilerHelper.*;
@@ -17,6 +18,9 @@ public class TypeCastExpressionTests {
     public void clean() {
         ApiRoot.boolStorage = new BoolStorage();
         ApiRoot.intStorage = new IntStorage();
+        ApiRoot.int64Storage = new Int64Storage();
+        ApiRoot.floatStorage = new FloatStorage();
+        ApiRoot.stringStorage = new StringStorage();
         ApiRoot.api = new Api();
     }
 
@@ -61,13 +65,58 @@ public class TypeCastExpressionTests {
     }
 
     @Test
-    public void castExceptionTest() {
+    public void validCastValueTypeTest() {
         String code = """
-                let x = 1 as float;
+                long a = 123;
+                long b = a as long;
+                int64Storage.add(b);
                 """;
 
         Runnable program = compile(ApiRoot.class, code);
-        Assertions.assertThrows(ClassCastException.class, program::run);
+        program.run();
+
+        Assertions.assertIterableEquals(ApiRoot.int64Storage.list, List.of(123L));
+    }
+
+    @Test
+    public void nonValidCastValueTypeTest() {
+        String code = """
+                let x = 1 as float;
+                floatStorage.add(x);
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(ApiRoot.floatStorage.list, List.of(0.0));
+    }
+
+    @Test
+    public void validCastReferenceTypeTest() {
+        String code = """
+                Java<java.lang.Object> func() => "123";
+                
+                stringStorage.add(func() as string);
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(ApiRoot.stringStorage.list, List.of("123"));
+    }
+
+    @Test
+    public void nonValidCastReferenceTypeTest() {
+        String code = """
+                Java<java.lang.Object> func() => new Java<java.lang.Object>();
+                
+                stringStorage.add(func() as string);
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(ApiRoot.stringStorage.list, Collections.singletonList((String) null));
     }
 
     @Test
@@ -93,9 +142,30 @@ public class TypeCastExpressionTests {
         Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(90, 20, 1, 30));
     }
 
+    @Test
+    public void boxedCastTest() {
+        String code = """
+                typealias Object = Java<java.lang.Object>;
+                typealias Integer = Java<java.lang.Integer>;
+                
+                Object getInt() => 10;
+                
+                intStorage.add(getInt() as int);
+                intStorage.add((20 as Integer).intValue());
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(10, 20));
+    }
+
     public static class ApiRoot {
         public static BoolStorage boolStorage;
         public static IntStorage intStorage;
+        public static Int64Storage int64Storage;
+        public static FloatStorage floatStorage;
+        public static StringStorage stringStorage;
         public static Api api;
     }
 

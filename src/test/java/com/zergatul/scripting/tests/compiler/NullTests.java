@@ -350,6 +350,18 @@ public class NullTests extends ComparatorTest {
                 getDiagnostics(LetTests.ApiRoot.class, code));
     }
 
+    @Test
+    public void nullMembersTest() {
+        String code = """
+                null.abc();
+                """;
+
+        comparator.assertEquals(
+                List.of(
+                        new DiagnosticMessage(BinderErrors.CannotAccessNullMembers, new SingleLineTextRange(1, 5, 4, 1))),
+                getDiagnostics(LetTests.ApiRoot.class, code));
+    }
+
     public static class ApiRoot {
         public static BoolStorage boolStorage;
         public static IntStorage intStorage;
