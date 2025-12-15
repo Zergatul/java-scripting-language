@@ -2,6 +2,7 @@ package com.zergatul.scripting.binding.nodes;
 
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
+import com.zergatul.scripting.binding.FallthroughFlow;
 import com.zergatul.scripting.parser.SyntaxFactory;
 import com.zergatul.scripting.parser.nodes.IfStatementNode;
 import org.jspecify.annotations.Nullable;
@@ -14,22 +15,23 @@ public class BoundIfStatementNode extends BoundStatementNode {
     public final BoundExpressionNode condition;
     public final BoundStatementNode thenStatement;
     @Nullable public final BoundStatementNode elseStatement;
+    public final FallthroughFlow flow;
 
-    public BoundIfStatementNode(BoundExpressionNode condition, BoundStatementNode thenStatement) {
-        this(SyntaxFactory.missingIfStatement(), condition, thenStatement, null, TextRange.MISSING);
-    }
-
-    public BoundIfStatementNode(BoundExpressionNode condition, BoundStatementNode thenStatement, BoundStatementNode elseStatement) {
-        this(SyntaxFactory.missingIfStatement(), condition, thenStatement, elseStatement, TextRange.MISSING);
+    public BoundIfStatementNode(
+            BoundExpressionNode condition,
+            BoundStatementNode thenStatement,
+            FallthroughFlow flow
+    ) {
+        this(SyntaxFactory.missingIfStatement(), condition, thenStatement, null, flow, TextRange.MISSING);
     }
 
     public BoundIfStatementNode(
-            IfStatementNode node,
             BoundExpressionNode condition,
             BoundStatementNode thenStatement,
-            @Nullable BoundStatementNode elseStatement
+            @Nullable BoundStatementNode elseStatement,
+            FallthroughFlow flow
     ) {
-        this(node, condition, thenStatement, elseStatement, node.getRange());
+        this(SyntaxFactory.missingIfStatement(), condition, thenStatement, elseStatement, flow, TextRange.MISSING);
     }
 
     public BoundIfStatementNode(
@@ -37,6 +39,17 @@ public class BoundIfStatementNode extends BoundStatementNode {
             BoundExpressionNode condition,
             BoundStatementNode thenStatement,
             @Nullable BoundStatementNode elseStatement,
+            FallthroughFlow flow
+    ) {
+        this(node, condition, thenStatement, elseStatement, flow, node.getRange());
+    }
+
+    public BoundIfStatementNode(
+            IfStatementNode node,
+            BoundExpressionNode condition,
+            BoundStatementNode thenStatement,
+            @Nullable BoundStatementNode elseStatement,
+            FallthroughFlow flow,
             TextRange range
     ) {
         super(BoundNodeType.IF_STATEMENT, range);
@@ -44,6 +57,7 @@ public class BoundIfStatementNode extends BoundStatementNode {
         this.condition = condition;
         this.thenStatement = thenStatement;
         this.elseStatement = elseStatement;
+        this.flow = flow;
     }
 
     @Override

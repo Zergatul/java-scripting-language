@@ -3,6 +3,7 @@ package com.zergatul.scripting.type;
 import com.zergatul.scripting.*;
 import com.zergatul.scripting.type.operation.BinaryOperation;
 import com.zergatul.scripting.type.operation.IndexOperation;
+import com.zergatul.scripting.type.operation.OverloadBinaryOperation;
 import com.zergatul.scripting.type.operation.ReferenceTypeOperations;
 import org.jspecify.annotations.Nullable;
 import org.objectweb.asm.MethodVisitor;
@@ -24,6 +25,7 @@ public class SCustomType extends SType {
     private final Lazy<List<IndexOperation>> indexes;
     private final Lazy<List<MethodReference>> staticMethods;
     private final Lazy<List<PropertyReference>> staticProperties;
+    private final Lazy<List<OverloadBinaryOperation>> operatorOverloads;
 
     public SCustomType(Class<?> clazz) {
         CustomType annotation = clazz.getAnnotation(CustomType.class);
@@ -38,6 +40,7 @@ public class SCustomType extends SType {
         this.indexes = new Lazy<>(this::loadIndexes);
         this.staticMethods = new Lazy<>(this::loadStaticMethods);
         this.staticProperties = new Lazy<>(this::loadStaticProperties);
+        this.operatorOverloads = new Lazy<>(this::loadOperatorOverloads);
     }
 
     @Override
@@ -154,6 +157,11 @@ public class SCustomType extends SType {
                 .map(StaticFieldPropertyReference::new)
                 .map(r -> (PropertyReference) r)
                 .toList();
+    }
+
+    @Override
+    public List<OverloadBinaryOperation> getOperatorOverloads() {
+        return operatorOverloads.value();
     }
 
     @Override
@@ -296,6 +304,7 @@ public class SCustomType extends SType {
                 .filter(m -> m.getDeclaringClass() != Object.class)
                 .filter(m -> !m.isAnnotationPresent(Getter.class))
                 .filter(m -> !m.isAnnotationPresent(Setter.class))
+                .filter(m -> !m.isAnnotationPresent(BinaryOperatorMethod.class))
                 .map(NativeStaticMethodReference::new)
                 .map(r -> (MethodReference) r)
                 .toList();
@@ -315,6 +324,16 @@ public class SCustomType extends SType {
         }
 
         return list;
+    }
+
+    private List<OverloadBinaryOperation> loadOperatorOverloads() {
+        return Arrays.stream(this.clazz.getDeclaredMethods())
+                .filter(m -> Modifier.isPublic(m.getModifiers()))
+                .filter(m -> Modifier.isStatic(m.getModifiers()))
+                .filter(m -> m.isAnnotationPresent(BinaryOperatorMethod.class))
+                .map(m -> OverloadBinaryOperation.fromMethod(this, m))
+                .filter(Objects::nonNull)
+                .toList();
     }
 
     private void validateProperty(Method getter, Method setter) {

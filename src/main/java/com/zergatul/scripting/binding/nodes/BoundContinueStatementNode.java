@@ -9,14 +9,16 @@ import java.util.List;
 public class BoundContinueStatementNode extends BoundStatementNode {
 
     public final ContinueStatementNode syntaxNode;
+    public final boolean isInsideLoop;
 
-    public BoundContinueStatementNode(ContinueStatementNode node) {
-        this(node, node.getRange());
+    public BoundContinueStatementNode(ContinueStatementNode node, boolean isInsideLoop) {
+        this(node, isInsideLoop, node.getRange());
     }
 
-    public BoundContinueStatementNode(ContinueStatementNode node, TextRange range) {
+    public BoundContinueStatementNode(ContinueStatementNode node, boolean isInsideLoop, TextRange range) {
         super(BoundNodeType.CONTINUE_STATEMENT, range);
         this.syntaxNode = node;
+        this.isInsideLoop = isInsideLoop;
     }
 
     @Override

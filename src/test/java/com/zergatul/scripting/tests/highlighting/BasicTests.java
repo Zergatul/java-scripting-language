@@ -446,7 +446,7 @@ public class BasicTests extends ComparatorTest {
                 highlight(code));
     }
 
-    protected List<SemanticToken> highlight(String code) {
+    private List<SemanticToken> highlight(String code) {
         LexerOutput lexerOutput = new Lexer(new LexerInput(code)).lex();
         ParserOutput parserOutput = new Parser(lexerOutput).parse();
         BinderOutput binderOutput = new Binder(parserOutput, new CompilationParametersBuilder()

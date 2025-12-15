@@ -11,7 +11,7 @@ import java.util.List;
 import static com.zergatul.scripting.tests.compiler.helpers.CompilerHelper.compile;
 import static com.zergatul.scripting.tests.compiler.helpers.CompilerHelper.compileWithCustomType;
 
-public class TypeTestExpressionTests {
+public class IsExpressionTypePatternTests {
 
     @BeforeEach
     public void clean() {
@@ -25,12 +25,19 @@ public class TypeTestExpressionTests {
                 boolStorage.add(false is boolean);
                 boolStorage.add(1 is boolean);
                 boolStorage.add("qwe" is boolean);
+                boolStorage.add(false is not boolean);
+                boolStorage.add(1 is not boolean);
+                boolStorage.add("qwe" is not boolean);
                 """;
 
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
-        Assertions.assertIterableEquals(ApiRoot.boolStorage.list, List.of(true, false, false));
+        Assertions.assertIterableEquals(
+                ApiRoot.boolStorage.list,
+                List.of(
+                        true, false, false,
+                        false, true, true));
     }
 
     @Test
@@ -67,12 +74,19 @@ public class TypeTestExpressionTests {
                 boolStorage.add("1" is string);
                 boolStorage.add(1 is string);
                 boolStorage.add(false is string);
+                boolStorage.add("1" is not string);
+                boolStorage.add(1 is not string);
+                boolStorage.add(false is not string);
                 """;
 
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
-        Assertions.assertIterableEquals(ApiRoot.boolStorage.list, List.of(true, false, false));
+        Assertions.assertIterableEquals(
+                ApiRoot.boolStorage.list,
+                List.of(
+                        true, false, false,
+                        false, true, true));
     }
 
     @Test

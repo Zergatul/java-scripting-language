@@ -3,6 +3,7 @@ package com.zergatul.scripting.type;
 import com.zergatul.scripting.Lazy;
 import com.zergatul.scripting.type.operation.BinaryOperation;
 import com.zergatul.scripting.type.operation.CastOperation;
+import org.jspecify.annotations.Nullable;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Type;
 
@@ -10,17 +11,14 @@ import java.util.List;
 
 import static org.objectweb.asm.Opcodes.*;
 
-public class SChar extends SPredefinedType {
+public class SChar extends SValueType {
 
     public static final SChar instance = new SChar();
 
+    private final SBoxedType boxed = new SBoxedType(this, Character.class);
+
     private SChar() {
         super(char.class);
-    }
-
-    @Override
-    public boolean isReference() {
-        return false;
     }
 
     @Override
@@ -64,8 +62,8 @@ public class SChar extends SPredefinedType {
     }
 
     @Override
-    public Class<?> getBoxedVersion() {
-        return Character.class;
+    public SBoxedType getBoxed() {
+        return boxed;
     }
 
     @Override
@@ -99,7 +97,7 @@ public class SChar extends SPredefinedType {
     }
 
     @Override
-    public CastOperation implicitCastTo(SType other) {
+    public @Nullable CastOperation implicitCastTo(SType other) {
         if (other == SInt.instance) {
             return CHAR_TO_INT.value();
         }
@@ -110,32 +108,32 @@ public class SChar extends SPredefinedType {
     }
 
     @Override
-    public BinaryOperation lessThan(SType other) {
+    public @Nullable BinaryOperation lessThan(SType other) {
         return other == SChar.instance ? SInt.instance.lessThan(SInt.instance) : null;
     }
 
     @Override
-    public BinaryOperation greaterThan(SType other) {
+    public @Nullable BinaryOperation greaterThan(SType other) {
         return other == SChar.instance ? SInt.instance.greaterThan(SInt.instance) : null;
     }
 
     @Override
-    public BinaryOperation lessEquals(SType other) {
+    public @Nullable BinaryOperation lessEquals(SType other) {
         return other == SChar.instance ? SInt.instance.lessEquals(SInt.instance) : null;
     }
 
     @Override
-    public BinaryOperation greaterEquals(SType other) {
+    public @Nullable BinaryOperation greaterEquals(SType other) {
         return other == SChar.instance ? SInt.instance.greaterEquals(SInt.instance) : null;
     }
 
     @Override
-    public BinaryOperation equalsOp(SType other) {
+    public @Nullable BinaryOperation equalsOp(SType other) {
         return other == SChar.instance ? SInt.instance.equalsOp(SInt.instance) : null;
     }
 
     @Override
-    public BinaryOperation notEqualsOp(SType other) {
+    public @Nullable BinaryOperation notEqualsOp(SType other) {
         return other == SChar.instance ? SInt.instance.notEqualsOp(SInt.instance) : null;
     }
 

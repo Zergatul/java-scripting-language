@@ -8,6 +8,7 @@ import com.zergatul.scripting.parser.nodes.*;
 import com.zergatul.scripting.symbols.Function;
 import com.zergatul.scripting.symbols.StaticFieldConstantStaticVariable;
 import com.zergatul.scripting.symbols.StaticVariable;
+import com.zergatul.scripting.symbols.Variable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -55,10 +56,12 @@ public class HighlightingProvider {
             case COMPILATION_UNIT -> process((BoundCompilationUnitNode) node);
             case COMPILATION_UNIT_MEMBERS -> process((BoundCompilationUnitMembersListNode) node);
             case CONDITIONAL_EXPRESSION -> process((BoundConditionalExpressionNode) node);
+            case CONSTANT_PATTERN -> process((BoundConstantPatternNode) node);
             case CONSTRUCTOR_INITIALIZER -> process((BoundConstructorInitializerNode) node);
             case CONTINUE_STATEMENT -> process((BoundContinueStatementNode) node);
             case CONVERSION -> process((BoundConversionNode) node);
             case CUSTOM_TYPE -> process((BoundCustomTypeNode) node);
+            case DECLARATION_PATTERN -> process((BoundDeclarationPatternNode) node);
             case DECLARED_CLASS_TYPE -> process((BoundDeclaredClassTypeNode) node);
             case DECREMENT_STATEMENT -> process((BoundPostfixStatementNode) node);
             case EMPTY_COLLECTION_EXPRESSION -> process((BoundEmptyCollectionExpressionNode) node);
@@ -89,6 +92,7 @@ public class HighlightingProvider {
             case JAVA_TYPE -> process((BoundJavaTypeNode) node);
             case LAMBDA_EXPRESSION -> process((BoundLambdaExpressionNode) node);
             case LET_TYPE -> process((BoundLetTypeNode) node);
+            case META_CAST_EXPRESSION -> process((BoundMetaCastExpressionNode) node);
             case META_INVALID_EXPRESSION -> process((BoundInvalidMetaExpressionNode) node);
             case META_TYPE_EXPRESSION -> process((BoundMetaTypeExpressionNode) node);
             case META_TYPE_OF_EXPRESSION -> process((BoundMetaTypeOfExpressionNode) node);
@@ -96,6 +100,8 @@ public class HighlightingProvider {
             case METHOD_GROUP -> process((BoundMethodGroupExpressionNode) node);
             case METHOD_INVOCATION_EXPRESSION -> process((BoundMethodInvocationExpressionNode) node);
             case NAME_EXPRESSION -> process((BoundNameExpressionNode) node);
+            case NOT_PATTERN -> process((BoundNotPattern) node);
+            case NULL_EXPRESSION -> process((BoundNullExpressionNode) node);
             case OBJECT_CREATION_EXPRESSION -> process((BoundObjectCreationExpressionNode) node);
             case OBJECT_INVOCATION -> process((BoundObjectInvocationExpression) node);
             case PARAMETER -> process((BoundParameterNode) node);
@@ -118,7 +124,8 @@ public class HighlightingProvider {
             case THIS_EXPRESSION -> process((BoundThisExpressionNode) node);
             case TYPE_ALIAS -> process((BoundTypeAliasNode) node);
             case TYPE_CAST_EXPRESSION -> process((BoundTypeCastExpressionNode) node);
-            case TYPE_TEST_EXPRESSION -> process((BoundTypeTestExpressionNode) node);
+            case TYPE_PATTERN -> process((BoundTypePatternNode) node);
+            case IS_EXPRESSION -> process((BoundIsExpressionNode) node);
             case UNARY_EXPRESSION -> process((BoundUnaryExpressionNode) node);
             case UNARY_OPERATOR -> process((BoundUnaryOperatorNode) node);
             case UNCONVERTED_LAMBDA -> process((BoundUnconvertedLambdaExpressionNode) node);
@@ -297,6 +304,10 @@ public class HighlightingProvider {
         process(node.whenFalse);
     }
 
+    private void process(BoundConstantPatternNode node) {
+        process(node.expression);
+    }
+
     private void process(BoundConstructorInitializerNode node) {
         process(node.syntaxNode.keyword);
         process(node.arguments);
@@ -313,6 +324,11 @@ public class HighlightingProvider {
 
     private void process(BoundCustomTypeNode node) {
         process(node.syntaxNode.token, SemanticTokenType.TYPE);
+    }
+
+    private void process(BoundDeclarationPatternNode node) {
+        process(node.typeNode);
+        process(node.symbolNode);
     }
 
     private void process(BoundDeclaredClassTypeNode node) {
@@ -539,6 +555,15 @@ public class HighlightingProvider {
         process(node.syntaxNode.token);
     }
 
+    private void process(BoundMetaCastExpressionNode node) {
+        process(node.syntaxNode.keyword);
+        process(node.syntaxNode.openParen);
+        process(node.expression);
+        process(node.syntaxNode.comma);
+        process(node.type);
+        process(node.syntaxNode.closeParen);
+    }
+
     private void process(BoundInvalidMetaExpressionNode node) {
         process(node.syntaxNode.token);
     }
@@ -590,6 +615,15 @@ public class HighlightingProvider {
             return;
         }
         process(node.syntaxNode.token);
+    }
+
+    private void process(BoundNotPattern pattern) {
+        process(pattern.syntaxNode.keyword, SemanticTokenType.KEYWORD);
+        process(pattern.inner);
+    }
+
+    private void process(BoundNullExpressionNode expression) {
+        process(expression.syntaxNode.token);
     }
 
     private void process(BoundObjectCreationExpressionNode node) {
@@ -694,7 +728,10 @@ public class HighlightingProvider {
     }
 
     private void process(BoundSymbolNode node) {
-
+        //if (node.symbolRef.get() instanceof Variable) {
+        // TODO: other cases? like BoundNameExpression
+        process(node.token);
+        //}
     }
 
     private void process(BoundThisExpressionNode node) {
@@ -715,10 +752,14 @@ public class HighlightingProvider {
         process(node.type);
     }
 
-    private void process(BoundTypeTestExpressionNode node) {
+    private void process(BoundTypePatternNode node) {
+        process(node.typeNode);
+    }
+
+    private void process(BoundIsExpressionNode node) {
         process(node.expression);
         process(node.syntaxNode.keyword);
-        process(node.type);
+        process(node.pattern);
     }
 
     private void process(BoundUnaryExpressionNode node) {

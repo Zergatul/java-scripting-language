@@ -142,6 +142,22 @@ public class CompletionContext {
         return canExpressionLazy.value();
     }
 
+    public boolean isFunctionBoundary() {
+        if (entry == null) {
+            return true;
+        }
+        if (entry.node.is(BoundNodeType.FUNCTION)) {
+            return true;
+        }
+        if (entry.node.is(BoundNodeType.CLASS_METHOD)) {
+            return true;
+        }
+        if (entry.node.is(BoundNodeType.CLASS_CONSTRUCTOR)) {
+            return true;
+        }
+        return false;
+    }
+
     public CompletionContext closestStatement(BinderOutput output) {
         if (entry == null) {
             if (type == ContextType.AFTER_LAST_NO_STATEMENTS) {

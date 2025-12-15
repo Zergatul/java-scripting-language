@@ -5,11 +5,8 @@ import com.zergatul.scripting.binding.nodes.*;
 import com.zergatul.scripting.compiler.*;
 import com.zergatul.scripting.lexer.Token;
 import com.zergatul.scripting.lexer.TokenType;
-import com.zergatul.scripting.parser.AssignmentOperator;
+import com.zergatul.scripting.parser.*;
 import com.zergatul.scripting.binding.nodes.BoundNodeType;
-import com.zergatul.scripting.parser.BinaryOperator;
-import com.zergatul.scripting.parser.ParserOutput;
-import com.zergatul.scripting.parser.SyntaxFactory;
 import com.zergatul.scripting.parser.nodes.*;
 import com.zergatul.scripting.symbols.*;
 import com.zergatul.scripting.type.*;
@@ -17,6 +14,8 @@ import com.zergatul.scripting.type.operation.*;
 import org.jspecify.annotations.Nullable;
 
 import java.util.*;
+import java.util.function.BiFunction;
+import java.util.stream.Stream;
 
 public class Binder {
 
@@ -115,7 +114,7 @@ public class Binder {
         }
 
         if (declaration.getReturnType() != SVoidType.instance && declaration.getReturnType() != SUnknown.instance) {
-            if (!new ReturnPathsVerifier().verify(List.of(statement))) {
+            if (new ControlFlowAnalyzer().analyzeStatement(statement) == FlowResult.CONTINUES) {
                 addDiagnostic(BinderErrors.NotAllPathReturnValue, statement);
             }
         }
@@ -269,7 +268,7 @@ public class Binder {
         popScope();
 
         if (returnType != SVoidType.instance && returnType != SUnknown.instance) {
-            if (!new ReturnPathsVerifier().verify(List.of(body))) {
+            if (new ControlFlowAnalyzer().analyzeStatement(body) == FlowResult.CONTINUES) {
                 addDiagnostic(BinderErrors.NotAllPathReturnValue, body);
             }
         }
@@ -320,7 +319,7 @@ public class Binder {
         popScope();
 
         if (returnType != SVoidType.instance && returnType != SUnknown.instance) {
-            if (!new ReturnPathsVerifier().verify(List.of(body))) {
+            if (new ControlFlowAnalyzer().analyzeStatement(body) == FlowResult.CONTINUES) {
                 addDiagnostic(BinderErrors.NotAllPathReturnValue, body);
             }
         }
@@ -417,45 +416,32 @@ public class Binder {
         BinaryOperator operator = operatorNode.operator.getBinaryOperator();
         assert operator != null;
 
-        BinaryOperation operation = left.type.binary(operator, right.type);
-        if (operation == null) {
-            // try implicit cast right to left
-            if (!left.type.equals(right.type)) {
-                CastOperation cast = SType.implicitCastTo(right.type, left.type);
-                if (cast != null) {
-                    operation = left.type.binary(operator, left.type);
-                    if (operation != null) {
-                        right = new BoundImplicitCastExpressionNode(right, cast, right.getRange());
-                    }
-                }
-            }
-        }
+        BinaryOperationResolveResult result = resolveBinaryOperation(left.type, operator, right.type, false);
 
-        if (operation != null) {
-            if (!operation.type.equals(left.type)) {
-                addDiagnostic(
-                        BinderErrors.AugmentedAssignmentInvalidType,
-                        operatorNode,
-                        operator,
-                        left.type,
-                        right.type,
-                        operation.type);
-            }
-        } else {
-            operation = UndefinedBinaryOperation.instance;
+        if (result == null) {
             addDiagnostic(
                     BinderErrors.BinaryOperatorNotDefined,
                     operatorNode,
                     operator,
                     left.type.toString(),
                     right.type.toString());
+            return new BoundAugmentedAssignmentStatementNode(
+                    statement,
+                    left,
+                    operatorNode,
+                    UndefinedBinaryOperation.instance,
+                    right);
+        }
+
+        if (result.rightCast != null) {
+            right = new BoundImplicitCastExpressionNode(right, result.rightCast, right.getRange());
         }
 
         return new BoundAugmentedAssignmentStatementNode(
                 statement,
                 left,
                 operatorNode,
-                operation,
+                result.operation,
                 right);
     }
 
@@ -516,10 +502,33 @@ public class Binder {
     }
 
     private BoundIfStatementNode bindIfStatement(IfStatementNode statement) {
-        BoundExpressionNode condition = convert(bindExpression(statement.condition), SBoolean.instance);
+        ConditionFlow flow = bindExpressionAsConditionFlow(statement.condition);
+        BoundExpressionNode condition = convert(flow.expression(), SBoolean.instance);
+
+        pushScope();
+        addVariablesToContext(flow.whenTrueLocals());
         BoundStatementNode thenStatement = bindStatement(statement.thenStatement);
+        popScope();
+
+        pushScope();
+        addVariablesToContext(flow.whenFalseLocals());
         BoundStatementNode elseStatement = statement.elseStatement == null ? null : bindStatement(statement.elseStatement);
-        return new BoundIfStatementNode(statement, condition, thenStatement, elseStatement);
+        popScope();
+
+        boolean thenTerminates = new ControlFlowAnalyzer().analyzeStatement(thenStatement) == FlowResult.TERMINATES;
+        boolean elseTerminates = elseStatement != null && new ControlFlowAnalyzer().analyzeStatement(elseStatement) == FlowResult.TERMINATES;
+
+        List<SymbolRef> fallthroughLocals = List.of();
+        if (thenTerminates && !elseTerminates && !flow.whenFalseLocals().isEmpty()) {
+            fallthroughLocals = flow.whenFalseLocals();
+        }
+        if (!thenTerminates && elseTerminates && !flow.whenTrueLocals().isEmpty()) {
+            fallthroughLocals = flow.whenTrueLocals();
+        }
+
+        addVariablesToContext(fallthroughLocals);
+
+        return new BoundIfStatementNode(statement, condition, thenStatement, elseStatement, new FallthroughFlow(flow, fallthroughLocals));
     }
 
     private BoundReturnStatementNode bindReturnStatement(ReturnStatementNode statement) {
@@ -635,17 +644,19 @@ public class Binder {
     }
 
     private BoundBreakStatementNode bindBreakStatement(BreakStatementNode statement) {
-        if (!context.canBreak()) {
+        boolean isInsideLoop = context.canBreak();
+        if (!isInsideLoop) {
             addDiagnostic(BinderErrors.NoLoop, statement);
         }
-        return new BoundBreakStatementNode(statement);
+        return new BoundBreakStatementNode(statement, isInsideLoop);
     }
 
     private BoundContinueStatementNode bindContinueStatement(ContinueStatementNode statement) {
-        if (!context.canContinue()) {
+        boolean isInsideLoop = context.canContinue();
+        if (!isInsideLoop) {
             addDiagnostic(BinderErrors.NoLoop, statement);
         }
-        return new BoundContinueStatementNode(statement);
+        return new BoundContinueStatementNode(statement, isInsideLoop);
     }
 
     private BoundEmptyStatementNode bindEmptyStatement(EmptyStatementNode statement) {
@@ -694,7 +705,7 @@ public class Binder {
             case PARENTHESIZED_EXPRESSION -> bindParenthesizedExpression((ParenthesizedExpressionNode) expression);
             case UNARY_EXPRESSION -> bindUnaryExpression((UnaryExpressionNode) expression);
             case BINARY_EXPRESSION -> bindBinaryExpression((BinaryExpressionNode) expression);
-            case TYPE_TEST_EXPRESSION -> bindTypeTestExpression((TypeTestExpressionNode) expression);
+            case IS_EXPRESSION -> bindIsExpression((IsExpressionNode) expression);
             case TYPE_CAST_EXPRESSION -> bindTypeCastExpression((TypeCastExpressionNode) expression);
             case CONDITIONAL_EXPRESSION -> bindConditionalExpression((ConditionalExpressionNode) expression);
             case INDEX_EXPRESSION -> bindIndexExpression((IndexExpressionNode) expression);
@@ -717,6 +728,14 @@ public class Binder {
             case META_TYPE_OF_EXPRESSION -> bindMetaTypeOfExpression((MetaTypeOfExpressionNode) expression);
             case INVALID_EXPRESSION -> bindInvalidExpression((InvalidExpressionNode) expression);
             default -> throw new InternalException();
+        };
+    }
+
+    private ConditionFlow bindExpressionAsConditionFlow(ExpressionNode expression) {
+        return switch (expression.getNodeType()) {
+            case IS_EXPRESSION -> bindIsExpressionAsCondition((IsExpressionNode) expression);
+            case BINARY_EXPRESSION -> bindBinaryExpressionAsCondition((BinaryExpressionNode) expression);
+            default -> new ConditionFlow(bindExpression(expression));
         };
     }
 
@@ -757,34 +776,9 @@ public class Binder {
 
         BoundExpressionNode left = bindExpression(binary.left);
         BoundExpressionNode right = bindExpression(binary.right);
-        BinaryOperation operation = left.type.binary(binary.operator.operator, right.type);
-        if (operation != null) {
-            BoundBinaryOperatorNode operator = new BoundBinaryOperatorNode(binary.operator, operation);
-            return new BoundBinaryExpressionNode(binary, left, operator, right);
-        } else {
-            // try implicit cast arguments to each other and see if operator is defined
-            if (!left.type.equals(right.type)) {
-                CastOperation cast = SType.implicitCastTo(right.type, left.type);
-                if (cast != null) {
-                    operation = left.type.binary(binary.operator.operator, left.type);
-                    if (operation != null) {
-                        right = new BoundImplicitCastExpressionNode(right, cast, right.getRange());
-                        BoundBinaryOperatorNode operator = new BoundBinaryOperatorNode(binary.operator, operation);
-                        return new BoundBinaryExpressionNode(binary, left, operator, right);
-                    }
-                }
 
-                cast = SType.implicitCastTo(left.type, right.type);
-                if (cast != null) {
-                    operation = right.type.binary(binary.operator.operator, right.type);
-                    if (operation != null) {
-                        left = new BoundImplicitCastExpressionNode(left, cast, left.getRange());
-                        BoundBinaryOperatorNode operator = new BoundBinaryOperatorNode(binary.operator, operation);
-                        return new BoundBinaryExpressionNode(binary, left, operator, right);
-                    }
-                }
-            }
-
+        BinaryOperationResolveResult result = resolveBinaryOperation(left.type, binary.operator.operator, right.type, true);
+        if (result == null) {
             addDiagnostic(
                     BinderErrors.BinaryOperatorNotDefined,
                     binary,
@@ -794,12 +788,156 @@ public class Binder {
             BoundBinaryOperatorNode operator = new BoundBinaryOperatorNode(binary.operator, UndefinedBinaryOperation.instance);
             return new BoundBinaryExpressionNode(binary, left, operator, right);
         }
+
+        if (result.leftCast != null) {
+            left = new BoundImplicitCastExpressionNode(left, result.leftCast, left.getRange());
+        }
+        if (result.rightCast != null) {
+            right = new BoundImplicitCastExpressionNode(right, result.rightCast, right.getRange());
+        }
+
+        BoundBinaryOperatorNode operator = new BoundBinaryOperatorNode(binary.operator, result.operation);
+        return new BoundBinaryExpressionNode(binary, left, operator, right);
     }
 
-    private BoundTypeTestExpressionNode bindTypeTestExpression(TypeTestExpressionNode test) {
-        BoundExpressionNode expression = bindExpression(test.expression);
-        BoundTypeNode type = bindType(test.type);
-        return new BoundTypeTestExpressionNode(test, expression, type);
+    private BoundIsExpressionNode bindIsExpression(IsExpressionNode is) {
+        BoundExpressionNode expression = bindExpression(is.expression);
+        BoundPatternNode pattern = bindPattern(is.pattern).pattern;
+        return new BoundIsExpressionNode(is, expression, pattern);
+    }
+
+    private ConditionFlow bindIsExpressionAsCondition(IsExpressionNode is) {
+        BoundExpressionNode expression = bindExpression(is.expression);
+        PatternFlow flow = bindPattern(is.pattern);
+        return new ConditionFlow(
+                new BoundIsExpressionNode(is, expression, flow.pattern),
+                flow.whenTrueLocals,
+                flow.whenFalseLocals,
+                Stream.concat(flow.whenTrueLocals.stream(), flow.whenFalseLocals.stream()).toList());
+    }
+
+    private ConditionFlow bindBinaryExpressionAsCondition(BinaryExpressionNode binary) {
+        BiFunction<List<SymbolRef>, List<SymbolRef>, List<SymbolRef>> merge = (list1, list2) -> {
+            if (list2.isEmpty()) {
+                return list1;
+            }
+            if (list1.isEmpty()) {
+                return list2;
+            }
+
+            List<SymbolRef> result = new ArrayList<>(list1);
+            for (SymbolRef ref : list2) {
+                if (result.stream().anyMatch(r -> r.get().getName().equals(ref.get().getName()))) {
+                    addDiagnostic(
+                            BinderErrors.VariableRedeclarationInCondition,
+                            binary,
+                            ref.get().getName());
+                } else {
+                    result.add(ref);
+                }
+            }
+            return result;
+        };
+
+        BinaryOperator operator = binary.operator.operator;
+        if (operator == BinaryOperator.BOOLEAN_AND || operator == BinaryOperator.BOOLEAN_OR) {
+            ConditionFlow left = bindExpressionAsConditionFlow(binary.left);
+            ConditionFlow right = bindExpressionAsConditionFlow(binary.right);
+            if (left.expression().type == SBoolean.instance && right.expression().type == SBoolean.instance) {
+                BinaryOperation operation = SBoolean.instance.binary(operator, SBoolean.instance);
+                if (operation == null) {
+                    throw new InternalException();
+                }
+                BoundBinaryOperatorNode boundOperator = new BoundBinaryOperatorNode(binary.operator, operation);
+
+                List<SymbolRef> whenTrueLocals;
+                if (operator == BinaryOperator.BOOLEAN_AND) {
+                    whenTrueLocals = merge.apply(left.whenTrueLocals(), right.whenTrueLocals());
+                } else {
+                    whenTrueLocals = List.of();
+                }
+
+                List<SymbolRef> whenFalseLocals;
+                if (operator == BinaryOperator.BOOLEAN_OR) {
+                    whenFalseLocals = merge.apply(left.whenFalseLocals(), right.whenFalseLocals());
+                } else {
+                    whenFalseLocals = List.of();
+                }
+
+                return new ConditionFlow(
+                        new BoundBinaryExpressionNode(binary, left.expression(), boundOperator, right.expression()),
+                        whenTrueLocals,
+                        whenFalseLocals,
+                        Stream.concat(left.allLocals().stream(), right.allLocals().stream()).toList());
+            }
+        }
+
+        // TODO: double binding when condition above fails?
+
+        return new ConditionFlow(bindBinaryExpression(binary));
+    }
+
+    private PatternFlow bindPattern(PatternNode pattern) {
+        return switch (pattern.getNodeType()) {
+            case NOT_PATTERN -> {
+                NotPatternNode notPatternNode = (NotPatternNode) pattern;
+                PatternFlow inner = bindPattern(notPatternNode.inner);
+                yield new PatternFlow(
+                        new BoundNotPattern(notPatternNode, inner.pattern, notPatternNode.getRange()),
+                        inner.whenFalseLocals,
+                        inner.whenTrueLocals);
+            }
+            case CONSTANT_PATTERN -> {
+                ConstantPatternNode constantPatternNode = (ConstantPatternNode) pattern;
+                BoundExpressionNode expression = bindExpression(constantPatternNode.expression);
+                if (!isConstant(expression)) {
+                    addDiagnostic(BinderErrors.ConstantExpressionExpected, expression);
+                }
+                yield new PatternFlow(
+                        new BoundConstantPatternNode(constantPatternNode, expression, constantPatternNode.getRange()));
+            }
+            case TYPE_PATTERN -> {
+                TypePatternNode typePatternNode = (TypePatternNode) pattern;
+                BoundTypeNode typeNode = bindType(typePatternNode.typeNode);
+                yield new PatternFlow(
+                        new BoundTypePatternNode(typePatternNode, typeNode, typePatternNode.getRange()));
+            }
+            case DECLARATION_PATTERN -> {
+                DeclarationPatternNode declarationPatternNode = (DeclarationPatternNode) pattern;
+                BoundTypeNode typeNode = bindType(declarationPatternNode.typeNode);
+                String name = declarationPatternNode.identifier.value;
+
+                SymbolRef existingRef = context.getSymbol(name);
+                SymbolRef symbolRef;
+                List<SymbolRef> whenTrueLocals;
+                if (existingRef != null) {
+                    symbolRef = new InvalidSymbolRef();
+                    whenTrueLocals = List.of();
+                    addDiagnostic(
+                            BinderErrors.SymbolAlreadyDeclared,
+                            declarationPatternNode.identifier,
+                            name);
+                } else {
+                    LocalVariable variable = new LocalVariable(name, typeNode.type, pattern.getRange());
+                    symbolRef = new MutableSymbolRef(variable);
+                    whenTrueLocals = List.of(symbolRef);
+                }
+
+                BoundSymbolNode symbolNode = new BoundSymbolNode(declarationPatternNode.identifier, symbolRef);
+                yield new PatternFlow(
+                        new BoundDeclarationPatternNode(declarationPatternNode, typeNode, symbolNode, declarationPatternNode.getRange()),
+                        whenTrueLocals,
+                        List.of());
+            }
+            default -> throw new InternalException();
+        };
+    }
+
+    private boolean isConstant(BoundExpressionNode expression) {
+        return switch (expression.getNodeType()) {
+            case NULL_EXPRESSION, BOOLEAN_LITERAL, CHAR_LITERAL, INTEGER_LITERAL, INTEGER64_LITERAL, FLOAT_LITERAL, STRING_LITERAL -> true;
+            default -> false;
+        };
     }
 
     private BoundTypeCastExpressionNode bindTypeCastExpression(TypeCastExpressionNode test) {
@@ -1350,6 +1488,63 @@ public class Binder {
         return new BindInvocableArgsResult<>(matchedInvocable, boundArgumentsListNode, noInvocables, noOverloads);
     }
 
+    private @Nullable BinaryOperationResolveResult resolveBinaryOperation(SType left, BinaryOperator operator, SType right, boolean allowLeftCast) {
+        BinaryOperation operation = left.binary(operator, right);
+        if (operation != null) {
+            return new BinaryOperationResolveResult(operation);
+        }
+
+        if (!left.equals(right)) {
+            // try implicit cast right to left
+            CastOperation cast = SType.implicitCastTo(right, left);
+            if (cast != null) {
+                operation = left.binary(operator, left);
+                if (operation != null) {
+                    return new BinaryOperationResolveResult(null, operation, cast);
+                }
+            }
+
+            // try implicit cast left to right
+            if (allowLeftCast) {
+                cast = SType.implicitCastTo(left, right);
+                if (cast != null) {
+                    operation = right.binary(operator, right);
+                    if (operation != null) {
+                        return new BinaryOperationResolveResult(cast, operation, null);
+                    }
+                }
+            }
+
+            // try all implicit casts on the left
+            if (allowLeftCast) {
+                for (SType casted : left.getPossibleImplicitCasts()) {
+                    operation = casted.binary(operator, right);
+                    if (operation != null) {
+                        cast = SType.implicitCastTo(left, casted);
+                        if (cast == null) {
+                            throw new InternalException();
+                        }
+                        return new BinaryOperationResolveResult(cast, operation, null);
+                    }
+                }
+            }
+
+            // try all implicit casts on the right
+            for (SType casted : right.getPossibleImplicitCasts()) {
+                operation = left.binary(operator, casted);
+                if (operation != null) {
+                    cast = SType.implicitCastTo(right, casted);
+                    if (cast == null) {
+                        throw new InternalException();
+                    }
+                    return new BinaryOperationResolveResult(null, operation, cast);
+                }
+            }
+        }
+
+        return null;
+    }
+
     private BoundExpressionNode bindCollectionExpression(CollectionExpressionNode collection) {
         if (collection.list.size() == 0) {
             return new BoundEmptyCollectionExpressionNode(collection);
@@ -1648,14 +1843,14 @@ public class Binder {
         if (expression.getNodeType() == BoundNodeType.FUNCTION_REFERENCE) {
             BoundFunctionReferenceNode functionReferenceNode = (BoundFunctionReferenceNode) expression;
             if (type instanceof SFunctionalInterface functionalInterface) {
-                if (functionReferenceNode.getFunctionType().matches(functionalInterface)) {
+                if (functionReferenceNode.getFunctionType().signatureMatchesWithBoxing(functionalInterface)) {
                     return new ConversionInfo(ConversionType.FUNCTION_TO_INTERFACE);
                 } else {
                     return null;
                 }
             }
             if (type instanceof SGenericFunction genericFunction) {
-                if (functionReferenceNode.getFunctionType().matches(genericFunction)) {
+                if (functionReferenceNode.getFunctionType().signatureMatchesWithBoxing(genericFunction)) {
                     return new ConversionInfo(ConversionType.FUNCTION_TO_GENERIC);
                 } else {
                     return null;
@@ -1668,7 +1863,7 @@ public class Binder {
             BoundMethodGroupExpressionNode methodGroupExpressionNode = (BoundMethodGroupExpressionNode) expression;
             if (type instanceof SFunctionalInterface functionalInterface) {
                 for (MethodReference method : methodGroupExpressionNode.candidates) {
-                    if (method.matches(functionalInterface)) {
+                    if (method.signatureMatchesWithBoxing(functionalInterface)) {
                         return new ConversionInfo(ConversionType.METHOD_GROUP_TO_INTERFACE, method);
                     }
                 }
@@ -1676,7 +1871,7 @@ public class Binder {
             }
             if (type instanceof SGenericFunction genericFunction) {
                 for (MethodReference method : methodGroupExpressionNode.candidates) {
-                    if (method.matches(genericFunction)) {
+                    if (method.signatureMatchesWithBoxing(genericFunction)) {
                         return new ConversionInfo(ConversionType.METHOD_GROUP_TO_GENERIC, method);
                     }
                 }
@@ -2094,7 +2289,7 @@ public class Binder {
                 addDiagnostic(BinderErrors.BaseClassAlreadyHasMember, methodNode.name);
             }
             MethodReference overrideCandidateBaseMethod = baseType.getInstanceMethods().stream()
-                    .filter(m -> m.getName().equals(methodName) && m.parametersMatch(functionType))
+                    .filter(m -> m.getName().equals(methodName) && m.signatureMatchesExactly(functionType))
                     .findFirst()
                     .orElse(null);
             if (overrideCandidateBaseMethod != null) {
@@ -2175,6 +2370,12 @@ public class Binder {
         }
 
         return false;
+    }
+
+    private void addVariablesToContext(List<SymbolRef> refs) {
+        for (SymbolRef ref : refs) {
+            context.addLocalVariable(ref);
+        }
     }
 
     @Nullable
@@ -2258,4 +2459,24 @@ public class Binder {
             BoundArgumentsListNode argumentsListNode,
             boolean noInvocables,
             boolean noOverload) {}
+
+    private record PatternFlow(
+            BoundPatternNode pattern,
+            List<SymbolRef> whenTrueLocals,
+            List<SymbolRef> whenFalseLocals
+    ) {
+        public PatternFlow(BoundPatternNode pattern) {
+            this(pattern, List.of(), List.of());
+        }
+    }
+
+    private record BinaryOperationResolveResult(
+            @Nullable CastOperation leftCast,
+            BinaryOperation operation,
+            @Nullable CastOperation rightCast
+    ) {
+        public BinaryOperationResolveResult(BinaryOperation operation) {
+            this(null, operation, null);
+        }
+    }
 }

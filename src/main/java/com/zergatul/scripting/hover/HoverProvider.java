@@ -246,13 +246,11 @@ public class HoverProvider {
     }
 
     protected String formatType(SType type) {
-        switch (type) {
-            case SPredefinedType sPredefinedType -> {
-                return formatPredefinedType(type.toString());
-            }
-            case SArrayType array -> {
-                return formatType(array.getElementsType()) + formatBrackets("[]");
-            }
+        if (type.isPredefined()) {
+            return formatPredefinedType(type.toString());
+        }
+        return switch (type) {
+            case SArrayType array -> formatType(array.getElementsType()) + formatBrackets("[]");
             case SFunctionalInterface func -> {
                 StringBuilder sb = new StringBuilder();
                 sb.append(formatType("Lambda<"));
@@ -271,29 +269,29 @@ public class HoverProvider {
                 sb.append(" => ");
                 sb.append(formatType(func.getActualReturnType()));
                 sb.append(formatType(">"));
-                return sb.toString();
+                yield sb.toString();
             }
             case SFuture future -> {
                 if (future.getUnderlying() == SVoidType.instance) {
-                    return formatType("Future");
+                    yield formatType("Future");
                 } else {
-                    return formatType("Future<") + formatType(future.getUnderlying()) + formatType(">");
+                    yield formatType("Future<") + formatType(future.getUnderlying()) + formatType(">");
                 }
             }
             case SCustomType sCustomType -> {
-                return formatType(type.toString());
+                yield formatType(type.toString());
             }
             case SClassType sClassType -> {
                 Class<?> clazz = type.getJavaClass();
-                return formatType(clazz.getName());
+                yield formatType(clazz.getName());
             }
             case SDeclaredType declaredType -> {
-                return formatType(type.toString());
+                yield formatType(type.toString());
             }
-            case null, default -> {
-                return "TODO";
+            default -> {
+                yield formatType(type.toString());
             }
-        }
+        };
     }
 
     protected String formatPredefinedType(String text) {

@@ -173,6 +173,10 @@ public class ComparatorRegistry {
                 .register(InvocationExpressionNode.class, builder -> builder
                         .extract("callee", node -> node.callee)
                         .extract("arguments", node -> node.arguments))
+                .register(IsExpressionNode.class, builder -> builder
+                        .extract("expression", node -> node.expression)
+                        .extract("keyword", node -> node.keyword)
+                        .extract("pattern", node -> node.pattern))
                 .register(JavaQualifiedTypeNameNode.class, builder -> builder
                         .extract("tokens", node -> node.tokens)
                         .extract("value", node -> node.value))
@@ -234,10 +238,8 @@ public class ComparatorRegistry {
                         .extract("commas", SeparatedList::getCommas))
                 .register(StatementsListNode.class, builder -> builder
                         .extract("statements", node -> node.statements))
-                .register(TypeTestExpressionNode.class, builder -> builder
-                        .extract("expression", node -> node.expression)
-                        .extract("keyword", node -> node.keyword)
-                        .extract("type", node -> node.type))
+                .register(TypePatternNode.class, builder -> builder
+                        .extract("typeNode", node -> node.typeNode))
                 .register(UnaryExpressionNode.class, builder -> builder
                         .extract("operator", node -> node.operator)
                         .extract("operand", node -> node.operand))

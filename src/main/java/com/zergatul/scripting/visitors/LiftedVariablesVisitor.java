@@ -1,6 +1,7 @@
 package com.zergatul.scripting.visitors;
 
 import com.zergatul.scripting.binding.BinderTreeVisitor;
+import com.zergatul.scripting.binding.nodes.BoundDeclarationPatternNode;
 import com.zergatul.scripting.binding.nodes.BoundLambdaExpressionNode;
 import com.zergatul.scripting.binding.nodes.BoundVariableDeclarationNode;
 import com.zergatul.scripting.symbols.LiftedVariable;
@@ -24,6 +25,13 @@ public class LiftedVariablesVisitor extends BinderTreeVisitor {
     @Override
     public void visit(BoundVariableDeclarationNode node) {
         if (node.name.getSymbol() instanceof LiftedVariable lifted) {
+            variables.add(lifted);
+        }
+    }
+
+    @Override
+    public void visit(BoundDeclarationPatternNode node) {
+        if (node.symbolNode.symbolRef.get() instanceof LiftedVariable lifted) {
             variables.add(lifted);
         }
     }

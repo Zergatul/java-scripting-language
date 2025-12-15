@@ -9,6 +9,7 @@ import com.zergatul.scripting.parser.UnaryOperator;
 import com.zergatul.scripting.runtime.Int64Reference;
 import com.zergatul.scripting.runtime.Int64Utils;
 import com.zergatul.scripting.type.operation.*;
+import org.jspecify.annotations.Nullable;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Type;
@@ -17,17 +18,14 @@ import java.util.List;
 
 import static org.objectweb.asm.Opcodes.*;
 
-public class SInt64 extends SPredefinedType {
+public class SInt64 extends SValueType {
 
     public static final SInt64 instance = new SInt64();
 
+    private final SBoxedType boxed = new SBoxedType(this, Long.class);
+
     private SInt64() {
         super(long.class);
-    }
-
-    @Override
-    public boolean isReference() {
-        return false;
     }
 
     @Override
@@ -70,7 +68,7 @@ public class SInt64 extends SPredefinedType {
     }
 
     @Override
-    public BinaryOperation add(SType other) {
+    public @Nullable BinaryOperation add(SType other) {
         BinaryOperation operation = super.add(other);
         if (operation != null) {
             return operation;
@@ -80,62 +78,62 @@ public class SInt64 extends SPredefinedType {
     }
 
     @Override
-    public BinaryOperation subtract(SType other) {
+    public @Nullable BinaryOperation subtract(SType other) {
         return other == this ? SUB.value() : null;
     }
 
     @Override
-    public BinaryOperation multiply(SType other) {
+    public @Nullable BinaryOperation multiply(SType other) {
         return other == this ? MUL.value() : null;
     }
 
     @Override
-    public BinaryOperation divide(SType other) {
+    public @Nullable BinaryOperation divide(SType other) {
         return other == this ? DIV.value() : null;
     }
 
     @Override
-    public BinaryOperation modulo(SType other) {
+    public @Nullable BinaryOperation modulo(SType other) {
         return other == this ? MOD.value() : null;
     }
 
     @Override
-    public BinaryOperation lessThan(SType other) {
+    public @Nullable BinaryOperation lessThan(SType other) {
         return other == this ? LESS_THAN.value() : null;
     }
 
     @Override
-    public BinaryOperation greaterThan(SType other) {
+    public @Nullable BinaryOperation greaterThan(SType other) {
         return other == this ? GREATER_THAN.value() : null;
     }
 
     @Override
-    public BinaryOperation lessEquals(SType other) {
+    public @Nullable BinaryOperation lessEquals(SType other) {
         return other == this ? LESS_THAN_EQUALS.value() : null;
     }
 
     @Override
-    public BinaryOperation greaterEquals(SType other) {
+    public @Nullable BinaryOperation greaterEquals(SType other) {
         return other == this ? GREATER_THAN_EQUALS.value() : null;
     }
 
     @Override
-    public BinaryOperation equalsOp(SType other) {
+    public @Nullable BinaryOperation equalsOp(SType other) {
         return other == this ? EQUALS.value() : null;
     }
 
     @Override
-    public BinaryOperation notEqualsOp(SType other) {
+    public @Nullable BinaryOperation notEqualsOp(SType other) {
         return other == this ? NOT_EQUALS.value() : null;
     }
 
     @Override
-    public BinaryOperation bitwiseAnd(SType other) {
+    public @Nullable BinaryOperation bitwiseAnd(SType other) {
         return other == this ? BITWISE_AND.value() : null;
     }
 
     @Override
-    public BinaryOperation bitwiseOr(SType other) {
+    public @Nullable BinaryOperation bitwiseOr(SType other) {
         return other == this ? BITWISE_OR.value() : null;
     }
 
@@ -160,7 +158,7 @@ public class SInt64 extends SPredefinedType {
     }
 
     @Override
-    public CastOperation implicitCastTo(SType other) {
+    public @Nullable CastOperation implicitCastTo(SType other) {
         if (other == SFloat32.instance) {
             return TO_FLOAT32.value();
         }
@@ -179,8 +177,8 @@ public class SInt64 extends SPredefinedType {
     }
 
     @Override
-    public Class<?> getBoxedVersion() {
-        return Long.class;
+    public SBoxedType getBoxed() {
+        return boxed;
     }
 
     @Override

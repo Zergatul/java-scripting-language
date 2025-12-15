@@ -4,6 +4,7 @@ import com.zergatul.scripting.binding.BinderOutput;
 import com.zergatul.scripting.binding.nodes.*;
 import com.zergatul.scripting.compiler.CompilationParameters;
 import com.zergatul.scripting.symbols.LocalVariable;
+import com.zergatul.scripting.symbols.SymbolRef;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -34,6 +35,14 @@ public class LocalVariablesCompletionProvider<T> extends AbstractCompletionProvi
                         continue;
                     }
                     suggestions.add(factory.getLocalVariableSuggestion(local));
+                }
+            }
+            if (statement instanceof BoundIfStatementNode ifStatement) {
+                // if cursor is after IfStatement, add fallthrough locals
+                if (ifStatement.getRange().isBefore(context.line, context.column)) {
+                    for (SymbolRef ref : ifStatement.flow.fallthroughLocals()) {
+                        suggestions.add(factory.getLocalVariableSuggestion(ref.asLocalVariable()));
+                    }
                 }
             }
         }

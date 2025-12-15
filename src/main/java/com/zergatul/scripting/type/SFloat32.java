@@ -11,6 +11,7 @@ import com.zergatul.scripting.type.operation.BinaryOperation;
 import com.zergatul.scripting.type.operation.CastOperation;
 import com.zergatul.scripting.type.operation.SingleInstructionBinaryOperation;
 import com.zergatul.scripting.type.operation.UnaryOperation;
+import org.jspecify.annotations.Nullable;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Type;
@@ -19,17 +20,14 @@ import java.util.List;
 
 import static org.objectweb.asm.Opcodes.*;
 
-public class SFloat32 extends SPredefinedType {
+public class SFloat32 extends SValueType {
 
     public static final SFloat32 instance = new SFloat32();
 
+    private final SBoxedType boxed = new SBoxedType(this, Float.class);
+
     private SFloat32() {
         super(float.class);
-    }
-
-    @Override
-    public boolean isReference() {
-        return false;
     }
 
     @Override
@@ -68,7 +66,7 @@ public class SFloat32 extends SPredefinedType {
     }
 
     @Override
-    public BinaryOperation add(SType other) {
+    public @Nullable BinaryOperation add(SType other) {
         BinaryOperation operation = super.add(other);
         if (operation != null) {
             return operation;
@@ -78,52 +76,52 @@ public class SFloat32 extends SPredefinedType {
     }
 
     @Override
-    public BinaryOperation subtract(SType other) {
+    public @Nullable BinaryOperation subtract(SType other) {
         return other == this ? SUB.value() : null;
     }
 
     @Override
-    public BinaryOperation multiply(SType other) {
+    public @Nullable BinaryOperation multiply(SType other) {
         return other == this ? MUL.value() : null;
     }
 
     @Override
-    public BinaryOperation divide(SType other) {
+    public @Nullable BinaryOperation divide(SType other) {
         return other == this ? DIV.value() : null;
     }
 
     @Override
-    public BinaryOperation modulo(SType other) {
+    public @Nullable BinaryOperation modulo(SType other) {
         return other == this ? MOD.value() : null;
     }
 
     @Override
-    public BinaryOperation lessThan(SType other) {
+    public @Nullable BinaryOperation lessThan(SType other) {
         return other == this ? LESS_THAN.value() : null;
     }
 
     @Override
-    public BinaryOperation greaterThan(SType other) {
+    public @Nullable BinaryOperation greaterThan(SType other) {
         return other == this ? GREATER_THAN.value() : null;
     }
 
     @Override
-    public BinaryOperation lessEquals(SType other) {
+    public @Nullable BinaryOperation lessEquals(SType other) {
         return other == this ? LESS_THAN_EQUALS.value() : null;
     }
 
     @Override
-    public BinaryOperation greaterEquals(SType other) {
+    public @Nullable BinaryOperation greaterEquals(SType other) {
         return other == this ? GREATER_THAN_EQUALS.value() : null;
     }
 
     @Override
-    public BinaryOperation equalsOp(SType other) {
+    public @Nullable BinaryOperation equalsOp(SType other) {
         return other == this ? EQUALS.value() : null;
     }
 
     @Override
-    public BinaryOperation notEqualsOp(SType other) {
+    public @Nullable BinaryOperation notEqualsOp(SType other) {
         return other == this ? NOT_EQUALS.value() : null;
     }
 
@@ -138,7 +136,7 @@ public class SFloat32 extends SPredefinedType {
     }
 
     @Override
-    public CastOperation implicitCastTo(SType other) {
+    public @Nullable CastOperation implicitCastTo(SType other) {
         if (other == SFloat.instance) {
             return TO_FLOAT.value();
         }
@@ -154,8 +152,8 @@ public class SFloat32 extends SPredefinedType {
     }
 
     @Override
-    public Class<?> getBoxedVersion() {
-        return Float.class;
+    public SBoxedType getBoxed() {
+        return boxed;
     }
 
     @Override

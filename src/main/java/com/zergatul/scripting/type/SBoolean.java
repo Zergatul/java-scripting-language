@@ -10,6 +10,7 @@ import com.zergatul.scripting.type.operation.BinaryOperation;
 import com.zergatul.scripting.type.operation.CastOperation;
 import com.zergatul.scripting.type.operation.SingleInstructionBinaryOperation;
 import com.zergatul.scripting.type.operation.UnaryOperation;
+import org.jspecify.annotations.Nullable;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Type;
@@ -18,17 +19,14 @@ import java.util.List;
 
 import static org.objectweb.asm.Opcodes.*;
 
-public class SBoolean extends SPredefinedType {
+public class SBoolean extends SValueType {
 
     public static final SBoolean instance = new SBoolean();
 
+    private final SBoxedType boxed = new SBoxedType(this, Boolean.class);
+
     private SBoolean() {
         super(boolean.class);
-    }
-
-    @Override
-    public boolean isReference() {
-        return false;
     }
 
     @Override
@@ -67,52 +65,52 @@ public class SBoolean extends SPredefinedType {
     }
 
     @Override
-    public BinaryOperation lessThan(SType other) {
+    public @Nullable BinaryOperation lessThan(SType other) {
         return other == this ? SInt.instance.lessThan(SInt.instance) : null;
     }
 
     @Override
-    public BinaryOperation greaterThan(SType other) {
+    public @Nullable BinaryOperation greaterThan(SType other) {
         return other == this ? SInt.instance.greaterThan(SInt.instance) : null;
     }
 
     @Override
-    public BinaryOperation lessEquals(SType other) {
+    public @Nullable BinaryOperation lessEquals(SType other) {
         return other == this ? SInt.instance.lessEquals(SInt.instance) : null;
     }
 
     @Override
-    public BinaryOperation greaterEquals(SType other) {
+    public @Nullable BinaryOperation greaterEquals(SType other) {
         return other == this ? SInt.instance.greaterEquals(SInt.instance) : null;
     }
 
     @Override
-    public BinaryOperation equalsOp(SType other) {
+    public @Nullable BinaryOperation equalsOp(SType other) {
         return other == this ? SInt.instance.equalsOp(SInt.instance) : null;
     }
 
     @Override
-    public BinaryOperation notEqualsOp(SType other) {
+    public @Nullable BinaryOperation notEqualsOp(SType other) {
         return other == this ? SInt.instance.notEqualsOp(SInt.instance) : null;
     }
 
     @Override
-    public BinaryOperation booleanAnd(SType other) {
+    public @Nullable BinaryOperation booleanAnd(SType other) {
         return other == this ? BOOLEAN_AND.value() : null;
     }
 
     @Override
-    public BinaryOperation booleanOr(SType other) {
+    public @Nullable BinaryOperation booleanOr(SType other) {
         return other == this ? BOOLEAN_OR.value() : null;
     }
 
     @Override
-    public BinaryOperation bitwiseAnd(SType other) {
+    public @Nullable BinaryOperation bitwiseAnd(SType other) {
         return other == this ? BITWISE_AND.value() : null;
     }
 
     @Override
-    public BinaryOperation bitwiseOr(SType other) {
+    public @Nullable BinaryOperation bitwiseOr(SType other) {
         return other == this ? BITWISE_OR.value() : null;
     }
 
@@ -122,7 +120,7 @@ public class SBoolean extends SPredefinedType {
     }
 
     @Override
-    public CastOperation implicitCastTo(SType other) {
+    public @Nullable CastOperation implicitCastTo(SType other) {
         if (other instanceof SClassType && other.getJavaClass() == Object.class) {
             return TO_OBJECT.value();
         }
@@ -135,8 +133,8 @@ public class SBoolean extends SPredefinedType {
     }
 
     @Override
-    public Class<?> getBoxedVersion() {
-        return Boolean.class;
+    public SBoxedType getBoxed() {
+        return boxed;
     }
 
     @Override

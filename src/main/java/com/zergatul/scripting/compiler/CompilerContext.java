@@ -392,7 +392,7 @@ public class CompilerContext {
 
     public SGenericFunction getGenericFunction(SType returnType, SType[] parameters) {
         for (SGenericFunction func : root.genericFunctions) {
-            if (func.matches(returnType, parameters)) {
+            if (func.signatureMatchesWithBoxing(returnType, parameters)) {
                 return func;
             }
         }

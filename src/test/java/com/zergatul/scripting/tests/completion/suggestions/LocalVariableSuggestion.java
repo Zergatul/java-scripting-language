@@ -2,6 +2,7 @@ package com.zergatul.scripting.tests.completion.suggestions;
 
 import com.zergatul.scripting.binding.BinderOutput;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
+import com.zergatul.scripting.binding.nodes.BoundDeclarationPatternNode;
 import com.zergatul.scripting.binding.nodes.BoundForEachLoopStatementNode;
 import com.zergatul.scripting.binding.nodes.BoundParameterNode;
 import com.zergatul.scripting.binding.nodes.BoundVariableDeclarationNode;
@@ -69,6 +70,13 @@ public class LocalVariableSuggestion extends Suggestion {
         public void visit(BoundForEachLoopStatementNode node) {
             if (result == null && node.name.value.equals(name)) {
                 result = (LocalVariable) node.name.getSymbol();
+            }
+        }
+
+        @Override
+        public void visit(BoundDeclarationPatternNode node) {
+            if (result == null && node.symbolNode.symbolRef.get().getName().equals(name)) {
+                result = node.symbolNode.symbolRef.asLocalVariable();
             }
         }
     }

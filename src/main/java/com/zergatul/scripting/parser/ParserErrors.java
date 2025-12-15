@@ -47,4 +47,5 @@ public class ParserErrors {
     public static final ErrorCode EqualExpected = new ErrorCode("C042", "= expected, found %s");
     public static final ErrorCode OpenParenthesisExpected = new ErrorCode("C043", "( expected, found %s");
     public static final ErrorCode CommaExpected = new ErrorCode("C044", ", expected, found %s");
+    public static final ErrorCode PatternExpected = new ErrorCode("C045", "Pattern expected, fount %s");
 }

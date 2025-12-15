@@ -30,6 +30,10 @@ public abstract class SType {
     public abstract boolean isReference();
     public abstract int getReturnInst();
 
+    public boolean isPredefined() {
+        return false;
+    }
+
     public boolean isJvmCategoryOneComputationalType() {
         return true;
     }
@@ -72,8 +76,7 @@ public abstract class SType {
         return false;
     }
 
-    @Nullable
-    public BinaryOperation add(SType other) {
+    public @Nullable BinaryOperation add(SType other) {
         if (other == SString.instance) {
             Optional<BinaryOperation> operation = SString.instance.genericLeftAdd(this);
             if (operation.isPresent()) {
@@ -84,78 +87,83 @@ public abstract class SType {
         return null;
     }
 
-    @Nullable
-    public BinaryOperation subtract(SType other) {
+    public @Nullable BinaryOperation subtract(SType other) {
         return null;
     }
 
-    @Nullable
-    public BinaryOperation multiply(SType other) {
+    public @Nullable BinaryOperation multiply(SType other) {
         return null;
     }
 
-    @Nullable
-    public BinaryOperation divide(SType other) {
+    public @Nullable BinaryOperation divide(SType other) {
         return null;
     }
 
-    @Nullable
-    public BinaryOperation modulo(SType other) {
+    public @Nullable BinaryOperation modulo(SType other) {
         return null;
     }
 
-    @Nullable
-    public BinaryOperation lessThan(SType other) {
+    public @Nullable BinaryOperation lessThan(SType other) {
         return null;
     }
 
-    @Nullable
-    public BinaryOperation greaterThan(SType other) {
+    public @Nullable BinaryOperation greaterThan(SType other) {
         return null;
     }
 
-    @Nullable
-    public BinaryOperation lessEquals(SType other) {
+    public @Nullable BinaryOperation lessEquals(SType other) {
         return null;
     }
 
-    @Nullable
-    public BinaryOperation greaterEquals(SType other) {
+    public @Nullable BinaryOperation greaterEquals(SType other) {
         return null;
     }
 
-    @Nullable
-    public BinaryOperation equalsOp(SType other) {
+    public @Nullable BinaryOperation equalsOp(SType other) {
         return null;
     }
 
-    @Nullable
-    public BinaryOperation notEqualsOp(SType other) {
+    public @Nullable BinaryOperation notEqualsOp(SType other) {
         return null;
     }
 
-    @Nullable
-    public BinaryOperation bitwiseAnd(SType other) {
+    public @Nullable BinaryOperation bitwiseAnd(SType other) {
         return null;
     }
 
-    @Nullable
-    public BinaryOperation bitwiseOr(SType other) {
+    public @Nullable BinaryOperation bitwiseOr(SType other) {
         return null;
     }
 
-    @Nullable
-    public BinaryOperation booleanAnd(SType other) {
+    public @Nullable BinaryOperation booleanAnd(SType other) {
         return null;
     }
 
-    @Nullable
-    public BinaryOperation booleanOr(SType other) {
+    public @Nullable BinaryOperation booleanOr(SType other) {
         return null;
     }
 
-    @Nullable
-    public BinaryOperation binary(BinaryOperator operator, SType other) {
+    public @Nullable BinaryOperation binary(BinaryOperator operator, SType other) {
+        BinaryOperation leftOverload = this.getOperatorOverloads().stream()
+                .filter(o -> o.operator == operator)
+                .filter(o -> o.getLeft().equals(this))
+                .filter(o -> o.getRight().equals(other))
+                .findFirst()
+                .orElse(null);
+        if (leftOverload != null) {
+            return leftOverload;
+        }
+
+        BinaryOperation rightOverload = other.getOperatorOverloads().stream()
+                .filter(o -> o.operator == operator)
+                .filter(o -> o.getLeft().equals(this))
+                .filter(o -> o.getRight().equals(other))
+                .findFirst()
+                .orElse(null);
+        if (rightOverload != null) {
+            return rightOverload;
+        }
+
         return switch (operator) {
             case PLUS -> add(other);
             case MINUS -> subtract(other);
@@ -176,23 +184,23 @@ public abstract class SType {
         };
     }
 
-    @Nullable
-    public UnaryOperation plus() {
+    public List<OverloadBinaryOperation> getOperatorOverloads() {
+        return List.of();
+    }
+
+    public @Nullable UnaryOperation plus() {
         return null;
     }
 
-    @Nullable
-    public UnaryOperation minus() {
+    public @Nullable UnaryOperation minus() {
         return null;
     }
 
-    @Nullable
-    public UnaryOperation not() {
+    public @Nullable UnaryOperation not() {
         return null;
     }
 
-    @Nullable
-    public UnaryOperation unary(UnaryOperator operator) {
+    public @Nullable UnaryOperation unary(UnaryOperator operator) {
         return switch (operator) {
             case PLUS -> plus();
             case MINUS -> minus();
@@ -200,23 +208,23 @@ public abstract class SType {
         };
     }
 
-    @Nullable
-    public PostfixOperation increment() {
+    public @Nullable PostfixOperation increment() {
         return null;
     }
 
-    @Nullable
-    public PostfixOperation decrement() {
+    public @Nullable PostfixOperation decrement() {
         return null;
     }
 
-    @Nullable
-    protected CastOperation implicitCastTo(SType other) {
+    public List<SType> getPossibleImplicitCasts() {
+        return List.of();
+    }
+
+    protected @Nullable CastOperation implicitCastTo(SType other) {
         return null;
     }
 
-    @Nullable
-    public static CastOperation implicitCastTo(SType src, SType dst) {
+    public static @Nullable CastOperation implicitCastTo(SType src, SType dst) {
         if (src == SUnknown.instance || dst == SUnknown.instance) {
             return EmptyCastOperation.instance;
         }
@@ -227,8 +235,7 @@ public abstract class SType {
         return List.of();
     }
 
-    @Nullable
-    public IndexOperation index(SType type) {
+    public @Nullable IndexOperation index(SType type) {
         return null;
     }
 
@@ -248,8 +255,7 @@ public abstract class SType {
         return List.of();
     }
 
-    @Nullable
-    public PropertyReference getInstanceProperty(String name) {
+    public @Nullable PropertyReference getInstanceProperty(String name) {
         return null;
     }
 
@@ -265,25 +271,11 @@ public abstract class SType {
                 .findFirst();
     }
 
-    @Nullable
-    public Class<?> getBoxedVersion() {
-        return null;
-    }
-
-    public void compileBoxing(MethodVisitor visitor) {
-        throw new InternalException();
-    }
-
-    public void compileUnboxing(MethodVisitor visitor) {
-        throw new InternalException();
-    }
-
     public void loadClassObject(MethodVisitor visitor) {
         visitor.visitLdcInsn(Type.getType(getJavaClass()));
     }
 
-    @Nullable
-    public SByReference getReferenceType() {
+    public @Nullable SByReference getReferenceType() {
         return null;
     }
 
@@ -339,26 +331,47 @@ public abstract class SType {
             if (clazz == Void.class) {
                 return SVoidType.instance;
             }
-            if (clazz == boolean.class || clazz == Boolean.class) {
+            if (clazz == boolean.class) {
                 return SBoolean.instance;
             }
-            if (clazz == byte.class || clazz == Byte.class) {
+            if (clazz == Boolean.class) {
+                return SBoolean.instance.getBoxed();
+            }
+            if (clazz == byte.class) {
                 return SInt8.instance;
             }
-            if (clazz == short.class || clazz == Short.class) {
+            if (clazz == Byte.class) {
+                return SInt8.instance.getBoxed();
+            }
+            if (clazz == short.class) {
                 return SInt16.instance;
             }
-            if (clazz == int.class || clazz == Integer.class) {
+            if (clazz == Short.class) {
+                return SInt16.instance.getBoxed();
+            }
+            if (clazz == int.class) {
                 return SInt.instance;
             }
-            if (clazz == long.class || clazz == Long.class) {
+            if (clazz == Integer.class) {
+                return SInt.instance.getBoxed();
+            }
+            if (clazz == long.class) {
                 return SInt64.instance;
             }
-            if (clazz == float.class || clazz == Float.class) {
+            if (clazz == Long.class) {
+                return SInt64.instance.getBoxed();
+            }
+            if (clazz == float.class) {
                 return SFloat32.instance;
             }
-            if (clazz == double.class || clazz == Double.class) {
+            if (clazz == Float.class) {
+                return SFloat32.instance.getBoxed();
+            }
+            if (clazz == double.class) {
                 return SFloat.instance;
+            }
+            if (clazz == Double.class) {
+                return SFloat.instance.getBoxed();
             }
             if (clazz == String.class) {
                 return SString.instance;

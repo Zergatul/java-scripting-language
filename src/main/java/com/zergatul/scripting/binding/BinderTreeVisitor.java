@@ -124,6 +124,11 @@ public abstract class BinderTreeVisitor {
         node.acceptChildren(this);
     }
 
+    public void explicitVisit(BoundConstantPatternNode node) {
+        visit(node);
+        node.acceptChildren(this);
+    }
+
     public void explicitVisit(BoundConstructorInitializerNode node) {
         visit(node);
         node.acceptChildren(this);
@@ -145,6 +150,11 @@ public abstract class BinderTreeVisitor {
     }
 
     public void explicitVisit(BoundDeclaredClassTypeNode node) {
+        visit(node);
+        node.acceptChildren(this);
+    }
+
+    public void explicitVisit(BoundDeclarationPatternNode node) {
         visit(node);
         node.acceptChildren(this);
     }
@@ -284,6 +294,11 @@ public abstract class BinderTreeVisitor {
         node.acceptChildren(this);
     }
 
+    public void explicitVisit(BoundNotPattern node) {
+        visit(node);
+        node.acceptChildren(this);
+    }
+
     public void explicitVisit(BoundNullExpressionNode node) {
         visit(node);
         node.acceptChildren(this);
@@ -384,7 +399,12 @@ public abstract class BinderTreeVisitor {
         node.acceptChildren(this);
     }
 
-    public void explicitVisit(BoundTypeTestExpressionNode node) {
+    public void explicitVisit(BoundTypePatternNode node) {
+        visit(node);
+        node.acceptChildren(this);
+    }
+
+    public void explicitVisit(BoundIsExpressionNode node) {
         visit(node);
         node.acceptChildren(this);
     }
@@ -440,11 +460,13 @@ public abstract class BinderTreeVisitor {
     public void visit(BoundCompilationUnitNode node) {}
     public void visit(BoundCompilationUnitMembersListNode node) {}
     public void visit(BoundConditionalExpressionNode node) {}
+    public void visit(BoundConstantPatternNode node) {}
     public void visit(BoundConstructorInitializerNode node) {}
     public void visit(BoundContinueStatementNode node) {}
     public void visit(BoundConversionNode node) {}
     public void visit(BoundCustomTypeNode node) {}
     public void visit(BoundDeclaredClassTypeNode node) {}
+    public void visit(BoundDeclarationPatternNode node) {}
     public void visit(BoundEmptyCollectionExpressionNode node) {}
     public void visit(BoundEmptyStatementNode node) {}
     public void visit(BoundClassConstructorNode node) {}
@@ -475,6 +497,7 @@ public abstract class BinderTreeVisitor {
     public void visit(BoundMethodInvocationExpressionNode node) {}
     public void visit(BoundMethodNode node) {}
     public void visit(BoundNameExpressionNode node) {}
+    public void visit(BoundNotPattern node) {}
     public void visit(BoundNullExpressionNode node) {}
     public void visit(BoundObjectCreationExpressionNode node) {}
     public void visit(BoundParameterListNode node) {}
@@ -495,7 +518,8 @@ public abstract class BinderTreeVisitor {
     public void visit(BoundThisExpressionNode node) {}
     public void visit(BoundTypeAliasNode node) {}
     public void visit(BoundTypeCastExpressionNode node) {}
-    public void visit(BoundTypeTestExpressionNode node) {}
+    public void visit(BoundTypePatternNode node) {}
+    public void visit(BoundIsExpressionNode node) {}
     public void visit(BoundUnaryExpressionNode node) {}
     public void visit(BoundUnaryOperatorNode node) {}
     public void visit(BoundUnconvertedLambdaExpressionNode node) {}

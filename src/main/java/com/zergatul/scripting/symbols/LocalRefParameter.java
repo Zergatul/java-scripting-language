@@ -24,7 +24,7 @@ public class LocalRefParameter extends LocalVariable {
         visitor.visitVarInsn(refType.getLoadInst(), getStackIndex());
         visitor.visitMethodInsn(
                 INVOKEVIRTUAL,
-                Type.getInternalName(refType.getJavaClass()),
+                refType.getInternalName(),
                 "get",
                 Type.getMethodDescriptor(Type.getType(getType().getJavaClass())),
                 false);
@@ -36,7 +36,7 @@ public class LocalRefParameter extends LocalVariable {
         StackHelper.swap(visitor, context, getType(), refType);
         visitor.visitMethodInsn(
                 INVOKEVIRTUAL,
-                Type.getInternalName(refType.getJavaClass()),
+                refType.getInternalName(),
                 "set",
                 Type.getMethodDescriptor(Type.VOID_TYPE, Type.getType(getType().getJavaClass())),
                 false);

@@ -69,6 +69,8 @@ public class BinderErrors {
     public static final ErrorCode TypeAliasLoop = new ErrorCode("B065", "Loop in type aliases");
     public static final ErrorCode LetNull = new ErrorCode("B066", "Cannot infer variable type from 'null'");
     public static final ErrorCode CannotAccessNullMembers = new ErrorCode("B067", "'.' operator is not allowed on 'null'");
+    public static final ErrorCode ConstantExpressionExpected = new ErrorCode("B068", "Expression is not constant");
+    public static final ErrorCode VariableRedeclarationInCondition = new ErrorCode("B069", "Variable '%s' is declared already.");
 
     public static final ErrorCode InternalError = new ErrorCode("B999", "Internal error: %s");
 }

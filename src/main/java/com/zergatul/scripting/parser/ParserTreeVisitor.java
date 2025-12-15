@@ -114,6 +114,11 @@ public abstract class ParserTreeVisitor {
         node.acceptChildren(this);
     }
 
+    public void explicitVisit(ConstantPatternNode node) {
+        visit(node);
+        node.acceptChildren(this);
+    }
+
     public void explicitVisit(ConstructorInitializerNode node) {
         visit(node);
         node.acceptChildren(this);
@@ -259,6 +264,11 @@ public abstract class ParserTreeVisitor {
         node.acceptChildren(this);
     }
 
+    public void explicitVisit(NotPatternNode node) {
+        visit(node);
+        node.acceptChildren(this);
+    }
+
     public void explicitVisit(ObjectCreationExpressionNode node) {
         visit(node);
         node.acceptChildren(this);
@@ -334,7 +344,12 @@ public abstract class ParserTreeVisitor {
         node.acceptChildren(this);
     }
 
-    public void explicitVisit(TypeTestExpressionNode node) {
+    public void explicitVisit(TypePatternNode node) {
+        visit(node);
+        node.acceptChildren(this);
+    }
+
+    public void explicitVisit(IsExpressionNode node) {
         visit(node);
         node.acceptChildren(this);
     }
@@ -386,6 +401,7 @@ public abstract class ParserTreeVisitor {
     public void visit(CompilationUnitNode node) {}
     public void visit(CompilationUnitMembersListNode node) {}
     public void visit(ConditionalExpressionNode node) {}
+    public void visit(ConstantPatternNode node) {}
     public void visit(ConstructorInitializerNode node) {}
     public void visit(ContinueStatementNode node) {}
     public void visit(CustomTypeNode node) {}
@@ -416,6 +432,7 @@ public abstract class ParserTreeVisitor {
     public void visit(ModifiersNode node) {}
     public void visit(ObjectCreationExpressionNode node) {}
     public void visit(NameExpressionNode node) {}
+    public void visit(NotPatternNode node) {}
     public void visit(ParameterListNode node) {}
     public void visit(ParameterNode node) {}
     public void visit(ParenthesizedExpressionNode node) {}
@@ -430,7 +447,8 @@ public abstract class ParserTreeVisitor {
     public void visit(StringLiteralExpressionNode node) {}
     public void visit(ThisExpressionNode node) {}
     public void visit(TypeCastExpressionNode node) {}
-    public void visit(TypeTestExpressionNode node) {}
+    public void visit(TypePatternNode node) {}
+    public void visit(IsExpressionNode node) {}
     public void visit(UnaryExpressionNode node) {}
     public void visit(UnaryOperatorNode node) {}
     public void visit(VariableDeclarationNode node) {}

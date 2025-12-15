@@ -648,6 +648,28 @@ public class Compiler {
     }
 
     private void compileIfStatement(MethodVisitor visitor, CompilerContext context, BoundIfStatementNode statement) {
+        // add fallthrough variables to parent context
+        for (SymbolRef ref : statement.flow.fallthroughLocals()) {
+            LocalVariable variable = ref.asLocalVariable();
+            context.setStackIndex(variable);
+            context.addLocalVariable(ref);
+            initVariableWithRawDefault(visitor, variable);
+        }
+
+        context = context.createChild();
+
+        // add all possible flow variables
+        for (SymbolRef ref : statement.flow.allLocals()) {
+            if (statement.flow.fallthroughLocals().contains(ref)) {
+                continue;
+            }
+
+            LocalVariable variable = ref.asLocalVariable();
+            context.setStackIndex(variable);
+            context.addLocalVariable(ref);
+            initVariableWithRawDefault(visitor, variable);
+        }
+
         compileExpression(visitor, context, statement.condition);
         if (statement.elseStatement == null) {
             Label endLabel = new Label();
@@ -676,8 +698,8 @@ public class Compiler {
         if (statement.expression != null) {
             compileExpression(visitor, context, statement.expression);
 
-            if (context.isGenericFunction() && context.getReturnType().getBoxedVersion() != null) {
-                context.getReturnType().compileBoxing(visitor);
+            if (context.isGenericFunction() && context.getReturnType() instanceof SValueType valueType) {
+                valueType.compileBoxing(visitor);
                 visitor.visitInsn(ARETURN);
                 return;
             }
@@ -1203,8 +1225,8 @@ public class Compiler {
             visitor.visitInsn(ACONST_NULL);
         } else {
             compileExpression(visitor, context, node.expression);
-            if (node.expression.type.getBoxedVersion() != null) {
-                node.expression.type.compileBoxing(visitor);
+            if (node.expression.type instanceof SValueType valueType) {
+                valueType.compileBoxing(visitor);
             }
         }
 
@@ -1235,7 +1257,7 @@ public class Compiler {
             case UNARY_EXPRESSION -> compileUnaryExpression(visitor, context, (BoundUnaryExpressionNode) expression);
             case BINARY_EXPRESSION -> compileBinaryExpression(visitor, context, (BoundBinaryExpressionNode) expression);
             case IN_EXPRESSION -> compileInExpression(visitor, context, (BoundInExpressionNode) expression);
-            case TYPE_TEST_EXPRESSION -> compileTypeTestExpression(visitor, context, (BoundTypeTestExpressionNode) expression);
+            case IS_EXPRESSION -> compileIsExpression(visitor, context, (BoundIsExpressionNode) expression);
             case TYPE_CAST_EXPRESSION -> compileTypeCastExpression(visitor, context, (BoundTypeCastExpressionNode) expression);
             case CONDITIONAL_EXPRESSION -> compileConditionalExpression(visitor, context, (BoundConditionalExpressionNode) expression);
             case IMPLICIT_CAST -> compileImplicitCastExpression(visitor, context, (BoundImplicitCastExpressionNode) expression);
@@ -1311,39 +1333,304 @@ public class Compiler {
         expression.method.compileInvoke(visitor, context);
     }
 
-    private void compileTypeTestExpression(MethodVisitor visitor, CompilerContext context, BoundTypeTestExpressionNode test) {
-        compileExpression(visitor, context, test.expression);
-        if (!test.expression.type.isReference()) {
-            test.expression.type.compileBoxing(visitor);
+    private void compileIsExpression(MethodVisitor visitor, CompilerContext context, BoundIsExpressionNode is) {
+        compileExpression(visitor, context, is.expression);
+
+        // lower "not" pattern
+        boolean not = false;
+        BoundPatternNode current = is.pattern;
+        while (current instanceof BoundNotPattern notPattern) {
+            not = !not;
+            current = notPattern.inner;
         }
 
-        if (test.type.type.isReference()) {
-            visitor.visitTypeInsn(INSTANCEOF, Type.getInternalName(test.type.type.getJavaClass()));
-        } else {
-            Class<?> boxed = test.type.type.getBoxedVersion();
-            if (boxed == null) {
-                throw new InternalException();
-            }
+        // at this stage 'current' cannot be BoundNotPattern
+        switch (current.getNodeType()) {
+            case CONSTANT_PATTERN -> compileConstantPatternCheck(visitor, is, not, (BoundConstantPatternNode) current);
+            case TYPE_PATTERN -> compileTypePatternCheck(visitor, is, not, (BoundTypePatternNode) current);
+            case DECLARATION_PATTERN -> compileDeclarationPatternCheck(visitor, context, is, not, (BoundDeclarationPatternNode) current);
+            default -> throw new InternalException();
+        }
+    }
 
-            visitor.visitTypeInsn(INSTANCEOF, Type.getInternalName(boxed));
+    private void compileConstantPatternCheck(MethodVisitor visitor, BoundIsExpressionNode is, boolean not, BoundConstantPatternNode pattern) {
+        switch (pattern.expression.getNodeType()) {
+            case NULL_EXPRESSION -> {
+                if (is.expression.type instanceof SValueType valueType) {
+                    valueType.compileBoxing(visitor);
+                }
+                Label elseLabel = new Label();
+                Label endLabel = new Label();
+                visitor.visitJumpInsn(not ? IFNONNULL : IFNULL, elseLabel);
+                visitor.visitInsn(ICONST_0);
+                visitor.visitJumpInsn(GOTO, endLabel);
+                visitor.visitLabel(elseLabel);
+                visitor.visitInsn(ICONST_1);
+                visitor.visitLabel(endLabel);
+            }
+            case BOOLEAN_LITERAL -> {
+                BoundBooleanLiteralExpressionNode literal = (BoundBooleanLiteralExpressionNode) pattern.expression;
+                if (is.expression.type == SBoolean.instance) {
+                    loadBoolConstantAndCompare(visitor, not != literal.value);
+                } else {
+                    if (is.expression.type instanceof SValueType valueType) {
+                        valueType.compileBoxing(visitor);
+                    }
+                    Label canCastLabel = new Label();
+                    Label endLabel = new Label();
+                    // ..., expr
+                    visitor.visitInsn(DUP);
+                    // ..., expr, expr
+                    visitor.visitTypeInsn(INSTANCEOF, Type.getInternalName(Boolean.class));
+                    // ..., expr, bool
+                    visitor.visitJumpInsn(IFNE, canCastLabel);
+                    // ..., expr
+                    visitor.visitInsn(POP);
+                    // ...
+                    visitor.visitInsn(not ? ICONST_1 : ICONST_0);
+                    // ..., false
+                    visitor.visitJumpInsn(GOTO, endLabel);
+
+                    visitor.visitLabel(canCastLabel);
+                    // ..., expr
+                    visitor.visitTypeInsn(CHECKCAST, Type.getInternalName(Boolean.class));
+                    // ..., (Boolean)(expr)
+                    SBoolean.instance.compileUnboxing(visitor);
+                    loadBoolConstantAndCompare(visitor, not != literal.value);
+
+                    visitor.visitLabel(endLabel);
+                }
+            }
+            case INTEGER_LITERAL -> {
+                BoundIntegerLiteralExpressionNode literal = (BoundIntegerLiteralExpressionNode) pattern.expression;
+                if (is.expression.type == SInt.instance) {
+                    loadInt32ConstantAndCompare(visitor, not, literal.value);
+                } else {
+                    if (is.expression.type instanceof SValueType valueType) {
+                        valueType.compileBoxing(visitor);
+                    }
+                    Label canCastLabel = new Label();
+                    Label endLabel = new Label();
+                    // ..., expr
+                    visitor.visitInsn(DUP);
+                    // ..., expr, expr
+                    visitor.visitTypeInsn(INSTANCEOF, Type.getInternalName(Integer.class));
+                    // ..., expr, bool
+                    visitor.visitJumpInsn(IFNE, canCastLabel);
+                    // ..., expr
+                    visitor.visitInsn(POP);
+                    // ...
+                    visitor.visitInsn(not ? ICONST_1 : ICONST_0);
+                    // ..., false
+                    visitor.visitJumpInsn(GOTO, endLabel);
+
+                    visitor.visitLabel(canCastLabel);
+                    // ..., expr
+                    visitor.visitTypeInsn(CHECKCAST, Type.getInternalName(Integer.class));
+                    // ..., (Boolean)(expr)
+                    SInt.instance.compileUnboxing(visitor);
+                    loadInt32ConstantAndCompare(visitor, not, literal.value);
+
+                    visitor.visitLabel(endLabel);
+                }
+            }
+            case INTEGER64_LITERAL -> {
+                BoundInteger64LiteralExpressionNode literal = (BoundInteger64LiteralExpressionNode) pattern.expression;
+                if (is.expression.type == SInt.instance) {
+                    loadInt64ConstantAndCompare(visitor, not, literal.value);
+                } else {
+                    if (is.expression.type instanceof SValueType valueType) {
+                        valueType.compileBoxing(visitor);
+                    }
+                    Label canCastLabel = new Label();
+                    Label endLabel = new Label();
+                    // ..., expr
+                    visitor.visitInsn(DUP);
+                    // ..., expr, expr
+                    visitor.visitTypeInsn(INSTANCEOF, Type.getInternalName(Long.class));
+                    // ..., expr, bool
+                    visitor.visitJumpInsn(IFNE, canCastLabel);
+                    // ..., expr
+                    visitor.visitInsn(POP);
+                    // ...
+                    visitor.visitInsn(not ? ICONST_1 : ICONST_0);
+                    // ..., false
+                    visitor.visitJumpInsn(GOTO, endLabel);
+
+                    visitor.visitLabel(canCastLabel);
+                    // ..., expr
+                    visitor.visitTypeInsn(CHECKCAST, Type.getInternalName(Long.class));
+                    // ..., (Boolean)(expr)
+                    SInt64.instance.compileUnboxing(visitor);
+                    loadInt64ConstantAndCompare(visitor, not, literal.value);
+
+                    visitor.visitLabel(endLabel);
+                }
+            }
+            case FLOAT_LITERAL -> {
+                BoundFloatLiteralExpressionNode literal = (BoundFloatLiteralExpressionNode) pattern.expression;
+                if (is.expression.type == SInt.instance) {
+                    loadFloat64ConstantAndCompare(visitor, not, literal.value);
+                } else {
+                    if (is.expression.type instanceof SValueType valueType) {
+                        valueType.compileBoxing(visitor);
+                    }
+                    Label canCastLabel = new Label();
+                    Label endLabel = new Label();
+                    // ..., expr
+                    visitor.visitInsn(DUP);
+                    // ..., expr, expr
+                    visitor.visitTypeInsn(INSTANCEOF, Type.getInternalName(Double.class));
+                    // ..., expr, bool
+                    visitor.visitJumpInsn(IFNE, canCastLabel);
+                    // ..., expr
+                    visitor.visitInsn(POP);
+                    // ...
+                    visitor.visitInsn(not ? ICONST_1 : ICONST_0);
+                    // ..., false
+                    visitor.visitJumpInsn(GOTO, endLabel);
+
+                    visitor.visitLabel(canCastLabel);
+                    // ..., expr
+                    visitor.visitTypeInsn(CHECKCAST, Type.getInternalName(Double.class));
+                    // ..., (Boolean)(expr)
+                    SFloat.instance.compileUnboxing(visitor);
+                    loadFloat64ConstantAndCompare(visitor, not, literal.value);
+
+                    visitor.visitLabel(endLabel);
+                }
+            }
+            default -> throw new InternalException();
+        }
+    }
+
+    private void loadBoolConstantAndCompare(MethodVisitor visitor, boolean value) {
+        visitor.visitInsn(value ? ICONST_1 : ICONST_0);
+        Label elseLabel = new Label();
+        Label endLabel = new Label();
+        visitor.visitJumpInsn(IF_ICMPEQ, elseLabel);
+        visitor.visitInsn(ICONST_0);
+        visitor.visitJumpInsn(GOTO, endLabel);
+        visitor.visitLabel(elseLabel);
+        visitor.visitInsn(ICONST_1);
+        visitor.visitLabel(endLabel);
+    }
+
+    private void loadInt32ConstantAndCompare(MethodVisitor visitor, boolean negate, int value) {
+        visitor.visitLdcInsn(value);
+        Label elseLabel = new Label();
+        Label endLabel = new Label();
+        visitor.visitJumpInsn(negate ? IF_ICMPNE : IF_ICMPEQ, elseLabel);
+        visitor.visitInsn(ICONST_0);
+        visitor.visitJumpInsn(GOTO, endLabel);
+        visitor.visitLabel(elseLabel);
+        visitor.visitInsn(ICONST_1);
+        visitor.visitLabel(endLabel);
+    }
+
+    private void loadInt64ConstantAndCompare(MethodVisitor visitor, boolean negate, long value) {
+        visitor.visitLdcInsn(value);
+        Label elseLabel = new Label();
+        Label endLabel = new Label();
+        visitor.visitInsn(LCMP);
+        visitor.visitJumpInsn(negate ? IFNE : IFEQ, elseLabel);
+        visitor.visitInsn(ICONST_0);
+        visitor.visitJumpInsn(GOTO, endLabel);
+        visitor.visitLabel(elseLabel);
+        visitor.visitInsn(ICONST_1);
+        visitor.visitLabel(endLabel);
+    }
+    private void loadFloat64ConstantAndCompare(MethodVisitor visitor, boolean negate, double value) {
+        visitor.visitLdcInsn(value);
+        Label elseLabel = new Label();
+        Label endLabel = new Label();
+        visitor.visitInsn(DCMPL); // TODO: NaN?
+        visitor.visitJumpInsn(negate ? IFNE : IFEQ, elseLabel);
+        visitor.visitInsn(ICONST_0);
+        visitor.visitJumpInsn(GOTO, endLabel);
+        visitor.visitLabel(elseLabel);
+        visitor.visitInsn(ICONST_1);
+        visitor.visitLabel(endLabel);
+    }
+
+    private void compileTypePatternCheck(MethodVisitor visitor, BoundIsExpressionNode is, boolean not, BoundTypePatternNode pattern) {
+        if (is.expression.type instanceof SValueType valueType) {
+            valueType.compileBoxing(visitor);
+        }
+
+        if (pattern.typeNode.type instanceof SValueType valueType) {
+            visitor.visitTypeInsn(INSTANCEOF, valueType.getBoxed().getInternalName());
+        } else {
+            visitor.visitTypeInsn(INSTANCEOF, pattern.typeNode.type.getInternalName());
+        }
+
+        if (not) {
+            visitor.visitInsn(ICONST_1);
+            visitor.visitInsn(IXOR);
+        }
+    }
+
+    private void compileDeclarationPatternCheck(MethodVisitor visitor, CompilerContext context, BoundIsExpressionNode is, boolean not, BoundDeclarationPatternNode pattern) {
+        if (is.expression.type instanceof SValueType valueType) {
+            valueType.compileBoxing(visitor);
+        }
+
+        // ..., <expr>
+        visitor.visitInsn(DUP);
+        // ..., <expr>, <expr>
+
+        String castToType;
+        if (pattern.typeNode.type instanceof SValueType valueType) {
+            castToType = valueType.getBoxed().getInternalName();
+        } else {
+            castToType = pattern.typeNode.type.getInternalName();
+        }
+
+        visitor.visitTypeInsn(INSTANCEOF, castToType);
+        // ..., <expr>, <instanceof>
+        visitor.visitInsn(DUP);
+        // ..., <expr>, <instanceof>, <instanceof>
+
+        Label elseLabel = new Label();
+        Label endLabel = new Label();
+        visitor.visitJumpInsn(IFEQ, elseLabel);
+        // ..., <expr>, <instanceof>
+        visitor.visitInsn(SWAP);
+        // ..., <instanceof>, <expr>
+        visitor.visitTypeInsn(CHECKCAST, castToType);
+        // ..., <instanceof>, <casted>
+        if (pattern.typeNode.type instanceof SValueType valueType) {
+            valueType.compileUnboxing(visitor);
+        }
+        pattern.symbolNode.symbolRef.asVariable().compileStore(context, visitor);
+        // ..., <instanceof>
+        visitor.visitJumpInsn(GOTO, endLabel);
+
+        visitor.visitLabel(elseLabel);
+        // ..., <expr>, <instanceof>
+        visitor.visitInsn(SWAP);
+        // ..., <instanceof>, <expr>
+        visitor.visitInsn(POP);
+        // ..., <instanceof>
+        visitor.visitLabel(endLabel);
+
+        if (not) {
+            visitor.visitInsn(ICONST_1);
+            visitor.visitInsn(IXOR);
         }
     }
 
     private void compileTypeCastExpression(MethodVisitor visitor, CompilerContext context, BoundTypeCastExpressionNode test) {
         compileExpression(visitor, context, test.expression);
-        if (!test.expression.type.isReference()) {
-            test.expression.type.compileBoxing(visitor);
+        if (test.expression.type instanceof SValueType valueType) {
+            valueType.compileBoxing(visitor);
         }
 
         String referenceTypeInternalName;
-        if (test.type.type.isReference()) {
-            referenceTypeInternalName = Type.getInternalName(test.type.type.getJavaClass());
+        if (test.type.type instanceof SValueType valueType) {
+            referenceTypeInternalName = valueType.getBoxed().getInternalName();
         } else {
-            Class<?> boxed = test.type.type.getBoxedVersion();
-            if (boxed == null) {
-                throw new InternalException();
-            }
-            referenceTypeInternalName = Type.getInternalName(boxed);
+            referenceTypeInternalName = test.type.type.getInternalName();
         }
 
         Label canCastLabel = new Label();
@@ -1370,8 +1657,8 @@ public class Compiler {
         // ..., expr
         visitor.visitTypeInsn(CHECKCAST, referenceTypeInternalName);
         // ..., casted_expr
-        if (!test.type.type.isReference()) {
-            test.type.type.compileUnboxing(visitor);
+        if (test.type.type instanceof SValueType valueType) {
+            valueType.compileUnboxing(visitor);
         }
 
         visitor.visitLabel(endLabel);
@@ -1454,7 +1741,7 @@ public class Compiler {
                 H_INVOKESTATIC,
                 context.getClassName(),
                 functionReferenceNode.getFunction().getName(),
-                functionalInterface.getActualMethodDescriptor(),
+                functionReferenceNode.getFunctionType().getMethodDescriptor(),
                 false);
 
         visitor.visitInvokeDynamicInsn(
@@ -1593,7 +1880,7 @@ public class Compiler {
         LocalVariable holder = expression.holder;
         context.setStackIndex(holder);
 
-        String refClassDescriptor = Type.getInternalName(holder.getType().getJavaClass());
+        String refClassDescriptor = holder.getType().getInternalName();
         visitor.visitTypeInsn(NEW, refClassDescriptor);
         // ..., Ref
         visitor.visitInsn(DUP);
@@ -1657,10 +1944,10 @@ public class Compiler {
 
         SArrayType arrayType = (SArrayType) expression.type;
         SType elementsType = arrayType.getElementsType();
-        if (elementsType.isReference()) {
-            visitor.visitTypeInsn(ANEWARRAY, Type.getInternalName(elementsType.getJavaClass()));
+        if (elementsType instanceof SValueType valueType) {
+            visitor.visitIntInsn(NEWARRAY, valueType.getArrayTypeInst());
         } else {
-            visitor.visitIntInsn(NEWARRAY, ((SPredefinedType) elementsType).getArrayTypeInst());
+            visitor.visitTypeInsn(ANEWARRAY, elementsType.getInternalName());
         }
     }
 
@@ -1669,10 +1956,10 @@ public class Compiler {
 
         SArrayType arrayType = (SArrayType) expression.type;
         SType elementsType = arrayType.getElementsType();
-        if (elementsType.isReference()) {
-            visitor.visitTypeInsn(ANEWARRAY, Type.getInternalName(elementsType.getJavaClass()));
+        if (elementsType instanceof SValueType valueType) {
+            visitor.visitIntInsn(NEWARRAY, valueType.getArrayTypeInst());
         } else {
-            visitor.visitIntInsn(NEWARRAY, ((SPredefinedType) elementsType).getArrayTypeInst());
+            visitor.visitTypeInsn(ANEWARRAY, Type.getInternalName(elementsType.getJavaClass()));
         }
 
         for (int i = 0; i < expression.items.size(); i++) {
@@ -1697,10 +1984,10 @@ public class Compiler {
 
         SArrayType arrayType = (SArrayType) expression.type;
         SType elementsType = arrayType.getElementsType();
-        if (elementsType.isReference()) {
-            visitor.visitTypeInsn(ANEWARRAY, Type.getInternalName(elementsType.getJavaClass()));
+        if (elementsType instanceof SValueType valueType) {
+            visitor.visitIntInsn(NEWARRAY, valueType.getArrayTypeInst());
         } else {
-            visitor.visitIntInsn(NEWARRAY, ((SPredefinedType) elementsType).getArrayTypeInst());
+            visitor.visitTypeInsn(ANEWARRAY, elementsType.getInternalName());
         }
 
         for (int i = 0; i < expression.list.size(); i++) {
@@ -1818,14 +2105,13 @@ public class Compiler {
                 LocalVariable unboxed = parameter.getName().symbolRef.asLocalVariable();
                 lambdaContext.addLocalVariable(parameter.getName().symbolRef);
                 lambdaContext.setStackIndex(unboxed);
-                Class<?> boxedType = parameter.getType().getBoxedVersion();
 
                 arguments[i].compileLoad(context, invokeVisitor); // load argument
-                if (boxedType != null) {
-                    invokeVisitor.visitTypeInsn(CHECKCAST, Type.getInternalName(boxedType)); // cast to boxed, example: java.lang.Integer
-                    parameter.getType().compileUnboxing(invokeVisitor); // convert to unboxed
+                if (parameter.getType() instanceof SValueType valueType) {
+                    invokeVisitor.visitTypeInsn(CHECKCAST, valueType.getBoxed().getInternalName()); // cast to boxed, example: java.lang.Integer
+                    valueType.compileUnboxing(invokeVisitor); // convert to unboxed
                 } else {
-                    invokeVisitor.visitTypeInsn(CHECKCAST, Type.getInternalName(parameter.getType().getJavaClass()));
+                    invokeVisitor.visitTypeInsn(CHECKCAST, parameter.getType().getInternalName());
                 }
                 unboxed.compileStore(context, invokeVisitor);
             } else {
@@ -1916,11 +2202,11 @@ public class Compiler {
         SymbolRef parameter = context.getSymbol("@result");
         parameter.get().compileLoad(context, visitor);
 
-        if (node.type.getBoxedVersion() != null) {
-            visitor.visitTypeInsn(CHECKCAST, Type.getInternalName(node.type.getBoxedVersion()));
-            node.type.compileUnboxing(visitor);
+        if (node.type instanceof SValueType valueType) {
+            visitor.visitTypeInsn(CHECKCAST, valueType.getBoxed().getInternalName());
+            valueType.compileUnboxing(visitor);
         } else {
-            visitor.visitTypeInsn(CHECKCAST, Type.getInternalName(node.type.getJavaClass()));
+            visitor.visitTypeInsn(CHECKCAST, node.type.getInternalName());
         }
     }
 
@@ -1963,23 +2249,19 @@ public class Compiler {
     private void compileMetaCastExpression(MethodVisitor visitor, CompilerContext context, BoundMetaCastExpressionNode node) {
         compileExpression(visitor, context, node.expression);
 
-        if (!node.expression.type.isReference()) {
-            node.expression.type.compileBoxing(visitor);
+        if (node.expression.type instanceof SValueType valueType) {
+            valueType.compileBoxing(visitor);
         }
 
-        if (node.type.type.isReference()) {
-            visitor.visitTypeInsn(CHECKCAST, Type.getInternalName(node.type.type.getJavaClass()));
+        if (node.type.type instanceof SValueType valueType) {
+            visitor.visitTypeInsn(CHECKCAST, valueType.getBoxed().getInternalName());
         } else {
-            Class<?> boxed = node.type.type.getBoxedVersion();
-            if (boxed == null) {
-                throw new InternalException();
-            }
+            visitor.visitTypeInsn(CHECKCAST, node.type.type.getInternalName());
 
-            visitor.visitTypeInsn(CHECKCAST, Type.getInternalName(boxed));
         }
 
-        if (!node.type.type.isReference()) {
-            node.type.type.compileUnboxing(visitor);
+        if (node.type.type instanceof SValueType valueType) {
+            valueType.compileUnboxing(visitor);
         }
     }
 
@@ -2021,7 +2303,7 @@ public class Compiler {
             holder.compileLoad(context, visitor);
             visitor.visitMethodInsn(
                     INVOKEVIRTUAL,
-                    Type.getInternalName(holder.getType().getJavaClass()),
+                    holder.getType().getInternalName(),
                     "get",
                     Type.getMethodDescriptor(Type.getType(variable.getType().getJavaClass())),
                     false);
@@ -2084,5 +2366,14 @@ public class Compiler {
         if (parameters.shouldEmitVariableNames()) {
             context.emitLocalVariableTable(visitor, variables);
         }
+    }
+
+    private void initVariableWithRawDefault(MethodVisitor visitor, LocalVariable variable) {
+        if (variable.getType().isReference()) {
+            visitor.visitInsn(ACONST_NULL);
+        } else {
+            variable.getType().storeDefaultValue(visitor);
+        }
+        visitor.visitVarInsn(variable.getType().getStoreInst(), variable.getStackIndex());
     }
 }

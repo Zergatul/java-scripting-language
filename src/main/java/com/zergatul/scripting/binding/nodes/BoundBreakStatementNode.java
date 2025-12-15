@@ -9,14 +9,16 @@ import java.util.List;
 public class BoundBreakStatementNode extends BoundStatementNode {
 
     public final BreakStatementNode syntaxNode;
+    public final boolean isInsideLoop;
 
-    public BoundBreakStatementNode(BreakStatementNode node) {
-        this(node, node.getRange());
+    public BoundBreakStatementNode(BreakStatementNode node, boolean isInsideLoop) {
+        this(node, isInsideLoop, node.getRange());
     }
 
-    public BoundBreakStatementNode(BreakStatementNode node, TextRange range) {
+    public BoundBreakStatementNode(BreakStatementNode node, boolean isInsideLoop, TextRange range) {
         super(BoundNodeType.BREAK_STATEMENT, range);
         this.syntaxNode = node;
+        this.isInsideLoop = isInsideLoop;
     }
 
     @Override

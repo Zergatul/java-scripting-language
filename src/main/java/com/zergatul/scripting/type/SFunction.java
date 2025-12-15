@@ -39,30 +39,30 @@ public abstract class SFunction extends SReferenceType {
                 getParameterTypes().stream().map(SType::getDescriptor).map(Type::getType).toArray(Type[]::new));
     }
 
-    public boolean matches(SFunction other) {
+    public boolean signatureMatchesWithBoxing(SFunction other) {
         if (this.parameters.length != other.parameters.length) {
             return false;
         }
-        if (!this.returnType.equals(other.returnType)) {
+        if (!SBoxedType.match(this.returnType, other.returnType)) {
             return false;
         }
         for (int i = 0; i < this.parameters.length; i++) {
-            if (!this.parameters[i].type().equals(other.parameters[i].type())) {
+            if (!SBoxedType.match(this.parameters[i].type(), other.parameters[i].type())) {
                 return false;
             }
         }
         return true;
     }
 
-    public boolean matches(SType returnType, SType[] parameters) {
+    public boolean signatureMatchesWithBoxing(SType returnType, SType[] parameters) {
         if (this.parameters.length != parameters.length) {
             return false;
         }
-        if (!this.returnType.equals(returnType)) {
+        if (!SBoxedType.match(this.returnType, returnType)) {
             return false;
         }
         for (int i = 0; i < this.parameters.length; i++) {
-            if (!this.parameters[i].type().equals(parameters[i])) {
+            if (!SBoxedType.match(this.parameters[i].type(), parameters[i])) {
                 return false;
             }
         }

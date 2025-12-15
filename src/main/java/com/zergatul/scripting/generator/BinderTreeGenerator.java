@@ -1,6 +1,7 @@
 package com.zergatul.scripting.generator;
 
 import com.zergatul.scripting.InternalException;
+import com.zergatul.scripting.binding.FallthroughFlow;
 import com.zergatul.scripting.parser.AssignmentOperator;
 import com.zergatul.scripting.type.SBoolean;
 import com.zergatul.scripting.type.SInt;
@@ -20,8 +21,11 @@ public class BinderTreeGenerator {
 
     private StateBoundary currentBoundary;
 
-    public void generate(BoundStatementsListNode node) {
+    public BinderTreeGenerator() {
         currentBoundary = newBoundary();
+    }
+
+    public void generate(BoundStatementsListNode node) {
         for (BoundStatementNode statement : node.statements) {
             rewriteStatement(statement);
         }
@@ -33,7 +37,7 @@ public class BinderTreeGenerator {
         List<BoundStatementNode> statements = currentBoundary.statements;
         boolean append =
                 statements.isEmpty() ||
-                statements.get(statements.size() - 1).getNodeType() != BoundNodeType.GENERATOR_RETURN;
+                statements.getLast().getNodeType() != BoundNodeType.GENERATOR_RETURN;
         if (append) {
             statements.add(new BoundGeneratorReturnNode(null));
         }
@@ -79,7 +83,8 @@ public class BinderTreeGenerator {
         return new BoundIfStatementNode(
                 node.condition,
                 rewriteStatementSync(node.thenStatement),
-                node.elseStatement != null ? rewriteStatementSync(node.elseStatement) : null);
+                node.elseStatement != null ? rewriteStatementSync(node.elseStatement) : null,
+                node.flow);
     }
 
     private BoundForLoopStatementNode rewrite(BoundForLoopStatementNode node) {
@@ -138,7 +143,8 @@ public class BinderTreeGenerator {
         original.statements.add(new BoundIfStatementNode(
                 new BoundNameExpressionNode(condition),
                 thenBlock,
-                elseBlock));
+                elseBlock,
+                FallthroughFlow.EMPTY));
 
         currentBoundary = end;
         end.index = boundaries.size();
@@ -147,6 +153,7 @@ public class BinderTreeGenerator {
 
     private void rewriteAsync(BoundVariableDeclarationNode node) {
         assert node.expression != null;
+        assert node.type != null;
         assert isAsync(node.expression);
 
         BoundExpressionNode expression = rewriteExpression(node.expression);
@@ -158,7 +165,9 @@ public class BinderTreeGenerator {
     }
 
     private void rewriteAsync(BoundForLoopStatementNode node) {
-        rewriteStatement(node.init);
+        if (node.init != null) {
+            rewriteStatement(node.init);
+        }
 
         StateBoundary begin = new StateBoundary();
         StateBoundary cont = new StateBoundary();
@@ -174,7 +183,8 @@ public class BinderTreeGenerator {
                     expression);
             add(new BoundIfStatementNode(
                     expression,
-                    new BoundBlockStatementNode(new BoundSetGeneratorStateNode(end), new BoundGeneratorContinueNode())));
+                    new BoundBlockStatementNode(new BoundSetGeneratorStateNode(end), new BoundGeneratorContinueNode()),
+                    FallthroughFlow.EMPTY));
         }
 
         LoopBodyTransformer transformer = new LoopBodyTransformer(node.body, cont, end);
@@ -182,7 +192,9 @@ public class BinderTreeGenerator {
         add(new BoundSetGeneratorStateNode(cont));
 
         makeCurrent(cont);
-        rewriteStatement(node.update);
+        if (node.update != null) {
+            rewriteStatement(node.update);
+        }
 
         add(new BoundSetGeneratorStateNode(begin));
 
@@ -224,7 +236,8 @@ public class BinderTreeGenerator {
                 new BoundNameExpressionNode(length));
         add(new BoundIfStatementNode(
                 condition,
-                new BoundBlockStatementNode(new BoundSetGeneratorStateNode(end), new BoundGeneratorContinueNode())));
+                new BoundBlockStatementNode(new BoundSetGeneratorStateNode(end), new BoundGeneratorContinueNode()),
+                FallthroughFlow.EMPTY));
 
         add(new BoundAssignmentStatementNode(
                 new BoundNameExpressionNode(item),
@@ -260,7 +273,8 @@ public class BinderTreeGenerator {
         condition = new BoundUnaryExpressionNode(new BoundUnaryOperatorNode(SBoolean.instance.not()), condition);
         add(new BoundIfStatementNode(
                 condition,
-                new BoundBlockStatementNode(new BoundSetGeneratorStateNode(end), new BoundGeneratorContinueNode())));
+                new BoundBlockStatementNode(new BoundSetGeneratorStateNode(end), new BoundGeneratorContinueNode()),
+                FallthroughFlow.EMPTY));
 
         LoopBodyTransformer transformer = new LoopBodyTransformer(node.body, begin, end);
         rewriteStatement(transformer.process());
@@ -426,6 +440,13 @@ public class BinderTreeGenerator {
             @Override
             public void visit(BoundForEachLoopStatementNode node) {
                 if (node.name.getSymbol() instanceof LocalVariable local) {
+                    local.setGeneratorState(currentBoundary);
+                }
+            }
+
+            @Override
+            public void visit(BoundDeclarationPatternNode node) {
+                if (node.symbolNode.symbolRef.get() instanceof LocalVariable local) {
                     local.setGeneratorState(currentBoundary);
                 }
             }

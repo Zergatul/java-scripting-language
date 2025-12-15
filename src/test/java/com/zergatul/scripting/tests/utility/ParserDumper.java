@@ -64,7 +64,7 @@ public class ParserDumper extends Dumper {
             case META_TYPE_OF_EXPRESSION -> dump((MetaTypeOfExpressionNode) node);
             case JAVA_TYPE -> dump((JavaTypeNode) node);
             case LAMBDA_EXPRESSION -> dump((LambdaExpressionNode) node);
-            case TYPE_TEST_EXPRESSION -> dump((TypeTestExpressionNode) node);
+            case IS_EXPRESSION -> dump((IsExpressionNode) node);
             default -> throw new InternalException(node.getClass().getName());
         }
     }
@@ -646,14 +646,14 @@ public class ParserDumper extends Dumper {
         decIndent();
     }
 
-    private void dump(TypeTestExpressionNode node) {
+    private void dump(IsExpressionNode node) {
         fullLine("new TypeTestExpressionNode(");
         incIndent();
         dump(node.expression);
         commaBreak();
         dump(node.keyword);
         commaBreak();
-        dump(node.type);
+        dump(node.pattern);
         sb.append(")");
         decIndent();
     }

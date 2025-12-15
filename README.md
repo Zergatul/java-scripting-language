@@ -30,6 +30,7 @@ It is lightweight, async-friendly, and designed to interop with Java APIs where 
     - [Functional Types](#functional-types)
     - [async/await](#asyncawait)
 - [Type Check/Cast](#type-checkcast)
+- [`is` operator and pattern matching](#is-operator-and-pattern-matching)
 - [null](#null)
 - [Reflection](#reflection)
 - [Classes](#classes)
@@ -356,8 +357,7 @@ async int waitForChestAndCountItems(string itemId) {
 ### Type Check/Cast
 ```c#
 let x = api.getSomething();
-if (x is ItemStack) {
-    let stack = x as ItemStack;
+if (x is ItemStack stack) {
     debug.write(stack.item.name);
 }
 ```
@@ -386,6 +386,59 @@ Use `#cast(<expr>, <type>)` expression for strong check cast. If expression can'
 typealias Object = Java<java.lang.Object>;
 Object getInt() => 10;
 let x = #cast(getInt(), int); // x is 10
+```
+
+### `is` operator and pattern matching
+`is` operator supports basic pattern matching (similar to C#):
+```c#
+typealias Object = Java<java.lang.Object>;
+// ...
+Object o = func();
+
+// constant patterns
+if (o is null) { /* ... */ }
+if (o is not null) { /* ... */ }
+if (o is 100) { /* ... */ }
+if (o is not 200) { /* ... */ }
+if (o is "hello") { /* ... */ }
+if (o is not "world") { /* ... */ }
+
+// type patterns
+if (o is int) { /* ... */ }
+if (o is string) { /* ... */ }
+
+// declaration pattern
+if (o is string str) {
+    // str is defined here
+} else {
+    // but not here
+}
+if (o is int i) {
+    // i is not defined here
+} else {
+    // i can be used here
+}
+if (o is not float f) {
+    return;
+}
+// f can be used here
+```
+
+Multiple declaration patterns are support in single condition:
+```c#
+Object o1 = func1();
+Object o2 = func1();
+
+if (o1 is string str && o2 is int x) {
+    // str and x can be used here
+}
+```
+
+However, pattern variables can't be used in the same expression:
+```c#
+Object o1 = func1();
+// will not work, str is not defined here
+if (o1 is string str && str.length > 5) {}
 ```
 
 ### null

@@ -4,12 +4,20 @@ import org.objectweb.asm.MethodVisitor;
 
 import static org.objectweb.asm.Opcodes.RETURN;
 
-public class SVoidType extends SPredefinedType {
+public class SVoidType extends SType {
 
     public static final SVoidType instance = new SVoidType();
 
-    private SVoidType() {
-        super(void.class);
+    private SVoidType() {}
+
+    @Override
+    public boolean isPredefined() {
+        return true;
+    }
+
+    @Override
+    public Class<?> getJavaClass() {
+        return void.class;
     }
 
     @Override
@@ -34,11 +42,6 @@ public class SVoidType extends SPredefinedType {
 
     @Override
     public int getStoreInst() {
-        throw new IllegalStateException();
-    }
-
-    @Override
-    public int getArrayTypeInst() {
         throw new IllegalStateException();
     }
 

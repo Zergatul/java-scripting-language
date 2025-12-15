@@ -3,6 +3,7 @@ package com.zergatul.scripting.parser;
 import com.zergatul.scripting.*;
 import com.zergatul.scripting.lexer.*;
 import com.zergatul.scripting.parser.nodes.*;
+import com.zergatul.scripting.parser.nodes.PatternNode;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -1162,8 +1163,8 @@ public class Parser {
             Token binaryToken = advance();
 
             if (binaryToken.is(TokenType.IS)) {
-                TypeNode typeNode = parseTypeNode();
-                left = new TypeTestExpressionNode(left, binaryToken, typeNode);
+                PatternNode patternNode = parsePatternNode();
+                left = new IsExpressionNode(left, binaryToken, patternNode);
             } else if (binaryToken.is(TokenType.AS)) {
                 TypeNode typeNode = parseTypeNode();
                 left = new TypeCastExpressionNode(left, binaryToken, typeNode);
@@ -1608,6 +1609,33 @@ public class Parser {
         }
 
         return false;
+    }
+
+    private PatternNode parsePatternNode() {
+        if (current.is(TokenType.IDENTIFIER) && current instanceof ValueToken value && value.value.equals("not")) {
+            advance();
+            return new NotPatternNode(value, parsePatternNode());
+        }
+
+        if (isPossibleType()) {
+            TypeNode typeNode = parseTypeNode();
+            if (current.is(TokenType.IDENTIFIER)) {
+                // <type> <identifier>
+                ValueToken identifier = (ValueToken) advance();
+                return new DeclarationPatternNode(typeNode, identifier);
+            } else {
+                // <type> <not identifier>
+                return new TypePatternNode(typeNode);
+            }
+        }
+
+        if (isPossibleExpression()) {
+            ExpressionNode expression = parseExpression();
+            return new ConstantPatternNode(expression);
+        }
+
+        addDiagnostic(ParserErrors.PatternExpected, current, current.getRawValue(code));
+        return new ConstantPatternNode(new InvalidExpressionNode(createMissingTokenRangeBeforeCurrent()));
     }
 
     private boolean isPredefinedType() {

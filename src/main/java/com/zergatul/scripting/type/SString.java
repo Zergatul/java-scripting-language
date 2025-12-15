@@ -1,12 +1,12 @@
 package com.zergatul.scripting.type;
 
-import com.zergatul.scripting.InternalException;
 import com.zergatul.scripting.compiler.BufferedMethodVisitor;
 import com.zergatul.scripting.compiler.CompilerContext;
 import com.zergatul.scripting.parser.BinaryOperator;
 import com.zergatul.scripting.runtime.StringUtils;
 import com.zergatul.scripting.type.operation.BinaryOperation;
 import com.zergatul.scripting.type.operation.IndexOperation;
+import org.jspecify.annotations.Nullable;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Type;
 
@@ -17,27 +17,20 @@ import java.util.Optional;
 
 import static org.objectweb.asm.Opcodes.*;
 
-public class SString extends SPredefinedType {
+public class SString extends SReferenceType {
 
     public static final SString instance = new SString();
 
-    private SString() {
-        super(String.class);
-    }
+    private SString() {}
 
     @Override
-    public boolean isReference() {
+    public boolean isPredefined() {
         return true;
     }
 
     @Override
-    public int getLoadInst() {
-        return ALOAD;
-    }
-
-    @Override
-    public int getStoreInst() {
-        return ASTORE;
+    public Class<?> getJavaClass() {
+        return String.class;
     }
 
     @Override
@@ -51,22 +44,7 @@ public class SString extends SPredefinedType {
     }
 
     @Override
-    public int getArrayTypeInst() {
-        throw new InternalException();
-    }
-
-    @Override
-    public int getArrayLoadInst() {
-        return AALOAD;
-    }
-
-    @Override
-    public int getArrayStoreInst() {
-        return AASTORE;
-    }
-
-    @Override
-    public BinaryOperation add(SType other) {
+    public @Nullable BinaryOperation add(SType other) {
         if (other == SString.instance) {
             return ADD_STRING;
         }
@@ -78,12 +56,12 @@ public class SString extends SPredefinedType {
     }
 
     @Override
-    public BinaryOperation equalsOp(SType other) {
+    public @Nullable BinaryOperation equalsOp(SType other) {
         return other == SString.instance ? EQUALS_STRING : null;
     }
 
     @Override
-    public BinaryOperation notEqualsOp(SType other) {
+    public @Nullable BinaryOperation notEqualsOp(SType other) {
         return other == SString.instance ? NOT_EQUALS_STRING : null;
     }
 
@@ -93,7 +71,7 @@ public class SString extends SPredefinedType {
     }
 
     @Override
-    public PropertyReference getInstanceProperty(String name) {
+    public @Nullable PropertyReference getInstanceProperty(String name) {
         return switch (name) {
             case "length" -> PROP_LENGTH;
             default -> null;
@@ -106,17 +84,12 @@ public class SString extends SPredefinedType {
     }
 
     @Override
-    public IndexOperation index(SType type) {
+    public @Nullable IndexOperation index(SType type) {
         if (type == SInt.instance) {
             return INDEX_INT;
         } else {
             return null;
         }
-    }
-
-    @Override
-    public int getReturnInst() {
-        return ARETURN;
     }
 
     @Override

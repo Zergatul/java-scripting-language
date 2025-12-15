@@ -26,6 +26,7 @@ public class CompletionProviderFactory<T> {
                 new MetaExpressionsCompletionProvider<>(factory),
                 new InputParametersCompletionProvider<>(factory),
                 new LocalVariablesCompletionProvider<>(factory),
+                new DeclarationPatternVariablesCompletionProvider<>(factory),
                 new ParametersCompletionProvider<>(factory),
                 new ObjectMemberCompletionProvider<>(factory),
                 new StatementsCompletionProvider<>(factory),

@@ -148,10 +148,10 @@ public class SFunctionalInterface extends SFunction {
         return Type.getMethodDescriptor(
                 Type.getType(actualReturnType.getJavaClass()),
                 Arrays.stream(getActualParameters()).map(t -> {
-                    if (t.isReference()) {
-                        return t.getDescriptor();
+                    if (t instanceof SValueType valueType) {
+                        return valueType.getBoxed().getDescriptor();
                     } else {
-                        return Type.getDescriptor(t.getBoxedVersion());
+                        return t.getDescriptor();
                     }
                 }).map(Type::getType).toArray(Type[]::new));
     }

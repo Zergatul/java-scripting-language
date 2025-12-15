@@ -3,9 +3,11 @@ package com.zergatul.scripting.type;
 import com.zergatul.scripting.InternalException;
 import org.objectweb.asm.MethodVisitor;
 
+import java.lang.reflect.Method;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
-public class SFuture extends SType {
+public class SFuture extends SReferenceType {
 
     private final SType underlying;
 
@@ -33,33 +35,13 @@ public class SFuture extends SType {
     }
 
     @Override
-    public int getLoadInst() {
-        throw new InternalException();
-    }
-
-    @Override
-    public int getStoreInst() {
-        throw new InternalException();
-    }
-
-    @Override
-    public int getArrayLoadInst() {
-        throw new InternalException();
-    }
-
-    @Override
-    public int getArrayStoreInst() {
-        throw new InternalException();
-    }
-
-    @Override
-    public boolean isReference() {
-        return true;
-    }
-
-    @Override
-    public int getReturnInst() {
-        throw new InternalException();
+    public List<MethodReference> getInstanceMethods() {
+        try {
+            Method method = CompletableFuture.class.getMethod("isDone");
+            return List.of(new NativeInstanceMethodReference(method));
+        } catch (NoSuchMethodException | SecurityException e) {
+            throw new InternalException();
+        }
     }
 
     @Override

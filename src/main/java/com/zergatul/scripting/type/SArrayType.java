@@ -70,10 +70,10 @@ public class SArrayType extends SType {
     @Override
     public void storeDefaultValue(MethodVisitor visitor) {
         visitor.visitInsn(ICONST_0);
-        if (underlying.isReference()) {
-            visitor.visitTypeInsn(ANEWARRAY, Type.getInternalName(underlying.getJavaClass()));
+        if (underlying instanceof SValueType valueType) {
+            visitor.visitIntInsn(NEWARRAY, valueType.getArrayTypeInst());
         } else {
-            visitor.visitIntInsn(NEWARRAY, ((SPredefinedType) underlying).getArrayTypeInst());
+            visitor.visitTypeInsn(ANEWARRAY, underlying.getInternalName());
         }
     }
 
@@ -189,7 +189,7 @@ public class SArrayType extends SType {
                     Type.getMethodDescriptor(Type.getType(arrayClass), Type.getType(arrayClass), Type.getType(elementClass)),
                     false);
             if (!isPrimitive) {
-                left.visitTypeInsn(CHECKCAST, Type.getInternalName(type.getJavaClass()));
+                left.visitTypeInsn(CHECKCAST, type.getInternalName());
             }
         }
     }
@@ -212,7 +212,7 @@ public class SArrayType extends SType {
                     Type.getMethodDescriptor(Type.getType(clazz), Type.getType(clazz), Type.getType(clazz)),
                     false);
             if (!isPrimitive) {
-                left.visitTypeInsn(CHECKCAST, Type.getInternalName(type.getJavaClass()));
+                left.visitTypeInsn(CHECKCAST, type.getInternalName());
             }
         }
     }

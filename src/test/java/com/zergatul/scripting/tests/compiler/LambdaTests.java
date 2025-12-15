@@ -243,7 +243,7 @@ public class LambdaTests extends ComparatorTest {
                 """;
 
         comparator.assertEquals(List.of(
-                new DiagnosticMessage(BinderErrors.CannotImplicitlyConvert, new SingleLineTextRange(1, 24, 23, 5), "float", "int")),
+                new DiagnosticMessage(BinderErrors.CannotImplicitlyConvert, new SingleLineTextRange(1, 24, 23, 5), "float", "Boxed<int>")),
                 getDiagnostics(ApiRoot.class, code));
     }
 

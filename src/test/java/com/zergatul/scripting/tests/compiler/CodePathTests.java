@@ -92,6 +92,24 @@ public class CodePathTests {
         assertNotAllCodePaths(code);
     }
 
+    @Test
+    public void extensionMethodTest() {
+        String code = """
+                extension(int) {
+                    int func() {
+                        if (this % 2 == 0) {
+                            if ((this / 2).func() % 2 == 0) {
+                                return 2;
+                            }
+                        } else {
+                            return 1;
+                        }
+                    }
+                }
+                """;
+        assertNotAllCodePaths(code);
+    }
+
     private void assertOk(String code) {
         compile(ApiRoot.class, code);
     }
@@ -99,7 +117,7 @@ public class CodePathTests {
     private void assertNotAllCodePaths(String code) {
         List<DiagnosticMessage> messages = getDiagnostics(ApiRoot.class, code);
         Assertions.assertEquals(1, messages.size());
-        Assertions.assertEquals(messages.get(0).code, BinderErrors.NotAllPathReturnValue.code());
+        Assertions.assertEquals(messages.getFirst().code, BinderErrors.NotAllPathReturnValue.code());
     }
 
     public static final class ApiRoot {}

@@ -7,17 +7,17 @@ import com.zergatul.scripting.parser.ParserTreeVisitor;
 
 import java.util.List;
 
-public class TypeTestExpressionNode extends ExpressionNode {
+public class IsExpressionNode extends ExpressionNode {
 
     public final ExpressionNode expression;
     public final Token keyword;
-    public final TypeNode type;
+    public final PatternNode pattern;
 
-    public TypeTestExpressionNode(ExpressionNode expression, Token keyword, TypeNode type) {
-        super(ParserNodeType.TYPE_TEST_EXPRESSION, TextRange.combine(expression, type));
+    public IsExpressionNode(ExpressionNode expression, Token keyword, PatternNode pattern) {
+        super(ParserNodeType.IS_EXPRESSION, TextRange.combine(expression, pattern));
         this.expression = expression;
         this.keyword = keyword;
-        this.type = type;
+        this.pattern = pattern;
     }
 
     @Override
@@ -28,11 +28,11 @@ public class TypeTestExpressionNode extends ExpressionNode {
     @Override
     public void acceptChildren(ParserTreeVisitor visitor) {
         expression.accept(visitor);
-        type.accept(visitor);
+        pattern.accept(visitor);
     }
 
     @Override
     public List<Locatable> getChildNodes() {
-        return List.of(expression, keyword, type);
+        return List.of(expression, keyword, pattern);
     }
 }

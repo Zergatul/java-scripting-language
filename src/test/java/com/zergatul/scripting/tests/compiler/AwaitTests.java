@@ -22,6 +22,7 @@ public class AwaitTests extends ComparatorTest {
     @BeforeEach
     public void clean() {
         ApiRoot.futures = new FutureHelper();
+        ApiRoot.boolStorage = new BoolStorage();
         ApiRoot.intStorage = new IntStorage();
         ApiRoot.longStorage = new Int64Storage();
         ApiRoot.stringStorage = new StringStorage();
@@ -1164,11 +1165,56 @@ public class AwaitTests extends ComparatorTest {
         Assertions.assertTrue(future.isDone());
     }
 
+    @Test
+    public void futureMethodsTest() {
+        String code = """
+                let future = futures.create();
+                boolStorage.add(future.isDone());
+                await future;
+                boolStorage.add(future.isDone());
+                """;
+
+        AsyncRunnable program = compileAsync(ApiRoot.class, code);
+        CompletableFuture<?> future = program.run();
+
+        Assertions.assertIterableEquals(ApiRoot.boolStorage.list, List.of(false));
+        Assertions.assertFalse(future.isDone());
+
+        ApiRoot.futures.get(0).complete(null);
+
+        Assertions.assertIterableEquals(ApiRoot.boolStorage.list, List.of(false, true));
+        Assertions.assertTrue(future.isDone());
+    }
+
+    @Test
+    public void javaTypeFutureMethod() {
+        String code = """
+                typealias TestClass = Java<com.zergatul.scripting.tests.compiler.AwaitTests$TestClass>;
+                
+                let future1 = TestClass.externalMethod();
+                let result = await future1;
+                stringStorage.add(result);
+                """;
+
+        AsyncRunnable program = compileAsync(ApiRoot.class, code);
+        CompletableFuture<?> future = program.run();
+
+        Assertions.assertIterableEquals(ApiRoot.stringStorage.list, List.of("Hello"));
+        Assertions.assertTrue(future.isDone());
+    }
+
     public static class ApiRoot {
         public static FutureHelper futures;
+        public static BoolStorage boolStorage;
         public static IntStorage intStorage;
         public static Int64Storage longStorage;
         public static StringStorage stringStorage;
         public static Run run;
+    }
+
+    public static class TestClass {
+        public static CompletableFuture<String> externalMethod() {
+            return CompletableFuture.completedFuture("Hello");
+        }
     }
 }

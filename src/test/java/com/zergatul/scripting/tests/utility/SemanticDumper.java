@@ -13,6 +13,13 @@ public class SemanticDumper extends Dumper {
             sb.append("new SemanticToken(SemanticTokenType.");
             sb.append(token.type().name());
             sb.append(", ");
+
+            if (!token.modifiers().isEmpty()) {
+                sb.append("List.of(");
+                sb.append(String.join(", ", token.modifiers().stream().map(mod -> "SemanticTokenModifier." + mod).toList()));
+                sb.append("), ");
+            }
+
             dump(token.range());
             sb.append(")");
             commaBreak();

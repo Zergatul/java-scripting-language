@@ -43,24 +43,24 @@ public abstract class MethodReference extends MemberReference implements Invocab
                 getParameterTypes().stream().map(SType::getAsmType).toArray(Type[]::new));
     }
 
-    public boolean matches(SFunction other) {
+    public boolean signatureMatchesWithBoxing(SFunction other) {
         List<MethodParameter> parameters1 = getParameters();
         List<MethodParameter> parameters2 = other.getParameters();
         if (parameters1.size() != parameters2.size()) {
             return false;
         }
-        if (!this.getReturn().equals(other.getReturnType())) {
+        if (!SBoxedType.match(this.getReturn(), other.getReturnType())) {
             return false;
         }
         for (int i = 0; i < parameters1.size(); i++) {
-            if (!parameters1.get(i).type().equals(parameters2.get(i).type())) {
+            if (!SBoxedType.match(parameters1.get(i).type(), parameters2.get(i).type())) {
                 return false;
             }
         }
         return true;
     }
 
-    public boolean parametersMatch(SFunction other) {
+    public boolean signatureMatchesExactly(SFunction other) {
         List<MethodParameter> parameters1 = getParameters();
         List<MethodParameter> parameters2 = other.getParameters();
         if (parameters1.size() != parameters2.size()) {

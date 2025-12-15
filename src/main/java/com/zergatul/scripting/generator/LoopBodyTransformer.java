@@ -38,7 +38,8 @@ public class LoopBodyTransformer {
         return new BoundIfStatementNode(
                 node.condition,
                 transformStatement(node.thenStatement),
-                node.elseStatement != null ? transformStatement(node.elseStatement) : null);
+                node.elseStatement != null ? transformStatement(node.elseStatement) : null,
+                node.flow);
     }
 
     private BoundStatementNode transform(BoundBreakStatementNode node) {
