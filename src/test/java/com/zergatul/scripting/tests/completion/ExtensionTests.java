@@ -121,6 +121,33 @@ public class ExtensionTests {
                         new StaticConstantSuggestion(context, "intStorage")));
     }
 
+    @Test
+    public void unaryOperatorOverloadTest() {
+        assertSuggestions("""
+                extension(string) {
+                    operator [+] int(string str) => <cursor>
+                }
+                """,
+                context -> Lists.of(
+                        expressions,
+                        LocalVariableSuggestion.getParameter(context, "str"),
+                        new StaticConstantSuggestion(context, "intStorage")));
+    }
+
+    @Test
+    public void binaryOperatorOverloadTest() {
+        assertSuggestions("""
+                extension(string) {
+                    operator [/] string[](string str, char separator) => <cursor>
+                }
+                """,
+                context -> Lists.of(
+                        expressions,
+                        LocalVariableSuggestion.getParameter(context, "str"),
+                        LocalVariableSuggestion.getParameter(context, "separator"),
+                        new StaticConstantSuggestion(context, "intStorage")));
+    }
+
     private void assertSuggestions(String code, Function<TestCompletionContext, List<Suggestion>> expectedFactory) {
         CompletionTestHelper.assertSuggestions(ApiRoot.class, code, expectedFactory);
     }

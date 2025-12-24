@@ -40,12 +40,13 @@ public class ParserErrors {
     public static final ErrorCode CommaOrCloseBraceExpected = new ErrorCode("C035", "'}' or ',' expected");
     public static final ErrorCode ClassMemberExpected = new ErrorCode("C036", "Class member expected, found '%s'");
     public static final ErrorCode OpenNewExpression = new ErrorCode("C037", "A new expression requires type");
-    public static final ErrorCode ExtensionOnlyMethodsAllowed = new ErrorCode("C038", "Only methods are allowed inside extension block");
-    public static final ErrorCode ExtensionMethodExpected = new ErrorCode("C039", "Extension method expected, found '%s'");
+    public static final ErrorCode ExtensionOnlyMethodsAllowed = new ErrorCode("C038", "Only methods/operators overload are allowed inside extension block");
+    public static final ErrorCode ExtensionMethodExpected = new ErrorCode("C039", "Extension method or operator overload expected, found '%s'");
     public static final ErrorCode DuplicateModifier = new ErrorCode("C040", "Duplicate '%s' modifier");
     public static final ErrorCode InvalidConstructorInitializer = new ErrorCode("C041", "'base' or 'this' expected");
     public static final ErrorCode EqualExpected = new ErrorCode("C042", "= expected, found %s");
     public static final ErrorCode OpenParenthesisExpected = new ErrorCode("C043", "( expected, found %s");
     public static final ErrorCode CommaExpected = new ErrorCode("C044", ", expected, found %s");
     public static final ErrorCode PatternExpected = new ErrorCode("C045", "Pattern expected, fount %s");
+    public static final ErrorCode InvalidOperatorDeclaration = new ErrorCode("C046", "Invalid operator declaration, use 'operator [+] ReturnType(...)'");
 }

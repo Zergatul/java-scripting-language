@@ -53,6 +53,10 @@ public class Token implements Locatable {
         return this.tokenType == tokenType;
     }
 
+    public boolean is(String value) {
+        return false;
+    }
+
     public boolean isNot(TokenType tokenType) {
         return this.tokenType != tokenType;
     }

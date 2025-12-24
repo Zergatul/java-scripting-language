@@ -42,7 +42,8 @@ public class ParameterListNode extends ParserNode {
         return nodes;
     }
 
-    public boolean hasParentheses() {
-        return !openParen.isMissing() && !closeParen.isMissing();
+    @Override
+    public boolean isOpen() {
+        return openParen.isMissing() || closeParen.isMissing();
     }
 }

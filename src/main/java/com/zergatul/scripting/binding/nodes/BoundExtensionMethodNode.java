@@ -9,7 +9,7 @@ import com.zergatul.scripting.type.SMethodFunction;
 
 import java.util.List;
 
-public class BoundExtensionMethodNode extends BoundNode {
+public class BoundExtensionMethodNode extends BoundExtensionMemberNode {
 
     public final ClassMethodNode syntaxNode;
     public final SMethodFunction functionType;

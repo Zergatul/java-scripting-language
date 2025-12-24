@@ -144,6 +144,7 @@ public class Binder {
                 case CLASS_FIELD -> bindClassField(declaration, (ClassFieldNode) member);
                 case CLASS_CONSTRUCTOR -> bindClassConstructor(declaration, (ClassConstructorNode) member);
                 case CLASS_METHOD -> bindClassMethod(declaration, (ClassMethodNode) member);
+                case CLASS_OPERATOR_OVERLOAD -> bindClassOperatorOverload(declaration, (ClassOperatorOverloadNode) member);
                 default -> throw new InternalException();
             });
         }
@@ -285,18 +286,113 @@ public class Binder {
                 lifted);
     }
 
+    private BoundClassOperatorOverloadNode bindClassOperatorOverload(ClassDeclaration classDeclaration, ClassOperatorOverloadNode operatorOverloadNode) {
+        ClassUnaryOperationDeclaration unaryOperationDeclaration = classDeclaration.getUnaryOperationDeclaration(operatorOverloadNode);
+        ClassBinaryOperationDeclaration binaryOperationDeclaration = classDeclaration.getBinaryOperationDeclaration(operatorOverloadNode);
+
+        if (unaryOperationDeclaration == null && binaryOperationDeclaration == null) {
+            throw new InternalException();
+        }
+
+        if (unaryOperationDeclaration != null) {
+            return bindClassUnaryOperatorOverload(unaryOperationDeclaration, operatorOverloadNode);
+        } else {
+            return bindClassBinaryOperatorOverload(binaryOperationDeclaration, operatorOverloadNode);
+        }
+    }
+
+    private BoundClassUnaryOperationNode bindClassUnaryOperatorOverload(ClassUnaryOperationDeclaration unaryOperationDeclaration, ClassOperatorOverloadNode operatorOverloadNode) {
+        SType returnType = unaryOperationDeclaration.getReturnType();
+
+        pushStaticMethodScope(returnType);
+        addParametersToContext(unaryOperationDeclaration.getParameters());
+
+        BoundStatementNode body;
+        if (operatorOverloadNode.body.is(ParserNodeType.EXPRESSION_STATEMENT)) {
+            body = rewriteAsReturnStatement((ExpressionStatementNode) operatorOverloadNode.body, returnType);
+        } else {
+            body = bindStatement(operatorOverloadNode.body);
+        }
+
+        List<LiftedVariable> lifted = context.getLifted();
+
+        popScope();
+
+        if (returnType != SUnknown.instance) {
+            if (new ControlFlowAnalyzer().analyzeStatement(body) == FlowResult.CONTINUES) {
+                addDiagnostic(BinderErrors.NotAllPathReturnValue, body);
+            }
+        }
+
+        return new BoundClassUnaryOperationNode(
+                operatorOverloadNode,
+                (SMethodFunction) unaryOperationDeclaration.getSymbolRef().get().getType(),
+                unaryOperationDeclaration.getMethodRef(),
+                unaryOperationDeclaration.getOperator(),
+                unaryOperationDeclaration.getReturnTypeNode(),
+                unaryOperationDeclaration.getParameters(),
+                body,
+                lifted);
+    }
+
+    private BoundClassBinaryOperationNode bindClassBinaryOperatorOverload(ClassBinaryOperationDeclaration binaryOperationDeclaration, ClassOperatorOverloadNode operatorOverloadNode) {
+        SType returnType = binaryOperationDeclaration.getReturnType();
+
+        if (!binaryOperationDeclaration.getOperator().canBeOverloaded()) {
+            addDiagnostic(BinderErrors.BinaryOperatorCannotBeOverloaded, operatorOverloadNode.operator, binaryOperationDeclaration.getOperator());
+        } else {
+            if (binaryOperationDeclaration.getOperator().isBooleanOnlyResult() && !returnType.equals(SBoolean.instance)) {
+                addDiagnostic(BinderErrors.BinaryOperatorCanReturnBooleanOnly, operatorOverloadNode.returnType, binaryOperationDeclaration.getOperator());
+            }
+        }
+
+        pushStaticMethodScope(returnType);
+        addParametersToContext(binaryOperationDeclaration.getParameters());
+
+        BoundStatementNode body;
+        if (operatorOverloadNode.body.is(ParserNodeType.EXPRESSION_STATEMENT)) {
+            body = rewriteAsReturnStatement((ExpressionStatementNode) operatorOverloadNode.body, returnType);
+        } else {
+            body = bindStatement(operatorOverloadNode.body);
+        }
+
+        List<LiftedVariable> lifted = context.getLifted();
+
+        popScope();
+
+        if (returnType != SUnknown.instance) {
+            if (new ControlFlowAnalyzer().analyzeStatement(body) == FlowResult.CONTINUES) {
+                addDiagnostic(BinderErrors.NotAllPathReturnValue, body);
+            }
+        }
+
+        return new BoundClassBinaryOperationNode(
+                operatorOverloadNode,
+                (SMethodFunction) binaryOperationDeclaration.getSymbolRef().get().getType(),
+                binaryOperationDeclaration.getMethodRef(),
+                binaryOperationDeclaration.getOperator(),
+                binaryOperationDeclaration.getReturnTypeNode(),
+                binaryOperationDeclaration.getParameters(),
+                body,
+                lifted);
+    }
+
     private BoundExtensionNode bindExtension(ExtensionNode extensionNode) {
         ExtensionDeclaration declaration = declarationTable.getExtensionDeclaration(extensionNode);
 
-        List<BoundExtensionMethodNode> methods = new ArrayList<>();
+        List<BoundExtensionMemberNode> members = new ArrayList<>();
         pushExtensionScope(declaration.getBaseType());
 
-        for (ClassMethodNode methodNode : extensionNode.methods) {
-            methods.add(bindExtensionMethod(declaration, methodNode));
+        for (ClassMemberNode memberNode : extensionNode.members) {
+            switch (memberNode.getNodeType()) {
+                case CLASS_METHOD -> members.add(bindExtensionMethod(declaration, (ClassMethodNode) memberNode));
+                case CLASS_OPERATOR_OVERLOAD -> members.add(bindExtensionOperationOverload(declaration, (ClassOperatorOverloadNode) memberNode));
+                default -> throw new InternalException();
+            }
         }
 
         popScope();
-        return new BoundExtensionNode(extensionNode, declaration.getTypeNode(), methods);
+        return new BoundExtensionNode(extensionNode, declaration.getTypeNode(), members);
     }
 
     private BoundExtensionMethodNode bindExtensionMethod(ExtensionDeclaration declaration, ClassMethodNode methodNode) {
@@ -332,6 +428,93 @@ public class Binder {
                 methodDeclaration.getTypeNode(),
                 name,
                 methodDeclaration.getParameters(),
+                body,
+                lifted);
+    }
+
+    private BoundExtensionOperatorOverloadNode bindExtensionOperationOverload(ExtensionDeclaration declaration, ClassOperatorOverloadNode overloadNode) {
+        ExtensionUnaryOperationDeclaration unaryOperationDeclaration = declaration.getUnaryOperationDeclaration(overloadNode);
+        ExtensionBinaryOperationDeclaration binaryOperationDeclaration = declaration.getBinaryOperationDeclaration(overloadNode);
+
+        if (unaryOperationDeclaration == null && binaryOperationDeclaration == null) {
+            throw new InternalException();
+        }
+
+        if (unaryOperationDeclaration != null) {
+            return bindExtensionUnaryOperatorOverload(unaryOperationDeclaration, overloadNode);
+        } else {
+            return bindExtensionBinaryOperatorOverload(binaryOperationDeclaration, overloadNode);
+        }
+    }
+
+    private BoundExtensionUnaryOperationNode bindExtensionUnaryOperatorOverload(ExtensionUnaryOperationDeclaration unaryOperationDeclaration, ClassOperatorOverloadNode operatorOverloadNode) {
+        SType returnType = unaryOperationDeclaration.getReturnType();
+
+        pushStaticMethodScope(returnType);
+        addParametersToContext(unaryOperationDeclaration.getParameters());
+
+        BoundStatementNode body;
+        if (operatorOverloadNode.body.is(ParserNodeType.EXPRESSION_STATEMENT)) {
+            body = rewriteAsReturnStatement((ExpressionStatementNode) operatorOverloadNode.body, returnType);
+        } else {
+            body = bindStatement(operatorOverloadNode.body);
+        }
+
+        List<LiftedVariable> lifted = context.getLifted();
+
+        popScope();
+
+        if (returnType != SUnknown.instance) {
+            if (new ControlFlowAnalyzer().analyzeStatement(body) == FlowResult.CONTINUES) {
+                addDiagnostic(BinderErrors.NotAllPathReturnValue, body);
+            }
+        }
+
+        return new BoundExtensionUnaryOperationNode(
+                operatorOverloadNode,
+                unaryOperationDeclaration.getOperation(),
+                unaryOperationDeclaration.getReturnTypeNode(),
+                unaryOperationDeclaration.getParameters(),
+                body,
+                lifted);
+    }
+
+    private BoundExtensionBinaryOperationNode bindExtensionBinaryOperatorOverload(ExtensionBinaryOperationDeclaration binaryOperationDeclaration, ClassOperatorOverloadNode operatorOverloadNode) {
+        SType returnType = binaryOperationDeclaration.getReturnType();
+
+        if (!binaryOperationDeclaration.getOperation().getOperator().canBeOverloaded()) {
+            addDiagnostic(BinderErrors.BinaryOperatorCannotBeOverloaded, operatorOverloadNode.operator, binaryOperationDeclaration.getOperation().getOperator());
+        } else {
+            if (binaryOperationDeclaration.getOperation().getOperator().isBooleanOnlyResult() && !returnType.equals(SBoolean.instance)) {
+                addDiagnostic(BinderErrors.BinaryOperatorCanReturnBooleanOnly, operatorOverloadNode.returnType, binaryOperationDeclaration.getOperation().getOperator());
+            }
+        }
+
+        pushStaticMethodScope(returnType);
+        addParametersToContext(binaryOperationDeclaration.getParameters());
+
+        BoundStatementNode body;
+        if (operatorOverloadNode.body.is(ParserNodeType.EXPRESSION_STATEMENT)) {
+            body = rewriteAsReturnStatement((ExpressionStatementNode) operatorOverloadNode.body, returnType);
+        } else {
+            body = bindStatement(operatorOverloadNode.body);
+        }
+
+        List<LiftedVariable> lifted = context.getLifted();
+
+        popScope();
+
+        if (returnType != SUnknown.instance) {
+            if (new ControlFlowAnalyzer().analyzeStatement(body) == FlowResult.CONTINUES) {
+                addDiagnostic(BinderErrors.NotAllPathReturnValue, body);
+            }
+        }
+
+        return new BoundExtensionBinaryOperationNode(
+                operatorOverloadNode,
+                binaryOperationDeclaration.getOperation(),
+                binaryOperationDeclaration.getReturnTypeNode(),
+                binaryOperationDeclaration.getParameters(),
                 body,
                 lifted);
     }
@@ -733,7 +916,9 @@ public class Binder {
 
     private ConditionFlow bindExpressionAsConditionFlow(ExpressionNode expression) {
         return switch (expression.getNodeType()) {
+            case PARENTHESIZED_EXPRESSION -> bindParenthesizedExpressionAsCondition((ParenthesizedExpressionNode) expression);
             case IS_EXPRESSION -> bindIsExpressionAsCondition((IsExpressionNode) expression);
+            case UNARY_EXPRESSION -> bindUnaryExpressionAsCondition((UnaryExpressionNode) expression);
             case BINARY_EXPRESSION -> bindBinaryExpressionAsCondition((BinaryExpressionNode) expression);
             default -> new ConditionFlow(bindExpression(expression));
         };
@@ -754,7 +939,7 @@ public class Binder {
         }
 
         BoundExpressionNode operand = bindExpression(unary.operand);
-        UnaryOperation operation = operand.type.unary(unary.operator.operator);
+        UnaryOperation operation = resolveUnaryOperation(unary.operator.operator, operand.type);
         BoundUnaryOperatorNode operator;
         if (operation != null) {
             operator = new BoundUnaryOperatorNode(unary.operator, operation);
@@ -806,6 +991,15 @@ public class Binder {
         return new BoundIsExpressionNode(is, expression, pattern);
     }
 
+    private ConditionFlow bindParenthesizedExpressionAsCondition(ParenthesizedExpressionNode parenthesized) {
+        ConditionFlow flow = bindExpressionAsConditionFlow(parenthesized.inner);
+        return new ConditionFlow(
+                new BoundParenthesizedExpressionNode(parenthesized, flow.expression()),
+                flow.whenTrueLocals(),
+                flow.whenFalseLocals(),
+                flow.allLocals());
+    }
+
     private ConditionFlow bindIsExpressionAsCondition(IsExpressionNode is) {
         BoundExpressionNode expression = bindExpression(is.expression);
         PatternFlow flow = bindPattern(is.pattern);
@@ -814,6 +1008,26 @@ public class Binder {
                 flow.whenTrueLocals,
                 flow.whenFalseLocals,
                 Stream.concat(flow.whenTrueLocals.stream(), flow.whenFalseLocals.stream()).toList());
+    }
+
+    private ConditionFlow bindUnaryExpressionAsCondition(UnaryExpressionNode unary) {
+        UnaryOperator operator = unary.operator.operator;
+        if (operator == UnaryOperator.NOT) {
+            ConditionFlow inner = bindExpressionAsConditionFlow(unary.operand);
+            if (inner.expression().type == SBoolean.instance) {
+                UnaryOperation operation = SBoolean.NOT.value();
+                BoundUnaryOperatorNode boundOperator = new BoundUnaryOperatorNode(unary.operator, operation);
+                return new ConditionFlow(
+                        new BoundUnaryExpressionNode(unary, boundOperator, inner.expression()),
+                        inner.whenFalseLocals(),
+                        inner.whenTrueLocals(),
+                        inner.allLocals());
+            }
+        }
+
+        // TODO: double binding when condition above fails?
+
+        return new ConditionFlow(bindUnaryExpression(unary));
     }
 
     private ConditionFlow bindBinaryExpressionAsCondition(BinaryExpressionNode binary) {
@@ -844,7 +1058,7 @@ public class Binder {
             ConditionFlow left = bindExpressionAsConditionFlow(binary.left);
             ConditionFlow right = bindExpressionAsConditionFlow(binary.right);
             if (left.expression().type == SBoolean.instance && right.expression().type == SBoolean.instance) {
-                BinaryOperation operation = SBoolean.instance.binary(operator, SBoolean.instance);
+                BinaryOperation operation = operator == BinaryOperator.BOOLEAN_AND ? SBoolean.BOOLEAN_AND.value() : SBoolean.BOOLEAN_OR.value();
                 if (operation == null) {
                     throw new InternalException();
                 }
@@ -1488,8 +1702,21 @@ public class Binder {
         return new BindInvocableArgsResult<>(matchedInvocable, boundArgumentsListNode, noInvocables, noOverloads);
     }
 
+    private @Nullable UnaryOperation resolveUnaryOperation(UnaryOperator operator, SType type) {
+        for (UnaryOperation operation : declarationTable.appendExtensionUnaryOperations(type, type.getUnaryOperations())) {
+            if (operation.getOperator() != operator) {
+                continue;
+            }
+            if (operation.getOperandType().equals(type)) {
+                return operation;
+            }
+        }
+
+        return null;
+    }
+
     private @Nullable BinaryOperationResolveResult resolveBinaryOperation(SType left, BinaryOperator operator, SType right, boolean allowLeftCast) {
-        BinaryOperation operation = left.binary(operator, right);
+        BinaryOperation operation = resolveDirectBinaryOperation(left, operator, right);
         if (operation != null) {
             return new BinaryOperationResolveResult(operation);
         }
@@ -1498,7 +1725,7 @@ public class Binder {
             // try implicit cast right to left
             CastOperation cast = SType.implicitCastTo(right, left);
             if (cast != null) {
-                operation = left.binary(operator, left);
+                operation = resolveDirectBinaryOperation(left, operator, left);
                 if (operation != null) {
                     return new BinaryOperationResolveResult(null, operation, cast);
                 }
@@ -1508,7 +1735,7 @@ public class Binder {
             if (allowLeftCast) {
                 cast = SType.implicitCastTo(left, right);
                 if (cast != null) {
-                    operation = right.binary(operator, right);
+                    operation = resolveDirectBinaryOperation(right, operator, right);
                     if (operation != null) {
                         return new BinaryOperationResolveResult(cast, operation, null);
                     }
@@ -1517,28 +1744,54 @@ public class Binder {
 
             // try all implicit casts on the left
             if (allowLeftCast) {
-                for (SType casted : left.getPossibleImplicitCasts()) {
-                    operation = casted.binary(operator, right);
+                for (CastOperation cast1 : left.getImplicitCasts()) {
+                    operation = resolveDirectBinaryOperation(cast1.getDstType(), operator, right);
                     if (operation != null) {
-                        cast = SType.implicitCastTo(left, casted);
-                        if (cast == null) {
-                            throw new InternalException();
-                        }
-                        return new BinaryOperationResolveResult(cast, operation, null);
+                        return new BinaryOperationResolveResult(cast1, operation, null);
                     }
                 }
             }
 
             // try all implicit casts on the right
-            for (SType casted : right.getPossibleImplicitCasts()) {
-                operation = left.binary(operator, casted);
+            for (CastOperation cast1 : right.getImplicitCasts()) {
+                operation = resolveDirectBinaryOperation(left, operator, cast1.getDstType());
                 if (operation != null) {
-                    cast = SType.implicitCastTo(right, casted);
-                    if (cast == null) {
-                        throw new InternalException();
-                    }
-                    return new BinaryOperationResolveResult(null, operation, cast);
+                    return new BinaryOperationResolveResult(null, operation, cast1);
                 }
+            }
+        }
+
+        return null;
+    }
+
+    private @Nullable BinaryOperation resolveDirectBinaryOperation(SType left, BinaryOperator operator, SType right) {
+        if (left == SUnknown.instance || right == SUnknown.instance) {
+            return UndefinedBinaryOperation.instance;
+        }
+
+        for (BinaryOperation operation : left.getBinaryOperations()) {
+            if (operation.getOperator() == operator && operation.getLeft().isCompatibleWith(left) && operation.getRight().isCompatibleWith(right)) {
+                return operation;
+            }
+        }
+
+        for (BinaryOperation operation : right.getBinaryOperations()) {
+            if (operation.getOperator() == operator && operation.getLeft().isCompatibleWith(left) && operation.getRight().isCompatibleWith(right)) {
+                return operation;
+            }
+        }
+
+        List<BinaryOperation> extensionOperations = declarationTable.getExtensionBinaryOperations();
+
+        for (BinaryOperation operation : extensionOperations) {
+            if (operation.getOperator() == operator && operation.getLeft().isCompatibleWith(left) && operation.getRight().isCompatibleWith(right)) {
+                return operation;
+            }
+        }
+
+        for (BinaryOperation operation : extensionOperations) {
+            if (operation.getOperator() == operator && operation.getLeft().isCompatibleWith(left) && operation.getRight().isCompatibleWith(right)) {
+                return operation;
             }
         }
 
@@ -2081,6 +2334,7 @@ public class Binder {
                     case CLASS_FIELD -> buildClassFieldDeclaration(classDeclaration, (ClassFieldNode) classMember);
                     case CLASS_CONSTRUCTOR -> buildClassConstructorDeclaration(classDeclaration, (ClassConstructorNode) classMember);
                     case CLASS_METHOD -> buildClassMethodDeclaration(classDeclaration, (ClassMethodNode) classMember);
+                    case CLASS_OPERATOR_OVERLOAD -> buildClassOperatorOverloadDeclaration(classDeclaration, (ClassOperatorOverloadNode) classMember);
                     default -> throw new InternalException();
                 }
             }
@@ -2088,8 +2342,12 @@ public class Binder {
 
         // process extension methods
         declarationTable.forEachExtension((extensionNode, extensionDeclaration) -> {
-            for (ClassMethodNode methodNode : extensionNode.methods) {
-                buildExtensionMethodDeclaration(extensionDeclaration, methodNode);
+            for (ClassMemberNode memberNode : extensionNode.members) {
+                switch (memberNode.getNodeType()) {
+                    case CLASS_METHOD -> buildExtensionMethodDeclaration(extensionDeclaration, (ClassMethodNode) memberNode);
+                    case CLASS_OPERATOR_OVERLOAD -> buildExtensionOperatorOverloadDeclaration(extensionDeclaration, (ClassOperatorOverloadNode) memberNode);
+                    default -> throw new InternalException();
+                }
             }
         });
     }
@@ -2313,6 +2571,80 @@ public class Binder {
         classDeclaration.addMethod(methodNode, new ClassMethodDeclaration(methodName, symbolRef, isAsync, typeNode, parameters, methodRef, hasError));
     }
 
+    private void buildClassOperatorOverloadDeclaration(ClassDeclaration classDeclaration, ClassOperatorOverloadNode overloadNode) {
+        UnaryOperator unary = UnaryOperator.fromToken(overloadNode.operator.getTokenType());
+        BinaryOperator binary = BinaryOperator.fromToken(overloadNode.operator.getTokenType());
+
+        if (unary == null && binary == null) {
+            throw new InternalException();
+        }
+
+        boolean processAsUnary;
+        if (unary != null) {
+            if (binary == null) {
+                processAsUnary = true;
+            } else {
+                processAsUnary = overloadNode.parameters.parameters.size() == 1;
+            }
+        } else {
+            processAsUnary = false;
+        }
+
+        if (processAsUnary) {
+            buildClassUnaryOperatorOverloadDeclaration(classDeclaration, overloadNode, unary);
+        } else {
+            buildClassBinaryOperatorOverloadDeclaration(classDeclaration, overloadNode, binary);
+        }
+    }
+
+    private void buildClassUnaryOperatorOverloadDeclaration(ClassDeclaration classDeclaration, ClassOperatorOverloadNode overloadNode, UnaryOperator operator) {
+        BoundTypeNode returnTypeNode = bindType(overloadNode.returnType);
+        BoundParameterListNode parameters = bindParameterList(overloadNode.parameters);
+        SMethodFunction functionType = new SMethodFunction(returnTypeNode.type, parameters.parameters.stream().map(pn -> new MethodParameter(pn.getName().value, pn.getType())).toArray(MethodParameter[]::new));
+
+        boolean hasError = false;
+        MethodReference methodRef = UnknownMethodReference.instance;
+        if (parameters.parameters.size() != 1) {
+            hasError = true;
+            addDiagnostic(BinderErrors.UnaryOperationOverloadOneParameters, parameters);
+        } else if (!parameters.parameters.getFirst().getType().equals(classDeclaration.getDeclaredType())) {
+            hasError = true;
+            addDiagnostic(BinderErrors.UnaryOperationOverloadShouldHaveSameParameter, parameters.parameters.getFirst());
+        } else if (classDeclaration.hasUnaryOperation(operator)) {
+            hasError = true;
+            addDiagnostic(BinderErrors.UnaryOperationAlreadyDeclared, parameters);
+        } else {
+            methodRef = classDeclaration.getDeclaredType().addUnaryOperation(operator, functionType);
+        }
+
+        SymbolRef symbolRef = new ImmutableSymbolRef(new UnaryOperationSymbol(operator, functionType, TextRange.combine(overloadNode.returnType, overloadNode.parameters)));
+        classDeclaration.addUnaryOperation(overloadNode, new ClassUnaryOperationDeclaration(returnTypeNode, operator, parameters, symbolRef, methodRef, hasError));
+    }
+
+    private void buildClassBinaryOperatorOverloadDeclaration(ClassDeclaration classDeclaration, ClassOperatorOverloadNode overloadNode, BinaryOperator operator) {
+        BoundTypeNode returnTypeNode = bindType(overloadNode.returnType);
+        BoundParameterListNode parameters = bindParameterList(overloadNode.parameters);
+        SMethodFunction functionType = new SMethodFunction(returnTypeNode.type, parameters.parameters.stream().map(pn -> new MethodParameter(pn.getName().value, pn.getType())).toArray(MethodParameter[]::new));
+
+        boolean hasError = false;
+        MethodReference methodRef = UnknownMethodReference.instance;
+        if (parameters.parameters.size() != 2) {
+            hasError = true;
+            addDiagnostic(BinderErrors.BinaryOperationOverloadTwoParameters, parameters);
+        } else if (!parameters.parameters.getFirst().getType().equals(classDeclaration.getDeclaredType()) && !parameters.parameters.getLast().getType().equals(classDeclaration.getDeclaredType())) {
+            hasError = true;
+            addDiagnostic(BinderErrors.BinaryOperationOverloadShouldHaveOneParameterType, parameters);
+        } else if (classDeclaration.hasBinaryOperation(operator, parameters.parameters.getFirst().getType(), parameters.parameters.getLast().getType())) {
+            hasError = true;
+            addDiagnostic(BinderErrors.BinaryOperationAlreadyDeclared, parameters);
+        } else {
+            methodRef = classDeclaration.getDeclaredType().addBinaryOperation(operator, functionType);
+        }
+
+        SymbolRef symbolRef = new ImmutableSymbolRef(new BinaryOperationSymbol(operator, functionType, TextRange.combine(overloadNode.returnType, overloadNode.parameters)));
+        classDeclaration.addBinaryOperation(overloadNode, new ClassBinaryOperationDeclaration(returnTypeNode, operator, parameters, symbolRef, methodRef, hasError));
+    }
+
     private void buildExtensionMethodDeclaration(ExtensionDeclaration extensionDeclaration, ClassMethodNode methodNode) {
         boolean isAsync = methodNode.modifiers.isAsync();
         BoundTypeNode typeNode = bindType(methodNode.type);
@@ -2343,6 +2675,86 @@ public class Binder {
 
         SymbolRef symbolRef = new ImmutableSymbolRef(new MethodSymbol(methodName, functionType, TextRange.combine(methodNode.modifiers, methodNode.parameters)));
         extensionDeclaration.addMethod(methodNode, new ClassMethodDeclaration(methodName, symbolRef, isAsync, typeNode, parameters, methodRef, hasError));
+    }
+
+    private void buildExtensionOperatorOverloadDeclaration(ExtensionDeclaration extensionDeclaration, ClassOperatorOverloadNode overloadNode) {
+        UnaryOperator unary = UnaryOperator.fromToken(overloadNode.operator.getTokenType());
+        BinaryOperator binary = BinaryOperator.fromToken(overloadNode.operator.getTokenType());
+
+        if (unary == null && binary == null) {
+            throw new InternalException();
+        }
+
+        boolean processAsUnary;
+        if (unary != null) {
+            if (binary == null) {
+                processAsUnary = true;
+            } else {
+                processAsUnary = overloadNode.parameters.parameters.size() == 1;
+            }
+        } else {
+            processAsUnary = false;
+        }
+
+        if (processAsUnary) {
+            buildExtensionUnaryOperatorOverloadDeclaration(extensionDeclaration, overloadNode, unary);
+        } else {
+            buildExtensionBinaryOperatorOverloadDeclaration(extensionDeclaration, overloadNode, binary);
+        }
+    }
+
+    private void buildExtensionUnaryOperatorOverloadDeclaration(ExtensionDeclaration extensionDeclaration, ClassOperatorOverloadNode overloadNode, UnaryOperator operator) {
+        BoundTypeNode returnTypeNode = bindType(overloadNode.returnType);
+        BoundParameterListNode parameters = bindParameterList(overloadNode.parameters);
+        SMethodFunction functionType = new SMethodFunction(returnTypeNode.type, parameters.parameters.stream().map(pn -> new MethodParameter(pn.getName().value, pn.getType())).toArray(MethodParameter[]::new));
+
+        boolean hasError = false;
+        UnaryOperation operation = UndefinedUnaryOperation.instance;
+        if (parameters.parameters.size() != 1) {
+            hasError = true;
+            addDiagnostic(BinderErrors.UnaryOperationOverloadOneParameters, parameters);
+        } else if (!parameters.parameters.getFirst().getType().equals(extensionDeclaration.getBaseType())) {
+            hasError = true;
+            addDiagnostic(BinderErrors.UnaryOperationOverloadShouldHaveSameParameter, parameters.parameters.getFirst());
+        } else if (declarationTable.hasExtensionUnaryOperationOverload(extensionDeclaration.getBaseType(), operator)) {
+            hasError = true;
+            addDiagnostic(BinderErrors.UnaryOperationAlreadyDeclared, parameters);
+        } else {
+            String internalMethodName = declarationTable.generateExtensionOperationOverloadInternalName(extensionDeclaration.getBaseType(), operator.name().toLowerCase());
+            ExtensionUnaryOperation extOperation = new ExtensionUnaryOperation(operator, returnTypeNode.type, extensionDeclaration.getBaseType(), internalMethodName);
+            operation = extOperation;
+            declarationTable.addExtensionUnaryOperation(extOperation);
+        }
+
+        SymbolRef symbolRef = new ImmutableSymbolRef(new UnaryOperationSymbol(operator, functionType, TextRange.combine(overloadNode.returnType, overloadNode.parameters)));
+        extensionDeclaration.addUnaryOperation(overloadNode, new ExtensionUnaryOperationDeclaration(returnTypeNode, parameters, symbolRef, operation, hasError));
+    }
+
+    private void buildExtensionBinaryOperatorOverloadDeclaration(ExtensionDeclaration extensionDeclaration, ClassOperatorOverloadNode overloadNode, BinaryOperator operator) {
+        BoundTypeNode returnTypeNode = bindType(overloadNode.returnType);
+        BoundParameterListNode parameters = bindParameterList(overloadNode.parameters);
+        SMethodFunction functionType = new SMethodFunction(returnTypeNode.type, parameters.parameters.stream().map(pn -> new MethodParameter(pn.getName().value, pn.getType())).toArray(MethodParameter[]::new));
+
+        boolean hasError = false;
+        BinaryOperation operation = UndefinedBinaryOperation.instance;
+        if (parameters.parameters.size() != 2) {
+            hasError = true;
+            addDiagnostic(BinderErrors.BinaryOperationOverloadTwoParameters, parameters);
+        } else if (!parameters.parameters.getFirst().getType().equals(extensionDeclaration.getBaseType()) && !parameters.parameters.getLast().getType().equals(extensionDeclaration.getBaseType())) {
+            hasError = true;
+            addDiagnostic(BinderErrors.BinaryOperationOverloadShouldHaveOneParameterType, parameters);
+        } else if (declarationTable.hasExtensionBinaryOperationOverload(operator, parameters.parameters.getFirst().getType(), parameters.parameters.getLast().getType())) {
+            hasError = true;
+            addDiagnostic(BinderErrors.BinaryOperationAlreadyDeclared, parameters);
+        } else {
+            String internalMethodName = declarationTable.generateExtensionOperationOverloadInternalName(extensionDeclaration.getBaseType(), operator.name().toLowerCase());
+            ExtensionBinaryOperation extOperation = new ExtensionBinaryOperation(operator, returnTypeNode.type, parameters.parameters.getFirst().getType(), parameters.parameters.getLast().getType(), internalMethodName);
+            operation = extOperation;
+            declarationTable.addExtensionBinaryOperation(extOperation);
+        }
+
+        SymbolRef symbolRef = new ImmutableSymbolRef(new BinaryOperationSymbol(operator, functionType, TextRange.combine(overloadNode.returnType, overloadNode.parameters)));
+        extensionDeclaration.addBinaryOperation(overloadNode, new ExtensionBinaryOperationDeclaration(returnTypeNode, parameters, symbolRef, operation, hasError));
     }
 
     private boolean hasInstanceMethod(SType type, String name, List<BoundParameterNode> parameters) {
@@ -2414,6 +2826,10 @@ public class Binder {
 
     private void pushMethodScope(SType returnType, boolean isAsync) {
         context = context.createClassMethod(returnType, isAsync);
+    }
+
+    private void pushStaticMethodScope(SType returnType) {
+        context = context.createClassStaticMethod(returnType);
     }
 
     private void popScope() {

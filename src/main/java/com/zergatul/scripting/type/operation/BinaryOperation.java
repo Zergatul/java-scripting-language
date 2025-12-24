@@ -8,17 +8,24 @@ import org.objectweb.asm.MethodVisitor;
 
 public abstract class BinaryOperation {
 
-    public final BinaryOperator operator;
-    public final SType type;
-
+    private final BinaryOperator operator;
+    private final SType resultType;
     private final SType left;
     private final SType right;
 
-    protected BinaryOperation(BinaryOperator operator, SType type, SType left, SType right) {
+    protected BinaryOperation(BinaryOperator operator, SType resultType, SType left, SType right) {
         this.operator = operator;
-        this.type = type;
+        this.resultType = resultType;
         this.left = left;
         this.right = right;
+    }
+
+    public BinaryOperator getOperator() {
+        return operator;
+    }
+
+    public SType getResultType() {
+        return resultType;
     }
 
     public SType getLeft() {
@@ -29,5 +36,5 @@ public abstract class BinaryOperation {
         return right;
     }
 
-    public abstract void apply(MethodVisitor left, BufferedMethodVisitor right, CompilerContext context);
+    public abstract void apply(MethodVisitor left, BufferedMethodVisitor right, CompilerContext context, SType leftType, SType rightType);
 }

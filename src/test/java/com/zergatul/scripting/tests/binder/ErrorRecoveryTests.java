@@ -211,6 +211,20 @@ public class ErrorRecoveryTests extends BinderTestBase {
                 result.diagnostics());
     }
 
+    @Test
+    public void unfinishedReturnTest() {
+        BinderOutput result = bind("""
+                int func(int x) {
+                    return x +
+                }
+                """);
+
+        comparator.assertEquals(
+                List.of(
+                        new DiagnosticMessage(ParserErrors.ExpressionExpected, new SingleLineTextRange(3, 1, 33, 1), "}")),
+                result.diagnostics());
+    }
+
     private BinderOutput bind(String code) {
         return bind(ApiRoot.class, code);
     }

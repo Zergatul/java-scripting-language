@@ -371,6 +371,68 @@ public class ClassTests {
                         new StaticConstantSuggestion(context, "intStorage")));
     }
 
+    @Test
+    public void unaryOperatorOverloadTest1() {
+        assertSuggestions("""
+                class ClassA {
+                    operator [+] int(ClassA instance) => <cursor>
+                }
+                """,
+                context -> Lists.of(
+                        expressions,
+                        new ClassSuggestion(context, "ClassA"),
+                        LocalVariableSuggestion.getParameter(context, "instance"),
+                        new StaticConstantSuggestion(context, "intStorage")));
+    }
+
+    @Test
+    public void unaryOperatorOverloadTest2() {
+        assertSuggestions("""
+                class ClassA {
+                    operator [+] int(ClassA instance) {
+                        return 10 + <cursor>
+                    }
+                }
+                """,
+                context -> Lists.of(
+                        expressions,
+                        new ClassSuggestion(context, "ClassA"),
+                        LocalVariableSuggestion.getParameter(context, "instance"),
+                        new StaticConstantSuggestion(context, "intStorage")));
+    }
+
+    @Test
+    public void binaryOperatorOverloadTest1() {
+        assertSuggestions("""
+                class ClassA {
+                    operator [+] int(ClassA instance1, ClassA instance2) => <cursor>
+                }
+                """,
+                context -> Lists.of(
+                        expressions,
+                        new ClassSuggestion(context, "ClassA"),
+                        LocalVariableSuggestion.getParameter(context, "instance1"),
+                        LocalVariableSuggestion.getParameter(context, "instance2"),
+                        new StaticConstantSuggestion(context, "intStorage")));
+    }
+
+    @Test
+    public void binaryOperatorOverloadTest2() {
+        assertSuggestions("""
+                class ClassA {
+                    operator [+] int(ClassA instance1, ClassA instance2) {
+                        return 10 + <cursor>
+                    }
+                }
+                """,
+                context -> Lists.of(
+                        expressions,
+                        new ClassSuggestion(context, "ClassA"),
+                        LocalVariableSuggestion.getParameter(context, "instance1"),
+                        LocalVariableSuggestion.getParameter(context, "instance2"),
+                        new StaticConstantSuggestion(context, "intStorage")));
+    }
+
     private void assertSuggestions(String code, Function<TestCompletionContext, List<Suggestion>> expectedFactory) {
         CompletionTestHelper.assertSuggestions(ApiRoot.class, code, expectedFactory);
     }

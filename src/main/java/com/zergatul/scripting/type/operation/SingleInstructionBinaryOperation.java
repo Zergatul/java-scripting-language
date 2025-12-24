@@ -21,7 +21,7 @@ public class SingleInstructionBinaryOperation extends BinaryOperation {
     }
 
     @Override
-    public void apply(MethodVisitor left, BufferedMethodVisitor right, CompilerContext context) {
+    public void apply(MethodVisitor left, BufferedMethodVisitor right, CompilerContext context, SType leftType, SType rightType) {
         right.release(left);
         left.visitInsn(opcode);
     }

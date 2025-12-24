@@ -1,17 +1,16 @@
 package com.zergatul.scripting.type;
 
 import com.zergatul.scripting.InternalException;
+import com.zergatul.scripting.Lazy;
 import com.zergatul.scripting.compiler.BufferedMethodVisitor;
 import com.zergatul.scripting.compiler.CompilerContext;
-import com.zergatul.scripting.parser.BinaryOperator;
-import com.zergatul.scripting.parser.UnaryOperator;
 import com.zergatul.scripting.type.operation.BinaryOperation;
 import com.zergatul.scripting.type.operation.CastOperation;
 import com.zergatul.scripting.type.operation.UnaryOperation;
-import org.jspecify.annotations.Nullable;
 import org.objectweb.asm.MethodVisitor;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -19,6 +18,7 @@ public class SBoxedType extends SReferenceType {
 
     private final SValueType underlying;
     private final Class<?> clazz;
+    private final Lazy<List<CastOperation>> implicitCasts = new Lazy<>(this::getImplicitCastsInternal);
 
     protected SBoxedType(SValueType underlying, Class<?> clazz) {
         this.underlying = underlying;
@@ -49,51 +49,37 @@ public class SBoxedType extends SReferenceType {
     }
 
     @Override
-    public @Nullable UnaryOperation unary(UnaryOperator operator) {
-        UnaryOperation operation = underlying.unary(operator);
-        if (operation != null) {
-            return new WrapperUnaryOperation(this, operation);
+    public List<UnaryOperation> getUnaryOperations() {
+        List<UnaryOperation> operations = new ArrayList<>();
+        for (UnaryOperation operation : underlying.getUnaryOperations()) {
+            operations.add(new WrapperUnaryOperation(this, operation));
         }
-        return super.unary(operator);
+        return operations;
     }
 
     @Override
-    public @Nullable BinaryOperation binary(BinaryOperator operator, SType other) {
-        if (other.equals(this)) {
-            // <boxed> <op> <boxed>
-            BinaryOperation operation = underlying.binary(operator, underlying);
-            if (operation != null) {
-                return new WrappedBinaryOperation(this, operation, true, true);
+    public List<BinaryOperation> getBinaryOperations() {
+        List<BinaryOperation> operations = new ArrayList<>();
+        for (BinaryOperation operation : underlying.getBinaryOperations()) {
+            if (operation.getLeft() instanceof SValueType leftValueType && operation.getRight() instanceof SValueType rightValueType) {
+                // convert <value1> <op> <value2> to <boxed1> <op> <boxed2>
+                // because binary operation resolver doesn't do implicit casts on both arguments
+                operations.add(new BinaryOperation(operation.getOperator(), operation.getResultType(), leftValueType.getBoxed(), rightValueType.getBoxed()) {
+                    @Override
+                    public void apply(MethodVisitor left, BufferedMethodVisitor right, CompilerContext context, SType leftType, SType rightType) {
+                        leftValueType.compileUnboxing(left);
+                        rightValueType.compileUnboxing(right);
+                        operation.apply(left, right, context, leftValueType, rightValueType);
+                    }
+                });
             }
         }
-        if (other.equals(underlying)) {
-            // <boxed> <op> <underlying>
-            BinaryOperation operation = underlying.binary(operator, underlying);
-            if (operation != null) {
-                return new WrappedBinaryOperation(this, operation, true, false);
-            }
-        }
-        return super.binary(operator, other);
+        return operations;
     }
 
     @Override
-    public List<SType> getPossibleImplicitCasts() {
-        List<SType> result = new ArrayList<>(super.getPossibleImplicitCasts());
-        result.add(underlying);
-        return result;
-    }
-
-    @Override
-    protected @Nullable CastOperation implicitCastTo(SType other) {
-        if (other.equals(underlying)) {
-            return new UnboxCastOperation(this);
-        } else {
-            CastOperation cast = underlying.implicitCastTo(other);
-            if (cast != null) {
-                return new WrappedCastOperation(this, cast);
-            }
-            return null;
-        }
+    public List<CastOperation> getImplicitCasts() {
+        return implicitCasts.value();
     }
 
     @Override
@@ -111,12 +97,23 @@ public class SBoxedType extends SReferenceType {
         return String.format("Boxed<%s>", underlying);
     }
 
+    private List<CastOperation> getImplicitCastsInternal() {
+        List<CastOperation> casts = new ArrayList<>();
+        casts.add(new UnboxCastOperation(this));
+        for (CastOperation cast : underlying.getImplicitCasts()) {
+            if (cast.getDstType() != this) {
+                casts.add(new WrappedCastOperation(this, cast));
+            }
+        }
+        return Collections.unmodifiableList(casts);
+    }
+
     private static class UnboxCastOperation extends CastOperation {
 
         private final SBoxedType boxed;
 
         protected UnboxCastOperation(SBoxedType boxed) {
-            super(boxed.underlying);
+            super(boxed, boxed.underlying);
             this.boxed = boxed;
         }
 
@@ -132,7 +129,7 @@ public class SBoxedType extends SReferenceType {
         private final CastOperation underlying;
 
         protected WrappedCastOperation(SBoxedType boxed, CastOperation underlying) {
-            super(underlying.type);
+            super(boxed, underlying.getDstType());
             this.boxed = boxed;
             this.underlying = underlying;
         }
@@ -192,42 +189,15 @@ public class SBoxedType extends SReferenceType {
         private final UnaryOperation underlying;
 
         protected WrapperUnaryOperation(SBoxedType boxed, UnaryOperation underlying) {
-            super(underlying.operator, underlying.type);
+            super(underlying.getOperator(), underlying.getResultType(), boxed);
             this.boxed = boxed;
             this.underlying = underlying;
         }
 
         @Override
-        public void apply(MethodVisitor visitor) {
+        public void apply(MethodVisitor visitor, CompilerContext context) {
             boxed.underlying.compileUnboxing(visitor);
-            underlying.apply(visitor);
-        }
-    }
-
-    private static class WrappedBinaryOperation extends BinaryOperation {
-
-        private final SBoxedType boxed;
-        private final BinaryOperation underlying;
-        private final boolean castRight;
-        private final boolean castLeft;
-
-        protected WrappedBinaryOperation(SBoxedType boxed, BinaryOperation underlying, boolean castLeft, boolean castRight) {
-            super(underlying.operator, underlying.type, underlying.getLeft(), underlying.getRight());
-            this.boxed = boxed;
-            this.underlying = underlying;
-            this.castLeft = castLeft;
-            this.castRight = castRight;
-        }
-
-        @Override
-        public void apply(MethodVisitor left, BufferedMethodVisitor right, CompilerContext context) {
-            if (castLeft) {
-                boxed.underlying.compileUnboxing(left);
-            }
-            if (castRight) {
-                boxed.underlying.compileUnboxing(right);
-            }
-            underlying.apply(left, right, context);
+            underlying.apply(visitor, context);
         }
     }
 }

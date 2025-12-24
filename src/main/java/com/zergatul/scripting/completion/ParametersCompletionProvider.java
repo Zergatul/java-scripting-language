@@ -38,9 +38,25 @@ public class ParametersCompletionProvider<T> extends AbstractCompletionProvider<
                     BoundClassMethodNode method = (BoundClassMethodNode) current.entry.node;
                     yield method.parameters.parameters;
                 }
+                case CLASS_UNARY_OPERATION -> {
+                    BoundClassUnaryOperationNode operationNode = (BoundClassUnaryOperationNode) current.entry.node;
+                    yield operationNode.parameters.parameters;
+                }
+                case CLASS_BINARY_OPERATION -> {
+                    BoundClassBinaryOperationNode operationNode = (BoundClassBinaryOperationNode) current.entry.node;
+                    yield operationNode.parameters.parameters;
+                }
                 case EXTENSION_METHOD -> {
                     BoundExtensionMethodNode method = (BoundExtensionMethodNode) current.entry.node;
                     yield method.parameters.parameters;
+                }
+                case EXTENSION_UNARY_OPERATION -> {
+                    BoundExtensionUnaryOperationNode operationNode = (BoundExtensionUnaryOperationNode) current.entry.node;
+                    yield operationNode.parameters.parameters;
+                }
+                case EXTENSION_BINARY_OPERATION -> {
+                    BoundExtensionBinaryOperationNode operationNode = (BoundExtensionBinaryOperationNode) current.entry.node;
+                    yield operationNode.parameters.parameters;
                 }
                 case FUNCTION -> {
                     BoundFunctionNode function = (BoundFunctionNode) current.entry.node;

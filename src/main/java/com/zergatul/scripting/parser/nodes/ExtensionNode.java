@@ -15,17 +15,17 @@ public class ExtensionNode extends CompilationUnitMemberNode {
     public final TypeNode typeNode;
     public final Token closeParen;
     public final Token openBrace;
-    public final List<ClassMethodNode> methods;
+    public final List<ClassMemberNode> members;
     public final Token closeBrace;
 
-    public ExtensionNode(Token keyword, Token openParen, TypeNode typeNode, Token closeParen, Token openBrace, List<ClassMethodNode> methods, Token closeBrace) {
+    public ExtensionNode(Token keyword, Token openParen, TypeNode typeNode, Token closeParen, Token openBrace, List<ClassMemberNode> members, Token closeBrace) {
         super(ParserNodeType.EXTENSION_DECLARATION, TextRange.combine(keyword, closeBrace));
         this.keyword = keyword;
         this.openParen = openParen;
         this.typeNode = typeNode;
         this.closeParen = closeParen;
         this.openBrace = openBrace;
-        this.methods = methods;
+        this.members = members;
         this.closeBrace = closeBrace;
     }
 
@@ -37,7 +37,7 @@ public class ExtensionNode extends CompilationUnitMemberNode {
     @Override
     public void acceptChildren(ParserTreeVisitor visitor) {
         typeNode.accept(visitor);
-        for (ClassMemberNode method : methods) {
+        for (ClassMemberNode method : members) {
             method.accept(visitor);
         }
     }
@@ -50,7 +50,7 @@ public class ExtensionNode extends CompilationUnitMemberNode {
         nodes.add(typeNode);
         nodes.add(closeParen);
         nodes.add(openBrace);
-        nodes.addAll(methods);
+        nodes.addAll(members);
         nodes.add(closeBrace);
         return nodes;
     }

@@ -163,9 +163,11 @@ public class DefinitionProvider {
         for (BoundCompilationUnitMemberNode member : output.unit().members.members) {
             if (member.is(BoundNodeType.EXTENSION_DECLARATION)) {
                 BoundExtensionNode extensionNode = (BoundExtensionNode) member;
-                for (BoundExtensionMethodNode methodNode : extensionNode.methods) {
-                    if (methodNode.method == method) {
-                        return methodNode.name.getSymbolOrThrow().getDefinition();
+                for (BoundExtensionMemberNode memberNode : extensionNode.members) {
+                    if (memberNode instanceof BoundExtensionMethodNode methodNode) {
+                        if (methodNode.method == method) {
+                            return methodNode.name.getSymbolOrThrow().getDefinition();
+                        }
                     }
                 }
             }

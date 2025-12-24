@@ -80,8 +80,10 @@ public class ObjectMemberCompletionProvider<T> extends AbstractCompletionProvide
                 continue;
             }
 
-            for (BoundExtensionMethodNode methodNode : extensionNode.methods) {
-                suggestions.add(factory.getMethodSuggestion(methodNode.method));
+            for (BoundExtensionMemberNode extMemberNode : extensionNode.members) {
+                if (extMemberNode instanceof BoundExtensionMethodNode methodNode) {
+                    suggestions.add(factory.getMethodSuggestion(methodNode.method));
+                }
             }
         }
 

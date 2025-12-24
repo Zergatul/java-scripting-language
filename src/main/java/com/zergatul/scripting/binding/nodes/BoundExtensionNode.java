@@ -10,13 +10,13 @@ public class BoundExtensionNode extends BoundCompilationUnitMemberNode {
 
     public final ExtensionNode syntaxNode;
     public final BoundTypeNode typeNode;
-    public final List<BoundExtensionMethodNode> methods;
+    public final List<BoundExtensionMemberNode> members;
 
-    public BoundExtensionNode(ExtensionNode node, BoundTypeNode typeNode, List<BoundExtensionMethodNode> methods) {
+    public BoundExtensionNode(ExtensionNode node, BoundTypeNode typeNode, List<BoundExtensionMemberNode> members) {
         super(BoundNodeType.EXTENSION_DECLARATION, node.getRange());
         this.syntaxNode = node;
         this.typeNode = typeNode;
-        this.methods = methods;
+        this.members = members;
     }
 
     @Override
@@ -27,16 +27,16 @@ public class BoundExtensionNode extends BoundCompilationUnitMemberNode {
     @Override
     public void acceptChildren(BinderTreeVisitor visitor) {
         typeNode.accept(visitor);
-        for (BoundExtensionMethodNode method : methods) {
-            method.accept(visitor);
+        for (BoundExtensionMemberNode member : members) {
+            member.accept(visitor);
         }
     }
 
     @Override
     public List<BoundNode> getChildren() {
-        List<BoundNode> list = new ArrayList<>(1 + methods.size());
+        List<BoundNode> list = new ArrayList<>(1 + members.size());
         list.add(typeNode);
-        list.addAll(methods);
+        list.addAll(members);
         return list;
     }
 }

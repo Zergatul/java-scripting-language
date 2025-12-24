@@ -179,7 +179,7 @@ public class BinderTreeGenerator {
         if (node.condition != null) {
             BoundExpressionNode expression = rewriteExpression(node.condition);
             expression = new BoundUnaryExpressionNode(
-                    new BoundUnaryOperatorNode(SBoolean.instance.not()),
+                    new BoundUnaryOperatorNode(SBoolean.NOT.value()),
                     expression);
             add(new BoundIfStatementNode(
                     expression,
@@ -232,7 +232,7 @@ public class BinderTreeGenerator {
 
         BoundExpressionNode condition = new BoundBinaryExpressionNode(
                 new BoundNameExpressionNode(index),
-                new BoundBinaryOperatorNode(SInt.instance.greaterEquals(SInt.instance)),
+                new BoundBinaryOperatorNode(SInt.GREATER_THAN_EQUALS.value()),
                 new BoundNameExpressionNode(length));
         add(new BoundIfStatementNode(
                 condition,
@@ -270,7 +270,7 @@ public class BinderTreeGenerator {
         currentBoundary = begin;
 
         BoundExpressionNode condition = rewriteExpression(node.condition);
-        condition = new BoundUnaryExpressionNode(new BoundUnaryOperatorNode(SBoolean.instance.not()), condition);
+        condition = new BoundUnaryExpressionNode(new BoundUnaryOperatorNode(SBoolean.NOT.value()), condition);
         add(new BoundIfStatementNode(
                 condition,
                 new BoundBlockStatementNode(new BoundSetGeneratorStateNode(end), new BoundGeneratorContinueNode()),

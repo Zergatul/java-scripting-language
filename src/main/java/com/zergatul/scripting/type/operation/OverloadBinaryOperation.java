@@ -4,6 +4,7 @@ import com.zergatul.scripting.BinaryOperatorMethod;
 import com.zergatul.scripting.compiler.BufferedMethodVisitor;
 import com.zergatul.scripting.compiler.CompilerContext;
 import com.zergatul.scripting.parser.BinaryOperator;
+import com.zergatul.scripting.type.DeclaredBinaryOperationReference;
 import com.zergatul.scripting.type.SType;
 import org.jspecify.annotations.Nullable;
 import org.objectweb.asm.MethodVisitor;
@@ -11,26 +12,38 @@ import org.objectweb.asm.Type;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.util.function.Supplier;
 
 import static org.objectweb.asm.Opcodes.INVOKESTATIC;
 
 public class OverloadBinaryOperation extends BinaryOperation {
 
-    private final Method method;
+    private final SType owner;
+    private final String methodName;
+    private final Supplier<String> methodDescriptor;
 
-    private OverloadBinaryOperation(Method method, BinaryOperator operator, SType type, SType left, SType right) {
+    public OverloadBinaryOperation(DeclaredBinaryOperationReference operationRef) {
+        super(operationRef.getOperator(), operationRef.getReturn(), operationRef.getParameters().getFirst().type(), operationRef.getParameters().getLast().type());
+        this.owner = operationRef.getOwner();
+        this.methodName = operationRef.getName();
+        this.methodDescriptor = operationRef::getDescriptor;
+    }
+
+    private OverloadBinaryOperation(SType owner, Method method, BinaryOperator operator, SType type, SType left, SType right) {
         super(operator, type, left, right);
-        this.method = method;
+        this.owner = owner;
+        this.methodName = method.getName();
+        this.methodDescriptor = () -> Type.getMethodDescriptor(method);
     }
 
     @Override
-    public void apply(MethodVisitor left, BufferedMethodVisitor right, CompilerContext context) {
+    public void apply(MethodVisitor left, BufferedMethodVisitor right, CompilerContext context, SType leftType, SType rightType) {
         right.release(left);
         left.visitMethodInsn(
                 INVOKESTATIC,
-                Type.getInternalName(method.getDeclaringClass()),
-                method.getName(),
-                Type.getMethodDescriptor(method),
+                owner.getInternalName(),
+                methodName,
+                methodDescriptor.get(),
                 false);
     }
 
@@ -64,6 +77,7 @@ public class OverloadBinaryOperation extends BinaryOperation {
         }
 
         return new OverloadBinaryOperation(
+                type,
                 method,
                 annotation.value(),
                 SType.fromJavaType(method.getReturnType()),

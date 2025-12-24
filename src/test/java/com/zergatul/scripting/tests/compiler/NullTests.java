@@ -208,18 +208,40 @@ public class NullTests extends ComparatorTest {
     }
 
     @Test
-    public void nullEqualityVsValueTypesTest() {
+    public void nullEqualsNullTest() {
         String code = """
-                int i = 0;
-                boolean b1 = null == i;
-                boolean b2 = i != null;
+                boolStorage.add(null == null);
+                boolStorage.add(null != null);
                 """;
 
-        comparator.assertEquals(
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(ApiRoot.boolStorage.list, List.of(true, false));
+    }
+
+    @Test
+    public void nullEqualityVsValueTypesTest() {
+        String code = """
+                boolStorage.add(null == 0);
+                boolStorage.add(0 == null);
+                boolStorage.add(null != 0);
+                boolStorage.add(0 != null);
+
+                boolStorage.add(null == 0.0);
+                boolStorage.add(0.0 == null);
+                boolStorage.add(null != 0.0);
+                boolStorage.add(0.0 != null);
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(
+                ApiRoot.boolStorage.list,
                 List.of(
-                        new DiagnosticMessage(BinderErrors.BinaryOperatorNotDefined, new SingleLineTextRange(2, 14, 24, 9), "==", "null", "int"),
-                        new DiagnosticMessage(BinderErrors.BinaryOperatorNotDefined, new SingleLineTextRange(3, 14, 48, 9), "!=", "int", "null")),
-                getDiagnostics(ApiRoot.class, code));
+                        false, false, true, true,
+                        false, false, true, true));
     }
 
     @Test

@@ -9,7 +9,7 @@ public class UndefinedCastOperation extends CastOperation {
     public static final CastOperation instance = new UndefinedCastOperation();
 
     private UndefinedCastOperation() {
-        super(SUnknown.instance);
+        super(SUnknown.instance, SUnknown.instance);
     }
 
     @Override

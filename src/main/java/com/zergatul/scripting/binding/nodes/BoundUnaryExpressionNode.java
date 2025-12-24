@@ -22,7 +22,7 @@ public class BoundUnaryExpressionNode extends BoundExpressionNode {
     }
 
     public BoundUnaryExpressionNode(UnaryExpressionNode node, BoundUnaryOperatorNode operator, BoundExpressionNode operand, TextRange range) {
-        super(BoundNodeType.UNARY_EXPRESSION, operator.operation.type, range);
+        super(BoundNodeType.UNARY_EXPRESSION, operator.operation.getResultType(), range);
         this.syntaxNode = node;
         this.operator = operator;
         this.operand = operand;

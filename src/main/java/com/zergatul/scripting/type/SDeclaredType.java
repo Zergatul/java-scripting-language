@@ -1,6 +1,12 @@
 package com.zergatul.scripting.type;
 
 import com.zergatul.scripting.InternalException;
+import com.zergatul.scripting.parser.BinaryOperator;
+import com.zergatul.scripting.parser.UnaryOperator;
+import com.zergatul.scripting.type.operation.BinaryOperation;
+import com.zergatul.scripting.type.operation.OverloadBinaryOperation;
+import com.zergatul.scripting.type.operation.OverloadUnaryOperation;
+import com.zergatul.scripting.type.operation.UnaryOperation;
 import org.jspecify.annotations.Nullable;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Type;
@@ -16,6 +22,8 @@ public class SDeclaredType extends SType {
     private final List<PropertyReference> properties = new ArrayList<>();
     private final List<ConstructorReference> constructors = new ArrayList<>();
     private final List<MethodReference> methods = new ArrayList<>();
+    private final List<DeclaredUnaryOperationReference> unaryOperations = new ArrayList<>();
+    private final List<DeclaredBinaryOperationReference> binaryOperations = new ArrayList<>();
     @Nullable private SType baseType;
     private boolean hasDefaultConstructor;
     @Nullable private String internalName;
@@ -56,6 +64,18 @@ public class SDeclaredType extends SType {
         DeclaredMethodReference method = new DeclaredMethodReference(this, modifiers, name, functionType);
         methods.add(method);
         return method;
+    }
+
+    public DeclaredUnaryOperationReference addUnaryOperation(UnaryOperator operator, SMethodFunction functionType) {
+        DeclaredUnaryOperationReference operation = new DeclaredUnaryOperationReference(this, operator, functionType);
+        unaryOperations.add(operation);
+        return operation;
+    }
+
+    public DeclaredBinaryOperationReference addBinaryOperation(BinaryOperator operator, SMethodFunction functionType) {
+        DeclaredBinaryOperationReference operation = new DeclaredBinaryOperationReference(this, operator, functionType);
+        binaryOperations.add(operation);
+        return operation;
     }
 
     @Nullable
@@ -113,6 +133,17 @@ public class SDeclaredType extends SType {
     }
 
     @Override
+    public boolean isAssignableFrom(SType other) {
+        if (other == this) {
+            return true;
+        }
+        if (other instanceof SDeclaredType declaredType && declaredType.baseType != null) {
+            return isAssignableFrom(declaredType.baseType);
+        }
+        return false;
+    }
+
+    @Override
     public String getDescriptor() {
         if (internalName == null) {
             throw new InternalException();
@@ -164,6 +195,19 @@ public class SDeclaredType extends SType {
     @Override
     public List<ConstructorReference> getConstructors() {
         return constructors;
+    }
+
+    @Override
+    public List<UnaryOperation> getUnaryOperations() {
+        return new ArrayList<>(unaryOperations.stream().map(OverloadUnaryOperation::new).toList());
+    }
+
+    @Override
+    public List<BinaryOperation> getBinaryOperations() {
+        List<BinaryOperation> operations = new ArrayList<>();
+        operations.addAll(binaryOperations.stream().map(OverloadBinaryOperation::new).toList());
+        operations.addAll(super.getBinaryOperations());
+        return operations;
     }
 
     @Override

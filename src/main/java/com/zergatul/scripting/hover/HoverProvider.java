@@ -161,7 +161,7 @@ public class HoverProvider {
             case BINARY_OPERATOR -> {
                 BoundBinaryOperatorNode operator = (BoundBinaryOperatorNode) node;
                 BinaryOperation operation = operator.operation;
-                String text = formatType(operation.type) + " " + formatDescription(operation.operator.toString()) + formatBrackets("(") + formatType(operation.getLeft()) + " " + formatParameter("left") + "," + " " + formatType(operation.getRight()) + " " + formatParameter("right") + formatBrackets(")");
+                String text = formatType(operation.getResultType()) + " " + formatDescription(operation.getOperator().toString()) + formatBrackets("(") + formatType(operation.getLeft()) + " " + formatParameter("left") + "," + " " + formatType(operation.getRight()) + " " + formatParameter("right") + formatBrackets(")");
                 yield new HoverResponse(text, range);
             }
             case FUNCTION_REFERENCE -> {

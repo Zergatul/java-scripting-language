@@ -368,10 +368,46 @@ public class CompletionContext {
                 }
             }
 
+            case CLASS_UNARY_OPERATION -> {
+                BoundClassUnaryOperationNode operationNode = (BoundClassUnaryOperationNode) entry.node;
+                if (operationNode.syntaxNode.arrow != null) {
+                    yield operationNode.syntaxNode.arrow.getRange().isBefore(line, column);
+                } else {
+                    yield false;
+                }
+            }
+
+            case CLASS_BINARY_OPERATION -> {
+                BoundClassBinaryOperationNode operationNode = (BoundClassBinaryOperationNode) entry.node;
+                if (operationNode.syntaxNode.arrow != null) {
+                    yield operationNode.syntaxNode.arrow.getRange().isBefore(line, column);
+                } else {
+                    yield false;
+                }
+            }
+
             case EXTENSION_METHOD -> {
                 BoundExtensionMethodNode methodNode = (BoundExtensionMethodNode) entry.node;
                 if (methodNode.syntaxNode.arrow != null) {
                     yield methodNode.syntaxNode.arrow.getRange().isBefore(line, column);
+                } else {
+                    yield false;
+                }
+            }
+
+            case EXTENSION_UNARY_OPERATION -> {
+                BoundExtensionUnaryOperationNode operationNode = (BoundExtensionUnaryOperationNode) entry.node;
+                if (operationNode.syntaxNode.arrow != null) {
+                    yield operationNode.syntaxNode.arrow.getRange().isBefore(line, column);
+                } else {
+                    yield false;
+                }
+            }
+
+            case EXTENSION_BINARY_OPERATION -> {
+                BoundExtensionBinaryOperationNode operationNode = (BoundExtensionBinaryOperationNode) entry.node;
+                if (operationNode.syntaxNode.arrow != null) {
+                    yield operationNode.syntaxNode.arrow.getRange().isBefore(line, column);
                 } else {
                     yield false;
                 }

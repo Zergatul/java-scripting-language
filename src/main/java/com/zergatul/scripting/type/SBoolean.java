@@ -10,7 +10,6 @@ import com.zergatul.scripting.type.operation.BinaryOperation;
 import com.zergatul.scripting.type.operation.CastOperation;
 import com.zergatul.scripting.type.operation.SingleInstructionBinaryOperation;
 import com.zergatul.scripting.type.operation.UnaryOperation;
-import org.jspecify.annotations.Nullable;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Type;
@@ -24,6 +23,8 @@ public class SBoolean extends SValueType {
     public static final SBoolean instance = new SBoolean();
 
     private final SBoxedType boxed = new SBoxedType(this, Boolean.class);
+    private final Lazy<List<BinaryOperation>> binaryOperations = new Lazy<>(this::getBinaryOperationsInternal);
+    private final Lazy<List<CastOperation>> implicitCasts = new Lazy<>(this::getImplicitCastsInternal);
 
     private SBoolean() {
         super(boolean.class);
@@ -65,66 +66,37 @@ public class SBoolean extends SValueType {
     }
 
     @Override
-    public @Nullable BinaryOperation lessThan(SType other) {
-        return other == this ? SInt.instance.lessThan(SInt.instance) : null;
+    public List<UnaryOperation> getUnaryOperations() {
+        return List.of(NOT.value());
     }
 
     @Override
-    public @Nullable BinaryOperation greaterThan(SType other) {
-        return other == this ? SInt.instance.greaterThan(SInt.instance) : null;
+    public List<BinaryOperation> getBinaryOperations() {
+        return binaryOperations.value();
+    }
+
+    private List<BinaryOperation> getBinaryOperationsInternal() {
+        return List.of(
+                LESS_THAN.value(),
+                GREATER_THAN.value(),
+                LESS_THAN_EQUALS.value(),
+                GREATER_THAN_EQUALS.value(),
+                EQUALS.value(),
+                NOT_EQUALS.value(),
+                BOOLEAN_AND.value(),
+                BOOLEAN_OR.value(),
+                BITWISE_AND.value(),
+                BITWISE_OR.value());
     }
 
     @Override
-    public @Nullable BinaryOperation lessEquals(SType other) {
-        return other == this ? SInt.instance.lessEquals(SInt.instance) : null;
+    public List<CastOperation> getImplicitCasts() {
+        return implicitCasts.value();
     }
 
-    @Override
-    public @Nullable BinaryOperation greaterEquals(SType other) {
-        return other == this ? SInt.instance.greaterEquals(SInt.instance) : null;
-    }
-
-    @Override
-    public @Nullable BinaryOperation equalsOp(SType other) {
-        return other == this ? SInt.instance.equalsOp(SInt.instance) : null;
-    }
-
-    @Override
-    public @Nullable BinaryOperation notEqualsOp(SType other) {
-        return other == this ? SInt.instance.notEqualsOp(SInt.instance) : null;
-    }
-
-    @Override
-    public @Nullable BinaryOperation booleanAnd(SType other) {
-        return other == this ? BOOLEAN_AND.value() : null;
-    }
-
-    @Override
-    public @Nullable BinaryOperation booleanOr(SType other) {
-        return other == this ? BOOLEAN_OR.value() : null;
-    }
-
-    @Override
-    public @Nullable BinaryOperation bitwiseAnd(SType other) {
-        return other == this ? BITWISE_AND.value() : null;
-    }
-
-    @Override
-    public @Nullable BinaryOperation bitwiseOr(SType other) {
-        return other == this ? BITWISE_OR.value() : null;
-    }
-
-    @Override
-    public UnaryOperation not() {
-        return NOT.value();
-    }
-
-    @Override
-    public @Nullable CastOperation implicitCastTo(SType other) {
-        if (other instanceof SClassType && other.getJavaClass() == Object.class) {
-            return TO_OBJECT.value();
-        }
-        return null;
+    private List<CastOperation> getImplicitCastsInternal() {
+        return extendWithBoxing(
+                BOOLEAN_TO_BOXED.value());
     }
 
     @Override
@@ -182,12 +154,30 @@ public class SBoolean extends SValueType {
         return "boolean";
     }
 
-    private static final Lazy<CastOperation> TO_OBJECT = new Lazy<>(() -> new CastOperation(SJavaObject.instance) {
+    private static final Lazy<CastOperation> BOOLEAN_TO_BOXED = new Lazy<>(() -> new CastOperation(instance, instance.boxed) {
         @Override
         public void apply(MethodVisitor visitor) {
             SBoolean.instance.compileBoxing(visitor);
         }
     });
+
+    protected static final Lazy<BinaryOperation> LESS_THAN = new Lazy<>(() ->
+            new BooleanComparisonOperation(BinaryOperator.LESS, IF_ICMPLT));
+
+    protected static final Lazy<BinaryOperation> GREATER_THAN = new Lazy<>(() ->
+            new BooleanComparisonOperation(BinaryOperator.GREATER, IF_ICMPGT));
+
+    protected static final Lazy<BinaryOperation> LESS_THAN_EQUALS = new Lazy<>(() ->
+            new BooleanComparisonOperation(BinaryOperator.LESS_EQUALS, IF_ICMPLE));
+
+    public static final Lazy<BinaryOperation> GREATER_THAN_EQUALS = new Lazy<>(() ->
+            new BooleanComparisonOperation(BinaryOperator.GREATER_EQUALS, IF_ICMPGE));
+
+    protected static final Lazy<BinaryOperation> EQUALS = new Lazy<>(() ->
+            new BooleanComparisonOperation(BinaryOperator.EQUALS, IF_ICMPEQ));
+
+    protected static final Lazy<BinaryOperation> NOT_EQUALS = new Lazy<>(() ->
+            new BooleanComparisonOperation(BinaryOperator.NOT_EQUALS, IF_ICMPNE));
 
     private static final Lazy<BinaryOperation> BITWISE_OR = new Lazy<>(() ->
             new SingleInstructionBinaryOperation(BinaryOperator.BITWISE_OR, SBoolean.instance, IOR));
@@ -195,9 +185,9 @@ public class SBoolean extends SValueType {
     private static final Lazy<BinaryOperation> BITWISE_AND = new Lazy<>(() ->
             new SingleInstructionBinaryOperation(BinaryOperator.BITWISE_AND, SBoolean.instance, IAND));
 
-    private static final Lazy<UnaryOperation> NOT = new Lazy<>(() -> new UnaryOperation(UnaryOperator.NOT, SBoolean.instance) {
+    public static final Lazy<UnaryOperation> NOT = new Lazy<>(() -> new UnaryOperation(UnaryOperator.NOT, SBoolean.instance, SBoolean.instance) {
         @Override
-        public void apply(MethodVisitor visitor) {
+        public void apply(MethodVisitor visitor, CompilerContext context) {
             Label elseLabel = new Label();
             Label endLabel = new Label();
             visitor.visitJumpInsn(IFNE, elseLabel);
@@ -209,9 +199,9 @@ public class SBoolean extends SValueType {
         }
     });
 
-    private static final Lazy<BinaryOperation> BOOLEAN_OR = new Lazy<>(() -> new BinaryOperation(BinaryOperator.BOOLEAN_OR, SBoolean.instance, SBoolean.instance, SBoolean.instance) {
+    public static final Lazy<BinaryOperation> BOOLEAN_OR = new Lazy<>(() -> new BinaryOperation(BinaryOperator.BOOLEAN_OR, SBoolean.instance, SBoolean.instance, SBoolean.instance) {
         @Override
-        public void apply(MethodVisitor left, BufferedMethodVisitor right, CompilerContext context) {
+        public void apply(MethodVisitor left, BufferedMethodVisitor right, CompilerContext context, SType leftType, SType rightType) {
             Label returnTrue = new Label();
             Label end = new Label();
             left.visitJumpInsn(IFNE, returnTrue);
@@ -223,9 +213,9 @@ public class SBoolean extends SValueType {
         }
     });
 
-    private static final Lazy<BinaryOperation> BOOLEAN_AND = new Lazy<>(() -> new BinaryOperation(BinaryOperator.BOOLEAN_AND, SBoolean.instance, SBoolean.instance, SBoolean.instance) {
+    public static final Lazy<BinaryOperation> BOOLEAN_AND = new Lazy<>(() -> new BinaryOperation(BinaryOperator.BOOLEAN_AND, SBoolean.instance, SBoolean.instance, SBoolean.instance) {
         @Override
-        public void apply(MethodVisitor left, BufferedMethodVisitor right, CompilerContext context) {
+        public void apply(MethodVisitor left, BufferedMethodVisitor right, CompilerContext context, SType leftType, SType rightType) {
             Label returnFalse = new Label();
             Label end = new Label();
             left.visitJumpInsn(IFEQ, returnFalse);
@@ -245,4 +235,27 @@ public class SBoolean extends SValueType {
             SBoolean.instance,
             "toString",
             SString.instance));
+
+    private static class BooleanComparisonOperation extends BinaryOperation {
+
+        private final int opcode;
+
+        public BooleanComparisonOperation(BinaryOperator operator, int opcode) {
+            super(operator, SBoolean.instance, SBoolean.instance, SBoolean.instance);
+            this.opcode = opcode;
+        }
+
+        @Override
+        public void apply(MethodVisitor left, BufferedMethodVisitor right, CompilerContext context, SType leftType, SType rightType) {
+            right.release(left);
+            Label elseLabel = new Label();
+            Label endLabel = new Label();
+            left.visitJumpInsn(opcode, elseLabel);
+            left.visitInsn(ICONST_0);
+            left.visitJumpInsn(GOTO, endLabel);
+            left.visitLabel(elseLabel);
+            left.visitInsn(ICONST_1);
+            left.visitLabel(endLabel);
+        }
+    }
 }

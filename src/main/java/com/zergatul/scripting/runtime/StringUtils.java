@@ -2,6 +2,9 @@ package com.zergatul.scripting.runtime;
 
 import com.zergatul.scripting.MethodDescription;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.StringTokenizer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
@@ -70,5 +73,40 @@ public class StringUtils {
         } else {
             return new String[0];
         }
+    }
+
+    public static String[] split(String input, char separator) {
+        return split(input, String.valueOf(separator));
+    }
+
+    public static String[] split(String input, String separator) {
+        if (separator.isEmpty()) {
+            String[] result = new String[input.length()];
+            for (int i = 0; i < input.length(); i++) {
+                result[i] = String.valueOf(input.charAt(i));
+            }
+            return result;
+        }
+
+        List<String> parts = new ArrayList<>();
+        int sepLen = separator.length();
+        int start = 0;
+
+        while (true) {
+            int index = input.indexOf(separator, start);
+            if (index < 0) {
+                parts.add(input.substring(start));
+                break;
+            }
+
+            parts.add(input.substring(start, index));
+            start = index + sepLen;
+        }
+
+        return parts.toArray(String[]::new);
+    }
+
+    public static String[] regexSplit(String input, String regex) {
+        return input.split(regex);
     }
 }

@@ -121,20 +121,15 @@ public class SArrayType extends SType {
     }
 
     @Override
-    @Nullable
-    public BinaryOperation add(SType other) {
-        if (other.equals(underlying)) {
-            return new AddElementOperation(this);
-        }
-        if (other.equals(this)) {
-            return new AddArrayOperation(this);
-        }
-        return null;
+    public List<BinaryOperation> getBinaryOperations() {
+        return List.of(
+                new AddElementOperation(this),
+                new AddArrayOperation(this));
     }
 
     @Override
     public String toString() {
-        return underlying.toString() + "[]";
+        return String.format("%s[]", underlying);
     }
 
     @Override
@@ -177,11 +172,11 @@ public class SArrayType extends SType {
         }
 
         @Override
-        public void apply(MethodVisitor left, BufferedMethodVisitor right, CompilerContext context) {
+        public void apply(MethodVisitor left, BufferedMethodVisitor right, CompilerContext context, SType leftType, SType rightType) {
             right.release(left);
-            boolean isPrimitive = ((SArrayType) type).getElementsType().getJavaClass().isPrimitive();
-            Class<?> arrayClass = isPrimitive ? type.getJavaClass() : Object[].class;
-            Class<?> elementClass = isPrimitive ? ((SArrayType) type).getElementsType().getJavaClass() : Object.class;
+            boolean isPrimitive = ((SArrayType) getResultType()).getElementsType().getJavaClass().isPrimitive();
+            Class<?> arrayClass = isPrimitive ? getResultType().getJavaClass() : Object[].class;
+            Class<?> elementClass = isPrimitive ? ((SArrayType) getResultType()).getElementsType().getJavaClass() : Object.class;
             left.visitMethodInsn(
                     INVOKESTATIC,
                     Type.getInternalName(ArrayUtils.class),
@@ -189,7 +184,7 @@ public class SArrayType extends SType {
                     Type.getMethodDescriptor(Type.getType(arrayClass), Type.getType(arrayClass), Type.getType(elementClass)),
                     false);
             if (!isPrimitive) {
-                left.visitTypeInsn(CHECKCAST, type.getInternalName());
+                left.visitTypeInsn(CHECKCAST, getResultType().getInternalName());
             }
         }
     }
@@ -201,10 +196,10 @@ public class SArrayType extends SType {
         }
 
         @Override
-        public void apply(MethodVisitor left, BufferedMethodVisitor right, CompilerContext context) {
+        public void apply(MethodVisitor left, BufferedMethodVisitor right, CompilerContext context, SType leftType, SType rightType) {
             right.release(left);
-            boolean isPrimitive = ((SArrayType) type).getElementsType().getJavaClass().isPrimitive();
-            Class<?> clazz = isPrimitive ? type.getJavaClass() : Object[].class;
+            boolean isPrimitive = ((SArrayType) getResultType()).getElementsType().getJavaClass().isPrimitive();
+            Class<?> clazz = isPrimitive ? getResultType().getJavaClass() : Object[].class;
             left.visitMethodInsn(
                     INVOKESTATIC,
                     Type.getInternalName(ArrayUtils.class),
@@ -212,7 +207,7 @@ public class SArrayType extends SType {
                     Type.getMethodDescriptor(Type.getType(clazz), Type.getType(clazz), Type.getType(clazz)),
                     false);
             if (!isPrimitive) {
-                left.visitTypeInsn(CHECKCAST, type.getInternalName());
+                left.visitTypeInsn(CHECKCAST, getResultType().getInternalName());
             }
         }
     }

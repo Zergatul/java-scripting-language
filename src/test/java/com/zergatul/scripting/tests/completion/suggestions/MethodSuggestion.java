@@ -1,9 +1,6 @@
 package com.zergatul.scripting.tests.completion.suggestions;
 
-import com.zergatul.scripting.binding.nodes.BoundCompilationUnitMemberNode;
-import com.zergatul.scripting.binding.nodes.BoundExtensionMethodNode;
-import com.zergatul.scripting.binding.nodes.BoundExtensionNode;
-import com.zergatul.scripting.binding.nodes.BoundNodeType;
+import com.zergatul.scripting.binding.nodes.*;
 import com.zergatul.scripting.tests.completion.helpers.SuggestionHelper;
 import com.zergatul.scripting.tests.completion.helpers.TestCompletionContext;
 import com.zergatul.scripting.type.MethodReference;
@@ -65,9 +62,11 @@ public class MethodSuggestion extends Suggestion {
                 continue;
             }
 
-            for (BoundExtensionMethodNode methodNode : extensionNode.methods) {
-                if (methodNode.method.getName().equals(name)) {
-                    return new MethodSuggestion(methodNode.method);
+            for (BoundExtensionMemberNode extMemberNode : extensionNode.members) {
+                if (extMemberNode instanceof BoundExtensionMethodNode methodNode) {
+                    if (methodNode.method.getName().equals(name)) {
+                        return new MethodSuggestion(methodNode.method);
+                    }
                 }
             }
         }

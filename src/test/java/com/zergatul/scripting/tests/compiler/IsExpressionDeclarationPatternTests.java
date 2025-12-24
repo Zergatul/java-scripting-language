@@ -64,6 +64,41 @@ public class IsExpressionDeclarationPatternTests extends ComparatorTest {
     }
 
     @Test
+    public void ifStatementTest3() {
+        String code = """
+                typealias Object = Java<java.lang.Object>;
+                
+                Object x = "hello";
+                if (!(x is string str)) {
+                } else {
+                    stringStorage.add(str);
+                }
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(ApiRoot.stringStorage.list, List.of("hello"));
+    }
+
+    @Test
+    public void ifStatementTest4() {
+        String code = """
+                typealias Object = Java<java.lang.Object>;
+                
+                Object x = "hello";
+                if (!!(x is string str)) {
+                    stringStorage.add(str);
+                }
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(ApiRoot.stringStorage.list, List.of("hello"));
+    }
+
+    @Test
     public void ifStatementAndTest1() {
         String code = """
                 typealias Object = Java<java.lang.Object>;

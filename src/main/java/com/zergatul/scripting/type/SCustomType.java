@@ -1,10 +1,7 @@
 package com.zergatul.scripting.type;
 
 import com.zergatul.scripting.*;
-import com.zergatul.scripting.type.operation.BinaryOperation;
-import com.zergatul.scripting.type.operation.IndexOperation;
-import com.zergatul.scripting.type.operation.OverloadBinaryOperation;
-import com.zergatul.scripting.type.operation.ReferenceTypeOperations;
+import com.zergatul.scripting.type.operation.*;
 import org.jspecify.annotations.Nullable;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Type;
@@ -16,16 +13,17 @@ import java.util.*;
 
 import static org.objectweb.asm.Opcodes.*;
 
-public class SCustomType extends SType {
+public class SCustomType extends SReferenceType {
 
     private final Class<?> clazz;
     private final CustomType annotation;
+    private final Lazy<List<UnaryOperation>> unaryOperations = new Lazy<>(this::getUnaryOperationsInternal);
+    private final Lazy<List<BinaryOperation>> binaryOperations = new Lazy<>(this::getBinaryOperationsInternal);
     private final Lazy<List<PropertyReference>> instanceProperties;
     private final Lazy<List<MethodReference>> instanceMethods;
     private final Lazy<List<IndexOperation>> indexes;
     private final Lazy<List<MethodReference>> staticMethods;
     private final Lazy<List<PropertyReference>> staticProperties;
-    private final Lazy<List<OverloadBinaryOperation>> operatorOverloads;
 
     public SCustomType(Class<?> clazz) {
         CustomType annotation = clazz.getAnnotation(CustomType.class);
@@ -40,7 +38,6 @@ public class SCustomType extends SType {
         this.indexes = new Lazy<>(this::loadIndexes);
         this.staticMethods = new Lazy<>(this::loadStaticMethods);
         this.staticProperties = new Lazy<>(this::loadStaticProperties);
-        this.operatorOverloads = new Lazy<>(this::loadOperatorOverloads);
     }
 
     @Override
@@ -68,56 +65,47 @@ public class SCustomType extends SType {
     }
 
     @Override
-    public int getLoadInst() {
-        return ALOAD;
-    }
-
-    @Override
-    public int getStoreInst() {
-        return ASTORE;
-    }
-
-    @Override
-    public int getArrayLoadInst() {
-        return AALOAD;
-    }
-
-    @Override
-    public int getArrayStoreInst() {
-        return AASTORE;
-    }
-
-    @Override
-    public BinaryOperation equalsOp(SType other) {
-        if (other instanceof SCustomType) {
-            return ReferenceTypeOperations.EQUALS.value();
-        } else {
-            return null;
-        }
-    }
-
-    @Override
-    public BinaryOperation notEqualsOp(SType other) {
-        if (other instanceof SCustomType) {
-            return ReferenceTypeOperations.NOT_EQUALS.value();
-        } else {
-            return null;
-        }
-    }
-
-    @Override
-    public boolean isReference() {
-        return true;
-    }
-
-    @Override
-    public int getReturnInst() {
-        return ARETURN;
-    }
-
-    @Override
     public boolean isAbstract() {
         return Modifier.isAbstract(clazz.getModifiers());
+    }
+
+    @Override
+    public List<UnaryOperation> getUnaryOperations() {
+        return unaryOperations.value();
+    }
+
+    private List<UnaryOperation> getUnaryOperationsInternal() {
+        List<UnaryOperation> operations = new ArrayList<>();
+
+        Arrays.stream(this.clazz.getDeclaredMethods())
+                .filter(m -> Modifier.isPublic(m.getModifiers()))
+                .filter(m -> Modifier.isStatic(m.getModifiers()))
+                .filter(m -> m.isAnnotationPresent(UnaryOperatorMethod.class))
+                .map(m -> OverloadUnaryOperation.fromMethod(this, m))
+                .filter(Objects::nonNull)
+                .forEach(operations::add);
+
+        return Collections.unmodifiableList(operations);
+    }
+
+    @Override
+    public List<BinaryOperation> getBinaryOperations() {
+        return binaryOperations.value();
+    }
+
+    private List<BinaryOperation> getBinaryOperationsInternal() {
+        List<BinaryOperation> operations = new ArrayList<>();
+
+        Arrays.stream(this.clazz.getDeclaredMethods())
+                .filter(m -> Modifier.isPublic(m.getModifiers()))
+                .filter(m -> Modifier.isStatic(m.getModifiers()))
+                .filter(m -> m.isAnnotationPresent(BinaryOperatorMethod.class))
+                .map(m -> OverloadBinaryOperation.fromMethod(this, m))
+                .filter(Objects::nonNull)
+                .forEach(operations::add);
+
+        operations.addAll(super.getBinaryOperations());
+        return Collections.unmodifiableList(operations);
     }
 
     @Override
@@ -157,11 +145,6 @@ public class SCustomType extends SType {
                 .map(StaticFieldPropertyReference::new)
                 .map(r -> (PropertyReference) r)
                 .toList();
-    }
-
-    @Override
-    public List<OverloadBinaryOperation> getOperatorOverloads() {
-        return operatorOverloads.value();
     }
 
     @Override
@@ -326,17 +309,7 @@ public class SCustomType extends SType {
         return list;
     }
 
-    private List<OverloadBinaryOperation> loadOperatorOverloads() {
-        return Arrays.stream(this.clazz.getDeclaredMethods())
-                .filter(m -> Modifier.isPublic(m.getModifiers()))
-                .filter(m -> Modifier.isStatic(m.getModifiers()))
-                .filter(m -> m.isAnnotationPresent(BinaryOperatorMethod.class))
-                .map(m -> OverloadBinaryOperation.fromMethod(this, m))
-                .filter(Objects::nonNull)
-                .toList();
-    }
-
-    private void validateProperty(Method getter, Method setter) {
+    private void validateProperty(@Nullable Method getter, @Nullable Method setter) {
         if (getter != null) {
             if (getter.getReturnType() == void.class) {
                 throw new InternalException();

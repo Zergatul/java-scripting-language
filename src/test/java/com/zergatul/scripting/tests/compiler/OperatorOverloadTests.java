@@ -3,7 +3,9 @@ package com.zergatul.scripting.tests.compiler;
 import com.zergatul.scripting.BinaryOperatorMethod;
 import com.zergatul.scripting.Getter;
 import com.zergatul.scripting.Setter;
+import com.zergatul.scripting.UnaryOperatorMethod;
 import com.zergatul.scripting.parser.BinaryOperator;
+import com.zergatul.scripting.parser.UnaryOperator;
 import com.zergatul.scripting.tests.compiler.helpers.FloatStorage;
 import com.zergatul.scripting.tests.compiler.helpers.IntStorage;
 import com.zergatul.scripting.tests.compiler.helpers.StringStorage;
@@ -30,6 +32,11 @@ public class OperatorOverloadTests {
         String code = """
                 let v1 = new Vector3f(1, 2, 3);
                 let v2 = new Vector3f(2, 0, 0);
+                
+                stringStorage.add((+v1).toString());
+                stringStorage.add((-v1).toString());
+                stringStorage.add((!v1).toString());
+                
                 stringStorage.add((v1 + v2).toString());
                 stringStorage.add((v1 - v2).toString());
                 stringStorage.add((v1 * v2).toString());
@@ -43,6 +50,9 @@ public class OperatorOverloadTests {
         Assertions.assertIterableEquals(
                 ApiRoot.stringStorage.list,
                 List.of(
+                        "(1.0, 2.0, 3.0)",
+                        "(-1.0, -2.0, -3.0)",
+                        "false",
                         "(3.0, 2.0, 3.0)",
                         "(-1.0, 2.0, 3.0)",
                         "2.0",
@@ -110,9 +120,19 @@ public class OperatorOverloadTests {
             return String.format("(%s, %s, %s)", x, y, z);
         }
 
+        @UnaryOperatorMethod(UnaryOperator.PLUS)
+        public static Vector3f op_Add(Vector3f v) {
+            return v;
+        }
+
         @BinaryOperatorMethod(BinaryOperator.PLUS)
         public static Vector3f op_Add(Vector3f v1, Vector3f v2) {
             return new Vector3f(v1.x + v2.x, v1.y + v2.y, v1.z + v2.z);
+        }
+
+        @UnaryOperatorMethod(UnaryOperator.MINUS)
+        public static Vector3f op_Negate(Vector3f v) {
+            return new Vector3f(-v.x, -v.y, -v.z);
         }
 
         @BinaryOperatorMethod(BinaryOperator.MINUS)
@@ -133,6 +153,11 @@ public class OperatorOverloadTests {
         @BinaryOperatorMethod(BinaryOperator.MULTIPLY)
         public static Vector3f op_Multiply(double factor, Vector3f v) {
             return new Vector3f(factor * v.x, factor * v.y, factor * v.z);
+        }
+
+        @UnaryOperatorMethod(UnaryOperator.NOT)
+        public static boolean op_Not(Vector3f v) {
+            return v.getLength() == 0;
         }
     }
 }

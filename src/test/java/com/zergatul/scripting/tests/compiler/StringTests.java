@@ -311,12 +311,29 @@ public class StringTests {
                 foreach (let part in "aa bbb cccc".split(" ")) {
                     stringStorage.add(part);
                 }
+                foreach (let part in "qwe abc ".split(' ')) {
+                    stringStorage.add(part);
+                }
                 """;
 
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
-        Assertions.assertIterableEquals(ApiRoot.stringStorage.list, List.of("aa", "bbb", "cccc"));
+        Assertions.assertIterableEquals(ApiRoot.stringStorage.list, List.of("aa", "bbb", "cccc", "qwe", "abc", ""));
+    }
+
+    @Test
+    public void regexSplitTest() {
+        String code = """
+                foreach (let part in "aa  bb   cc".regexSplit("\\\\s+")) {
+                    stringStorage.add(part);
+                }
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(ApiRoot.stringStorage.list, List.of("aa", "bb", "cc"));
     }
 
     public static class ApiRoot {

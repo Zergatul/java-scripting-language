@@ -8,7 +8,6 @@ import com.zergatul.scripting.parser.nodes.*;
 import com.zergatul.scripting.symbols.Function;
 import com.zergatul.scripting.symbols.StaticFieldConstantStaticVariable;
 import com.zergatul.scripting.symbols.StaticVariable;
-import com.zergatul.scripting.symbols.Variable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -48,6 +47,7 @@ public class HighlightingProvider {
             case BOOLEAN_LITERAL -> process((BoundBooleanLiteralExpressionNode) node);
             case BREAK_STATEMENT -> process((BoundBreakStatementNode) node);
             case CHAR_LITERAL -> process((BoundCharLiteralExpressionNode) node);
+            case CLASS_BINARY_OPERATION -> process((BoundClassBinaryOperationNode) node);
             case CLASS_CONSTRUCTOR -> process((BoundClassConstructorNode) node);
             case CLASS_DECLARATION -> process((BoundClassNode) node);
             case CLASS_FIELD -> process((BoundClassFieldNode) node);
@@ -68,7 +68,9 @@ public class HighlightingProvider {
             case EMPTY_STATEMENT -> process((BoundEmptyStatementNode) node);
             case EXPRESSION_STATEMENT -> process((BoundExpressionStatementNode) node);
             case EXTENSION_DECLARATION -> process((BoundExtensionNode) node);
+            case EXTENSION_BINARY_OPERATION -> process((BoundExtensionBinaryOperationNode) node);
             case EXTENSION_METHOD -> process((BoundExtensionMethodNode) node);
+            case EXTENSION_UNARY_OPERATION -> process((BoundExtensionUnaryOperationNode) node);
             case FLOAT_LITERAL -> process((BoundFloatLiteralExpressionNode) node);
             case FOREACH_LOOP_STATEMENT -> process((BoundForEachLoopStatementNode) node);
             case FOR_LOOP_STATEMENT -> process((BoundForLoopStatementNode) node);
@@ -230,6 +232,19 @@ public class HighlightingProvider {
         process(node.syntaxNode.token);
     }
 
+    private void process(BoundClassBinaryOperationNode node) {
+        process(node.syntaxNode.keyword, SemanticTokenType.KEYWORD);
+        process(node.syntaxNode.openBracket);
+        process(node.syntaxNode.operator);
+        process(node.syntaxNode.closeBracket);
+        process(node.returnTypeNode);
+        process(node.parameters);
+        if (node.syntaxNode.arrow != null) {
+            process(node.syntaxNode.arrow);
+        }
+        process(node.body);
+    }
+
     private void process(BoundClassConstructorNode node) {
         process(node.syntaxNode.keyword);
         process(node.parameters);
@@ -372,16 +387,42 @@ public class HighlightingProvider {
         process(node.typeNode);
         process(node.syntaxNode.closeParen);
         process(node.syntaxNode.openBrace);
-        for (BoundExtensionMethodNode method : node.methods) {
-            process(method);
+        for (BoundExtensionMemberNode member : node.members) {
+            process(member);
         }
         process(node.syntaxNode.closeBrace);
+    }
+
+    private void process(BoundExtensionBinaryOperationNode node) {
+        process(node.syntaxNode.keyword, SemanticTokenType.KEYWORD);
+        process(node.syntaxNode.openBracket);
+        process(node.syntaxNode.operator);
+        process(node.syntaxNode.closeBracket);
+        process(node.returnTypeNode);
+        process(node.parameters);
+        if (node.syntaxNode.arrow != null) {
+            process(node.syntaxNode.arrow);
+        }
+        process(node.body);
     }
 
     private void process(BoundExtensionMethodNode node) {
         process(node.syntaxNode.modifiers);
         process(node.typeNode);
         process(node.name);
+        process(node.parameters);
+        if (node.syntaxNode.arrow != null) {
+            process(node.syntaxNode.arrow);
+        }
+        process(node.body);
+    }
+
+    private void process(BoundExtensionUnaryOperationNode node) {
+        process(node.syntaxNode.keyword, SemanticTokenType.KEYWORD);
+        process(node.syntaxNode.openBracket);
+        process(node.syntaxNode.operator);
+        process(node.syntaxNode.closeBracket);
+        process(node.returnTypeNode);
         process(node.parameters);
         if (node.syntaxNode.arrow != null) {
             process(node.syntaxNode.arrow);

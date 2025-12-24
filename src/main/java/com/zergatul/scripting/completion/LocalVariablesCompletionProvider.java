@@ -3,6 +3,7 @@ package com.zergatul.scripting.completion;
 import com.zergatul.scripting.binding.BinderOutput;
 import com.zergatul.scripting.binding.nodes.*;
 import com.zergatul.scripting.compiler.CompilationParameters;
+import com.zergatul.scripting.symbols.LiftedVariable;
 import com.zergatul.scripting.symbols.LocalVariable;
 import com.zergatul.scripting.symbols.SymbolRef;
 
@@ -29,12 +30,17 @@ public class LocalVariablesCompletionProvider<T> extends AbstractCompletionProvi
         List<T> suggestions = new ArrayList<>();
         for (BoundStatementNode statement : getStatementsPriorTo(context)) {
             if (statement instanceof BoundVariableDeclarationNode declaration) {
-                // can be lifted variable?
                 if (declaration.name.getSymbol() instanceof LocalVariable local) {
                     if (local.getName() == null || local.getName().isEmpty()) {
                         continue;
                     }
                     suggestions.add(factory.getLocalVariableSuggestion(local));
+                }
+                if (declaration.name.getSymbol() instanceof LiftedVariable lifted) {
+                    if (lifted.getName() == null || lifted.getName().isEmpty()) {
+                        continue;
+                    }
+                    suggestions.add(factory.getLocalVariableSuggestion(lifted.getUnderlying()));
                 }
             }
             if (statement instanceof BoundIfStatementNode ifStatement) {

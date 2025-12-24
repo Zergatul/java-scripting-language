@@ -41,4 +41,9 @@ public class FunctionSuggestion extends Suggestion {
             return false;
         }
     }
+
+    @Override
+    public String toString() {
+        return String.format("Func[%s]", function.getName());
+    }
 }

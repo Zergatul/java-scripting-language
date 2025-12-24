@@ -88,7 +88,7 @@ string s1 = obj as string;
 JString s2 = obj as JString;
 ```
 
-Use `string` for normal scripting and only use `Java<java.lang.String>` (or its alias) when you specifically need to call Java APIs that require an explicit `java.lang.String` type or you are doing low-level reflection.
+Use `string` for normal scripting and only use `Java<java.lang.String>` (or its alias) when you specifically need to call Java APIs that require an explicit `java.lang.String` type, or you are doing low-level reflection.
 
 ### Variables
 ```c#
@@ -103,7 +103,7 @@ Supported binary operators: `+`, `-`, `*`, `/`, `%`, `&&`, `||`, `==`, `!=`, `<`
 Supported unary operators: `+`, `-`, `!`
 
 #### `in` operator
-`in` operator is just a syntactic sugar for `contains` method that returns `boolean` and accepts single argument. You can also declare extension `contains` method and `in` operator will for this:
+`in` operator is just a syntactic sugar for `contains` method that returns `boolean` and accepts single argument. You can also declare extension `contains` method and `in` operator will work for this:
 ```c#
 extension(int) {
     boolean contains(int value) => value.toString() in this.toString();
@@ -465,7 +465,8 @@ if (type == #type(string)) {
 
 ### Classes
 Classes should be defined in the beginning of the script, before all script statements.
-Class can have fields, constructors, methods. Class without constructors receives implicit parameterless constructor:
+Class can have fields, constructors, methods, operator overloads.
+Class without constructors receives implicit parameterless constructor:
 ```c#
 class MyClass {
     int x;
@@ -538,6 +539,39 @@ class ChildClass : BaseClass {
 }
 ```
 
+Operator overloads:
+```c#
+class Vec2 {
+    float x;
+    float y;
+
+    constructor(float x, float y) {
+        this.x = x;
+        this.y = y;
+    }
+
+    operator [+] Vec2(Vec2 vec) => vec;
+
+    operator [+] Vec2(Vec2 left, Vec2 right) {
+        return new Vec2(left.x + right.x, left.y + right.y);
+    }
+
+    operator [-] Vec2(Vec2 vec) => new Vec2(-vec.x, -vec.y, -vec.z);
+
+    operator [-] Vec2(Vec2 left, Vec2 right) {
+        return new Vec2(left.x - right.x, left.y - right.y);
+    }
+
+    operator [==] boolean(Vec2 left, Vec2 right) => left.x == right.x && left.y == right.y;
+    operator [!=] boolean(Vec2 left, Vec2 right) => left.x != right.x || left.y != right.y;
+}
+
+let v1 = new Vec2(1, 2);
+let v2 = new Vec2(3, 4);
+let v3 = v1 + v2;
+if (v2 == new Vec2(0, 0)) { /* ... */ }
+```
+
 Limitations:
 - access modifiers (private/public/etc.) are not supported
 - abstract classes not supported
@@ -546,7 +580,8 @@ Limitations:
 
 ### Extensions
 Extensions should be defined in the beginning of the script, before all script statements.
-Extension blocks can only have methods inside.
+
+Extension blocks can have methods inside:
 
 ```c#
 extension(int) {
@@ -574,6 +609,32 @@ boolean b1 = 1 in [1, 2, 3]; // true
 boolean b2 = 4 in [1, 2, 3]; // false
 ```
 
+Extension blocks can have operator overloads inside:
+
+```c#
+extension(string) {
+    operator [+] int(string str) {
+        int value;
+        if (int.tryParse(str, ref value)) {
+            return value;
+        } else {
+            return int.MIN_VALUE;
+        }
+    }
+}
+
+string s = "100"
+int x = +s;      // 100
+```
+
+```c#
+extension(string) {
+    operator [/] string[](string str, char ch) => str.split(ch);
+}
+
+let str = "hello world";
+let parts = str / ' ';   // ["hello", "world"]
+```
 
 ### Java Interop
 Generic type syntax is not supported.
@@ -618,7 +679,6 @@ ClientLevel level = Minecraft.instance.level;
 
 ### Limitations
 - `try/catch` not supported
-- operator overloading not supported
 - Java interop with parameterized types (generics) is not supported
 
 ### Comparison Table

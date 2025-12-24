@@ -332,6 +332,51 @@ public class ExtensionTests extends ComparatorTest {
         Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(123, 0, 0));
     }
 
+    @Test
+    public void unaryOperationTest() {
+        String code = """
+                extension(string) {
+                    operator [+] int(string str) {
+                        int value;
+                        if (int.tryParse(str, ref value)) {
+                            return value;
+                        } else {
+                            return int.MIN_VALUE;
+                        }
+                    }
+                }
+                
+                intStorage.add(+"");
+                intStorage.add(+"100");
+                intStorage.add(+"123");
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(Integer.MIN_VALUE, 100, 123));
+    }
+
+    @Test
+    public void binaryOperationTest() {
+        String code = """
+                extension(string) {
+                    operator [/] string[](string str, char ch) => str.split(ch);
+                }
+                
+                let str = "hello world! bye world!";
+                let parts = str / ' ';
+                foreach (let part in parts) {
+                    stringStorage.add(part);
+                }
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(ApiRoot.stringStorage.list, List.of("hello", "world!", "bye", "world!"));
+    }
+
     public static class ApiRoot {
         public static BoolStorage boolStorage;
         public static IntStorage intStorage;

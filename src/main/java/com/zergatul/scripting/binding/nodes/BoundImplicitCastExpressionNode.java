@@ -16,7 +16,7 @@ public class BoundImplicitCastExpressionNode extends BoundExpressionNode {
     }
 
     public BoundImplicitCastExpressionNode(BoundExpressionNode operand, CastOperation operation, TextRange range) {
-        super(BoundNodeType.IMPLICIT_CAST, operation.type, range);
+        super(BoundNodeType.IMPLICIT_CAST, operation.getDstType(), range);
         this.operand = operand;
         this.operation = operation;
     }

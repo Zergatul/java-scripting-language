@@ -1,9 +1,13 @@
 package com.zergatul.scripting.type;
 
 import com.zergatul.scripting.Lazy;
+import com.zergatul.scripting.compiler.BufferedMethodVisitor;
+import com.zergatul.scripting.compiler.CompilerContext;
+import com.zergatul.scripting.parser.BinaryOperator;
 import com.zergatul.scripting.type.operation.BinaryOperation;
 import com.zergatul.scripting.type.operation.CastOperation;
 import org.jspecify.annotations.Nullable;
+import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Type;
 
@@ -16,6 +20,8 @@ public class SChar extends SValueType {
     public static final SChar instance = new SChar();
 
     private final SBoxedType boxed = new SBoxedType(this, Character.class);
+    private final Lazy<List<BinaryOperation>> binaryOperations = new Lazy<>(this::getBinaryOperationsInternal);
+    private final Lazy<List<CastOperation>> implicitCasts = new Lazy<>(this::getImplicitCastsInternal);
 
     private SChar() {
         super(char.class);
@@ -97,44 +103,29 @@ public class SChar extends SValueType {
     }
 
     @Override
-    public @Nullable CastOperation implicitCastTo(SType other) {
-        if (other == SInt.instance) {
-            return CHAR_TO_INT.value();
-        }
-        if (other instanceof SClassType && other.getJavaClass() == Object.class) {
-            return TO_OBJECT.value();
-        }
-        return null;
+    public List<BinaryOperation> getBinaryOperations() {
+        return binaryOperations.value();
+    }
+
+    private List<BinaryOperation> getBinaryOperationsInternal() {
+        return List.of(
+                LESS_THAN.value(),
+                GREATER_THAN.value(),
+                LESS_THAN_EQUALS.value(),
+                GREATER_THAN_EQUALS.value(),
+                EQUALS.value(),
+                NOT_EQUALS.value());
     }
 
     @Override
-    public @Nullable BinaryOperation lessThan(SType other) {
-        return other == SChar.instance ? SInt.instance.lessThan(SInt.instance) : null;
+    public List<CastOperation> getImplicitCasts() {
+        return implicitCasts.value();
     }
 
-    @Override
-    public @Nullable BinaryOperation greaterThan(SType other) {
-        return other == SChar.instance ? SInt.instance.greaterThan(SInt.instance) : null;
-    }
-
-    @Override
-    public @Nullable BinaryOperation lessEquals(SType other) {
-        return other == SChar.instance ? SInt.instance.lessEquals(SInt.instance) : null;
-    }
-
-    @Override
-    public @Nullable BinaryOperation greaterEquals(SType other) {
-        return other == SChar.instance ? SInt.instance.greaterEquals(SInt.instance) : null;
-    }
-
-    @Override
-    public @Nullable BinaryOperation equalsOp(SType other) {
-        return other == SChar.instance ? SInt.instance.equalsOp(SInt.instance) : null;
-    }
-
-    @Override
-    public @Nullable BinaryOperation notEqualsOp(SType other) {
-        return other == SChar.instance ? SInt.instance.notEqualsOp(SInt.instance) : null;
+    private List<CastOperation> getImplicitCastsInternal() {
+        return extendWithBoxing(
+                CHAR_TO_INT.value(),
+                CHAR_TO_BOXED.value());
     }
 
     @Override
@@ -142,17 +133,35 @@ public class SChar extends SValueType {
         return "char";
     }
 
-    private static final Lazy<CastOperation> CHAR_TO_INT = new Lazy<>(() -> new CastOperation(SInt.instance) {
+    private static final Lazy<CastOperation> CHAR_TO_INT = new Lazy<>(() -> new CastOperation(instance, SInt.instance) {
         @Override
         public void apply(MethodVisitor visitor) {}
     });
 
-    private static final Lazy<CastOperation> TO_OBJECT = new Lazy<>(() -> new CastOperation(SJavaObject.instance) {
+    private static final Lazy<CastOperation> CHAR_TO_BOXED = new Lazy<>(() -> new CastOperation(instance, instance.boxed) {
         @Override
         public void apply(MethodVisitor visitor) {
             SChar.instance.compileBoxing(visitor);
         }
     });
+
+    protected static final Lazy<BinaryOperation> LESS_THAN = new Lazy<>(() ->
+            new CharComparisonOperation(BinaryOperator.LESS, IF_ICMPLT));
+
+    protected static final Lazy<BinaryOperation> GREATER_THAN = new Lazy<>(() ->
+            new CharComparisonOperation(BinaryOperator.GREATER, IF_ICMPGT));
+
+    protected static final Lazy<BinaryOperation> LESS_THAN_EQUALS = new Lazy<>(() ->
+            new CharComparisonOperation(BinaryOperator.LESS_EQUALS, IF_ICMPLE));
+
+    public static final Lazy<BinaryOperation> GREATER_THAN_EQUALS = new Lazy<>(() ->
+            new CharComparisonOperation(BinaryOperator.GREATER_EQUALS, IF_ICMPGE));
+
+    protected static final Lazy<BinaryOperation> EQUALS = new Lazy<>(() ->
+            new CharComparisonOperation(BinaryOperator.EQUALS, IF_ICMPEQ));
+
+    protected static final Lazy<BinaryOperation> NOT_EQUALS = new Lazy<>(() ->
+            new CharComparisonOperation(BinaryOperator.NOT_EQUALS, IF_ICMPNE));
 
     private static final Lazy<MethodReference> METHOD_TO_STRING = new Lazy<>(() -> new StaticAsInstanceMethodReference(
             """
@@ -163,4 +172,27 @@ public class SChar extends SValueType {
             "valueOf",
             "toString",
             SString.instance));
+
+    private static class CharComparisonOperation extends BinaryOperation {
+
+        private final int opcode;
+
+        public CharComparisonOperation(BinaryOperator operator, int opcode) {
+            super(operator, SBoolean.instance, SChar.instance, SChar.instance);
+            this.opcode = opcode;
+        }
+
+        @Override
+        public void apply(MethodVisitor left, BufferedMethodVisitor right, CompilerContext context, SType leftType, SType rightType) {
+            right.release(left);
+            Label elseLabel = new Label();
+            Label endLabel = new Label();
+            left.visitJumpInsn(opcode, elseLabel);
+            left.visitInsn(ICONST_0);
+            left.visitJumpInsn(GOTO, endLabel);
+            left.visitLabel(elseLabel);
+            left.visitInsn(ICONST_1);
+            left.visitLabel(endLabel);
+        }
+    }
 }

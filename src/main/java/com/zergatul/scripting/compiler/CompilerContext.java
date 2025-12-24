@@ -21,6 +21,7 @@ public class CompilerContext {
     private final boolean isClassRoot;
     private final SDeclaredType classType;
     private final SType extensionType;
+    private final boolean isStatic;
     private final boolean isClassMethod;
     private final boolean isFunctionRoot;
     private final boolean isGenericFunction;
@@ -52,7 +53,8 @@ public class CompilerContext {
             boolean isClassRoot,
             SDeclaredType classType,
             SType extensionType,
-            boolean isClassMethod
+            boolean isClassMethod,
+            boolean isStatic
     ) {
         this.root = parent == null ? this : parent.root;
         this.parent = parent;
@@ -63,6 +65,7 @@ public class CompilerContext {
         this.isGenericFunction = isGenericFunction;
         this.returnType = returnType;
         this.isAsync = isAsync;
+        this.isStatic = isStatic;
         this.isClassMethod = isClassMethod;
         if (isFunctionRoot) {
             lifted = new ArrayList<>();
@@ -242,6 +245,20 @@ public class CompilerContext {
                 .setReturnType(returnType)
                 .setInitialStackIndex(1)
                 .setAsync(isAsync)
+                .build();
+    }
+
+    public CompilerContext createClassStaticMethod(SType returnType) {
+        return new Builder()
+                .setParent(this)
+                .setClassType(classType)
+                .setExtensionType(extensionType)
+                .setStatic()
+                .setClassMethod(true)
+                .setFunctionRoot(true)
+                .setReturnType(returnType)
+                .setInitialStackIndex(0)
+                .setAsync(false)
                 .build();
     }
 
@@ -635,6 +652,7 @@ public class CompilerContext {
         private boolean isClassRoot;
         private SDeclaredType classType;
         private SType extensionType;
+        private boolean isStatic;
         private boolean isClassMethod;
         public SType returnType;
         public boolean isAsync;
@@ -659,6 +677,11 @@ public class CompilerContext {
 
         public Builder setExtensionType(SType value) {
             this.extensionType = value;
+            return this;
+        }
+
+        public Builder setStatic() {
+            this.isStatic = true;
             return this;
         }
 
@@ -703,7 +726,8 @@ public class CompilerContext {
                     isClassRoot,
                     classType,
                     extensionType,
-                    isClassMethod);
+                    isClassMethod,
+                    isStatic);
         }
     }
 }

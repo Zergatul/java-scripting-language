@@ -213,6 +213,8 @@ public class Compiler {
             case CLASS_FIELD -> compileClassField(writer, (BoundClassFieldNode) member);
             case CLASS_CONSTRUCTOR -> compileClassConstructor(writer, (BoundClassConstructorNode) member, context);
             case CLASS_METHOD -> compileClassMethod(writer, (BoundClassMethodNode) member, context);
+            case CLASS_UNARY_OPERATION -> compileClassUnaryOperation(writer, (BoundClassUnaryOperationNode) member, context);
+            case CLASS_BINARY_OPERATION -> compileClassBinaryOperation(writer, (BoundClassBinaryOperationNode) member, context);
             default -> throw new InternalException();
         }
     }
@@ -253,7 +255,7 @@ public class Compiler {
     }
 
     private void compileClassMethod(ClassWriter writer, BoundClassMethodNode methodNode, CompilerContext context) {
-        int methodModifiers= ACC_PUBLIC;
+        int methodModifiers = ACC_PUBLIC;
         if (methodNode.syntaxNode.modifiers.isFinal()) {
             methodModifiers |= ACC_FINAL;
         }
@@ -283,49 +285,162 @@ public class Compiler {
         methodVisitor.visitEnd();
     }
 
+    private void compileClassUnaryOperation(ClassWriter writer, BoundClassUnaryOperationNode unaryOperationNode, CompilerContext context) {
+        int methodModifiers = ACC_PUBLIC | ACC_STATIC;
+
+        MethodVisitor methodVisitor = writer.visitMethod(methodModifiers, unaryOperationNode.method.getName(), unaryOperationNode.functionType.getMethodDescriptor(), null, null);
+        methodVisitor.visitCode();
+
+        context = context.createClassStaticMethod(unaryOperationNode.functionType.getReturnType());
+        for (BoundParameterNode parameter : unaryOperationNode.parameters.parameters) {
+            context.setStackIndex((LocalVariable) parameter.getName().getSymbolOrThrow());
+        }
+
+        if (!unaryOperationNode.lifted.isEmpty()) {
+            compileClosureClass(methodVisitor, context, unaryOperationNode.lifted);
+        }
+
+        compileStatement(methodVisitor, context, unaryOperationNode.body);
+        if (unaryOperationNode.functionType.getReturnType() == SVoidType.instance) {
+            methodVisitor.visitInsn(RETURN);
+        }
+
+        methodVisitor.visitMaxs(0, 0);
+        methodVisitor.visitEnd();
+    }
+
+    private void compileClassBinaryOperation(ClassWriter writer, BoundClassBinaryOperationNode binaryOperationNode, CompilerContext context) {
+        int methodModifiers = ACC_PUBLIC | ACC_STATIC;
+
+        MethodVisitor methodVisitor = writer.visitMethod(methodModifiers, binaryOperationNode.method.getName(), binaryOperationNode.functionType.getMethodDescriptor(), null, null);
+        methodVisitor.visitCode();
+
+        context = context.createClassStaticMethod(binaryOperationNode.functionType.getReturnType());
+        for (BoundParameterNode parameter : binaryOperationNode.parameters.parameters) {
+            context.setStackIndex((LocalVariable) parameter.getName().getSymbolOrThrow());
+        }
+
+        if (!binaryOperationNode.lifted.isEmpty()) {
+            compileClosureClass(methodVisitor, context, binaryOperationNode.lifted);
+        }
+
+        compileStatement(methodVisitor, context, binaryOperationNode.body);
+        if (binaryOperationNode.functionType.getReturnType() == SVoidType.instance) {
+            methodVisitor.visitInsn(RETURN);
+        }
+
+        methodVisitor.visitMaxs(0, 0);
+        methodVisitor.visitEnd();
+    }
+
     private void compileExtensions(List<BoundExtensionNode> extensions, ClassWriter writer, CompilerContext context) {
         for (BoundExtensionNode extension : extensions) {
             CompilerContext extensionContext = context.createExtension(extension.typeNode.type);
-            for (BoundExtensionMethodNode methodNode : extension.methods) {
-                MethodSymbol symbol = (MethodSymbol) methodNode.name.getSymbolOrThrow();
-                SFunction type = (SFunction) symbol.getType();
-
-                MethodVisitor visitor = writer.visitMethod(
-                        ACC_PUBLIC | ACC_STATIC,
-                        methodNode.method.getInternalName(),
-                        methodNode.method.getDescriptor(),
-                        null,
-                        null);
-                visitor.visitCode();
-
-                CompilerContext methodContext = extensionContext.createExtensionMethod(type.getReturnType(), false /*function.isAsync()*/);
-                processContextStart(visitor, methodContext);
-
-                LocalVariable thisParameter = methodContext.addLocalParameter("@this", methodNode.method.getOwner(), null);
-                methodContext.setStackIndex(thisParameter);
-
-                for (BoundParameterNode parameter : methodNode.parameters.parameters) {
-                    methodContext.setStackIndex((LocalVariable) parameter.getName().getSymbolOrThrow());
+            for (BoundExtensionMemberNode memberNode : extension.members) {
+                switch (memberNode.getNodeType()) {
+                    case EXTENSION_METHOD -> compileExtensionMethod((BoundExtensionMethodNode) memberNode, writer, extensionContext);
+                    case EXTENSION_UNARY_OPERATION -> compileExtensionUnaryOperation((BoundExtensionUnaryOperationNode) memberNode, writer, extensionContext);
+                    case EXTENSION_BINARY_OPERATION -> compileExtensionBinaryOperation((BoundExtensionBinaryOperationNode) memberNode, writer, extensionContext);
+                    default -> throw new InternalException();
                 }
-
-                if (methodNode.isAsync()) {
-                    compileAsyncBoundStatementList(visitor, methodContext, new BoundStatementsListNode(List.of(methodNode.body)));
-                } else {
-                    if (!methodNode.lifted.isEmpty()) {
-                        compileClosureClass(visitor, methodContext, methodNode.lifted);
-                    }
-
-                    compileStatement(visitor, methodContext, methodNode.body);
-                    if (type.getReturnType() == SVoidType.instance) {
-                        visitor.visitInsn(RETURN);
-                    }
-                }
-
-                processContextEnd(visitor, methodContext, methodNode.parameters.parameters.stream().map(p -> p.getName().symbolRef.asLocalVariable()).toList());
-                visitor.visitMaxs(0, 0);
-                visitor.visitEnd();
             }
         }
+    }
+
+    private void compileExtensionMethod(BoundExtensionMethodNode methodNode, ClassWriter writer, CompilerContext context) {
+        MethodSymbol symbol = (MethodSymbol) methodNode.name.getSymbolOrThrow();
+        SFunction type = (SFunction) symbol.getType();
+
+        MethodVisitor visitor = writer.visitMethod(
+                ACC_PUBLIC | ACC_STATIC,
+                methodNode.method.getInternalName(),
+                methodNode.method.getDescriptor(),
+                null,
+                null);
+        visitor.visitCode();
+
+        CompilerContext methodContext = context.createExtensionMethod(type.getReturnType(), false /*function.isAsync()*/);
+        processContextStart(visitor, methodContext);
+
+        LocalVariable thisParameter = methodContext.addLocalParameter("@this", methodNode.method.getOwner(), null);
+        methodContext.setStackIndex(thisParameter);
+
+        for (BoundParameterNode parameter : methodNode.parameters.parameters) {
+            methodContext.setStackIndex((LocalVariable) parameter.getName().getSymbolOrThrow());
+        }
+
+        if (methodNode.isAsync()) {
+            compileAsyncBoundStatementList(visitor, methodContext, new BoundStatementsListNode(List.of(methodNode.body)));
+        } else {
+            if (!methodNode.lifted.isEmpty()) {
+                compileClosureClass(visitor, methodContext, methodNode.lifted);
+            }
+
+            compileStatement(visitor, methodContext, methodNode.body);
+            if (type.getReturnType() == SVoidType.instance) {
+                visitor.visitInsn(RETURN);
+            }
+        }
+
+        processContextEnd(visitor, methodContext, methodNode.parameters.parameters.stream().map(p -> p.getName().symbolRef.asLocalVariable()).toList());
+        visitor.visitMaxs(0, 0);
+        visitor.visitEnd();
+    }
+
+    private void compileExtensionUnaryOperation(BoundExtensionUnaryOperationNode operationNode, ClassWriter writer, CompilerContext context) {
+        ExtensionUnaryOperation operation = (ExtensionUnaryOperation) operationNode.operation;
+
+        MethodVisitor methodVisitor = writer.visitMethod(
+                ACC_PUBLIC | ACC_STATIC,
+                operation.getInternalName(),
+                operation.getMethodDescriptor(),
+                null, null);
+        methodVisitor.visitCode();
+
+        context = context.createClassStaticMethod(operation.getResultType());
+        for (BoundParameterNode parameter : operationNode.parameters.parameters) {
+            context.setStackIndex((LocalVariable) parameter.getName().getSymbolOrThrow());
+        }
+
+        if (!operationNode.lifted.isEmpty()) {
+            compileClosureClass(methodVisitor, context, operationNode.lifted);
+        }
+
+        compileStatement(methodVisitor, context, operationNode.body);
+        if (operation.getResultType() == SVoidType.instance) {
+            methodVisitor.visitInsn(RETURN);
+        }
+
+        methodVisitor.visitMaxs(0, 0);
+        methodVisitor.visitEnd();
+    }
+
+    private void compileExtensionBinaryOperation(BoundExtensionBinaryOperationNode operationNode, ClassWriter writer, CompilerContext context) {
+        ExtensionBinaryOperation operation = (ExtensionBinaryOperation) operationNode.operation;
+
+        MethodVisitor methodVisitor = writer.visitMethod(
+                ACC_PUBLIC | ACC_STATIC,
+                operation.getInternalName(),
+                operation.getMethodDescriptor(),
+                null, null);
+        methodVisitor.visitCode();
+
+        context = context.createClassStaticMethod(operation.getResultType());
+        for (BoundParameterNode parameter : operationNode.parameters.parameters) {
+            context.setStackIndex((LocalVariable) parameter.getName().getSymbolOrThrow());
+        }
+
+        if (!operationNode.lifted.isEmpty()) {
+            compileClosureClass(methodVisitor, context, operationNode.lifted);
+        }
+
+        compileStatement(methodVisitor, context, operationNode.body);
+        if (operation.getResultType() == SVoidType.instance) {
+            methodVisitor.visitInsn(RETURN);
+        }
+
+        methodVisitor.visitMaxs(0, 0);
+        methodVisitor.visitEnd();
     }
 
     private void compileGenericFunctions(List<SGenericFunction> functions, CompilerContext context) {
@@ -614,7 +729,7 @@ public class Compiler {
                 BufferedMethodVisitor buffer = new BufferedMethodVisitor();
                 compileExpression(visitor, context, assignment.left);
                 compileExpression(buffer, context, assignment.right);
-                assignment.operation.apply(visitor, buffer, context);
+                assignment.operation.apply(visitor, buffer, context, assignment.left.type, assignment.right.type);
 
                 BoundNameExpressionNode name = (BoundNameExpressionNode) assignment.left;
                 Variable variable = name.symbolRef.asVariable();
@@ -629,7 +744,7 @@ public class Compiler {
                 BufferedMethodVisitor buffer = new BufferedMethodVisitor();
                 indexExpression.operation.compileGet(visitor);
                 compileExpression(buffer, context, assignment.right);
-                assignment.operation.apply(visitor, buffer, context);
+                assignment.operation.apply(visitor, buffer, context, assignment.left.type, assignment.right.type);
 
                 indexExpression.operation.compileSet(visitor);
             }
@@ -640,7 +755,7 @@ public class Compiler {
                 propertyAccess.property.property.compileGet(visitor);
                 BufferedMethodVisitor buffer = new BufferedMethodVisitor();
                 compileExpression(buffer, context, assignment.right);
-                assignment.operation.apply(visitor, buffer, context);
+                assignment.operation.apply(visitor, buffer, context, assignment.left.type, assignment.right.type);
                 propertyAccess.property.property.compileSet(visitor);
             }
             default -> throw new InternalException("Not implemented.");
@@ -1317,14 +1432,14 @@ public class Compiler {
 
     private void compileUnaryExpression(MethodVisitor visitor, CompilerContext context, BoundUnaryExpressionNode expression) {
         compileExpression(visitor, context, expression.operand);
-        expression.operator.operation.apply(visitor);
+        expression.operator.operation.apply(visitor, context);
     }
 
     private void compileBinaryExpression(MethodVisitor visitor, CompilerContext context, BoundBinaryExpressionNode expression) {
         BufferedMethodVisitor buffer = new BufferedMethodVisitor();
         compileExpression(visitor, context, expression.left);
         compileExpression(buffer, context, expression.right);
-        expression.operator.operation.apply(visitor, buffer, context);
+        expression.operator.operation.apply(visitor, buffer, context, expression.left.type, expression.right.type);
     }
 
     private void compileInExpression(MethodVisitor visitor, CompilerContext context, BoundInExpressionNode expression) {

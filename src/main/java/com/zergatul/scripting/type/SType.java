@@ -2,7 +2,6 @@ package com.zergatul.scripting.type;
 
 import com.zergatul.scripting.InterfaceHelper;
 import com.zergatul.scripting.InternalException;
-import com.zergatul.scripting.parser.BinaryOperator;
 import com.zergatul.scripting.parser.UnaryOperator;
 import com.zergatul.scripting.runtime.*;
 import com.zergatul.scripting.type.operation.*;
@@ -66,146 +65,30 @@ public abstract class SType {
             return false;
         }
         if (isReference() && other.isReference()) {
-            return other.getJavaClass().isAssignableFrom(getJavaClass());
+            return other.isAssignableFrom(this);
         } else {
             return false;
         }
+    }
+
+    public boolean isAssignableFrom(SType other) {
+        return this.getJavaClass().isAssignableFrom(other.getJavaClass());
+    }
+
+    public boolean isCompatibleWith(SType other) {
+        return other.isInstanceOf(this);
     }
 
     public boolean isAbstract() {
         return false;
     }
 
-    public @Nullable BinaryOperation add(SType other) {
-        if (other == SString.instance) {
-            Optional<BinaryOperation> operation = SString.instance.genericLeftAdd(this);
-            if (operation.isPresent()) {
-                return operation.get();
-            }
-        }
-
-        return null;
-    }
-
-    public @Nullable BinaryOperation subtract(SType other) {
-        return null;
-    }
-
-    public @Nullable BinaryOperation multiply(SType other) {
-        return null;
-    }
-
-    public @Nullable BinaryOperation divide(SType other) {
-        return null;
-    }
-
-    public @Nullable BinaryOperation modulo(SType other) {
-        return null;
-    }
-
-    public @Nullable BinaryOperation lessThan(SType other) {
-        return null;
-    }
-
-    public @Nullable BinaryOperation greaterThan(SType other) {
-        return null;
-    }
-
-    public @Nullable BinaryOperation lessEquals(SType other) {
-        return null;
-    }
-
-    public @Nullable BinaryOperation greaterEquals(SType other) {
-        return null;
-    }
-
-    public @Nullable BinaryOperation equalsOp(SType other) {
-        return null;
-    }
-
-    public @Nullable BinaryOperation notEqualsOp(SType other) {
-        return null;
-    }
-
-    public @Nullable BinaryOperation bitwiseAnd(SType other) {
-        return null;
-    }
-
-    public @Nullable BinaryOperation bitwiseOr(SType other) {
-        return null;
-    }
-
-    public @Nullable BinaryOperation booleanAnd(SType other) {
-        return null;
-    }
-
-    public @Nullable BinaryOperation booleanOr(SType other) {
-        return null;
-    }
-
-    public @Nullable BinaryOperation binary(BinaryOperator operator, SType other) {
-        BinaryOperation leftOverload = this.getOperatorOverloads().stream()
-                .filter(o -> o.operator == operator)
-                .filter(o -> o.getLeft().equals(this))
-                .filter(o -> o.getRight().equals(other))
-                .findFirst()
-                .orElse(null);
-        if (leftOverload != null) {
-            return leftOverload;
-        }
-
-        BinaryOperation rightOverload = other.getOperatorOverloads().stream()
-                .filter(o -> o.operator == operator)
-                .filter(o -> o.getLeft().equals(this))
-                .filter(o -> o.getRight().equals(other))
-                .findFirst()
-                .orElse(null);
-        if (rightOverload != null) {
-            return rightOverload;
-        }
-
-        return switch (operator) {
-            case PLUS -> add(other);
-            case MINUS -> subtract(other);
-            case MULTIPLY -> multiply(other);
-            case DIVIDE -> divide(other);
-            case MODULO -> modulo(other);
-            case BITWISE_OR -> bitwiseOr(other);
-            case BITWISE_AND -> bitwiseAnd(other);
-            case BOOLEAN_OR -> booleanOr(other);
-            case BOOLEAN_AND -> booleanAnd(other);
-            case EQUALS -> equalsOp(other);
-            case NOT_EQUALS -> notEqualsOp(other);
-            case LESS -> lessThan(other);
-            case GREATER -> greaterThan(other);
-            case LESS_EQUALS -> lessEquals(other);
-            case GREATER_EQUALS -> greaterEquals(other);
-            case IS, AS, IN -> throw new InternalException();
-        };
-    }
-
-    public List<OverloadBinaryOperation> getOperatorOverloads() {
+    public List<BinaryOperation> getBinaryOperations() {
         return List.of();
     }
 
-    public @Nullable UnaryOperation plus() {
-        return null;
-    }
-
-    public @Nullable UnaryOperation minus() {
-        return null;
-    }
-
-    public @Nullable UnaryOperation not() {
-        return null;
-    }
-
-    public @Nullable UnaryOperation unary(UnaryOperator operator) {
-        return switch (operator) {
-            case PLUS -> plus();
-            case MINUS -> minus();
-            case NOT -> not();
-        };
+    public List<UnaryOperation> getUnaryOperations() {
+        return List.of();
     }
 
     public @Nullable PostfixOperation increment() {
@@ -216,19 +99,29 @@ public abstract class SType {
         return null;
     }
 
-    public List<SType> getPossibleImplicitCasts() {
+    public List<CastOperation> getImplicitCasts() {
         return List.of();
-    }
-
-    protected @Nullable CastOperation implicitCastTo(SType other) {
-        return null;
     }
 
     public static @Nullable CastOperation implicitCastTo(SType src, SType dst) {
         if (src == SUnknown.instance || dst == SUnknown.instance) {
-            return EmptyCastOperation.instance;
+            return UndefinedCastOperation.instance;
         }
-        return src.implicitCastTo(dst);
+
+        if (src == SNull.instance && !dst.isSyntheticType() && dst.isReference()) {
+            return new CastOperation(SNull.instance, dst) {
+                @Override
+                public void apply(MethodVisitor visitor) {}
+            };
+        }
+
+        for (CastOperation cast : src.getImplicitCasts()) {
+            if (cast.getDstType().isInstanceOf(dst)) {
+                return cast;
+            }
+        }
+
+        return null;
     }
 
     public List<SType> supportedIndexers() {

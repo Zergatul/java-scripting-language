@@ -10,18 +10,18 @@ public class BoxingWrapCastOperation extends CastOperation {
     private final CastOperation inner;
 
     public BoxingWrapCastOperation(CastOperation inner) {
-        super(getBoxed(inner));
+        super(inner.getSrcType(), getBoxed(inner));
         this.inner = inner;
     }
 
     @Override
     public void apply(MethodVisitor visitor) {
         inner.apply(visitor);
-        ((SValueType) inner.type).compileBoxing(visitor);
+        ((SValueType) inner.getDstType()).compileBoxing(visitor);
     }
 
     private static SType getBoxed(CastOperation cast) {
-        if (cast.type instanceof SValueType valueType) {
+        if (cast.getDstType() instanceof SValueType valueType) {
             return valueType.getBoxed();
         }
         throw new InternalException();

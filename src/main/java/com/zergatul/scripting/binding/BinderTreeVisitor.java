@@ -84,6 +84,11 @@ public abstract class BinderTreeVisitor {
         node.acceptChildren(this);
     }
 
+    public void explicitVisit(BoundClassBinaryOperationNode node) {
+        visit(node);
+        node.acceptChildren(this);
+    }
+
     public void explicitVisit(BoundClassConstructorNode node) {
         visit(node);
         node.acceptChildren(this);
@@ -100,6 +105,11 @@ public abstract class BinderTreeVisitor {
     }
 
     public void explicitVisit(BoundClassNode node) {
+        visit(node);
+        node.acceptChildren(this);
+    }
+
+    public void explicitVisit(BoundClassUnaryOperationNode node) {
         visit(node);
         node.acceptChildren(this);
     }
@@ -174,12 +184,22 @@ public abstract class BinderTreeVisitor {
         node.acceptChildren(this);
     }
 
+    public void explicitVisit(BoundExtensionBinaryOperationNode node) {
+        visit(node);
+        node.acceptChildren(this);
+    }
+
     public void explicitVisit(BoundExtensionMethodNode node) {
         visit(node);
         node.acceptChildren(this);
     }
 
     public void explicitVisit(BoundExtensionNode node) {
+        visit(node);
+        node.acceptChildren(this);
+    }
+
+    public void explicitVisit(BoundExtensionUnaryOperationNode node) {
         visit(node);
         node.acceptChildren(this);
     }
@@ -455,7 +475,9 @@ public abstract class BinderTreeVisitor {
     public void visit(BoundBooleanLiteralExpressionNode node) {}
     public void visit(BoundBreakStatementNode node) {}
     public void visit(BoundClassNode node) {}
+    public void visit(BoundClassUnaryOperationNode node) {}
     public void visit(BoundCharLiteralExpressionNode node) {}
+    public void visit(BoundClassBinaryOperationNode node) {}
     public void visit(BoundCollectionExpressionNode node) {}
     public void visit(BoundCompilationUnitNode node) {}
     public void visit(BoundCompilationUnitMembersListNode node) {}
@@ -473,8 +495,10 @@ public abstract class BinderTreeVisitor {
     public void visit(BoundClassFieldNode node) {}
     public void visit(BoundClassMethodNode node) {}
     public void visit(BoundExpressionStatementNode node) {}
+    public void visit(BoundExtensionBinaryOperationNode node) {}
     public void visit(BoundExtensionMethodNode node) {}
     public void visit(BoundExtensionNode node) {}
+    public void visit(BoundExtensionUnaryOperationNode node) {}
     public void visit(BoundFloatLiteralExpressionNode node) {}
     public void visit(BoundForEachLoopStatementNode node) {}
     public void visit(BoundForLoopStatementNode node) {}

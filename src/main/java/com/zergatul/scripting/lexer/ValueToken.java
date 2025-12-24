@@ -20,6 +20,11 @@ public final class ValueToken extends Token {
     }
 
     @Override
+    public boolean is(String value) {
+        return this.is(TokenType.IDENTIFIER) && this.value.equals(value);
+    }
+
+    @Override
     public ValueToken withLeadingTrivia(List<Trivia> trivia) {
         return new ValueToken(getTokenType(), value, merge(leadingTrivia, trivia), trailingTrivia, getRange());
     }

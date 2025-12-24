@@ -13,7 +13,6 @@ import org.objectweb.asm.Type;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
-import java.util.Optional;
 
 import static org.objectweb.asm.Opcodes.*;
 
@@ -44,25 +43,14 @@ public class SString extends SReferenceType {
     }
 
     @Override
-    public @Nullable BinaryOperation add(SType other) {
-        if (other == SString.instance) {
-            return ADD_STRING;
-        }
-        if (other == SChar.instance) {
-            return ADD_CHAR;
-        }
-
-        return genericRightAdd(other).orElse(null);
-    }
-
-    @Override
-    public @Nullable BinaryOperation equalsOp(SType other) {
-        return other == SString.instance ? EQUALS_STRING : null;
-    }
-
-    @Override
-    public @Nullable BinaryOperation notEqualsOp(SType other) {
-        return other == SString.instance ? NOT_EQUALS_STRING : null;
+    public List<BinaryOperation> getBinaryOperations() {
+        return List.of(
+                STRING_ADD_CHAR,
+                STRING_ADD_STRING,
+                STRING_EQUALS_STRING,
+                STRING_NOT_EQUALS_STRING,
+                STRING_ADD_STRING_CONVERTIBLE,
+                STRING_CONVERTIBLE_ADD_STRING);
     }
 
     @Override
@@ -108,7 +96,9 @@ public class SString extends SReferenceType {
                 METHOD_GET_MATCHES,
                 METHOD_GET_MATCHES_FLAGS,
                 METHOD_REPLACE,
-                METHOD_SPLIT);
+                METHOD_SPLIT_BY_CHAR,
+                METHOD_SPLIT_BY_STRING,
+                METHOD_REGEX_SPLIT);
     }
 
     @Override
@@ -116,33 +106,11 @@ public class SString extends SReferenceType {
         return "string";
     }
 
-    public Optional<BinaryOperation> genericRightAdd(SType other) {
-        Optional<MethodReference> toString = other.getToStringMethod();
-        return toString.map(methodReference -> new BinaryOperation(BinaryOperator.PLUS, SString.instance, SString.instance, SUnknown.instance) {
-            @Override
-            public void apply(MethodVisitor left, BufferedMethodVisitor right, CompilerContext context) {
-                methodReference.compileInvoke(right, context);
-                ADD_STRING.apply(left, right, context);
-            }
-        });
-    }
-
-    public Optional<BinaryOperation> genericLeftAdd(SType other) {
-        Optional<MethodReference> toString = other.getToStringMethod();
-        return toString.map(methodReference -> new BinaryOperation(BinaryOperator.PLUS, SString.instance, SUnknown.instance, SString.instance) {
-            @Override
-            public void apply(MethodVisitor left, BufferedMethodVisitor right, CompilerContext context) {
-                methodReference.compileInvoke(left, context);
-                ADD_STRING.apply(left, right, context);
-            }
-        });
-    }
-
     private static final PropertyReference PROP_LENGTH = new MethodBasedPropertyReference("length", String.class, "length");
 
-    private static final BinaryOperation ADD_STRING = new BinaryOperation(BinaryOperator.PLUS, SString.instance, SString.instance, SString.instance) {
+    private static final BinaryOperation STRING_ADD_STRING = new BinaryOperation(BinaryOperator.PLUS, SString.instance, SString.instance, SString.instance) {
         @Override
-        public void apply(MethodVisitor left, BufferedMethodVisitor right, CompilerContext context) {
+        public void apply(MethodVisitor left, BufferedMethodVisitor right, CompilerContext context, SType leftType, SType rightType) {
             // stack = ..., left
             left.visitTypeInsn(NEW, Type.getInternalName(StringBuilder.class));
             // stack = ..., left, builder
@@ -182,9 +150,9 @@ public class SString extends SReferenceType {
         }
     };
 
-    private static final BinaryOperation ADD_CHAR = new BinaryOperation(BinaryOperator.PLUS, SString.instance, SString.instance, SChar.instance) {
+    private static final BinaryOperation STRING_ADD_CHAR = new BinaryOperation(BinaryOperator.PLUS, SString.instance, SString.instance, SChar.instance) {
         @Override
-        public void apply(MethodVisitor left, BufferedMethodVisitor right, CompilerContext context) {
+        public void apply(MethodVisitor left, BufferedMethodVisitor right, CompilerContext context, SType leftType, SType rightType) {
             // stack = ..., left
             left.visitTypeInsn(NEW, Type.getInternalName(StringBuilder.class));
             // stack = ..., left, builder
@@ -224,9 +192,9 @@ public class SString extends SReferenceType {
         }
     };
 
-    private static final BinaryOperation EQUALS_STRING = new BinaryOperation(BinaryOperator.EQUALS, SBoolean.instance, SString.instance, SString.instance) {
+    private static final BinaryOperation STRING_EQUALS_STRING = new BinaryOperation(BinaryOperator.EQUALS, SBoolean.instance, SString.instance, SString.instance) {
         @Override
-        public void apply(MethodVisitor left, BufferedMethodVisitor right, CompilerContext context) {
+        public void apply(MethodVisitor left, BufferedMethodVisitor right, CompilerContext context, SType leftType, SType rightType) {
             right.release(left);
             left.visitMethodInsn(
                     INVOKESTATIC,
@@ -237,11 +205,27 @@ public class SString extends SReferenceType {
         }
     };
 
-    private static final BinaryOperation NOT_EQUALS_STRING = new BinaryOperation(BinaryOperator.NOT_EQUALS, SBoolean.instance, SString.instance, SString.instance) {
+    private static final BinaryOperation STRING_NOT_EQUALS_STRING = new BinaryOperation(BinaryOperator.NOT_EQUALS, SBoolean.instance, SString.instance, SString.instance) {
         @Override
-        public void apply(MethodVisitor left, BufferedMethodVisitor right, CompilerContext context) {
-            SString.EQUALS_STRING.apply(left, right, context);
-            SBoolean.instance.not().apply(left);
+        public void apply(MethodVisitor left, BufferedMethodVisitor right, CompilerContext context, SType leftType, SType rightType) {
+            SString.STRING_EQUALS_STRING.apply(left, right, context, leftType, rightType);
+            SBoolean.NOT.value().apply(left, context);
+        }
+    };
+
+    private static final BinaryOperation STRING_ADD_STRING_CONVERTIBLE = new BinaryOperation(BinaryOperator.PLUS, SString.instance, SString.instance, SStringConvertible.instance) {
+        @Override
+        public void apply(MethodVisitor left, BufferedMethodVisitor right, CompilerContext context, SType leftType, SType rightType) {
+            SStringConvertible.instance.extractMethod(rightType).compileInvoke(right, context);
+            SString.STRING_ADD_STRING.apply(left, right, context, SString.instance, SString.instance);
+        }
+    };
+
+    private static final BinaryOperation STRING_CONVERTIBLE_ADD_STRING = new BinaryOperation(BinaryOperator.PLUS, SString.instance, SStringConvertible.instance, SString.instance) {
+        @Override
+        public void apply(MethodVisitor left, BufferedMethodVisitor right, CompilerContext context, SType leftType, SType rightType) {
+            SStringConvertible.instance.extractMethod(leftType).compileInvoke(left, context);
+            SString.STRING_ADD_STRING.apply(left, right, context, SString.instance, SString.instance);
         }
     };
 
@@ -472,10 +456,24 @@ public class SString extends SReferenceType {
         }
     };
 
-    private static final MethodReference METHOD_SPLIT = new InstanceMethodReference(
-            String.class,
+    private static final MethodReference METHOD_SPLIT_BY_CHAR = new StaticAsInstanceMethodReference(
+            StringUtils.class,
             SString.instance,
             "split",
+            new SArrayType(SString.instance),
+            new MethodParameter("separator", SChar.instance));
+
+    private static final MethodReference METHOD_SPLIT_BY_STRING = new StaticAsInstanceMethodReference(
+            StringUtils.class,
+            SString.instance,
+            "split",
+            new SArrayType(SString.instance),
+            new MethodParameter("separator", SString.instance));
+
+    private static final MethodReference METHOD_REGEX_SPLIT = new StaticAsInstanceMethodReference(
+            StringUtils.class,
+            SString.instance,
+            "regexSplit",
             new SArrayType(SString.instance),
             new MethodParameter("regex", SString.instance));
 }

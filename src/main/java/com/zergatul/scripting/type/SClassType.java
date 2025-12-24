@@ -2,23 +2,15 @@ package com.zergatul.scripting.type;
 
 import com.zergatul.scripting.Getter;
 import com.zergatul.scripting.InternalException;
-import com.zergatul.scripting.Lazy;
 import com.zergatul.scripting.Setter;
-import com.zergatul.scripting.compiler.BufferedMethodVisitor;
-import com.zergatul.scripting.compiler.CompilerContext;
-import com.zergatul.scripting.parser.BinaryOperator;
-import com.zergatul.scripting.type.operation.BinaryOperation;
 import org.jspecify.annotations.Nullable;
-import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 
 import java.lang.reflect.*;
 import java.util.Arrays;
 import java.util.List;
 
-import static org.objectweb.asm.Opcodes.*;
-
-public class SClassType extends SType {
+public class SClassType extends SReferenceType {
 
     private final Class<?> clazz;
 
@@ -47,69 +39,11 @@ public class SClassType extends SType {
     }
 
     @Override
-    public int getLoadInst() {
-        return ALOAD;
-    }
-
-    @Override
-    public int getStoreInst() {
-        return ASTORE;
-    }
-
-    @Override
-    public int getArrayLoadInst() {
-        return AALOAD;
-    }
-
-    @Override
-    public int getArrayStoreInst() {
-        return AASTORE;
-    }
-
-    @Override
-    public boolean isReference() {
-        return true;
-    }
-
-    @Override
-    public int getReturnInst() {
-        return ARETURN;
-    }
-
-    @Override
     public boolean isInstanceOf(SType other) {
         if (other instanceof SDeclaredType) {
             return false;
         }
         return super.isInstanceOf(other);
-    }
-
-    @Override
-    @Nullable
-    public BinaryOperation equalsOp(SType other) {
-        if (other.isSyntheticType()) {
-            return null;
-        }
-
-        if (other.isReference()) {
-            return EQUALS.value();
-        } else {
-            return super.equalsOp(other);
-        }
-    }
-
-    @Override
-    @Nullable
-    public BinaryOperation notEqualsOp(SType other) {
-        if (other.isSyntheticType()) {
-            return null;
-        }
-
-        if (other.isReference()) {
-            return NOT_EQUALS.value();
-        } else {
-            return super.equalsOp(other);
-        }
     }
 
     @Override
@@ -194,34 +128,5 @@ public class SClassType extends SType {
     @Override
     public String toString() {
         return String.format("Java<%s>", clazz.getName());
-    }
-
-    private static final Lazy<BinaryOperation> EQUALS = new Lazy<>(() ->
-            new ObjectComparisonOperation(BinaryOperator.EQUALS, IF_ACMPEQ));
-
-    private static final Lazy<BinaryOperation> NOT_EQUALS = new Lazy<>(() ->
-            new ObjectComparisonOperation(BinaryOperator.NOT_EQUALS, IF_ACMPNE));
-
-    private static class ObjectComparisonOperation extends BinaryOperation {
-
-        private final int opcode;
-
-        public ObjectComparisonOperation(BinaryOperator operator, int opcode) {
-            super(operator, SBoolean.instance, SInt.instance, SInt.instance);
-            this.opcode = opcode;
-        }
-
-        @Override
-        public void apply(MethodVisitor left, BufferedMethodVisitor right, CompilerContext context) {
-            right.release(left);
-            Label elseLabel = new Label();
-            Label endLabel = new Label();
-            left.visitJumpInsn(opcode, elseLabel);
-            left.visitInsn(ICONST_0);
-            left.visitJumpInsn(GOTO, endLabel);
-            left.visitLabel(elseLabel);
-            left.visitInsn(ICONST_1);
-            left.visitLabel(endLabel);
-        }
     }
 }

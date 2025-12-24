@@ -23,7 +23,7 @@ public class BoundBinaryExpressionNode extends BoundExpressionNode {
     }
 
     public BoundBinaryExpressionNode(BinaryExpressionNode node, BoundExpressionNode left, BoundBinaryOperatorNode operator, BoundExpressionNode right, TextRange range) {
-        super(BoundNodeType.BINARY_EXPRESSION, operator.operation.type, range);
+        super(BoundNodeType.BINARY_EXPRESSION, operator.operation.getResultType(), range);
         this.syntaxNode = node;
         this.left = left;
         this.operator = operator;

@@ -70,7 +70,15 @@ public class BinderErrors {
     public static final ErrorCode LetNull = new ErrorCode("B066", "Cannot infer variable type from 'null'");
     public static final ErrorCode CannotAccessNullMembers = new ErrorCode("B067", "'.' operator is not allowed on 'null'");
     public static final ErrorCode ConstantExpressionExpected = new ErrorCode("B068", "Expression is not constant");
-    public static final ErrorCode VariableRedeclarationInCondition = new ErrorCode("B069", "Variable '%s' is declared already.");
+    public static final ErrorCode VariableRedeclarationInCondition = new ErrorCode("B069", "Variable '%s' is declared already");
+    public static final ErrorCode BinaryOperationOverloadTwoParameters = new ErrorCode("B070", "Binary operator overload should have 2 parameters");
+    public static final ErrorCode BinaryOperationOverloadShouldHaveOneParameterType = new ErrorCode("B071", "For binary operator overload one parameter should match current type");
+    public static final ErrorCode BinaryOperationAlreadyDeclared = new ErrorCode("B072", "Binary operation with the same signature already declared");
+    public static final ErrorCode BinaryOperatorCannotBeOverloaded = new ErrorCode("B073", "Binary operator '%s' cannot be overloaded");
+    public static final ErrorCode BinaryOperatorCanReturnBooleanOnly = new ErrorCode("B074", "Binary operator '%s' should return boolean");
+    public static final ErrorCode UnaryOperationOverloadOneParameters = new ErrorCode("B075", "Unary operator overload should have 1 parameter");
+    public static final ErrorCode UnaryOperationOverloadShouldHaveSameParameter = new ErrorCode("B076", "For unary operator overload the parameter should match current type");
+    public static final ErrorCode UnaryOperationAlreadyDeclared = new ErrorCode("B077", "Unary operation with the same signature already declared");
 
     public static final ErrorCode InternalError = new ErrorCode("B999", "Internal error: %s");
 }

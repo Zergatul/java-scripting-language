@@ -6,6 +6,7 @@ import com.zergatul.scripting.binding.nodes.BoundDeclarationPatternNode;
 import com.zergatul.scripting.binding.nodes.BoundForEachLoopStatementNode;
 import com.zergatul.scripting.binding.nodes.BoundParameterNode;
 import com.zergatul.scripting.binding.nodes.BoundVariableDeclarationNode;
+import com.zergatul.scripting.symbols.LiftedVariable;
 import com.zergatul.scripting.symbols.LocalVariable;
 import com.zergatul.scripting.tests.completion.helpers.TestCompletionContext;
 import org.junit.jupiter.api.Assertions;
@@ -62,7 +63,11 @@ public class LocalVariableSuggestion extends Suggestion {
         @Override
         public void visit(BoundVariableDeclarationNode node) {
             if (result == null && node.name.value.equals(name)) {
-                result = (LocalVariable) node.name.getSymbol();
+                if (node.name.getSymbol() instanceof LiftedVariable lifted) {
+                    result = lifted.getUnderlying();
+                } else {
+                    result = (LocalVariable) node.name.getSymbol();
+                }
             }
         }
 

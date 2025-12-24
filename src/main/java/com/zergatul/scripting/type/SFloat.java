@@ -8,7 +8,6 @@ import com.zergatul.scripting.parser.UnaryOperator;
 import com.zergatul.scripting.runtime.FloatReference;
 import com.zergatul.scripting.runtime.FloatUtils;
 import com.zergatul.scripting.type.operation.*;
-import org.jspecify.annotations.Nullable;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Type;
@@ -22,6 +21,8 @@ public class SFloat extends SValueType {
     public static final SFloat instance = new SFloat();
 
     private final SBoxedType boxed = new SBoxedType(this, Double.class);
+    private final Lazy<List<BinaryOperation>> binaryOperations = new Lazy<>(this::getBinaryOperationsInternal);
+    private final Lazy<List<CastOperation>> implicitCasts = new Lazy<>(this::getImplicitCastsInternal);
 
     private SFloat() {
         super(double.class);
@@ -68,86 +69,38 @@ public class SFloat extends SValueType {
     }
 
     @Override
-    public @Nullable BinaryOperation add(SType other) {
-        BinaryOperation operation = super.add(other);
-        if (operation != null) {
-            return operation;
-        }
-
-        return other == this ? ADD.value() : null;
+    public List<UnaryOperation> getUnaryOperations() {
+        return List.of(PLUS.value(), MINUS.value());
     }
 
     @Override
-    public @Nullable BinaryOperation subtract(SType other) {
-        return other == this ? SUB.value() : null;
+    public List<BinaryOperation> getBinaryOperations() {
+        return binaryOperations.value();
+    }
+
+    private List<BinaryOperation> getBinaryOperationsInternal() {
+        return List.of(
+                ADD.value(),
+                SUB.value(),
+                MUL.value(),
+                DIV.value(),
+                MOD.value(),
+                LESS_THAN.value(),
+                GREATER_THAN.value(),
+                LESS_THAN_EQUALS.value(),
+                GREATER_THAN_EQUALS.value(),
+                EQUALS.value(),
+                NOT_EQUALS.value());
     }
 
     @Override
-    public @Nullable BinaryOperation multiply(SType other) {
-        return other == this ? MUL.value() : null;
+    public List<CastOperation> getImplicitCasts() {
+        return implicitCasts.value();
     }
 
-    @Override
-    public @Nullable BinaryOperation divide(SType other) {
-        return other == this ? DIV.value() : null;
-    }
-
-    @Override
-    public @Nullable BinaryOperation modulo(SType other) {
-        return other == this ? MOD.value() : null;
-    }
-
-    @Override
-    public @Nullable BinaryOperation lessThan(SType other) {
-        return other == this ? LESS_THAN.value() : null;
-    }
-
-    @Override
-    public @Nullable BinaryOperation greaterThan(SType other) {
-        return other == this ? GREATER_THAN.value() : null;
-    }
-
-    @Override
-    public @Nullable BinaryOperation lessEquals(SType other) {
-        return other == this ? LESS_THAN_EQUALS.value() : null;
-    }
-
-    @Override
-    public @Nullable BinaryOperation greaterEquals(SType other) {
-        return other == this ? GREATER_THAN_EQUALS.value() : null;
-    }
-
-    @Override
-    public @Nullable BinaryOperation equalsOp(SType other) {
-        return other == this ? EQUALS.value() : null;
-    }
-
-    @Override
-    public @Nullable BinaryOperation notEqualsOp(SType other) {
-        return other == this ? NOT_EQUALS.value() : null;
-    }
-
-    @Override
-    public UnaryOperation plus() {
-        return PLUS.value();
-    }
-
-    @Override
-    public UnaryOperation minus() {
-        return MINUS.value();
-    }
-
-    @Override
-    public List<SType> getPossibleImplicitCasts() {
-        return List.of(SType.fromJavaType(Object.class));
-    }
-
-    @Override
-    public @Nullable CastOperation implicitCastTo(SType other) {
-        if (other instanceof SClassType && other.getJavaClass() == Object.class) {
-            return TO_OBJECT.value();
-        }
-        return null;
+    private List<CastOperation> getImplicitCastsInternal() {
+        return extendWithBoxing(
+                FLOAT64_TO_BOXED.value());
     }
 
     @Override
@@ -243,21 +196,21 @@ public class SFloat extends SValueType {
     private static final Lazy<BinaryOperation> NOT_EQUALS = new Lazy<>(() ->
             new FloatComparisonOperation(BinaryOperator.NOT_EQUALS, IF_ICMPNE));
 
-    private static final Lazy<CastOperation> TO_OBJECT = new Lazy<>(() -> new CastOperation(SJavaObject.instance) {
+    private static final Lazy<CastOperation> FLOAT64_TO_BOXED = new Lazy<>(() -> new CastOperation(instance, instance.boxed) {
         @Override
         public void apply(MethodVisitor visitor) {
             SFloat.instance.compileBoxing(visitor);
         }
     });
 
-    private static final Lazy<UnaryOperation> PLUS = new Lazy<>(() -> new UnaryOperation(UnaryOperator.PLUS, SFloat.instance) {
+    private static final Lazy<UnaryOperation> PLUS = new Lazy<>(() -> new UnaryOperation(UnaryOperator.PLUS, SFloat.instance, instance) {
         @Override
-        public void apply(MethodVisitor visitor) {}
+        public void apply(MethodVisitor visitor, CompilerContext context) {}
     });
 
-    private static final Lazy<UnaryOperation> MINUS = new Lazy<>(() -> new UnaryOperation(UnaryOperator.MINUS, SFloat.instance) {
+    private static final Lazy<UnaryOperation> MINUS = new Lazy<>(() -> new UnaryOperation(UnaryOperator.MINUS, SFloat.instance, instance) {
         @Override
-        public void apply(MethodVisitor visitor) {
+        public void apply(MethodVisitor visitor, CompilerContext context) {
             visitor.visitInsn(DNEG);
         }
     });
@@ -293,7 +246,7 @@ public class SFloat extends SValueType {
         }
 
         @Override
-        public void apply(MethodVisitor left, BufferedMethodVisitor right, CompilerContext context) {
+        public void apply(MethodVisitor left, BufferedMethodVisitor right, CompilerContext context, SType leftType, SType rightType) {
             right.release(left);
             Label elseLabel = new Label();
             Label endLabel = new Label();

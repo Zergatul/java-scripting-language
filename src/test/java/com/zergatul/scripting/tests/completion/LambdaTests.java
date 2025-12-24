@@ -48,7 +48,7 @@ public class LambdaTests {
     }
 
     @Test
-    public void variableCapturingTest() {
+    public void variableCapturingTest1() {
         assertSuggestions("""
                 let xa = 123;
                 run.onString(str1 => {
@@ -67,6 +67,25 @@ public class LambdaTests {
                         new LocalVariableSuggestion(context, "xa"),
                         new LocalVariableSuggestion(context, "xb"),
                         new LocalVariableSuggestion(context, "xc"),
+                        new StaticConstantSuggestion(context, "run")));
+    }
+
+    @Test
+    public void variableCapturingTest2() {
+        assertSuggestions("""
+                void write(string x) => {};
+                
+                int[] players = [];
+                run.onString(str1 => {
+                    players += 10;
+                    write("A: " + p<cursor>)
+                });
+                """,
+                context -> Lists.of(
+                        expressions,
+                        LocalVariableSuggestion.getParameter(context, "str1"),
+                        new LocalVariableSuggestion(context, "players"),
+                        new FunctionSuggestion(context, "write"),
                         new StaticConstantSuggestion(context, "run")));
     }
 
