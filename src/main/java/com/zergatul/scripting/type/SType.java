@@ -123,12 +123,8 @@ public abstract class SType {
         return null;
     }
 
-    public List<SType> supportedIndexers() {
+    public List<IndexOperation> getIndexOperations() {
         return List.of();
-    }
-
-    public @Nullable IndexOperation index(SType type) {
-        return null;
     }
 
     public List<ConstructorReference> getConstructors() {

@@ -245,7 +245,7 @@ public class BinderTreeGenerator {
                 new BoundIndexExpressionNode(
                         new BoundNameExpressionNode(iterable),
                         new BoundNameExpressionNode(index),
-                        iterable.getType().index(SInt.instance))));
+                        iterable.getType().getIndexOperations().stream().filter(o -> o.indexType == SInt.instance).findFirst().orElseThrow())));
 
         LoopBodyTransformer transformer = new LoopBodyTransformer(node.body, cont, end);
         rewriteStatement(transformer.process());

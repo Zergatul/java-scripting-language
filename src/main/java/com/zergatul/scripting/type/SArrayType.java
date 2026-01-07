@@ -97,18 +97,8 @@ public class SArrayType extends SType {
     }
 
     @Override
-    public List<SType> supportedIndexers() {
-        return List.of(SInt.instance);
-    }
-
-    @Override
-    @Nullable
-    public IndexOperation index(SType type) {
-        if (type == SInt.instance) {
-            return new ArrayIndexOperation(getElementsType());
-        } else {
-            return null;
-        }
+    public List<IndexOperation> getIndexOperations() {
+        return List.of(new ArrayIndexOperation(getElementsType()));
     }
 
     @Override

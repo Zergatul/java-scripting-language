@@ -1951,13 +1951,19 @@ public class Binder {
         BoundExpressionNode index = bindExpression(indexExpression.index);
 
         IndexOperation operation = null;
-        if (callee.type.supportedIndexers().contains(index.type)) {
-            operation = callee.type.index(index.type);
-        } else {
-            for (SType type : callee.type.supportedIndexers()) {
-                CastOperation cast = SType.implicitCastTo(index.type, type);
+        List<IndexOperation> operations = callee.type.getIndexOperations();
+        for (IndexOperation o : operations) {
+            if (o.indexType.equals(index.type)) {
+                operation = o;
+                break;
+            }
+        }
+
+        if (operation == null) {
+            for (IndexOperation o : operations) {
+                CastOperation cast = SType.implicitCastTo(index.type, o.indexType);
                 if (cast != null) {
-                    operation = callee.type.index(type);
+                    operation = o;
                     index = new BoundImplicitCastExpressionNode(index, cast, index.getRange());
                     break;
                 }

@@ -148,14 +148,8 @@ public class SCustomType extends SReferenceType {
     }
 
     @Override
-    public List<SType> supportedIndexers() {
-        return indexes.value().stream().map(o -> o.indexType).toList();
-    }
-
-    @Override
-    @Nullable
-    public IndexOperation index(SType type) {
-        return indexes.value().stream().filter(o -> o.indexType.equals(type)).findFirst().orElse(null);
+    public List<IndexOperation> getIndexOperations() {
+        return indexes.value();
     }
 
     @Override
