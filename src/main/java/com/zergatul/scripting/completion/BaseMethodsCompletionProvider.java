@@ -65,7 +65,7 @@ public class BaseMethodsCompletionProvider<T> extends AbstractCompletionProvider
         BoundClassNode classNode = findClassNode(context);
         if (classNode != null) {
             List<T> suggestions = new ArrayList<>();
-            SType baseType = classNode.getDeclaredType().getActualBaseType();
+            SType baseType = classNode.getDeclaredType().getBaseType();
             baseType.getInstanceMethods().stream()
                     .filter(m -> {
                         if (m instanceof NativeMethodReference nativeRef) {

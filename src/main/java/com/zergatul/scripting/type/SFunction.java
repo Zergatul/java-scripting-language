@@ -69,6 +69,20 @@ public abstract class SFunction extends SReferenceType {
         return true;
     }
 
+    public boolean signatureMatchesExactly(SFunction other) {
+        List<MethodParameter> parameters1 = getParameters();
+        List<MethodParameter> parameters2 = other.getParameters();
+        if (parameters1.size() != parameters2.size()) {
+            return false;
+        }
+        for (int i = 0; i < parameters1.size(); i++) {
+            if (!parameters1.get(i).type().equals(parameters2.get(i).type())) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     @Override
     public boolean hasDefaultValue() {
         return false;

@@ -2,7 +2,6 @@ package com.zergatul.scripting.type;
 
 import com.zergatul.scripting.InterfaceHelper;
 import com.zergatul.scripting.InternalException;
-import com.zergatul.scripting.parser.UnaryOperator;
 import com.zergatul.scripting.runtime.*;
 import com.zergatul.scripting.type.operation.*;
 import org.jspecify.annotations.Nullable;
@@ -14,12 +13,12 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.TypeVariable;
 import java.lang.reflect.WildcardType;
 import java.util.List;
-import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
 public abstract class SType {
 
     public abstract Class<?> getJavaClass();
+    public abstract @Nullable SType getBaseType();
     public abstract boolean hasDefaultValue();
     public abstract void storeDefaultValue(MethodVisitor visitor);
     public abstract int getLoadInst();
@@ -124,12 +123,8 @@ public abstract class SType {
         return null;
     }
 
-    public List<SType> supportedIndexers() {
+    public List<IndexOperation> getIndexOperations() {
         return List.of();
-    }
-
-    public @Nullable IndexOperation index(SType type) {
-        return null;
     }
 
     public List<ConstructorReference> getConstructors() {
@@ -137,6 +132,10 @@ public abstract class SType {
     }
 
     public List<MethodReference> getInstanceMethods() {
+        return getDeclaredInstanceMethods();
+    }
+
+    public List<MethodReference> getDeclaredInstanceMethods() {
         return List.of();
     }
 
@@ -154,14 +153,6 @@ public abstract class SType {
 
     public List<PropertyReference> getStaticProperties() {
         return List.of();
-    }
-
-    public Optional<MethodReference> getToStringMethod() {
-        return getInstanceMethods().stream()
-                .filter(m -> m.getName().equals("toString"))
-                .filter(m -> m.getParameters().isEmpty())
-                .filter(m -> m.getReturn() == SString.instance)
-                .findFirst();
     }
 
     public void loadClassObject(MethodVisitor visitor) {
@@ -206,7 +197,7 @@ public abstract class SType {
                 return new SFuture(fromJavaType(arguments[0]));
             }
 
-            return new SClassType((Class<?>) parameterized.getRawType());
+            return SClassType.create((Class<?>) parameterized.getRawType());
         }
 
         if (type instanceof WildcardType wildcard) {
@@ -283,6 +274,9 @@ public abstract class SType {
             }
             if (clazz == Object.class) {
                 return SJavaObject.instance;
+            }
+            if (clazz == CompletableFuture.class) {
+                return new SFuture(SVoidType.instance);
             }
             if (InterfaceHelper.isFuncInterface(clazz)) {
                 return SFunctionalInterface.from(clazz);

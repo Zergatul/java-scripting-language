@@ -35,7 +35,7 @@ public class SFuture extends SReferenceType {
     }
 
     @Override
-    public List<MethodReference> getInstanceMethods() {
+    public List<MethodReference> getDeclaredInstanceMethods() {
         try {
             Method method = CompletableFuture.class.getMethod("isDone");
             return List.of(new NativeInstanceMethodReference(method));

@@ -1,6 +1,7 @@
 package com.zergatul.scripting.type;
 
 import com.zergatul.scripting.InternalException;
+import org.jspecify.annotations.Nullable;
 import org.objectweb.asm.MethodVisitor;
 
 import static org.objectweb.asm.Opcodes.ALOAD;
@@ -26,6 +27,11 @@ public class SLazyClassType extends SType {
 
     @Override
     public Class<?> getJavaClass() {
+        throw new InternalException();
+    }
+
+    @Override
+    public @Nullable SType getBaseType() {
         throw new InternalException();
     }
 

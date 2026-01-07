@@ -117,13 +117,13 @@ public class Compiler {
 
     private void compileCompilationUnitMembers(BoundCompilationUnitNode unit, ClassWriter writer, CompilerContext context) {
         List<BoundStaticVariableNode> fields = new ArrayList<>();
-        List<BoundFunctionNode> functions = new ArrayList<>();
+        List<BoundFunctionDeclarationNode> functions = new ArrayList<>();
         List<BoundClassNode> classes = new ArrayList<>();
         List<BoundExtensionNode> extensions = new ArrayList<>();
         for (BoundCompilationUnitMemberNode member : unit.members.members) {
             switch (member.getNodeType()) {
                 case STATIC_VARIABLE -> fields.add((BoundStaticVariableNode) member);
-                case FUNCTION -> functions.add((BoundFunctionNode) member);
+                case FUNCTION_DECLARATION -> functions.add((BoundFunctionDeclarationNode) member);
                 case CLASS_DECLARATION -> classes.add((BoundClassNode) member);
                 case EXTENSION_DECLARATION -> extensions.add((BoundExtensionNode) member);
                 case TYPE_ALIAS -> {}
@@ -164,7 +164,7 @@ public class Compiler {
                     ACC_PUBLIC,
                     name,
                     null,
-                    declaredType.getActualBaseType().getInternalName(),
+                    declaredType.getBaseType().getInternalName(),
                     null);
 
             AnnotationVisitor annotationVisitor = innerWriter.visitAnnotation(Type.getDescriptor(CustomType.class), true);
@@ -508,8 +508,8 @@ public class Compiler {
         visitor.visitEnd();
     }
 
-    private void compileFunctions(List<BoundFunctionNode> functions, ClassWriter writer, CompilerContext context) {
-        for (BoundFunctionNode function : functions) {
+    private void compileFunctions(List<BoundFunctionDeclarationNode> functions, ClassWriter writer, CompilerContext context) {
+        for (BoundFunctionDeclarationNode function : functions) {
             Function symbol = (Function) function.name.getSymbolOrThrow();
             SStaticFunction type = symbol.getFunctionType();
 
@@ -1806,27 +1806,27 @@ public class Compiler {
             case FUNCTION_TO_INTERFACE -> compileFunctionToInterfaceConversion(
                     visitor,
                     context,
-                    (BoundFunctionReferenceNode) expression.expression,
+                    Objects.requireNonNull(expression.conversionInfo.function()),
                     (SFunctionalInterface) expression.type);
 
             case FUNCTION_TO_GENERIC -> compileFunctionToGeneric(
                     visitor,
                     context,
-                    (BoundFunctionReferenceNode) expression.expression,
+                    Objects.requireNonNull(expression.conversionInfo.function()),
                     (SGenericFunction) expression.type);
 
             case METHOD_GROUP_TO_INTERFACE -> compileInstanceMethodToInterface(
                     visitor,
                     context,
                     (BoundMethodGroupExpressionNode) expression.expression,
-                    expression.conversionInfo.method(),
+                    Objects.requireNonNull(expression.conversionInfo.method()),
                     (SFunctionalInterface) expression.type);
 
             case METHOD_GROUP_TO_GENERIC -> compileInstanceMethodToGeneric(
                     visitor,
                     context,
                     (BoundMethodGroupExpressionNode) expression.expression,
-                    expression.conversionInfo.method(),
+                    Objects.requireNonNull(expression.conversionInfo.method()),
                     (SGenericFunction) expression.type);
 
             default -> throw new InternalException();
@@ -1838,7 +1838,7 @@ public class Compiler {
         expression.conversionInfo.cast().apply(visitor);
     }
 
-    private void compileFunctionToInterfaceConversion(MethodVisitor visitor, CompilerContext context, BoundFunctionReferenceNode functionReferenceNode, SFunctionalInterface functionalInterface) {
+    private void compileFunctionToInterfaceConversion(MethodVisitor visitor, CompilerContext context, Function function, SFunctionalInterface functionalInterface) {
         Handle bsm = new Handle(
                 H_INVOKESTATIC,
                 Type.getInternalName(LambdaMetafactory.class),
@@ -1855,8 +1855,8 @@ public class Compiler {
         Handle impl = new Handle(
                 H_INVOKESTATIC,
                 context.getClassName(),
-                functionReferenceNode.getFunction().getName(),
-                functionReferenceNode.getFunctionType().getMethodDescriptor(),
+                function.getName(),
+                function.getFunctionType().getMethodDescriptor(),
                 false);
 
         visitor.visitInvokeDynamicInsn(
@@ -1868,7 +1868,7 @@ public class Compiler {
                 Type.getType(functionalInterface.getIntermediateMethodDescriptor()));
     }
 
-    private void compileFunctionToGeneric(MethodVisitor visitor, CompilerContext context, BoundFunctionReferenceNode functionReferenceNode, SGenericFunction genericFunction) {
+    private void compileFunctionToGeneric(MethodVisitor visitor, CompilerContext context, Function function, SGenericFunction genericFunction) {
         Handle bsm = new Handle(
                 H_INVOKESTATIC,
                 Type.getInternalName(LambdaMetafactory.class),
@@ -1885,7 +1885,7 @@ public class Compiler {
         Handle impl = new Handle(
                 H_INVOKESTATIC,
                 context.getClassName(),
-                functionReferenceNode.getFunction().getName(),
+                function.getName(),
                 genericFunction.getMethodDescriptor(),
                 false);
 
@@ -2281,7 +2281,7 @@ public class Compiler {
             compileExpression(visitor, context, argument);
         }
 
-        Function symbol = expression.functionReferenceNode.getFunction();
+        Function symbol = expression.functionNode.function;
         SStaticFunction type = symbol.getFunctionType();
         visitor.visitMethodInsn(
                 INVOKESTATIC,
@@ -2351,7 +2351,7 @@ public class Compiler {
         }
 
         BoundFunctionInvocationExpression invocation = new BoundFunctionInvocationExpression(
-                new BoundFunctionReferenceNode(node.name.syntaxNode, node.name.symbolRef),
+                new BoundFunctionNode(node.name.syntaxNode, node.name.symbolRef.asFunction()),
                 type.getReturnType(),
                 new BoundArgumentsListNode(arguments));
         BoundStatementNode statement = type.getReturnType() == SVoidType.instance ?

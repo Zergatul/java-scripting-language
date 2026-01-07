@@ -2,7 +2,7 @@ package com.zergatul.scripting.completion;
 
 import com.zergatul.scripting.binding.BinderOutput;
 import com.zergatul.scripting.binding.nodes.BoundCompilationUnitMemberNode;
-import com.zergatul.scripting.binding.nodes.BoundFunctionNode;
+import com.zergatul.scripting.binding.nodes.BoundFunctionDeclarationNode;
 import com.zergatul.scripting.compiler.CompilationParameters;
 import com.zergatul.scripting.symbols.Function;
 
@@ -23,7 +23,7 @@ public class FunctionsCompletionProvider<T> extends AbstractCompletionProvider<T
 
         List<T> suggestions = new ArrayList<>();
         for (BoundCompilationUnitMemberNode member : output.unit().members.members) {
-            if (member instanceof BoundFunctionNode functionNode) {
+            if (member instanceof BoundFunctionDeclarationNode functionNode) {
                 String name = functionNode.name.value;
                 if (name == null || name.isEmpty()) {
                     continue;

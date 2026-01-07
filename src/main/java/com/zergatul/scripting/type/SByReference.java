@@ -1,6 +1,7 @@
 package com.zergatul.scripting.type;
 
 import com.zergatul.scripting.InternalException;
+import org.jspecify.annotations.Nullable;
 import org.objectweb.asm.MethodVisitor;
 
 import static org.objectweb.asm.Opcodes.*;
@@ -24,6 +25,11 @@ public class SByReference extends SType {
     @Override
     public Class<?> getJavaClass() {
         return underlying.getReferenceClass();
+    }
+
+    @Override
+    public @Nullable SType getBaseType() {
+        return null;
     }
 
     @Override

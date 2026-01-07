@@ -1,5 +1,6 @@
 package com.zergatul.scripting.type;
 
+import org.jspecify.annotations.Nullable;
 import org.objectweb.asm.MethodVisitor;
 
 import static org.objectweb.asm.Opcodes.RETURN;
@@ -18,6 +19,11 @@ public class SVoidType extends SType {
     @Override
     public Class<?> getJavaClass() {
         return void.class;
+    }
+
+    @Override
+    public @Nullable SType getBaseType() {
+        return null;
     }
 
     @Override

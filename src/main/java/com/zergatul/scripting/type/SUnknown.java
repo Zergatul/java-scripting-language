@@ -14,7 +14,7 @@ public class SUnknown extends SSyntheticType {
     }
 
     @Override
-    public List<MethodReference> getInstanceMethods() {
+    public List<MethodReference> getDeclaredInstanceMethods() {
         return List.of(UnknownMethodReference.instance);
     }
 

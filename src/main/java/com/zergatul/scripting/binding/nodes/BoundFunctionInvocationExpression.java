@@ -12,17 +12,17 @@ import java.util.List;
 public class BoundFunctionInvocationExpression extends BoundExpressionNode {
 
     public final InvocationExpressionNode syntaxNode;
-    public final BoundFunctionReferenceNode functionReferenceNode;
+    public final BoundFunctionNode functionNode;
     public final BoundArgumentsListNode arguments;
     public final List<RefHolder> refVariables;
 
-    public BoundFunctionInvocationExpression(BoundFunctionReferenceNode functionReferenceNode, SType type, BoundArgumentsListNode arguments) {
-        this(SyntaxFactory.missingInvocationExpression(), functionReferenceNode, type, arguments, List.of(), TextRange.MISSING);
+    public BoundFunctionInvocationExpression(BoundFunctionNode functionNode, SType type, BoundArgumentsListNode arguments) {
+        this(SyntaxFactory.missingInvocationExpression(), functionNode, type, arguments, List.of(), TextRange.MISSING);
     }
 
     public BoundFunctionInvocationExpression(
             InvocationExpressionNode node,
-            BoundFunctionReferenceNode functionReferenceNode,
+            BoundFunctionNode functionNode,
             SType type,
             BoundArgumentsListNode arguments,
             List<RefHolder> refVariables,
@@ -30,7 +30,7 @@ public class BoundFunctionInvocationExpression extends BoundExpressionNode {
     ) {
         super(BoundNodeType.FUNCTION_INVOCATION, type, range);
         this.syntaxNode = node;
-        this.functionReferenceNode = functionReferenceNode;
+        this.functionNode = functionNode;
         this.arguments = arguments;
         this.refVariables = refVariables;
     }
@@ -42,12 +42,12 @@ public class BoundFunctionInvocationExpression extends BoundExpressionNode {
 
     @Override
     public void acceptChildren(BinderTreeVisitor visitor) {
-        functionReferenceNode.accept(visitor);
+        functionNode.accept(visitor);
         arguments.accept(visitor);
     }
 
     @Override
     public List<BoundNode> getChildren() {
-        return List.of(functionReferenceNode, arguments);
+        return List.of(functionNode, arguments);
     }
 }

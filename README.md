@@ -32,6 +32,7 @@ It is lightweight, async-friendly, and designed to interop with Java APIs where 
 - [Type Check/Cast](#type-checkcast)
 - [`is` operator and pattern matching](#is-operator-and-pattern-matching)
 - [null](#null)
+- [Boxing](#boxing)
 - [Reflection](#reflection)
 - [Classes](#classes)
 - [Extensions](#extensions)
@@ -210,10 +211,11 @@ You can also use arrow syntax if function is short:
 int sum(int a, int b) => a + b;
 ```
 
-Function overloading is not supported:
+Function overloading is supported:
 ```c#
-void func() {}
-void func(int x) {} // will not compile
+int max(int i1, int i2) => i1 > i2 ? i1 : i2;
+int max(int i1, int i2, int i3) => max(i1, max(i2, i3));
+int max(int i1, int i2, int i3, int i4) => max(max(i1, i2), max(i3, i4));
 ```
 
 #### Lambda Functions
@@ -451,6 +453,15 @@ string s = null;
 if (s == null) {
     debug.write("s is null");
 }
+```
+
+### Boxing
+Wrapper classes (Java terminology) or boxed classes (C# terminology) are described like this: `Boxed<int>` (however you can't use such syntax in the code, you have to use `Java<java.lang.Integer>` instead).
+Normally you don't need to use them explicitly, but you may often see them as parameters or return types when working with Java interop. Language supports automatic boxing/unboxing.
+
+For example, API method may return `Future<Boxed<boolean>>`, because `Future` type corresponds to `CompletableFuture` under the hood, and it actually has `java.lang.Boolean` as type parameter. But you can write code like this:
+```c#
+boolean result = await game.connect("my.server.example.com");
 ```
 
 ### Reflection

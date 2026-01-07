@@ -29,10 +29,9 @@ public class DefinitionProvider {
                 yield symbol.getDefinition();
             }
 
-            case FUNCTION_REFERENCE -> {
-                BoundFunctionReferenceNode functionReference = (BoundFunctionReferenceNode) node;
-                Symbol symbol = functionReference.getFunction();
-                yield symbol.getDefinition();
+            case FUNCTION -> {
+                BoundFunctionNode functionNode = (BoundFunctionNode) node;
+                yield functionNode.function.getDefinition();
             }
 
             case ALIASED_TYPE -> {

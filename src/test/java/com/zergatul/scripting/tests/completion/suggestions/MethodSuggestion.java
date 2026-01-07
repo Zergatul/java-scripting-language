@@ -3,11 +3,13 @@ package com.zergatul.scripting.tests.completion.suggestions;
 import com.zergatul.scripting.binding.nodes.*;
 import com.zergatul.scripting.tests.completion.helpers.SuggestionHelper;
 import com.zergatul.scripting.tests.completion.helpers.TestCompletionContext;
+import com.zergatul.scripting.type.MethodParameter;
 import com.zergatul.scripting.type.MethodReference;
 import com.zergatul.scripting.type.SType;
 import org.junit.jupiter.api.Assertions;
 
 import java.lang.reflect.Method;
+import java.util.List;
 import java.util.Optional;
 
 public class MethodSuggestion extends Suggestion {
@@ -82,5 +84,25 @@ public class MethodSuggestion extends Suggestion {
         } else {
             return false;
         }
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder builder = new StringBuilder();
+        builder.append(method.getReturn());
+        builder.append(' ');
+        builder.append(method.getName());
+        builder.append('(');
+        List<MethodParameter> parameters = method.getParameters();
+        for (int i = 0; i < parameters.size(); i++) {
+            builder.append(parameters.get(i).type());
+            builder.append(' ');
+            builder.append(parameters.get(i).name());
+            if (i < parameters.size() - 1) {
+                builder.append(", ");
+            }
+        }
+        builder.append(')');
+        return builder.toString();
     }
 }

@@ -111,6 +111,19 @@ public class TypeAliasTests extends ComparatorTest {
                 getDiagnostics(ApiRoot.class, code));
     }
 
+    @Test
+    public void redeclarationTest() {
+        String code = """
+                typealias MyType = int;
+                typealias MyType = string;
+                """;
+
+        comparator.assertEquals(
+                List.of(
+                        new DiagnosticMessage(BinderErrors.SymbolAlreadyDeclared, new SingleLineTextRange(2, 11, 34, 6), "MyType")),
+                getDiagnostics(ApiRoot.class, code));
+    }
+
     public static class ApiRoot {
         public static IntStorage intStorage;
         public static StringStorage stringStorage;

@@ -67,21 +67,12 @@ public class SString extends SReferenceType {
     }
 
     @Override
-    public List<SType> supportedIndexers() {
-        return List.of(SInt.instance);
+    public List<IndexOperation> getIndexOperations() {
+        return List.of(INDEX_INT);
     }
 
     @Override
-    public @Nullable IndexOperation index(SType type) {
-        if (type == SInt.instance) {
-            return INDEX_INT;
-        } else {
-            return null;
-        }
-    }
-
-    @Override
-    public List<MethodReference> getInstanceMethods() {
+    public List<MethodReference> getDeclaredInstanceMethods() {
         return List.of(
                 METHOD_CONTAINS,
                 METHOD_INDEX_OF,

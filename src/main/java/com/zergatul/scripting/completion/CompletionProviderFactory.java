@@ -44,7 +44,7 @@ public class CompletionProviderFactory<T> {
         BoundCompilationUnitNode unit = output.unit();
         CompletionContext completionContext = CompletionContext.create(unit, line, column);
         List<T> suggestions = new ArrayList<>();
-        for (var provider : providers) {
+        for (AbstractCompletionProvider<T> provider : providers) {
             suggestions.addAll(provider.provide(parameters, output, completionContext));
         }
         return suggestions;

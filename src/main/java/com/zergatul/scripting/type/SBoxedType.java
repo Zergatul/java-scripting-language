@@ -41,8 +41,8 @@ public class SBoxedType extends SReferenceType {
     }
 
     @Override
-    public List<MethodReference> getInstanceMethods() {
-        return underlying.getInstanceMethods().stream()
+    public List<MethodReference> getDeclaredInstanceMethods() {
+        return underlying.getDeclaredInstanceMethods().stream()
                 .map(method -> new WrappedMethodReference(this, method))
                 .map(wrapped -> (MethodReference) wrapped)
                 .toList();

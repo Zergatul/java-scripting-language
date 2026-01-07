@@ -94,14 +94,17 @@ public class Binder {
                 expression);
     }
 
-    private BoundFunctionNode bindFunction(FunctionNode functionNode) {
+    private BoundFunctionDeclarationNode bindFunction(FunctionNode functionNode) {
         FunctionDeclaration declaration = declarationTable.getFunctionDeclaration(functionNode);
 
         pushStaticFunctionScope(declaration.getReturnType(), declaration.isAsync());
         addParametersToContext(declaration.getParameters());
 
-        if (!declaration.hasError()) {
-            context.getParent().addStaticSymbol(declaration.getName(), declaration.getSymbolRef());
+        if (!declaration.getGroup().hasError()) {
+            SymbolRef groupSymbolRef = declaration.getGroup().getSymbolRef();
+            if (!context.getParent().getStaticSymbols().contains(groupSymbolRef)) {
+                context.getParent().addStaticSymbol(declaration.getName(), groupSymbolRef);
+            }
         }
 
         BoundNameExpressionNode name = new BoundNameExpressionNode(functionNode.name, declaration.getSymbolRef());
@@ -119,7 +122,7 @@ public class Binder {
             }
         }
 
-        BoundFunctionNode boundFunction = new BoundFunctionNode(
+        BoundFunctionDeclarationNode boundFunction = new BoundFunctionDeclarationNode(
                 functionNode,
                 declaration.getReturnTypeNode(),
                 name,
@@ -152,7 +155,7 @@ public class Binder {
         // add default constructor if we have zero constructors defined
         ConstructorReference defaultBaseConstructor = null;
         if (members.stream().noneMatch(m -> m.getNodeType() == BoundNodeType.CLASS_CONSTRUCTOR)) {
-            SType baseType = declaration.getDeclaredType().getActualBaseType();
+            SType baseType = declaration.getDeclaredType().getBaseType();
             if (baseType != SUnknown.instance) {
                 defaultBaseConstructor = baseType.getConstructors().stream().filter(c -> c.getParameters().isEmpty()).findFirst().orElse(null);
                 if (defaultBaseConstructor == null) {
@@ -206,7 +209,7 @@ public class Binder {
                 throw new InternalException();
             }
 
-            SType constructorOwner = isBaseCall ? context.getClassType().getActualBaseType() : context.getClassType();
+            SType constructorOwner = isBaseCall ? context.getClassType().getBaseType() : context.getClassType();
             BindInvocableArgsResult<ConstructorReference> result = bindInvocableArguments(
                     constructorNode.initializer.arguments,
                     constructorOwner.getConstructors(),
@@ -229,7 +232,7 @@ public class Binder {
                     result.argumentsListNode,
                     result.invocable);
         } else {
-            SType baseType = context.getClassType().getActualBaseType();
+            SType baseType = context.getClassType().getBaseType();
             ConstructorReference constructor = baseType.getConstructors().stream()
                     .filter(c -> c.getParameters().isEmpty())
                     .findFirst()
@@ -1292,6 +1295,46 @@ public class Binder {
 
         BoundExpressionNode callee = bindExpression(invocation.callee);
 
+        if (callee.getNodeType() == BoundNodeType.FUNCTION_GROUP) {
+            BoundFunctionGroupExpressionNode functionGroup = (BoundFunctionGroupExpressionNode) callee;
+            BindInvocableArgsResult<Function> result = bindInvocableArguments(
+                    invocation.arguments,
+                    functionGroup.candidates,
+                    UnknownFunction.instance);
+            if (result.noInvocables) {
+                // there should always be candidates
+                throw new InternalException();
+            } else if (result.noOverload) {
+                if (functionGroup.candidates.size() == 1) {
+                    // if there is only 1 candidate, bind it, and output more user-friendly error
+                    result = new BindInvocableArgsResult<>(
+                            functionGroup.candidates.getFirst(),
+                            result.argumentsListNode(),
+                            false, false);
+                    addDiagnostic(
+                            BinderErrors.ArgumentCountMismatch,
+                            functionGroup,
+                            functionGroup.syntaxNode.value,
+                            result.invocable.getParameters().size());
+                } else {
+                    addDiagnostic(
+                            BinderErrors.FunctionDoesNotExist,
+                            functionGroup,
+                            functionGroup.syntaxNode.value,
+                            invocation.arguments.arguments.size());
+                }
+            }
+
+            BoundFunctionNode functionNode = new BoundFunctionNode(functionGroup.syntaxNode, result.invocable);
+            return new BoundFunctionInvocationExpression(
+                    invocation,
+                    functionNode,
+                    result.invocable.getFunctionType().getReturnType(),
+                    result.argumentsListNode,
+                    context.releaseRefVariables(),
+                    invocation.getRange());
+        }
+
         if (callee.getNodeType() == BoundNodeType.METHOD_GROUP) {
             BoundMethodGroupExpressionNode methodGroup = (BoundMethodGroupExpressionNode) callee;
             BindInvocableArgsResult<MethodReference> result = bindInvocableArguments(
@@ -1317,30 +1360,6 @@ public class Binder {
                     methodNode,
                     result.argumentsListNode,
                     context.releaseRefVariables());
-        }
-
-        if (callee.type instanceof SStaticFunction staticFunction) {
-            BoundFunctionReferenceNode functionReferenceNode = (BoundFunctionReferenceNode) callee;
-
-            BindInvocableArgsResult<Function> result = bindInvocableArguments(
-                    invocation.arguments,
-                    List.of(functionReferenceNode.getFunction()));
-
-            if (result.noOverload) {
-                addDiagnostic(
-                        BinderErrors.ArgumentCountMismatch,
-                        functionReferenceNode,
-                        functionReferenceNode.name,
-                        staticFunction.getParameters().size());
-            }
-
-            return new BoundFunctionInvocationExpression(
-                    invocation,
-                    functionReferenceNode,
-                    staticFunction.getReturnType(),
-                    result.argumentsListNode,
-                    context.releaseRefVariables(),
-                    invocation.getRange());
         }
 
         if (callee.type instanceof SFunction function) {
@@ -1377,17 +1396,17 @@ public class Binder {
         }
 
         String methodName = memberAccessNode.name.value;
-        SType actualBaseType = context.getClassType().getActualBaseType();
+        SType baseType = context.getClassType().getBaseType();
 
         // intentionally skip extension methods
-        List<MethodReference> candidates = actualBaseType.getInstanceMethods().stream()
+        List<MethodReference> candidates = baseType.getInstanceMethods().stream()
                 .filter(m -> m.getName().equals(methodName))
                 .toList();
         if (candidates.isEmpty()) {
             addDiagnostic(
                     BinderErrors.MemberDoesNotExist,
                     memberAccessNode.name,
-                    actualBaseType.toString(), methodName);
+                    baseType.toString(), methodName);
             // TODO: add parameters
             return new BoundInvalidExpressionNode(List.of(), List.of(invocation), invocation.getRange());
         }
@@ -1400,7 +1419,7 @@ public class Binder {
             addDiagnostic(
                     BinderErrors.MemberDoesNotExist,
                     memberAccessNode.name,
-                    actualBaseType.toString(), methodName);
+                    baseType.toString(), methodName);
         } else if (result.noOverload) {
             addDiagnostic(
                     BinderErrors.NoOverloadedMethods,
@@ -1490,8 +1509,8 @@ public class Binder {
         SymbolRef symbolRef = getSymbol(name.value);
 
         if (symbolRef != null) {
-            if (symbolRef.get() instanceof Function) {
-                return new BoundFunctionReferenceNode(name, symbolRef);
+            if (symbolRef.get() instanceof FunctionGroup group) {
+                return new BoundFunctionGroupExpressionNode(name, group.getFunctions());
             } else if (symbolRef.get() instanceof TypeAliasSymbol typeAliasSymbol) {
                 CustomTypeNode custom = new CustomTypeNode(name.token);
                 BoundAliasedTypeNode typeNode = new BoundAliasedTypeNode(custom, symbolRef);
@@ -1951,13 +1970,19 @@ public class Binder {
         BoundExpressionNode index = bindExpression(indexExpression.index);
 
         IndexOperation operation = null;
-        if (callee.type.supportedIndexers().contains(index.type)) {
-            operation = callee.type.index(index.type);
-        } else {
-            for (SType type : callee.type.supportedIndexers()) {
-                CastOperation cast = SType.implicitCastTo(index.type, type);
+        List<IndexOperation> operations = callee.type.getIndexOperations();
+        for (IndexOperation o : operations) {
+            if (o.indexType.equals(index.type)) {
+                operation = o;
+                break;
+            }
+        }
+
+        if (operation == null) {
+            for (IndexOperation o : operations) {
+                CastOperation cast = SType.implicitCastTo(index.type, o.indexType);
                 if (cast != null) {
-                    operation = callee.type.index(type);
+                    operation = o;
                     index = new BoundImplicitCastExpressionNode(index, cast, index.getRange());
                     break;
                 }
@@ -2093,20 +2118,20 @@ public class Binder {
             return null;
         }
 
-        if (expression.getNodeType() == BoundNodeType.FUNCTION_REFERENCE) {
-            BoundFunctionReferenceNode functionReferenceNode = (BoundFunctionReferenceNode) expression;
+        if (expression.getNodeType() == BoundNodeType.FUNCTION_GROUP) {
+            BoundFunctionGroupExpressionNode functionGroupExpressionNode = (BoundFunctionGroupExpressionNode) expression;
             if (type instanceof SFunctionalInterface functionalInterface) {
-                if (functionReferenceNode.getFunctionType().signatureMatchesWithBoxing(functionalInterface)) {
-                    return new ConversionInfo(ConversionType.FUNCTION_TO_INTERFACE);
-                } else {
-                    return null;
+                for (Function candidate : functionGroupExpressionNode.candidates) {
+                    if (candidate.getFunctionType().signatureMatchesWithBoxing(functionalInterface)) {
+                        return new ConversionInfo(ConversionType.FUNCTION_TO_INTERFACE, candidate);
+                    }
                 }
             }
             if (type instanceof SGenericFunction genericFunction) {
-                if (functionReferenceNode.getFunctionType().signatureMatchesWithBoxing(genericFunction)) {
-                    return new ConversionInfo(ConversionType.FUNCTION_TO_GENERIC);
-                } else {
-                    return null;
+                for (Function candidate : functionGroupExpressionNode.candidates) {
+                    if (candidate.getFunctionType().signatureMatchesWithBoxing(genericFunction)) {
+                        return new ConversionInfo(ConversionType.FUNCTION_TO_GENERIC, candidate);
+                    }
                 }
             }
             return null;
@@ -2232,7 +2257,7 @@ public class Binder {
                         clazz = null;
                     }
                     if (clazz != null) {
-                        yield new BoundJavaTypeNode(java, new SClassType(clazz));
+                        yield new BoundJavaTypeNode(java, SClassType.create(clazz));
                     } else {
                         addDiagnostic(BinderErrors.JavaTypeDoesNotExist, java, java.name.value);
                         yield new BoundJavaTypeNode(java, SUnknown.instance);
@@ -2302,7 +2327,6 @@ public class Binder {
                 classDeclaration.setBaseType(bindType(classNode.baseTypeNode));
 
                 SType baseType = classDeclaration.getDeclaredType().getBaseType();
-                assert baseType != null;
                 if (baseType.isInstanceOf(classDeclaration.getDeclaredType())) {
                     classDeclaration.getDeclaredType().clearBaseType();
                     addDiagnostic(BinderErrors.ClassCircularInheritance, classNode.baseTypeNode);
@@ -2459,10 +2483,29 @@ public class Binder {
 
     private void buildFunctionDeclaration(FunctionNode functionNode) {
         String name = functionNode.name.value;
-        boolean hasError = false;
-        if (!name.isEmpty() && (declarationTable.hasSymbol(name) || context.hasSymbol(name))) {
-            hasError = true;
+
+        FunctionGroupDeclaration groupDeclaration = null;
+
+        boolean hasGroupError = false;
+        if (!name.isEmpty()) {
+            if (context.hasSymbol(name)) {
+                hasGroupError = true;
+            } else if (declarationTable.hasSymbol(name)) {
+                groupDeclaration = declarationTable.getFunctionGroupDeclaration(name);
+                if (groupDeclaration == null) {
+                    hasGroupError = true;
+                }
+            }
+        }
+
+        if (hasGroupError) {
             addDiagnostic(BinderErrors.SymbolAlreadyDeclared, functionNode.name, name);
+        }
+
+        TextRange definition = TextRange.combine(functionNode.modifiers, functionNode.parameters);
+        if (groupDeclaration == null) {
+            groupDeclaration = new FunctionGroupDeclaration(name, new ImmutableSymbolRef(new FunctionGroup(name, definition)), hasGroupError);
+            declarationTable.addFunctionGroup(groupDeclaration);
         }
 
         boolean isAsync = functionNode.modifiers.isAsync();
@@ -2473,14 +2516,24 @@ public class Binder {
                 actualReturnType,
                 parameters.parameters.stream().map(pn -> new MethodParameter(pn.getName().value, pn.getType())).toArray(MethodParameter[]::new));
         SymbolRef symbolRef = new ImmutableSymbolRef(new Function(name, functionType, TextRange.combine(functionNode.modifiers, functionNode.parameters)));
+
+        boolean hasFunctionError = false;
+        for (Function overload : groupDeclaration.getFunctionGroup().getFunctions()) {
+            if (overload.getFunctionType().signatureMatchesExactly(functionType)) {
+                hasFunctionError = true;
+                addDiagnostic(BinderErrors.FunctionAlreadyDeclared, functionNode.name);
+                break;
+            }
+        }
+
         declarationTable.addFunction(functionNode, new FunctionDeclaration(
                 name,
                 symbolRef,
+                groupDeclaration,
                 isAsync,
                 returnTypeNode,
                 parameters,
-                functionType,
-                hasError));
+                hasFunctionError));
     }
 
     private void buildClassFieldDeclaration(ClassDeclaration classDeclaration, ClassFieldNode classFieldNode) {
@@ -2494,10 +2547,10 @@ public class Binder {
             addDiagnostic(BinderErrors.MemberAlreadyDeclared, classFieldNode.name, fieldName);
         } else {
             SType baseType = classDeclaration.getDeclaredType().getBaseType();
-            if (baseType != null && baseType.getInstanceProperty(fieldName) != null) {
+            if (baseType.getInstanceProperty(fieldName) != null) {
                 addDiagnostic(BinderErrors.BaseClassAlreadyHasMember, classFieldNode.name);
             }
-            if (baseType != null && baseType.getInstanceMethods().stream().anyMatch(m -> m.getName().equals(fieldName))) {
+            if (baseType.getInstanceMethods().stream().anyMatch(m -> m.getName().equals(fieldName))) {
                 addDiagnostic(BinderErrors.BaseClassAlreadyHasMember, classFieldNode.name);
             }
 
@@ -2542,7 +2595,7 @@ public class Binder {
             hasError = true;
             addDiagnostic(BinderErrors.MethodAlreadyDeclared, methodNode.name);
         } else {
-            SType baseType = classDeclaration.getDeclaredType().getActualBaseType();
+            SType baseType = classDeclaration.getDeclaredType().getBaseType();
             if (baseType.getInstanceProperty(methodName) != null) {
                 addDiagnostic(BinderErrors.BaseClassAlreadyHasMember, methodNode.name);
             }

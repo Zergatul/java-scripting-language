@@ -146,7 +146,7 @@ public class CompletionContext {
         if (entry == null) {
             return true;
         }
-        if (entry.node.is(BoundNodeType.FUNCTION)) {
+        if (entry.node.is(BoundNodeType.FUNCTION_DECLARATION)) {
             return true;
         }
         if (entry.node.is(BoundNodeType.CLASS_METHOD)) {
@@ -178,7 +178,7 @@ public class CompletionContext {
             if (current.entry.node instanceof BoundStatementNode) {
                 return current;
             }
-            if (current.entry.node.getNodeType() == BoundNodeType.FUNCTION) {
+            if (current.entry.node.getNodeType() == BoundNodeType.FUNCTION_DECLARATION) {
                 return null;
             }
             if (current.entry.node.getNodeType() == BoundNodeType.CLASS_METHOD) {
@@ -501,8 +501,8 @@ public class CompletionContext {
                 }
             }
 
-            case FUNCTION -> {
-                BoundFunctionNode functionNode = (BoundFunctionNode) entry.node;
+            case FUNCTION_DECLARATION -> {
+                BoundFunctionDeclarationNode functionNode = (BoundFunctionDeclarationNode) entry.node;
                 if (functionNode.syntaxNode.modifiers.getRange().isBefore(line, column)) {
                     if (functionNode.returnType.isMissing() || functionNode.returnType.getRange().getEnd().isAfter(line, column)) {
                         yield true;
@@ -585,8 +585,8 @@ public class CompletionContext {
 
         return switch (entry.node.getNodeType()) {
 
-            case FUNCTION -> {
-                BoundFunctionNode functionNode = (BoundFunctionNode) entry.node;
+            case FUNCTION_DECLARATION -> {
+                BoundFunctionDeclarationNode functionNode = (BoundFunctionDeclarationNode) entry.node;
                 if (functionNode.syntaxNode.modifiers.getRange().isBefore(line, column)) {
                     if (functionNode.returnType.isMissing() || functionNode.returnType.getRange().getEnd().isAfter(line, column)) {
                         yield true;

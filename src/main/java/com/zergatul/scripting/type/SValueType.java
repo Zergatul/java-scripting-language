@@ -2,6 +2,7 @@ package com.zergatul.scripting.type;
 
 import com.zergatul.scripting.type.operation.BoxingWrapCastOperation;
 import com.zergatul.scripting.type.operation.CastOperation;
+import org.jspecify.annotations.Nullable;
 import org.objectweb.asm.MethodVisitor;
 
 import java.util.ArrayList;
@@ -30,6 +31,11 @@ public abstract class SValueType extends SType {
     @Override
     public Class<?> getJavaClass() {
         return type;
+    }
+
+    @Override
+    public @Nullable SType getBaseType() {
+        return null;
     }
 
     public abstract int getArrayTypeInst();

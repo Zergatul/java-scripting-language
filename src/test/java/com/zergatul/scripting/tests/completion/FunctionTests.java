@@ -95,6 +95,26 @@ public class FunctionTests {
                 context -> List.of());
     }
 
+    @Test
+    public void functionOverloadTest() {
+        assertSuggestions("""
+                int max(int i1) => 0;
+                int max(int i1, int i2) => 0;
+                int max(int i1, int i2, int i3) => 0;
+                int max(int i1, int i2, int i3, int i4) => 0;
+                
+                intStorage.add(1);
+                <cursor>
+                """,
+                context -> Lists.of(
+                        statements,
+                        new StaticConstantSuggestion(context, "intStorage"),
+                        new FunctionSuggestion(context, "max", 1),
+                        new FunctionSuggestion(context, "max", 2),
+                        new FunctionSuggestion(context, "max", 3),
+                        new FunctionSuggestion(context, "max", 4)));
+    }
+
     private void assertSuggestions(String code, Function<TestCompletionContext, List<Suggestion>> expectedFactory) {
         CompletionTestHelper.assertSuggestions(ApiRoot.class, code, expectedFactory);
     }

@@ -3,32 +3,35 @@ package com.zergatul.scripting.binding;
 import com.zergatul.scripting.binding.nodes.BoundParameterListNode;
 import com.zergatul.scripting.binding.nodes.BoundTypeNode;
 import com.zergatul.scripting.symbols.SymbolRef;
-import com.zergatul.scripting.type.SStaticFunction;
 import com.zergatul.scripting.type.SType;
 
 public class FunctionDeclaration extends NamedDeclaration {
 
+    private final FunctionGroupDeclaration group;
     private final boolean isAsync;
     private final BoundTypeNode returnTypeNode;
     private final BoundParameterListNode parameters;
-    private final SStaticFunction functionType;
     private final boolean hasError;
 
     public FunctionDeclaration(
             String name,
             SymbolRef symbolRef,
+            FunctionGroupDeclaration group,
             boolean isAsync,
             BoundTypeNode returnTypeNode,
             BoundParameterListNode parameters,
-            SStaticFunction functionType,
             boolean hasError
     ) {
         super(name, symbolRef);
+        this.group = group;
         this.isAsync = isAsync;
         this.returnTypeNode = returnTypeNode;
         this.parameters = parameters;
-        this.functionType = functionType;
         this.hasError = hasError;
+    }
+
+    public FunctionGroupDeclaration getGroup() {
+        return group;
     }
 
     public boolean isAsync() {
