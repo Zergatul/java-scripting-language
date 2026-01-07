@@ -15,7 +15,7 @@ public class SStaticTypeReference extends SSyntheticType {
     }
 
     @Override
-    public List<MethodReference> getInstanceMethods() {
+    public List<MethodReference> getDeclaredInstanceMethods() {
         return underlying.getStaticMethods();
     }
 

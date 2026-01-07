@@ -4,6 +4,7 @@ import com.zergatul.scripting.compiler.BufferedMethodVisitor;
 import com.zergatul.scripting.compiler.CompilerContext;
 import com.zergatul.scripting.parser.BinaryOperator;
 import com.zergatul.scripting.type.operation.BinaryOperation;
+import org.jspecify.annotations.Nullable;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 
@@ -17,6 +18,11 @@ public abstract class SReferenceType extends SType {
     @Override
     public boolean isReference() {
         return true;
+    }
+
+    @Override
+    public @Nullable SType getBaseType() {
+        return SJavaObject.instance;
     }
 
     @Override

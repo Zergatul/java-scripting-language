@@ -77,18 +77,21 @@ public class JavaClassesTests extends ComparatorTest {
         public static Class3 class3;
     }
 
+    @SuppressWarnings("unused")
     public static class Class3 extends Class2 {
         public void do3(int value) {
             ApiRoot.intStorage.add(100 + value);
         }
     }
 
+    @SuppressWarnings("unused")
     public static class Class2 extends Class1 {
         public void do2(int value) {
             ApiRoot.intStorage.add(10 + value);
         }
     }
 
+    @SuppressWarnings("unused")
     public static class Class1 {
         public void do1(int value) {
             ApiRoot.intStorage.add(value);

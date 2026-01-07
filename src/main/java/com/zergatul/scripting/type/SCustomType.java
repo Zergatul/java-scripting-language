@@ -128,7 +128,7 @@ public class SCustomType extends SReferenceType {
     }
 
     @Override
-    public List<MethodReference> getInstanceMethods() {
+    public List<MethodReference> getDeclaredInstanceMethods() {
         return instanceMethods.value();
     }
 

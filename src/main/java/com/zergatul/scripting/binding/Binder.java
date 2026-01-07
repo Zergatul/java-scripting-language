@@ -152,7 +152,7 @@ public class Binder {
         // add default constructor if we have zero constructors defined
         ConstructorReference defaultBaseConstructor = null;
         if (members.stream().noneMatch(m -> m.getNodeType() == BoundNodeType.CLASS_CONSTRUCTOR)) {
-            SType baseType = declaration.getDeclaredType().getActualBaseType();
+            SType baseType = declaration.getDeclaredType().getBaseType();
             if (baseType != SUnknown.instance) {
                 defaultBaseConstructor = baseType.getConstructors().stream().filter(c -> c.getParameters().isEmpty()).findFirst().orElse(null);
                 if (defaultBaseConstructor == null) {
@@ -206,7 +206,7 @@ public class Binder {
                 throw new InternalException();
             }
 
-            SType constructorOwner = isBaseCall ? context.getClassType().getActualBaseType() : context.getClassType();
+            SType constructorOwner = isBaseCall ? context.getClassType().getBaseType() : context.getClassType();
             BindInvocableArgsResult<ConstructorReference> result = bindInvocableArguments(
                     constructorNode.initializer.arguments,
                     constructorOwner.getConstructors(),
@@ -229,7 +229,7 @@ public class Binder {
                     result.argumentsListNode,
                     result.invocable);
         } else {
-            SType baseType = context.getClassType().getActualBaseType();
+            SType baseType = context.getClassType().getBaseType();
             ConstructorReference constructor = baseType.getConstructors().stream()
                     .filter(c -> c.getParameters().isEmpty())
                     .findFirst()
@@ -1377,17 +1377,17 @@ public class Binder {
         }
 
         String methodName = memberAccessNode.name.value;
-        SType actualBaseType = context.getClassType().getActualBaseType();
+        SType baseType = context.getClassType().getBaseType();
 
         // intentionally skip extension methods
-        List<MethodReference> candidates = actualBaseType.getInstanceMethods().stream()
+        List<MethodReference> candidates = baseType.getInstanceMethods().stream()
                 .filter(m -> m.getName().equals(methodName))
                 .toList();
         if (candidates.isEmpty()) {
             addDiagnostic(
                     BinderErrors.MemberDoesNotExist,
                     memberAccessNode.name,
-                    actualBaseType.toString(), methodName);
+                    baseType.toString(), methodName);
             // TODO: add parameters
             return new BoundInvalidExpressionNode(List.of(), List.of(invocation), invocation.getRange());
         }
@@ -1400,7 +1400,7 @@ public class Binder {
             addDiagnostic(
                     BinderErrors.MemberDoesNotExist,
                     memberAccessNode.name,
-                    actualBaseType.toString(), methodName);
+                    baseType.toString(), methodName);
         } else if (result.noOverload) {
             addDiagnostic(
                     BinderErrors.NoOverloadedMethods,
@@ -2232,7 +2232,7 @@ public class Binder {
                         clazz = null;
                     }
                     if (clazz != null) {
-                        yield new BoundJavaTypeNode(java, new SClassType(clazz));
+                        yield new BoundJavaTypeNode(java, SClassType.create(clazz));
                     } else {
                         addDiagnostic(BinderErrors.JavaTypeDoesNotExist, java, java.name.value);
                         yield new BoundJavaTypeNode(java, SUnknown.instance);
@@ -2302,7 +2302,6 @@ public class Binder {
                 classDeclaration.setBaseType(bindType(classNode.baseTypeNode));
 
                 SType baseType = classDeclaration.getDeclaredType().getBaseType();
-                assert baseType != null;
                 if (baseType.isInstanceOf(classDeclaration.getDeclaredType())) {
                     classDeclaration.getDeclaredType().clearBaseType();
                     addDiagnostic(BinderErrors.ClassCircularInheritance, classNode.baseTypeNode);
@@ -2494,10 +2493,10 @@ public class Binder {
             addDiagnostic(BinderErrors.MemberAlreadyDeclared, classFieldNode.name, fieldName);
         } else {
             SType baseType = classDeclaration.getDeclaredType().getBaseType();
-            if (baseType != null && baseType.getInstanceProperty(fieldName) != null) {
+            if (baseType.getInstanceProperty(fieldName) != null) {
                 addDiagnostic(BinderErrors.BaseClassAlreadyHasMember, classFieldNode.name);
             }
-            if (baseType != null && baseType.getInstanceMethods().stream().anyMatch(m -> m.getName().equals(fieldName))) {
+            if (baseType.getInstanceMethods().stream().anyMatch(m -> m.getName().equals(fieldName))) {
                 addDiagnostic(BinderErrors.BaseClassAlreadyHasMember, classFieldNode.name);
             }
 
@@ -2542,7 +2541,7 @@ public class Binder {
             hasError = true;
             addDiagnostic(BinderErrors.MethodAlreadyDeclared, methodNode.name);
         } else {
-            SType baseType = classDeclaration.getDeclaredType().getActualBaseType();
+            SType baseType = classDeclaration.getDeclaredType().getBaseType();
             if (baseType.getInstanceProperty(methodName) != null) {
                 addDiagnostic(BinderErrors.BaseClassAlreadyHasMember, methodNode.name);
             }

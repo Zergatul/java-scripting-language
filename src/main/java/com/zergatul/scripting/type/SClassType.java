@@ -14,8 +14,16 @@ public class SClassType extends SReferenceType {
 
     private final Class<?> clazz;
 
-    public SClassType(Class<?> clazz) {
+    protected SClassType(Class<?> clazz) {
         this.clazz = clazz;
+    }
+
+    public static SClassType create(Class<?> clazz) {
+        if (clazz == Object.class) {
+            return SJavaObject.instance;
+        } else {
+            return new SClassType(clazz);
+        }
     }
 
     @Override
@@ -44,6 +52,15 @@ public class SClassType extends SReferenceType {
             return false;
         }
         return super.isInstanceOf(other);
+    }
+
+    @Override
+    public @Nullable SType getBaseType() {
+        if (clazz.isInterface()) {
+            return null;
+        } else {
+            return SType.fromJavaType(clazz.getSuperclass());
+        }
     }
 
     @Override
@@ -86,8 +103,17 @@ public class SClassType extends SReferenceType {
         return Arrays.stream(this.clazz.getMethods())
                 .filter(m -> Modifier.isPublic(m.getModifiers()))
                 .filter(m -> !Modifier.isStatic(m.getModifiers()))
-                // return Object members only for Object class
-                .filter(m -> clazz == Object.class || m.getDeclaringClass() != Object.class)
+                .filter(m -> m.getDeclaringClass() != Object.class)
+                .map(NativeInstanceMethodReference::new)
+                .map(r -> (MethodReference) r)
+                .toList();
+    }
+
+    @Override
+    public List<MethodReference> getDeclaredInstanceMethods() {
+        return Arrays.stream(this.clazz.getDeclaredMethods())
+                .filter(m -> Modifier.isPublic(m.getModifiers()))
+                .filter(m -> !Modifier.isStatic(m.getModifiers()))
                 .map(NativeInstanceMethodReference::new)
                 .map(r -> (MethodReference) r)
                 .toList();
@@ -95,10 +121,9 @@ public class SClassType extends SReferenceType {
 
     @Override
     public List<MethodReference> getStaticMethods() {
-        return Arrays.stream(this.clazz.getMethods())
+        return Arrays.stream(this.clazz.getDeclaredMethods())
                 .filter(m -> Modifier.isPublic(m.getModifiers()))
                 .filter(m -> Modifier.isStatic(m.getModifiers()))
-                .filter(m -> m.getDeclaringClass() != Object.class)
                 .filter(m -> !m.isAnnotationPresent(Getter.class))
                 .filter(m -> !m.isAnnotationPresent(Setter.class))
                 .map(NativeStaticMethodReference::new)

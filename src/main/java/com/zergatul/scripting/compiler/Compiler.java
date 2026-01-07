@@ -164,7 +164,7 @@ public class Compiler {
                     ACC_PUBLIC,
                     name,
                     null,
-                    declaredType.getActualBaseType().getInternalName(),
+                    declaredType.getBaseType().getInternalName(),
                     null);
 
             AnnotationVisitor annotationVisitor = innerWriter.visitAnnotation(Type.getDescriptor(CustomType.class), true);

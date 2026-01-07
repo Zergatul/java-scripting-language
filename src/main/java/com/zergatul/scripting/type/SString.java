@@ -81,7 +81,7 @@ public class SString extends SReferenceType {
     }
 
     @Override
-    public List<MethodReference> getInstanceMethods() {
+    public List<MethodReference> getDeclaredInstanceMethods() {
         return List.of(
                 METHOD_CONTAINS,
                 METHOD_INDEX_OF,

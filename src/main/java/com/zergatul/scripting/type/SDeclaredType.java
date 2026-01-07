@@ -7,6 +7,7 @@ import com.zergatul.scripting.type.operation.BinaryOperation;
 import com.zergatul.scripting.type.operation.OverloadBinaryOperation;
 import com.zergatul.scripting.type.operation.OverloadUnaryOperation;
 import com.zergatul.scripting.type.operation.UnaryOperation;
+import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Type;
@@ -78,9 +79,8 @@ public class SDeclaredType extends SType {
         return operation;
     }
 
-    @Nullable
-    public SType getBaseType() {
-        return this.baseType;
+    public @NonNull SType getBaseType() {
+        return baseType != null ? baseType : SJavaObject.instance;
     }
 
     public void clearBaseType() {
@@ -89,10 +89,6 @@ public class SDeclaredType extends SType {
 
     public void setBaseType(SType type) {
         this.baseType = type;
-    }
-
-    public SType getActualBaseType() {
-        return baseType != null ? baseType : SJavaObject.instance;
     }
 
     // returns how many SDeclaredType's are in inheritance chain
@@ -228,16 +224,25 @@ public class SDeclaredType extends SType {
         return getInstanceProperties().stream().filter(p -> p.getName().equals(name)).findFirst().orElse(null);
     }
 
-    @Override
     public List<MethodReference> getInstanceMethods() {
-        if (baseType != null) {
-            List<MethodReference> combined = new ArrayList<>();
-            combined.addAll(baseType.getInstanceMethods());
-            combined.addAll(methods);
-            return combined;
-        } else {
-            return methods;
+        if (getBaseType() == SJavaObject.instance) {
+            return getDeclaredInstanceMethods();
         }
+
+        List<MethodReference> methods = new ArrayList<>();
+
+        SType current = this;
+        while (current != null && current != SJavaObject.instance) {
+            methods.addAll(current.getDeclaredInstanceMethods());
+            current = current.getBaseType();
+        }
+
+        return methods;
+    }
+
+    @Override
+    public List<MethodReference> getDeclaredInstanceMethods() {
+        return methods;
     }
 
     @Override

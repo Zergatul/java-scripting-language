@@ -1,6 +1,7 @@
 package com.zergatul.scripting.type;
 
 import com.zergatul.scripting.InternalException;
+import org.jspecify.annotations.Nullable;
 import org.objectweb.asm.MethodVisitor;
 
 public abstract class SSyntheticType extends SType {
@@ -13,6 +14,11 @@ public abstract class SSyntheticType extends SType {
     @Override
     public Class<?> getJavaClass() {
         throw new InternalException();
+    }
+
+    @Override
+    public @Nullable SType getBaseType() {
+        return null;
     }
 
     @Override

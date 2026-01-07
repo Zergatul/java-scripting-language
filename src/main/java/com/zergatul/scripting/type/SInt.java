@@ -150,7 +150,7 @@ public class SInt extends SValueType {
     }
 
     @Override
-    public List<MethodReference> getInstanceMethods() {
+    public List<MethodReference> getDeclaredInstanceMethods() {
         return List.of(METHOD_TO_INT8.value(), METHOD_TO_INT16.value(), METHOD_TO_STRING.value(), METHOD_TO_STANDARD_STRING.value());
     }
 

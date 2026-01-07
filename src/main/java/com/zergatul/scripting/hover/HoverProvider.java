@@ -178,7 +178,7 @@ public class HoverProvider {
                     BoundClassNode classNode = closestNodeOfType(chain, BoundNodeType.CLASS_DECLARATION, BoundClassNode.class);
                     if (classNode != null) {
                         SDeclaredType classType = (SDeclaredType) classNode.name.getSymbolOrThrow().getType();
-                        String text = formatType(classType.getActualBaseType()) + " " + formatPredefinedType("base");
+                        String text = formatType(classType.getBaseType()) + " " + formatPredefinedType("base");
                         yield new HoverResponse(text, baseExpression.getRange());
                     }
                 }
@@ -205,7 +205,7 @@ public class HoverProvider {
                         BoundClassNode classNode = closestNodeOfType(chain, BoundNodeType.CLASS_DECLARATION, BoundClassNode.class);
                         if (classNode != null) {
                             SDeclaredType classType = (SDeclaredType) classNode.name.getSymbolOrThrow().getType();
-                            String text = formatType(classType.getActualBaseType()) + " " + formatPredefinedType("base");
+                            String text = formatType(classType.getBaseType()) + " " + formatPredefinedType("base");
                             yield new HoverResponse(text, syntaxNode.getRange());
                         }
                     }

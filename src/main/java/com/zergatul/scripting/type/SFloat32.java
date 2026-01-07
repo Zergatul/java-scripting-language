@@ -138,7 +138,7 @@ public class SFloat32 extends SValueType {
     }
 
     @Override
-    public List<MethodReference> getInstanceMethods() {
+    public List<MethodReference> getDeclaredInstanceMethods() {
         return List.of(METHOD_TO_STRING.value(), METHOD_TO_STANDARD_STRING.value());
     }
 

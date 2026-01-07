@@ -33,6 +33,11 @@ public class SArrayType extends SType {
     }
 
     @Override
+    public @Nullable SType getBaseType() {
+        return SJavaObject.instance;
+    }
+
+    @Override
     public boolean isReference() {
         return true;
     }
