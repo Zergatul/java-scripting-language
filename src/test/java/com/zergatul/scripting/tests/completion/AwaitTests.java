@@ -8,7 +8,6 @@ import com.zergatul.scripting.tests.completion.helpers.Lists;
 import com.zergatul.scripting.tests.completion.helpers.TestCompletionContext;
 import com.zergatul.scripting.tests.completion.suggestions.*;
 import com.zergatul.scripting.type.SJavaObject;
-import com.zergatul.scripting.type.SType;
 import com.zergatul.scripting.type.SVoidType;
 import org.junit.jupiter.api.Test;
 

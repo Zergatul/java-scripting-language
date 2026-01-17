@@ -275,6 +275,9 @@ public abstract class SType {
             if (clazz == Object.class) {
                 return SJavaObject.instance;
             }
+            if (clazz == CompletableFuture.class) {
+                return new SFuture(SVoidType.instance);
+            }
             if (InterfaceHelper.isFuncInterface(clazz)) {
                 return SFunctionalInterface.from(clazz);
             }
