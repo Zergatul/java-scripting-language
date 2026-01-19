@@ -73,7 +73,7 @@ public class SClassType extends SReferenceType {
 
     @Override
     public List<PropertyReference> getInstanceProperties() {
-        return Arrays.stream(clazz.getDeclaredFields())
+        return Arrays.stream(clazz.getFields())
                 .filter(f -> !Modifier.isStatic(f.getModifiers()))
                 .filter(f -> Modifier.isPublic(f.getModifiers()))
                 .map(FieldPropertyReference::new)
@@ -85,7 +85,7 @@ public class SClassType extends SReferenceType {
     @Nullable
     public PropertyReference getInstanceProperty(String name) {
         try {
-            Field field = clazz.getDeclaredField(name);
+            Field field = clazz.getField(name);
             if (Modifier.isStatic(field.getModifiers())) {
                 return null;
             }

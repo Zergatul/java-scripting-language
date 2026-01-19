@@ -203,6 +203,20 @@ public class JavaTypeTests {
         Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(1, 2, 3, 4, 5));
     }
 
+    @Test
+    public void baseClassFieldTest() {
+        String code = """
+                let instance = new Java<com.zergatul.scripting.tests.compiler.JavaTypeTests$InheritedClass1>();
+                instance.enabled = true;
+                boolStorage.add(instance.enabled);
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(ApiRoot.boolStorage.list, List.of(true));
+    }
+
     public static class ApiRoot {
         public static BoolStorage boolStorage;
         public static IntStorage intStorage;
@@ -210,6 +224,7 @@ public class JavaTypeTests {
         public static Api api;
     }
 
+    @SuppressWarnings("unused")
     public static class Api {
 
         private final Object object = new Object();
@@ -223,6 +238,7 @@ public class JavaTypeTests {
         }
     }
 
+    @SuppressWarnings("unused")
     public static class ClassA {
 
         public static int field = 654321;
@@ -232,11 +248,12 @@ public class JavaTypeTests {
         }
     }
 
+    @SuppressWarnings("unused")
     public enum EnumA {
         VAL_1(100),
         VAL_2(200);
 
-        private int value;
+        private final int value;
 
         EnumA(int value) {
             this.value  = value;
@@ -245,5 +262,15 @@ public class JavaTypeTests {
         public int getValue() {
             return value;
         }
+    }
+
+    @SuppressWarnings("unused")
+    public static class BaseClass1 {
+        public boolean enabled;
+    }
+
+    @SuppressWarnings("unused")
+    public static class InheritedClass1 extends BaseClass1 {
+        public int color;
     }
 }
