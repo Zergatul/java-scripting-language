@@ -176,7 +176,7 @@ public class DeclarationTable {
     }
 
     public boolean hasSymbol(String name) {
-        return staticVariables.containsKey(name) || functions.containsKey(name) || classes.containsKey(name);
+        return staticVariables.containsKey(name) || functions.containsKey(name) || classes.containsKey(name) || typeAliases.containsKey(name);
     }
 
     public boolean hasExtensionMethod(SType type, String name, List<BoundParameterNode> parameters) {
