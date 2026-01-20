@@ -94,14 +94,17 @@ public class Binder {
                 expression);
     }
 
-    private BoundFunctionNode bindFunction(FunctionNode functionNode) {
+    private BoundFunctionDeclarationNode bindFunction(FunctionNode functionNode) {
         FunctionDeclaration declaration = declarationTable.getFunctionDeclaration(functionNode);
 
         pushStaticFunctionScope(declaration.getReturnType(), declaration.isAsync());
         addParametersToContext(declaration.getParameters());
 
-        if (!declaration.hasError()) {
-            context.getParent().addStaticSymbol(declaration.getName(), declaration.getSymbolRef());
+        if (!declaration.getGroup().hasError()) {
+            SymbolRef groupSymbolRef = declaration.getGroup().getSymbolRef();
+            if (!context.getParent().getStaticSymbols().contains(groupSymbolRef)) {
+                context.getParent().addStaticSymbol(declaration.getName(), groupSymbolRef);
+            }
         }
 
         BoundNameExpressionNode name = new BoundNameExpressionNode(functionNode.name, declaration.getSymbolRef());
@@ -119,7 +122,7 @@ public class Binder {
             }
         }
 
-        BoundFunctionNode boundFunction = new BoundFunctionNode(
+        BoundFunctionDeclarationNode boundFunction = new BoundFunctionDeclarationNode(
                 functionNode,
                 declaration.getReturnTypeNode(),
                 name,
@@ -1292,6 +1295,46 @@ public class Binder {
 
         BoundExpressionNode callee = bindExpression(invocation.callee);
 
+        if (callee.getNodeType() == BoundNodeType.FUNCTION_GROUP) {
+            BoundFunctionGroupExpressionNode functionGroup = (BoundFunctionGroupExpressionNode) callee;
+            BindInvocableArgsResult<Function> result = bindInvocableArguments(
+                    invocation.arguments,
+                    functionGroup.candidates,
+                    UnknownFunction.instance);
+            if (result.noInvocables) {
+                // there should always be candidates
+                throw new InternalException();
+            } else if (result.noOverload) {
+                if (functionGroup.candidates.size() == 1) {
+                    // if there is only 1 candidate, bind it, and output more user-friendly error
+                    result = new BindInvocableArgsResult<>(
+                            functionGroup.candidates.getFirst(),
+                            result.argumentsListNode(),
+                            false, false);
+                    addDiagnostic(
+                            BinderErrors.ArgumentCountMismatch,
+                            functionGroup,
+                            functionGroup.syntaxNode.value,
+                            result.invocable.getParameters().size());
+                } else {
+                    addDiagnostic(
+                            BinderErrors.FunctionDoesNotExist,
+                            functionGroup,
+                            functionGroup.syntaxNode.value,
+                            invocation.arguments.arguments.size());
+                }
+            }
+
+            BoundFunctionNode functionNode = new BoundFunctionNode(functionGroup.syntaxNode, result.invocable);
+            return new BoundFunctionInvocationExpression(
+                    invocation,
+                    functionNode,
+                    result.invocable.getFunctionType().getReturnType(),
+                    result.argumentsListNode,
+                    context.releaseRefVariables(),
+                    invocation.getRange());
+        }
+
         if (callee.getNodeType() == BoundNodeType.METHOD_GROUP) {
             BoundMethodGroupExpressionNode methodGroup = (BoundMethodGroupExpressionNode) callee;
             BindInvocableArgsResult<MethodReference> result = bindInvocableArguments(
@@ -1317,30 +1360,6 @@ public class Binder {
                     methodNode,
                     result.argumentsListNode,
                     context.releaseRefVariables());
-        }
-
-        if (callee.type instanceof SStaticFunction staticFunction) {
-            BoundFunctionReferenceNode functionReferenceNode = (BoundFunctionReferenceNode) callee;
-
-            BindInvocableArgsResult<Function> result = bindInvocableArguments(
-                    invocation.arguments,
-                    List.of(functionReferenceNode.getFunction()));
-
-            if (result.noOverload) {
-                addDiagnostic(
-                        BinderErrors.ArgumentCountMismatch,
-                        functionReferenceNode,
-                        functionReferenceNode.name,
-                        staticFunction.getParameters().size());
-            }
-
-            return new BoundFunctionInvocationExpression(
-                    invocation,
-                    functionReferenceNode,
-                    staticFunction.getReturnType(),
-                    result.argumentsListNode,
-                    context.releaseRefVariables(),
-                    invocation.getRange());
         }
 
         if (callee.type instanceof SFunction function) {
@@ -1490,8 +1509,8 @@ public class Binder {
         SymbolRef symbolRef = getSymbol(name.value);
 
         if (symbolRef != null) {
-            if (symbolRef.get() instanceof Function) {
-                return new BoundFunctionReferenceNode(name, symbolRef);
+            if (symbolRef.get() instanceof FunctionGroup group) {
+                return new BoundFunctionGroupExpressionNode(name, group.getFunctions());
             } else if (symbolRef.get() instanceof TypeAliasSymbol typeAliasSymbol) {
                 CustomTypeNode custom = new CustomTypeNode(name.token);
                 BoundAliasedTypeNode typeNode = new BoundAliasedTypeNode(custom, symbolRef);
@@ -2099,20 +2118,20 @@ public class Binder {
             return null;
         }
 
-        if (expression.getNodeType() == BoundNodeType.FUNCTION_REFERENCE) {
-            BoundFunctionReferenceNode functionReferenceNode = (BoundFunctionReferenceNode) expression;
+        if (expression.getNodeType() == BoundNodeType.FUNCTION_GROUP) {
+            BoundFunctionGroupExpressionNode functionGroupExpressionNode = (BoundFunctionGroupExpressionNode) expression;
             if (type instanceof SFunctionalInterface functionalInterface) {
-                if (functionReferenceNode.getFunctionType().signatureMatchesWithBoxing(functionalInterface)) {
-                    return new ConversionInfo(ConversionType.FUNCTION_TO_INTERFACE);
-                } else {
-                    return null;
+                for (Function candidate : functionGroupExpressionNode.candidates) {
+                    if (candidate.getFunctionType().signatureMatchesWithBoxing(functionalInterface)) {
+                        return new ConversionInfo(ConversionType.FUNCTION_TO_INTERFACE, candidate);
+                    }
                 }
             }
             if (type instanceof SGenericFunction genericFunction) {
-                if (functionReferenceNode.getFunctionType().signatureMatchesWithBoxing(genericFunction)) {
-                    return new ConversionInfo(ConversionType.FUNCTION_TO_GENERIC);
-                } else {
-                    return null;
+                for (Function candidate : functionGroupExpressionNode.candidates) {
+                    if (candidate.getFunctionType().signatureMatchesWithBoxing(genericFunction)) {
+                        return new ConversionInfo(ConversionType.FUNCTION_TO_GENERIC, candidate);
+                    }
                 }
             }
             return null;
@@ -2464,10 +2483,29 @@ public class Binder {
 
     private void buildFunctionDeclaration(FunctionNode functionNode) {
         String name = functionNode.name.value;
+
+        FunctionGroupDeclaration groupDeclaration = null;
+
         boolean hasError = false;
-        if (!name.isEmpty() && (declarationTable.hasSymbol(name) || context.hasSymbol(name))) {
-            hasError = true;
+        if (!name.isEmpty()) {
+            if (context.hasSymbol(name)) {
+                hasError = true;
+            } else if (declarationTable.hasSymbol(name)) {
+                groupDeclaration = declarationTable.getFunctionGroupDeclaration(name);
+                if (groupDeclaration == null) {
+                    hasError = true;
+                }
+            }
+        }
+
+        if (hasError) {
             addDiagnostic(BinderErrors.SymbolAlreadyDeclared, functionNode.name, name);
+        }
+
+        TextRange definition = TextRange.combine(functionNode.modifiers, functionNode.parameters);
+        if (groupDeclaration == null) {
+            groupDeclaration = new FunctionGroupDeclaration(name, new ImmutableSymbolRef(new FunctionGroup(name, definition)), hasError);
+            declarationTable.addFunctionGroup(groupDeclaration);
         }
 
         boolean isAsync = functionNode.modifiers.isAsync();
@@ -2481,10 +2519,10 @@ public class Binder {
         declarationTable.addFunction(functionNode, new FunctionDeclaration(
                 name,
                 symbolRef,
+                groupDeclaration,
                 isAsync,
                 returnTypeNode,
                 parameters,
-                functionType,
                 hasError));
     }
 

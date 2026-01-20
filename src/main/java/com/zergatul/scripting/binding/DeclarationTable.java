@@ -17,7 +17,7 @@ import java.util.function.BiConsumer;
 public class DeclarationTable {
 
     private final Map<String, StaticVariableDeclaration> staticVariables = new HashMap<>();
-    private final Map<String, FunctionDeclaration> functions = new HashMap<>();
+    private final Map<String, FunctionGroupDeclaration> functionGroups = new HashMap<>();
     private final Map<String, ClassDeclaration> classes = new HashMap<>();
     private final Map<String, TypeAliasDeclaration> typeAliases = new HashMap<>();
     private final List<ExtensionDeclaration> extensions = new ArrayList<>();
@@ -40,10 +40,17 @@ public class DeclarationTable {
         staticVariableNodeMap.put(fieldNode, declaration);
     }
 
+    public void addFunctionGroup(FunctionGroupDeclaration declaration) {
+        String name = declaration.getName();
+        if (!name.isEmpty() && !functionGroups.containsKey(name)) {
+            functionGroups.put(name, declaration);
+        }
+    }
+
     public void addFunction(FunctionNode functionNode, FunctionDeclaration declaration) {
         String name = declaration.getName();
-        if (!name.isEmpty() && !functions.containsKey(name)) {
-            functions.put(name, declaration);
+        if (!name.isEmpty()) {
+            functionGroups.get(name).addFunction(declaration);
         }
         functionNodeMap.put(functionNode, declaration);
     }
@@ -85,6 +92,10 @@ public class DeclarationTable {
             throw new InternalException();
         }
         return declaration;
+    }
+
+    public @Nullable FunctionGroupDeclaration getFunctionGroupDeclaration(String name) {
+        return functionGroups.get(name);
     }
 
     public FunctionDeclaration getFunctionDeclaration(FunctionNode functionNode) {
@@ -169,14 +180,14 @@ public class DeclarationTable {
         if (typeAliases.containsKey(name)) {
             return typeAliases.get(name).getSymbolRef();
         }
-        if (functions.containsKey(name)) {
-            return functions.get(name).getSymbolRef();
+        if (functionGroups.containsKey(name)) {
+            return functionGroups.get(name).getSymbolRef();
         }
         return null;
     }
 
     public boolean hasSymbol(String name) {
-        return staticVariables.containsKey(name) || functions.containsKey(name) || classes.containsKey(name) || typeAliases.containsKey(name);
+        return staticVariables.containsKey(name) || functionGroups.containsKey(name) || classes.containsKey(name) || typeAliases.containsKey(name);
     }
 
     public boolean hasExtensionMethod(SType type, String name, List<BoundParameterNode> parameters) {

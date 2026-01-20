@@ -2,11 +2,9 @@ package com.zergatul.scripting.completion;
 
 import com.zergatul.scripting.binding.BinderOutput;
 import com.zergatul.scripting.binding.nodes.BoundCompilationUnitMemberNode;
-import com.zergatul.scripting.binding.nodes.BoundFunctionNode;
 import com.zergatul.scripting.binding.nodes.BoundStaticVariableNode;
 import com.zergatul.scripting.compiler.CompilationParameters;
 import com.zergatul.scripting.symbols.DeclaredStaticVariable;
-import com.zergatul.scripting.symbols.Function;
 
 import java.util.ArrayList;
 import java.util.List;

@@ -211,10 +211,11 @@ You can also use arrow syntax if function is short:
 int sum(int a, int b) => a + b;
 ```
 
-Function overloading is not supported:
+Function overloading is supported:
 ```c#
-void func() {}
-void func(int x) {} // will not compile
+int max(int i1, int i2) => i1 > i2 ? i1 : i2;
+int max(int i1, int i2, int i3) => max(i1, max(i2, i3));
+int max(int i1, int i2, int i3, int i4) => max(max(i1, i2), max(i3, i4));
 ```
 
 #### Lambda Functions

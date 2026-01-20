@@ -75,9 +75,9 @@ public class HighlightingProvider {
             case FOREACH_LOOP_STATEMENT -> process((BoundForEachLoopStatementNode) node);
             case FOR_LOOP_STATEMENT -> process((BoundForLoopStatementNode) node);
             case FUNCTION -> process((BoundFunctionNode) node);
+            case FUNCTION_DECLARATION -> process((BoundFunctionDeclarationNode) node);
             case FUNCTION_AS_LAMBDA -> process((BoundFunctionAsLambdaExpressionNode) node);
             case FUNCTION_INVOCATION -> process((BoundFunctionInvocationExpression) node);
-            case FUNCTION_REFERENCE -> process((BoundFunctionReferenceNode) node);
             case FUNCTION_TYPE -> process((BoundFunctionTypeNode) node);
             case GENERATOR_CONTINUE -> process((BoundGeneratorContinueNode) node);
             case GENERATOR_GET_VALUE -> process((BoundGeneratorGetValueNode) node);
@@ -464,6 +464,10 @@ public class HighlightingProvider {
     }
 
     private void process(BoundFunctionNode node) {
+        process(node.syntaxNode.token, SemanticTokenType.IDENTIFIER, List.of(SemanticTokenModifier.FUNCTION));
+    }
+
+    private void process(BoundFunctionDeclarationNode node) {
         process(node.syntaxNode.modifiers);
         process(node.returnType);
         process(node.name);
@@ -479,12 +483,8 @@ public class HighlightingProvider {
     }
 
     private void process(BoundFunctionInvocationExpression node) {
-        process(node.functionReferenceNode);
+        process(node.functionNode);
         process(node.arguments);
-    }
-
-    private void process(BoundFunctionReferenceNode node) {
-        process(node.syntaxNode.token, SemanticTokenType.IDENTIFIER, List.of(SemanticTokenModifier.FUNCTION));
     }
 
     private void process(BoundFunctionTypeNode node) {

@@ -229,12 +229,12 @@ public abstract class BinderTreeVisitor {
         node.acceptChildren(this);
     }
 
-    public void explicitVisit(BoundFunctionNode node) {
+    public void explicitVisit(BoundFunctionDeclarationNode node) {
         visit(node);
         node.acceptChildren(this);
     }
 
-    public void explicitVisit(BoundFunctionReferenceNode node) {
+    public void explicitVisit(BoundFunctionNode node) {
         visit(node);
         node.acceptChildren(this);
     }
@@ -504,8 +504,8 @@ public abstract class BinderTreeVisitor {
     public void visit(BoundForLoopStatementNode node) {}
     public void visit(BoundFunctionAsLambdaExpressionNode node) {}
     public void visit(BoundFunctionInvocationExpression node) {}
+    public void visit(BoundFunctionDeclarationNode node) {}
     public void visit(BoundFunctionNode node) {}
-    public void visit(BoundFunctionReferenceNode node) {}
     public void visit(BoundJavaTypeNode node) {}
     public void visit(BoundIfStatementNode node) {}
     public void visit(BoundImplicitCastExpressionNode node) {}

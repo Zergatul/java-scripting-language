@@ -276,7 +276,7 @@ public class ComparatorRegistry {
                         .extract("type", node -> node.type))
                 .register(BoundExpressionStatementNode.class, builder -> builder
                         .extract("expression", node -> node.expression))
-                .register(BoundFunctionNode.class, builder -> builder
+                .register(BoundFunctionDeclarationNode.class, builder -> builder
                         .extract("syntaxNode", node -> node.syntaxNode)
                         .extract("returnType", node -> node.returnType)
                         .extract("name", node -> node.name)

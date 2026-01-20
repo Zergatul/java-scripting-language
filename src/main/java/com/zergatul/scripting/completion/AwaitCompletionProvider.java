@@ -2,7 +2,7 @@ package com.zergatul.scripting.completion;
 
 import com.zergatul.scripting.binding.BinderOutput;
 import com.zergatul.scripting.binding.nodes.BoundClassMethodNode;
-import com.zergatul.scripting.binding.nodes.BoundFunctionNode;
+import com.zergatul.scripting.binding.nodes.BoundFunctionDeclarationNode;
 import com.zergatul.scripting.compiler.CompilationParameters;
 import com.zergatul.scripting.lexer.TokenType;
 import com.zergatul.scripting.binding.nodes.BoundNodeType;
@@ -37,8 +37,8 @@ public class AwaitCompletionProvider<T> extends AbstractCompletionProvider<T> {
                     return List.of();
                 }
             }
-            if (current.entry.node.getNodeType() == BoundNodeType.FUNCTION) {
-                BoundFunctionNode functionNode = (BoundFunctionNode) current.entry.node;
+            if (current.entry.node.getNodeType() == BoundNodeType.FUNCTION_DECLARATION) {
+                BoundFunctionDeclarationNode functionNode = (BoundFunctionDeclarationNode) current.entry.node;
                 if (functionNode.isAsync()) {
                     return List.of(factory.getKeywordSuggestion(TokenType.AWAIT));
                 } else {

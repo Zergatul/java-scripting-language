@@ -79,6 +79,7 @@ public class BinderErrors {
     public static final ErrorCode UnaryOperationOverloadOneParameters = new ErrorCode("B075", "Unary operator overload should have 1 parameter");
     public static final ErrorCode UnaryOperationOverloadShouldHaveSameParameter = new ErrorCode("B076", "For unary operator overload the parameter should match current type");
     public static final ErrorCode UnaryOperationAlreadyDeclared = new ErrorCode("B077", "Unary operation with the same signature already declared");
+    public static final ErrorCode FunctionDoesNotExist = new ErrorCode("B078", "Function '%s' with %s arguments does not exist");
 
     public static final ErrorCode InternalError = new ErrorCode("B999", "Internal error: %s");
 }

@@ -2,51 +2,24 @@ package com.zergatul.scripting.binding.nodes;
 
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
-import com.zergatul.scripting.parser.nodes.FunctionNode;
-import com.zergatul.scripting.symbols.LiftedVariable;
+import com.zergatul.scripting.parser.nodes.NameExpressionNode;
+import com.zergatul.scripting.symbols.Function;
 
 import java.util.List;
 
-public class BoundFunctionNode extends BoundCompilationUnitMemberNode {
+public class BoundFunctionNode extends BoundNode {
 
-    public final FunctionNode syntaxNode;
-    public final BoundTypeNode returnType;
-    public final BoundNameExpressionNode name;
-    public final BoundParameterListNode parameters;
-    public final BoundStatementNode body;
-    public final List<LiftedVariable> lifted;
+    public final NameExpressionNode syntaxNode;
+    public final Function function;
 
-    public BoundFunctionNode(
-            FunctionNode node,
-            BoundTypeNode returnType,
-            BoundNameExpressionNode name,
-            BoundParameterListNode parameters,
-            BoundStatementNode body,
-            List<LiftedVariable> lifted
-    ) {
-        this(node, returnType, name, parameters, body, lifted, node.getRange());
+    public BoundFunctionNode(NameExpressionNode node, Function function) {
+        this(node, function, node.getRange());
     }
 
-    public BoundFunctionNode(
-            FunctionNode node,
-            BoundTypeNode returnType,
-            BoundNameExpressionNode name,
-            BoundParameterListNode parameters,
-            BoundStatementNode body,
-            List<LiftedVariable> lifted,
-            TextRange range
-    ) {
+    public BoundFunctionNode(NameExpressionNode node, Function function, TextRange range) {
         super(BoundNodeType.FUNCTION, range);
         this.syntaxNode = node;
-        this.returnType = returnType;
-        this.name = name;
-        this.parameters = parameters;
-        this.body = body;
-        this.lifted = lifted;
-    }
-
-    public boolean isAsync() {
-        return syntaxNode.modifiers.isAsync();
+        this.function = function;
     }
 
     @Override
@@ -55,20 +28,10 @@ public class BoundFunctionNode extends BoundCompilationUnitMemberNode {
     }
 
     @Override
-    public void acceptChildren(BinderTreeVisitor visitor) {
-        returnType.accept(visitor);
-        name.accept(visitor);
-        parameters.accept(visitor);
-        body.accept(visitor);
-    }
-
-    @Override
-    public boolean isOpen() {
-        return body.isOpen();
-    }
+    public void acceptChildren(BinderTreeVisitor visitor) {}
 
     @Override
     public List<BoundNode> getChildren() {
-        return List.of(returnType, name, parameters, body);
+        return List.of();
     }
 }

@@ -340,6 +340,25 @@ public class FunctionTests extends ComparatorTest {
     }
 
     @Test
+    public void asLambdaTest4() {
+        String code = """
+                int max(int i1, int i2) => i1 > i2 ? i1 : i2;
+                int max(int i1, int i2, int i3) => max(max(i1, i2), i3);
+                int max(int i1, int i2, int i3, int i4) => max(max(i1, i2), max(i3, i4));
+                void func1(int i1, int i2, fn<(int, int) => int> callback) => intStorage.add(callback(i1, i2));
+                void func2(int i1, int i2, int i3, fn<(int, int, int) => int> callback) => intStorage.add(callback(i1, i2, i3));
+                
+                func1(10, 9, max);
+                func2(5, 6, 4, max);
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(10, 6));
+    }
+
+    @Test
     public void refParameterTest1() {
         String code = """
                 void inc(ref int x) {
@@ -478,13 +497,101 @@ public class FunctionTests extends ComparatorTest {
     }
 
     @Test
+    public void staticVariableConflictTest() {
+        String code = """
+                static int func;
+                void func(){}
+                """;
+
+        comparator.assertEquals(
+                List.of(
+                        new DiagnosticMessage(BinderErrors.SymbolAlreadyDeclared, new SingleLineTextRange(2, 6, 22, 4), "func")),
+                getDiagnostics(ApiRoot.class, code));
+    }
+
+    @Test
     public void externalNameConflictTest() {
         String code = """
                 void run(){}
                 """;
 
-        comparator.assertEquals(List.of(
+        comparator.assertEquals(
+                List.of(
                         new DiagnosticMessage(BinderErrors.SymbolAlreadyDeclared, new SingleLineTextRange(1, 6, 5, 3), "run")),
+                getDiagnostics(ApiRoot.class, code));
+    }
+
+    @Test
+    public void typeAliasConflictTest() {
+        String code = """
+                typealias func = int;
+                void func(){}
+                """;
+
+        comparator.assertEquals(
+                List.of(
+                        new DiagnosticMessage(BinderErrors.SymbolAlreadyDeclared, new SingleLineTextRange(2, 6, 27, 4), "func")),
+                getDiagnostics(ApiRoot.class, code));
+    }
+
+    @Test
+    public void classConflictTest() {
+        String code = """
+                class func {}
+                void func(){}
+                """;
+
+        comparator.assertEquals(
+                List.of(
+                        new DiagnosticMessage(BinderErrors.SymbolAlreadyDeclared, new SingleLineTextRange(2, 6, 19, 4), "func")),
+                getDiagnostics(ApiRoot.class, code));
+    }
+
+    @Test
+    public void functionOverloadTest1() {
+        String code = """
+                int max(int i1, int i2) => i1 > i2 ? i1 : i2;
+                int max(int i1, int i2, int i3) => max(max(i1, i2), i3);
+                int max(int i1, int i2, int i3, int i4) => max(max(i1, i2), max(i3, i4));
+                
+                intStorage.add(max(1, 2));
+                intStorage.add(max(1, 3, 2));
+                intStorage.add(max(1, 4, 3, 2));
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(2, 3, 4));
+    }
+
+    @Test
+    public void functionOverloadTest2() {
+        String code = """
+                int max(int i1, int i2) => i1 > i2 ? i1 : i2;
+                int max(int i1, int i2, int i3) => max(max(i1, i2), i3);
+                int max(int i1, int i2, int i3, int i4) => max(max(i1, i2), max(i3, i4));
+                
+                intStorage.add(max(1));
+                """;
+
+        comparator.assertEquals(
+                List.of(
+                        new DiagnosticMessage(BinderErrors.FunctionDoesNotExist, new SingleLineTextRange(5, 16, 193, 3), "max", 1)),
+                getDiagnostics(ApiRoot.class, code));
+    }
+
+    @Test
+    public void functionOverloadTest3() {
+        String code = """
+                int max(int i1, int i2) => i1 > i2 ? i1 : i2;
+                
+                intStorage.add(max(1));
+                """;
+
+        comparator.assertEquals(
+                List.of(
+                        new DiagnosticMessage(BinderErrors.ArgumentCountMismatch, new SingleLineTextRange(3, 16, 62, 3), "max", 2)),
                 getDiagnostics(ApiRoot.class, code));
     }
 

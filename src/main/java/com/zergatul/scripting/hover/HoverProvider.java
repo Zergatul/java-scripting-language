@@ -164,10 +164,11 @@ public class HoverProvider {
                 String text = formatType(operation.getResultType()) + " " + formatDescription(operation.getOperator().toString()) + formatBrackets("(") + formatType(operation.getLeft()) + " " + formatParameter("left") + "," + " " + formatType(operation.getRight()) + " " + formatParameter("right") + formatBrackets(")");
                 yield new HoverResponse(text, range);
             }
-            case FUNCTION_REFERENCE -> {
-                BoundFunctionReferenceNode reference = (BoundFunctionReferenceNode) node;
-                SFunction functionType = (SFunction) reference.type;
-                String text = formatDescription("(function)") + " " + formatType(functionType.getReturnType()) + " " + formatIdentifier(reference.name) + formatMethodParameters(functionType.getParameters());
+
+            case FUNCTION -> {
+                BoundFunctionNode functionNode = (BoundFunctionNode) node;
+                SStaticFunction functionType = functionNode.function.getFunctionType();
+                String text = formatDescription("(function)") + " " + formatType(functionType.getReturnType()) + " " + formatIdentifier(functionNode.function.getName()) + formatMethodParameters(functionType.getParameters());
                 yield new HoverResponse(text, range);
             }
 

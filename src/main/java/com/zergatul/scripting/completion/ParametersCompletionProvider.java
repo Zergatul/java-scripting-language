@@ -58,8 +58,8 @@ public class ParametersCompletionProvider<T> extends AbstractCompletionProvider<
                     BoundExtensionBinaryOperationNode operationNode = (BoundExtensionBinaryOperationNode) current.entry.node;
                     yield operationNode.parameters.parameters;
                 }
-                case FUNCTION -> {
-                    BoundFunctionNode function = (BoundFunctionNode) current.entry.node;
+                case FUNCTION_DECLARATION -> {
+                    BoundFunctionDeclarationNode function = (BoundFunctionDeclarationNode) current.entry.node;
                     yield function.parameters.parameters;
                 }
                 default -> null;

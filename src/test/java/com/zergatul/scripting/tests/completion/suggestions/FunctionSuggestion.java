@@ -2,7 +2,7 @@ package com.zergatul.scripting.tests.completion.suggestions;
 
 import com.zergatul.scripting.binding.nodes.BoundCompilationUnitMemberNode;
 import com.zergatul.scripting.binding.nodes.BoundCompilationUnitNode;
-import com.zergatul.scripting.binding.nodes.BoundFunctionNode;
+import com.zergatul.scripting.binding.nodes.BoundFunctionDeclarationNode;
 import com.zergatul.scripting.binding.nodes.BoundNodeType;
 import com.zergatul.scripting.symbols.Function;
 import com.zergatul.scripting.tests.completion.helpers.TestCompletionContext;
@@ -16,15 +16,32 @@ public class FunctionSuggestion extends Suggestion {
         this(extract(context.output().unit(), name));
     }
 
+    public FunctionSuggestion(TestCompletionContext context, String name, int parametersCount) {
+        this(extract(context.output().unit(), name, parametersCount));
+    }
+
     public FunctionSuggestion(Function function) {
         this.function = function;
     }
 
     private static Function extract(BoundCompilationUnitNode unit, String name) {
         for (BoundCompilationUnitMemberNode node : unit.members.members) {
-            if (node.getNodeType() == BoundNodeType.FUNCTION) {
-                BoundFunctionNode function = (BoundFunctionNode) node;
+            if (node.getNodeType() == BoundNodeType.FUNCTION_DECLARATION) {
+                BoundFunctionDeclarationNode function = (BoundFunctionDeclarationNode) node;
                 if (function.name.value.equals(name)) {
+                    return (Function) function.name.getSymbol();
+                }
+            }
+        }
+        Assertions.fail();
+        throw new AssertionError();
+    }
+
+    private static Function extract(BoundCompilationUnitNode unit, String name, int parametersCount) {
+        for (BoundCompilationUnitMemberNode node : unit.members.members) {
+            if (node.getNodeType() == BoundNodeType.FUNCTION_DECLARATION) {
+                BoundFunctionDeclarationNode function = (BoundFunctionDeclarationNode) node;
+                if (function.name.value.equals(name) && function.parameters.parameters.size() == parametersCount) {
                     return (Function) function.name.getSymbol();
                 }
             }
