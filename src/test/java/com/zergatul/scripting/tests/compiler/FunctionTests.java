@@ -595,6 +595,19 @@ public class FunctionTests extends ComparatorTest {
                 getDiagnostics(ApiRoot.class, code));
     }
 
+    @Test
+    public void functionOverloadTest4() {
+        String code = """
+                void func(int i1, int i2) {}
+                int func(int a1, int a2) => 0;
+                """;
+
+        comparator.assertEquals(
+                List.of(
+                        new DiagnosticMessage(BinderErrors.FunctionAlreadyDeclared, new SingleLineTextRange(2, 5, 33, 4))),
+                getDiagnostics(ApiRoot.class, code));
+    }
+
     public static class ApiRoot {
         public static IntStorage intStorage;
         public static FloatStorage floatStorage;

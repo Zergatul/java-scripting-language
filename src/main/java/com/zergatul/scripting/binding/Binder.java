@@ -2486,25 +2486,25 @@ public class Binder {
 
         FunctionGroupDeclaration groupDeclaration = null;
 
-        boolean hasError = false;
+        boolean hasGroupError = false;
         if (!name.isEmpty()) {
             if (context.hasSymbol(name)) {
-                hasError = true;
+                hasGroupError = true;
             } else if (declarationTable.hasSymbol(name)) {
                 groupDeclaration = declarationTable.getFunctionGroupDeclaration(name);
                 if (groupDeclaration == null) {
-                    hasError = true;
+                    hasGroupError = true;
                 }
             }
         }
 
-        if (hasError) {
+        if (hasGroupError) {
             addDiagnostic(BinderErrors.SymbolAlreadyDeclared, functionNode.name, name);
         }
 
         TextRange definition = TextRange.combine(functionNode.modifiers, functionNode.parameters);
         if (groupDeclaration == null) {
-            groupDeclaration = new FunctionGroupDeclaration(name, new ImmutableSymbolRef(new FunctionGroup(name, definition)), hasError);
+            groupDeclaration = new FunctionGroupDeclaration(name, new ImmutableSymbolRef(new FunctionGroup(name, definition)), hasGroupError);
             declarationTable.addFunctionGroup(groupDeclaration);
         }
 
@@ -2516,6 +2516,16 @@ public class Binder {
                 actualReturnType,
                 parameters.parameters.stream().map(pn -> new MethodParameter(pn.getName().value, pn.getType())).toArray(MethodParameter[]::new));
         SymbolRef symbolRef = new ImmutableSymbolRef(new Function(name, functionType, TextRange.combine(functionNode.modifiers, functionNode.parameters)));
+
+        boolean hasFunctionError = false;
+        for (Function overload : groupDeclaration.getFunctionGroup().getFunctions()) {
+            if (overload.getFunctionType().signatureMatchesExactly(functionType)) {
+                hasFunctionError = true;
+                addDiagnostic(BinderErrors.FunctionAlreadyDeclared, functionNode.name);
+                break;
+            }
+        }
+
         declarationTable.addFunction(functionNode, new FunctionDeclaration(
                 name,
                 symbolRef,
@@ -2523,7 +2533,7 @@ public class Binder {
                 isAsync,
                 returnTypeNode,
                 parameters,
-                hasError));
+                hasFunctionError));
     }
 
     private void buildClassFieldDeclaration(ClassDeclaration classDeclaration, ClassFieldNode classFieldNode) {
