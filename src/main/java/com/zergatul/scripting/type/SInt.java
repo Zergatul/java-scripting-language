@@ -276,14 +276,16 @@ public class SInt extends SValueType {
 
     private static final Lazy<MethodReference> METHOD_TO_INT8 = new Lazy<>(() -> new NoArgsByteCodeMethodReference(instance, SInt8.instance, "toInt8") {
         @Override
-        public void compileInvoke(MethodVisitor visitor, CompilerContext context) {
+        public void compileInvoke(MethodVisitor visitor, CompilerContext context, Runnable compileArguments) {
+            compileArguments.run();
             visitor.visitInsn(I2B);
         }
     });
 
     private static final Lazy<MethodReference> METHOD_TO_INT16 = new Lazy<>(() -> new NoArgsByteCodeMethodReference(instance, SInt16.instance, "toInt16") {
         @Override
-        public void compileInvoke(MethodVisitor visitor, CompilerContext context) {
+        public void compileInvoke(MethodVisitor visitor, CompilerContext context, Runnable compileArguments) {
+            compileArguments.run();
             visitor.visitInsn(I2S);
         }
     });
@@ -311,12 +313,12 @@ public class SInt extends SValueType {
             new MethodParameter("str", SString.instance),
             new MethodParameter("result", SByReference.INT)));
 
-    private static final Lazy<PropertyReference> PROPERTY_MIN_VALUE = new Lazy<>(() -> new GetterPropertyReference(
+    private static final Lazy<PropertyReference> PROPERTY_MIN_VALUE = new Lazy<>(() -> new StaticCustomGetterPropertyReference(
             SInt.instance,
             "MIN_VALUE",
             visitor -> visitor.visitLdcInsn(Integer.MIN_VALUE)));
 
-    private static final Lazy<PropertyReference> PROPERTY_MAX_VALUE = new Lazy<>(() -> new GetterPropertyReference(
+    private static final Lazy<PropertyReference> PROPERTY_MAX_VALUE = new Lazy<>(() -> new StaticCustomGetterPropertyReference(
             SInt.instance,
             "MAX_VALUE",
             visitor -> visitor.visitLdcInsn(Integer.MAX_VALUE)));

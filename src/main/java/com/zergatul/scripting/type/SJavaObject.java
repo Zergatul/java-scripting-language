@@ -24,7 +24,7 @@ public class SJavaObject extends SClassType {
         return Arrays.stream(Object.class.getMethods())
                 .filter(m -> Modifier.isPublic(m.getModifiers()))
                 .filter(m -> !Modifier.isStatic(m.getModifiers()))
-                .map(NativeInstanceMethodReference::new)
+                .map(NativeMethodReference::new)
                 .map(r -> (MethodReference) r)
                 .toList();
     }

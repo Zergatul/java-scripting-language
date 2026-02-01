@@ -3,16 +3,17 @@ package com.zergatul.scripting.symbols;
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.compiler.CompilerContext;
 import com.zergatul.scripting.type.SType;
+import org.jspecify.annotations.Nullable;
 import org.objectweb.asm.MethodVisitor;
 
 public abstract class Symbol {
 
-    private final String name;
+    private final @Nullable String name;
     private final SType type;
 
-    private final TextRange definition;
+    private final @Nullable TextRange definition;
 
-    protected Symbol(String name, SType type, TextRange definition) {
+    protected Symbol(@Nullable String name, SType type, @Nullable TextRange definition) {
         this.name = name;
         this.type = type;
         this.definition = definition;
@@ -22,11 +23,11 @@ public abstract class Symbol {
         return type;
     }
 
-    public String getName() {
+    public @Nullable String getName() {
         return name;
     }
 
-    public TextRange getDefinition() {
+    public @Nullable TextRange getDefinition() {
         return definition;
     }
 

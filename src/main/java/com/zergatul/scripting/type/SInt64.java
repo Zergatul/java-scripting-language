@@ -293,12 +293,12 @@ public class SInt64 extends SValueType {
             new MethodParameter("str", SString.instance),
             new MethodParameter("result", SByReference.INT64)));
 
-    private static final Lazy<PropertyReference> PROPERTY_MIN_VALUE = new Lazy<>(() -> new GetterPropertyReference(
+    private static final Lazy<PropertyReference> PROPERTY_MIN_VALUE = new Lazy<>(() -> new StaticCustomGetterPropertyReference(
             SInt64.instance,
             "MIN_VALUE",
             visitor -> visitor.visitLdcInsn(Long.MIN_VALUE)));
 
-    private final Lazy<PropertyReference> PROPERTY_MAX_VALUE = new Lazy<>(() -> new GetterPropertyReference(
+    private static final Lazy<PropertyReference> PROPERTY_MAX_VALUE = new Lazy<>(() -> new StaticCustomGetterPropertyReference(
             SInt64.instance,
             "MAX_VALUE",
             visitor -> visitor.visitLdcInsn(Long.MAX_VALUE)));

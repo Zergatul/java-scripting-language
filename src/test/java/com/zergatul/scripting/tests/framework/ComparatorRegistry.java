@@ -6,7 +6,6 @@ import com.zergatul.scripting.highlighting.SemanticToken;
 import com.zergatul.scripting.hover.HoverProvider;
 import com.zergatul.scripting.lexer.*;
 import com.zergatul.scripting.parser.nodes.*;
-import com.zergatul.scripting.type.NativeInstanceMethodReference;
 import com.zergatul.scripting.type.NativeMethodReference;
 import org.jspecify.annotations.Nullable;
 
@@ -195,7 +194,7 @@ public class ComparatorRegistry {
                         .extract("token", node -> node.token))
                 .register(MemberAccessExpressionNode.class, builder -> builder
                         .extract("callee", node -> node.callee)
-                        .extract("dot", node -> node.dot)
+                        .extract("operator", node -> node.operator)
                         .extract("name", node -> node.name))
                 .register(MetaTypeExpressionNode.class, builder -> builder
                         .extract("keyword", node -> node.keyword)
@@ -238,6 +237,8 @@ public class ComparatorRegistry {
                         .extract("commas", SeparatedList::getCommas))
                 .register(StatementsListNode.class, builder -> builder
                         .extract("statements", node -> node.statements))
+                .register(StaticReferenceNode.class, builder -> builder
+                        .extract("typeNode", node -> node.typeNode))
                 .register(TypePatternNode.class, builder -> builder
                         .extract("typeNode", node -> node.typeNode))
                 .register(UnaryExpressionNode.class, builder -> builder
@@ -321,7 +322,6 @@ public class ComparatorRegistry {
                 .register(BoundTypeNode.class, builder -> builder
                         .extract("type", node -> node.type))
                 /* */
-                .register(NativeInstanceMethodReference.class, builder -> {})
                 .register(NativeMethodReference.class, builder -> builder
                         .extract("method", NativeMethodReference::getUnderlying));
     }

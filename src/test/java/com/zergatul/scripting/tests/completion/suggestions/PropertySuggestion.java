@@ -16,8 +16,34 @@ public class PropertySuggestion extends Suggestion {
         this.property = property;
     }
 
+    public static PropertySuggestion getInstance(Class<?> clazz, String name) {
+        PropertyReference property = SType.fromJavaType(clazz)
+                .getInstanceProperties()
+                .stream()
+                .filter(p -> p.getName().equals(name))
+                .findFirst()
+                .orElseThrow();
+        return new PropertySuggestion(property);
+    }
+
+    public static PropertySuggestion getStatic(Class<?> clazz, String name) {
+        PropertyReference property = SType.fromJavaType(clazz)
+                .getStaticProperties()
+                .stream()
+                .filter(p -> p.getName().equals(name))
+                .findFirst()
+                .orElseThrow();
+        return new PropertySuggestion(property);
+    }
+
     public static PropertySuggestion getInstance(TestCompletionContext context, String className, String propertyName) {
-        return new PropertySuggestion(SuggestionHelper.extractClassType(context, className).getInstanceProperty(propertyName));
+        PropertyReference property = SuggestionHelper.extractClassType(context, className)
+                .getInstanceProperties()
+                .stream()
+                .filter(p -> p.getName().equals(propertyName))
+                .findFirst()
+                .orElseThrow();
+        return new PropertySuggestion(property);
     }
 
     public static PropertySuggestion getStatic(SType type, String name) {
@@ -37,5 +63,10 @@ public class PropertySuggestion extends Suggestion {
         } else {
             return false;
         }
+    }
+
+    @Override
+    public String toString() {
+        return String.format("%s %s %s", property.isPublic() ? "public" : "private", property.getType(), property.getName());
     }
 }

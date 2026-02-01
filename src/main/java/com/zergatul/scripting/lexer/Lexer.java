@@ -69,7 +69,12 @@ public class Lexer {
                     advance();
                 }
                 case '.' -> {
-                    if (isNumber(next)) {
+                    if (next == '#') {
+                        trackBeginToken();
+                        advance();
+                        advance();
+                        endToken(TokenType.DOT_HASH);
+                    } else if (isNumber(next)) {
                         processNumber();
                     } else {
                         appendToken(TokenType.DOT);

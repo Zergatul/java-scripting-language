@@ -13,6 +13,9 @@ import com.zergatul.scripting.type.*;
 import com.zergatul.scripting.type.operation.*;
 import org.jspecify.annotations.Nullable;
 
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.reflect.Field;
 import java.util.*;
 import java.util.function.BiFunction;
 import java.util.stream.Stream;
@@ -880,6 +883,17 @@ public class Binder {
     }
 
     private BoundExpressionNode bindExpression(ExpressionNode expression) {
+        BoundExpressionNode result = bindExpressionOrStaticRef(expression);
+
+        if (result.is(BoundNodeType.STATIC_REFERENCE)) {
+            addDiagnostic(BinderErrors.TypeReferenceNotAllowed, expression, expression.getRange().extract(code));
+            return new BoundInvalidExpressionNode(List.of(result), List.of(), expression.getRange());
+        }
+
+        return result;
+    }
+
+    private BoundExpressionNode bindExpressionOrStaticRef(ExpressionNode expression) {
         return switch (expression.getNodeType()) {
             case NULL_EXPRESSION -> bindNullExpression((NullExpressionNode) expression);
             case BOOLEAN_LITERAL -> bindBooleanLiteralExpression((BooleanLiteralExpressionNode) expression);
@@ -1171,7 +1185,7 @@ public class Binder {
             return new BoundInExpressionNode(binary, left, right, UnknownMethodReference.instance);
         }
 
-        List<MethodReference> methods = getInstanceMethodsWithExtensions(right.type);
+        List<MethodReference> methods = getInstanceMethodsWithExtensions(right.type, false);
         for (MethodReference method : methods) {
             if (!method.getName().equals("contains")) {
                 continue;
@@ -1353,6 +1367,8 @@ public class Binder {
                         methodGroup.method.name, invocation.arguments.arguments.size());
             }
 
+            verifyMethodAccessible(result.invocable, methodGroup.syntaxNode.name);
+
             BoundMethodNode methodNode = new BoundMethodNode(methodGroup.syntaxNode.name, result.invocable);
             return new BoundMethodInvocationExpressionNode(
                     invocation,
@@ -1521,7 +1537,10 @@ public class Binder {
         }
 
         if (context.isClassMethod() && !context.isExtension()) {
-            PropertyReference property = context.getClassType().getInstanceProperty(name.value);
+            PropertyReference property = context.getClassType().getInstanceProperties().stream()
+                    .filter(p -> p.getName().equals(name.value))
+                    .findFirst()
+                    .orElse(null);
             if (property != null) {
                 TextRange ephemeralRange = name.getRange().getStart();
                 ThisExpressionNode ephemeralThis = new ThisExpressionNode(new Token(TokenType.THIS, ephemeralRange));
@@ -1538,7 +1557,7 @@ public class Binder {
                         name.getRange());
             }
 
-            List<MethodReference> methods = getInstanceMethodsWithExtensions(context.getClassType()).stream()
+            List<MethodReference> methods = getInstanceMethodsWithExtensions(context.getClassType(), false).stream()
                     .filter(m -> m.getName().equals(name.value))
                     .toList();
             if (!methods.isEmpty()) {
@@ -1835,22 +1854,26 @@ public class Binder {
     }
 
     private BoundExpressionNode bindMemberAccessExpression(MemberAccessExpressionNode expression) {
-        BoundExpressionNode callee = bindExpression(expression.callee);
+        BoundExpressionNode callee = bindExpressionOrStaticRef(expression.callee);
 
         if (callee.type == SNull.instance) {
-            addDiagnostic(BinderErrors.CannotAccessNullMembers, expression.dot);
+            addDiagnostic(BinderErrors.CannotAccessNullMembers, expression.operator);
             return new BoundPropertyAccessExpressionNode(
                     expression,
                     callee,
                     new BoundPropertyNode(expression.name, UnknownPropertyReference.instance));
         }
 
+        boolean isPrivate = expression.isPrivate();
+
         if (callee.type instanceof SStaticTypeReference staticType) {
             PropertyReference property = staticType.getUnderlying().getStaticProperties().stream()
+                    .filter(p -> p.isPublic() ^ isPrivate)
                     .filter(p -> p.getName().equals(expression.name.value))
                     .findFirst()
                     .orElse(null);
             if (property != null) {
+                verifyPropertyAccessible(property, expression.name);
                 return new BoundPropertyAccessExpressionNode(
                         expression,
                         callee,
@@ -1858,6 +1881,7 @@ public class Binder {
             }
 
             List<MethodReference> methods = staticType.getUnderlying().getStaticMethods().stream()
+                    .filter(p -> p.isPublic() ^ isPrivate)
                     .filter(m -> m.getName().equals(expression.name.value))
                     .filter(m -> {
                         if (m instanceof NativeMethodReference ref) {
@@ -1888,16 +1912,22 @@ public class Binder {
             if (callee.type == SUnknown.instance || expression.name.value.isEmpty()) {
                 property = UnknownPropertyReference.instance;
             } else {
-                property = callee.type.getInstanceProperty(expression.name.value);
+                property = callee.type.getInstanceProperties().stream()
+                        .filter(p -> p.isPublic() ^ isPrivate)
+                        .filter(p -> p.getName().equals(expression.name.value))
+                        .findFirst()
+                        .orElse(null);
             }
             if (property != null) {
+                verifyPropertyAccessible(property, expression.name);
                 return new BoundPropertyAccessExpressionNode(
                         expression,
                         callee,
                         new BoundPropertyNode(expression.name, property));
             }
 
-            List<MethodReference> methods = getInstanceMethodsWithExtensions(callee.type).stream()
+            List<MethodReference> methods = getInstanceMethodsWithExtensions(callee.type, isPrivate)
+                    .stream()
                     .filter(m -> m.getName().equals(expression.name.value))
                     .filter(m -> {
                         if (m instanceof NativeMethodReference ref) {
@@ -1926,9 +1956,46 @@ public class Binder {
         }
     }
 
-    private List<MethodReference> getInstanceMethodsWithExtensions(SType type) {
-        List<MethodReference> methods = new ArrayList<>(type.getInstanceMethods());
-        declarationTable.appendExtensionMethods(type, methods);
+    private void verifyPropertyAccessible(PropertyReference propertyRef, Locatable locatable) {
+        if (propertyRef.isPublic()) {
+            return;
+        }
+
+        if (propertyRef instanceof FieldPropertyReference fieldPropertyRef) {
+            MethodHandles.Lookup lookup = MethodHandles.lookup();
+            try {
+                MethodHandles.privateLookupIn(fieldPropertyRef.getUnderlyingField().getDeclaringClass(), lookup);
+            } catch (IllegalAccessException | SecurityException e) {
+                addDiagnostic(BinderErrors.PrivateAccessDenied, locatable, e.toString());
+            }
+        }
+    }
+
+    private void verifyMethodAccessible(MethodReference methodRef, Locatable locatable) {
+        if (methodRef.isPublic()) {
+            return;
+        }
+
+        if (methodRef instanceof NativeMethodReference nativeMethodRef) {
+            MethodHandles.Lookup lookup = MethodHandles.lookup();
+            try {
+                MethodHandles.privateLookupIn(nativeMethodRef.getUnderlying().getDeclaringClass(), lookup);
+            } catch (IllegalAccessException | SecurityException e) {
+                addDiagnostic(BinderErrors.PrivateAccessDenied, locatable, e.toString());
+            }
+        }
+    }
+
+    private List<MethodReference> getInstanceMethodsWithExtensions(SType type, boolean isPrivate) {
+        List<MethodReference> methods = new ArrayList<>();
+        for (MethodReference method : type.getInstanceMethods()) {
+            if (method.isPublic() ^ isPrivate) {
+                methods.add(method);
+            }
+        }
+        if (!isPrivate) {
+            declarationTable.appendExtensionMethods(type, methods);
+        }
         return methods;
     }
 
@@ -2547,7 +2614,7 @@ public class Binder {
             addDiagnostic(BinderErrors.MemberAlreadyDeclared, classFieldNode.name, fieldName);
         } else {
             SType baseType = classDeclaration.getDeclaredType().getBaseType();
-            if (baseType.getInstanceProperty(fieldName) != null) {
+            if (baseType.getInstanceProperties().stream().anyMatch(p -> p.getName().equals(fieldName))) {
                 addDiagnostic(BinderErrors.BaseClassAlreadyHasMember, classFieldNode.name);
             }
             if (baseType.getInstanceMethods().stream().anyMatch(m -> m.getName().equals(fieldName))) {
@@ -2596,7 +2663,7 @@ public class Binder {
             addDiagnostic(BinderErrors.MethodAlreadyDeclared, methodNode.name);
         } else {
             SType baseType = classDeclaration.getDeclaredType().getBaseType();
-            if (baseType.getInstanceProperty(methodName) != null) {
+            if (baseType.getInstanceProperties().stream().anyMatch(p -> p.getName().equals(methodName))) {
                 addDiagnostic(BinderErrors.BaseClassAlreadyHasMember, methodNode.name);
             }
             MethodReference overrideCandidateBaseMethod = baseType.getInstanceMethods().stream()
@@ -2710,7 +2777,7 @@ public class Binder {
 
         boolean hasError = false;
         MethodReference methodRef = UnknownMethodReference.instance;
-        if (baseType.getInstanceProperty(methodName) != null) {
+        if (baseType.getInstanceProperties().stream().anyMatch(p -> p.getName().equals(methodName))) {
             hasError = true;
             addDiagnostic(BinderErrors.MemberAlreadyDeclared, methodNode.name, methodName);
         } else if (hasInstanceMethod(baseType, methodName, parameters.parameters)) {

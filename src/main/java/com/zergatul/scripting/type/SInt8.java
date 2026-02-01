@@ -279,12 +279,12 @@ public class SInt8 extends SValueType {
             new MethodParameter("str", SString.instance),
             new MethodParameter("result", SByReference.INT8)));
 
-    private static final Lazy<PropertyReference> PROPERTY_MIN_VALUE = new Lazy<>(() -> new GetterPropertyReference(
+    private static final Lazy<PropertyReference> PROPERTY_MIN_VALUE = new Lazy<>(() -> new StaticCustomGetterPropertyReference(
             SInt8.instance,
             "MIN_VALUE",
             visitor -> visitor.visitLdcInsn(Byte.MIN_VALUE)));
 
-    private static final Lazy<PropertyReference> PROPERTY_MAX_VALUE = new Lazy<>(() -> new GetterPropertyReference(
+    private static final Lazy<PropertyReference> PROPERTY_MAX_VALUE = new Lazy<>(() -> new StaticCustomGetterPropertyReference(
             SInt8.instance,
             "MAX_VALUE",
             visitor -> visitor.visitLdcInsn(Byte.MAX_VALUE)));

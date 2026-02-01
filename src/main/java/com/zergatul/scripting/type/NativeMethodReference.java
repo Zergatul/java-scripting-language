@@ -1,7 +1,12 @@
 package com.zergatul.scripting.type;
 
 import com.zergatul.scripting.MethodDescription;
+import com.zergatul.scripting.compiler.CompilerContext;
+import com.zergatul.scripting.compiler.MethodHandleCache;
+import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.Type;
 
+import java.lang.invoke.MethodHandle;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Parameter;
@@ -9,11 +14,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-public abstract class NativeMethodReference extends MethodReference {
+import static org.objectweb.asm.Opcodes.*;
 
-    protected final Method method;
+public class NativeMethodReference extends MethodReference {
 
-    protected NativeMethodReference(Method method) {
+    private final Method method;
+
+    public NativeMethodReference(Method method) {
         this.method = method;
     }
 
@@ -54,6 +61,11 @@ public abstract class NativeMethodReference extends MethodReference {
     }
 
     @Override
+    public boolean isPublic() {
+        return Modifier.isPublic(method.getModifiers());
+    }
+
+    @Override
     public boolean isVirtual() {
         return !Modifier.isFinal(method.getModifiers());
     }
@@ -64,11 +76,75 @@ public abstract class NativeMethodReference extends MethodReference {
     }
 
     @Override
+    public void compileInvoke(MethodVisitor visitor, CompilerContext context, Runnable compileArguments) {
+        if (isPublic()) {
+            compileArguments.run();
+            if (isStatic()) {
+                visitor.visitMethodInsn(
+                        INVOKESTATIC,
+                        Type.getInternalName(method.getDeclaringClass()),
+                        method.getName(),
+                        Type.getMethodDescriptor(method),
+                        false);
+            } else {
+                visitor.visitMethodInsn(
+                        method.getDeclaringClass().isInterface() ? INVOKEINTERFACE : INVOKEVIRTUAL,
+                        Type.getInternalName(method.getDeclaringClass()),
+                        method.getName(),
+                        Type.getMethodDescriptor(method),
+                        method.getDeclaringClass().isInterface());
+            }
+        } else {
+            if (isStatic()) {
+                String methodHandleFieldName = context.createCachedPrivateMethodHandle(this);
+                visitor.visitFieldInsn(
+                        GETSTATIC,
+                        MethodHandleCache.INTERNAL_NAME,
+                        methodHandleFieldName,
+                        Type.getDescriptor(MethodHandle.class));
+                compileArguments.run();
+                visitor.visitMethodInsn(
+                        INVOKEVIRTUAL,
+                        Type.getInternalName(MethodHandle.class),
+                        "invokeExact",
+                        getDescriptor(),
+                        false);
+            } else {
+                String methodHandleFieldName = context.createCachedPrivateMethodHandle(this);
+                visitor.visitFieldInsn(
+                        GETSTATIC,
+                        MethodHandleCache.INTERNAL_NAME,
+                        methodHandleFieldName,
+                        Type.getDescriptor(MethodHandle.class));
+                compileArguments.run();
+
+                List<SType> types = getParameterTypes();
+                Type[] argumentTypes = new Type[types.size() + 1];
+                argumentTypes[0] = getOwner().getAsmType();
+                for (int i = 1; i < argumentTypes.length; i++) {
+                    argumentTypes[i] = types.get(i - 1).getAsmType();
+                }
+
+                visitor.visitMethodInsn(
+                        INVOKEVIRTUAL,
+                        Type.getInternalName(MethodHandle.class),
+                        "invokeExact",
+                        Type.getMethodDescriptor(getReturn().getAsmType(), argumentTypes),
+                        false);
+            }
+        }
+    }
+
+    @Override
     public boolean equals(Object obj) {
         if (obj instanceof NativeMethodReference other) {
             return other.method.equals(method);
         } else {
             return false;
         }
+    }
+
+    private boolean isStatic() {
+        return Modifier.isStatic(method.getModifiers());
     }
 }

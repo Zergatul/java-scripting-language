@@ -33,7 +33,7 @@ public class UnknownMethodReference extends MethodReference {
     }
 
     @Override
-    public void compileInvoke(MethodVisitor visitor, CompilerContext context) {
+    public void compileInvoke(MethodVisitor visitor, CompilerContext context, Runnable compileArguments) {
         throw new InternalException();
     }
 }

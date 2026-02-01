@@ -24,6 +24,10 @@ public class MethodSuggestion extends Suggestion {
         return getInstance(SuggestionHelper.extractClassType(context, className), methodName);
     }
 
+    public static MethodSuggestion getInstance(Class<?> clazz, String name) {
+        return getInstance(SType.fromJavaType(clazz), name);
+    }
+
     public static MethodSuggestion getInstance(SType type, String name) {
         Optional<MethodReference> optional = type.getInstanceMethods().stream().filter(r -> r.getName().equals(name)).findFirst();
         if (optional.isEmpty()) {
@@ -41,6 +45,10 @@ public class MethodSuggestion extends Suggestion {
                 .filter(ref -> ref.getReturn().equals(SType.fromJavaType(method.getReturnType())))
                 .findFirst()
                 .orElseThrow());
+    }
+
+    public static MethodSuggestion getStatic(Class<?> clazz, String name) {
+        return getStatic(SType.fromJavaType(clazz), name);
     }
 
     public static MethodSuggestion getStatic(SType type, String name) {

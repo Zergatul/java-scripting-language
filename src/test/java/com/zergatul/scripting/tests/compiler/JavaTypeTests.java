@@ -43,12 +43,19 @@ public class JavaTypeTests {
                 intStorage.add(Java<com.zergatul.scripting.tests.compiler.JavaTypeTests$ClassA>.field);
                 boolStorage.add(Java<java.util.Objects>.equals("qqq", "qqq"));
                 boolStorage.add(Java<java.util.Objects>.equals("qqq", "www"));
+                
+                Java<com.zergatul.scripting.tests.compiler.JavaTypeTests$ClassA>.field = 100;
+                intStorage.add(Java<com.zergatul.scripting.tests.compiler.JavaTypeTests$ClassA>.field);
+                Java<com.zergatul.scripting.tests.compiler.JavaTypeTests$ClassA>.field += 10;
+                intStorage.add(Java<com.zergatul.scripting.tests.compiler.JavaTypeTests$ClassA>.field);
+                Java<com.zergatul.scripting.tests.compiler.JavaTypeTests$ClassA>.field++;
+                intStorage.add(Java<com.zergatul.scripting.tests.compiler.JavaTypeTests$ClassA>.field);
                 """;
 
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
-        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(123456, 654321));
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(123456, 654321, 100, 110, 111));
         Assertions.assertIterableEquals(ApiRoot.boolStorage.list, List.of(true, false));
     }
 

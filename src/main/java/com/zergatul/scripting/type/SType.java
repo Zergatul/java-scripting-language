@@ -147,10 +147,6 @@ public abstract class SType {
         return List.of();
     }
 
-    public @Nullable PropertyReference getInstanceProperty(String name) {
-        return null;
-    }
-
     public List<PropertyReference> getStaticProperties() {
         return List.of();
     }

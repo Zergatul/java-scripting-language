@@ -122,12 +122,6 @@ public class SCustomType extends SReferenceType {
     }
 
     @Override
-    @Nullable
-    public PropertyReference getInstanceProperty(String name) {
-        return instanceProperties.value().stream().filter(p -> p.getName().equals(name)).findFirst().orElse(null);
-    }
-
-    @Override
     public List<MethodReference> getDeclaredInstanceMethods() {
         return instanceMethods.value();
     }
@@ -142,7 +136,7 @@ public class SCustomType extends SReferenceType {
         return Arrays.stream(clazz.getDeclaredFields())
                 .filter(m -> Modifier.isPublic(m.getModifiers()))
                 .filter(m -> Modifier.isStatic(m.getModifiers()))
-                .map(StaticFieldPropertyReference::new)
+                .map(FieldPropertyReference::new)
                 .map(r -> (PropertyReference) r)
                 .toList();
     }
@@ -218,7 +212,7 @@ public class SCustomType extends SReferenceType {
                 .filter(m -> !m.isAnnotationPresent(Setter.class))
                 .filter(m -> !m.isAnnotationPresent(IndexGetter.class))
                 .filter(m -> !m.isAnnotationPresent(IndexSetter.class))
-                .map(NativeInstanceMethodReference::new)
+                .map(NativeMethodReference::new)
                 .map(r -> (MethodReference) r)
                 .toList();
     }
@@ -282,7 +276,7 @@ public class SCustomType extends SReferenceType {
                 .filter(m -> !m.isAnnotationPresent(Getter.class))
                 .filter(m -> !m.isAnnotationPresent(Setter.class))
                 .filter(m -> !m.isAnnotationPresent(BinaryOperatorMethod.class))
-                .map(NativeStaticMethodReference::new)
+                .map(NativeMethodReference::new)
                 .map(r -> (MethodReference) r)
                 .toList();
     }
@@ -297,7 +291,7 @@ public class SCustomType extends SReferenceType {
             if (!Modifier.isPublic(field.getModifiers())) {
                 continue;
             }
-            list.add(new StaticFieldPropertyReference(field));
+            list.add(new FieldPropertyReference(field));
         }
 
         return list;

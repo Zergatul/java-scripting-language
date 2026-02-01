@@ -1,21 +1,24 @@
 package com.zergatul.scripting.type;
 
 import com.zergatul.scripting.InternalException;
+import com.zergatul.scripting.compiler.CompilerContext;
+import org.jspecify.annotations.Nullable;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Type;
 
 import java.lang.reflect.Method;
 
+import static org.objectweb.asm.Opcodes.DUP;
 import static org.objectweb.asm.Opcodes.INVOKEVIRTUAL;
 
 public class AnnotatedPropertyReference extends PropertyReference {
 
     private final String name;
     private final SType type;
-    private final Method getter;
-    private final Method setter;
+    private final @Nullable Method getter;
+    private final @Nullable Method setter;
 
-    public AnnotatedPropertyReference(String name, SType type, Method getter, Method setter) {
+    public AnnotatedPropertyReference(String name, SType type, @Nullable Method getter, @Nullable Method setter) {
         this.name = name;
         this.type = type;
         this.getter = getter;
@@ -28,12 +31,12 @@ public class AnnotatedPropertyReference extends PropertyReference {
     }
 
     @Override
-    public boolean canGet() {
+    public boolean canLoad() {
         return getter != null;
     }
 
     @Override
-    public boolean canSet() {
+    public boolean canStore() {
         return setter != null;
     }
 
@@ -43,11 +46,12 @@ public class AnnotatedPropertyReference extends PropertyReference {
     }
 
     @Override
-    public void compileGet(MethodVisitor visitor) {
+    public void compileLoad(MethodVisitor visitor, CompilerContext context, Runnable compileCallee) {
         if (getter == null) {
             throw new InternalException();
         }
 
+        compileCallee.run();
         visitor.visitMethodInsn(
                 INVOKEVIRTUAL,
                 Type.getInternalName(getter.getDeclaringClass()),
@@ -57,10 +61,38 @@ public class AnnotatedPropertyReference extends PropertyReference {
     }
 
     @Override
-    public void compileSet(MethodVisitor visitor) {
+    public void compileStore(MethodVisitor visitor, CompilerContext context, Runnable compileCallee, Runnable compileValue) {
         if (setter == null) {
             throw new InternalException();
         }
+
+        compileCallee.run();
+        compileValue.run();
+        visitor.visitMethodInsn(
+                INVOKEVIRTUAL,
+                Type.getInternalName(setter.getDeclaringClass()),
+                setter.getName(),
+                Type.getMethodDescriptor(setter),
+                false);
+    }
+
+    @Override
+    public void compileLoadModifyStore(MethodVisitor visitor, CompilerContext context, Runnable compileCallee, Runnable compileModify) {
+        if (getter == null || setter == null) {
+            throw new InternalException();
+        }
+
+        compileCallee.run();
+        visitor.visitInsn(DUP);
+
+        visitor.visitMethodInsn(
+                INVOKEVIRTUAL,
+                Type.getInternalName(getter.getDeclaringClass()),
+                getter.getName(),
+                Type.getMethodDescriptor(getter),
+                false);
+
+        compileModify.run();
 
         visitor.visitMethodInsn(
                 INVOKEVIRTUAL,

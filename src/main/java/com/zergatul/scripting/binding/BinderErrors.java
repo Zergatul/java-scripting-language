@@ -24,7 +24,7 @@ public class BinderErrors {
     public static final ErrorCode CannotApplyIncDec = new ErrorCode("B018", "Cannot apply '%s' to operand of type '%s'");
     public static final ErrorCode NewSupportArraysOnly = new ErrorCode("B019", "new expression support only arrays");
     public static final ErrorCode InvalidArrayCreation = new ErrorCode("B020", "Array creation must have array size or array initializer");
-    public static final ErrorCode ExpressionCannotBeSet = new ErrorCode("B021", "The left-hand side of an assignment must be a variable, property or indexer");
+    public static final ErrorCode ExpressionCannotBeSet = new ErrorCode("B021", "The left-hand side of an assignment must be a variable, writable property or indexer");
     public static final ErrorCode CannotIterate = new ErrorCode("B022", "foreach statement cannot operate on expression of type '%s'");
     public static final ErrorCode ForEachTypesNotMatch = new ErrorCode("B023", "foreach variable type and expression type doesn't match");
     public static final ErrorCode LambdaIsInvalidInCurrentContext = new ErrorCode("B024", "Lambda expression is invalid in this context");
@@ -81,6 +81,8 @@ public class BinderErrors {
     public static final ErrorCode UnaryOperationAlreadyDeclared = new ErrorCode("B077", "Unary operation with the same signature already declared");
     public static final ErrorCode FunctionDoesNotExist = new ErrorCode("B078", "Function '%s' with %s arguments does not exist");
     public static final ErrorCode FunctionAlreadyDeclared = new ErrorCode("B079", "Function with the same signature already declared");
+    public static final ErrorCode PrivateAccessDenied = new ErrorCode("B080", "Access to private member denied by Java security system: %s");
+    public static final ErrorCode TypeReferenceNotAllowed = new ErrorCode("B081", "%s is a type, which is not valid in the given context");
 
     public static final ErrorCode InternalError = new ErrorCode("B999", "Internal error: %s");
 }

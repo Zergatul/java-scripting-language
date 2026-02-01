@@ -88,15 +88,6 @@ public class SArrayType extends SType {
     }
 
     @Override
-    @Nullable
-    public PropertyReference getInstanceProperty(String name) {
-        return switch (name) {
-            case "length" -> PROP_LENGTH.value();
-            default -> null;
-        };
-    }
-
-    @Override
     public List<IndexOperation> getIndexOperations() {
         return List.of(new ArrayIndexOperation(getElementsType()));
     }
@@ -145,17 +136,18 @@ public class SArrayType extends SType {
         }
 
         @Override
-        public boolean canGet() {
+        public boolean canLoad() {
             return true;
         }
 
         @Override
-        public boolean canSet() {
+        public boolean canStore() {
             return false;
         }
 
         @Override
-        public void compileGet(MethodVisitor visitor) {
+        public void compileLoad(MethodVisitor visitor, CompilerContext context, Runnable compileCallee) {
+            compileCallee.run();
             visitor.visitInsn(ARRAYLENGTH);
         }
     });

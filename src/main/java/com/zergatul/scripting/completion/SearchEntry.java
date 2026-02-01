@@ -33,6 +33,13 @@ public class SearchEntry {
                 BoundVariableDeclarationNode declaration = (BoundVariableDeclarationNode) parent.node;
                 return declaration.name.value.isEmpty() && declaration.expression == null;
             }
+            if (parent.node.getNodeType() == BoundNodeType.STATIC_REFERENCE) {
+                return true;
+            }
+        }
+        if (node.getNodeType() == BoundNodeType.STATIC_REFERENCE) {
+            BoundStaticReferenceExpression staticReference = (BoundStaticReferenceExpression) node;
+            return new SearchEntry(this, staticReference.typeNode).isSingleWordStatementStart(line, column);
         }
         if (node.getNodeType() == BoundNodeType.IF_STATEMENT) {
             BoundIfStatementNode statement = (BoundIfStatementNode) node;

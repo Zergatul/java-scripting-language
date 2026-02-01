@@ -3,6 +3,7 @@ package com.zergatul.scripting.type;
 import org.jspecify.annotations.Nullable;
 import org.objectweb.asm.MethodVisitor;
 
+import static org.objectweb.asm.Opcodes.GETSTATIC;
 import static org.objectweb.asm.Opcodes.RETURN;
 
 public class SVoidType extends SType {
@@ -24,6 +25,11 @@ public class SVoidType extends SType {
     @Override
     public @Nullable SType getBaseType() {
         return null;
+    }
+
+    @Override
+    public void loadClassObject(MethodVisitor visitor) {
+        visitor.visitFieldInsn(GETSTATIC, "java/lang/Void", "TYPE", "Ljava/lang/Class;");
     }
 
     @Override

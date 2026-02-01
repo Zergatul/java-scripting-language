@@ -4,15 +4,19 @@ import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.compiler.CompilerContext;
 import com.zergatul.scripting.generator.StateBoundary;
 import com.zergatul.scripting.type.SType;
-import org.objectweb.asm.Label;
+import org.jspecify.annotations.Nullable;
 import org.objectweb.asm.MethodVisitor;
 
 public class LocalVariable extends Variable {
 
     private int stackIndex;
-    private StateBoundary state;
+    private @Nullable StateBoundary state;
 
-    public LocalVariable(String name, SType type, TextRange definition) {
+    public LocalVariable(
+            @Nullable String name,
+            SType type,
+            @Nullable TextRange definition
+    ) {
         super(name, type, definition);
         stackIndex = Integer.MIN_VALUE;
     }
@@ -25,7 +29,7 @@ public class LocalVariable extends Variable {
         this.stackIndex = stackIndex;
     }
 
-    public StateBoundary getGeneratorState() {
+    public @Nullable StateBoundary getGeneratorState() {
         return state;
     }
 

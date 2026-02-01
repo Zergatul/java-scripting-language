@@ -30,7 +30,7 @@ public class BaseMethodsCompletionProvider<T> extends AbstractCompletionProvider
         if (context.entry.node.is(BoundNodeType.PROPERTY_ACCESS_EXPRESSION)) {
             BoundPropertyAccessExpressionNode propertyAccessNode = (BoundPropertyAccessExpressionNode) context.entry.node;
             if (propertyAccessNode.syntaxNode.callee.is(ParserNodeType.BASE_EXPRESSION)) {
-                if (propertyAccessNode.syntaxNode.dot.getRange().isBefore(context.line, context.column)) {
+                if (propertyAccessNode.syntaxNode.operator.getRange().isBefore(context.line, context.column)) {
                     return getBaseClassMethodSuggestions(parameters, context);
                 }
             }
@@ -46,7 +46,7 @@ public class BaseMethodsCompletionProvider<T> extends AbstractCompletionProvider
             if (isBaseMethodInvocation) {
                 InvocationExpressionNode invocationNode = (InvocationExpressionNode) invalidExpressionNode.unboundNodes.getFirst();
                 MemberAccessExpressionNode memberAccessNode = (MemberAccessExpressionNode) invocationNode.callee;
-                if (TextRange.isBetween(context.line, context.column, memberAccessNode.dot, invocationNode.arguments)) {
+                if (TextRange.isBetween(context.line, context.column, memberAccessNode.operator, invocationNode.arguments)) {
                     return getBaseClassMethodSuggestions(parameters, context);
                 }
             }

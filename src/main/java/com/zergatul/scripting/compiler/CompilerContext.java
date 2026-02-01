@@ -4,6 +4,7 @@ import com.zergatul.scripting.InternalException;
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.symbols.*;
 import com.zergatul.scripting.type.*;
+import org.jspecify.annotations.Nullable;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 
@@ -42,6 +43,7 @@ public class CompilerContext {
     private final List<SGenericFunction> genericFunctions;
     private Label startLabel;
     private ClassLoaderContext classLoaderContext;
+    @Nullable private MethodHandleCache methodHandleCache;
 
     private CompilerContext(
             CompilerContext parent,
@@ -616,6 +618,32 @@ public class CompilerContext {
         }
 
         return root.classLoaderContext.getNextUniqueIndex();
+    }
+
+    public String createCachedPrivateFieldHandle(PropertyReference property) {
+        if (property instanceof FieldPropertyReference fieldProperty) {
+            if (root.methodHandleCache == null) {
+                root.methodHandleCache = new MethodHandleCache();
+            }
+            return root.methodHandleCache.createFieldAccess(fieldProperty.getUnderlyingField());
+        } else {
+            throw new InternalException();
+        }
+    }
+
+    public String createCachedPrivateMethodHandle(MethodReference method) {
+        if (method instanceof NativeMethodReference methodReference) {
+            if (root.methodHandleCache == null) {
+                root.methodHandleCache = new MethodHandleCache();
+            }
+            return root.methodHandleCache.createMethodAccess(methodReference.getUnderlying());
+        } else {
+            throw new InternalException();
+        }
+    }
+
+    public @Nullable MethodHandleCache getMethodHandleCache() {
+        return methodHandleCache;
     }
 
     private void insertLocalVariable(SymbolRef variableRef) {

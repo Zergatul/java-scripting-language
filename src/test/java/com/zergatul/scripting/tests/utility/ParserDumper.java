@@ -65,6 +65,7 @@ public class ParserDumper extends Dumper {
             case JAVA_TYPE -> dump((JavaTypeNode) node);
             case LAMBDA_EXPRESSION -> dump((LambdaExpressionNode) node);
             case IS_EXPRESSION -> dump((IsExpressionNode) node);
+            case STATIC_REFERENCE -> dump((StaticReferenceNode) node);
             default -> throw new InternalException(node.getClass().getName());
         }
     }
@@ -437,7 +438,7 @@ public class ParserDumper extends Dumper {
         incIndent();
         dump(node.callee);
         commaBreak();
-        dump(node.dot);
+        dump(node.operator);
         commaBreak();
         dump(node.name);
         sb.append(")");
@@ -654,6 +655,16 @@ public class ParserDumper extends Dumper {
         dump(node.keyword);
         commaBreak();
         dump(node.pattern);
+        sb.append(")");
+        decIndent();
+    }
+
+    private void dump(StaticReferenceNode node) {
+        fullLine("new StaticReferenceNode(");
+        incIndent();
+        dump(node.typeNode);
+        commaBreak();
+        dump(node.getRange());
         sb.append(")");
         decIndent();
     }

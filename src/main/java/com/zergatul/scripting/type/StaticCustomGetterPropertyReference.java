@@ -1,16 +1,17 @@
 package com.zergatul.scripting.type;
 
+import com.zergatul.scripting.compiler.CompilerContext;
 import org.objectweb.asm.MethodVisitor;
 
 import java.util.function.Consumer;
 
-public class GetterPropertyReference extends PropertyReference {
+public class StaticCustomGetterPropertyReference extends PropertyReference {
 
     private final SType type;
     private final String name;
     private final Consumer<MethodVisitor> getter;
 
-    public GetterPropertyReference(SType type, String name, Consumer<MethodVisitor> getter) {
+    public StaticCustomGetterPropertyReference(SType type, String name, Consumer<MethodVisitor> getter) {
         this.type = type;
         this.name = name;
         this.getter = getter;
@@ -22,12 +23,12 @@ public class GetterPropertyReference extends PropertyReference {
     }
 
     @Override
-    public boolean canGet() {
+    public boolean canLoad() {
         return true;
     }
 
     @Override
-    public boolean canSet() {
+    public boolean canStore() {
         return false;
     }
 
@@ -37,7 +38,7 @@ public class GetterPropertyReference extends PropertyReference {
     }
 
     @Override
-    public void compileGet(MethodVisitor visitor) {
+    public void compileLoad(MethodVisitor visitor, CompilerContext context, Runnable compileCallee) {
         getter.accept(visitor);
     }
 }

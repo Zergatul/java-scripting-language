@@ -19,12 +19,12 @@ public class UnknownPropertyReference extends PropertyReference {
     }
 
     @Override
-    public boolean canGet() {
+    public boolean canLoad() {
         return true;
     }
 
     @Override
-    public boolean canSet() {
+    public boolean canStore() {
         return true;
     }
 }

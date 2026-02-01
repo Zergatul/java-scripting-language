@@ -1,9 +1,9 @@
 package com.zergatul.scripting.type;
 
+import com.zergatul.scripting.compiler.CompilerContext;
 import org.objectweb.asm.MethodVisitor;
 
-import static org.objectweb.asm.Opcodes.GETFIELD;
-import static org.objectweb.asm.Opcodes.PUTFIELD;
+import static org.objectweb.asm.Opcodes.*;
 
 public class DeclaredFieldReference extends PropertyReference {
 
@@ -23,12 +23,12 @@ public class DeclaredFieldReference extends PropertyReference {
     }
 
     @Override
-    public boolean canGet() {
+    public boolean canLoad() {
         return true;
     }
 
     @Override
-    public boolean canSet() {
+    public boolean canStore() {
         return true;
     }
 
@@ -38,12 +38,24 @@ public class DeclaredFieldReference extends PropertyReference {
     }
 
     @Override
-    public void compileGet(MethodVisitor visitor) {
+    public void compileLoad(MethodVisitor visitor, CompilerContext context, Runnable compileCallee) {
+        compileCallee.run();
         visitor.visitFieldInsn(GETFIELD, owner.getInternalName(), name, type.getDescriptor());
     }
 
     @Override
-    public void compileSet(MethodVisitor visitor) {
+    public void compileStore(MethodVisitor visitor, CompilerContext context, Runnable compileCallee, Runnable compileValue) {
+        compileCallee.run();
+        compileValue.run();
+        visitor.visitFieldInsn(PUTFIELD, owner.getInternalName(), name, type.getDescriptor());
+    }
+
+    @Override
+    public void compileLoadModifyStore(MethodVisitor visitor, CompilerContext context, Runnable compileCallee, Runnable compileModify) {
+        compileCallee.run();
+        visitor.visitInsn(DUP);
+        visitor.visitFieldInsn(GETFIELD, owner.getInternalName(), name, type.getDescriptor());
+        compileModify.run();
         visitor.visitFieldInsn(PUTFIELD, owner.getInternalName(), name, type.getDescriptor());
     }
 

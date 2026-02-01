@@ -5,7 +5,10 @@ import com.zergatul.scripting.binding.BinderOutput;
 import com.zergatul.scripting.binding.nodes.*;
 import com.zergatul.scripting.compiler.CompilationParameters;
 import com.zergatul.scripting.compiler.JavaInteropPolicy;
+import com.zergatul.scripting.parser.nodes.MemberAccessExpressionNode;
+import com.zergatul.scripting.parser.nodes.ParserNodeType;
 import com.zergatul.scripting.type.NativeMethodReference;
+import com.zergatul.scripting.type.PropertyReference;
 import com.zergatul.scripting.type.SType;
 import com.zergatul.scripting.type.SUnknown;
 
@@ -27,14 +30,19 @@ public class ObjectMemberCompletionProvider<T> extends AbstractCompletionProvide
         switch (context.entry.node.getNodeType()) {
             case PROPERTY_ACCESS_EXPRESSION -> {
                 BoundPropertyAccessExpressionNode propertyAccess = (BoundPropertyAccessExpressionNode) context.entry.node;
-                if (TextRange.combineFromEnd(propertyAccess.syntaxNode.dot, propertyAccess.property).containsOrEnds(context.line, context.column)) {
-                    return getMembers(output, parameters, propertyAccess.callee.type);
+                if (TextRange.combineFromEnd(propertyAccess.syntaxNode.operator, propertyAccess.property).containsOrEnds(context.line, context.column)) {
+                    return getMembers(output, parameters, propertyAccess.callee.type, propertyAccess.syntaxNode.isPrivate());
                 }
             }
             case METHOD_INVOCATION_EXPRESSION -> {
                 BoundMethodInvocationExpressionNode methodInvocation = (BoundMethodInvocationExpressionNode) context.entry.node;
                 if (TextRange.combineFromEnd(methodInvocation.getDotToken(), methodInvocation.method).containsOrEnds(context.line, context.column)) {
-                    return getMembers(output, parameters, methodInvocation.objectReference.type);
+                    if (methodInvocation.syntaxNode.callee.is(ParserNodeType.MEMBER_ACCESS_EXPRESSION)) {
+                        MemberAccessExpressionNode memberAccess = (MemberAccessExpressionNode) methodInvocation.syntaxNode.callee;
+                        return getMembers(output, parameters, methodInvocation.objectReference.type, memberAccess.isPrivate());
+                    } else {
+                        return getMembers(output, parameters, methodInvocation.objectReference.type, false);
+                    }
                 }
             }
             case PROPERTY, METHOD -> {
@@ -45,17 +53,19 @@ public class ObjectMemberCompletionProvider<T> extends AbstractCompletionProvide
         return List.of();
     }
 
-    private List<T> getMembers(BinderOutput output, CompilationParameters parameters, SType type) {
+    private List<T> getMembers(BinderOutput output, CompilationParameters parameters, SType type, boolean isPrivate) {
         if (type == SUnknown.instance) {
             return List.of();
         }
 
         List<T> suggestions = new ArrayList<>();
 
-        type.getInstanceProperties()
+        type.getInstanceProperties().stream()
+                .filter(p -> p.isPublic() ^ isPrivate)
                 .forEach(p -> suggestions.add(factory.getPropertySuggestion(p)));
 
         type.getInstanceMethods().stream()
+                .filter(p -> p.isPublic() ^ isPrivate)
                 .filter(m -> {
                     if (m instanceof NativeMethodReference nativeRef) {
                         JavaInteropPolicy checker = parameters.getPolicy();

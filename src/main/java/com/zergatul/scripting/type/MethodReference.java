@@ -23,6 +23,10 @@ public abstract class MethodReference extends MemberReference implements Invocab
         return Optional.empty();
     }
 
+    public boolean isPublic() {
+        return true;
+    }
+
     public boolean isVirtual() {
         return false;
     }
@@ -31,7 +35,7 @@ public abstract class MethodReference extends MemberReference implements Invocab
         return false;
     }
 
-    public abstract void compileInvoke(MethodVisitor visitor, CompilerContext context);
+    public abstract void compileInvoke(MethodVisitor visitor, CompilerContext context, Runnable compileArguments);
 
     public List<SType> getParameterTypes() {
         return getParameters().stream().map(MethodParameter::type).toList();
