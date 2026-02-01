@@ -1,6 +1,7 @@
 package com.zergatul.scripting.type;
 
 import com.zergatul.scripting.InternalException;
+import org.jspecify.annotations.Nullable;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Type;
 
@@ -12,10 +13,10 @@ public class AnnotatedPropertyReference extends PropertyReference {
 
     private final String name;
     private final SType type;
-    private final Method getter;
-    private final Method setter;
+    @Nullable private final Method getter;
+    @Nullable private final Method setter;
 
-    public AnnotatedPropertyReference(String name, SType type, Method getter, Method setter) {
+    public AnnotatedPropertyReference(String name, SType type, @Nullable Method getter, @Nullable Method setter) {
         this.name = name;
         this.type = type;
         this.getter = getter;

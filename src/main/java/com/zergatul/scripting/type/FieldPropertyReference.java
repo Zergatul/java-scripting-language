@@ -17,6 +17,10 @@ public class FieldPropertyReference extends PropertyReference {
         this.field = field;
     }
 
+    public Field getUnderlyingField() {
+        return field;
+    }
+
     @Override
     public String getName() {
         return field.getName();
@@ -25,6 +29,11 @@ public class FieldPropertyReference extends PropertyReference {
     @Override
     public SType getType() {
         return SType.fromJavaType(field.getType());
+    }
+
+    @Override
+    public boolean isPublic() {
+        return Modifier.isPublic(field.getModifiers());
     }
 
     @Override

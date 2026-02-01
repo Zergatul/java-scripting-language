@@ -122,12 +122,6 @@ public class SCustomType extends SReferenceType {
     }
 
     @Override
-    @Nullable
-    public PropertyReference getInstanceProperty(String name) {
-        return instanceProperties.value().stream().filter(p -> p.getName().equals(name)).findFirst().orElse(null);
-    }
-
-    @Override
     public List<MethodReference> getDeclaredInstanceMethods() {
         return instanceMethods.value();
     }

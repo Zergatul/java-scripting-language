@@ -23,11 +23,15 @@ import com.zergatul.scripting.type.*;
 import com.zergatul.scripting.visitors.ExternalParameterVisitor;
 import com.zergatul.scripting.visitors.LiftedVariablesVisitor;
 import com.zergatul.scripting.visitors.LocalParameterVisitor;
+import org.jspecify.annotations.Nullable;
 import org.objectweb.asm.*;
 
 import java.io.IOException;
 import java.lang.invoke.LambdaMetafactory;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.VarHandle;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.nio.file.Files;
@@ -88,6 +92,8 @@ public class Compiler {
         buildMainMethod(unit, writer, name, context);
 
         writer.visitEnd();
+
+        compileMethodHandleCache(context);
 
         byte[] bytecode = writer.toByteArray();
         saveClassFile(name, bytecode);
@@ -712,9 +718,29 @@ public class Compiler {
                 }
                 case PROPERTY_ACCESS_EXPRESSION -> {
                     BoundPropertyAccessExpressionNode access = (BoundPropertyAccessExpressionNode) assignment.left;
-                    compileExpression(visitor, context, access.callee);
-                    compileExpression(visitor, context, assignment.right);
-                    access.property.property.compileSet(visitor);
+                    if (access.property.property.isPublic()) {
+                        compileExpression(visitor, context, access.callee);
+                        compileExpression(visitor, context, assignment.right);
+                        access.property.property.compileSet(visitor);
+                    } else {
+                        String varHandleFieldName = context.createCachedPrivateMethodHandle(access.property.property);
+                        visitor.visitFieldInsn(
+                                GETSTATIC,
+                                MethodHandleCache.CLASS_NAME,
+                                varHandleFieldName,
+                                Type.getDescriptor(VarHandle.class));
+                        compileExpression(visitor, context, access.callee);
+                        compileExpression(visitor, context, assignment.right);
+                        visitor.visitMethodInsn(
+                                INVOKEVIRTUAL,
+                                Type.getInternalName(VarHandle.class),
+                                "set",
+                                Type.getMethodDescriptor(
+                                        Type.VOID_TYPE,
+                                        access.callee.type.getAsmType(),
+                                        assignment.right.type.getAsmType()),
+                                false);
+                    }
                 }
                 default -> throw new InternalException("Not implemented.");
             }
@@ -2051,7 +2077,26 @@ public class Compiler {
         }
 
         compileExpression(visitor, context, propertyAccess.callee);
-        propertyAccess.property.property.compileGet(visitor);
+
+        if (propertyAccess.property.property.isPublic()) {
+            propertyAccess.property.property.compileGet(visitor);
+        } else {
+            String varHandleFieldName = context.createCachedPrivateMethodHandle(propertyAccess.property.property);
+            visitor.visitFieldInsn(
+                    GETSTATIC,
+                    MethodHandleCache.CLASS_NAME,
+                    varHandleFieldName,
+                    Type.getDescriptor(VarHandle.class));
+            visitor.visitInsn(SWAP);
+            visitor.visitMethodInsn(
+                    INVOKEVIRTUAL,
+                    Type.getInternalName(VarHandle.class),
+                    "get",
+                    Type.getMethodDescriptor(
+                            propertyAccess.property.property.getType().getAsmType(),
+                            propertyAccess.callee.type.getAsmType()),
+                    false);
+        }
     }
 
     private void compileArrayCreationExpression(MethodVisitor visitor, CompilerContext context, BoundArrayCreationExpressionNode expression) {
@@ -2490,5 +2535,89 @@ public class Compiler {
             variable.getType().storeDefaultValue(visitor);
         }
         visitor.visitVarInsn(variable.getType().getStoreInst(), variable.getStackIndex());
+    }
+
+    private void compileMethodHandleCache(CompilerContext context) {
+        if (context.getMethodHandleCache() == null) {
+            return;
+        }
+
+        MethodHandleCache cache = context.getMethodHandleCache();
+
+        ClassWriter writer = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
+        emitSourceFile(writer);
+        writer.visit(
+                V1_8,
+                ACC_PUBLIC,
+                MethodHandleCache.CLASS_NAME,
+                null,
+                Type.getInternalName(Object.class),
+                null);
+
+        // fields
+        for (var entry : cache.getFieldsMap().entrySet()) {
+            String name = entry.getValue();
+            FieldVisitor fieldVisitor = writer.visitField(
+                    ACC_PUBLIC | ACC_STATIC,
+                    name,
+                    Type.getDescriptor(VarHandle.class),
+                    null, null);
+            fieldVisitor.visitEnd();
+        }
+
+        // static constructor
+        MethodVisitor visitor = writer.visitMethod(ACC_STATIC, "<clinit>", Type.getMethodDescriptor(Type.VOID_TYPE), null, null);
+        visitor.visitCode();
+
+        visitor.visitMethodInsn(
+                INVOKESTATIC,
+                Type.getInternalName(MethodHandles.class),
+                "lookup",
+                Type.getMethodDescriptor(Type.getType(MethodHandles.Lookup.class)),
+                false);
+        visitor.visitVarInsn(ASTORE, 0);
+
+        for (var entry : cache.getFieldsMap().entrySet()) {
+            Field field = entry.getKey();
+            String name = entry.getValue();
+
+            visitor.visitLdcInsn(Type.getType(field.getDeclaringClass()));
+            visitor.visitVarInsn(ALOAD, 0);
+            visitor.visitMethodInsn(
+                    INVOKESTATIC,
+                    Type.getInternalName(MethodHandles.class),
+                    "privateLookupIn",
+                    Type.getMethodDescriptor(Type.getType(MethodHandles.Lookup.class), Type.getType(Class.class), Type.getType(MethodHandles.Lookup.class)),
+                    false);
+
+            visitor.visitLdcInsn(Type.getType(field.getDeclaringClass()));
+            visitor.visitLdcInsn(field.getName());
+            SType.fromJavaType(field.getType()).loadClassObject(visitor);
+            visitor.visitMethodInsn(
+                    INVOKEVIRTUAL,
+                    Type.getInternalName(MethodHandles.Lookup.class),
+                    "findVarHandle",
+                    Type.getMethodDescriptor(
+                            Type.getType(VarHandle.class),
+                            Type.getType(Class.class),
+                            Type.getType(String.class),
+                            Type.getType(Class.class)),
+                    false);
+
+            visitor.visitFieldInsn(
+                    PUTSTATIC,
+                    MethodHandleCache.CLASS_NAME,
+                    name,
+                    Type.getDescriptor(VarHandle.class));
+        }
+
+        visitor.visitInsn(RETURN);
+        visitor.visitMaxs(0, 0);
+        visitor.visitEnd();
+
+        byte[] bytecode = writer.toByteArray();
+        saveClassFile("MethodHandleCache", bytecode);
+
+        context.defineClass(MethodHandleCache.CLASS_NAME.replace('/', '.'), bytecode);
     }
 }

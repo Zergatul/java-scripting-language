@@ -1521,7 +1521,10 @@ public class Binder {
         }
 
         if (context.isClassMethod() && !context.isExtension()) {
-            PropertyReference property = context.getClassType().getInstanceProperty(name.value);
+            PropertyReference property = context.getClassType().getInstanceProperties().stream()
+                    .filter(p -> p.getName().equals(name.value))
+                    .findFirst()
+                    .orElse(null);
             if (property != null) {
                 TextRange ephemeralRange = name.getRange().getStart();
                 ThisExpressionNode ephemeralThis = new ThisExpressionNode(new Token(TokenType.THIS, ephemeralRange));
@@ -1838,15 +1841,19 @@ public class Binder {
         BoundExpressionNode callee = bindExpression(expression.callee);
 
         if (callee.type == SNull.instance) {
-            addDiagnostic(BinderErrors.CannotAccessNullMembers, expression.dot);
+            addDiagnostic(BinderErrors.CannotAccessNullMembers, expression.operator);
             return new BoundPropertyAccessExpressionNode(
                     expression,
                     callee,
                     new BoundPropertyNode(expression.name, UnknownPropertyReference.instance));
         }
 
+        boolean isPrivate = expression.operator.is(TokenType.DOT_HASH);
+
         if (callee.type instanceof SStaticTypeReference staticType) {
+            // TODO
             PropertyReference property = staticType.getUnderlying().getStaticProperties().stream()
+                    .filter(p -> p.isPublic() ^ isPrivate)
                     .filter(p -> p.getName().equals(expression.name.value))
                     .findFirst()
                     .orElse(null);
@@ -1888,7 +1895,11 @@ public class Binder {
             if (callee.type == SUnknown.instance || expression.name.value.isEmpty()) {
                 property = UnknownPropertyReference.instance;
             } else {
-                property = callee.type.getInstanceProperty(expression.name.value);
+                property = callee.type.getInstanceProperties().stream()
+                        .filter(p -> p.isPublic() ^ isPrivate)
+                        .filter(p -> p.getName().equals(expression.name.value))
+                        .findFirst()
+                        .orElse(null);
             }
             if (property != null) {
                 return new BoundPropertyAccessExpressionNode(
@@ -2547,7 +2558,7 @@ public class Binder {
             addDiagnostic(BinderErrors.MemberAlreadyDeclared, classFieldNode.name, fieldName);
         } else {
             SType baseType = classDeclaration.getDeclaredType().getBaseType();
-            if (baseType.getInstanceProperty(fieldName) != null) {
+            if (baseType.getInstanceProperties().stream().anyMatch(p -> p.getName().equals(fieldName))) {
                 addDiagnostic(BinderErrors.BaseClassAlreadyHasMember, classFieldNode.name);
             }
             if (baseType.getInstanceMethods().stream().anyMatch(m -> m.getName().equals(fieldName))) {
@@ -2596,7 +2607,7 @@ public class Binder {
             addDiagnostic(BinderErrors.MethodAlreadyDeclared, methodNode.name);
         } else {
             SType baseType = classDeclaration.getDeclaredType().getBaseType();
-            if (baseType.getInstanceProperty(methodName) != null) {
+            if (baseType.getInstanceProperties().stream().anyMatch(p -> p.getName().equals(methodName))) {
                 addDiagnostic(BinderErrors.BaseClassAlreadyHasMember, methodNode.name);
             }
             MethodReference overrideCandidateBaseMethod = baseType.getInstanceMethods().stream()
@@ -2710,7 +2721,7 @@ public class Binder {
 
         boolean hasError = false;
         MethodReference methodRef = UnknownMethodReference.instance;
-        if (baseType.getInstanceProperty(methodName) != null) {
+        if (baseType.getInstanceProperties().stream().anyMatch(p -> p.getName().equals(methodName))) {
             hasError = true;
             addDiagnostic(BinderErrors.MemberAlreadyDeclared, methodNode.name, methodName);
         } else if (hasInstanceMethod(baseType, methodName, parameters.parameters)) {

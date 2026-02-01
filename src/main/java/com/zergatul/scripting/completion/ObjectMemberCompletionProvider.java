@@ -27,7 +27,7 @@ public class ObjectMemberCompletionProvider<T> extends AbstractCompletionProvide
         switch (context.entry.node.getNodeType()) {
             case PROPERTY_ACCESS_EXPRESSION -> {
                 BoundPropertyAccessExpressionNode propertyAccess = (BoundPropertyAccessExpressionNode) context.entry.node;
-                if (TextRange.combineFromEnd(propertyAccess.syntaxNode.dot, propertyAccess.property).containsOrEnds(context.line, context.column)) {
+                if (TextRange.combineFromEnd(propertyAccess.syntaxNode.operator, propertyAccess.property).containsOrEnds(context.line, context.column)) {
                     return getMembers(output, parameters, propertyAccess.callee.type);
                 }
             }

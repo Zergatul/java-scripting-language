@@ -10,13 +10,13 @@ import java.util.List;
 public class MemberAccessExpressionNode extends ExpressionNode {
 
     public final ExpressionNode callee;
-    public final Token dot;
+    public final Token operator;
     public final NameExpressionNode name;
 
-    public MemberAccessExpressionNode(ExpressionNode callee, Token dot, NameExpressionNode name) {
+    public MemberAccessExpressionNode(ExpressionNode callee, Token operator, NameExpressionNode name) {
         super(ParserNodeType.MEMBER_ACCESS_EXPRESSION, TextRange.combine(callee, name));
         this.callee = callee;
-        this.dot = dot;
+        this.operator = operator;
         this.name = name;
     }
 
@@ -33,6 +33,6 @@ public class MemberAccessExpressionNode extends ExpressionNode {
 
     @Override
     public List<Locatable> getChildNodes() {
-        return List.of(callee, dot, name);
+        return List.of(callee, operator, name);
     }
 }

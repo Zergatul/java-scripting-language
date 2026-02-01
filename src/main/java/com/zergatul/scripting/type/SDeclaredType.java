@@ -218,12 +218,6 @@ public class SDeclaredType extends SType {
         }
     }
 
-    @Override
-    @Nullable
-    public PropertyReference getInstanceProperty(String name) {
-        return getInstanceProperties().stream().filter(p -> p.getName().equals(name)).findFirst().orElse(null);
-    }
-
     public List<MethodReference> getInstanceMethods() {
         if (getBaseType() == SJavaObject.instance) {
             return getDeclaredInstanceMethods();

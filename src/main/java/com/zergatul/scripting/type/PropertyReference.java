@@ -9,6 +9,10 @@ public abstract class PropertyReference extends MemberReference {
     public abstract boolean canGet();
     public abstract boolean canSet();
 
+    public boolean isPublic() {
+        return true;
+    }
+
     public void compileGet(MethodVisitor visitor) {
         throw new InternalException();
     }

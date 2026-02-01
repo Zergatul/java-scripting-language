@@ -196,7 +196,7 @@ public class HighlightingProvider {
 
     private void process(BoundBaseMethodInvocationExpressionNode node) {
         process(node.getBaseExpressionSyntaxNode().token);
-        process(((MemberAccessExpressionNode) node.syntaxNode.callee).dot);
+        process(((MemberAccessExpressionNode) node.syntaxNode.callee).operator);
         process(node.method);
         process(node.arguments);
     }
@@ -629,14 +629,14 @@ public class HighlightingProvider {
 
     private void process(BoundMethodGroupExpressionNode node) {
         process(node.callee);
-        process(node.syntaxNode.dot);
+        process(node.syntaxNode.operator);
         process(node.method);
     }
 
     private void process(BoundMethodInvocationExpressionNode node) {
         process(node.objectReference);
         if (node.syntaxNode.callee instanceof MemberAccessExpressionNode memberAccess) {
-            process(memberAccess.dot);
+            process(memberAccess.operator);
         }
         process(node.method);
         process(node.arguments);
@@ -707,7 +707,7 @@ public class HighlightingProvider {
 
     private void process(BoundPropertyAccessExpressionNode node) {
         process(node.callee);
-        process(node.syntaxNode.dot);
+        process(node.syntaxNode.operator);
         process(node.property);
     }
 
@@ -896,7 +896,7 @@ public class HighlightingProvider {
                 case IDENTIFIER -> SemanticTokenType.IDENTIFIER;
                 case LEFT_PARENTHESES, LEFT_CURLY_BRACKET, LEFT_SQUARE_BRACKET, RIGHT_PARENTHESES, RIGHT_CURLY_BRACKET,
                      RIGHT_SQUARE_BRACKET -> SemanticTokenType.BRACKET;
-                case DOT, DOLLAR, COMMA, SEMICOLON, COLON -> SemanticTokenType.SEPARATOR;
+                case DOT, DOT_HASH, DOLLAR, COMMA, SEMICOLON, COLON -> SemanticTokenType.SEPARATOR;
                 case PLUS, PLUS_PLUS, PLUS_EQUAL, MINUS, MINUS_MINUS, MINUS_EQUAL, ASTERISK, ASTERISK_EQUAL, SLASH,
                      SLASH_EQUAL, PERCENT, PERCENT_EQUAL, AMPERSAND, AMPERSAND_AMPERSAND, AMPERSAND_EQUAL, PIPE, PIPE_PIPE,
                      PIPE_EQUAL, EQUAL, EQUAL_EQUAL, GREATER, GREATER_EQUAL, LESS, LESS_EQUAL, EXCLAMATION,

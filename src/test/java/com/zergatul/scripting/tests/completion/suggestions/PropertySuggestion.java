@@ -17,7 +17,13 @@ public class PropertySuggestion extends Suggestion {
     }
 
     public static PropertySuggestion getInstance(TestCompletionContext context, String className, String propertyName) {
-        return new PropertySuggestion(SuggestionHelper.extractClassType(context, className).getInstanceProperty(propertyName));
+        PropertyReference property = SuggestionHelper.extractClassType(context, className)
+                .getInstanceProperties()
+                .stream()
+                .filter(p -> p.getName().equals(propertyName))
+                .findFirst()
+                .orElseThrow();
+        return new PropertySuggestion(property);
     }
 
     public static PropertySuggestion getStatic(SType type, String name) {

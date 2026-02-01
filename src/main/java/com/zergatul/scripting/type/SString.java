@@ -59,14 +59,6 @@ public class SString extends SReferenceType {
     }
 
     @Override
-    public @Nullable PropertyReference getInstanceProperty(String name) {
-        return switch (name) {
-            case "length" -> PROP_LENGTH;
-            default -> null;
-        };
-    }
-
-    @Override
     public List<IndexOperation> getIndexOperations() {
         return List.of(INDEX_INT);
     }

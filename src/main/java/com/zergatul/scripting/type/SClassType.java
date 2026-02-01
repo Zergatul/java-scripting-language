@@ -7,6 +7,7 @@ import org.jspecify.annotations.Nullable;
 import org.objectweb.asm.MethodVisitor;
 
 import java.lang.reflect.*;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -73,29 +74,20 @@ public class SClassType extends SReferenceType {
 
     @Override
     public List<PropertyReference> getInstanceProperties() {
-        return Arrays.stream(clazz.getFields())
+        List<PropertyReference> properties = new ArrayList<>();
+        properties.addAll(Arrays.stream(clazz.getFields())
                 .filter(f -> !Modifier.isStatic(f.getModifiers()))
                 .filter(f -> Modifier.isPublic(f.getModifiers()))
                 .map(FieldPropertyReference::new)
                 .map(f -> (PropertyReference) f)
-                .toList();
-    }
-
-    @Override
-    @Nullable
-    public PropertyReference getInstanceProperty(String name) {
-        try {
-            Field field = clazz.getField(name);
-            if (Modifier.isStatic(field.getModifiers())) {
-                return null;
-            }
-            if (!Modifier.isPublic(field.getModifiers())) {
-                return null;
-            }
-            return new FieldPropertyReference(field);
-        } catch (NoSuchFieldException e) {
-            return null;
-        }
+                .toList());
+        properties.addAll(Arrays.stream(clazz.getDeclaredFields())
+                .filter(f -> !Modifier.isStatic(f.getModifiers()))
+                .filter(f -> Modifier.isPrivate(f.getModifiers()))
+                .map(FieldPropertyReference::new)
+                .map(f -> (PropertyReference) f)
+                .toList());
+        return properties;
     }
 
     @Override

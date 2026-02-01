@@ -1341,16 +1341,16 @@ public class Parser {
                     expression = new IndexExpressionNode(expression, openBracket, index, closeBracket);
                 }
 
-                case DOT -> {
-                    Token dot = advance();
+                case DOT, DOT_HASH -> {
+                    Token operator = advance();
                     if (current.is(TokenType.IDENTIFIER)) {
                         ValueToken identifier = (ValueToken) current;
                         NameExpressionNode name = new NameExpressionNode(identifier);
                         advance();
-                        expression = new MemberAccessExpressionNode(expression, dot, name);
+                        expression = new MemberAccessExpressionNode(expression, operator, name);
                     } else {
                         addDiagnostic(ParserErrors.IdentifierExpected, current, current.getRawValue(code));
-                        return new MemberAccessExpressionNode(expression, dot, createMissingNameExpressionAfterLast());
+                        return new MemberAccessExpressionNode(expression, operator, createMissingNameExpressionAfterLast());
                     }
                 }
 

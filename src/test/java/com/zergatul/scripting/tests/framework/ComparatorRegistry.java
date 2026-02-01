@@ -195,7 +195,7 @@ public class ComparatorRegistry {
                         .extract("token", node -> node.token))
                 .register(MemberAccessExpressionNode.class, builder -> builder
                         .extract("callee", node -> node.callee)
-                        .extract("dot", node -> node.dot)
+                        .extract("operator", node -> node.operator)
                         .extract("name", node -> node.name))
                 .register(MetaTypeExpressionNode.class, builder -> builder
                         .extract("keyword", node -> node.keyword)

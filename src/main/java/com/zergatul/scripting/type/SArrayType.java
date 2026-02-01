@@ -88,15 +88,6 @@ public class SArrayType extends SType {
     }
 
     @Override
-    @Nullable
-    public PropertyReference getInstanceProperty(String name) {
-        return switch (name) {
-            case "length" -> PROP_LENGTH.value();
-            default -> null;
-        };
-    }
-
-    @Override
     public List<IndexOperation> getIndexOperations() {
         return List.of(new ArrayIndexOperation(getElementsType()));
     }

@@ -437,7 +437,7 @@ public class ParserDumper extends Dumper {
         incIndent();
         dump(node.callee);
         commaBreak();
-        dump(node.dot);
+        dump(node.operator);
         commaBreak();
         dump(node.name);
         sb.append(")");

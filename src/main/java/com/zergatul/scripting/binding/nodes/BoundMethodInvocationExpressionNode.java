@@ -54,7 +54,7 @@ public class BoundMethodInvocationExpressionNode extends BoundExpressionNode {
     }
 
     public Token getDotToken() {
-        return ((MemberAccessExpressionNode) syntaxNode.callee).dot;
+        return ((MemberAccessExpressionNode) syntaxNode.callee).operator;
     }
 
     @Override

@@ -220,7 +220,7 @@ public class BinderTreeGenerator {
                 new BoundNameExpressionNode(length),
                 new BoundPropertyAccessExpressionNode(
                     new BoundNameExpressionNode(iterable),
-                    iterable.getType().getInstanceProperty("length"))));
+                    iterable.getType().getInstanceProperties().stream().filter(p -> p.getName().equals("length")).findFirst().orElseThrow())));
         add(new BoundVariableDeclarationNode(new BoundNameExpressionNode(item)));
 
         StateBoundary begin = new StateBoundary();
