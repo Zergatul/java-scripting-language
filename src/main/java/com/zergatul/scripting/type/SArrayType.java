@@ -136,17 +136,18 @@ public class SArrayType extends SType {
         }
 
         @Override
-        public boolean canGet() {
+        public boolean canLoad() {
             return true;
         }
 
         @Override
-        public boolean canSet() {
+        public boolean canStore() {
             return false;
         }
 
         @Override
-        public void compileGet(MethodVisitor visitor) {
+        public void compileLoad(CompilerContext context, MethodVisitor visitor, Runnable compileCallee) {
+            compileCallee.run();
             visitor.visitInsn(ARRAYLENGTH);
         }
     });

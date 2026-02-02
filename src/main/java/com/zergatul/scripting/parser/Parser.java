@@ -384,34 +384,29 @@ public class Parser {
             return true;
         }
 
-        Token next = peek(1);
-        // "int." is not declaration
-        if (isPredefinedType() && next.isNot(TokenType.DOT)) {
-            return true;
-        }
+        LookAhead ahead = new LookAhead();
+        try {
+            if (!tryAdvanceType()) {
+                return false;
+            }
 
-        if (current.is(TokenType.IDENTIFIER)) {
-            ValueToken identifier = (ValueToken) current;
-            if (identifier.value.equals("Java") && next.is(TokenType.LESS)) {
-                return true;
+            if (current.is(TokenType.DOT)) {
+                // <type> .
+                return false;
             }
-            if (identifier.value.equals("fn") && next.is(TokenType.LESS)) {
-                return true;
-            }
-            if (next.is(TokenType.LEFT_SQUARE_BRACKET) && peek(2).is(TokenType.RIGHT_SQUARE_BRACKET)) {
-                return true;
-            }
-            if (next.is(TokenType.IDENTIFIER)) {
-                // identifier1 identifier2
-                // we have to do more lookahead to correctly handle case like this:
-                // a
-                // obj.method();
-                Token next2 = peek(2);
-                return next2.isNot(TokenType.DOT);
-            }
-        }
 
-        return false;
+            if (!current.is(TokenType.IDENTIFIER)) {
+                return false;
+            }
+
+            advance();
+
+            // <type>
+            // <identifier>.method();
+            return !current.is(TokenType.DOT) && !current.is(TokenType.DOT_HASH);
+        } finally {
+            ahead.rollback();
+        }
     }
 
     private boolean isPossibleFunction() {
@@ -2012,6 +2007,15 @@ public class Parser {
         }
     }
 
+    private boolean tryAdvanceTypeOrVoid() {
+        if (current.is(TokenType.VOID)) {
+            advance();
+            return true;
+        }
+
+        return tryAdvanceType();
+    }
+
     private boolean tryAdvanceType() {
         if (isPredefinedType()) {
             advance();
@@ -2135,7 +2139,7 @@ public class Parser {
         }
         advance();
 
-        if (!tryAdvanceType()) {
+        if (!tryAdvanceTypeOrVoid()) {
             return;
         }
 

@@ -44,4 +44,9 @@ public class PropertySuggestion extends Suggestion {
             return false;
         }
     }
+
+    @Override
+    public String toString() {
+        return String.format("%s %s %s", property.isPublic() ? "public" : "private", property.getType(), property.getName());
+    }
 }

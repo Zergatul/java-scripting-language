@@ -313,24 +313,24 @@ public class ErrorRecoveryTests extends ParserTestBase {
                 freeCam.toggle();
                 """);
 
-        comparator.assertEquals(List.of(
-                new DiagnosticMessage(ParserErrors.IdentifierExpected, new SingleLineTextRange(2, 1, 4, 7), "freeCam.")),
+        comparator.assertEquals(
+                List.of(
+                        new DiagnosticMessage(ParserErrors.NotAStatement, new SingleLineTextRange(1, 1, 0, 3)),
+                        new DiagnosticMessage(ParserErrors.SemicolonExpected, new SingleLineTextRange(1, 1, 0, 3))),
                 result.diagnostics());
 
         comparator.assertEquals(
                 new CompilationUnitNode(
                         new CompilationUnitMembersListNode(List.of(), new SingleLineTextRange(1, 1, 0, 0)),
                         new StatementsListNode(List.of(
-                                new VariableDeclarationNode(
-                                        new PredefinedTypeNode(
-                                                new Token(TokenType.INT, new SingleLineTextRange(1, 1, 0, 3))
-                                                        .withTrailingTrivia(new Trivia(TokenType.LINE_BREAK, new MultiLineTextRange(1, 4, 2, 1, 3, 1))),
-                                                PredefinedType.INT),
-                                        new NameExpressionNode(
-                                                new ValueToken(TokenType.IDENTIFIER, "", new SingleLineTextRange(2, 1, 4, 0))),
-                                        null,
-                                        null,
-                                        new Token(TokenType.SEMICOLON, new SingleLineTextRange(2, 1, 4, 0))),
+                                new ExpressionStatementNode(
+                                        new StaticReferenceNode(
+                                                new PredefinedTypeNode(
+                                                        new Token(TokenType.INT, new SingleLineTextRange(1, 1, 0, 3))
+                                                                .withTrailingTrivia(new Trivia(TokenType.LINE_BREAK, new MultiLineTextRange(1, 4, 2, 1, 3, 1))),
+                                                        PredefinedType.INT),
+                                                new SingleLineTextRange(1, 1, 0, 3)),
+                                        new Token(TokenType.SEMICOLON, new SingleLineTextRange(1, 4, 3, 0))),
                                 new ExpressionStatementNode(
                                         new InvocationExpressionNode(
                                                 new MemberAccessExpressionNode(

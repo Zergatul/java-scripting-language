@@ -23,17 +23,14 @@ import com.zergatul.scripting.type.*;
 import com.zergatul.scripting.visitors.ExternalParameterVisitor;
 import com.zergatul.scripting.visitors.LiftedVariablesVisitor;
 import com.zergatul.scripting.visitors.LocalParameterVisitor;
-import org.jspecify.annotations.Nullable;
 import org.objectweb.asm.*;
+import org.objectweb.asm.Type;
 
 import java.io.IOException;
 import java.lang.invoke.LambdaMetafactory;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
+import java.lang.reflect.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
@@ -718,29 +715,11 @@ public class Compiler {
                 }
                 case PROPERTY_ACCESS_EXPRESSION -> {
                     BoundPropertyAccessExpressionNode access = (BoundPropertyAccessExpressionNode) assignment.left;
-                    if (access.property.property.isPublic()) {
-                        compileExpression(visitor, context, access.callee);
-                        compileExpression(visitor, context, assignment.right);
-                        access.property.property.compileSet(visitor);
-                    } else {
-                        String varHandleFieldName = context.createCachedPrivateMethodHandle(access.property.property);
-                        visitor.visitFieldInsn(
-                                GETSTATIC,
-                                MethodHandleCache.CLASS_NAME,
-                                varHandleFieldName,
-                                Type.getDescriptor(VarHandle.class));
-                        compileExpression(visitor, context, access.callee);
-                        compileExpression(visitor, context, assignment.right);
-                        visitor.visitMethodInsn(
-                                INVOKEVIRTUAL,
-                                Type.getInternalName(VarHandle.class),
-                                "set",
-                                Type.getMethodDescriptor(
-                                        Type.VOID_TYPE,
-                                        access.callee.type.getAsmType(),
-                                        assignment.right.type.getAsmType()),
-                                false);
-                    }
+                    access.property.property.compileStore(
+                            context,
+                            visitor,
+                            () -> compileExpression(visitor, context, access.callee),
+                            () -> compileExpression(visitor, context, assignment.right));
                 }
                 default -> throw new InternalException("Not implemented.");
             }
@@ -776,13 +755,15 @@ public class Compiler {
             }
             case PROPERTY_ACCESS_EXPRESSION -> {
                 BoundPropertyAccessExpressionNode propertyAccess = (BoundPropertyAccessExpressionNode) assignment.left;
-                compileExpression(visitor, context, propertyAccess.callee);
-                visitor.visitInsn(DUP);
-                propertyAccess.property.property.compileGet(visitor);
-                BufferedMethodVisitor buffer = new BufferedMethodVisitor();
-                compileExpression(buffer, context, assignment.right);
-                assignment.operation.apply(visitor, buffer, context, assignment.left.type, assignment.right.type);
-                propertyAccess.property.property.compileSet(visitor);
+                propertyAccess.property.property.compileLoadModifyStore(
+                        context,
+                        visitor,
+                        () -> compileExpression(visitor, context, propertyAccess.callee),
+                        () -> {
+                            BufferedMethodVisitor buffer = new BufferedMethodVisitor();
+                            compileExpression(buffer, context, assignment.right);
+                            assignment.operation.apply(visitor, buffer, context, assignment.left.type, assignment.right.type);
+                        });
             }
             default -> throw new InternalException("Not implemented.");
         }
@@ -1003,11 +984,11 @@ public class Compiler {
             }
             case PROPERTY_ACCESS_EXPRESSION -> {
                 BoundPropertyAccessExpressionNode propertyExpression = (BoundPropertyAccessExpressionNode) statement.expression;
-                compileExpression(visitor, context, propertyExpression.callee);
-                visitor.visitInsn(DUP);
-                propertyExpression.property.property.compileGet(visitor);
-                statement.operation.apply(visitor);
-                propertyExpression.property.property.compileSet(visitor);
+                propertyExpression.property.property.compileLoadModifyStore(
+                        context,
+                        visitor,
+                        () -> compileExpression(visitor, context, propertyExpression.callee),
+                        () -> statement.operation.apply(visitor));
             }
             default -> throw new InternalException();
         }
@@ -2072,31 +2053,14 @@ public class Compiler {
     }
 
     private void compilePropertyAccessExpression(MethodVisitor visitor, CompilerContext context, BoundPropertyAccessExpressionNode propertyAccess) {
-        if (!propertyAccess.property.property.canGet()) {
+        if (!propertyAccess.property.property.canLoad()) {
             throw new InternalException();
         }
 
-        compileExpression(visitor, context, propertyAccess.callee);
-
-        if (propertyAccess.property.property.isPublic()) {
-            propertyAccess.property.property.compileGet(visitor);
-        } else {
-            String varHandleFieldName = context.createCachedPrivateMethodHandle(propertyAccess.property.property);
-            visitor.visitFieldInsn(
-                    GETSTATIC,
-                    MethodHandleCache.CLASS_NAME,
-                    varHandleFieldName,
-                    Type.getDescriptor(VarHandle.class));
-            visitor.visitInsn(SWAP);
-            visitor.visitMethodInsn(
-                    INVOKEVIRTUAL,
-                    Type.getInternalName(VarHandle.class),
-                    "get",
-                    Type.getMethodDescriptor(
-                            propertyAccess.property.property.getType().getAsmType(),
-                            propertyAccess.callee.type.getAsmType()),
-                    false);
-        }
+        propertyAccess.property.property.compileLoad(
+                context,
+                visitor,
+                () -> compileExpression(visitor, context, propertyAccess.callee));
     }
 
     private void compileArrayCreationExpression(MethodVisitor visitor, CompilerContext context, BoundArrayCreationExpressionNode expression) {
@@ -2549,7 +2513,7 @@ public class Compiler {
         writer.visit(
                 V1_8,
                 ACC_PUBLIC,
-                MethodHandleCache.CLASS_NAME,
+                MethodHandleCache.INTERNAL_NAME,
                 null,
                 Type.getInternalName(Object.class),
                 null);
@@ -2569,6 +2533,7 @@ public class Compiler {
         MethodVisitor visitor = writer.visitMethod(ACC_STATIC, "<clinit>", Type.getMethodDescriptor(Type.VOID_TYPE), null, null);
         visitor.visitCode();
 
+        // var caller = MethodHandles.lookup(); // stack index = 0
         visitor.visitMethodInsn(
                 INVOKESTATIC,
                 Type.getInternalName(MethodHandles.class),
@@ -2577,26 +2542,44 @@ public class Compiler {
                 false);
         visitor.visitVarInsn(ASTORE, 0);
 
-        for (var entry : cache.getFieldsMap().entrySet()) {
+        int stackTop = 1;
+        Map<Class<?>, Integer> privateLookupStackIndexMap = new HashMap<>();
+
+        for (Map.Entry<Field, String> entry : cache.getFieldsMap().entrySet()) {
             Field field = entry.getKey();
             String name = entry.getValue();
+            Class<?> fieldDeclaringClass = field.getDeclaringClass();
 
-            visitor.visitLdcInsn(Type.getType(field.getDeclaringClass()));
-            visitor.visitVarInsn(ALOAD, 0);
-            visitor.visitMethodInsn(
-                    INVOKESTATIC,
-                    Type.getInternalName(MethodHandles.class),
-                    "privateLookupIn",
-                    Type.getMethodDescriptor(Type.getType(MethodHandles.Lookup.class), Type.getType(Class.class), Type.getType(MethodHandles.Lookup.class)),
-                    false);
+            Integer existing = privateLookupStackIndexMap.get(fieldDeclaringClass);
+            if (existing == null) {
+                // var privateLookup = MethodHandles.privateLookupIn(fieldDeclaringClass, caller); // save to map
+                visitor.visitLdcInsn(Type.getType(fieldDeclaringClass));
+                visitor.visitVarInsn(ALOAD, 0);
+                visitor.visitMethodInsn(
+                        INVOKESTATIC,
+                        Type.getInternalName(MethodHandles.class),
+                        "privateLookupIn",
+                        Type.getMethodDescriptor(Type.getType(MethodHandles.Lookup.class), Type.getType(Class.class), Type.getType(MethodHandles.Lookup.class)),
+                        false);
 
-            visitor.visitLdcInsn(Type.getType(field.getDeclaringClass()));
+                int stackIndex = stackTop++;
+                visitor.visitVarInsn(ASTORE, stackIndex);
+                privateLookupStackIndexMap.put(fieldDeclaringClass, stackIndex);
+            }
+
+            // load privateLookup for corresponding class
+            visitor.visitVarInsn(ALOAD, privateLookupStackIndexMap.get(fieldDeclaringClass));
+
+            // staticFieldVarHandle = privateLookup.findVarHandle(fieldDeclaringClass, fieldName, fieldType);
+            // or
+            // staticFieldVarHandle = privateLookup.findStaticVarHandle(fieldDeclaringClass, fieldName, fieldType);
+            visitor.visitLdcInsn(Type.getType(fieldDeclaringClass));
             visitor.visitLdcInsn(field.getName());
             SType.fromJavaType(field.getType()).loadClassObject(visitor);
             visitor.visitMethodInsn(
                     INVOKEVIRTUAL,
                     Type.getInternalName(MethodHandles.Lookup.class),
-                    "findVarHandle",
+                    Modifier.isStatic(field.getModifiers()) ? "findStaticVarHandle" : "findVarHandle",
                     Type.getMethodDescriptor(
                             Type.getType(VarHandle.class),
                             Type.getType(Class.class),
@@ -2606,7 +2589,7 @@ public class Compiler {
 
             visitor.visitFieldInsn(
                     PUTSTATIC,
-                    MethodHandleCache.CLASS_NAME,
+                    MethodHandleCache.INTERNAL_NAME,
                     name,
                     Type.getDescriptor(VarHandle.class));
         }
@@ -2616,8 +2599,8 @@ public class Compiler {
         visitor.visitEnd();
 
         byte[] bytecode = writer.toByteArray();
-        saveClassFile("MethodHandleCache", bytecode);
+        saveClassFile(MethodHandleCache.CLASS_NAME, bytecode);
 
-        context.defineClass(MethodHandleCache.CLASS_NAME.replace('/', '.'), bytecode);
+        context.defineClass(MethodHandleCache.INTERNAL_NAME.replace('/', '.'), bytecode);
     }
 }

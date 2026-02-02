@@ -136,7 +136,7 @@ public class SCustomType extends SReferenceType {
         return Arrays.stream(clazz.getDeclaredFields())
                 .filter(m -> Modifier.isPublic(m.getModifiers()))
                 .filter(m -> Modifier.isStatic(m.getModifiers()))
-                .map(StaticFieldPropertyReference::new)
+                .map(FieldPropertyReference::new)
                 .map(r -> (PropertyReference) r)
                 .toList();
     }
@@ -291,7 +291,7 @@ public class SCustomType extends SReferenceType {
             if (!Modifier.isPublic(field.getModifiers())) {
                 continue;
             }
-            list.add(new StaticFieldPropertyReference(field));
+            list.add(new FieldPropertyReference(field));
         }
 
         return list;

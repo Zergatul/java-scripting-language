@@ -238,6 +238,8 @@ public class ComparatorRegistry {
                         .extract("commas", SeparatedList::getCommas))
                 .register(StatementsListNode.class, builder -> builder
                         .extract("statements", node -> node.statements))
+                .register(StaticReferenceNode.class, builder -> builder
+                        .extract("typeNode", node -> node.typeNode))
                 .register(TypePatternNode.class, builder -> builder
                         .extract("typeNode", node -> node.typeNode))
                 .register(UnaryExpressionNode.class, builder -> builder

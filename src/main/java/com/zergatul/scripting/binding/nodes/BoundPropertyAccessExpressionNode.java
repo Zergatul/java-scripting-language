@@ -31,12 +31,12 @@ public class BoundPropertyAccessExpressionNode extends BoundExpressionNode {
 
     @Override
     public boolean canGet() {
-        return property.property.canGet();
+        return property.property.canLoad();
     }
 
     @Override
     public boolean canSet() {
-        return property.property.canSet();
+        return property.property.canStore();
     }
 
     @Override

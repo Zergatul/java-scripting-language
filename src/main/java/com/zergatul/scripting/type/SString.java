@@ -6,7 +6,6 @@ import com.zergatul.scripting.parser.BinaryOperator;
 import com.zergatul.scripting.runtime.StringUtils;
 import com.zergatul.scripting.type.operation.BinaryOperation;
 import com.zergatul.scripting.type.operation.IndexOperation;
-import org.jspecify.annotations.Nullable;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Type;
 
@@ -89,7 +88,7 @@ public class SString extends SReferenceType {
         return "string";
     }
 
-    private static final PropertyReference PROP_LENGTH = new MethodBasedPropertyReference("length", String.class, "length");
+    private static final PropertyReference PROP_LENGTH = new InstanceMethodBasedPropertyReference("length", String.class, "length");
 
     private static final BinaryOperation STRING_ADD_STRING = new BinaryOperation(BinaryOperator.PLUS, SString.instance, SString.instance, SString.instance) {
         @Override

@@ -112,6 +112,15 @@ public class SClassType extends SReferenceType {
     }
 
     @Override
+    public List<PropertyReference> getStaticProperties() {
+        return Arrays.stream(clazz.getDeclaredFields())
+                .filter(m -> Modifier.isStatic(m.getModifiers()))
+                .map(FieldPropertyReference::new)
+                .map(r -> (PropertyReference) r)
+                .toList();
+    }
+
+    @Override
     public List<MethodReference> getStaticMethods() {
         return Arrays.stream(this.clazz.getDeclaredMethods())
                 .filter(m -> Modifier.isPublic(m.getModifiers()))
@@ -120,16 +129,6 @@ public class SClassType extends SReferenceType {
                 .filter(m -> !m.isAnnotationPresent(Setter.class))
                 .map(NativeStaticMethodReference::new)
                 .map(r -> (MethodReference) r)
-                .toList();
-    }
-
-    @Override
-    public List<PropertyReference> getStaticProperties() {
-        return Arrays.stream(clazz.getDeclaredFields())
-                .filter(m -> Modifier.isPublic(m.getModifiers()))
-                .filter(m -> Modifier.isStatic(m.getModifiers()))
-                .map(StaticFieldPropertyReference::new)
-                .map(r -> (PropertyReference) r)
                 .toList();
     }
 

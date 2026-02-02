@@ -8,7 +8,8 @@ import java.util.Map;
 
 public class MethodHandleCache {
 
-    public static final String CLASS_NAME = "com/zergatul/scripting/dynamic/MethodHandleCache";
+    public static final String CLASS_NAME = "MethodHandleCache";
+    public static final String INTERNAL_NAME = "com/zergatul/scripting/dynamic/" + CLASS_NAME;
 
     private final Map<Field, String> fields = new HashMap<>();
 

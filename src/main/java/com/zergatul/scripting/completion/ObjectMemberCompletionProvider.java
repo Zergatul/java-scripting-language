@@ -6,6 +6,7 @@ import com.zergatul.scripting.binding.nodes.*;
 import com.zergatul.scripting.compiler.CompilationParameters;
 import com.zergatul.scripting.compiler.JavaInteropPolicy;
 import com.zergatul.scripting.type.NativeMethodReference;
+import com.zergatul.scripting.type.PropertyReference;
 import com.zergatul.scripting.type.SType;
 import com.zergatul.scripting.type.SUnknown;
 
@@ -52,7 +53,8 @@ public class ObjectMemberCompletionProvider<T> extends AbstractCompletionProvide
 
         List<T> suggestions = new ArrayList<>();
 
-        type.getInstanceProperties()
+        type.getInstanceProperties().stream()
+                .filter(PropertyReference::isPublic)
                 .forEach(p -> suggestions.add(factory.getPropertySuggestion(p)));
 
         type.getInstanceMethods().stream()

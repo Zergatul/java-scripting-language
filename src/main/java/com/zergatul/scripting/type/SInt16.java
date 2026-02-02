@@ -276,12 +276,12 @@ public class SInt16 extends SValueType {
             new MethodParameter("str", SString.instance),
             new MethodParameter("result", SByReference.INT16)));
 
-    private static final Lazy<PropertyReference> PROPERTY_MIN_VALUE = new Lazy<>(() -> new GetterPropertyReference(
+    private static final Lazy<PropertyReference> PROPERTY_MIN_VALUE = new Lazy<>(() -> new StaticCustomGetterPropertyReference(
             SInt16.instance,
             "MIN_VALUE",
             visitor -> visitor.visitLdcInsn(Short.MIN_VALUE)));
 
-    private static final Lazy<PropertyReference> PROPERTY_MAX_VALUE = new Lazy<>(() -> new GetterPropertyReference(
+    private static final Lazy<PropertyReference> PROPERTY_MAX_VALUE = new Lazy<>(() -> new StaticCustomGetterPropertyReference(
             SInt16.instance,
             "MAX_VALUE",
             visitor -> visitor.visitLdcInsn(Short.MAX_VALUE)));

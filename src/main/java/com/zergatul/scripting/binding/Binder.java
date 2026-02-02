@@ -1851,7 +1851,6 @@ public class Binder {
         boolean isPrivate = expression.operator.is(TokenType.DOT_HASH);
 
         if (callee.type instanceof SStaticTypeReference staticType) {
-            // TODO
             PropertyReference property = staticType.getUnderlying().getStaticProperties().stream()
                     .filter(p -> p.isPublic() ^ isPrivate)
                     .filter(p -> p.getName().equals(expression.name.value))
