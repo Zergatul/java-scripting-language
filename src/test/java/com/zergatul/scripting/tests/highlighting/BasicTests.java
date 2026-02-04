@@ -259,7 +259,8 @@ public class BasicTests extends ComparatorTest {
                         new SemanticToken(SemanticTokenType.SEPARATOR, new SingleLineTextRange(1, 13, 12, 1)),
                         new SemanticToken(SemanticTokenType.IDENTIFIER, List.of(SemanticTokenModifier.STATIC), new SingleLineTextRange(2, 1, 14, 1)),
                         new SemanticToken(SemanticTokenType.OPERATOR, new SingleLineTextRange(2, 3, 16, 1)),
-                        new SemanticToken(SemanticTokenType.NUMBER, new SingleLineTextRange(2, 5, 18, 1))),
+                        new SemanticToken(SemanticTokenType.NUMBER, new SingleLineTextRange(2, 5, 18, 1)),
+                        new SemanticToken(SemanticTokenType.SEPARATOR, new SingleLineTextRange(2, 6, 19, 1))),
                 highlight(code));
     }
 
@@ -317,7 +318,8 @@ public class BasicTests extends ComparatorTest {
                         new SemanticToken(SemanticTokenType.KEYWORD, List.of(SemanticTokenModifier.PREDEFINED_TYPE), new SingleLineTextRange(2, 1, 15, 7)),
                         new SemanticToken(SemanticTokenType.IDENTIFIER, new SingleLineTextRange(2, 9, 23, 4)),
                         new SemanticToken(SemanticTokenType.OPERATOR, new SingleLineTextRange(2, 14, 28, 1)),
-                        new SemanticToken(SemanticTokenType.KEYWORD, List.of(SemanticTokenModifier.VALUE), new SingleLineTextRange(2, 16, 30, 4))),
+                        new SemanticToken(SemanticTokenType.KEYWORD, List.of(SemanticTokenModifier.VALUE), new SingleLineTextRange(2, 16, 30, 4)),
+                        new SemanticToken(SemanticTokenType.SEPARATOR, new SingleLineTextRange(2, 20, 34, 1))),
                 highlight(code));
     }
 

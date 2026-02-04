@@ -178,6 +178,9 @@ public class HighlightingProvider {
         process(node.left);
         process(node.operator);
         process(node.right);
+        if (node.syntaxNode.semicolon != null) {
+            process(node.syntaxNode.semicolon);
+        }
     }
 
     private void process(BoundAugmentedAssignmentStatementNode node) {

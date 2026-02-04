@@ -883,6 +883,17 @@ public class Binder {
     }
 
     private BoundExpressionNode bindExpression(ExpressionNode expression) {
+        BoundExpressionNode result = bindExpressionOrStaticRef(expression);
+
+        if (result.is(BoundNodeType.STATIC_REFERENCE)) {
+            addDiagnostic(BinderErrors.TypeReferenceNotAllowed, expression, expression.getRange().extract(code));
+            return new BoundInvalidExpressionNode(List.of(result), List.of(), expression.getRange());
+        }
+
+        return result;
+    }
+
+    private BoundExpressionNode bindExpressionOrStaticRef(ExpressionNode expression) {
         return switch (expression.getNodeType()) {
             case NULL_EXPRESSION -> bindNullExpression((NullExpressionNode) expression);
             case BOOLEAN_LITERAL -> bindBooleanLiteralExpression((BooleanLiteralExpressionNode) expression);
@@ -1843,7 +1854,7 @@ public class Binder {
     }
 
     private BoundExpressionNode bindMemberAccessExpression(MemberAccessExpressionNode expression) {
-        BoundExpressionNode callee = bindExpression(expression.callee);
+        BoundExpressionNode callee = bindExpressionOrStaticRef(expression.callee);
 
         if (callee.type == SNull.instance) {
             addDiagnostic(BinderErrors.CannotAccessNullMembers, expression.operator);
