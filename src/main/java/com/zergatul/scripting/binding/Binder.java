@@ -13,6 +13,9 @@ import com.zergatul.scripting.type.*;
 import com.zergatul.scripting.type.operation.*;
 import org.jspecify.annotations.Nullable;
 
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.reflect.Field;
 import java.util.*;
 import java.util.function.BiFunction;
 import java.util.stream.Stream;
@@ -1353,6 +1356,8 @@ public class Binder {
                         methodGroup.method.name, invocation.arguments.arguments.size());
             }
 
+            verifyMethodAccessible(result.invocable, methodGroup.syntaxNode.name);
+
             BoundMethodNode methodNode = new BoundMethodNode(methodGroup.syntaxNode.name, result.invocable);
             return new BoundMethodInvocationExpressionNode(
                     invocation,
@@ -1857,6 +1862,7 @@ public class Binder {
                     .findFirst()
                     .orElse(null);
             if (property != null) {
+                verifyPropertyAccessible(property, expression.name);
                 return new BoundPropertyAccessExpressionNode(
                         expression,
                         callee,
@@ -1902,6 +1908,7 @@ public class Binder {
                         .orElse(null);
             }
             if (property != null) {
+                verifyPropertyAccessible(property, expression.name);
                 return new BoundPropertyAccessExpressionNode(
                         expression,
                         callee,
@@ -1938,6 +1945,36 @@ public class Binder {
         }
     }
 
+    private void verifyPropertyAccessible(PropertyReference propertyRef, Locatable locatable) {
+        if (propertyRef.isPublic()) {
+            return;
+        }
+
+        if (propertyRef instanceof FieldPropertyReference fieldPropertyRef) {
+            MethodHandles.Lookup lookup = MethodHandles.lookup();
+            try {
+                MethodHandles.privateLookupIn(fieldPropertyRef.getUnderlyingField().getDeclaringClass(), lookup);
+            } catch (IllegalAccessException | SecurityException e) {
+                addDiagnostic(BinderErrors.PrivateAccessDenied, locatable, e.toString());
+            }
+        }
+    }
+
+    private void verifyMethodAccessible(MethodReference methodRef, Locatable locatable) {
+        if (methodRef.isPublic()) {
+            return;
+        }
+
+        if (methodRef instanceof NativeMethodReference nativeMethodRef) {
+            MethodHandles.Lookup lookup = MethodHandles.lookup();
+            try {
+                MethodHandles.privateLookupIn(nativeMethodRef.getUnderlying().getDeclaringClass(), lookup);
+            } catch (IllegalAccessException | SecurityException e) {
+                addDiagnostic(BinderErrors.PrivateAccessDenied, locatable, e.toString());
+            }
+        }
+    }
+
     private List<MethodReference> getInstanceMethodsWithExtensions(SType type, boolean isPrivate) {
         List<MethodReference> methods = new ArrayList<>();
         for (MethodReference method : type.getInstanceMethods()) {
@@ -1945,7 +1982,9 @@ public class Binder {
                 methods.add(method);
             }
         }
-        declarationTable.appendExtensionMethods(type, methods);
+        if (!isPrivate) {
+            declarationTable.appendExtensionMethods(type, methods);
+        }
         return methods;
     }
 

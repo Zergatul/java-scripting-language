@@ -173,6 +173,53 @@ public class PrivateMemberTests extends ComparatorTest {
         Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(10, 20));
     }
 
+    @Test
+    public void accessDeniedPropertiesTest() {
+        String code = """
+                typealias Hashtable = Java<java.util.Hashtable>;
+                
+                let instance = new Hashtable();
+                instance.#count = 10;
+                Hashtable.#KEYS.toString();
+                """;
+
+        comparator.assertEquals(
+                List.of(
+                        new DiagnosticMessage(
+                                BinderErrors.PrivateAccessDenied,
+                                new SingleLineTextRange(4, 11, 92, 5),
+                                "java.lang.IllegalAccessException: module java.base does not open java.util to " + getClass().getModule()),
+                        new DiagnosticMessage(
+                                BinderErrors.PrivateAccessDenied,
+                                new SingleLineTextRange(5, 12, 115, 4),
+                                "java.lang.IllegalAccessException: module java.base does not open java.util to " + getClass().getModule())),
+                getDiagnostics(RefTests.ApiRoot.class, code));
+    }
+
+    @Test
+    public void accessDeniedMethodsTest() {
+        String code = """
+                typealias System = Java<java.lang.System>;
+                typealias Hashtable = Java<java.util.Hashtable>;
+                
+                let instance = new Hashtable();
+                instance.#rehash();
+                System.#checkIO();
+                """;
+
+        comparator.assertEquals(
+                List.of(
+                        new DiagnosticMessage(
+                                BinderErrors.PrivateAccessDenied,
+                                new SingleLineTextRange(5, 11, 135, 6),
+                                "java.lang.IllegalAccessException: module java.base does not open java.util to " + getClass().getModule()),
+                        new DiagnosticMessage(
+                                BinderErrors.PrivateAccessDenied,
+                                new SingleLineTextRange(6, 9, 153, 7),
+                                "java.lang.IllegalAccessException: module java.base does not open java.lang to " + getClass().getModule())),
+                getDiagnostics(RefTests.ApiRoot.class, code));
+    }
+
     public static class ApiRoot {
         public static BoolStorage boolStorage;
         public static IntStorage intStorage;
