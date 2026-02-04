@@ -104,6 +104,7 @@ public class PrivateMemberTests extends ComparatorTest {
                 int64Storage.add(MyClass.#longValue);
                 """;
 
+        MyClass1.strValue = "q";
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
@@ -139,6 +140,39 @@ public class PrivateMemberTests extends ComparatorTest {
                 getDiagnostics(ApiRoot.class, code));
     }
 
+    @Test
+    public void staticMethodTest() {
+        String code = """
+                typealias MyClass = Java<com.zergatul.scripting.tests.compiler.PrivateMemberTests$MyClass1>;
+                
+                stringStorage.add(MyClass.#getStrValue());
+                MyClass.#setStrValue("hello");
+                stringStorage.add(MyClass.#getStrValue());
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(ApiRoot.stringStorage.list, List.of("q", "hello"));
+    }
+
+    @Test
+    public void instanceMethodTest() {
+        String code = """
+                typealias MyClass = Java<com.zergatul.scripting.tests.compiler.PrivateMemberTests$MyClass2>;
+                
+                let instance = new MyClass(10);
+                intStorage.add(instance.#getMutableValue());
+                instance.#setMutableValue(20);
+                intStorage.add(instance.#getMutableValue());
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(10, 20));
+    }
+
     public static class ApiRoot {
         public static BoolStorage boolStorage;
         public static IntStorage intStorage;
@@ -157,6 +191,14 @@ public class PrivateMemberTests extends ComparatorTest {
             this.value = value;
         }
 
+        private static String getStrValue() {
+            return strValue;
+        }
+
+        private static void setStrValue(String value) {
+            strValue = value;
+        }
+
         public void inc() {
             value++;
         }
@@ -173,13 +215,23 @@ public class PrivateMemberTests extends ComparatorTest {
         private static final String strValue = "a";
         private static final long longValue = 100;
         private final int value;
+        private int mutableValue;
 
         public MyClass2(int value) {
             this.value = value;
+            this.mutableValue = value;
         }
 
         public int getValue() {
             return value;
+        }
+
+        private int getMutableValue() {
+            return mutableValue;
+        }
+
+        private void setMutableValue(int value) {
+            mutableValue = value;
         }
     }
 }

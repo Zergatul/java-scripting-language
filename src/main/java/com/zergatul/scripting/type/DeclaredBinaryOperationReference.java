@@ -35,13 +35,13 @@ public class DeclaredBinaryOperationReference extends MethodReference {
     }
 
     @Override
-    public void compileInvoke(MethodVisitor visitor, CompilerContext context) {
-        throw new InternalException();
+    public String getName() {
+        return "op_" + operator.name().toLowerCase();
     }
 
     @Override
-    public String getName() {
-        return "op_" + operator.name().toLowerCase();
+    public void compileInvoke(MethodVisitor visitor, CompilerContext context, Runnable compileArguments) {
+        throw new InternalException();
     }
 
     public BinaryOperator getOperator() {

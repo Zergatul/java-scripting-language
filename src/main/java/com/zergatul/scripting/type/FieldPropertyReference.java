@@ -50,7 +50,7 @@ public final class FieldPropertyReference extends PropertyReference {
     }
 
     @Override
-    public void compileLoad(CompilerContext context, MethodVisitor visitor, Runnable compileCallee) {
+    public void compileLoad(MethodVisitor visitor, CompilerContext context, Runnable compileCallee) {
         if (isPublic()) {
             if (isStatic()) {
                 visitor.visitFieldInsn(
@@ -68,7 +68,7 @@ public final class FieldPropertyReference extends PropertyReference {
             }
         } else {
             if (isStatic()) {
-                String varHandleFieldName = context.createCachedPrivateMethodHandle(this);
+                String varHandleFieldName = context.createCachedPrivateFieldHandle(this);
                 visitor.visitFieldInsn(
                         GETSTATIC,
                         MethodHandleCache.INTERNAL_NAME,
@@ -82,7 +82,7 @@ public final class FieldPropertyReference extends PropertyReference {
                                 Type.getType(field.getType())),
                         false);
             } else {
-                String varHandleFieldName = context.createCachedPrivateMethodHandle(this);
+                String varHandleFieldName = context.createCachedPrivateFieldHandle(this);
                 visitor.visitFieldInsn(
                         GETSTATIC,
                         MethodHandleCache.INTERNAL_NAME,
@@ -102,7 +102,7 @@ public final class FieldPropertyReference extends PropertyReference {
     }
 
     @Override
-    public void compileStore(CompilerContext context, MethodVisitor visitor, Runnable compileCallee, Runnable compileValue) {
+    public void compileStore(MethodVisitor visitor, CompilerContext context, Runnable compileCallee, Runnable compileValue) {
         if (isPublic()) {
             compileCallee.run();
             compileValue.run();
@@ -121,7 +121,7 @@ public final class FieldPropertyReference extends PropertyReference {
             }
         } else {
             if (isStatic()) {
-                String varHandleFieldName = context.createCachedPrivateMethodHandle(this);
+                String varHandleFieldName = context.createCachedPrivateFieldHandle(this);
                 visitor.visitFieldInsn(
                         GETSTATIC,
                         MethodHandleCache.INTERNAL_NAME,
@@ -137,7 +137,7 @@ public final class FieldPropertyReference extends PropertyReference {
                                 Type.getType(field.getType())),
                         false);
             } else {
-                String varHandleFieldName = context.createCachedPrivateMethodHandle(this);
+                String varHandleFieldName = context.createCachedPrivateFieldHandle(this);
                 visitor.visitFieldInsn(
                         GETSTATIC,
                         MethodHandleCache.INTERNAL_NAME,
@@ -159,7 +159,7 @@ public final class FieldPropertyReference extends PropertyReference {
     }
 
     @Override
-    public void compileLoadModifyStore(CompilerContext context, MethodVisitor visitor, Runnable compileCallee, Runnable compileModify) {
+    public void compileLoadModifyStore(MethodVisitor visitor, CompilerContext context, Runnable compileCallee, Runnable compileModify) {
         if (isPublic()) {
             if (isStatic()) {
                 visitor.visitFieldInsn(
@@ -196,7 +196,7 @@ public final class FieldPropertyReference extends PropertyReference {
             }
         } else {
             if (isStatic()) {
-                String varHandleFieldName = context.createCachedPrivateMethodHandle(this);
+                String varHandleFieldName = context.createCachedPrivateFieldHandle(this);
                 visitor.visitFieldInsn(
                         GETSTATIC,
                         MethodHandleCache.INTERNAL_NAME,
@@ -225,7 +225,7 @@ public final class FieldPropertyReference extends PropertyReference {
                         false);
             } else {
                 context = context.createChild();
-                String varHandleFieldName = context.createCachedPrivateMethodHandle(this);
+                String varHandleFieldName = context.createCachedPrivateFieldHandle(this);
                 visitor.visitFieldInsn(
                         GETSTATIC,
                         MethodHandleCache.INTERNAL_NAME,
@@ -271,6 +271,15 @@ public final class FieldPropertyReference extends PropertyReference {
                                 Type.getType(field.getType())),
                         false);
             }
+        }
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj instanceof FieldPropertyReference other) {
+            return other.field.equals(field);
+        } else {
+            return false;
         }
     }
 

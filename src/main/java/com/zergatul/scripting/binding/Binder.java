@@ -1171,7 +1171,7 @@ public class Binder {
             return new BoundInExpressionNode(binary, left, right, UnknownMethodReference.instance);
         }
 
-        List<MethodReference> methods = getInstanceMethodsWithExtensions(right.type);
+        List<MethodReference> methods = getInstanceMethodsWithExtensions(right.type, false);
         for (MethodReference method : methods) {
             if (!method.getName().equals("contains")) {
                 continue;
@@ -1541,7 +1541,7 @@ public class Binder {
                         name.getRange());
             }
 
-            List<MethodReference> methods = getInstanceMethodsWithExtensions(context.getClassType()).stream()
+            List<MethodReference> methods = getInstanceMethodsWithExtensions(context.getClassType(), false).stream()
                     .filter(m -> m.getName().equals(name.value))
                     .toList();
             if (!methods.isEmpty()) {
@@ -1848,7 +1848,7 @@ public class Binder {
                     new BoundPropertyNode(expression.name, UnknownPropertyReference.instance));
         }
 
-        boolean isPrivate = expression.operator.is(TokenType.DOT_HASH);
+        boolean isPrivate = expression.isPrivate();
 
         if (callee.type instanceof SStaticTypeReference staticType) {
             PropertyReference property = staticType.getUnderlying().getStaticProperties().stream()
@@ -1864,6 +1864,7 @@ public class Binder {
             }
 
             List<MethodReference> methods = staticType.getUnderlying().getStaticMethods().stream()
+                    .filter(p -> p.isPublic() ^ isPrivate)
                     .filter(m -> m.getName().equals(expression.name.value))
                     .filter(m -> {
                         if (m instanceof NativeMethodReference ref) {
@@ -1907,7 +1908,8 @@ public class Binder {
                         new BoundPropertyNode(expression.name, property));
             }
 
-            List<MethodReference> methods = getInstanceMethodsWithExtensions(callee.type).stream()
+            List<MethodReference> methods = getInstanceMethodsWithExtensions(callee.type, isPrivate)
+                    .stream()
                     .filter(m -> m.getName().equals(expression.name.value))
                     .filter(m -> {
                         if (m instanceof NativeMethodReference ref) {
@@ -1936,8 +1938,13 @@ public class Binder {
         }
     }
 
-    private List<MethodReference> getInstanceMethodsWithExtensions(SType type) {
-        List<MethodReference> methods = new ArrayList<>(type.getInstanceMethods());
+    private List<MethodReference> getInstanceMethodsWithExtensions(SType type, boolean isPrivate) {
+        List<MethodReference> methods = new ArrayList<>();
+        for (MethodReference method : type.getInstanceMethods()) {
+            if (method.isPublic() ^ isPrivate) {
+                methods.add(method);
+            }
+        }
         declarationTable.appendExtensionMethods(type, methods);
         return methods;
     }

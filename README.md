@@ -37,6 +37,7 @@ It is lightweight, async-friendly, and designed to interop with Java APIs where 
 - [Classes](#classes)
 - [Extensions](#extensions)
 - [Java Interop](#java-interop)
+    - [Accessing Private Members](#accessing-private-members)
 - [Type Aliases](#type-aliases)
 - [Limitations](#limitations)
 - [Comparison Table](#comparison-table)
@@ -663,6 +664,52 @@ debug.write(table.get(false).toString()); // 100
 let obj = table.get("qq"); // type: Java<java.lang.Object>
 let str = obj as string;   // cast to string
 debug.write(str);
+```
+
+#### Accessing Private Members
+To write complex scripts you often have to access private members.
+Language supports unique syntax to simplify this process:
+```ts
+typealias Minecraft = Java<net.minecraft.client.Minecraft>;
+
+let mc = Minecraft.#instance; // accessing package-private static field
+mc.#rightClickDelay = 0; // modifying private instance field
+mc.#handleKeybinds(); // calling private method
+```
+
+Any "private" modifier is considered private by this syntax: private, package-private, protected.
+This syntax doesn't switch the language into dynamic type mode (like `dynamic` keyword in C#),
+every private access/call is validated during compilation.
+
+Auto-completion is supported: `obj.#<cursor>` should pull private-only members.
+
+Accessing private members is only allowed on `Java<...>` types.
+
+Under the hood such calls are highly optimized by using `MethodHandle` objects.
+Above example compiles to something like this in Java code:
+
+```java
+class MethodHandleCache {
+  public static final VarHandle instance_var_handle;
+  public static final VarHandle rightClickDelay_var_handle;
+  public static final MethodHandle handleKeybinding_method_handle;
+
+  static MethodHandleCache() {
+    var caller = MethodHandles.lookup();
+    var mcPrivateLookup = MethodHandles.privateLookupIn(Minecraft.class, caller);
+    instance_var_handle = mcPrivateLookup.findStaticVarHandle(Minecraft.class, "instance", Minecraft.class);
+    rightClickDelay_var_handle = mcPrivateLookup.findVarHandle(Minecraft.class, "rightClickDelay", int.class);
+    handleKeybinding_method_handle = mcPrivateLookup.findVirtual(Minecraft.class, "handleKeybinds", MethodType.methodType(void.class));
+  }
+}
+
+class Script {
+    public void run() {
+        var mc = (Minecraft) MethodHandleCache.instance_var_handle.get();
+        MethodHandleCache.rightClickDelay_var_handle.set(mc, 0);
+        MethodHandleCache.handleKeybinding_method_handle.invokeExact(mc);
+    }
+}
 ```
 
 ### Type Aliases

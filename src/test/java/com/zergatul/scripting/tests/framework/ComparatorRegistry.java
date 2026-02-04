@@ -6,7 +6,6 @@ import com.zergatul.scripting.highlighting.SemanticToken;
 import com.zergatul.scripting.hover.HoverProvider;
 import com.zergatul.scripting.lexer.*;
 import com.zergatul.scripting.parser.nodes.*;
-import com.zergatul.scripting.type.NativeInstanceMethodReference;
 import com.zergatul.scripting.type.NativeMethodReference;
 import org.jspecify.annotations.Nullable;
 
@@ -323,7 +322,6 @@ public class ComparatorRegistry {
                 .register(BoundTypeNode.class, builder -> builder
                         .extract("type", node -> node.type))
                 /* */
-                .register(NativeInstanceMethodReference.class, builder -> {})
                 .register(NativeMethodReference.class, builder -> builder
                         .extract("method", NativeMethodReference::getUnderlying));
     }

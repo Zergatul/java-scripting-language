@@ -1,9 +1,6 @@
 package com.zergatul.scripting.tests.runtime;
 
-import com.zergatul.scripting.type.MethodReference;
-import com.zergatul.scripting.type.NativeInstanceMethodReference;
-import com.zergatul.scripting.type.SClassType;
-import com.zergatul.scripting.type.SType;
+import com.zergatul.scripting.type.*;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -16,7 +13,7 @@ public class STypeTests {
     @Test
     public void genericArrayTypeTest() throws Exception {
         Method method = TestClass1.class.getMethod("getParts");
-        MethodReference methodReference = new NativeInstanceMethodReference(method);
+        MethodReference methodReference = new NativeMethodReference(method);
         SType returnType = methodReference.getReturn();
         Assertions.assertEquals("Java<com.zergatul.scripting.tests.runtime.STypeTests$TestClass2>[]", returnType.toString());
     }
@@ -24,7 +21,7 @@ public class STypeTests {
     @Test
     public void methodTest1() throws Exception {
         Method method = TestClass3.class.getMethod("getPlayers", Predicate.class);
-        MethodReference methodReference = new NativeInstanceMethodReference(method);
+        MethodReference methodReference = new NativeMethodReference(method);
         SType parameterType = methodReference.getParameterTypes().getFirst();
         Assertions.assertEquals("fn<Java<com.zergatul.scripting.tests.runtime.STypeTests$ServerPlayer> => boolean>", parameterType.toString());
     }

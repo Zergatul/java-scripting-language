@@ -2,7 +2,6 @@ package com.zergatul.scripting.type;
 
 import com.zergatul.scripting.InternalException;
 import com.zergatul.scripting.compiler.CompilerContext;
-import com.zergatul.scripting.parser.BinaryOperator;
 import com.zergatul.scripting.parser.UnaryOperator;
 import org.objectweb.asm.MethodVisitor;
 
@@ -36,13 +35,13 @@ public class DeclaredUnaryOperationReference extends MethodReference {
     }
 
     @Override
-    public void compileInvoke(MethodVisitor visitor, CompilerContext context) {
-        throw new InternalException();
+    public String getName() {
+        return "op_" + operator.name().toLowerCase();
     }
 
     @Override
-    public String getName() {
-        return "op_" + operator.name().toLowerCase();
+    public void compileInvoke(MethodVisitor visitor, CompilerContext context, Runnable compileArguments) {
+        throw new InternalException();
     }
 
     public UnaryOperator getOperator() {

@@ -620,12 +620,23 @@ public class CompilerContext {
         return root.classLoaderContext.getNextUniqueIndex();
     }
 
-    public String createCachedPrivateMethodHandle(PropertyReference property) {
+    public String createCachedPrivateFieldHandle(PropertyReference property) {
         if (property instanceof FieldPropertyReference fieldProperty) {
             if (root.methodHandleCache == null) {
                 root.methodHandleCache = new MethodHandleCache();
             }
             return root.methodHandleCache.createFieldAccess(fieldProperty.getUnderlyingField());
+        } else {
+            throw new InternalException();
+        }
+    }
+
+    public String createCachedPrivateMethodHandle(MethodReference method) {
+        if (method instanceof NativeMethodReference methodReference) {
+            if (root.methodHandleCache == null) {
+                root.methodHandleCache = new MethodHandleCache();
+            }
+            return root.methodHandleCache.createMethodAccess(methodReference.getUnderlying());
         } else {
             throw new InternalException();
         }

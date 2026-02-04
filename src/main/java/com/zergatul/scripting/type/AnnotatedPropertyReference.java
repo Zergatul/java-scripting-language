@@ -46,7 +46,7 @@ public class AnnotatedPropertyReference extends PropertyReference {
     }
 
     @Override
-    public void compileLoad(CompilerContext context, MethodVisitor visitor, Runnable compileCallee) {
+    public void compileLoad(MethodVisitor visitor, CompilerContext context, Runnable compileCallee) {
         if (getter == null) {
             throw new InternalException();
         }
@@ -61,7 +61,7 @@ public class AnnotatedPropertyReference extends PropertyReference {
     }
 
     @Override
-    public void compileStore(CompilerContext context, MethodVisitor visitor, Runnable compileCallee, Runnable compileValue) {
+    public void compileStore(MethodVisitor visitor, CompilerContext context, Runnable compileCallee, Runnable compileValue) {
         if (setter == null) {
             throw new InternalException();
         }
@@ -77,7 +77,7 @@ public class AnnotatedPropertyReference extends PropertyReference {
     }
 
     @Override
-    public void compileLoadModifyStore(CompilerContext context, MethodVisitor visitor, Runnable compileCallee, Runnable compileModify) {
+    public void compileLoadModifyStore(MethodVisitor visitor, CompilerContext context, Runnable compileCallee, Runnable compileModify) {
         if (getter == null || setter == null) {
             throw new InternalException();
         }

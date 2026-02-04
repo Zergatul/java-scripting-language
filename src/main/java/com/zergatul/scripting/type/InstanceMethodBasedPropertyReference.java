@@ -46,7 +46,7 @@ public class InstanceMethodBasedPropertyReference extends PropertyReference {
     }
 
     @Override
-    public void compileLoad(CompilerContext context, MethodVisitor visitor, Runnable compileCallee) {
+    public void compileLoad(MethodVisitor visitor, CompilerContext context, Runnable compileCallee) {
         compileCallee.run();
         visitor.visitMethodInsn(
                 INVOKEVIRTUAL,

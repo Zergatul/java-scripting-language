@@ -14,15 +14,15 @@ public abstract class PropertyReference extends MemberReference {
         return true;
     }
 
-    public void compileLoad(CompilerContext context, MethodVisitor visitor, Runnable compileCallee) {
+    public void compileLoad(MethodVisitor visitor, CompilerContext context, Runnable compileCallee) {
         throw new InternalException();
     }
 
-    public void compileStore(CompilerContext context, MethodVisitor visitor, Runnable compileCallee, Runnable compileValue) {
+    public void compileStore(MethodVisitor visitor, CompilerContext context, Runnable compileCallee, Runnable compileValue) {
         throw new InternalException();
     }
 
-    public void compileLoadModifyStore(CompilerContext context, MethodVisitor visitor, Runnable compileCallee, Runnable compileModify) {
+    public void compileLoadModifyStore(MethodVisitor visitor, CompilerContext context, Runnable compileCallee, Runnable compileModify) {
         throw new InternalException();
     }
 }

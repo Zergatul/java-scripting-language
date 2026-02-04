@@ -38,7 +38,7 @@ public class SFuture extends SReferenceType {
     public List<MethodReference> getDeclaredInstanceMethods() {
         try {
             Method method = CompletableFuture.class.getMethod("isDone");
-            return List.of(new NativeInstanceMethodReference(method));
+            return List.of(new NativeMethodReference(method));
         } catch (NoSuchMethodException | SecurityException e) {
             throw new InternalException();
         }

@@ -7,9 +7,7 @@ import org.jspecify.annotations.Nullable;
 import org.objectweb.asm.MethodVisitor;
 
 import java.lang.reflect.*;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 
 public class SClassType extends SReferenceType {
 
@@ -92,13 +90,26 @@ public class SClassType extends SReferenceType {
 
     @Override
     public List<MethodReference> getInstanceMethods() {
-        return Arrays.stream(this.clazz.getMethods())
-                .filter(m -> Modifier.isPublic(m.getModifiers()))
-                .filter(m -> !Modifier.isStatic(m.getModifiers()))
-                .filter(m -> m.getDeclaringClass() != Object.class)
-                .map(NativeInstanceMethodReference::new)
-                .map(r -> (MethodReference) r)
-                .toList();
+        Set<Method> methods = new HashSet<>();
+        for (Method method : this.clazz.getMethods()) {
+            if (Modifier.isStatic(method.getModifiers())) {
+                continue;
+            }
+            if (method.getDeclaringClass() == Object.class) {
+                continue;
+            }
+            methods.add(method);
+        }
+        for (Method method : this.clazz.getDeclaredMethods()) {
+            if (Modifier.isStatic(method.getModifiers())) {
+                continue;
+            }
+            if (method.getDeclaringClass() == Object.class) {
+                continue;
+            }
+            methods.add(method);
+        }
+        return methods.stream().map(m -> (MethodReference) new NativeMethodReference(m)).toList();
     }
 
     @Override
@@ -106,7 +117,7 @@ public class SClassType extends SReferenceType {
         return Arrays.stream(this.clazz.getDeclaredMethods())
                 .filter(m -> Modifier.isPublic(m.getModifiers()))
                 .filter(m -> !Modifier.isStatic(m.getModifiers()))
-                .map(NativeInstanceMethodReference::new)
+                .map(NativeMethodReference::new)
                 .map(r -> (MethodReference) r)
                 .toList();
     }
@@ -123,11 +134,10 @@ public class SClassType extends SReferenceType {
     @Override
     public List<MethodReference> getStaticMethods() {
         return Arrays.stream(this.clazz.getDeclaredMethods())
-                .filter(m -> Modifier.isPublic(m.getModifiers()))
                 .filter(m -> Modifier.isStatic(m.getModifiers()))
                 .filter(m -> !m.isAnnotationPresent(Getter.class))
                 .filter(m -> !m.isAnnotationPresent(Setter.class))
-                .map(NativeStaticMethodReference::new)
+                .map(NativeMethodReference::new)
                 .map(r -> (MethodReference) r)
                 .toList();
     }

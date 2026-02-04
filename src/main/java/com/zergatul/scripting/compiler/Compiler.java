@@ -27,9 +27,7 @@ import org.objectweb.asm.*;
 import org.objectweb.asm.Type;
 
 import java.io.IOException;
-import java.lang.invoke.LambdaMetafactory;
-import java.lang.invoke.MethodHandles;
-import java.lang.invoke.VarHandle;
+import java.lang.invoke.*;
 import java.lang.reflect.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -716,8 +714,7 @@ public class Compiler {
                 case PROPERTY_ACCESS_EXPRESSION -> {
                     BoundPropertyAccessExpressionNode access = (BoundPropertyAccessExpressionNode) assignment.left;
                     access.property.property.compileStore(
-                            context,
-                            visitor,
+                            visitor, context,
                             () -> compileExpression(visitor, context, access.callee),
                             () -> compileExpression(visitor, context, assignment.right));
                 }
@@ -756,8 +753,7 @@ public class Compiler {
             case PROPERTY_ACCESS_EXPRESSION -> {
                 BoundPropertyAccessExpressionNode propertyAccess = (BoundPropertyAccessExpressionNode) assignment.left;
                 propertyAccess.property.property.compileLoadModifyStore(
-                        context,
-                        visitor,
+                        visitor, context,
                         () -> compileExpression(visitor, context, propertyAccess.callee),
                         () -> {
                             BufferedMethodVisitor buffer = new BufferedMethodVisitor();
@@ -985,8 +981,7 @@ public class Compiler {
             case PROPERTY_ACCESS_EXPRESSION -> {
                 BoundPropertyAccessExpressionNode propertyExpression = (BoundPropertyAccessExpressionNode) statement.expression;
                 propertyExpression.property.property.compileLoadModifyStore(
-                        context,
-                        visitor,
+                        visitor, context,
                         () -> compileExpression(visitor, context, propertyExpression.callee),
                         () -> statement.operation.apply(visitor));
             }
@@ -1450,9 +1445,10 @@ public class Compiler {
     }
 
     private void compileInExpression(MethodVisitor visitor, CompilerContext context, BoundInExpressionNode expression) {
-        compileExpression(visitor, context, expression.right);
-        compileExpression(visitor, context, expression.left);
-        expression.method.compileInvoke(visitor, context);
+        expression.method.compileInvoke(visitor, context, () -> {
+            compileExpression(visitor, context, expression.right);
+            compileExpression(visitor, context, expression.left);
+        });
     }
 
     private void compileIsExpression(MethodVisitor visitor, CompilerContext context, BoundIsExpressionNode is) {
@@ -2023,20 +2019,19 @@ public class Compiler {
     }
 
     private void compileMethodInvocationExpression(MethodVisitor visitor, CompilerContext context, BoundMethodInvocationExpressionNode invocation) {
-        compileExpression(visitor, context, invocation.objectReference);
-        for (BoundExpressionNode expression : invocation.arguments.arguments) {
-            compileExpression(visitor, context, expression);
-        }
-        invocation.method.method.compileInvoke(visitor, context);
+        invocation.method.method.compileInvoke(
+                visitor, context,
+                () -> {
+                    compileExpression(visitor, context, invocation.objectReference);
+                    for (BoundExpressionNode expression : invocation.arguments.arguments) {
+                        compileExpression(visitor, context, expression);
+                    }
+                });
+
         releaseRefVariables(visitor, context, invocation.refVariables);
     }
 
     private void compileBaseMethodInvocationExpression(MethodVisitor visitor, CompilerContext context, BoundBaseMethodInvocationExpressionNode invocation) {
-        visitor.visitVarInsn(ALOAD, 0);
-        for (BoundExpressionNode expression : invocation.arguments.arguments) {
-            compileExpression(visitor, context, expression);
-        }
-
         // TODO: find better way?
         invocation.method.method.compileInvoke(new MethodVisitor(ASM9, visitor) {
             @Override
@@ -2047,7 +2042,12 @@ public class Compiler {
                     throw new InternalException();
                 }
             }
-        }, context);
+        }, context, () -> {
+            visitor.visitVarInsn(ALOAD, 0);
+            for (BoundExpressionNode expression : invocation.arguments.arguments) {
+                compileExpression(visitor, context, expression);
+            }
+        });
 
         releaseRefVariables(visitor, context, invocation.refVariables);
     }
@@ -2058,8 +2058,7 @@ public class Compiler {
         }
 
         propertyAccess.property.property.compileLoad(
-                context,
-                visitor,
+                visitor, context,
                 () -> compileExpression(visitor, context, propertyAccess.callee));
     }
 
@@ -2519,12 +2518,23 @@ public class Compiler {
                 null);
 
         // fields
-        for (var entry : cache.getFieldsMap().entrySet()) {
+        for (Map.Entry<Field, String> entry : cache.getFieldsMap().entrySet()) {
             String name = entry.getValue();
             FieldVisitor fieldVisitor = writer.visitField(
-                    ACC_PUBLIC | ACC_STATIC,
+                    ACC_PUBLIC | ACC_STATIC | ACC_FINAL,
                     name,
                     Type.getDescriptor(VarHandle.class),
+                    null, null);
+            fieldVisitor.visitEnd();
+        }
+
+        // methods
+        for (Map.Entry<Method, String> entry : cache.getMethodsMap().entrySet()) {
+            String name = entry.getValue();
+            FieldVisitor fieldVisitor = writer.visitField(
+                    ACC_PUBLIC | ACC_STATIC | ACC_FINAL,
+                    name,
+                    Type.getDescriptor(MethodHandle.class),
                     null, null);
             fieldVisitor.visitEnd();
         }
@@ -2570,9 +2580,7 @@ public class Compiler {
             // load privateLookup for corresponding class
             visitor.visitVarInsn(ALOAD, privateLookupStackIndexMap.get(fieldDeclaringClass));
 
-            // staticFieldVarHandle = privateLookup.findVarHandle(fieldDeclaringClass, fieldName, fieldType);
-            // or
-            // staticFieldVarHandle = privateLookup.findStaticVarHandle(fieldDeclaringClass, fieldName, fieldType);
+            // staticFieldVarHandle = privateLookup.findVarHandle/findStaticVarHandle(fieldDeclaringClass, fieldName, fieldType);
             visitor.visitLdcInsn(Type.getType(fieldDeclaringClass));
             visitor.visitLdcInsn(field.getName());
             SType.fromJavaType(field.getType()).loadClassObject(visitor);
@@ -2592,6 +2600,74 @@ public class Compiler {
                     MethodHandleCache.INTERNAL_NAME,
                     name,
                     Type.getDescriptor(VarHandle.class));
+        }
+
+        for (Map.Entry<Method, String> entry : cache.getMethodsMap().entrySet()) {
+            Method method = entry.getKey();
+            String name = entry.getValue();
+            Class<?> methodDeclaringClass = method.getDeclaringClass();
+
+            Integer existing = privateLookupStackIndexMap.get(methodDeclaringClass);
+            if (existing == null) {
+                // var privateLookup = MethodHandles.privateLookupIn(methodDeclaringClass, caller); // save to map
+                visitor.visitLdcInsn(Type.getType(methodDeclaringClass));
+                visitor.visitVarInsn(ALOAD, 0);
+                visitor.visitMethodInsn(
+                        INVOKESTATIC,
+                        Type.getInternalName(MethodHandles.class),
+                        "privateLookupIn",
+                        Type.getMethodDescriptor(Type.getType(MethodHandles.Lookup.class), Type.getType(Class.class), Type.getType(MethodHandles.Lookup.class)),
+                        false);
+
+                int stackIndex = stackTop++;
+                visitor.visitVarInsn(ASTORE, stackIndex);
+                privateLookupStackIndexMap.put(methodDeclaringClass, stackIndex);
+            }
+
+            // load privateLookup for corresponding class
+            visitor.visitVarInsn(ALOAD, privateLookupStackIndexMap.get(methodDeclaringClass));
+
+            // staticFieldVarHandle = privateLookup.findStatic(methodDeclaringClass, methodName, methodType);
+            visitor.visitLdcInsn(Type.getType(methodDeclaringClass));
+            visitor.visitLdcInsn(method.getName());
+
+            // MethodType.methodType(type1, new Class[] { type2, type3 })
+            SType.fromJavaType(method.getReturnType()).loadClassObject(visitor);
+            visitor.visitLdcInsn(method.getParameterCount());
+            visitor.visitTypeInsn(ANEWARRAY, Type.getInternalName(Class.class));
+            for (int i = 0; i < method.getParameterCount(); i++) {
+                visitor.visitInsn(DUP);
+                visitor.visitLdcInsn(i);
+                SType.fromJavaType(method.getParameterTypes()[i]).loadClassObject(visitor);
+                visitor.visitInsn(AASTORE);
+            }
+
+            visitor.visitMethodInsn(
+                    INVOKESTATIC,
+                    Type.getInternalName(MethodType.class),
+                    "methodType",
+                    Type.getMethodDescriptor(
+                            Type.getType(MethodType.class),
+                            Type.getType(Class.class),
+                            Type.getType(Class.class.arrayType())),
+                    false);
+
+            visitor.visitMethodInsn(
+                    INVOKEVIRTUAL,
+                    Type.getInternalName(MethodHandles.Lookup.class),
+                    Modifier.isStatic(method.getModifiers()) ? "findStatic" : "findVirtual",
+                    Type.getMethodDescriptor(
+                            Type.getType(MethodHandle.class),
+                            Type.getType(Class.class),
+                            Type.getType(String.class),
+                            Type.getType(MethodType.class)),
+                    false);
+
+            visitor.visitFieldInsn(
+                    PUTSTATIC,
+                    MethodHandleCache.INTERNAL_NAME,
+                    name,
+                    Type.getDescriptor(MethodHandle.class));
         }
 
         visitor.visitInsn(RETURN);

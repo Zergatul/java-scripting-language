@@ -2,7 +2,6 @@ package com.zergatul.scripting.type;
 
 import com.zergatul.scripting.compiler.CompilerContext;
 import org.objectweb.asm.MethodVisitor;
-import org.objectweb.asm.Type;
 
 import static org.objectweb.asm.Opcodes.*;
 
@@ -39,20 +38,20 @@ public class DeclaredFieldReference extends PropertyReference {
     }
 
     @Override
-    public void compileLoad(CompilerContext context, MethodVisitor visitor, Runnable compileCallee) {
+    public void compileLoad(MethodVisitor visitor, CompilerContext context, Runnable compileCallee) {
         compileCallee.run();
         visitor.visitFieldInsn(GETFIELD, owner.getInternalName(), name, type.getDescriptor());
     }
 
     @Override
-    public void compileStore(CompilerContext context, MethodVisitor visitor, Runnable compileCallee, Runnable compileValue) {
+    public void compileStore(MethodVisitor visitor, CompilerContext context, Runnable compileCallee, Runnable compileValue) {
         compileCallee.run();
         compileValue.run();
         visitor.visitFieldInsn(PUTFIELD, owner.getInternalName(), name, type.getDescriptor());
     }
 
     @Override
-    public void compileLoadModifyStore(CompilerContext context, MethodVisitor visitor, Runnable compileCallee, Runnable compileModify) {
+    public void compileLoadModifyStore(MethodVisitor visitor, CompilerContext context, Runnable compileCallee, Runnable compileModify) {
         compileCallee.run();
         visitor.visitInsn(DUP);
         visitor.visitFieldInsn(GETFIELD, owner.getInternalName(), name, type.getDescriptor());

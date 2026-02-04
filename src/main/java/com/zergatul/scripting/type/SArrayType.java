@@ -146,7 +146,7 @@ public class SArrayType extends SType {
         }
 
         @Override
-        public void compileLoad(CompilerContext context, MethodVisitor visitor, Runnable compileCallee) {
+        public void compileLoad(MethodVisitor visitor, CompilerContext context, Runnable compileCallee) {
             compileCallee.run();
             visitor.visitInsn(ARRAYLENGTH);
         }

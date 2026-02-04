@@ -3,6 +3,7 @@ package com.zergatul.scripting.parser.nodes;
 import com.zergatul.scripting.Locatable;
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.lexer.Token;
+import com.zergatul.scripting.lexer.TokenType;
 import com.zergatul.scripting.parser.ParserTreeVisitor;
 
 import java.util.List;
@@ -34,5 +35,9 @@ public class MemberAccessExpressionNode extends ExpressionNode {
     @Override
     public List<Locatable> getChildNodes() {
         return List.of(callee, operator, name);
+    }
+
+    public boolean isPrivate() {
+        return operator.is(TokenType.DOT_HASH);
     }
 }
