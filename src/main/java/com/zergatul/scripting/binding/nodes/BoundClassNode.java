@@ -14,9 +14,9 @@ public class BoundClassNode extends BoundCompilationUnitMemberNode {
 
     public final ClassNode syntaxNode;
     public final BoundNameExpressionNode name;
-    @Nullable public final BoundTypeNode baseTypeNode;
+    public final @Nullable BoundTypeNode baseTypeNode;
     public final List<BoundClassMemberNode> members;
-    @Nullable public ConstructorReference defaultBaseConstructor;
+    public @Nullable ConstructorReference defaultBaseConstructor;
 
     public BoundClassNode(
             ClassNode node,

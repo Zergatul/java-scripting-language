@@ -27,7 +27,7 @@ public class ClassDeclaration extends NamedDeclaration {
     private final Map<ClassMethodNode, ClassMethodDeclaration> methodNodeMap = new HashMap<>();
     private final Map<ClassOperatorOverloadNode, ClassUnaryOperationDeclaration> unaryOperationNodeMap = new HashMap<>();
     private final Map<ClassOperatorOverloadNode, ClassBinaryOperationDeclaration> binaryOperationNodeMap = new HashMap<>();
-    @Nullable private BoundTypeNode baseTypeNode;
+    private @Nullable BoundTypeNode baseTypeNode;
 
     public ClassDeclaration(String name, SymbolRef symbolRef) {
         super(name, symbolRef);
@@ -63,8 +63,7 @@ public class ClassDeclaration extends NamedDeclaration {
         return classType;
     }
 
-    @Nullable
-    public BoundTypeNode getBaseTypeNode() {
+    public @Nullable BoundTypeNode getBaseTypeNode() {
         return baseTypeNode;
     }
 

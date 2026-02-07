@@ -41,4 +41,9 @@ public class BlockStatementNode extends StatementNode {
         nodes.add(closeBrace);
         return nodes;
     }
+
+    @Override
+    public boolean isOpen() {
+        return closeBrace.isMissing();
+    }
 }

@@ -18,7 +18,7 @@ public class ClassOperatorOverloadNode extends ClassMemberNode {
     public final Token closeBracket;
     public final TypeNode returnType;
     public final ParameterListNode parameters;
-    @Nullable public final Token arrow;
+    public final @Nullable Token arrow;
     public final StatementNode body;
 
     public ClassOperatorOverloadNode(

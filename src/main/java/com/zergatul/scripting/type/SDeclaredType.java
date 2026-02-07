@@ -25,10 +25,10 @@ public class SDeclaredType extends SType {
     private final List<MethodReference> methods = new ArrayList<>();
     private final List<DeclaredUnaryOperationReference> unaryOperations = new ArrayList<>();
     private final List<DeclaredBinaryOperationReference> binaryOperations = new ArrayList<>();
-    @Nullable private SType baseType;
+    private @Nullable  SType baseType;
     private boolean hasDefaultConstructor;
-    @Nullable private String internalName;
-    @Nullable private Class<?> clazz;
+    private @Nullable  String internalName;
+    private @Nullable  Class<?> clazz;
 
     public SDeclaredType(String name) {
         this.name = name;

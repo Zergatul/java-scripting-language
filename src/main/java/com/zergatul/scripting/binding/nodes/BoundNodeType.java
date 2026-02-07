@@ -108,4 +108,5 @@ public enum BoundNodeType {
     CONSTANT_PATTERN,
     TYPE_PATTERN,
     DECLARATION_PATTERN,
+    TRY_STATEMENT,
 }

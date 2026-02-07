@@ -11,7 +11,7 @@ import java.util.List;
 public class BoundReturnStatementNode extends BoundStatementNode {
 
     public final ReturnStatementNode syntaxNode;
-    @Nullable public final BoundExpressionNode expression;
+    public final @Nullable BoundExpressionNode expression;
 
     public BoundReturnStatementNode(BoundExpressionNode expression) {
         this(SyntaxFactory.missingReturnStatement(), expression, TextRange.MISSING);

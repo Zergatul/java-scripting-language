@@ -4,7 +4,6 @@ import com.zergatul.scripting.*;
 import com.zergatul.scripting.lexer.*;
 import com.zergatul.scripting.parser.nodes.*;
 import com.zergatul.scripting.parser.nodes.PatternNode;
-import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -352,6 +351,124 @@ public class Parser {
         }
 
         return new WhileLoopStatementNode(keyword, openParen, condition, closeParen, body);
+    }
+
+    private TryStatementNode parseTryStatement() {
+        Token keyword = advance(TokenType.TRY);
+        if (current.isNot(TokenType.LEFT_CURLY_BRACKET)) {
+            TextRange range = createMissingTokenRangeBeforeCurrent();
+            return new TryStatementNode(
+                    keyword,
+                    createMissingBlockStatement(range),
+                    null,
+                    new FinallyClauseNode(
+                            new Token(TokenType.FINALLY, range),
+                            createMissingBlockStatement(range)));
+        }
+
+        BlockStatementNode block = parseBlockStatement();
+        if (block.isOpen()) {
+            TextRange range = createMissingTokenRangeBeforeCurrent();
+            return new TryStatementNode(
+                    keyword,
+                    block,
+                    null,
+                    new FinallyClauseNode(
+                            new Token(TokenType.FINALLY, range),
+                            createMissingBlockStatement(range)));
+        }
+
+        if (current.isNot(TokenType.CATCH) && current.isNot(TokenType.FINALLY)) {
+            addDiagnostic(ParserErrors.CatchOrFinallyExpected, current, current.getRawValue(code));
+            TextRange range = createMissingTokenRangeBeforeCurrent();
+            return new TryStatementNode(
+                    keyword,
+                    block,
+                    null,
+                    new FinallyClauseNode(
+                            new Token(TokenType.FINALLY, range),
+                            createMissingBlockStatement(range)));
+        }
+
+        CatchClauseNode catchClause = null;
+        if (current.is(TokenType.CATCH)) {
+            catchClause = parseCatchClause();
+            if (catchClause.isOpen()) {
+                return new TryStatementNode(
+                        keyword,
+                        block,
+                        catchClause,
+                        null);
+            }
+        }
+
+        FinallyClauseNode finallyClause = null;
+        if (current.is(TokenType.FINALLY)) {
+            finallyClause = parseFinallyClause();
+        }
+
+        return new TryStatementNode(keyword, block, catchClause, finallyClause);
+    }
+
+    private CatchClauseNode parseCatchClause() {
+        Token keyword = advance(TokenType.CATCH);
+        if (current.isNot(TokenType.LEFT_PARENTHESES) && current.isNot(TokenType.LEFT_CURLY_BRACKET)) {
+            addDiagnostic(ParserErrors.OpenParenOrBraceExpected, current, current.getRawValue(code));
+            TextRange range = createMissingTokenRangeBeforeCurrent();
+            return new CatchClauseNode(
+                    keyword,
+                    null,
+                    createMissingBlockStatement(range));
+        }
+
+        CatchDeclarationNode declaration = null;
+        if (current.is(TokenType.LEFT_PARENTHESES)) {
+            declaration = parseCatchDeclaration();
+            if (declaration.isOpen()) {
+                TextRange range = createMissingTokenRangeBeforeCurrent();
+                return new CatchClauseNode(
+                        keyword,
+                        declaration,
+                        createMissingBlockStatement(range));
+            }
+        }
+
+        assert current.is(TokenType.LEFT_CURLY_BRACKET);
+        BlockStatementNode block = parseBlockStatement();
+
+        return new CatchClauseNode(keyword, declaration, block);
+    }
+
+    private CatchDeclarationNode parseCatchDeclaration() {
+        Token openParen = advance(TokenType.LEFT_PARENTHESES);
+
+        if (current.isNot(TokenType.IDENTIFIER)) {
+            addDiagnostic(ParserErrors.IdentifierExpected, current, current.getRawValue(code));
+            TextRange range = createMissingTokenRangeBeforeCurrent();
+            Token closeParen = current.is(TokenType.RIGHT_PARENTHESES) ? advance() : new Token(TokenType.RIGHT_PARENTHESES, range);
+            return new CatchDeclarationNode(
+                    openParen,
+                    createMissingIdentifier(range),
+                    closeParen);
+        }
+
+        ValueToken identifier = (ValueToken) advance();
+        Token closeParen = advance(TokenType.RIGHT_PARENTHESES);
+
+        return new CatchDeclarationNode(openParen, identifier, closeParen);
+    }
+
+    private FinallyClauseNode parseFinallyClause() {
+        Token keyword = advance(TokenType.FINALLY);
+        if (current.isNot(TokenType.LEFT_CURLY_BRACKET)) {
+            addDiagnostic(ParserErrors.OpenCurlyBracketExpected, current, current.getRawValue(code));
+            TextRange range = createMissingTokenRangeBeforeCurrent();
+            return new FinallyClauseNode(
+                    keyword,
+                    createMissingBlockStatement(range));
+        }
+
+        return new FinallyClauseNode(keyword, parseBlockStatement());
     }
 
     private BreakStatementNode parseBreakStatement() {
@@ -1179,6 +1296,7 @@ public class Parser {
             case BREAK:
             case CONTINUE:
             case LET:
+            case TRY:
                 return true;
 
             default:
@@ -1227,6 +1345,7 @@ public class Parser {
             case SEMICOLON -> parseEmptyStatement();
             case BOOLEAN, INT8, INT16, INT, INT32, INT64, LONG, FLOAT32, FLOAT, FLOAT64, STRING, CHAR, IDENTIFIER, LEFT_PARENTHESES -> withSemicolon(parseSimpleStatementOrDeclaration());
             case LET -> withSemicolon(parseVariableDeclaration());
+            case TRY -> parseTryStatement();
             default -> {
                 if (isPossibleExpression()) {
                     yield withSemicolon(parseSimpleStatementOrDeclaration());

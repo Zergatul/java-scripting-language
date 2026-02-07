@@ -8,7 +8,7 @@ import java.util.Objects;
 public class SAliasType extends SSyntheticType {
 
     private final String name;
-    @Nullable private SType underlying;
+    private @Nullable SType underlying;
 
     public SAliasType(String name) {
         this.name = name;

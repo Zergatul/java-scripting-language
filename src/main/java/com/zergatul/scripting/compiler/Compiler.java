@@ -665,6 +665,7 @@ public class Compiler {
             case CONTINUE_STATEMENT -> compileContinueStatement(visitor, context);
             case EMPTY_STATEMENT -> compileEmptyStatement();
             case INCREMENT_STATEMENT, DECREMENT_STATEMENT -> compilePostfixStatement(visitor, context, (BoundPostfixStatementNode) statement);
+            case TRY_STATEMENT -> compileTryStatement(visitor, context, (BoundTryStatementNode) statement);
             case SET_GENERATOR_STATE -> compileGoToGeneratorState(visitor, context, (BoundSetGeneratorStateNode) statement);
             case SET_GENERATOR_BOUNDARY -> compileSetGeneratorBoundary(visitor, context, (BoundSetGeneratorBoundaryNode) statement);
             case GENERATOR_RETURN -> compileGeneratorReturn(visitor, context, (BoundGeneratorReturnNode) statement);
@@ -994,6 +995,43 @@ public class Compiler {
         if (!statement.expression.type.equals(SVoidType.instance)) {
             visitor.visitInsn(POP);
         }
+    }
+
+    private void compileTryStatement(MethodVisitor visitor, CompilerContext context, BoundTryStatementNode statement) {
+        if (statement.finallyBlock == null) {
+            compileTryCatch(visitor, context, statement.block, statement.catchBlock, statement.exceptionSymbol);
+        } else {
+            throw new InternalException();
+        }
+    }
+
+    private void compileTryCatch(MethodVisitor visitor, CompilerContext context, BoundBlockStatementNode tryBlock, BoundBlockStatementNode catchBlock, BoundSymbolNode exceptionSymbol) {
+        Label tryBlockBegin = new Label();
+        Label tryBlockEnd = new Label();
+        Label catchBlockBegin = new Label();
+        Label end = new Label();
+
+        visitor.visitTryCatchBlock(tryBlockBegin, tryBlockEnd, catchBlockBegin, Type.getInternalName(Throwable.class));
+
+        visitor.visitLabel(tryBlockBegin);
+        visitor.visitInsn(NOP); // this is required because empty try-block will not compile
+        compileBlockStatement(visitor, context, tryBlock);
+        visitor.visitLabel(tryBlockEnd);
+
+        visitor.visitJumpInsn(GOTO, end);
+
+        visitor.visitLabel(catchBlockBegin);
+        if (exceptionSymbol != null) {
+            LocalVariable exceptionVariable = exceptionSymbol.symbolRef.asLocalVariable();
+            context.setStackIndex(exceptionVariable);
+            exceptionVariable.compileStore(context, visitor);
+        } else {
+            visitor.visitInsn(POP);
+        }
+        compileBlockStatement(visitor, context, catchBlock);
+        visitor.visitJumpInsn(GOTO, end);
+
+        visitor.visitLabel(end);
     }
 
     private void compileStatements(MethodVisitor visitor, CompilerContext context, List<BoundStatementNode> statements) {

@@ -101,4 +101,7 @@ public enum TokenType {
     OVERRIDE,
     TYPEALIAS,
     NULL,
+    TRY,
+    CATCH,
+    FINALLY,
 }

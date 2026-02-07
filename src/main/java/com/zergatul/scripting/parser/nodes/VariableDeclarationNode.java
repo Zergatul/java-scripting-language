@@ -13,8 +13,8 @@ public class VariableDeclarationNode extends StatementNode {
 
     public final TypeNode type;
     public final NameExpressionNode name;
-    @Nullable public final Token equal;
-    @Nullable public final ExpressionNode expression;
+    public final @Nullable Token equal;
+    public final @Nullable ExpressionNode expression;
     public final Token semicolon;
 
     public VariableDeclarationNode(

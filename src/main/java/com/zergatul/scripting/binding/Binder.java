@@ -577,6 +577,7 @@ public class Binder {
             case EMPTY_STATEMENT -> bindEmptyStatement((EmptyStatementNode) statement);
             case INVALID_STATEMENT -> bindInvalidStatement((InvalidStatementNode) statement);
             case INCREMENT_STATEMENT, DECREMENT_STATEMENT -> bindPostfixStatement((PostfixStatementNode) statement);
+            case TRY_STATEMENT -> bindTryStatement((TryStatementNode) statement);
             default -> throw new InternalException();
         };
     }
@@ -880,6 +881,48 @@ public class Binder {
                 isInc ? BoundNodeType.INCREMENT_STATEMENT : BoundNodeType.DECREMENT_STATEMENT,
                 expression,
                 operation);
+    }
+
+    private BoundTryStatementNode bindTryStatement(TryStatementNode statement) {
+        BoundBlockStatementNode block = bindBlockStatement(statement.block);
+
+        BoundBlockStatementNode catchBlock = null;
+        BoundSymbolNode exceptionSymbol = null;
+        if (statement.catchClause != null) {
+            pushScope();
+            if (statement.catchClause.declaration != null) {
+                String name = statement.catchClause.declaration.identifier.value;
+                boolean exists = context.hasLocalSymbol(name);
+                SymbolRef symbolRef;
+                if (exists) {
+                    symbolRef = new InvalidSymbolRef();
+                    addDiagnostic(
+                            BinderErrors.SymbolAlreadyDeclared,
+                            statement.catchClause.declaration.identifier,
+                            name);
+                } else {
+                    LocalVariable variable = new LocalVariable(name, SType.fromJavaType(Throwable.class), statement.catchClause.declaration.identifier.getRange());
+                    symbolRef = new MutableSymbolRef(variable);
+                    context.addLocalVariable(symbolRef);
+                }
+
+                exceptionSymbol = new BoundSymbolNode(statement.catchClause.declaration.identifier, symbolRef);
+            }
+            catchBlock = bindBlockStatement(statement.catchClause.block);
+            popScope();
+        }
+
+        BoundBlockStatementNode finallyBlock = null;
+        if (statement.finallyClause != null) {
+            finallyBlock = bindBlockStatement(statement.finallyClause.block);
+        }
+
+        return new BoundTryStatementNode(
+                statement,
+                block,
+                exceptionSymbol,
+                catchBlock,
+                finallyBlock);
     }
 
     private BoundExpressionNode bindExpression(ExpressionNode expression) {

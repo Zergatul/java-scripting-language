@@ -12,7 +12,7 @@ public class BoundStaticVariableNode extends BoundCompilationUnitMemberNode {
     public final StaticVariableNode syntaxNode;
     public final BoundTypeNode type;
     public final BoundNameExpressionNode name;
-    @Nullable public final BoundExpressionNode expression;
+    public final @Nullable BoundExpressionNode expression;
 
     public BoundStaticVariableNode(
             StaticVariableNode node,

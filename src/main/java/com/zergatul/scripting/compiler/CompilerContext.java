@@ -43,7 +43,7 @@ public class CompilerContext {
     private final List<SGenericFunction> genericFunctions;
     private Label startLabel;
     private ClassLoaderContext classLoaderContext;
-    @Nullable private MethodHandleCache methodHandleCache;
+    private @Nullable MethodHandleCache methodHandleCache;
 
     private CompilerContext(
             CompilerContext parent,

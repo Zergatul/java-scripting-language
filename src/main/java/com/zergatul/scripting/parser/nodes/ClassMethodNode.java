@@ -15,7 +15,7 @@ public class ClassMethodNode extends ClassMemberNode {
     public final TypeNode type;
     public final NameExpressionNode name;
     public final ParameterListNode parameters;
-    @Nullable public final Token arrow;
+    public final @Nullable Token arrow;
     public final StatementNode body;
 
     public ClassMethodNode(
