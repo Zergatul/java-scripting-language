@@ -3,6 +3,8 @@ package com.zergatul.scripting.binding;
 import com.zergatul.scripting.*;
 import com.zergatul.scripting.binding.nodes.*;
 import com.zergatul.scripting.compiler.*;
+import com.zergatul.scripting.compiler.frames.Frame;
+import com.zergatul.scripting.compiler.frames.LoopFrame;
 import com.zergatul.scripting.lexer.Token;
 import com.zergatul.scripting.lexer.TokenType;
 import com.zergatul.scripting.parser.*;
@@ -12,6 +14,7 @@ import com.zergatul.scripting.symbols.*;
 import com.zergatul.scripting.type.*;
 import com.zergatul.scripting.type.operation.*;
 import org.jspecify.annotations.Nullable;
+import org.objectweb.asm.Label;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
@@ -117,11 +120,12 @@ public class Binder {
             statement = rewriteAsReturnStatement((ExpressionStatementNode) functionNode.body, declaration.getReturnType());
         } else {
             statement = bindStatement(functionNode.body);
-        }
 
-        if (declaration.getReturnType() != SVoidType.instance && declaration.getReturnType() != SUnknown.instance) {
-            if (new ControlFlowAnalyzer().analyzeStatement(statement) == FlowResult.CONTINUES) {
-                addDiagnostic(BinderErrors.NotAllPathReturnValue, statement);
+            if (declaration.getReturnType() != SVoidType.instance && declaration.getReturnType() != SUnknown.instance) {
+                if (new ControlFlowAnalyzer().analyzeStatement(statement) == FlowResult.CONTINUES) {
+                    BlockStatementNode block = (BlockStatementNode) functionNode.body;
+                    addDiagnostic(BinderErrors.NotAllPathReturnValue, block.closeBrace);
+                }
             }
         }
 
@@ -739,7 +743,7 @@ public class Binder {
     }
 
     private BoundForLoopStatementNode bindForLoopStatement(ForLoopStatementNode statement) {
-        pushScope();
+        pushScope(new LoopFrame(context.getFrame(), new Label(), new Label()));
         BoundStatementNode init = statement.init != null ? bindStatement(statement.init) : null;
 
         BoundExpressionNode condition;
@@ -753,9 +757,6 @@ public class Binder {
         }
 
         BoundStatementNode update = statement.update != null ? bindStatement(statement.update) : null;
-
-        context.setBreak(v -> {});
-        context.setContinue(v -> {});
         BoundStatementNode body = bindStatement(statement.body);
 
         popScope();
@@ -764,7 +765,7 @@ public class Binder {
     }
 
     private BoundForEachLoopStatementNode bindForEachLoopStatement(ForEachLoopStatementNode statement) {
-        pushScope();
+        pushScope(new LoopFrame(context.getFrame(), new Label(), new Label()));
 
         SymbolRef index = context.addLocalVariable(null, SInt.instance, null);
         SymbolRef length = context.addLocalVariable(null, SInt.instance, null);
@@ -804,8 +805,6 @@ public class Binder {
             name = new BoundNameExpressionNode(statement.name, symbolRef);
         }
 
-        context.setBreak(v -> {});
-        context.setContinue(v -> {});
         BoundStatementNode body = bindStatement(statement.body);
 
         popScope();
@@ -817,15 +816,13 @@ public class Binder {
     }
 
     private BoundWhileLoopStatementNode bindWhileLoopStatement(WhileLoopStatementNode statement) {
-        pushScope();
+        pushScope(new LoopFrame(context.getFrame(), new Label(), new Label()));
 
         BoundExpressionNode condition = convert(bindExpression(statement.condition), SBoolean.instance);
         if (condition.type != SBoolean.instance) {
             addDiagnostic(BinderErrors.CannotImplicitlyConvert, condition, condition.type.toString(), SBoolean.instance.toString());
         }
 
-        context.setBreak(v -> {});
-        context.setContinue(v -> {});
         BoundStatementNode body = bindStatement(statement.body);
 
         popScope();
@@ -834,7 +831,7 @@ public class Binder {
     }
 
     private BoundBreakStatementNode bindBreakStatement(BreakStatementNode statement) {
-        boolean isInsideLoop = context.canBreak();
+        boolean isInsideLoop = context.getFrame().getClosestLoop() != null;
         if (!isInsideLoop) {
             addDiagnostic(BinderErrors.NoLoop, statement);
         }
@@ -842,7 +839,7 @@ public class Binder {
     }
 
     private BoundContinueStatementNode bindContinueStatement(ContinueStatementNode statement) {
-        boolean isInsideLoop = context.canContinue();
+        boolean isInsideLoop = context.getFrame().getClosestLoop() != null;
         if (!isInsideLoop) {
             addDiagnostic(BinderErrors.NoLoop, statement);
         }
@@ -2965,6 +2962,10 @@ public class Binder {
 
     private void pushScope() {
         context = context.createChild();
+    }
+
+    private void pushScope(Frame frame) {
+        context = context.createChild(frame);
     }
 
     private void pushFunctionScope(SType returnType, boolean isAsync) {

@@ -43,6 +43,21 @@ public class ControlFlowAnalyzer {
                 yield (thenResult == FlowResult.TERMINATES && elseResult == FlowResult.TERMINATES) ? FlowResult.TERMINATES : FlowResult.CONTINUES;
             }
 
+            case TRY_STATEMENT -> {
+                BoundTryStatementNode tryStatement = (BoundTryStatementNode) statement;
+                FlowResult finallyBlockResult = tryStatement.finallyBlock != null ? analyzeStatement(tryStatement.finallyBlock) : FlowResult.CONTINUES;
+                if (finallyBlockResult == FlowResult.TERMINATES) {
+                    yield FlowResult.TERMINATES;
+                }
+
+                FlowResult tryBlockResult = analyzeStatement(tryStatement.block);
+                boolean normalCompletionPossible =
+                        tryBlockResult == FlowResult.CONTINUES ||
+                        (tryStatement.catchBlock != null && analyzeStatement(tryStatement.catchBlock) == FlowResult.CONTINUES);
+
+                yield normalCompletionPossible ? FlowResult.CONTINUES : FlowResult.TERMINATES;
+            }
+
             default -> FlowResult.CONTINUES;
         };
     }
