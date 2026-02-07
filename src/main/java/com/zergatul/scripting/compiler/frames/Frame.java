@@ -23,6 +23,19 @@ public abstract class Frame {
         return null;
     }
 
+    public @Nullable TryFinallyFrame getClosestTryFinally(Frame stop) {
+        for (Frame frame = this; frame != stop; frame = frame.parent) {
+            if (frame == null) {
+                throw new InternalException();
+            }
+            if (frame instanceof TryFinallyFrame tryFinallyFrame) {
+                return tryFinallyFrame;
+            }
+        }
+
+        return null;
+    }
+
     public FunctionFrame getFunction() {
         for (Frame frame = this; frame != null; frame = frame.parent) {
             if (frame instanceof FunctionFrame function) {

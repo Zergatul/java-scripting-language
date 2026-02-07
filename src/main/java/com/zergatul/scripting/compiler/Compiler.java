@@ -816,18 +816,33 @@ public class Compiler {
     }
 
     private void compileReturnStatement(MethodVisitor visitor, CompilerContext context, BoundReturnStatementNode statement) {
+        TryFinallyFrame tryFinally = context.getFrame().getClosestTryFinally(context.getFrame().getFunction());
+
+        LocalVariable returnVariable = null;
         if (statement.expression != null) {
             compileExpression(visitor, context, statement.expression);
+            if (tryFinally != null) {
+                returnVariable = new LocalVariable(statement.expression.type);
+                context.setStackIndex(returnVariable);
+                returnVariable.compileStore(context, visitor);
+            }
+        }
 
+        if (tryFinally != null) {
+            compileFinallyBlock(tryFinally, visitor, context);
+            if (returnVariable != null) {
+                returnVariable.compileLoad(context, visitor);
+            }
+        }
+
+        if (statement.expression != null) {
             if (context.isGenericFunction() && context.getReturnType() instanceof SValueType valueType) {
                 valueType.compileBoxing(visitor);
-                emitUnwindFinally(visitor, context, context.getFrame().getFunction());
                 visitor.visitInsn(ARETURN);
                 return;
             }
         }
 
-        emitUnwindFinally(visitor, context, context.getFrame().getFunction());
         visitor.visitInsn(context.getReturnType().getReturnInst());
     }
 
@@ -954,7 +969,7 @@ public class Compiler {
             throw new InternalException();
         }
 
-        emitUnwindFinally(visitor, context, loop);
+        compileFinallyBlock(visitor, context, loop);
         visitor.visitJumpInsn(GOTO, loop.breakLabel);
     }
 
@@ -965,7 +980,7 @@ public class Compiler {
             throw new InternalException();
         }
 
-        emitUnwindFinally(visitor, context, loop);
+        compileFinallyBlock(visitor, context, loop);
         visitor.visitJumpInsn(GOTO, loop.continueLabel);
     }
 
@@ -1075,7 +1090,7 @@ public class Compiler {
 
         visitor.visitLabel(catchBlockBegin);
         context = context.createChild();
-        LocalVariable exceptionVariable = new LocalVariable(null, SType.fromJavaType(Throwable.class), null);
+        LocalVariable exceptionVariable = new LocalVariable(SType.fromJavaType(Throwable.class));
         context.setStackIndex(exceptionVariable);
         exceptionVariable.compileStore(context, visitor);      // save exception into variable
         compileBlockStatement(visitor, context, finallyBlock); // run finally
@@ -2595,14 +2610,16 @@ public class Compiler {
         visitor.visitVarInsn(variable.getType().getStoreInst(), variable.getStackIndex());
     }
 
-    private void emitUnwindFinally(MethodVisitor visitor, CompilerContext context, Frame stopFrame) {
-        // emit finally blocks for try/finally frames we are leaving
-        for (Frame frame = context.getFrame(); frame != stopFrame; frame = frame.parent) {
-            if (frame instanceof TryFinallyFrame tryFinallyFrame) {
-                assert tryFinallyFrame.parent != null;
-                compileBlockStatement(visitor, context.createChild(tryFinallyFrame.parent), tryFinallyFrame.finallyBlock);
-            }
+    private void compileFinallyBlock(MethodVisitor visitor, CompilerContext context, Frame stop) {
+        TryFinallyFrame tryFinally = context.getFrame().getClosestTryFinally(stop);
+        if (tryFinally != null) {
+            compileFinallyBlock(tryFinally, visitor, context);
         }
+    }
+
+    private void compileFinallyBlock(TryFinallyFrame tryFinally, MethodVisitor visitor, CompilerContext context) {
+        assert tryFinally.parent != null;
+        compileBlockStatement(visitor, context.createChild(tryFinally.parent), tryFinally.finallyBlock);
     }
 
     private void compileMethodHandleCache(CompilerContext context) {
