@@ -5,6 +5,7 @@ import com.zergatul.scripting.Locatable;
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.*;
 import com.zergatul.scripting.binding.nodes.*;
+import com.zergatul.scripting.compiler.frames.*;
 import com.zergatul.scripting.generator.BinderTreeGenerator;
 import com.zergatul.scripting.generator.StateBoundary;
 import com.zergatul.scripting.lexer.Lexer;
@@ -23,6 +24,7 @@ import com.zergatul.scripting.type.*;
 import com.zergatul.scripting.visitors.ExternalParameterVisitor;
 import com.zergatul.scripting.visitors.LiftedVariablesVisitor;
 import com.zergatul.scripting.visitors.LocalParameterVisitor;
+import org.jspecify.annotations.Nullable;
 import org.objectweb.asm.*;
 import org.objectweb.asm.Type;
 
@@ -665,6 +667,8 @@ public class Compiler {
             case CONTINUE_STATEMENT -> compileContinueStatement(visitor, context);
             case EMPTY_STATEMENT -> compileEmptyStatement();
             case INCREMENT_STATEMENT, DECREMENT_STATEMENT -> compilePostfixStatement(visitor, context, (BoundPostfixStatementNode) statement);
+            case TRY_STATEMENT -> compileTryStatement(visitor, context, (BoundTryStatementNode) statement);
+            case THROW_STATEMENT -> compileThrowStatement(visitor, context, (BoundThrowStatementNode) statement);
             case SET_GENERATOR_STATE -> compileGoToGeneratorState(visitor, context, (BoundSetGeneratorStateNode) statement);
             case SET_GENERATOR_BOUNDARY -> compileSetGeneratorBoundary(visitor, context, (BoundSetGeneratorBoundaryNode) statement);
             case GENERATOR_RETURN -> compileGeneratorReturn(visitor, context, (BoundGeneratorReturnNode) statement);
@@ -813,9 +817,26 @@ public class Compiler {
     }
 
     private void compileReturnStatement(MethodVisitor visitor, CompilerContext context, BoundReturnStatementNode statement) {
+        TryFinallyFrame tryFinally = context.getFrame().getClosestTryFinally();
+
+        LocalVariable returnVariable = null;
         if (statement.expression != null) {
             compileExpression(visitor, context, statement.expression);
+            if (tryFinally != null) {
+                returnVariable = new LocalVariable(statement.expression.type);
+                context.setStackIndex(returnVariable);
+                returnVariable.compileStore(context, visitor);
+            }
+        }
 
+        if (tryFinally != null) {
+            compileFinallyBlock(tryFinally, visitor, context);
+            if (returnVariable != null) {
+                returnVariable.compileLoad(context, visitor);
+            }
+        }
+
+        if (statement.expression != null) {
             if (context.isGenericFunction() && context.getReturnType() instanceof SValueType valueType) {
                 valueType.compileBoxing(visitor);
                 visitor.visitInsn(ARETURN);
@@ -827,8 +848,6 @@ public class Compiler {
     }
 
     private void compileForLoopStatement(MethodVisitor visitor, CompilerContext context, BoundForLoopStatementNode statement) {
-        context = createChildContext(visitor, context);
-
         /*
             <init>
             begin:
@@ -839,23 +858,23 @@ public class Compiler {
             end:
         */
 
-        Label begin = new Label();
+        Label beginLabel = new Label();
         Label continueLabel = new Label();
-        Label end = new Label();
+        Label endLabel = new Label();
+
+        context = createChildContext(visitor, context, new LoopFrame(context.getFrame(), endLabel, continueLabel));
 
         if (statement.init != null) {
             compileStatement(visitor, context, statement.init);
         }
 
-        visitor.visitLabel(begin);
+        visitor.visitLabel(beginLabel);
 
         if (statement.condition != null) {
             compileExpression(visitor, context, statement.condition);
-            visitor.visitJumpInsn(IFEQ, end);
+            visitor.visitJumpInsn(IFEQ, endLabel);
         }
 
-        context.setBreak(v -> v.visitJumpInsn(GOTO, end));
-        context.setContinue(v -> v.visitJumpInsn(GOTO, continueLabel));
         compileStatement(visitor, context, statement.body);
 
         visitor.visitLabel(continueLabel);
@@ -863,18 +882,18 @@ public class Compiler {
             compileStatement(visitor, context, statement.update);
         }
 
-        visitor.visitJumpInsn(GOTO, begin);
-        visitor.visitLabel(end);
+        visitor.visitJumpInsn(GOTO, beginLabel);
+        visitor.visitLabel(endLabel);
 
         processContextEnd(visitor, context);
     }
 
     private void compileForEachLoopStatement(MethodVisitor visitor, CompilerContext context, BoundForEachLoopStatementNode statement) {
-        context = createChildContext(visitor, context);
-
-        Label begin = new Label();
+        Label beginLabel = new Label();
         Label continueLabel = new Label();
-        Label end = new Label();
+        Label endLabel = new Label();
+
+        context = createChildContext(visitor, context, new LoopFrame(context.getFrame(), endLabel, continueLabel));
 
         compileExpression(visitor, context, statement.iterable);
 
@@ -894,12 +913,12 @@ public class Compiler {
         visitor.visitInsn(ARRAYLENGTH);
         statement.length.asLocalVariable().compileStore(context, visitor);
 
-        visitor.visitLabel(begin);
+        visitor.visitLabel(beginLabel);
 
         // index >= length -- GOTO end
         statement.index.asLocalVariable().compileLoad(context, visitor);
         statement.length.asLocalVariable().compileLoad(context, visitor);
-        visitor.visitJumpInsn(IF_ICMPGE, end);
+        visitor.visitJumpInsn(IF_ICMPGE, endLabel);
 
         // variable = array[index]
         visitor.visitInsn(DUP);
@@ -908,16 +927,14 @@ public class Compiler {
         variable.compileStore(context, visitor);
 
         // body
-        context.setBreak(v -> v.visitJumpInsn(GOTO, end));
-        context.setContinue(v -> v.visitJumpInsn(GOTO, continueLabel));
         compileStatement(visitor, context, statement.body);
 
         // index++
         visitor.visitLabel(continueLabel);
         visitor.visitIincInsn(statement.index.asLocalVariable().getStackIndex(), 1);
 
-        visitor.visitJumpInsn(GOTO, begin);
-        visitor.visitLabel(end);
+        visitor.visitJumpInsn(GOTO, beginLabel);
+        visitor.visitLabel(endLabel);
 
         visitor.visitInsn(POP);
 
@@ -925,40 +942,50 @@ public class Compiler {
     }
 
     private void compileWhileLoopStatement(MethodVisitor visitor, CompilerContext context, BoundWhileLoopStatementNode statement) {
-        context = context.createChild();
-
-        Label begin = new Label();
+        Label beginLabel = new Label();
         Label continueLabel = new Label();
-        Label end = new Label();
+        Label endLabel = new Label();
 
-        visitor.visitLabel(begin);
+        context = context.createChild(new LoopFrame(context.getFrame(), endLabel, continueLabel));
+
+        visitor.visitLabel(beginLabel);
 
         compileExpression(visitor, context, statement.condition);
-        visitor.visitJumpInsn(IFEQ, end);
+        visitor.visitJumpInsn(IFEQ, endLabel);
 
-        context.setBreak(v -> v.visitJumpInsn(GOTO, end));
-        context.setContinue(v -> v.visitJumpInsn(GOTO, continueLabel));
         compileStatement(visitor, context, statement.body);
 
         visitor.visitLabel(continueLabel);
 
-        visitor.visitJumpInsn(GOTO, begin);
-        visitor.visitLabel(end);
+        visitor.visitJumpInsn(GOTO, beginLabel);
+        visitor.visitLabel(endLabel);
 
         processContextEnd(visitor, context);
     }
 
     private void compileBreakStatement(MethodVisitor visitor, CompilerContext context) {
-        context.compileBreak(visitor);
+        Frame current = context.getFrame();
+        LoopFrame loop = current.getClosestLoop();
+        if (loop == null) {
+            throw new InternalException();
+        }
+
+        compileFinallyBlocks(visitor, context, loop);
+        visitor.visitJumpInsn(GOTO, loop.breakLabel);
     }
 
     private void compileContinueStatement(MethodVisitor visitor, CompilerContext context) {
-        context.compileContinue(visitor);
+        Frame current = context.getFrame();
+        LoopFrame loop = current.getClosestLoop();
+        if (loop == null) {
+            throw new InternalException();
+        }
+
+        compileFinallyBlocks(visitor, context, loop);
+        visitor.visitJumpInsn(GOTO, loop.continueLabel);
     }
 
-    private void compileEmptyStatement() {
-
-    }
+    private void compileEmptyStatement() {}
 
     private void compilePostfixStatement(MethodVisitor visitor, CompilerContext context, BoundPostfixStatementNode statement) {
         switch (statement.expression.getNodeType()) {
@@ -993,6 +1020,176 @@ public class Compiler {
         compileExpression(visitor, context, statement.expression);
         if (!statement.expression.type.equals(SVoidType.instance)) {
             visitor.visitInsn(POP);
+        }
+    }
+
+    private void compileTryStatement(MethodVisitor visitor, CompilerContext context, BoundTryStatementNode statement) {
+        if (statement.finallyBlock == null) {
+            assert statement.catchBlock != null;
+            compileTryCatch(visitor, context, statement.block, statement.catchBlock, statement.exceptionSymbol);
+        } else if (statement.catchBlock == null) {
+            compileTryFinally(visitor, context, statement.block, statement.finallyBlock);
+        } else {
+            compileTryCatchFinally(visitor, context, statement.block, statement.catchBlock, statement.exceptionSymbol, statement.finallyBlock);
+        }
+    }
+
+    private void compileTryCatch(
+            MethodVisitor visitor,
+            CompilerContext context,
+            BoundBlockStatementNode tryBlock,
+            BoundBlockStatementNode catchBlock,
+            @Nullable BoundSymbolNode exceptionSymbol
+    ) {
+        Label tryBlockBegin = new Label();
+        Label tryBlockEnd = new Label();
+        Label catchBlockBegin = new Label();
+        Label end = new Label();
+
+        visitor.visitLabel(tryBlockBegin);
+        visitor.visitInsn(NOP); // this is required because empty try-block will not compile
+        compileBlockStatement(visitor, context, tryBlock);
+        visitor.visitLabel(tryBlockEnd);
+
+        visitor.visitJumpInsn(GOTO, end);
+
+        visitor.visitLabel(catchBlockBegin);
+
+        context = context.createChild();
+        LocalVariable exceptionVariable = exceptionSymbol != null ?
+                exceptionSymbol.symbolRef.asLocalVariable() :
+                new LocalVariable(SType.fromJavaType(Throwable.class));
+        context.setStackIndex(exceptionVariable);
+        exceptionVariable.compileStore(context, visitor);
+
+        context = context.createChild(new TryCatchFrame(context.getFrame(), exceptionVariable));
+        compileBlockStatement(visitor, context, catchBlock);
+        visitor.visitJumpInsn(GOTO, end);
+
+        visitor.visitLabel(end);
+
+        visitor.visitTryCatchBlock(tryBlockBegin, tryBlockEnd, catchBlockBegin, null);
+    }
+
+    private void compileTryFinally(MethodVisitor visitor, CompilerContext context, BoundBlockStatementNode tryBlock, BoundBlockStatementNode finallyBlock) {
+        Label tryBlockBegin = new Label();
+        Label tryBlockEnd = new Label();
+        Label catchBlockBegin = new Label();
+        Label end = new Label();
+
+        visitor.visitLabel(tryBlockBegin);
+        visitor.visitInsn(NOP); // this is required because empty try-block will not compile
+        compileBlockStatement(
+                visitor,
+                context.createChild(new TryFinallyFrame(context.getFrame(), finallyBlock)),
+                tryBlock);
+        visitor.visitLabel(tryBlockEnd);
+
+        // normal path, run finally-block after try-block
+        compileBlockStatement(visitor, context.createChild(), finallyBlock);
+        visitor.visitJumpInsn(GOTO, end);
+
+        visitor.visitLabel(catchBlockBegin);
+        context = context.createChild();
+        LocalVariable exceptionVariable = new LocalVariable(SType.fromJavaType(Throwable.class));
+        context.setStackIndex(exceptionVariable);
+        exceptionVariable.compileStore(context, visitor);      // save exception into variable
+        compileBlockStatement(visitor, context, finallyBlock); // run finally
+        exceptionVariable.compileLoad(context, visitor);       // load exception from variable
+        visitor.visitInsn(ATHROW);                             // rethrow
+
+        visitor.visitLabel(end);
+
+        visitor.visitTryCatchBlock(tryBlockBegin, tryBlockEnd, catchBlockBegin, null);
+    }
+
+    private void compileTryCatchFinally(
+            MethodVisitor visitor,
+            CompilerContext context,
+            BoundBlockStatementNode tryBlock,
+            BoundBlockStatementNode catchBlock,
+            @Nullable BoundSymbolNode exceptionSymbol,
+            BoundBlockStatementNode finallyBlock
+    ) {
+        Label tryBlockBegin = new Label();
+        Label tryBlockEnd = new Label();
+        Label catchBlockBegin = new Label();
+        Label catchInnerTryBlockBegin = new Label();
+        Label catchInnerTryBlockEnd = new Label();
+        Label catchInnerCatchBlockBegin = new Label();
+        Label end = new Label();
+
+        // main try-block: begin
+        visitor.visitLabel(tryBlockBegin);
+        visitor.visitInsn(NOP); // this is required because empty try-block will not compile
+        compileBlockStatement(
+                visitor,
+                context.createChild(new TryFinallyFrame(context.getFrame(), finallyBlock)),
+                tryBlock);
+        visitor.visitLabel(tryBlockEnd);
+        // main try-block: end
+
+        // run finally-block after try-block
+        compileBlockStatement(visitor, context.createChild(), finallyBlock);
+        visitor.visitJumpInsn(GOTO, end);
+
+        // main catch-block: begin
+        visitor.visitLabel(catchBlockBegin);
+        visitor.visitLabel(catchInnerTryBlockBegin);
+
+        context = context.createChild();
+        LocalVariable exceptionVariable = exceptionSymbol != null ?
+                exceptionSymbol.symbolRef.asLocalVariable() :
+                new LocalVariable(SType.fromJavaType(Throwable.class));
+        context.setStackIndex(exceptionVariable);
+        exceptionVariable.compileStore(context, visitor);
+
+        context = context.createChild(new TryCatchFrame(context.getFrame(), exceptionVariable));
+        compileBlockStatement(
+                visitor,
+                context.createChild(new TryFinallyFrame(context.getFrame(), finallyBlock)),
+                catchBlock);
+        context = context.getParent();
+        context = context.getParent();
+
+        visitor.visitLabel(catchInnerTryBlockEnd);
+        // main catch-block: end
+
+        // run finally-block after catch-block
+        compileBlockStatement(visitor, context.createChild(), finallyBlock);
+        visitor.visitJumpInsn(GOTO, end);
+
+        // inner catch-block for main catch-block
+        visitor.visitLabel(catchInnerCatchBlockBegin);
+        context = context.createChild();
+
+        LocalVariable catchBlockExceptionVariable = new LocalVariable(SType.fromJavaType(Throwable.class));
+        context.setStackIndex(catchBlockExceptionVariable);
+        catchBlockExceptionVariable.compileStore(context, visitor);
+
+        compileBlockStatement(visitor, context.createChild(), finallyBlock);
+
+        catchBlockExceptionVariable.compileLoad(context, visitor);
+        visitor.visitInsn(ATHROW);
+
+        visitor.visitLabel(end);
+
+        visitor.visitTryCatchBlock(catchInnerTryBlockBegin, catchInnerTryBlockEnd, catchInnerCatchBlockBegin, null);
+        visitor.visitTryCatchBlock(tryBlockBegin, tryBlockEnd, catchBlockBegin, null);
+    }
+
+    private void compileThrowStatement(MethodVisitor visitor, CompilerContext context, BoundThrowStatementNode statement) {
+        if (statement.expression != null) {
+            compileExpression(visitor, context, statement.expression);
+            visitor.visitInsn(ATHROW);
+        } else {
+            TryCatchFrame tryCatchFrame = context.getFrame().getClosestTryCatch();
+            if (tryCatchFrame == null) {
+                throw new InternalException();
+            }
+
+            tryCatchFrame.exceptionVariable.compileLoad(context, visitor);
+            visitor.visitInsn(ATHROW);
         }
     }
 
@@ -1400,6 +1597,7 @@ public class Compiler {
             case META_CAST_EXPRESSION -> compileMetaCastExpression(visitor, context, (BoundMetaCastExpressionNode) expression);
             case META_TYPE_EXPRESSION -> compileMetaTypeExpression(visitor, (BoundMetaTypeExpressionNode) expression);
             case META_TYPE_OF_EXPRESSION -> compileMetaTypeOfExpression(visitor, context, (BoundMetaTypeOfExpressionNode) expression);
+            case THROW_EXPRESSION -> compileThrowExpression(visitor, context, (BoundThrowExpressionNode) expression);
             default -> throw new InternalException();
         }
     }
@@ -2419,6 +2617,11 @@ public class Compiler {
                 false);
     }
 
+    private void compileThrowExpression(MethodVisitor visitor, CompilerContext context, BoundThrowExpressionNode node) {
+        compileExpression(visitor, context, node.expression);
+        visitor.visitInsn(ATHROW);
+    }
+
     private void releaseRefVariables(MethodVisitor visitor, CompilerContext context, List<RefHolder> refs) {
         for (RefHolder ref : refs) {
             LocalVariable holder = ref.getHolder();
@@ -2473,6 +2676,12 @@ public class Compiler {
         return context;
     }
 
+    private CompilerContext createChildContext(MethodVisitor visitor, CompilerContext context, Frame frame) {
+        context = context.createChild(frame);
+        processContextStart(visitor, context);
+        return context;
+    }
+
     private void processContextStart(MethodVisitor visitor, CompilerContext context) {
         if (parameters.shouldEmitVariableNames()) {
             Label label = new Label();
@@ -2498,6 +2707,25 @@ public class Compiler {
             variable.getType().storeDefaultValue(visitor);
         }
         visitor.visitVarInsn(variable.getType().getStoreInst(), variable.getStackIndex());
+    }
+
+    private void compileFinallyBlocks(MethodVisitor visitor, CompilerContext context, Frame stop) {
+        Frame current = context.getFrame();
+        while (true) {
+            TryFinallyFrame tryFinally = current.getClosestTryFinally(stop);
+            if (tryFinally == null) {
+                break;
+            }
+
+            compileFinallyBlock(tryFinally, visitor, context);
+            current = tryFinally.parent;
+            assert current != null;
+        }
+    }
+
+    private void compileFinallyBlock(TryFinallyFrame tryFinally, MethodVisitor visitor, CompilerContext context) {
+        assert tryFinally.parent != null;
+        compileBlockStatement(visitor, context.createChild(tryFinally.parent), tryFinally.finallyBlock);
     }
 
     private void compileMethodHandleCache(CompilerContext context) {

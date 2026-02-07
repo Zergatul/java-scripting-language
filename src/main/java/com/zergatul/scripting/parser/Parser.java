@@ -4,7 +4,6 @@ import com.zergatul.scripting.*;
 import com.zergatul.scripting.lexer.*;
 import com.zergatul.scripting.parser.nodes.*;
 import com.zergatul.scripting.parser.nodes.PatternNode;
-import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -352,6 +351,124 @@ public class Parser {
         }
 
         return new WhileLoopStatementNode(keyword, openParen, condition, closeParen, body);
+    }
+
+    private TryStatementNode parseTryStatement() {
+        Token keyword = advance(TokenType.TRY);
+        if (current.isNot(TokenType.LEFT_CURLY_BRACKET)) {
+            TextRange range = createMissingTokenRangeBeforeCurrent();
+            return new TryStatementNode(
+                    keyword,
+                    createMissingBlockStatement(range),
+                    null,
+                    new FinallyClauseNode(
+                            new Token(TokenType.FINALLY, range),
+                            createMissingBlockStatement(range)));
+        }
+
+        BlockStatementNode block = parseBlockStatement();
+        if (block.isOpen()) {
+            TextRange range = createMissingTokenRangeBeforeCurrent();
+            return new TryStatementNode(
+                    keyword,
+                    block,
+                    null,
+                    new FinallyClauseNode(
+                            new Token(TokenType.FINALLY, range),
+                            createMissingBlockStatement(range)));
+        }
+
+        if (current.isNot(TokenType.CATCH) && current.isNot(TokenType.FINALLY)) {
+            addDiagnostic(ParserErrors.CatchOrFinallyExpected, current, current.getRawValue(code));
+            TextRange range = createMissingTokenRangeBeforeCurrent();
+            return new TryStatementNode(
+                    keyword,
+                    block,
+                    null,
+                    new FinallyClauseNode(
+                            new Token(TokenType.FINALLY, range),
+                            createMissingBlockStatement(range)));
+        }
+
+        CatchClauseNode catchClause = null;
+        if (current.is(TokenType.CATCH)) {
+            catchClause = parseCatchClause();
+            if (catchClause.isOpen()) {
+                return new TryStatementNode(
+                        keyword,
+                        block,
+                        catchClause,
+                        null);
+            }
+        }
+
+        FinallyClauseNode finallyClause = null;
+        if (current.is(TokenType.FINALLY)) {
+            finallyClause = parseFinallyClause();
+        }
+
+        return new TryStatementNode(keyword, block, catchClause, finallyClause);
+    }
+
+    private CatchClauseNode parseCatchClause() {
+        Token keyword = advance(TokenType.CATCH);
+        if (current.isNot(TokenType.LEFT_PARENTHESES) && current.isNot(TokenType.LEFT_CURLY_BRACKET)) {
+            addDiagnostic(ParserErrors.OpenParenOrBraceExpected, current, current.getRawValue(code));
+            TextRange range = createMissingTokenRangeBeforeCurrent();
+            return new CatchClauseNode(
+                    keyword,
+                    null,
+                    createMissingBlockStatement(range));
+        }
+
+        CatchDeclarationNode declaration = null;
+        if (current.is(TokenType.LEFT_PARENTHESES)) {
+            declaration = parseCatchDeclaration();
+            if (declaration.isOpen()) {
+                TextRange range = createMissingTokenRangeBeforeCurrent();
+                return new CatchClauseNode(
+                        keyword,
+                        declaration,
+                        createMissingBlockStatement(range));
+            }
+        }
+
+        assert current.is(TokenType.LEFT_CURLY_BRACKET);
+        BlockStatementNode block = parseBlockStatement();
+
+        return new CatchClauseNode(keyword, declaration, block);
+    }
+
+    private CatchDeclarationNode parseCatchDeclaration() {
+        Token openParen = advance(TokenType.LEFT_PARENTHESES);
+
+        if (current.isNot(TokenType.IDENTIFIER)) {
+            addDiagnostic(ParserErrors.IdentifierExpected, current, current.getRawValue(code));
+            TextRange range = createMissingTokenRangeBeforeCurrent();
+            Token closeParen = current.is(TokenType.RIGHT_PARENTHESES) ? advance() : new Token(TokenType.RIGHT_PARENTHESES, range);
+            return new CatchDeclarationNode(
+                    openParen,
+                    createMissingIdentifier(range),
+                    closeParen);
+        }
+
+        ValueToken identifier = (ValueToken) advance();
+        Token closeParen = advance(TokenType.RIGHT_PARENTHESES);
+
+        return new CatchDeclarationNode(openParen, identifier, closeParen);
+    }
+
+    private FinallyClauseNode parseFinallyClause() {
+        Token keyword = advance(TokenType.FINALLY);
+        if (current.isNot(TokenType.LEFT_CURLY_BRACKET)) {
+            addDiagnostic(ParserErrors.OpenCurlyBracketExpected, current, current.getRawValue(code));
+            TextRange range = createMissingTokenRangeBeforeCurrent();
+            return new FinallyClauseNode(
+                    keyword,
+                    createMissingBlockStatement(range));
+        }
+
+        return new FinallyClauseNode(keyword, parseBlockStatement());
     }
 
     private BreakStatementNode parseBreakStatement() {
@@ -1104,8 +1221,17 @@ public class Parser {
     }
 
     private StatementNode parseSimpleStatementNotDeclaration(boolean canBeExpression) {
-        // TODO: custom types
-        ExpressionNode expression1 = parseExpression();
+        if (!canBeExpression && current.is(TokenType.THROW)) {
+            Token keyword = advance();
+            ExpressionNode expression = null;
+            if (isPossibleExpression()) {
+                expression = parseExpressionCore(Precedences.getThrow());
+            }
+            return new ThrowStatementNode(keyword, expression, null);
+        }
+
+        ExpressionNode expression1 = parseExpressionOrThrow();
+
         AssignmentOperator assignment = switch (current.getTokenType()) {
             case EQUAL -> AssignmentOperator.ASSIGNMENT;
             case PLUS_EQUAL -> AssignmentOperator.PLUS_ASSIGNMENT;
@@ -1179,6 +1305,7 @@ public class Parser {
             case BREAK:
             case CONTINUE:
             case LET:
+            case TRY:
                 return true;
 
             default:
@@ -1225,8 +1352,10 @@ public class Parser {
             case BREAK -> parseBreakStatement();
             case CONTINUE -> parseContinueStatement();
             case SEMICOLON -> parseEmptyStatement();
-            case BOOLEAN, INT8, INT16, INT, INT32, INT64, LONG, FLOAT32, FLOAT, FLOAT64, STRING, CHAR, IDENTIFIER, LEFT_PARENTHESES -> withSemicolon(parseSimpleStatementOrDeclaration());
+            case BOOLEAN, INT8, INT16, INT, INT32, INT64, LONG, FLOAT32, FLOAT, FLOAT64, STRING, CHAR, IDENTIFIER,
+                 LEFT_PARENTHESES -> withSemicolon(parseSimpleStatementOrDeclaration());
             case LET -> withSemicolon(parseVariableDeclaration());
+            case TRY -> parseTryStatement();
             default -> {
                 if (isPossibleExpression()) {
                     yield withSemicolon(parseSimpleStatementOrDeclaration());
@@ -1237,6 +1366,16 @@ public class Parser {
         };
     }
 
+    private ExpressionNode parseExpressionOrThrow() {
+        if (current.is(TokenType.THROW)) {
+            Token keyword = advance();
+            ExpressionNode expression = parseExpressionCore(Precedences.getThrow());
+            return new ThrowExpressionNode(keyword, expression);
+        } else {
+            return parseExpression();
+        }
+    }
+
     private ExpressionNode parseExpression() {
         return parseExpressionCore(0);
     }
@@ -1245,9 +1384,9 @@ public class Parser {
         ExpressionNode left;
 
         if (current.is(TokenType.AWAIT)) {
-            Token awaitToken = advance();
+            Token keyword = advance();
             ExpressionNode expression = parseExpressionCore(Precedences.getAwait());
-            left = new AwaitExpressionNode(awaitToken, expression, TextRange.combine(awaitToken, expression));
+            left = new AwaitExpressionNode(keyword, expression, TextRange.combine(keyword, expression));
         } else {
             UnaryOperator unary = UnaryOperator.fromToken(current.getTokenType());
             if (unary != null) {
@@ -1301,9 +1440,9 @@ public class Parser {
 
         if (current.is(TokenType.QUESTION) && precedence <= Precedences.getConditionalExpression()) {
             Token question = advance(TokenType.QUESTION);
-            ExpressionNode whenTrue = parseExpression();
+            ExpressionNode whenTrue = parseExpressionOrThrow();
             Token colon = advance(TokenType.COLON);
-            ExpressionNode whenFalse = parseExpression();
+            ExpressionNode whenFalse = parseExpressionOrThrow();
             return new ConditionalExpressionNode(left, question, whenTrue, colon, whenFalse, TextRange.combine(left, whenFalse));
         } else {
             return left;
@@ -1635,46 +1774,13 @@ public class Parser {
     }
 
     private boolean isPossibleExpression() {
-        switch (current.getTokenType()) {
-            case NULL:
-            case FALSE:
-            case TRUE:
-            case LEFT_PARENTHESES:
-            case LEFT_SQUARE_BRACKET:
-            case INTEGER_LITERAL:
-            case INTEGER64_LITERAL:
-            case FLOAT_LITERAL:
-            case STRING_LITERAL:
-            case CHAR_LITERAL:
-            case NEW:
-            case IDENTIFIER:
-            case BOOLEAN:
-            case INT8:
-            case INT16:
-            case INT:
-            case INT32:
-            case INT64:
-            case LONG:
-            case FLOAT32:
-            case FLOAT:
-            case FLOAT64:
-            case STRING:
-            case CHAR:
-            case PLUS:
-            case MINUS:
-            case EXCLAMATION:
-            case AWAIT:
-            case META_UNKNOWN:
-            case META_CAST:
-            case META_TYPE:
-            case META_TYPE_OF:
-            case THIS:
-            case BASE:
-                return true;
-
-            default:
-                return false;
-        }
+        return switch (current.getTokenType()) {
+            case NULL, FALSE, TRUE, LEFT_PARENTHESES, LEFT_SQUARE_BRACKET, INTEGER_LITERAL, INTEGER64_LITERAL,
+                 FLOAT_LITERAL, STRING_LITERAL, CHAR_LITERAL, NEW, IDENTIFIER, BOOLEAN, INT8, INT16, INT, INT32, INT64,
+                 LONG, FLOAT32, FLOAT, FLOAT64, STRING, CHAR, PLUS, MINUS, EXCLAMATION, AWAIT, META_UNKNOWN, META_CAST,
+                 META_TYPE, META_TYPE_OF, THIS, BASE, THROW -> true;
+            default -> false;
+        };
     }
 
     private boolean isPossibleArgumentExpression() {

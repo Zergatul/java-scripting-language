@@ -12,8 +12,7 @@ import java.util.List;
 
 public class IntegerLiteralExpressionNode extends ExpressionNode {
 
-    @Nullable public Token sign;
-
+    public final @Nullable Token sign;
     public final ValueToken token;
     public final String value;
 

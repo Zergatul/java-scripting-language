@@ -9,7 +9,7 @@ import java.util.List;
 
 public class BoundGeneratorReturnNode extends BoundStatementNode {
 
-    @Nullable public final BoundExpressionNode expression;
+    public final @Nullable BoundExpressionNode expression;
 
     public BoundGeneratorReturnNode(@Nullable BoundExpressionNode expression) {
         super(BoundNodeType.GENERATOR_RETURN, TextRange.MISSING);

@@ -597,6 +597,10 @@ public class Lexer {
             case "override" -> TokenType.OVERRIDE;
             case "typealias" -> TokenType.TYPEALIAS;
             case "null" -> TokenType.NULL;
+            case "try" -> TokenType.TRY;
+            case "catch" -> TokenType.CATCH;
+            case "finally" -> TokenType.FINALLY;
+            case "throw" -> TokenType.THROW;
             default -> null;
         };
         TextRange range = getCurrentTokenRange();

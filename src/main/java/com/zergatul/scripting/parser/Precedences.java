@@ -6,6 +6,10 @@ public class Precedences {
         return 100;
     }
 
+    public static int getThrow() {
+        return 100;
+    }
+
     public static int get(UnaryOperator operator) {
         return switch (operator) {
             case PLUS, MINUS, NOT -> 100;

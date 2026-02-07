@@ -12,9 +12,9 @@ import java.util.List;
 public class BoundVariableDeclarationNode extends BoundStatementNode {
 
     public final VariableDeclarationNode syntaxNode;
-    @Nullable public final BoundTypeNode type;
+    public final @Nullable BoundTypeNode type;
     public final BoundNameExpressionNode name;
-    @Nullable public final BoundExpressionNode expression;
+    public final @Nullable BoundExpressionNode expression;
 
     public BoundVariableDeclarationNode(BoundNameExpressionNode name) {
         this(SyntaxFactory.missingVariableDeclaration(), null, name, null, TextRange.MISSING);

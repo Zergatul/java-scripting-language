@@ -11,9 +11,9 @@ import java.util.List;
 public class BoundForLoopStatementNode extends BoundStatementNode {
 
     public final ForLoopStatementNode syntaxNode;
-    @Nullable public final BoundStatementNode init;
-    @Nullable public final BoundExpressionNode condition;
-    @Nullable public final BoundStatementNode update;
+    public final @Nullable BoundStatementNode init;
+    public final @Nullable BoundExpressionNode condition;
+    public final @Nullable BoundStatementNode update;
     public final BoundStatementNode body;
 
     public BoundForLoopStatementNode(

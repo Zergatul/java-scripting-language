@@ -8,6 +8,7 @@ import com.zergatul.scripting.symbols.StaticFieldConstantStaticVariable;
 import com.zergatul.scripting.symbols.StaticVariable;
 import com.zergatul.scripting.type.CustomType;
 import com.zergatul.scripting.type.SType;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Parameter;
@@ -20,11 +21,11 @@ public class CompilationParameters {
 
     private final List<StaticVariable> staticVariables = new ArrayList<>();
     private final Class<?> functionalInterface;
-    private final SType asyncReturnType;
+    private final @Nullable SType asyncReturnType;
     private final List<Class<?>> customTypes;
     private final JavaInteropPolicy policy;
-    private final String mainClassName;
-    private final String sourceFile;
+    private final @Nullable String mainClassName;
+    private final @Nullable String sourceFile;
 
     private final boolean emitLineNumbers;
     private final boolean emitVariableNames;
@@ -33,11 +34,11 @@ public class CompilationParameters {
     public CompilationParameters(
             Class<?> root,
             Class<?> functionalInterface,
-            SType asyncReturnType,
+            @Nullable SType asyncReturnType,
             List<Class<?>> customTypes,
             JavaInteropPolicy policy,
-            String mainClassName,
-            String sourceFile,
+            @Nullable String mainClassName,
+            @Nullable String sourceFile,
             boolean emitLineNumbers,
             boolean emitVariableNames,
             boolean debug
@@ -71,7 +72,7 @@ public class CompilationParameters {
         return mainClassName != null ? mainClassName : "Script";
     }
 
-    public String getSourceFile() {
+    public @Nullable String getSourceFile() {
         return sourceFile;
     }
 

@@ -11,7 +11,7 @@ import java.util.List;
 
 public class BoundInvalidExpressionNode extends BoundExpressionNode {
 
-    @Nullable public final InvalidExpressionNode syntaxNode;
+    public final @Nullable InvalidExpressionNode syntaxNode;
     public final List<BoundExpressionNode> children;
     public final List<ParserNode> unboundNodes;
     // LookupResultKind resultKind;

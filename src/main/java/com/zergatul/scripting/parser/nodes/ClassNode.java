@@ -14,8 +14,8 @@ public class ClassNode extends CompilationUnitMemberNode {
 
     public final Token keyword;
     public final NameExpressionNode name;
-    @Nullable public final Token colon;
-    @Nullable public final TypeNode baseTypeNode;
+    public final @Nullable Token colon;
+    public final @Nullable TypeNode baseTypeNode;
     public final Token openBrace;
     public final List<ClassMemberNode> members;
     public final Token closeBrace;

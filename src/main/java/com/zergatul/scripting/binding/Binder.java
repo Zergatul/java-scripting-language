@@ -3,6 +3,9 @@ package com.zergatul.scripting.binding;
 import com.zergatul.scripting.*;
 import com.zergatul.scripting.binding.nodes.*;
 import com.zergatul.scripting.compiler.*;
+import com.zergatul.scripting.compiler.frames.Frame;
+import com.zergatul.scripting.compiler.frames.LoopFrame;
+import com.zergatul.scripting.compiler.frames.TryCatchFrame;
 import com.zergatul.scripting.lexer.Token;
 import com.zergatul.scripting.lexer.TokenType;
 import com.zergatul.scripting.parser.*;
@@ -12,10 +15,9 @@ import com.zergatul.scripting.symbols.*;
 import com.zergatul.scripting.type.*;
 import com.zergatul.scripting.type.operation.*;
 import org.jspecify.annotations.Nullable;
+import org.objectweb.asm.Label;
 
-import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
-import java.lang.reflect.Field;
 import java.util.*;
 import java.util.function.BiFunction;
 import java.util.stream.Stream;
@@ -117,11 +119,12 @@ public class Binder {
             statement = rewriteAsReturnStatement((ExpressionStatementNode) functionNode.body, declaration.getReturnType());
         } else {
             statement = bindStatement(functionNode.body);
-        }
 
-        if (declaration.getReturnType() != SVoidType.instance && declaration.getReturnType() != SUnknown.instance) {
-            if (new ControlFlowAnalyzer().analyzeStatement(statement) == FlowResult.CONTINUES) {
-                addDiagnostic(BinderErrors.NotAllPathReturnValue, statement);
+            if (declaration.getReturnType() != SVoidType.instance && declaration.getReturnType() != SUnknown.instance) {
+                if (new ControlFlowAnalyzer().analyzeStatement(statement) == FlowResult.CONTINUES) {
+                    BlockStatementNode block = (BlockStatementNode) functionNode.body;
+                    addDiagnostic(BinderErrors.NotAllPathReturnValue, block.closeBrace);
+                }
             }
         }
 
@@ -577,6 +580,8 @@ public class Binder {
             case EMPTY_STATEMENT -> bindEmptyStatement((EmptyStatementNode) statement);
             case INVALID_STATEMENT -> bindInvalidStatement((InvalidStatementNode) statement);
             case INCREMENT_STATEMENT, DECREMENT_STATEMENT -> bindPostfixStatement((PostfixStatementNode) statement);
+            case TRY_STATEMENT -> bindTryStatement((TryStatementNode) statement);
+            case THROW_STATEMENT -> bindThrowStatement((ThrowStatementNode) statement);
             default -> throw new InternalException();
         };
     }
@@ -738,7 +743,7 @@ public class Binder {
     }
 
     private BoundForLoopStatementNode bindForLoopStatement(ForLoopStatementNode statement) {
-        pushScope();
+        pushScope(new LoopFrame(context.getFrame(), new Label(), new Label()));
         BoundStatementNode init = statement.init != null ? bindStatement(statement.init) : null;
 
         BoundExpressionNode condition;
@@ -752,9 +757,6 @@ public class Binder {
         }
 
         BoundStatementNode update = statement.update != null ? bindStatement(statement.update) : null;
-
-        context.setBreak(v -> {});
-        context.setContinue(v -> {});
         BoundStatementNode body = bindStatement(statement.body);
 
         popScope();
@@ -763,7 +765,7 @@ public class Binder {
     }
 
     private BoundForEachLoopStatementNode bindForEachLoopStatement(ForEachLoopStatementNode statement) {
-        pushScope();
+        pushScope(new LoopFrame(context.getFrame(), new Label(), new Label()));
 
         SymbolRef index = context.addLocalVariable(null, SInt.instance, null);
         SymbolRef length = context.addLocalVariable(null, SInt.instance, null);
@@ -803,8 +805,6 @@ public class Binder {
             name = new BoundNameExpressionNode(statement.name, symbolRef);
         }
 
-        context.setBreak(v -> {});
-        context.setContinue(v -> {});
         BoundStatementNode body = bindStatement(statement.body);
 
         popScope();
@@ -816,15 +816,13 @@ public class Binder {
     }
 
     private BoundWhileLoopStatementNode bindWhileLoopStatement(WhileLoopStatementNode statement) {
-        pushScope();
+        pushScope(new LoopFrame(context.getFrame(), new Label(), new Label()));
 
         BoundExpressionNode condition = convert(bindExpression(statement.condition), SBoolean.instance);
         if (condition.type != SBoolean.instance) {
             addDiagnostic(BinderErrors.CannotImplicitlyConvert, condition, condition.type.toString(), SBoolean.instance.toString());
         }
 
-        context.setBreak(v -> {});
-        context.setContinue(v -> {});
         BoundStatementNode body = bindStatement(statement.body);
 
         popScope();
@@ -833,7 +831,7 @@ public class Binder {
     }
 
     private BoundBreakStatementNode bindBreakStatement(BreakStatementNode statement) {
-        boolean isInsideLoop = context.canBreak();
+        boolean isInsideLoop = context.getFrame().getClosestLoop() != null;
         if (!isInsideLoop) {
             addDiagnostic(BinderErrors.NoLoop, statement);
         }
@@ -841,7 +839,7 @@ public class Binder {
     }
 
     private BoundContinueStatementNode bindContinueStatement(ContinueStatementNode statement) {
-        boolean isInsideLoop = context.canContinue();
+        boolean isInsideLoop = context.getFrame().getClosestLoop() != null;
         if (!isInsideLoop) {
             addDiagnostic(BinderErrors.NoLoop, statement);
         }
@@ -880,6 +878,71 @@ public class Binder {
                 isInc ? BoundNodeType.INCREMENT_STATEMENT : BoundNodeType.DECREMENT_STATEMENT,
                 expression,
                 operation);
+    }
+
+    private BoundTryStatementNode bindTryStatement(TryStatementNode statement) {
+        BoundBlockStatementNode block = bindBlockStatement(statement.block);
+
+        BoundBlockStatementNode catchBlock = null;
+        BoundSymbolNode exceptionSymbol = null;
+        if (statement.catchClause != null) {
+            pushScope();
+            if (statement.catchClause.declaration != null) {
+                String name = statement.catchClause.declaration.identifier.value;
+                boolean exists = context.hasLocalSymbol(name);
+                SymbolRef symbolRef;
+                if (exists) {
+                    symbolRef = new InvalidSymbolRef();
+                    addDiagnostic(
+                            BinderErrors.SymbolAlreadyDeclared,
+                            statement.catchClause.declaration.identifier,
+                            name);
+                } else {
+                    LocalVariable variable = new LocalVariable(name, SType.fromJavaType(Throwable.class), statement.catchClause.declaration.identifier.getRange());
+                    symbolRef = new MutableSymbolRef(variable);
+                    context.addLocalVariable(symbolRef);
+                }
+
+                exceptionSymbol = new BoundSymbolNode(statement.catchClause.declaration.identifier, symbolRef);
+            }
+
+            pushScope(new TryCatchFrame(context.getFrame(), new LocalVariable(SType.fromJavaType(Throwable.class))));
+            catchBlock = bindBlockStatement(statement.catchClause.block);
+            popScope();
+
+            popScope();
+        }
+
+        BoundBlockStatementNode finallyBlock = null;
+        if (statement.finallyClause != null) {
+            finallyBlock = bindBlockStatement(statement.finallyClause.block);
+        }
+
+        return new BoundTryStatementNode(
+                statement,
+                block,
+                exceptionSymbol,
+                catchBlock,
+                finallyBlock);
+    }
+
+    private BoundThrowStatementNode bindThrowStatement(ThrowStatementNode statement) {
+        if (statement.expression != null) {
+            BoundExpressionNode expression = bindExpression(statement.expression);
+            SType throwable = SType.fromJavaType(Throwable.class);
+            if (!expression.type.isInstanceOf(throwable)) {
+                addDiagnostic(BinderErrors.ThrowInvalidType, expression, throwable, expression.type);
+            }
+
+            return new BoundThrowStatementNode(statement, expression);
+        } else {
+            TryCatchFrame tryCatchFrame = context.getFrame().getClosestTryCatch();
+            if (tryCatchFrame == null) {
+                addDiagnostic(BinderErrors.RethrowNotAllowed, statement);
+            }
+
+            return new BoundThrowStatementNode(statement, null);
+        }
     }
 
     private BoundExpressionNode bindExpression(ExpressionNode expression) {
@@ -926,6 +989,7 @@ public class Binder {
             case META_CAST_EXPRESSION -> bindMetaCastExpression((MetaCastExpressionNode) expression);
             case META_TYPE_EXPRESSION -> bindMetaTypeExpression((MetaTypeExpressionNode) expression);
             case META_TYPE_OF_EXPRESSION -> bindMetaTypeOfExpression((MetaTypeOfExpressionNode) expression);
+            case THROW_EXPRESSION -> bindThrowExpression((ThrowExpressionNode) expression);
             case INVALID_EXPRESSION -> bindInvalidExpression((InvalidExpressionNode) expression);
             default -> throw new InternalException();
         };
@@ -2116,6 +2180,16 @@ public class Binder {
         return new BoundMetaTypeOfExpressionNode(meta, expression);
     }
 
+    private BoundThrowExpressionNode bindThrowExpression(ThrowExpressionNode throwExpression) {
+        BoundExpressionNode expression = bindExpression(throwExpression.expression);
+        SType throwable = SType.fromJavaType(Throwable.class);
+        if (!expression.type.isInstanceOf(throwable)) {
+            addDiagnostic(BinderErrors.ThrowInvalidType, expression, throwable, expression.type);
+        }
+
+        return new BoundThrowExpressionNode(throwExpression, expression);
+    }
+
     private BoundInvalidExpressionNode bindInvalidExpression(InvalidExpressionNode expression) {
         return new BoundInvalidExpressionNode(expression, List.of(), List.of(), expression.getRange());
     }
@@ -2922,6 +2996,10 @@ public class Binder {
 
     private void pushScope() {
         context = context.createChild();
+    }
+
+    private void pushScope(Frame frame) {
+        context = context.createChild(frame);
     }
 
     private void pushFunctionScope(SType returnType, boolean isAsync) {

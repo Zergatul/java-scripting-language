@@ -2,6 +2,8 @@ package com.zergatul.scripting.compiler;
 
 import com.zergatul.scripting.InternalException;
 import com.zergatul.scripting.TextRange;
+import com.zergatul.scripting.compiler.frames.Frame;
+import com.zergatul.scripting.compiler.frames.FunctionFrame;
 import com.zergatul.scripting.symbols.*;
 import com.zergatul.scripting.type.*;
 import org.jspecify.annotations.Nullable;
@@ -10,27 +12,25 @@ import org.objectweb.asm.MethodVisitor;
 
 import java.lang.reflect.Method;
 import java.util.*;
-import java.util.function.Consumer;
 
 public class CompilerContext {
 
     private final CompilerContext root;
-    private final CompilerContext parent;
+    private final @Nullable CompilerContext parent;
     private final Map<String, SymbolRef> staticSymbols = new HashMap<>();
     private final Map<String, SymbolRef> localSymbols = new HashMap<>();
     private final List<SymbolRef> anonymousLocalSymbols = new ArrayList<>();
     private final boolean isClassRoot;
     private final SDeclaredType classType;
-    private final SType extensionType;
+    private final @Nullable SType extensionType;
     private final boolean isStatic;
     private final boolean isClassMethod;
     private final boolean isFunctionRoot;
     private final boolean isGenericFunction;
     private final SType returnType;
     private final boolean isAsync;
+    private final @Nullable Frame frame;
     private String className;
-    private Consumer<MethodVisitor> breakConsumer;
-    private Consumer<MethodVisitor> continueConsumer;
     private final List<RefHolder> refVariables = new ArrayList<>();
     private String asyncStateMachineClassName;
     private String thisFieldName;
@@ -43,10 +43,10 @@ public class CompilerContext {
     private final List<SGenericFunction> genericFunctions;
     private Label startLabel;
     private ClassLoaderContext classLoaderContext;
-    @Nullable private MethodHandleCache methodHandleCache;
+    private @Nullable MethodHandleCache methodHandleCache;
 
     private CompilerContext(
-            CompilerContext parent,
+            @Nullable CompilerContext parent,
             int initialStackIndex,
             boolean isFunctionRoot,
             boolean isGenericFunction,
@@ -54,9 +54,10 @@ public class CompilerContext {
             boolean isAsync,
             boolean isClassRoot,
             SDeclaredType classType,
-            SType extensionType,
+            @Nullable SType extensionType,
             boolean isClassMethod,
-            boolean isStatic
+            boolean isStatic,
+            @Nullable Frame frame
     ) {
         this.root = parent == null ? this : parent.root;
         this.parent = parent;
@@ -69,6 +70,7 @@ public class CompilerContext {
         this.isAsync = isAsync;
         this.isStatic = isStatic;
         this.isClassMethod = isClassMethod;
+        this.frame = frame;
         if (isFunctionRoot) {
             lifted = new ArrayList<>();
             captured = new ArrayList<>();
@@ -193,6 +195,10 @@ public class CompilerContext {
     }
 
     public CompilerContext createChild() {
+        return createChild(getFrame());
+    }
+
+    public CompilerContext createChild(Frame frame) {
         return new Builder()
                 .setParent(this)
                 .setClassType(this.classType)
@@ -202,6 +208,7 @@ public class CompilerContext {
                 .setGenericFunction(isGenericFunction)
                 .setReturnType(returnType)
                 .setAsync(isAsync)
+                .setFrame(frame)
                 .build();
     }
 
@@ -211,6 +218,7 @@ public class CompilerContext {
                 .setFunctionRoot(true)
                 .setReturnType(returnType)
                 .setAsync(isAsync)
+                .setFrame(new FunctionFrame())
                 .build();
     }
 
@@ -226,6 +234,7 @@ public class CompilerContext {
                 .setGenericFunction(generic)
                 .setReturnType(returnType)
                 .setAsync(isAsync)
+                .setFrame(new FunctionFrame())
                 .build();
     }
 
@@ -247,6 +256,7 @@ public class CompilerContext {
                 .setReturnType(returnType)
                 .setInitialStackIndex(1)
                 .setAsync(isAsync)
+                .setFrame(new FunctionFrame())
                 .build();
     }
 
@@ -261,6 +271,7 @@ public class CompilerContext {
                 .setReturnType(returnType)
                 .setInitialStackIndex(0)
                 .setAsync(false)
+                .setFrame(new FunctionFrame())
                 .build();
     }
 
@@ -279,6 +290,7 @@ public class CompilerContext {
                 .setFunctionRoot(true)
                 .setReturnType(returnType)
                 .setAsync(isAsync)
+                .setFrame(new FunctionFrame())
                 .build();
     }
 
@@ -291,6 +303,9 @@ public class CompilerContext {
     }
 
     public CompilerContext getParent() {
+        if (parent == null) {
+            throw new InternalException();
+        }
         return parent;
     }
 
@@ -339,7 +354,7 @@ public class CompilerContext {
         }
     }
 
-    public SymbolRef getSymbol(String name) {
+    public @Nullable SymbolRef getSymbol(String name) {
         List<CompilerContext> functions = List.of(); // function boundaries
         for (CompilerContext context = this; context != null; ) {
             SymbolRef localSymbolRef = context.localSymbols.get(name);
@@ -429,52 +444,11 @@ public class CompilerContext {
         return getSymbol(name) != null;
     }
 
-    public void setBreak(Consumer<MethodVisitor> consumer) {
-        breakConsumer = consumer;
-    }
-
-    public void setContinue(Consumer<MethodVisitor> consumer) {
-        continueConsumer = consumer;
-    }
-
-    public boolean canBreak() {
-        for (CompilerContext context = this; context != null; context = context.parent) {
-            if (context.breakConsumer != null) {
-                return true;
-            }
+    public Frame getFrame() {
+        if (this.frame == null) {
+            throw new InternalException();
         }
-        return false;
-    }
-
-    public boolean canContinue() {
-        for (CompilerContext context = this; context != null; context = context.parent) {
-            if (context.continueConsumer != null) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    public void compileBreak(MethodVisitor visitor) {
-        for (CompilerContext context = this; context != null; context = context.parent) {
-            if (context.breakConsumer != null) {
-                context.breakConsumer.accept(visitor);
-                return;
-            }
-        }
-
-        throw new InternalException(); // no loop
-    }
-
-    public void compileContinue(MethodVisitor visitor) {
-        for (CompilerContext context = this; context != null; context = context.parent) {
-            if (context.continueConsumer != null) {
-                context.continueConsumer.accept(visitor);
-                return;
-            }
-        }
-
-        throw new InternalException(); // no loop
+        return this.frame;
     }
 
     public void setClassName(String className) {
@@ -676,7 +650,8 @@ public class CompilerContext {
 
     private static class Builder {
 
-        private CompilerContext parent;
+        private @Nullable CompilerContext parent;
+        private @Nullable Frame frame;
         private boolean isClassRoot;
         private SDeclaredType classType;
         private SType extensionType;
@@ -743,6 +718,11 @@ public class CompilerContext {
             return this;
         }
 
+        public Builder setFrame(Frame frame) {
+            this.frame = frame;
+            return this;
+        }
+
         public CompilerContext build() {
             return new CompilerContext(
                     parent,
@@ -755,7 +735,8 @@ public class CompilerContext {
                     classType,
                     extensionType,
                     isClassMethod,
-                    isStatic);
+                    isStatic,
+                    frame);
         }
     }
 }

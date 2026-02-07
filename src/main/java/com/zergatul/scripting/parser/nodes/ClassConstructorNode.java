@@ -13,9 +13,9 @@ public class ClassConstructorNode extends ClassMemberNode {
 
     public final Token keyword;
     public final ParameterListNode parameters;
-    @Nullable public final Token colon;
-    @Nullable public final ConstructorInitializerNode initializer;
-    @Nullable public final Token arrow;
+    public final @Nullable Token colon;
+    public final @Nullable ConstructorInitializerNode initializer;
+    public final @Nullable Token arrow;
     public final StatementNode body;
 
     public ClassConstructorNode(

@@ -10,7 +10,7 @@ import java.util.List;
 public class BoundParameterNode extends BoundNode {
 
     private final BoundNameExpressionNode name;
-    @Nullable private final BoundTypeNode typeNode;
+    private final @Nullable BoundTypeNode typeNode;
     private final SType type;
 
     public BoundParameterNode(BoundNameExpressionNode name, BoundTypeNode typeNode, TextRange range) {

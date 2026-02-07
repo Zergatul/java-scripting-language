@@ -12,6 +12,10 @@ public class LocalVariable extends Variable {
     private int stackIndex;
     private @Nullable StateBoundary state;
 
+    public LocalVariable(SType type) {
+        this(null, type, null);
+    }
+
     public LocalVariable(
             @Nullable String name,
             SType type,

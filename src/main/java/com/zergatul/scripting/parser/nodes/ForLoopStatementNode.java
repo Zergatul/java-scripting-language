@@ -13,11 +13,11 @@ public class ForLoopStatementNode extends StatementNode {
 
     public final Token keyword;
     public final Token openParen;
-    @Nullable public final StatementNode init;
+    public final @Nullable StatementNode init;
     public final Token semicolon1;
-    @Nullable public final ExpressionNode condition;
+    public final @Nullable ExpressionNode condition;
     public final Token semicolon2;
-    @Nullable public final StatementNode update;
+    public final @Nullable StatementNode update;
     public final Token closeParen;
     public final StatementNode body;
 

@@ -14,7 +14,7 @@ public class BoundIfStatementNode extends BoundStatementNode {
     public final IfStatementNode syntaxNode;
     public final BoundExpressionNode condition;
     public final BoundStatementNode thenStatement;
-    @Nullable public final BoundStatementNode elseStatement;
+    public final @Nullable BoundStatementNode elseStatement;
     public final FallthroughFlow flow;
 
     public BoundIfStatementNode(

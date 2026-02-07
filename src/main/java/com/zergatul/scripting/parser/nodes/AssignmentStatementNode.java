@@ -13,7 +13,7 @@ public class AssignmentStatementNode extends StatementNode {
     public final ExpressionNode left;
     public final AssignmentOperatorNode operator;
     public final ExpressionNode right;
-    @Nullable public final Token semicolon;
+    public final @Nullable Token semicolon;
 
     public AssignmentStatementNode(
             ExpressionNode left,

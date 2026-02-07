@@ -11,7 +11,7 @@ import java.util.List;
 public class ExpressionStatementNode extends StatementNode {
 
     public final ExpressionNode expression;
-    @Nullable public final Token semicolon;
+    public final @Nullable Token semicolon;
 
     public ExpressionStatementNode(
             ExpressionNode expression,
