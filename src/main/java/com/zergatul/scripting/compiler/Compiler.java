@@ -1029,7 +1029,7 @@ public class Compiler {
         } else if (statement.catchBlock == null) {
             compileTryFinally(visitor, context, statement.block, statement.finallyBlock);
         } else {
-            throw new InternalException();
+            compileTryCatchFinally(visitor, context, statement.block, statement.catchBlock, statement.exceptionSymbol, statement.finallyBlock);
         }
     }
 
@@ -1055,6 +1055,7 @@ public class Compiler {
         visitor.visitJumpInsn(GOTO, end);
 
         visitor.visitLabel(catchBlockBegin);
+        context = context.createChild();
         if (exceptionSymbol != null) {
             LocalVariable exceptionVariable = exceptionSymbol.symbolRef.asLocalVariable();
             context.setStackIndex(exceptionVariable);
@@ -1096,6 +1097,54 @@ public class Compiler {
         compileBlockStatement(visitor, context, finallyBlock); // run finally
         exceptionVariable.compileLoad(context, visitor);       // load exception from variable
         visitor.visitInsn(ATHROW);                             // rethrow
+
+        visitor.visitLabel(end);
+    }
+
+    private void compileTryCatchFinally(
+            MethodVisitor visitor,
+            CompilerContext context,
+            BoundBlockStatementNode tryBlock,
+            BoundBlockStatementNode catchBlock,
+            @Nullable BoundSymbolNode exceptionSymbol,
+            BoundBlockStatementNode finallyBlock
+    ) {
+        Label tryBlockBegin = new Label();
+        Label tryBlockEnd = new Label();
+        Label catchBlockBegin = new Label();
+        Label end = new Label();
+
+        visitor.visitTryCatchBlock(tryBlockBegin, tryBlockEnd, catchBlockBegin, null);
+
+        visitor.visitLabel(tryBlockBegin);
+        visitor.visitInsn(NOP); // this is required because empty try-block will not compile
+        compileBlockStatement(
+                visitor,
+                context.createChild(new TryFinallyFrame(context.getFrame(), finallyBlock)),
+                tryBlock);
+        visitor.visitLabel(tryBlockEnd);
+
+        // normal path, run finally-block after try-block
+        compileBlockStatement(visitor, context.createChild(), finallyBlock);
+        visitor.visitJumpInsn(GOTO, end);
+
+        visitor.visitLabel(catchBlockBegin);
+        context = context.createChild();
+        if (exceptionSymbol != null) {
+            LocalVariable exceptionVariable = exceptionSymbol.symbolRef.asLocalVariable();
+            context.setStackIndex(exceptionVariable);
+            exceptionVariable.compileStore(context, visitor);
+        } else {
+            visitor.visitInsn(POP);
+        }
+        compileBlockStatement(
+                visitor,
+                context.createChild(new TryFinallyFrame(context.getFrame(), finallyBlock)),
+                catchBlock);
+
+        // catch exit also runs finally-block
+        compileBlockStatement(visitor, context.createChild(), finallyBlock);
+        visitor.visitJumpInsn(GOTO, end);
 
         visitor.visitLabel(end);
     }

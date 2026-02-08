@@ -104,4 +104,5 @@ public enum TokenType {
     TRY,
     CATCH,
     FINALLY,
+    THROW,
 }

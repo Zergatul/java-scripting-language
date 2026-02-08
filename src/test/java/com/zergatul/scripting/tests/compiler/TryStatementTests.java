@@ -47,17 +47,17 @@ public class TryStatementTests extends ComparatorTest {
         program.run();
     }
 
-//    @Test
-//    public void emptyTryCatchFinallyTest() {
-//        String code = """
-//                try {}
-//                catch {}
-//                finally {}
-//                """;
-//
-//        Runnable program = compile(ApiRoot.class, code);
-//        program.run();
-//    }
+    @Test
+    public void emptyTryCatchFinallyTest() {
+        String code = """
+                try {}
+                catch {}
+                finally {}
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+    }
 
     @Test
     public void tryCatchNoExceptionTest() {
@@ -257,25 +257,141 @@ public class TryStatementTests extends ComparatorTest {
         Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(20));
     }
 
-//    @Test
-//    public void simpleTryCatchFinallyTest() {
-//        String code = """
-//                intStorage.add(1);
-//                try {
-//                    intStorage.add(2);
-//                } catch {
-//                    intStorage.add(3);
-//                } finally {
-//                    intStorage.add(4);
-//                }
-//                intStorage.add(5);
-//                """;
-//
-//        Runnable program = compile(ApiRoot.class, code);
-//        program.run();
-//
-//        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(1, 2, 4, 5));
-//    }
+    @Test
+    public void tryCatchFinallyNoExceptionTest() {
+        String code = """
+                intStorage.add(1);
+                try {
+                    intStorage.add(2);
+                } catch {
+                    intStorage.add(3);
+                } finally {
+                    intStorage.add(4);
+                }
+                intStorage.add(5);
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(1, 2, 4, 5));
+    }
+
+    @Test
+    public void tryCatchFinallyWithExceptionTest() {
+        String code = """
+                intStorage.add(1);
+                try {
+                    intStorage.add(2);
+                    int[] array = [];
+                    array[1] = 100;
+                    intStorage.add(3);
+                } catch {
+                    intStorage.add(5);
+                } finally {
+                    intStorage.add(6);
+                }
+                intStorage.add(7);
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(1, 2, 5, 6, 7));
+    }
+
+    @Test
+    public void tryCatchFinallyWithExceptionVariableTest() {
+        String code = """
+                intStorage.add(1);
+                try {
+                    intStorage.add(2);
+                    int[] array = [];
+                    array[1] = 100;
+                    intStorage.add(3);
+                } catch (e) {
+                    intStorage.add(5);
+                    stringStorage.add(e.getMessage());
+                } finally {
+                    intStorage.add(6);
+                }
+                intStorage.add(7);
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(1, 2, 5, 6, 7));
+        Assertions.assertIterableEquals(ApiRoot.stringStorage.list, List.of("Index 1 out of bounds for length 0"));
+    }
+
+    @Test
+    public void tryCatchFinallyReturnTest1() {
+        String code = """
+                int func() {
+                    try {
+                        return 1;
+                    } catch {
+                        return 2;
+                    } finally {
+                        intStorage.add(10);
+                    }
+                }
+                
+                intStorage.add(func());
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(10, 1));
+    }
+
+    @Test
+    public void tryCatchFinallyReturnTest2() {
+        String code = """
+                int func() {
+                    try {
+                        int[] array = [];
+                        array[1] = 0;
+                        return 1;
+                    } catch {
+                        return 2;
+                    } finally {
+                        intStorage.add(10);
+                    }
+                }
+                
+                intStorage.add(func());
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(10, 2));
+    }
+
+    @Test
+    public void tryCatchFinallyDoubleReturnTest() {
+        String code = """
+                int func() {
+                    try {
+                        return 1;
+                    } catch {
+                        return 2;
+                    } finally {
+                        return 3;
+                    }
+                }
+                
+                intStorage.add(func());
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(3));
+    }
 
     @Test
     public void tryCatchControlFlowTest() {
