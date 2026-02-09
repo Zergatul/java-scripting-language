@@ -359,6 +359,16 @@ public abstract class ParserTreeVisitor {
         node.acceptChildren(this);
     }
 
+    public void explicitVisit(ThrowExpressionNode node) {
+        visit(node);
+        node.acceptChildren(this);
+    }
+
+    public void explicitVisit(ThrowStatementNode node) {
+        visit(node);
+        node.acceptChildren(this);
+    }
+
     public void explicitVisit(TryStatementNode node) {
         visit(node);
         node.acceptChildren(this);
@@ -475,6 +485,8 @@ public abstract class ParserTreeVisitor {
     public void visit(StaticReferenceNode node) {}
     public void visit(StringLiteralExpressionNode node) {}
     public void visit(ThisExpressionNode node) {}
+    public void visit(ThrowExpressionNode node) {}
+    public void visit(ThrowStatementNode node) {}
     public void visit(TryStatementNode node) {}
     public void visit(TypeCastExpressionNode node) {}
     public void visit(TypePatternNode node) {}

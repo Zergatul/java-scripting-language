@@ -39,6 +39,8 @@ It is lightweight, async-friendly, and designed to interop with Java APIs where 
 - [Java Interop](#java-interop)
     - [Accessing Private Members](#accessing-private-members)
 - [Type Aliases](#type-aliases)
+- [Exceptions](#exceptions)
+    - [throw expressions](#throw-expressions)
 - [Limitations](#limitations)
 - [Comparison Table](#comparison-table)
 
@@ -735,8 +737,63 @@ LocalPlayer player = Minecraft.instance.player;
 ClientLevel level = Minecraft.instance.level;
 ```
 
+### Exceptions
+3 variants supported:
+```c#
+try { ... } catch { ... }
+try { ... } finally { ... }
+try { ... } catch { ... } finally { ... }
+```
+
+`catch`-block may have optional variable where it will store `Throwable` instance:
+```c#
+try {
+    (new int[0])[1] = 0;
+} catch (e) {
+    // e is IndexOutOfRangeException
+}
+```
+
+Only single `catch`-block supported. You can't filter exceptions by their types, like in Java or C#.
+
+You can rethrow exception from `catch`-block:
+```c#
+try {
+    // ...
+} catch (e) {
+    // ...
+    throw;
+}
+```
+
+To `throw` exception use `throw` statement:
+```c#
+typealias RuntimeException = Java<java.lang.RuntimeException>;
+
+throw new RuntimeException();
+```
+
+#### throw expressions
+In few cases `throw` behaves like expression, and not like statement:
+```c#
+// in lambda
+typealias RuntimeException = Java<java.lang.RuntimeException>;
+
+void log(fn<() => int> func) => debug.log(func().toString());
+
+log(() => throw new RuntimeException());
+```
+
+```c#
+// in conditional expression
+typealias RuntimeException = Java<java.lang.RuntimeException>;
+
+boolean b = api.getSomething();
+int value = b ? 100 : throw new RuntimeException();
+```
+
 ### Limitations
-- `try/catch` not supported
+- `try/catch/finally` with `await` inside is not supported
 - Java interop with parameterized types (generics) is not supported
 
 ### Comparison Table

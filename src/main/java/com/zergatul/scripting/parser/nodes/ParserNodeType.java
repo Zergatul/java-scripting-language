@@ -87,4 +87,6 @@ public enum ParserNodeType {
     CATCH_CLAUSE,
     CATCH_DECLARATION,
     FINALLY_CLAUSE,
+    THROW_STATEMENT,
+    THROW_EXPRESSION,
 }

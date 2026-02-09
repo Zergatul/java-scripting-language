@@ -1221,8 +1221,17 @@ public class Parser {
     }
 
     private StatementNode parseSimpleStatementNotDeclaration(boolean canBeExpression) {
-        // TODO: custom types
-        ExpressionNode expression1 = parseExpression();
+        if (!canBeExpression && current.is(TokenType.THROW)) {
+            Token keyword = advance();
+            ExpressionNode expression = null;
+            if (isPossibleExpression()) {
+                expression = parseExpressionCore(Precedences.getThrow());
+            }
+            return new ThrowStatementNode(keyword, expression, null);
+        }
+
+        ExpressionNode expression1 = parseExpressionOrThrow();
+
         AssignmentOperator assignment = switch (current.getTokenType()) {
             case EQUAL -> AssignmentOperator.ASSIGNMENT;
             case PLUS_EQUAL -> AssignmentOperator.PLUS_ASSIGNMENT;
@@ -1343,7 +1352,8 @@ public class Parser {
             case BREAK -> parseBreakStatement();
             case CONTINUE -> parseContinueStatement();
             case SEMICOLON -> parseEmptyStatement();
-            case BOOLEAN, INT8, INT16, INT, INT32, INT64, LONG, FLOAT32, FLOAT, FLOAT64, STRING, CHAR, IDENTIFIER, LEFT_PARENTHESES -> withSemicolon(parseSimpleStatementOrDeclaration());
+            case BOOLEAN, INT8, INT16, INT, INT32, INT64, LONG, FLOAT32, FLOAT, FLOAT64, STRING, CHAR, IDENTIFIER,
+                 LEFT_PARENTHESES -> withSemicolon(parseSimpleStatementOrDeclaration());
             case LET -> withSemicolon(parseVariableDeclaration());
             case TRY -> parseTryStatement();
             default -> {
@@ -1356,6 +1366,16 @@ public class Parser {
         };
     }
 
+    private ExpressionNode parseExpressionOrThrow() {
+        if (current.is(TokenType.THROW)) {
+            Token keyword = advance();
+            ExpressionNode expression = parseExpressionCore(Precedences.getThrow());
+            return new ThrowExpressionNode(keyword, expression);
+        } else {
+            return parseExpression();
+        }
+    }
+
     private ExpressionNode parseExpression() {
         return parseExpressionCore(0);
     }
@@ -1364,9 +1384,9 @@ public class Parser {
         ExpressionNode left;
 
         if (current.is(TokenType.AWAIT)) {
-            Token awaitToken = advance();
+            Token keyword = advance();
             ExpressionNode expression = parseExpressionCore(Precedences.getAwait());
-            left = new AwaitExpressionNode(awaitToken, expression, TextRange.combine(awaitToken, expression));
+            left = new AwaitExpressionNode(keyword, expression, TextRange.combine(keyword, expression));
         } else {
             UnaryOperator unary = UnaryOperator.fromToken(current.getTokenType());
             if (unary != null) {
@@ -1420,9 +1440,9 @@ public class Parser {
 
         if (current.is(TokenType.QUESTION) && precedence <= Precedences.getConditionalExpression()) {
             Token question = advance(TokenType.QUESTION);
-            ExpressionNode whenTrue = parseExpression();
+            ExpressionNode whenTrue = parseExpressionOrThrow();
             Token colon = advance(TokenType.COLON);
-            ExpressionNode whenFalse = parseExpression();
+            ExpressionNode whenFalse = parseExpressionOrThrow();
             return new ConditionalExpressionNode(left, question, whenTrue, colon, whenFalse, TextRange.combine(left, whenFalse));
         } else {
             return left;
@@ -1754,46 +1774,13 @@ public class Parser {
     }
 
     private boolean isPossibleExpression() {
-        switch (current.getTokenType()) {
-            case NULL:
-            case FALSE:
-            case TRUE:
-            case LEFT_PARENTHESES:
-            case LEFT_SQUARE_BRACKET:
-            case INTEGER_LITERAL:
-            case INTEGER64_LITERAL:
-            case FLOAT_LITERAL:
-            case STRING_LITERAL:
-            case CHAR_LITERAL:
-            case NEW:
-            case IDENTIFIER:
-            case BOOLEAN:
-            case INT8:
-            case INT16:
-            case INT:
-            case INT32:
-            case INT64:
-            case LONG:
-            case FLOAT32:
-            case FLOAT:
-            case FLOAT64:
-            case STRING:
-            case CHAR:
-            case PLUS:
-            case MINUS:
-            case EXCLAMATION:
-            case AWAIT:
-            case META_UNKNOWN:
-            case META_CAST:
-            case META_TYPE:
-            case META_TYPE_OF:
-            case THIS:
-            case BASE:
-                return true;
-
-            default:
-                return false;
-        }
+        return switch (current.getTokenType()) {
+            case NULL, FALSE, TRUE, LEFT_PARENTHESES, LEFT_SQUARE_BRACKET, INTEGER_LITERAL, INTEGER64_LITERAL,
+                 FLOAT_LITERAL, STRING_LITERAL, CHAR_LITERAL, NEW, IDENTIFIER, BOOLEAN, INT8, INT16, INT, INT32, INT64,
+                 LONG, FLOAT32, FLOAT, FLOAT64, STRING, CHAR, PLUS, MINUS, EXCLAMATION, AWAIT, META_UNKNOWN, META_CAST,
+                 META_TYPE, META_TYPE_OF, THIS, BASE, THROW -> true;
+            default -> false;
+        };
     }
 
     private boolean isPossibleArgumentExpression() {

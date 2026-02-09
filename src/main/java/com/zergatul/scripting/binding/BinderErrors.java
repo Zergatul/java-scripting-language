@@ -83,6 +83,8 @@ public class BinderErrors {
     public static final ErrorCode FunctionAlreadyDeclared = new ErrorCode("B079", "Function with the same signature already declared");
     public static final ErrorCode PrivateAccessDenied = new ErrorCode("B080", "Access to private member denied by Java security system: %s");
     public static final ErrorCode TypeReferenceNotAllowed = new ErrorCode("B081", "%s is a type, which is not valid in the given context");
+    public static final ErrorCode ThrowInvalidType = new ErrorCode("B082", "'throw' requires '%s' type, but '%s' was provided");
+    public static final ErrorCode RethrowNotAllowed = new ErrorCode("B083", "Rethrow statement is only allowed inside catch-blocks");
 
     public static final ErrorCode InternalError = new ErrorCode("B999", "Internal error: %s");
 }

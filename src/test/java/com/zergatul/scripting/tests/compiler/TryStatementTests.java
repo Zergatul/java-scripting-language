@@ -2,9 +2,7 @@ package com.zergatul.scripting.tests.compiler;
 
 import com.zergatul.scripting.DiagnosticMessage;
 import com.zergatul.scripting.SingleLineTextRange;
-import com.zergatul.scripting.binding.Binder;
 import com.zergatul.scripting.binding.BinderErrors;
-import com.zergatul.scripting.parser.ParserErrors;
 import com.zergatul.scripting.tests.compiler.helpers.IntStorage;
 import com.zergatul.scripting.tests.compiler.helpers.StringStorage;
 import com.zergatul.scripting.tests.framework.ComparatorTest;
@@ -184,6 +182,31 @@ public class TryStatementTests extends ComparatorTest {
         program.run();
 
         Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(1, 2, 3, 4, 6, 7, 8));
+    }
+
+    @Test
+    public void tryFinallyInnerLoopContinueTest() {
+        String code = """
+                foreach (int x in [1, 2, 3]) {
+                    try {
+                        intStorage.add(x);
+                        if (x == 2) {
+                            continue;
+                        }
+                        intStorage.add(100 + x);
+                    } finally {
+                        intStorage.add(1000 + x);
+                    }
+                    intStorage.add(2000 + x);
+                }
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(
+                List.of(1, 101, 1001, 2001, 2, 1002, 3, 103, 1003, 2003),
+                ApiRoot.intStorage.list);
     }
 
     @Test
@@ -559,6 +582,173 @@ public class TryStatementTests extends ComparatorTest {
                         new DiagnosticMessage(BinderErrors.NotAllPathReturnValue, new SingleLineTextRange(19, 1, 235, 1)),
                         new DiagnosticMessage(BinderErrors.NotAllPathReturnValue, new SingleLineTextRange(28, 1, 347, 1))),
                 getDiagnostics(ApiRoot.class, code));
+    }
+
+    @Test
+    public void rethrowTest() {
+        String code = """
+                try {
+                    int[] array = [];
+                    array[1] = 0;
+                } catch {
+                    intStorage.add(10);
+                    throw;
+                }
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        Assertions.assertThrows(IndexOutOfBoundsException.class, program::run);
+
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(10));
+    }
+
+    @Test
+    public void rethrowWithFinallyTest() {
+        String code = """
+                try {
+                    int[] array = [];
+                    array[1] = 0;
+                } catch {
+                    intStorage.add(4);
+                    throw;
+                } finally {
+                    intStorage.add(5);
+                }
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        Assertions.assertThrows(IndexOutOfBoundsException.class, program::run);
+
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(4, 5));
+    }
+
+    @Test
+    public void throwFromCatchWithFinallyTest() {
+        String code = """
+                typealias RuntimeException = Java<java.lang.RuntimeException>;
+                
+                try {
+                    int[] array = [];
+                    array[1] = 0;
+                } catch {
+                    intStorage.add(4);
+                    throw new RuntimeException();
+                } finally {
+                    intStorage.add(5);
+                }
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        Assertions.assertThrows(RuntimeException.class, program::run);
+
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(4, 5));
+    }
+
+    @Test
+    public void throwExceptionVariableWithFinallyTest() {
+        String code = """
+                typealias RuntimeException = Java<java.lang.RuntimeException>;
+                
+                try {
+                    int[] array = [];
+                    array[1] = 0;
+                } catch (e) {
+                    intStorage.add(4);
+                    throw e;
+                } finally {
+                    intStorage.add(5);
+                }
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        Assertions.assertThrows(IndexOutOfBoundsException.class, program::run);
+
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(4, 5));
+    }
+
+    @Test
+    public void throwFromFinallyOverridesExceptionFromTryTest() {
+        String code = """
+                typealias RuntimeException = Java<java.lang.RuntimeException>;
+
+                try {
+                    intStorage.add(1);
+                    [1][2] = 0; // throws
+                } finally {
+                    intStorage.add(2);
+                    throw new RuntimeException("finally");
+                }
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        RuntimeException ex = Assertions.assertThrows(RuntimeException.class, program::run);
+        Assertions.assertEquals("finally", ex.getMessage());
+        Assertions.assertIterableEquals(List.of(1, 2), ApiRoot.intStorage.list);
+    }
+
+    @Test
+    public void returnInFinallySuppressesExceptionTest() {
+        String code = """
+                int func() {
+                    try {
+                        intStorage.add(1);
+                        [1][2] = 0; // throws
+                        return 111;
+                    } finally {
+                        intStorage.add(2);
+                        return 123;
+                    }
+                }
+
+                intStorage.add(func());
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(List.of(1, 2, 123), ApiRoot.intStorage.list);
+    }
+
+    @Test
+    public void finallyOverridesCatchThrowTest() {
+        String code = """
+                typealias RuntimeException = Java<java.lang.RuntimeException>;
+
+                try {
+                    [1][2] = 0; // throws
+                } catch {
+                    intStorage.add(1);
+                    throw new RuntimeException("catch");
+                } finally {
+                    intStorage.add(2);
+                    throw new RuntimeException("finally");
+                }
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        RuntimeException ex = Assertions.assertThrows(RuntimeException.class, program::run);
+
+        Assertions.assertEquals("finally", ex.getMessage());
+        Assertions.assertIterableEquals(List.of(1, 2), ApiRoot.intStorage.list);
+    }
+
+    @Test
+    public void exceptionInCatchShouldRunFinally() {
+        String code = """
+                try {
+                    [1][2] = 0; // throws
+                } catch {
+                    intStorage.add(1);
+                    [1][2] = 0; // throws
+                } finally {
+                    intStorage.add(2);
+                }
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        Assertions.assertThrows(IndexOutOfBoundsException.class, program::run);
+
+        Assertions.assertIterableEquals(List.of(1, 2), ApiRoot.intStorage.list);
     }
 
     public static class ApiRoot {

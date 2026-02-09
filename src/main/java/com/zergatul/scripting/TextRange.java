@@ -1,5 +1,7 @@
 package com.zergatul.scripting;
 
+import org.jspecify.annotations.Nullable;
+
 import java.util.List;
 
 public abstract class TextRange {
@@ -198,6 +200,24 @@ public abstract class TextRange {
 
     public static TextRange combine(Locatable locatable1, Locatable locatable2) {
         return combine(locatable1.getRange(), locatable2.getRange());
+    }
+
+    public static TextRange combineNullable(@Nullable Locatable... items) {
+        Locatable first = null;
+        Locatable last = null;
+        for (int i = 0; i < items.length; i++) {
+            if (first == null && items[i] != null) {
+                first = items[i];
+            }
+            if (last == null && items[items.length - 1 - i] != null) {
+                last = items[items.length - 1 - i];
+            }
+            if (first != null && last != null) {
+                return combine(first, last);
+            }
+        }
+
+        throw new InternalException();
     }
 
     public static TextRange combineFromEnd(Locatable locatable1, Locatable locatable2) {

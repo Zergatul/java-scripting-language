@@ -600,6 +600,7 @@ public class Lexer {
             case "try" -> TokenType.TRY;
             case "catch" -> TokenType.CATCH;
             case "finally" -> TokenType.FINALLY;
+            case "throw" -> TokenType.THROW;
             default -> null;
         };
         TextRange range = getCurrentTokenRange();

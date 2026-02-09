@@ -23,6 +23,26 @@ public abstract class Frame {
         return null;
     }
 
+    public @Nullable TryCatchFrame getClosestTryCatch() {
+        for (Frame frame = this; frame != null; frame = frame.parent) {
+            if (frame instanceof TryCatchFrame tryCatchFrame) {
+                return tryCatchFrame;
+            }
+        }
+
+        return null;
+    }
+
+    public @Nullable TryFinallyFrame getClosestTryFinally() {
+        for (Frame frame = this; frame != null; frame = frame.parent) {
+            if (frame instanceof TryFinallyFrame tryFinallyFrame) {
+                return tryFinallyFrame;
+            }
+        }
+
+        return null;
+    }
+
     public @Nullable TryFinallyFrame getClosestTryFinally(Frame stop) {
         for (Frame frame = this; frame != stop; frame = frame.parent) {
             if (frame == null) {

@@ -107,6 +107,13 @@ public abstract class SType {
             return UndefinedCastOperation.instance;
         }
 
+        if (src == SNever.instance) {
+            return new CastOperation(src, dst) {
+                @Override
+                public void apply(MethodVisitor visitor) {}
+            };
+        }
+
         if (src == SNull.instance && !dst.isSyntheticType() && dst.isReference()) {
             return new CastOperation(SNull.instance, dst) {
                 @Override

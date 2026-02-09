@@ -4,4 +4,5 @@ public enum FrameKind {
     FUNCTION,
     LOOP,
     TRY_FINALLY,
+    TRY_CATCH,
 }
