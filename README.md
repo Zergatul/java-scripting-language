@@ -458,6 +458,14 @@ if (s == null) {
 }
 ```
 
+Null-coalescing operator is supported:
+```c#
+string s1 = null;
+string s2 = "hello";
+string s3 = s1 ?? s2; // s3 is "hello" here
+string s4 = s1 ?? throw new Java<java.lang.RuntimeException>();
+```
+
 ### Boxing
 Wrapper classes (Java terminology) or boxed classes (C# terminology) are described like this: `Boxed<int>` (however you can't use such syntax in the code, you have to use `Java<java.lang.Integer>` instead).
 Normally you don't need to use them explicitly, but you may often see them as parameters or return types when working with Java interop. Language supports automatic boxing/unboxing.
@@ -790,6 +798,14 @@ typealias RuntimeException = Java<java.lang.RuntimeException>;
 
 boolean b = api.getSomething();
 int value = b ? 100 : throw new RuntimeException();
+```
+
+```c#
+// in null-coalescing expression
+typealias RuntimeException = Java<java.lang.RuntimeException>;
+
+string value = api.getStr() ?? throw new RuntimeException();
+value ??= throw new RuntimeException();
 ```
 
 ### Limitations

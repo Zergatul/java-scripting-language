@@ -600,14 +600,17 @@ public class Binder {
         }
 
         BoundAssignmentOperatorNode operatorNode = new BoundAssignmentOperatorNode(statement.operator);
-        BoundExpressionNode right = bindExpression(statement.right);
+        BinaryOperator operator = operatorNode.operator.getBinaryOperator();
+
+        BoundExpressionNode right = operator != null && operator.isThrowOnTheRightSideAllowed() ?
+                bindExpressionOrThrow(statement.right) :
+                bindExpression(statement.right);
 
         if (operatorNode.operator == AssignmentOperator.ASSIGNMENT) {
             right = convert(right, left.type);
             return new BoundAssignmentStatementNode(statement, left, operatorNode, right);
         }
 
-        BinaryOperator operator = operatorNode.operator.getBinaryOperator();
         assert operator != null;
 
         BinaryOperationResolveResult result = resolveBinaryOperation(left.type, operator, right.type, false);
@@ -946,7 +949,34 @@ public class Binder {
     }
 
     private BoundExpressionNode bindExpression(ExpressionNode expression) {
-        BoundExpressionNode result = bindExpressionOrStaticRef(expression);
+        BoundExpressionNode result = bindExpressionAll(expression);
+
+        if (result.is(BoundNodeType.STATIC_REFERENCE)) {
+            addDiagnostic(BinderErrors.TypeReferenceNotAllowed, expression, expression.getRange().extract(code));
+            return new BoundInvalidExpressionNode(List.of(result), List.of(), expression.getRange());
+        }
+
+        if (result.is(BoundNodeType.THROW_EXPRESSION)) {
+            addDiagnostic(BinderErrors.ThrowExpressionNotAllowed, expression, expression.getRange().extract(code));
+            return new BoundInvalidExpressionNode(List.of(result), List.of(), expression.getRange());
+        }
+
+        return result;
+    }
+
+    private BoundExpressionNode bindExpressionOrStaticRef(ExpressionNode expression) {
+        BoundExpressionNode result = bindExpressionAll(expression);
+
+        if (result.is(BoundNodeType.THROW_EXPRESSION)) {
+            addDiagnostic(BinderErrors.ThrowExpressionNotAllowed, expression, expression.getRange().extract(code));
+            return new BoundInvalidExpressionNode(List.of(result), List.of(), expression.getRange());
+        }
+
+        return result;
+    }
+
+    private BoundExpressionNode bindExpressionOrThrow(ExpressionNode expression) {
+        BoundExpressionNode result = bindExpressionAll(expression);
 
         if (result.is(BoundNodeType.STATIC_REFERENCE)) {
             addDiagnostic(BinderErrors.TypeReferenceNotAllowed, expression, expression.getRange().extract(code));
@@ -956,7 +986,7 @@ public class Binder {
         return result;
     }
 
-    private BoundExpressionNode bindExpressionOrStaticRef(ExpressionNode expression) {
+    private BoundExpressionNode bindExpressionAll(ExpressionNode expression) {
         return switch (expression.getNodeType()) {
             case NULL_EXPRESSION -> bindNullExpression((NullExpressionNode) expression);
             case BOOLEAN_LITERAL -> bindBooleanLiteralExpression((BooleanLiteralExpressionNode) expression);
@@ -1041,7 +1071,9 @@ public class Binder {
         }
 
         BoundExpressionNode left = bindExpression(binary.left);
-        BoundExpressionNode right = bindExpression(binary.right);
+        BoundExpressionNode right = binary.operator.operator.isThrowOnTheRightSideAllowed() ?
+                bindExpressionOrThrow(binary.right) :
+                bindExpression(binary.right);
 
         BinaryOperationResolveResult result = resolveBinaryOperation(left.type, binary.operator.operator, right.type, true);
         if (result == null) {
@@ -1352,8 +1384,8 @@ public class Binder {
 
     private BoundConditionalExpressionNode bindConditionalExpression(ConditionalExpressionNode expression) {
         BoundExpressionNode condition = convert(bindExpression(expression.condition), SBoolean.instance);
-        BoundExpressionNode whenTrue = bindExpression(expression.whenTrue);
-        BoundExpressionNode whenFalse = bindExpression(expression.whenFalse);
+        BoundExpressionNode whenTrue = bindExpressionOrThrow(expression.whenTrue);
+        BoundExpressionNode whenFalse = bindExpressionOrThrow(expression.whenFalse);
 
         ExpressionPair pair = tryCastToCommon(whenTrue, whenFalse);
         if (!pair.result) {
@@ -2431,7 +2463,7 @@ public class Binder {
     }
 
     private BoundReturnStatementNode rewriteAsReturnStatement(ExpressionStatementNode expressionStatement, SType returnType) {
-        BoundExpressionNode expression = bindExpression(expressionStatement.expression);
+        BoundExpressionNode expression = bindExpressionOrThrow(expressionStatement.expression);
         BoundExpressionNode converted = convert(expression, returnType);
         Token semicolon = expressionStatement.semicolon;
         if (semicolon == null) {

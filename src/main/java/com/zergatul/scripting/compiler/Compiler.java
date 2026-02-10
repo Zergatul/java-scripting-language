@@ -830,7 +830,7 @@ public class Compiler {
         }
 
         if (tryFinally != null) {
-            compileFinallyBlock(tryFinally, visitor, context);
+            compileFinallyBlocks(visitor, context, context.getFrame().getFunction());
             if (returnVariable != null) {
                 returnVariable.compileLoad(context, visitor);
             }
@@ -2717,15 +2717,11 @@ public class Compiler {
                 break;
             }
 
-            compileFinallyBlock(tryFinally, visitor, context);
-            current = tryFinally.parent;
-            assert current != null;
-        }
-    }
+            assert tryFinally.parent != null;
+            compileBlockStatement(visitor, context.createChild(tryFinally.parent), tryFinally.finallyBlock);
 
-    private void compileFinallyBlock(TryFinallyFrame tryFinally, MethodVisitor visitor, CompilerContext context) {
-        assert tryFinally.parent != null;
-        compileBlockStatement(visitor, context.createChild(tryFinally.parent), tryFinally.finallyBlock);
+            current = tryFinally.parent;
+        }
     }
 
     private void compileMethodHandleCache(CompilerContext context) {

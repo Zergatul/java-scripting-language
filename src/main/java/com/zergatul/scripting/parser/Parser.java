@@ -1230,7 +1230,7 @@ public class Parser {
             return new ThrowStatementNode(keyword, expression, null);
         }
 
-        ExpressionNode expression1 = parseExpressionOrThrow();
+        ExpressionNode expression1 = parseExpression();
 
         AssignmentOperator assignment = switch (current.getTokenType()) {
             case EQUAL -> AssignmentOperator.ASSIGNMENT;
@@ -1241,6 +1241,7 @@ public class Parser {
             case PERCENT_EQUAL -> AssignmentOperator.MODULO_ASSIGNMENT;
             case AMPERSAND_EQUAL -> AssignmentOperator.AND_ASSIGNMENT;
             case PIPE_EQUAL -> AssignmentOperator.OR_ASSIGNMENT;
+            case QUESTION_QUESTION_EQUAL -> AssignmentOperator.NULL_COALESCING_ASSIGNMENT;
             default -> null;
         };
 
@@ -1366,16 +1367,6 @@ public class Parser {
         };
     }
 
-    private ExpressionNode parseExpressionOrThrow() {
-        if (current.is(TokenType.THROW)) {
-            Token keyword = advance();
-            ExpressionNode expression = parseExpressionCore(Precedences.getThrow());
-            return new ThrowExpressionNode(keyword, expression);
-        } else {
-            return parseExpression();
-        }
-    }
-
     private ExpressionNode parseExpression() {
         return parseExpressionCore(0);
     }
@@ -1387,6 +1378,10 @@ public class Parser {
             Token keyword = advance();
             ExpressionNode expression = parseExpressionCore(Precedences.getAwait());
             left = new AwaitExpressionNode(keyword, expression, TextRange.combine(keyword, expression));
+        } else if (current.is(TokenType.THROW)) {
+            Token keyword = advance();
+            ExpressionNode expression = parseExpressionCore(Precedences.getThrow());
+            left = new ThrowExpressionNode(keyword, expression);
         } else {
             UnaryOperator unary = UnaryOperator.fromToken(current.getTokenType());
             if (unary != null) {
@@ -1409,7 +1404,6 @@ public class Parser {
             }
 
             int newPrecedence = Precedences.get(binary);
-            // left/right associativity? equals or not equals?
             if (newPrecedence <= precedence) {
                 break;
             }
@@ -1423,7 +1417,9 @@ public class Parser {
                 TypeNode typeNode = parseTypeNode();
                 left = new TypeCastExpressionNode(left, binaryToken, typeNode);
             } else if (isPossibleExpression()) {
-                ExpressionNode right = parseExpressionCore(newPrecedence);
+                int rightSidePrecedence = binary.isRightAssociative() ? newPrecedence - 1 : newPrecedence;
+
+                ExpressionNode right = parseExpressionCore(rightSidePrecedence);
                 left = new BinaryExpressionNode(
                         left,
                         new BinaryOperatorNode(binaryToken, binary),
@@ -1440,9 +1436,9 @@ public class Parser {
 
         if (current.is(TokenType.QUESTION) && precedence <= Precedences.getConditionalExpression()) {
             Token question = advance(TokenType.QUESTION);
-            ExpressionNode whenTrue = parseExpressionOrThrow();
+            ExpressionNode whenTrue = parseExpression();
             Token colon = advance(TokenType.COLON);
-            ExpressionNode whenFalse = parseExpressionOrThrow();
+            ExpressionNode whenFalse = parseExpression();
             return new ConditionalExpressionNode(left, question, whenTrue, colon, whenFalse, TextRange.combine(left, whenFalse));
         } else {
             return left;

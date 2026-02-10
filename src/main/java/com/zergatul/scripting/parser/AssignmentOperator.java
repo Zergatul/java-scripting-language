@@ -10,7 +10,8 @@ public enum AssignmentOperator {
     DIVIDE_ASSIGNMENT(BinaryOperator.DIVIDE),
     MODULO_ASSIGNMENT(BinaryOperator.MODULO),
     AND_ASSIGNMENT(BinaryOperator.BITWISE_AND),
-    OR_ASSIGNMENT(BinaryOperator.BITWISE_OR);
+    OR_ASSIGNMENT(BinaryOperator.BITWISE_OR),
+    NULL_COALESCING_ASSIGNMENT(BinaryOperator.NULL_COALESCING);
 
     @Nullable
     private final BinaryOperator binary;
