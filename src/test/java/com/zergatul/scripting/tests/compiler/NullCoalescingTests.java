@@ -1,9 +1,13 @@
 package com.zergatul.scripting.tests.compiler;
 
+import com.zergatul.scripting.DiagnosticMessage;
+import com.zergatul.scripting.SingleLineTextRange;
+import com.zergatul.scripting.binding.BinderErrors;
 import com.zergatul.scripting.tests.compiler.helpers.BoolStorage;
 import com.zergatul.scripting.tests.compiler.helpers.FloatStorage;
 import com.zergatul.scripting.tests.compiler.helpers.IntStorage;
 import com.zergatul.scripting.tests.compiler.helpers.StringStorage;
+import com.zergatul.scripting.tests.framework.ComparatorTest;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -11,8 +15,9 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 
 import static com.zergatul.scripting.tests.compiler.helpers.CompilerHelper.compile;
+import static com.zergatul.scripting.tests.compiler.helpers.CompilerHelper.getDiagnostics;
 
-public class NullCoalescingTests {
+public class NullCoalescingTests extends ComparatorTest {
 
     @BeforeEach
     public void clean() {
@@ -84,10 +89,40 @@ public class NullCoalescingTests {
                 boolStorage.add((animal ?? dog ?? cat) is not null);
                 """;
 
+        comparator.assertEquals(
+                List.of(
+                        new DiagnosticMessage(
+                                BinderErrors.BinaryOperatorNotDefined,
+                                new SingleLineTextRange(8, 28, 147, 10),
+                                "??", "Dog", "Cat")),
+                getDiagnostics(ApiRoot.class, code));
+    }
+
+    @Test
+    public void augmentedAssignmentTest1() {
+        String code = """
+                string str = null;
+                str ??= "none";
+                stringStorage.add(str);
+                str ??= "x";
+                stringStorage.add(str);
+                """;
+
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
-        Assertions.assertIterableEquals(List.of(true), ApiRoot.boolStorage.list);
+        Assertions.assertIterableEquals(List.of("none", "none"), ApiRoot.stringStorage.list);
+    }
+
+    @Test
+    public void augmentedAssignmentTest2() {
+        String code = """
+                string str = null;
+                str ??= throw new Java<java.lang.RuntimeException>();
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        Assertions.assertThrows(RuntimeException.class, program::run);
     }
 
     public static class ApiRoot {

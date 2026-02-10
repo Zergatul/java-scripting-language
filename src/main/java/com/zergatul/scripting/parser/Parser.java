@@ -1241,6 +1241,7 @@ public class Parser {
             case PERCENT_EQUAL -> AssignmentOperator.MODULO_ASSIGNMENT;
             case AMPERSAND_EQUAL -> AssignmentOperator.AND_ASSIGNMENT;
             case PIPE_EQUAL -> AssignmentOperator.OR_ASSIGNMENT;
+            case QUESTION_QUESTION_EQUAL -> AssignmentOperator.NULL_COALESCING_ASSIGNMENT;
             default -> null;
         };
 

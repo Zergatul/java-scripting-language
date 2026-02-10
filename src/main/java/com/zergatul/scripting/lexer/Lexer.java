@@ -69,7 +69,12 @@ public class Lexer {
                         trackBeginToken();
                         advance();
                         advance();
-                        endToken(TokenType.QUESTION_QUESTION);
+                        if (current == '=') {
+                            advance();
+                            endToken(TokenType.QUESTION_QUESTION_EQUAL);
+                        } else {
+                            endToken(TokenType.QUESTION_QUESTION);
+                        }
                     } else {
                         appendToken(TokenType.QUESTION);
                         advance();

@@ -17,7 +17,7 @@ import java.util.List;
 
 import static org.objectweb.asm.Opcodes.*;
 
-public class SDeclaredType extends SType {
+public class SDeclaredType extends SReferenceType {
 
     private final String name;
     private final List<PropertyReference> properties = new ArrayList<>();
@@ -25,10 +25,10 @@ public class SDeclaredType extends SType {
     private final List<MethodReference> methods = new ArrayList<>();
     private final List<DeclaredUnaryOperationReference> unaryOperations = new ArrayList<>();
     private final List<DeclaredBinaryOperationReference> binaryOperations = new ArrayList<>();
-    private @Nullable  SType baseType;
+    private @Nullable SType baseType;
     private boolean hasDefaultConstructor;
-    private @Nullable  String internalName;
-    private @Nullable  Class<?> clazz;
+    private @Nullable String internalName;
+    private @Nullable Class<?> clazz;
 
     public SDeclaredType(String name) {
         this.name = name;
@@ -156,36 +156,6 @@ public class SDeclaredType extends SType {
     @Override
     public void storeDefaultValue(MethodVisitor visitor) {
         throw new InternalException();
-    }
-
-    @Override
-    public int getLoadInst() {
-        return ALOAD;
-    }
-
-    @Override
-    public int getStoreInst() {
-        return ASTORE;
-    }
-
-    @Override
-    public int getArrayLoadInst() {
-        return AALOAD;
-    }
-
-    @Override
-    public int getArrayStoreInst() {
-        return AASTORE;
-    }
-
-    @Override
-    public boolean isReference() {
-        return true;
-    }
-
-    @Override
-    public int getReturnInst() {
-        return ARETURN;
     }
 
     @Override

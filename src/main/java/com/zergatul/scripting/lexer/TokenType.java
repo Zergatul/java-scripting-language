@@ -70,6 +70,7 @@ public enum TokenType {
     SLASH_EQUAL,
     PERCENT_EQUAL,
     QUESTION_QUESTION,
+    QUESTION_QUESTION_EQUAL,
     IF,
     ELSE,
     RETURN,

@@ -600,14 +600,17 @@ public class Binder {
         }
 
         BoundAssignmentOperatorNode operatorNode = new BoundAssignmentOperatorNode(statement.operator);
-        BoundExpressionNode right = bindExpression(statement.right);
+        BinaryOperator operator = operatorNode.operator.getBinaryOperator();
+
+        BoundExpressionNode right = operator != null && operator.isThrowOnTheRightSideAllowed() ?
+                bindExpressionOrThrow(statement.right) :
+                bindExpression(statement.right);
 
         if (operatorNode.operator == AssignmentOperator.ASSIGNMENT) {
             right = convert(right, left.type);
             return new BoundAssignmentStatementNode(statement, left, operatorNode, right);
         }
 
-        BinaryOperator operator = operatorNode.operator.getBinaryOperator();
         assert operator != null;
 
         BinaryOperationResolveResult result = resolveBinaryOperation(left.type, operator, right.type, false);
