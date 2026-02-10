@@ -85,6 +85,7 @@ public class BinderErrors {
     public static final ErrorCode TypeReferenceNotAllowed = new ErrorCode("B081", "%s is a type, which is not valid in the given context");
     public static final ErrorCode ThrowInvalidType = new ErrorCode("B082", "'throw' requires '%s' type, but '%s' was provided");
     public static final ErrorCode RethrowNotAllowed = new ErrorCode("B083", "Rethrow statement is only allowed inside catch-blocks");
+    public static final ErrorCode ThrowExpressionNotAllowed = new ErrorCode("B084", "'throw' expression is not allowed in this context");
 
     public static final ErrorCode InternalError = new ErrorCode("B999", "Internal error: %s");
 }

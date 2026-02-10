@@ -9,6 +9,7 @@ import com.zergatul.scripting.type.operation.IndexOperation;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Type;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
@@ -43,13 +44,15 @@ public class SString extends SReferenceType {
 
     @Override
     public List<BinaryOperation> getBinaryOperations() {
-        return List.of(
-                STRING_ADD_CHAR,
-                STRING_ADD_STRING,
-                STRING_EQUALS_STRING,
-                STRING_NOT_EQUALS_STRING,
-                STRING_ADD_STRING_CONVERTIBLE,
-                STRING_CONVERTIBLE_ADD_STRING);
+        List<BinaryOperation> operations = new ArrayList<>();
+        operations.add(STRING_ADD_CHAR);
+        operations.add(STRING_ADD_STRING);
+        operations.add(STRING_EQUALS_STRING);
+        operations.add(STRING_NOT_EQUALS_STRING);
+        operations.add(STRING_ADD_STRING_CONVERTIBLE);
+        operations.add(STRING_CONVERTIBLE_ADD_STRING);
+        operations.addAll(super.getBinaryOperations());
+        return operations;
     }
 
     @Override

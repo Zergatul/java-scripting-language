@@ -1,5 +1,6 @@
 package com.zergatul.scripting.type;
 
+import com.zergatul.scripting.InternalException;
 import com.zergatul.scripting.compiler.BufferedMethodVisitor;
 import com.zergatul.scripting.compiler.CompilerContext;
 import com.zergatul.scripting.parser.BinaryOperator;
@@ -54,7 +55,8 @@ public abstract class SReferenceType extends SType {
     public List<BinaryOperation> getBinaryOperations() {
         return List.of(
                 new ObjectComparisonOperation(SJavaObject.instance, BinaryOperator.EQUALS, SJavaObject.instance, IF_ACMPEQ),
-                new ObjectComparisonOperation(SJavaObject.instance, BinaryOperator.NOT_EQUALS, SJavaObject.instance, IF_ACMPNE));
+                new ObjectComparisonOperation(SJavaObject.instance, BinaryOperator.NOT_EQUALS, SJavaObject.instance, IF_ACMPNE),
+                new NullCoalescingOperation(this));
     }
 
     private static class ObjectComparisonOperation extends BinaryOperation {
@@ -77,6 +79,30 @@ public abstract class SReferenceType extends SType {
             left.visitLabel(elseLabel);
             left.visitInsn(ICONST_1);
             left.visitLabel(endLabel);
+        }
+    }
+
+    private static class NullCoalescingOperation extends BinaryOperation {
+
+        public NullCoalescingOperation(SReferenceType type) {
+            super(BinaryOperator.NULL_COALESCING, type, type, type);
+        }
+
+        @Override
+        public void apply(MethodVisitor left, BufferedMethodVisitor right, CompilerContext context, SType leftType, SType rightType) {
+            Label end = new Label();
+
+            // ..., left
+            left.visitInsn(DUP);
+            // ..., left, left
+            left.visitJumpInsn(IFNONNULL, end);
+            // ..., left
+            left.visitInsn(POP);
+            // ...
+            right.release(left);
+            // ..., right
+
+            left.visitLabel(end);
         }
     }
 }

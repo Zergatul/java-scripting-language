@@ -65,8 +65,15 @@ public class Lexer {
                     advance();
                 }
                 case '?' -> {
-                    appendToken(TokenType.QUESTION);
-                    advance();
+                    if (next == '?') {
+                        trackBeginToken();
+                        advance();
+                        advance();
+                        endToken(TokenType.QUESTION_QUESTION);
+                    } else {
+                        appendToken(TokenType.QUESTION);
+                        advance();
+                    }
                 }
                 case '.' -> {
                     if (next == '#') {
