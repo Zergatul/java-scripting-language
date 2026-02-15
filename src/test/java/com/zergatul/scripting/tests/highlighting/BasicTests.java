@@ -448,6 +448,28 @@ public class BasicTests extends ComparatorTest {
                 highlight(code));
     }
 
+    @Test
+    public void tryStatementTest() {
+        String code = """
+                try {} catch (e) {} finally {}
+                """;
+        comparator.assertSemanticEquals(
+                List.of(
+                        new SemanticToken(SemanticTokenType.KEYWORD, new SingleLineTextRange(1, 1, 0, 3)),
+                        new SemanticToken(SemanticTokenType.BRACKET, new SingleLineTextRange(1, 5, 4, 1)),
+                        new SemanticToken(SemanticTokenType.BRACKET, new SingleLineTextRange(1, 6, 5, 1)),
+                        new SemanticToken(SemanticTokenType.KEYWORD, new SingleLineTextRange(1, 8, 7, 5)),
+                        new SemanticToken(SemanticTokenType.BRACKET, new SingleLineTextRange(1, 14, 13, 1)),
+                        new SemanticToken(SemanticTokenType.IDENTIFIER, new SingleLineTextRange(1, 15, 14, 1)),
+                        new SemanticToken(SemanticTokenType.BRACKET, new SingleLineTextRange(1, 16, 15, 1)),
+                        new SemanticToken(SemanticTokenType.BRACKET, new SingleLineTextRange(1, 18, 17, 1)),
+                        new SemanticToken(SemanticTokenType.BRACKET, new SingleLineTextRange(1, 19, 18, 1)),
+                        new SemanticToken(SemanticTokenType.KEYWORD, new SingleLineTextRange(1, 21, 20, 7)),
+                        new SemanticToken(SemanticTokenType.BRACKET, new SingleLineTextRange(1, 29, 28, 1)),
+                        new SemanticToken(SemanticTokenType.BRACKET, new SingleLineTextRange(1, 30, 29, 1))),
+                highlight(code));
+    }
+
     private List<SemanticToken> highlight(String code) {
         LexerOutput lexerOutput = new Lexer(new LexerInput(code)).lex();
         ParserOutput parserOutput = new Parser(lexerOutput).parse();

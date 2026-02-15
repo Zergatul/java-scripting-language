@@ -88,6 +88,10 @@ public final class SyntaxFactory {
         return NODES.value().statementsList;
     }
 
+    public static TryStatementNode missingTryStatement() {
+        return NODES.value().tryStatement;
+    }
+
     public static TypeNode missingType() {
         return NODES.value().type;
     }
@@ -120,6 +124,7 @@ public final class SyntaxFactory {
         public final NameExpressionNode nameExpression;
         public final ReturnStatementNode returnStatement;
         public final StatementsListNode statementsList;
+        public final TryStatementNode tryStatement;
         public final TypeNode type;
         public final UnaryOperatorNode unaryOperator;
         public final VariableDeclarationNode variableDeclaration;
@@ -128,6 +133,7 @@ public final class SyntaxFactory {
         public final BinaryExpressionNode binaryExpression;
         public final ConstructorInitializerNode constructorInitializer;
         public final ExpressionStatementNode expressionStatement;
+        public final FinallyClauseNode finallyClause;
         public final IfStatementNode ifStatement;
         public final IndexExpressionNode indexExpression;
         public final InvocationExpressionNode invocationExpression;
@@ -156,12 +162,14 @@ public final class SyntaxFactory {
             binaryExpression = new BinaryExpressionNode(expression, binaryOperator, expression);
             constructorInitializer = new ConstructorInitializerNode(Token.MISSING, argumentsList);
             expressionStatement = new ExpressionStatementNode(expression, null);
+            finallyClause = new FinallyClauseNode(Token.MISSING, blockStatement);
             ifStatement = new IfStatementNode(Token.MISSING, Token.MISSING, expression, Token.MISSING, blockStatement, null, null, TextRange.MISSING);
             indexExpression = new IndexExpressionNode(expression, Token.MISSING, expression, Token.MISSING);
             invocationExpression = new InvocationExpressionNode(expression, argumentsList, TextRange.MISSING);
             lambdaExpression = new LambdaExpressionNode(Token.MISSING, SeparatedList.of(), Token.MISSING, Token.MISSING, blockStatement);
             postfixStatement = new PostfixStatementNode(ParserNodeType.INCREMENT_STATEMENT, expression, Token.MISSING, null);
             memberAccessExpression = new MemberAccessExpressionNode(expression, Token.MISSING, nameExpression);
+            tryStatement = new TryStatementNode(Token.MISSING, blockStatement, null, finallyClause);
             unaryExpression = new UnaryExpressionNode(unaryOperator, expression);
             whileLoopStatement = new WhileLoopStatementNode(Token.MISSING, Token.MISSING, expression, Token.MISSING, blockStatement);
         }

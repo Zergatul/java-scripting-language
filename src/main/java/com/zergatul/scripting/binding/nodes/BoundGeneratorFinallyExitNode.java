@@ -7,13 +7,13 @@ import com.zergatul.scripting.generator.StateBoundary;
 
 import java.util.List;
 
-public class BoundSetGeneratorStateNode extends BoundStatementNode {
+public class BoundGeneratorFinallyExitNode extends BoundStatementNode {
 
-    public final StateBoundary boundary;
+    public final StateBoundary catchState;
 
-    public BoundSetGeneratorStateNode(StateBoundary boundary) {
-        super(BoundNodeType.SET_GENERATOR_STATE, TextRange.MISSING);
-        this.boundary = boundary;
+    public BoundGeneratorFinallyExitNode(StateBoundary catchState) {
+        super(BoundNodeType.GENERATOR_FINALLY_EXIT, TextRange.MISSING);
+        this.catchState = catchState;
     }
 
     @Override

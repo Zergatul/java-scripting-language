@@ -3,17 +3,13 @@ package com.zergatul.scripting.binding.nodes;
 import com.zergatul.scripting.InternalException;
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
-import com.zergatul.scripting.generator.StateBoundary;
 
 import java.util.List;
 
-public class BoundSetGeneratorStateNode extends BoundStatementNode {
+public class BoundGeneratorFinallyDispatchNode extends BoundStatementNode {
 
-    public final StateBoundary boundary;
-
-    public BoundSetGeneratorStateNode(StateBoundary boundary) {
-        super(BoundNodeType.SET_GENERATOR_STATE, TextRange.MISSING);
-        this.boundary = boundary;
+    public BoundGeneratorFinallyDispatchNode() {
+        super(BoundNodeType.GENERATOR_FINALLY_DISPATCH, TextRange.MISSING);
     }
 
     @Override

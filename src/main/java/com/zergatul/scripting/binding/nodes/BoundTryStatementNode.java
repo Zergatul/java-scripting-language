@@ -1,6 +1,8 @@
 package com.zergatul.scripting.binding.nodes;
 
+import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
+import com.zergatul.scripting.parser.SyntaxFactory;
 import com.zergatul.scripting.parser.nodes.TryStatementNode;
 import org.jspecify.annotations.Nullable;
 
@@ -14,6 +16,15 @@ public class BoundTryStatementNode extends BoundStatementNode {
     public final @Nullable BoundSymbolNode exceptionSymbol;
     public final @Nullable BoundBlockStatementNode catchBlock;
     public final @Nullable BoundBlockStatementNode finallyBlock;
+
+    public BoundTryStatementNode(
+            BoundBlockStatementNode block,
+            @Nullable BoundSymbolNode exceptionSymbol,
+            @Nullable BoundBlockStatementNode catchBlock,
+            @Nullable BoundBlockStatementNode finallyBlock
+    ) {
+        this(SyntaxFactory.missingTryStatement(), block, exceptionSymbol, catchBlock, finallyBlock);
+    }
 
     public BoundTryStatementNode(
             TryStatementNode node,

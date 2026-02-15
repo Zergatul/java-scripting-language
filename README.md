@@ -809,7 +809,6 @@ value ??= throw new RuntimeException();
 ```
 
 ### Limitations
-- `try/catch/finally` with `await` inside is not supported
 - Java interop with parameterized types (generics) is not supported
 
 ### Comparison Table

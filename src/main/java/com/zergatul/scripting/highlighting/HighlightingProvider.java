@@ -115,7 +115,6 @@ public class HighlightingProvider {
             case REF_ARGUMENT_EXPRESSION -> process((BoundRefArgumentExpressionNode) node);
             case REF_TYPE -> process((BoundRefTypeNode) node);
             case RETURN_STATEMENT -> process((BoundReturnStatementNode) node);
-            case SET_GENERATOR_BOUNDARY -> process((BoundSetGeneratorBoundaryNode) node);
             case SET_GENERATOR_STATE -> process((BoundSetGeneratorStateNode) node);
             case STACK_LOAD -> process((BoundStackLoadNode) node);
             case STATEMENTS_LIST -> process((BoundStatementsListNode) node);
@@ -124,6 +123,7 @@ public class HighlightingProvider {
             case STRING_LITERAL -> process((BoundStringLiteralExpressionNode) node);
             case SYMBOL -> process((BoundSymbolNode) node);
             case THIS_EXPRESSION -> process((BoundThisExpressionNode) node);
+            case TRY_STATEMENT -> process((BoundTryStatementNode) node);
             case TYPE_ALIAS -> process((BoundTypeAliasNode) node);
             case TYPE_CAST_EXPRESSION -> process((BoundTypeCastExpressionNode) node);
             case TYPE_PATTERN -> process((BoundTypePatternNode) node);
@@ -732,10 +732,6 @@ public class HighlightingProvider {
         process(node.syntaxNode.semicolon);
     }
 
-    private void process(BoundSetGeneratorBoundaryNode node) {
-        throw new InternalException();
-    }
-
     private void process(BoundSetGeneratorStateNode node) {
         throw new InternalException();
     }
@@ -780,6 +776,30 @@ public class HighlightingProvider {
 
     private void process(BoundThisExpressionNode node) {
         process(node.syntaxNode.token);
+    }
+
+    private void process(BoundTryStatementNode node) {
+        process(node.syntaxNode.keyword);
+        process(node.block);
+        if (node.syntaxNode.catchClause != null) {
+            process(node.syntaxNode.catchClause.keyword);
+            if (node.syntaxNode.catchClause.declaration != null) {
+                process(node.syntaxNode.catchClause.declaration.openParen);
+                if (node.exceptionSymbol != null) {
+                    process(node.exceptionSymbol);
+                }
+                process(node.syntaxNode.catchClause.declaration.closeParen);
+            }
+        }
+        if (node.catchBlock != null) {
+            process(node.catchBlock);
+        }
+        if (node.syntaxNode.finallyClause != null) {
+            process(node.syntaxNode.finallyClause.keyword);
+        }
+        if (node.finallyBlock != null) {
+            process(node.finallyBlock);
+        }
     }
 
     private void process(BoundTypeAliasNode node) {
