@@ -4,6 +4,7 @@ import com.zergatul.scripting.InternalException;
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.compiler.frames.Frame;
 import com.zergatul.scripting.compiler.frames.FunctionFrame;
+import com.zergatul.scripting.generator.StateBoundary;
 import com.zergatul.scripting.symbols.*;
 import com.zergatul.scripting.type.*;
 import org.jspecify.annotations.Nullable;
@@ -44,6 +45,7 @@ public class CompilerContext {
     private Label startLabel;
     private ClassLoaderContext classLoaderContext;
     private @Nullable MethodHandleCache methodHandleCache;
+    private @Nullable Map<StateBoundary, Integer> asyncStateBoundariesMap;
 
     private CompilerContext(
             @Nullable CompilerContext parent,
@@ -618,6 +620,18 @@ public class CompilerContext {
 
     public @Nullable MethodHandleCache getMethodHandleCache() {
         return methodHandleCache;
+    }
+
+    public Map<StateBoundary, Integer> getAsyncStateBoundariesMap() {
+        Map<StateBoundary, Integer> map = getFunctionContext().asyncStateBoundariesMap;
+        if (map == null) {
+            throw new InternalException();
+        }
+        return map;
+    }
+
+    public void setAsyncStateBoundariesMap(Map<StateBoundary, Integer> map) {
+        asyncStateBoundariesMap = map;
     }
 
     private void insertLocalVariable(SymbolRef variableRef) {

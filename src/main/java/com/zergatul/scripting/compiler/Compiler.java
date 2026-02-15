@@ -15,7 +15,6 @@ import com.zergatul.scripting.parser.AssignmentOperator;
 import com.zergatul.scripting.binding.nodes.BoundNodeType;
 import com.zergatul.scripting.parser.Parser;
 import com.zergatul.scripting.parser.ParserOutput;
-import com.zergatul.scripting.runtime.AsyncStateMachine;
 import com.zergatul.scripting.runtime.AsyncStateMachineException;
 import com.zergatul.scripting.runtime.RuntimeType;
 import com.zergatul.scripting.runtime.RuntimeTypes;
@@ -670,9 +669,10 @@ public class Compiler {
             case TRY_STATEMENT -> compileTryStatement(visitor, context, (BoundTryStatementNode) statement);
             case THROW_STATEMENT -> compileThrowStatement(visitor, context, (BoundThrowStatementNode) statement);
             case SET_GENERATOR_STATE -> compileGoToGeneratorState(visitor, context, (BoundSetGeneratorStateNode) statement);
-            case SET_GENERATOR_BOUNDARY -> compileSetGeneratorBoundary(visitor, context, (BoundSetGeneratorBoundaryNode) statement);
+            case GENERATOR_AWAIT_TRANSITION -> compileGeneratorAwaitTransition(visitor, context, (BoundGeneratorAwaitTransitionNode) statement);
             case GENERATOR_RETURN -> compileGeneratorReturn(visitor, context, (BoundGeneratorReturnNode) statement);
             case GENERATOR_CONTINUE -> compileGeneratorContinue(visitor, context);
+            case GENERATOR_RETHROW -> compileGeneratorRethrow(visitor, context);
             default -> throw new InternalException();
         }
     }
@@ -1329,10 +1329,15 @@ public class Compiler {
                 name,
                 null,
                 Type.getInternalName(Object.class),
-                new String[] { Type.getInternalName(AsyncStateMachine.class) });
+                null);
 
         // state field
         writer.visitField(ACC_PRIVATE, "state", Type.getDescriptor(int.class), null, null);
+
+        // exception field
+        if (generator.boundaries.stream().anyMatch(s -> s.catchState != null)) {
+            writer.visitField(ACC_PRIVATE, "exception", Type.getDescriptor(Throwable.class), null, null);
+        }
 
         // lifted variables
         LiftedVariablesVisitor treeVisitor = new LiftedVariablesVisitor();
@@ -1395,6 +1400,12 @@ public class Compiler {
                 null,
                 null);
 
+        Map<StateBoundary, Integer> stateMap = new HashMap<>();
+        for (int i = 0; i < generator.boundaries.size(); i++) {
+            // -1 state = global catch state
+            stateMap.put(generator.boundaries.get(i), i - 1);
+        }
+
         CompilerContext nextMethodContext = context.createInstanceMethod(SType.fromJavaType(CompletableFuture.class), false);
         nextMethodContext.setAsyncStateMachineClassName(name);
         if (parameterVisitor.hasThisLocalVariable()) {
@@ -1410,6 +1421,9 @@ public class Compiler {
             lifted.setClosure(closureRef.asLocalVariable());
         }
 
+        // states
+        nextMethodContext.setAsyncStateBoundariesMap(stateMap);
+
         Label loop = new Label();
         nextMethodVisitor.visitLabel(loop);
         nextMethodContext.setGeneratorContinueLabel(loop);
@@ -1421,19 +1435,59 @@ public class Compiler {
         int[] keys = new int[generator.boundaries.size()];
         Label[] labels = new Label[generator.boundaries.size()];
         for (int i = 0; i < generator.boundaries.size(); i++) {
-            keys[i] = i;
+            keys[i] = stateMap.get(generator.boundaries.get(i));
             labels[i] = generator.boundaries.get(i).label;
         }
         nextMethodVisitor.visitLookupSwitchInsn(defaultLabel, keys, labels);
 
         for (StateBoundary boundary : generator.boundaries) {
             nextMethodVisitor.visitLabel(boundary.label);
+
+            // main catch state
+            if (boundary.catchState == null) {
+                // this.state = -2;
+                compileGeneratorInvalidState(nextMethodVisitor, nextMethodContext);
+                // return CompletableFuture.failedFuture(this.exception);
+                nextMethodVisitor.visitVarInsn(ALOAD, 0);
+                nextMethodVisitor.visitFieldInsn(
+                        GETFIELD,
+                        name,
+                        "exception",
+                        Type.getDescriptor(Throwable.class));
+                nextMethodVisitor.visitMethodInsn(
+                        INVOKESTATIC,
+                        Type.getInternalName(CompletableFuture.class),
+                        "failedFuture",
+                        Type.getMethodDescriptor(Type.getType(CompletableFuture.class), Type.getType(Throwable.class)),
+                        false);
+                nextMethodVisitor.visitInsn(ARETURN);
+                continue;
+            }
+
+            Label tryBeginLabel = new Label();
+            Label tryEndLabel = new Label();
+            Label catchLabel = new Label();
+
+            nextMethodVisitor.visitLabel(tryBeginLabel);
+
             for (BoundStatementNode statement : boundary.statements) {
                 compileStatement(nextMethodVisitor, nextMethodContext, statement);
             }
             if (boundary.statements.isEmpty() || boundary.statements.getLast().getNodeType() != BoundNodeType.RETURN_STATEMENT) {
                 nextMethodVisitor.visitJumpInsn(GOTO, loop);
             }
+
+            nextMethodVisitor.visitLabel(tryEndLabel);
+            nextMethodVisitor.visitLabel(catchLabel);
+            nextMethodVisitor.visitVarInsn(ALOAD, 0);
+            nextMethodVisitor.visitInsn(SWAP);
+            nextMethodVisitor.visitFieldInsn(PUTFIELD, name, "exception", Type.getDescriptor(Throwable.class));
+            nextMethodVisitor.visitVarInsn(ALOAD, 0);
+            nextMethodVisitor.visitLdcInsn(stateMap.get(boundary.catchState));
+            nextMethodVisitor.visitFieldInsn(PUTFIELD, name, "state", Type.getDescriptor(int.class));
+            nextMethodVisitor.visitJumpInsn(GOTO, loop);
+
+            nextMethodVisitor.visitTryCatchBlock(tryBeginLabel, tryEndLabel, catchLabel, null);
         }
 
         nextMethodVisitor.visitLabel(defaultLabel);
@@ -1449,10 +1503,10 @@ public class Compiler {
 
         nextMethodVisitor.visitJumpInsn(GOTO, loop);
 
-        //markEnd(nextMethodVisitor, nextMethodContext);
-
         nextMethodVisitor.visitMaxs(0, 0);
         nextMethodVisitor.visitEnd();
+
+        compileAwaitTransitionMethod(writer, name);
 
         writer.visitEnd();
 
@@ -1503,37 +1557,226 @@ public class Compiler {
         parentVisitor.visitInsn(ARETURN);
     }
 
-    private void compileSetGeneratorBoundary(MethodVisitor visitor, CompilerContext context, BoundSetGeneratorBoundaryNode node) {
-        compileExpression(visitor, context, node.expression);
+    private void compileAwaitTransitionMethod(ClassWriter classWriter, String classInternalName) {
+        MethodVisitor mv = classWriter.visitMethod(
+                ACC_PRIVATE,
+                "await",
+                "(Ljava/util/concurrent/CompletableFuture;II)Ljava/util/concurrent/CompletableFuture;",
+                "(Ljava/util/concurrent/CompletableFuture<*>;II)Ljava/util/concurrent/CompletableFuture<Ljava/lang/Object;>;",
+                null);
+        mv.visitCode();
 
+        Label methodStart = null;
+        if (parameters.shouldEmitVariableNames()) {
+            mv.visitLabel(methodStart = new Label());
+        }
+
+        mv.visitVarInsn(ALOAD, 1); // f
+
+        // push captured args: this, resumeState, catchState
+        mv.visitVarInsn(ALOAD, 0);
+        mv.visitVarInsn(ILOAD, 2);
+        mv.visitVarInsn(ILOAD, 3);
+
+        Handle bsm = new Handle(
+                H_INVOKESTATIC,
+                "java/lang/invoke/LambdaMetafactory",
+                "metafactory",
+                "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodHandle;Ljava/lang/invoke/MethodType;)Ljava/lang/invoke/CallSite;",
+                false
+        );
+
+        Type samMethodType = Type.getType("(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;");
+
+        // --- CORRECTION 1: Update Handle Descriptor ---
+        // Order: (CapturedArgs..., SAMArgs...)
+        // Note: 'this' is implied by INVOKESPECIAL, so it is NOT in the descriptor args
+        // Args: (int resumeState, int catchState, Object val, Object ex)
+        Handle impl = new Handle(
+                H_INVOKESPECIAL,
+                classInternalName,
+                "lambda$await$0",
+                "(IILjava/lang/Object;Ljava/lang/Object;)Ljava/util/concurrent/CompletableFuture;",
+                false
+        );
+
+        Type instantiatedMethodType = Type.getType("(Ljava/lang/Object;Ljava/lang/Object;)Ljava/util/concurrent/CompletableFuture;");
+
+        mv.visitInvokeDynamicInsn(
+                "apply",
+                "(L" + classInternalName + ";II)Ljava/util/function/BiFunction;",
+                bsm,
+                samMethodType,
+                impl,
+                instantiatedMethodType);
+
+        mv.visitMethodInsn(
+                INVOKEVIRTUAL,
+                "java/util/concurrent/CompletableFuture",
+                "handle",
+                "(Ljava/util/function/BiFunction;)Ljava/util/concurrent/CompletableFuture;",
+                false);
+
+        // .thenCompose(Function.identity())
+        mv.visitMethodInsn(INVOKESTATIC, "java/util/function/Function", "identity", "()Ljava/util/function/Function;", true);
+        mv.visitMethodInsn(INVOKEVIRTUAL, "java/util/concurrent/CompletableFuture", "thenCompose", "(Ljava/util/function/Function;)Ljava/util/concurrent/CompletableFuture;", false);
+
+        mv.visitInsn(ARETURN);
+
+        if (parameters.shouldEmitVariableNames()) {
+            Label methodEnd = new Label();
+            mv.visitLabel(methodEnd);
+            mv.visitLocalVariable(
+                    "future",
+                    Type.getDescriptor(CompletableFuture.class),
+                    "Ljava/util/concurrent/CompletableFuture<*>",
+                    methodStart,
+                    methodEnd,
+                    1);
+            mv.visitLocalVariable(
+                    "resumeState",
+                    Type.getDescriptor(int.class),
+                    null,
+                    methodStart,
+                    methodEnd,
+                    2);
+            mv.visitLocalVariable(
+                    "catchState",
+                    Type.getDescriptor(int.class),
+                    null,
+                    methodStart,
+                    methodEnd,
+                    3);
+        }
+
+        mv.visitMaxs(0, 0);
+        mv.visitEnd();
+
+        // ---------------------------------------------------------------------
+        // 2) Implementation Method
+        //    NEW Signature: (int resumeState, int catchState, Object val, Object ex)
+        // ---------------------------------------------------------------------
+        MethodVisitor lm = classWriter.visitMethod(
+                ACC_PRIVATE | ACC_SYNTHETIC,
+                "lambda$await$0",
+                "(IILjava/lang/Object;Ljava/lang/Object;)Ljava/util/concurrent/CompletableFuture;",
+                null,
+                null);
+        lm.visitCode();
+
+        Label methodStart2 = null;
+        if (parameters.shouldEmitVariableNames()) {
+            lm.visitLabel(methodStart2 = new Label());
+        }
+
+        // --- CORRECTION 2: Update Local Variable Indices ---
+        /*
+         * 0 = this (Receiver)
+         * 1 = resumeState (Captured int)
+         * 2 = catchState (Captured int)
+         * 3 = val (SAM Object)
+         * 4 = ex (SAM Object)
+         */
+
+        Label success = new Label();
+
+        // if (ex == null) -> (ex is now at 4)
+        lm.visitVarInsn(ALOAD, 4);
+        lm.visitJumpInsn(IFNULL, success);
+
+        // this.exception = (Throwable) ex;
+        lm.visitVarInsn(ALOAD, 0);
+        lm.visitVarInsn(ALOAD, 4); // ex is 4
+        lm.visitTypeInsn(CHECKCAST, "java/lang/Throwable");
+        lm.visitFieldInsn(PUTFIELD, classInternalName, "exception", "Ljava/lang/Throwable;");
+
+        // this.state = catchState;
+        lm.visitVarInsn(ALOAD, 0);
+        lm.visitVarInsn(ILOAD, 2); // catchState is 2
+        lm.visitFieldInsn(PUTFIELD, classInternalName, "state", "I");
+
+        // return this.next(null);
+        lm.visitVarInsn(ALOAD, 0);
+        lm.visitInsn(ACONST_NULL);
+        lm.visitMethodInsn(INVOKEVIRTUAL, classInternalName, "next", "(Ljava/lang/Object;)Ljava/util/concurrent/CompletableFuture;", false);
+        lm.visitInsn(ARETURN);
+
+        // success:
+        lm.visitLabel(success);
+
+        // this.state = resumeState;
+        lm.visitVarInsn(ALOAD, 0);
+        lm.visitVarInsn(ILOAD, 1); // resumeState is 1
+        lm.visitFieldInsn(PUTFIELD, classInternalName, "state", "I");
+
+        // return this.next(val);
+        lm.visitVarInsn(ALOAD, 0);
+        lm.visitVarInsn(ALOAD, 3); // val is 3
+        lm.visitMethodInsn(INVOKEVIRTUAL, classInternalName, "next", "(Ljava/lang/Object;)Ljava/util/concurrent/CompletableFuture;", false);
+        lm.visitInsn(ARETURN);
+
+        if (parameters.shouldEmitVariableNames()) {
+            Label methodEnd = new Label();
+            lm.visitLabel(methodEnd);
+            lm.visitLocalVariable(
+                    "resumeState",
+                    Type.getDescriptor(int.class),
+                    null,
+                    methodStart2,
+                    methodEnd,
+                    1);
+            lm.visitLocalVariable(
+                    "catchState",
+                    Type.getDescriptor(int.class),
+                    null,
+                    methodStart2,
+                    methodEnd,
+                    2);
+            lm.visitLocalVariable(
+                    "result",
+                    Type.getDescriptor(Object.class),
+                    null,
+                    methodStart2,
+                    methodEnd,
+                    3);
+            lm.visitLocalVariable(
+                    "ex",
+                    Type.getDescriptor(Object.class),
+                    null,
+                    methodStart2,
+                    methodEnd,
+                    4);
+        }
+
+        lm.visitMaxs(0, 0);
+        lm.visitEnd();
+    }
+
+    private void compileGeneratorAwaitTransition(MethodVisitor visitor, CompilerContext context, BoundGeneratorAwaitTransitionNode node) {
         visitor.visitVarInsn(ALOAD, 0);
+        compileExpression(visitor, context, node.expression);
+        visitor.visitLdcInsn(context.getAsyncStateBoundariesMap().get(node.resumeState));
+        visitor.visitLdcInsn(context.getAsyncStateBoundariesMap().get(node.catchState));
+
         visitor.visitMethodInsn(
                 INVOKEVIRTUAL,
                 context.getAsyncStateMachineClassName(),
-                "getContinuation",
-                Type.getMethodDescriptor(Type.getType(java.util.function.Function.class)),
+                "await",
+                //Type.getMethodDescriptor(Type.getType(java.util.function.Function.class)),
+                "(Ljava/util/concurrent/CompletableFuture;II)Ljava/util/concurrent/CompletableFuture;",
                 false);
 
-        visitor.visitMethodInsn(
-                INVOKEVIRTUAL,
-                Type.getInternalName(CompletableFuture.class),
-                "thenCompose",
-                Type.getMethodDescriptor(Type.getType(CompletableFuture.class), Type.getType(java.util.function.Function.class)),
-                false);
         visitor.visitInsn(ARETURN);
     }
 
     private void compileGoToGeneratorState(MethodVisitor visitor, CompilerContext context, BoundSetGeneratorStateNode node) {
         visitor.visitVarInsn(ALOAD, 0);
-        visitor.visitLdcInsn(node.boundary.index);
+        visitor.visitLdcInsn(context.getAsyncStateBoundariesMap().get(node.boundary));
         visitor.visitFieldInsn(PUTFIELD, context.getAsyncStateMachineClassName(), "state", Type.getDescriptor(int.class));
     }
 
     private void compileGeneratorReturn(MethodVisitor visitor, CompilerContext context, BoundGeneratorReturnNode node) {
-        // set state to invalid to prevent consequent calls to next()
-        visitor.visitVarInsn(ALOAD, 0);
-        visitor.visitLdcInsn(-1);
-        visitor.visitFieldInsn(PUTFIELD, context.getAsyncStateMachineClassName(), "state", Type.getDescriptor(int.class));
+        compileGeneratorInvalidState(visitor, context);
 
         if (node.expression == null) {
             visitor.visitInsn(ACONST_NULL);
@@ -1555,6 +1798,23 @@ public class Compiler {
 
     private void compileGeneratorContinue(MethodVisitor visitor, CompilerContext context) {
         visitor.visitJumpInsn(GOTO, context.getGeneratorContinueLabel());
+    }
+
+    private void compileGeneratorRethrow(MethodVisitor visitor, CompilerContext context) {
+        visitor.visitVarInsn(ALOAD, 0);
+        visitor.visitFieldInsn(
+                GETFIELD,
+                context.getAsyncStateMachineClassName(),
+                "exception",
+                Type.getDescriptor(Throwable.class));
+        visitor.visitInsn(ATHROW);
+    }
+
+    private void compileGeneratorInvalidState(MethodVisitor visitor, CompilerContext context) {
+        // set state to invalid to prevent consequent calls to next()
+        visitor.visitVarInsn(ALOAD, 0);
+        visitor.visitLdcInsn(-2);
+        visitor.visitFieldInsn(PUTFIELD, context.getAsyncStateMachineClassName(), "state", Type.getDescriptor(int.class));
     }
 
     private void compileExpression(MethodVisitor visitor, CompilerContext context, BoundExpressionNode expression) {

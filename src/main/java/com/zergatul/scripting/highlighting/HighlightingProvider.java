@@ -115,7 +115,6 @@ public class HighlightingProvider {
             case REF_ARGUMENT_EXPRESSION -> process((BoundRefArgumentExpressionNode) node);
             case REF_TYPE -> process((BoundRefTypeNode) node);
             case RETURN_STATEMENT -> process((BoundReturnStatementNode) node);
-            case SET_GENERATOR_BOUNDARY -> process((BoundSetGeneratorBoundaryNode) node);
             case SET_GENERATOR_STATE -> process((BoundSetGeneratorStateNode) node);
             case STACK_LOAD -> process((BoundStackLoadNode) node);
             case STATEMENTS_LIST -> process((BoundStatementsListNode) node);
@@ -730,10 +729,6 @@ public class HighlightingProvider {
             process(node.expression);
         }
         process(node.syntaxNode.semicolon);
-    }
-
-    private void process(BoundSetGeneratorBoundaryNode node) {
-        throw new InternalException();
     }
 
     private void process(BoundSetGeneratorStateNode node) {
