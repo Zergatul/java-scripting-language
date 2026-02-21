@@ -1954,7 +1954,6 @@ public class Compiler {
                 INVOKEVIRTUAL,
                 context.getAsyncStateMachineClassName(),
                 "await",
-                //Type.getMethodDescriptor(Type.getType(java.util.function.Function.class)),
                 "(Ljava/util/concurrent/CompletableFuture;II)Ljava/util/concurrent/CompletableFuture;",
                 false);
 

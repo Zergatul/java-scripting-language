@@ -444,7 +444,7 @@ public class BinderTreeGenerator {
         } else if (node.catchBlock == null && node.finallyBlock != null) {
             rewriteTryFinally(node);
         } else {
-            throw new InternalException(); // TODO
+            rewriteTryCatchFinally(node);
         }
     }
 
@@ -495,6 +495,57 @@ public class BinderTreeGenerator {
         add(new BoundSetGeneratorStateNode(finallyBlockState));
 
         frame = frame.getParent();
+
+        makeCurrent(finallyBlockState);
+        rewriteStatement(node.finallyBlock);
+
+        if (finallyFrame.hasPendingFinallyJumps) {
+            add(new BoundGeneratorFinallyDispatchNode());
+        }
+
+        StateBoundary outerFinally = frame.getCurrentFinallyState();
+        if (outerFinally == null) {
+            add(new BoundGeneratorFinallyExitNode(frame.getCurrentCatchState()));
+        } else {
+            add(new BoundSetGeneratorStateNode(outerFinally));
+            add(new BoundGeneratorContinueNode());
+        }
+        add(new BoundSetGeneratorStateNode(endState));
+
+        makeCurrent(endState);
+    }
+
+    private void rewriteTryCatchFinally(BoundTryStatementNode node) {
+        assert node.catchBlock != null;
+        assert node.finallyBlock != null;
+
+        if (node.exceptionSymbol != null) {
+            Variable variable = node.exceptionSymbol.symbolRef.asVariable();
+            node.exceptionSymbol.symbolRef.set(new AsyncExceptionVariable(variable));
+        }
+
+        StateBoundary catchBlockState = newDetachedBoundary();
+        StateBoundary finallyBlockState = newDetachedBoundary();
+        StateBoundary endState = newDetachedBoundary();
+        AsyncTryFinallyBlockFrame finallyFrame = new AsyncTryFinallyBlockFrame(frame, finallyBlockState);
+        frame = finallyFrame;
+        frame = new AsyncTryBlockFrame(frame, catchBlockState);
+        StateBoundary tryBlockState = newDetachedBoundary();
+
+        add(new BoundSetGeneratorStateNode(tryBlockState));
+        makeCurrent(tryBlockState);
+
+        rewriteStatement(node.block);
+        add(new BoundSetGeneratorStateNode(finallyBlockState));
+
+        frame = frame.getParent().getParent();
+
+        makeCurrent(catchBlockState);
+        frame = new AsyncCatchBlockFrame(frame);
+        rewriteStatement(node.catchBlock);
+        frame = frame.getParent();
+        add(new BoundGeneratorForgetException());
+        add(new BoundSetGeneratorStateNode(finallyBlockState));
 
         makeCurrent(finallyBlockState);
         rewriteStatement(node.finallyBlock);
