@@ -23,6 +23,23 @@ public class TryStatementAsyncTryCatchTests {
     }
 
     @Test
+    public void syncTryStatementTest() {
+        String code = """
+                try {
+                    [1][2] = 3;
+                } catch (e) {
+                    stringStorage.add(e.getMessage());
+                }
+                """;
+
+        AsyncRunnable program = compileAsync(ApiRoot.class, code);
+        CompletableFuture<?> future = program.run();
+
+        Assertions.assertIterableEquals(List.of("Index 2 out of bounds for length 1"), ApiRoot.stringStorage.list);
+        Assertions.assertTrue(future.isDone());
+    }
+
+    @Test
     public void simpleTest() {
         String code = """
                 try {

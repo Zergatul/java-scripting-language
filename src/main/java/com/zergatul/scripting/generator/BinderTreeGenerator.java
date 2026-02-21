@@ -712,6 +712,17 @@ public class BinderTreeGenerator {
                     local.setGeneratorState(currentBoundary);
                 }
             }
+
+            @Override
+            public void visit(BoundTryStatementNode node) {
+                if (node.exceptionSymbol == null) {
+                    return;
+                }
+
+                if (node.exceptionSymbol.symbolRef.get() instanceof LocalVariable local) {
+                    local.setGeneratorState(currentBoundary);
+                }
+            }
         });
     }
 
