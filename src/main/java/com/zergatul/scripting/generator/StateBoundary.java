@@ -11,11 +11,11 @@ public class StateBoundary {
 
     public final Label label;
     public final List<BoundStatementNode> statements;
-    public final @Nullable StateBoundary catchState;
+    public final @Nullable StateBoundary tryCatchJumpState;
 
-    public StateBoundary(@Nullable StateBoundary catchState) {
+    public StateBoundary(@Nullable StateBoundary tryCatchJumpState) {
         this.label = new Label();
         this.statements = new ArrayList<>();
-        this.catchState = catchState;
+        this.tryCatchJumpState = tryCatchJumpState;
     }
 }

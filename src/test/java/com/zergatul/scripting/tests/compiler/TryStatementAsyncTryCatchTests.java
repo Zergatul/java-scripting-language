@@ -13,7 +13,7 @@ import java.util.concurrent.CompletableFuture;
 
 import static com.zergatul.scripting.tests.compiler.helpers.CompilerHelper.compileAsync;
 
-public class TryStatementAsyncTests {
+public class TryStatementAsyncTryCatchTests {
 
     @BeforeEach
     public void clean() {
@@ -23,7 +23,7 @@ public class TryStatementAsyncTests {
     }
 
     @Test
-    public void tryCatchSimpleTest1() {
+    public void simpleTest() {
         String code = """
                 try {
                     intStorage.add(1);
@@ -47,7 +47,7 @@ public class TryStatementAsyncTests {
     }
 
     @Test
-    public void tryCatchSimpleTest2() {
+    public void exceptionTest() {
         String code = """
                 try {
                     intStorage.add(1);
@@ -73,7 +73,7 @@ public class TryStatementAsyncTests {
     }
 
     @Test
-    public void tryCatchInnerBlockTest() {
+    public void innerBlockTest() {
         String code = """
                 try {
                     intStorage.add(1);
@@ -105,7 +105,7 @@ public class TryStatementAsyncTests {
     }
 
     @Test
-    public void tryCatchInnerBlockRethrowTest() {
+    public void innerBlockRethrowTest() {
         String code = """
                 try {
                     intStorage.add(1);
@@ -138,7 +138,7 @@ public class TryStatementAsyncTests {
     }
 
     @Test
-    public void tryCatchThrowBeforeAwaitTest() {
+    public void throwBeforeAwaitTest() {
         String code = """
                 try {
                     intStorage.add(1);
@@ -160,7 +160,7 @@ public class TryStatementAsyncTests {
     }
 
     @Test
-    public void tryCatchCompleteExceptionallyTest() {
+    public void completeExceptionallyTest() {
         String code = """
                 try {
                     intStorage.add(1);
@@ -184,7 +184,7 @@ public class TryStatementAsyncTests {
     }
 
     @Test
-    public void tryCatchExceptionAfterBlock() {
+    public void exceptionAfterBlockTest() {
         String code = """
                 try {
                     intStorage.add(1);
@@ -211,7 +211,7 @@ public class TryStatementAsyncTests {
     }
 
     @Test
-    public void tryCatchThrowableVariable() {
+    public void throwableVariableTest() {
         String code = """
                 try {
                     intStorage.add(1);
@@ -240,7 +240,7 @@ public class TryStatementAsyncTests {
     }
 
     @Test
-    public void tryCatchCompleteExceptionallyInnerTest() {
+    public void completeExceptionallyInnerTest() {
         String code = """
                 try {
                     intStorage.add(1);
@@ -270,7 +270,7 @@ public class TryStatementAsyncTests {
     }
 
     @Test
-    public void tryCatchLoopBreakContinue() {
+    public void loopBreakContinueTest() {
         // Scenario: A loop where we await, then throw, catch, and continue/break.
         // This tests if the state machine correctly handles control flow jumps from within exception handlers.
         String code = """
@@ -331,7 +331,7 @@ public class TryStatementAsyncTests {
     }
 
     @Test
-    public void tryCatchReturnFromCatch() {
+    public void returnFromCatchTest() {
         String code = """
                 async int test() {
                     try {
@@ -363,7 +363,7 @@ public class TryStatementAsyncTests {
     }
 
     @Test
-    public void tryCatchMultipleAwaits() {
+    public void multipleAwaitsTest() {
         String code = """
                 try {
                     intStorage.add(1);
@@ -418,7 +418,7 @@ public class TryStatementAsyncTests {
     }
 
     @Test
-    public void tryCatchExceptionInAwaitArguments() {
+    public void exceptionInAwaitArgumentsTest() {
         String code = """
                 async void risky(int x) => await futures.create();
                 int thrower() => throw new Java<java.lang.RuntimeException>();
@@ -447,7 +447,7 @@ public class TryStatementAsyncTests {
     }
 
     @Test
-    public void tryCatchAwaitInsideCatchThenThrow() {
+    public void awaitInsideCatchThenThrowTest() {
         String code = """
                 try {
                     await futures.create(); // 1. Suspend

@@ -239,6 +239,11 @@ public abstract class BinderTreeVisitor {
         node.acceptChildren(this);
     }
 
+    public void explicitVisit(BoundGeneratorReturnNode node) {
+        visit(node);
+        node.acceptChildren(this);
+    }
+
     public void explicitVisit(BoundJavaTypeNode node) {
         visit(node);
         node.acceptChildren(this);
@@ -521,6 +526,7 @@ public abstract class BinderTreeVisitor {
     public void visit(BoundFunctionInvocationExpression node) {}
     public void visit(BoundFunctionDeclarationNode node) {}
     public void visit(BoundFunctionNode node) {}
+    public void visit(BoundGeneratorReturnNode node) {}
     public void visit(BoundJavaTypeNode node) {}
     public void visit(BoundIfStatementNode node) {}
     public void visit(BoundImplicitCastExpressionNode node) {}

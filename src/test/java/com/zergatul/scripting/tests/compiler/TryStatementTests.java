@@ -751,6 +751,29 @@ public class TryStatementTests extends ComparatorTest {
         Assertions.assertIterableEquals(List.of(1, 2), ApiRoot.intStorage.list);
     }
 
+    @Test
+    public void nestedTryFinallyTest() {
+        String code = """
+                try {
+                     try {
+                         intStorage.add(1);
+                         [1][2] = 3; // throws
+                         intStorage.add(999);
+                     } finally {
+                         intStorage.add(2);
+                     }
+                } finally {
+                    intStorage.add(3);
+                }
+                intStorage.add(4);
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        Assertions.assertThrows(IndexOutOfBoundsException.class, program::run);
+
+        Assertions.assertIterableEquals(List.of(1, 2, 3), ApiRoot.intStorage.list);
+    }
+
     public static class ApiRoot {
         public static IntStorage intStorage;
         public static StringStorage stringStorage;
