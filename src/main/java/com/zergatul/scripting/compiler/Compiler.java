@@ -7,6 +7,7 @@ import com.zergatul.scripting.binding.*;
 import com.zergatul.scripting.binding.nodes.*;
 import com.zergatul.scripting.compiler.frames.*;
 import com.zergatul.scripting.generator.BinderTreeGenerator;
+import com.zergatul.scripting.generator.GeneratorStackEntryType;
 import com.zergatul.scripting.generator.StateBoundary;
 import com.zergatul.scripting.lexer.Lexer;
 import com.zergatul.scripting.lexer.LexerInput;
@@ -35,6 +36,7 @@ import java.nio.file.Path;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 
+import static com.zergatul.scripting.compiler.GeneratorMembers.*;
 import static org.objectweb.asm.Opcodes.*;
 
 public class Compiler {
@@ -672,10 +674,13 @@ public class Compiler {
             case GENERATOR_AWAIT_TRANSITION -> compileGeneratorAwaitTransition(visitor, context, (BoundGeneratorAwaitTransitionNode) statement);
             case GENERATOR_RETURN -> compileGeneratorReturn(visitor, context, (BoundGeneratorReturnNode) statement);
             case GENERATOR_CONTINUE -> compileGeneratorContinue(visitor, context);
+            case GENERATOR_JUMP -> compileGeneratorJump(visitor, context, (BoundGeneratorJumpNode) statement);
             case GENERATOR_RETHROW -> compileGeneratorRethrow(visitor, context);
             case GENERATOR_FORGET_EXCEPTION -> compileGeneratorForgetException(visitor, context);
             case GENERATOR_FINALLY_EXIT -> compileGeneratorFinallyExit(visitor, context, (BoundGeneratorFinallyExitNode) statement);
-            case GENERATOR_ADD_PENDING_FINALLY_STATE -> compileGeneratorAddPendingFinally(visitor, context, (BoundGeneratorAddPendingFinallyStateNode) statement);
+            case GENERATOR_PUSH_STATE -> compileGeneratorPushState(visitor, context, (BoundGeneratorPushStateNode) statement);
+            case GENERATOR_POP_PENDING_FINALLY_STATE -> compileGeneratorPopPendingFinally(visitor, context, (BoundGeneratorPopPendingFinallyStateNode) statement);
+            case GENERATOR_FINALLY_EPILOGUE -> compileGeneratorFinallyEpilogue(visitor, context, (BoundGeneratorFinallyEpilogueNode) statement);
             case GENERATOR_FINALLY_DISPATCH -> compileGeneratorFinallyDispatch(visitor, context);
             default -> throw new InternalException();
         }
@@ -1342,14 +1347,20 @@ public class Compiler {
         writer.visitField(ACC_PRIVATE, "exception", Type.getDescriptor(Throwable.class), null, null);
 
         if (generator.hasFinallyBlocks()) {
-            writer.visitField(ACC_PRIVATE, "hasPendingReturn", Type.getDescriptor(boolean.class), null, null);
+            writer.visitField(ACC_PRIVATE, HAS_PENDING_RETURN_FIELD_NAME, Type.getDescriptor(boolean.class), null, null);
             writer.visitField(ACC_PRIVATE, "result", Type.getDescriptor(Object.class), null, null);
         }
 
-        if (generator.getMaxPendingFinallyStates() > 0) {
-            writer.visitField(ACC_PRIVATE, "pendingFinallyStatesCount", Type.getDescriptor(int.class), null, null);
-            for (int i = 0; i < generator.getMaxPendingFinallyStates(); i++) {
-                writer.visitField(ACC_PRIVATE, "pendingFinallyState" + i, Type.getDescriptor(int.class), null, null);
+        if (generator.hasPendingJump()) {
+            writer.visitField(ACC_PRIVATE, HAS_PENDING_JUMP_FIELD_NAME, Type.getDescriptor(boolean.class), null, null);
+            writer.visitField(ACC_PRIVATE, JUMP_STATE_FIELD_NAME, Type.getDescriptor(int.class), null, null);
+        }
+
+        if (generator.getMaxInternalFrames() > 0) {
+            writer.visitField(ACC_PRIVATE, FRAMES_COUNT_FIELD_NAME, Type.getDescriptor(int.class), null, null);
+            for (int i = 0; i < generator.getMaxInternalFrames(); i++) {
+                writer.visitField(ACC_PRIVATE, FRAME_TYPE_FIELD_NAME + i, Type.getDescriptor(int.class), null, null);
+                writer.visitField(ACC_PRIVATE, FRAME_STATE_FIELD_NAME + i, Type.getDescriptor(int.class), null, null);
             }
         }
 
@@ -1421,7 +1432,16 @@ public class Compiler {
         }
 
         CompilerContext nextMethodContext = context.createInstanceMethod(SType.fromJavaType(CompletableFuture.class), false);
-        nextMethodContext.setAsyncStateMachineClassName(name);
+
+        Label loop = new Label();
+        nextMethodContext.setAsyncContext(new AsyncStateMachineContext.Builder()
+                .setClassName(name)
+                .setStatesMap(stateMap)
+                .setContinueLabel(loop)
+                .setPendingReturn(generator.hasFinallyBlocks())
+                .setPendingJump(generator.hasPendingJump())
+                .build());
+
         if (parameterVisitor.hasThisLocalVariable()) {
             nextMethodContext.setAsyncThisFieldName(parameterVisitor.getParameters().getFirst().getFieldName());
         }
@@ -1435,12 +1455,7 @@ public class Compiler {
             lifted.setClosure(closureRef.asLocalVariable());
         }
 
-        // states
-        nextMethodContext.setAsyncStateBoundariesMap(stateMap);
-
-        Label loop = new Label();
         nextMethodVisitor.visitLabel(loop);
-        nextMethodContext.setGeneratorContinueLabel(loop);
 
         nextMethodVisitor.visitVarInsn(ALOAD, 0);
         nextMethodVisitor.visitFieldInsn(GETFIELD, name, "state", Type.getDescriptor(int.class));
@@ -1458,7 +1473,7 @@ public class Compiler {
             nextMethodVisitor.visitLabel(boundary.label);
 
             // main catch state
-            if (boundary.tryCatchJumpState == null) {
+            if (boundary.isMainCatch) {
                 // this.state = -2;
                 compileGeneratorInvalidState(nextMethodVisitor, nextMethodContext);
                 // return CompletableFuture.failedFuture(this.exception);
@@ -1478,10 +1493,13 @@ public class Compiler {
                 continue;
             }
 
+            boolean genTryCatch = boundary.catchState != null;
             Label tryBeginLabel = new Label();
             Label tryEndLabel = new Label();
 
-            nextMethodVisitor.visitLabel(tryBeginLabel);
+            if (genTryCatch) {
+                nextMethodVisitor.visitLabel(tryBeginLabel);
+            }
 
             for (BoundStatementNode statement : boundary.statements) {
                 compileStatement(nextMethodVisitor, nextMethodContext, statement);
@@ -1490,36 +1508,45 @@ public class Compiler {
                 nextMethodVisitor.visitJumpInsn(GOTO, loop);
             }
 
-            nextMethodVisitor.visitLabel(tryEndLabel);
+            if (genTryCatch) {
+                nextMethodVisitor.visitLabel(tryEndLabel);
 
-            // this.exception = throwable
-            nextMethodVisitor.visitVarInsn(ALOAD, 0);
-            nextMethodVisitor.visitInsn(SWAP);
-            nextMethodVisitor.visitFieldInsn(PUTFIELD, name, "exception", Type.getDescriptor(Throwable.class));
-
-            // this.hasPendingReturn = false
-            if (generator.hasFinallyBlocks()) {
+                // this.exception = throwable
                 nextMethodVisitor.visitVarInsn(ALOAD, 0);
-                nextMethodVisitor.visitLdcInsn(false);
-                nextMethodVisitor.visitFieldInsn(PUTFIELD, name, "hasPendingReturn", Type.getDescriptor(boolean.class));
-            }
+                nextMethodVisitor.visitInsn(SWAP);
+                nextMethodVisitor.visitFieldInsn(PUTFIELD, name, "exception", Type.getDescriptor(Throwable.class));
 
-            // this.pendingFinallyStatesCount = 0
-            if (generator.getMaxPendingFinallyStates() > 0) {
+                // this.hasPendingReturn = false
+                if (generator.hasFinallyBlocks()) {
+                    nextMethodVisitor.visitVarInsn(ALOAD, 0);
+                    nextMethodVisitor.visitLdcInsn(false);
+                    nextMethodVisitor.visitFieldInsn(PUTFIELD, name, HAS_PENDING_RETURN_FIELD_NAME, Type.getDescriptor(boolean.class));
+                }
+
+                // this.hasPendingJump = false
+                if (generator.hasPendingJump()) {
+                    nextMethodVisitor.visitVarInsn(ALOAD, 0);
+                    nextMethodVisitor.visitLdcInsn(false);
+                    nextMethodVisitor.visitFieldInsn(PUTFIELD, name, HAS_PENDING_JUMP_FIELD_NAME, Type.getDescriptor(boolean.class));
+                }
+
+                // this.pendingFinallyStatesCount = 0
+//                if (generator.getMaxStackFrames() > 0) {
+//                    nextMethodVisitor.visitVarInsn(ALOAD, 0);
+//                    nextMethodVisitor.visitInsn(ICONST_0);
+//                    nextMethodVisitor.visitFieldInsn(PUTFIELD, name, "pendingFinallyStatesCount", Type.getDescriptor(int.class));
+//                }
+
+                // this.state = ...
                 nextMethodVisitor.visitVarInsn(ALOAD, 0);
-                nextMethodVisitor.visitInsn(ICONST_0);
-                nextMethodVisitor.visitFieldInsn(PUTFIELD, name, "pendingFinallyStatesCount", Type.getDescriptor(int.class));
+                nextMethodVisitor.visitLdcInsn(stateMap.get(boundary.catchState));
+                nextMethodVisitor.visitFieldInsn(PUTFIELD, name, "state", Type.getDescriptor(int.class));
+
+                // break
+                nextMethodVisitor.visitJumpInsn(GOTO, loop);
+
+                nextMethodVisitor.visitTryCatchBlock(tryBeginLabel, tryEndLabel, tryEndLabel, null);
             }
-
-            // this.state = ...
-            nextMethodVisitor.visitVarInsn(ALOAD, 0);
-            nextMethodVisitor.visitLdcInsn(stateMap.get(boundary.tryCatchJumpState));
-            nextMethodVisitor.visitFieldInsn(PUTFIELD, name, "state", Type.getDescriptor(int.class));
-
-            // break
-            nextMethodVisitor.visitJumpInsn(GOTO, loop);
-
-            nextMethodVisitor.visitTryCatchBlock(tryBeginLabel, tryEndLabel, tryEndLabel, null);
         }
 
         nextMethodVisitor.visitLabel(defaultLabel);
@@ -1538,11 +1565,15 @@ public class Compiler {
         nextMethodVisitor.visitMaxs(0, 0);
         nextMethodVisitor.visitEnd();
 
-        compileAwaitTransitionMethod(writer, name);
-        if (generator.getMaxPendingFinallyStates() > 0) {
-            compileAddPendingFinallyState(writer, name, generator.getMaxPendingFinallyStates());
-            compileHasPendingFinallyState(writer, name);
-            compilePopPendingFinallyState(writer, name, generator.getMaxPendingFinallyStates());
+        compileAwaitTransitionMethod(writer, name, generator.hasFinallyBlocks(), generator.hasPendingJump());
+        if (generator.getMaxInternalFrames() > 0) {
+            compilePushState(writer, name, generator.getMaxInternalFrames());
+            compileHasFinallyFrame(writer, name, generator.getMaxInternalFrames(), generator.hasPendingJump());
+            if (generator.hasPendingJump()) {
+                compileHasFinallyFrameBeforeState(writer, name, generator.getMaxInternalFrames());
+            }
+            compilePeekPendingFinallyState(writer, name, generator.getMaxInternalFrames());
+            compilePopPendingFinallyState(writer, name, generator.getMaxInternalFrames());
         }
 
         writer.visitEnd();
@@ -1594,10 +1625,10 @@ public class Compiler {
         parentVisitor.visitInsn(ARETURN);
     }
 
-    private void compileAwaitTransitionMethod(ClassWriter classWriter, String classInternalName) {
+    private void compileAwaitTransitionMethod(ClassWriter classWriter, String classInternalName, boolean hasFinallyBlocks, boolean hasPendingJump) {
         MethodVisitor mv = classWriter.visitMethod(
                 ACC_PRIVATE,
-                "await",
+                AWAIT_TRANSITION_METHOD_NAME,
                 "(Ljava/util/concurrent/CompletableFuture;II)Ljava/util/concurrent/CompletableFuture;",
                 "(Ljava/util/concurrent/CompletableFuture<*>;II)Ljava/util/concurrent/CompletableFuture<Ljava/lang/Object;>;",
                 null);
@@ -1732,6 +1763,20 @@ public class Compiler {
         lm.visitVarInsn(ILOAD, 2); // catchState is 2
         lm.visitFieldInsn(PUTFIELD, classInternalName, "state", "I");
 
+        // this.hasPendingReturn = false
+        if (hasFinallyBlocks) {
+            lm.visitVarInsn(ALOAD, 0);
+            lm.visitLdcInsn(false);
+            lm.visitFieldInsn(PUTFIELD, classInternalName, HAS_PENDING_RETURN_FIELD_NAME, Type.getDescriptor(boolean.class));
+        }
+
+        // this.hasPendingJump = false
+        if (hasPendingJump) {
+            lm.visitVarInsn(ALOAD, 0);
+            lm.visitLdcInsn(false);
+            lm.visitFieldInsn(PUTFIELD, classInternalName, HAS_PENDING_JUMP_FIELD_NAME, Type.getDescriptor(boolean.class));
+        }
+
         // return this.next(null);
         lm.visitVarInsn(ALOAD, 0);
         lm.visitInsn(ACONST_NULL);
@@ -1789,20 +1834,25 @@ public class Compiler {
         lm.visitEnd();
     }
 
-    private void compileAddPendingFinallyState(ClassWriter classWriter, String classInternalName, int maxPending) {
+    private void compilePushState(ClassWriter classWriter, String classInternalName, int maxPending) {
         MethodVisitor visitor = classWriter.visitMethod(
                 ACC_PRIVATE,
-                "addPendingFinallyState",
-                Type.getMethodDescriptor(Type.VOID_TYPE, Type.INT_TYPE),
+                PUSH_FRAME_METHOD_NAME,
+                Type.getMethodDescriptor(Type.VOID_TYPE, Type.INT_TYPE, Type.INT_TYPE),
                 null,
                 null);
         visitor.visitCode();
+
+        Label methodStart = null;
+        if (parameters.shouldEmitVariableNames()) {
+            visitor.visitLabel(methodStart = new Label());
+        }
 
         visitor.visitVarInsn(ALOAD, 0);
         visitor.visitFieldInsn(
                 GETFIELD,
                 classInternalName,
-                "pendingFinallyStatesCount",
+                FRAMES_COUNT_FIELD_NAME,
                 Type.getDescriptor(int.class));
 
         Label defaultLabel = new Label();
@@ -1822,7 +1872,15 @@ public class Compiler {
             visitor.visitFieldInsn(
                     PUTFIELD,
                     classInternalName,
-                    "pendingFinallyState" + i,
+                    FRAME_TYPE_FIELD_NAME + i,
+                    Type.getDescriptor(int.class));
+
+            visitor.visitVarInsn(ALOAD, 0);
+            visitor.visitVarInsn(ILOAD, 2);
+            visitor.visitFieldInsn(
+                    PUTFIELD,
+                    classInternalName,
+                    FRAME_STATE_FIELD_NAME + i,
                     Type.getDescriptor(int.class));
 
             visitor.visitVarInsn(ALOAD, 0);
@@ -1830,10 +1888,115 @@ public class Compiler {
             visitor.visitFieldInsn(
                     PUTFIELD,
                     classInternalName,
-                    "pendingFinallyStatesCount",
+                    FRAMES_COUNT_FIELD_NAME,
                     Type.getDescriptor(int.class));
 
             visitor.visitInsn(RETURN);
+        }
+
+        visitor.visitLabel(defaultLabel);
+        visitor.visitTypeInsn(NEW, Type.getInternalName(AsyncStateMachineException.class));
+        visitor.visitInsn(DUP);
+        visitor.visitMethodInsn(
+                INVOKESPECIAL,
+                Type.getInternalName(AsyncStateMachineException.class),
+                "<init>",
+                Type.getMethodDescriptor(Type.VOID_TYPE),
+                false);
+        visitor.visitInsn(ATHROW);
+
+        if (parameters.shouldEmitVariableNames()) {
+            Label methodEnd = new Label();
+            visitor.visitLabel(methodEnd);
+            visitor.visitLocalVariable(
+                    "type",
+                    Type.getDescriptor(int.class),
+                    null,
+                    methodStart,
+                    methodEnd,
+                    1);
+            visitor.visitLocalVariable(
+                    "state",
+                    Type.getDescriptor(int.class),
+                    null,
+                    methodStart,
+                    methodEnd,
+                    2);
+        }
+
+        visitor.visitMaxs(0, 0);
+        visitor.visitEnd();
+    }
+
+    private void compileHasFinallyFrame(ClassWriter classWriter, String classInternalName, int maxFrames, boolean hasPendingJump) {
+        MethodVisitor visitor = classWriter.visitMethod(
+                ACC_PRIVATE,
+                HAS_FINALLY_FRAME_METHOD_NAME,
+                Type.getMethodDescriptor(Type.BOOLEAN_TYPE),
+                null,
+                null);
+        visitor.visitCode();
+
+        if (hasPendingJump) {
+            visitor.visitVarInsn(ALOAD, 0);
+            visitor.visitFieldInsn(GETFIELD, classInternalName, HAS_PENDING_JUMP_FIELD_NAME, Type.getDescriptor(boolean.class));
+
+            Label noPendingJumpLabel = new Label();
+            visitor.visitJumpInsn(IFEQ, noPendingJumpLabel);
+
+            visitor.visitVarInsn(ALOAD, 0);
+            visitor.visitFieldInsn(GETFIELD, classInternalName, JUMP_STATE_FIELD_NAME, Type.getDescriptor(int.class));
+            visitor.visitVarInsn(ALOAD, 0);
+            visitor.visitInsn(SWAP);
+            visitor.visitMethodInsn(
+                    INVOKEVIRTUAL,
+                    classInternalName,
+                    HAS_FINALLY_FRAME_BEFORE_STATE_METHOD_NAME,
+                    Type.getMethodDescriptor(Type.BOOLEAN_TYPE, Type.INT_TYPE),
+                    false);
+            visitor.visitInsn(IRETURN);
+
+            visitor.visitLabel(noPendingJumpLabel);
+        }
+
+        visitor.visitVarInsn(ALOAD, 0);
+        visitor.visitFieldInsn(
+                GETFIELD,
+                classInternalName,
+                FRAMES_COUNT_FIELD_NAME,
+                Type.getDescriptor(int.class));
+
+        Label defaultLabel = new Label();
+        int[] keys = new int[maxFrames + 1];
+        Label[] labels = new Label[maxFrames + 1];
+        for (int i = 0; i <= maxFrames; i++) {
+            keys[i] = i;
+            labels[i] = new Label();
+        }
+        visitor.visitLookupSwitchInsn(defaultLabel, keys, labels);
+
+        for (int i = 0; i <= maxFrames; i++) {
+            visitor.visitLabel(labels[i]);
+
+            for (int j = i - 1; j >= 0; j--) {
+                visitor.visitVarInsn(ALOAD, 0);
+                visitor.visitFieldInsn(
+                        GETFIELD,
+                        classInternalName,
+                        FRAME_TYPE_FIELD_NAME + j,
+                        Type.getDescriptor(int.class));
+
+                visitor.visitLdcInsn(GeneratorStackEntryType.FINALLY.getInternalIndex());
+
+                Label postCondition = new Label();
+                visitor.visitJumpInsn(IF_ICMPNE, postCondition);
+                visitor.visitLdcInsn(true);
+                visitor.visitInsn(IRETURN);
+                visitor.visitLabel(postCondition);
+            }
+
+            visitor.visitLdcInsn(false);
+            visitor.visitInsn(IRETURN);
         }
 
         visitor.visitLabel(defaultLabel);
@@ -1851,11 +2014,11 @@ public class Compiler {
         visitor.visitEnd();
     }
 
-    private void compileHasPendingFinallyState(ClassWriter classWriter, String classInternalName) {
+    private void compileHasFinallyFrameBeforeState(ClassWriter classWriter, String classInternalName, int maxFrames) {
         MethodVisitor visitor = classWriter.visitMethod(
                 ACC_PRIVATE,
-                "hasPendingFinallyState",
-                Type.getMethodDescriptor(Type.BOOLEAN_TYPE),
+                HAS_FINALLY_FRAME_BEFORE_STATE_METHOD_NAME,
+                Type.getMethodDescriptor(Type.BOOLEAN_TYPE, Type.INT_TYPE),
                 null,
                 null);
         visitor.visitCode();
@@ -1864,28 +2027,75 @@ public class Compiler {
         visitor.visitFieldInsn(
                 GETFIELD,
                 classInternalName,
-                "pendingFinallyStatesCount",
+                FRAMES_COUNT_FIELD_NAME,
                 Type.getDescriptor(int.class));
 
-        Label zero = new Label();
-        Label end = new Label();
-        visitor.visitJumpInsn(IFEQ, zero);
-        visitor.visitInsn(ICONST_1);
-        visitor.visitJumpInsn(GOTO, end);
-        visitor.visitLabel(zero);
-        visitor.visitInsn(ICONST_0);
-        visitor.visitLabel(end);
+        Label defaultLabel = new Label();
+        int[] keys = new int[maxFrames + 1];
+        Label[] labels = new Label[maxFrames + 1];
+        for (int i = 0; i <= maxFrames; i++) {
+            keys[i] = i;
+            labels[i] = new Label();
+        }
+        visitor.visitLookupSwitchInsn(defaultLabel, keys, labels);
 
-        visitor.visitInsn(IRETURN);
+        for (int i = 0; i <= maxFrames; i++) {
+            visitor.visitLabel(labels[i]);
+
+            for (int j = i - 1; j >= 0; j--) {
+                visitor.visitVarInsn(ALOAD, 0);
+                visitor.visitFieldInsn(
+                        GETFIELD,
+                        classInternalName,
+                        FRAME_STATE_FIELD_NAME + j,
+                        Type.getDescriptor(int.class));
+                visitor.visitVarInsn(ILOAD, 1);
+
+                Label isValidState = new Label();
+                visitor.visitJumpInsn(IF_ICMPNE, isValidState);
+                visitor.visitLdcInsn(false);
+                visitor.visitInsn(IRETURN);
+                visitor.visitLabel(isValidState);
+
+                visitor.visitVarInsn(ALOAD, 0);
+                visitor.visitFieldInsn(
+                        GETFIELD,
+                        classInternalName,
+                        FRAME_TYPE_FIELD_NAME + j,
+                        Type.getDescriptor(int.class));
+
+                visitor.visitLdcInsn(GeneratorStackEntryType.FINALLY.getInternalIndex());
+
+                Label postCondition = new Label();
+                visitor.visitJumpInsn(IF_ICMPNE, postCondition);
+                visitor.visitLdcInsn(true);
+                visitor.visitInsn(IRETURN);
+                visitor.visitLabel(postCondition);
+            }
+
+            visitor.visitLdcInsn(false);
+            visitor.visitInsn(IRETURN);
+        }
+
+        visitor.visitLabel(defaultLabel);
+        visitor.visitTypeInsn(NEW, Type.getInternalName(AsyncStateMachineException.class));
+        visitor.visitInsn(DUP);
+        visitor.visitMethodInsn(
+                INVOKESPECIAL,
+                Type.getInternalName(AsyncStateMachineException.class),
+                "<init>",
+                Type.getMethodDescriptor(Type.VOID_TYPE),
+                false);
+        visitor.visitInsn(ATHROW);
 
         visitor.visitMaxs(0, 0);
         visitor.visitEnd();
     }
 
-    private void compilePopPendingFinallyState(ClassWriter classWriter, String classInternalName, int maxPending) {
+    private void compilePopPendingFinallyState(ClassWriter classWriter, String classInternalName, int maxInternalFrames) {
         MethodVisitor visitor = classWriter.visitMethod(
                 ACC_PRIVATE,
-                "popPendingFinallyState",
+                POP_FRAME_METHOD_NAME,
                 Type.getMethodDescriptor(Type.INT_TYPE),
                 null,
                 null);
@@ -1895,20 +2105,20 @@ public class Compiler {
         visitor.visitFieldInsn(
                 GETFIELD,
                 classInternalName,
-                "pendingFinallyStatesCount",
+                FRAMES_COUNT_FIELD_NAME,
                 Type.getDescriptor(int.class));
 
         Label defaultLabel = new Label();
-        int[] keys = new int[maxPending];
-        Label[] labels = new Label[maxPending];
-        for (int i = 0; i < maxPending; i++) {
+        int[] keys = new int[maxInternalFrames];
+        Label[] labels = new Label[maxInternalFrames];
+        for (int i = 0; i < maxInternalFrames; i++) {
             keys[i] = i + 1;
             labels[i] = new Label();
         }
 
         visitor.visitLookupSwitchInsn(defaultLabel, keys, labels);
 
-        for (int i = 0; i < maxPending; i++) {
+        for (int i = 0; i < maxInternalFrames; i++) {
             visitor.visitLabel(labels[i]);
 
             visitor.visitVarInsn(ALOAD, 0);
@@ -1916,14 +2126,85 @@ public class Compiler {
             visitor.visitFieldInsn(
                     PUTFIELD,
                     classInternalName,
-                    "pendingFinallyStatesCount",
+                    FRAMES_COUNT_FIELD_NAME,
                     Type.getDescriptor(int.class));
 
             visitor.visitVarInsn(ALOAD, 0);
             visitor.visitFieldInsn(
                     GETFIELD,
                     classInternalName,
-                    "pendingFinallyState" + i,
+                    FRAME_STATE_FIELD_NAME + i,
+                    Type.getDescriptor(int.class));
+
+            visitor.visitInsn(IRETURN);
+        }
+
+        visitor.visitLabel(defaultLabel);
+        visitor.visitTypeInsn(NEW, Type.getInternalName(AsyncStateMachineException.class));
+        visitor.visitInsn(DUP);
+        visitor.visitMethodInsn(
+                INVOKESPECIAL,
+                Type.getInternalName(AsyncStateMachineException.class),
+                "<init>",
+                Type.getMethodDescriptor(Type.VOID_TYPE),
+                false);
+        visitor.visitInsn(ATHROW);
+
+        visitor.visitMaxs(0, 0);
+        visitor.visitEnd();
+    }
+
+    private void compilePeekPendingFinallyState(ClassWriter classWriter, String classInternalName, int maxInternalFrames) {
+        MethodVisitor visitor = classWriter.visitMethod(
+                ACC_PRIVATE,
+                PEEK_FINALLY_FRAME_METHOD_NAME,
+                Type.getMethodDescriptor(Type.INT_TYPE),
+                null,
+                null);
+        visitor.visitCode();
+
+        Label begin = new Label();
+        visitor.visitLabel(begin);
+
+        visitor.visitVarInsn(ALOAD, 0);
+        visitor.visitFieldInsn(
+                GETFIELD,
+                classInternalName,
+                FRAMES_COUNT_FIELD_NAME,
+                Type.getDescriptor(int.class));
+
+        Label defaultLabel = new Label();
+        int[] keys = new int[maxInternalFrames];
+        Label[] labels = new Label[maxInternalFrames];
+        for (int i = 0; i < maxInternalFrames; i++) {
+            keys[i] = i + 1;
+            labels[i] = new Label();
+        }
+
+        visitor.visitLookupSwitchInsn(defaultLabel, keys, labels);
+
+        for (int i = 0; i < maxInternalFrames; i++) {
+            visitor.visitLabel(labels[i]);
+
+            visitor.visitVarInsn(ALOAD, 0);
+            visitor.visitFieldInsn(GETFIELD, classInternalName, FRAME_TYPE_FIELD_NAME + i, Type.getDescriptor(int.class));
+            visitor.visitLdcInsn(GeneratorStackEntryType.FINALLY.getInternalIndex());
+
+            Label label = new Label();
+            visitor.visitJumpInsn(IF_ICMPEQ, label);
+
+            visitor.visitVarInsn(ALOAD, 0);
+            visitor.visitLdcInsn(i);
+            visitor.visitFieldInsn(PUTFIELD, classInternalName, FRAMES_COUNT_FIELD_NAME, Type.getDescriptor(int.class));
+            visitor.visitJumpInsn(GOTO, begin);
+
+            visitor.visitLabel(label);
+
+            visitor.visitVarInsn(ALOAD, 0);
+            visitor.visitFieldInsn(
+                    GETFIELD,
+                    classInternalName,
+                    FRAME_STATE_FIELD_NAME + i,
                     Type.getDescriptor(int.class));
 
             visitor.visitInsn(IRETURN);
@@ -1947,13 +2228,13 @@ public class Compiler {
     private void compileGeneratorAwaitTransition(MethodVisitor visitor, CompilerContext context, BoundGeneratorAwaitTransitionNode node) {
         visitor.visitVarInsn(ALOAD, 0);
         compileExpression(visitor, context, node.expression);
-        visitor.visitLdcInsn(context.getAsyncStateBoundariesMap().get(node.resumeState));
-        visitor.visitLdcInsn(context.getAsyncStateBoundariesMap().get(node.catchState));
+        visitor.visitLdcInsn(context.getAsyncContext().getStateIndex(node.resumeState));
+        visitor.visitLdcInsn(context.getAsyncContext().getStateIndex(node.catchState));
 
         visitor.visitMethodInsn(
                 INVOKEVIRTUAL,
-                context.getAsyncStateMachineClassName(),
-                "await",
+                context.getAsyncContext().getClassName(),
+                AWAIT_TRANSITION_METHOD_NAME,
                 "(Ljava/util/concurrent/CompletableFuture;II)Ljava/util/concurrent/CompletableFuture;",
                 false);
 
@@ -1962,12 +2243,12 @@ public class Compiler {
 
     private void compileGoToGeneratorState(MethodVisitor visitor, CompilerContext context, BoundSetGeneratorStateNode node) {
         visitor.visitVarInsn(ALOAD, 0);
-        visitor.visitLdcInsn(context.getAsyncStateBoundariesMap().get(node.boundary));
-        visitor.visitFieldInsn(PUTFIELD, context.getAsyncStateMachineClassName(), "state", Type.getDescriptor(int.class));
+        visitor.visitLdcInsn(context.getAsyncContext().getStateIndex(node.boundary));
+        visitor.visitFieldInsn(PUTFIELD, context.getAsyncContext().getClassName(), "state", Type.getDescriptor(int.class));
     }
 
     private void compileGeneratorReturn(MethodVisitor visitor, CompilerContext context, BoundGeneratorReturnNode node) {
-        if (node.finallyState != null) {
+        if (node.pendingState != null) {
             visitor.visitVarInsn(ALOAD, 0);
             if (node.expression == null) {
                 visitor.visitInsn(ACONST_NULL);
@@ -1977,15 +2258,25 @@ public class Compiler {
                     valueType.compileBoxing(visitor);
                 }
             }
-            visitor.visitFieldInsn(PUTFIELD, context.getAsyncStateMachineClassName(), "result", Type.getDescriptor(Object.class));
+            visitor.visitFieldInsn(PUTFIELD, context.getAsyncContext().getClassName(), "result", Type.getDescriptor(Object.class));
 
             visitor.visitVarInsn(ALOAD, 0);
             visitor.visitLdcInsn(true);
-            visitor.visitFieldInsn(PUTFIELD, context.getAsyncStateMachineClassName(), "hasPendingReturn", Type.getDescriptor(boolean.class));
+            visitor.visitFieldInsn(PUTFIELD, context.getAsyncContext().getClassName(), HAS_PENDING_RETURN_FIELD_NAME, Type.getDescriptor(boolean.class));
 
             visitor.visitVarInsn(ALOAD, 0);
-            visitor.visitLdcInsn(context.getAsyncStateBoundariesMap().get(node.finallyState));
-            visitor.visitFieldInsn(PUTFIELD, context.getAsyncStateMachineClassName(), "state", Type.getDescriptor(int.class));
+            visitor.visitInsn(ACONST_NULL);
+            visitor.visitFieldInsn(PUTFIELD, context.getAsyncContext().getClassName(), "exception", Type.getDescriptor(Throwable.class));
+
+            if (context.getAsyncContext().hasPendingJump()) {
+                visitor.visitVarInsn(ALOAD, 0);
+                visitor.visitLdcInsn(false);
+                visitor.visitFieldInsn(PUTFIELD, context.getAsyncContext().getClassName(), HAS_PENDING_JUMP_FIELD_NAME, Type.getDescriptor(boolean.class));
+            }
+
+            visitor.visitVarInsn(ALOAD, 0);
+            visitor.visitLdcInsn(context.getAsyncContext().getStateIndex(node.pendingState));
+            visitor.visitFieldInsn(PUTFIELD, context.getAsyncContext().getClassName(), "state", Type.getDescriptor(int.class));
 
             compileGeneratorContinue(visitor, context);
         } else {
@@ -2011,14 +2302,58 @@ public class Compiler {
     }
 
     private void compileGeneratorContinue(MethodVisitor visitor, CompilerContext context) {
-        visitor.visitJumpInsn(GOTO, context.getGeneratorContinueLabel());
+        visitor.visitJumpInsn(GOTO, context.getAsyncContext().getContinueLabel());
+    }
+
+    private void compileGeneratorJump(MethodVisitor visitor, CompilerContext context, BoundGeneratorJumpNode node) {
+        visitor.visitVarInsn(ALOAD, 0);
+        visitor.visitLdcInsn(true);
+        visitor.visitFieldInsn(
+                PUTFIELD,
+                context.getAsyncContext().getClassName(),
+                HAS_PENDING_JUMP_FIELD_NAME,
+                Type.getDescriptor(boolean.class));
+
+        visitor.visitVarInsn(ALOAD, 0);
+        visitor.visitLdcInsn(context.getAsyncContext().getStateIndex(node.state));
+        visitor.visitFieldInsn(
+                PUTFIELD,
+                context.getAsyncContext().getClassName(),
+                JUMP_STATE_FIELD_NAME,
+                Type.getDescriptor(int.class));
+
+        if (node.finallyEpilogue != null) {
+            visitor.visitVarInsn(ALOAD, 0);
+            visitor.visitLdcInsn(context.getAsyncContext().getStateIndex(node.finallyEpilogue));
+            visitor.visitFieldInsn(
+                    PUTFIELD,
+                    context.getAsyncContext().getClassName(),
+                    "state",
+                    Type.getDescriptor(int.class));
+        } else {
+            visitor.visitVarInsn(ALOAD, 0);
+            visitor.visitMethodInsn(
+                    INVOKEVIRTUAL,
+                    context.getAsyncContext().getClassName(),
+                    PEEK_FINALLY_FRAME_METHOD_NAME,
+                    Type.getMethodDescriptor(Type.INT_TYPE),
+                    false);
+
+            visitor.visitVarInsn(ALOAD, 0);
+            visitor.visitInsn(SWAP);
+            visitor.visitFieldInsn(
+                    PUTFIELD,
+                    context.getAsyncContext().getClassName(),
+                    "state",
+                    Type.getDescriptor(int.class));
+        }
     }
 
     private void compileGeneratorRethrow(MethodVisitor visitor, CompilerContext context) {
         visitor.visitVarInsn(ALOAD, 0);
         visitor.visitFieldInsn(
                 GETFIELD,
-                context.getAsyncStateMachineClassName(),
+                context.getAsyncContext().getClassName(),
                 "exception",
                 Type.getDescriptor(Throwable.class));
         visitor.visitInsn(ATHROW);
@@ -2029,7 +2364,7 @@ public class Compiler {
         visitor.visitInsn(ACONST_NULL);
         visitor.visitFieldInsn(
                 PUTFIELD,
-                context.getAsyncStateMachineClassName(),
+                context.getAsyncContext().getClassName(),
                 "exception",
                 Type.getDescriptor(Throwable.class));
     }
@@ -2044,17 +2379,17 @@ public class Compiler {
         visitor.visitVarInsn(ALOAD, 0);
         visitor.visitFieldInsn(
                 GETFIELD,
-                context.getAsyncStateMachineClassName(),
+                context.getAsyncContext().getClassName(),
                 "exception",
                 Type.getDescriptor(Throwable.class));
 
         Label end = new Label();
         visitor.visitJumpInsn(IFNULL, end);
         visitor.visitVarInsn(ALOAD, 0);
-        visitor.visitLdcInsn(context.getAsyncStateBoundariesMap().get(node.catchState));
+        visitor.visitLdcInsn(context.getAsyncContext().getStateIndex(node.catchState));
         visitor.visitFieldInsn(
                 PUTFIELD,
-                context.getAsyncStateMachineClassName(),
+                context.getAsyncContext().getClassName(),
                 "state",
                 Type.getDescriptor(int.class));
         compileGeneratorContinue(visitor, context);
@@ -2067,11 +2402,7 @@ public class Compiler {
         */
 
         visitor.visitVarInsn(ALOAD, 0);
-        visitor.visitFieldInsn(
-                GETFIELD,
-                context.getAsyncStateMachineClassName(),
-                "hasPendingReturn",
-                Type.getDescriptor(boolean.class));
+        visitor.visitFieldInsn(GETFIELD, context.getAsyncContext().getClassName(), HAS_PENDING_RETURN_FIELD_NAME, Type.getDescriptor(boolean.class));
 
         Label end2 = new Label();
         visitor.visitJumpInsn(IFEQ, end2);
@@ -2079,7 +2410,7 @@ public class Compiler {
         visitor.visitVarInsn(ALOAD, 0);
         visitor.visitFieldInsn(
                 GETFIELD,
-                context.getAsyncStateMachineClassName(),
+                context.getAsyncContext().getClassName(),
                 "result",
                 Type.getDescriptor(Object.class));
         visitor.visitMethodInsn(
@@ -2089,27 +2420,193 @@ public class Compiler {
                 Type.getMethodDescriptor(Type.getType(CompletableFuture.class), Type.getType(Object.class)),
                 false);
         visitor.visitInsn(ARETURN);
-
         visitor.visitLabel(end2);
+
+        if (context.getAsyncContext().hasPendingJump()) {
+            // if (this.hasPendingJump) { ... }
+
+            visitor.visitVarInsn(ALOAD, 0);
+            visitor.visitFieldInsn(GETFIELD, context.getAsyncContext().getClassName(), HAS_PENDING_JUMP_FIELD_NAME, Type.getDescriptor(boolean.class));
+
+            Label end3 = new Label();
+            visitor.visitJumpInsn(IFEQ, end3);
+
+            // TODO: too simple
+            visitor.visitVarInsn(ALOAD, 0);
+            visitor.visitFieldInsn(GETFIELD, context.getAsyncContext().getClassName(), JUMP_STATE_FIELD_NAME, Type.getDescriptor(int.class));
+
+            visitor.visitVarInsn(ALOAD, 0);
+            visitor.visitInsn(SWAP);
+            visitor.visitFieldInsn(PUTFIELD, context.getAsyncContext().getClassName(), "state", Type.getDescriptor(int.class));
+
+            visitor.visitVarInsn(ALOAD, 0);
+            visitor.visitLdcInsn(false);
+            visitor.visitFieldInsn(PUTFIELD, context.getAsyncContext().getClassName(), HAS_PENDING_JUMP_FIELD_NAME, Type.getDescriptor(boolean.class));
+
+            visitor.visitLabel(end3);
+        }
     }
 
-    private void compileGeneratorAddPendingFinally(MethodVisitor visitor, CompilerContext context, BoundGeneratorAddPendingFinallyStateNode node) {
+    private void compileGeneratorPushState(MethodVisitor visitor, CompilerContext context, BoundGeneratorPushStateNode node) {
         visitor.visitVarInsn(ALOAD, 0);
-        visitor.visitLdcInsn(context.getAsyncStateBoundariesMap().get(node.state));
+        visitor.visitLdcInsn(node.type.getInternalIndex());
+        visitor.visitLdcInsn(context.getAsyncContext().getStateIndex(node.state));
         visitor.visitMethodInsn(
                 INVOKEVIRTUAL,
-                context.getAsyncStateMachineClassName(),
-                "addPendingFinallyState",
-                Type.getMethodDescriptor(Type.VOID_TYPE, Type.INT_TYPE),
+                context.getAsyncContext().getClassName(),
+                PUSH_FRAME_METHOD_NAME,
+                Type.getMethodDescriptor(Type.VOID_TYPE, Type.INT_TYPE, Type.INT_TYPE),
                 false);
+    }
+
+    private void compileGeneratorPopPendingFinally(MethodVisitor visitor, CompilerContext context, BoundGeneratorPopPendingFinallyStateNode node) {
+        visitor.visitVarInsn(ALOAD, 0);
+        visitor.visitMethodInsn(
+                INVOKEVIRTUAL,
+                context.getAsyncContext().getClassName(),
+                POP_FRAME_METHOD_NAME,
+                Type.getMethodDescriptor(Type.INT_TYPE),
+                false);
+        visitor.visitInsn(POP);
+    }
+
+    private void compileGeneratorFinallyEpilogue(MethodVisitor visitor, CompilerContext context, BoundGeneratorFinallyEpilogueNode node) {
+        // this.popFrame();
+        visitor.visitVarInsn(ALOAD, 0);
+        visitor.visitMethodInsn(
+                INVOKEVIRTUAL,
+                context.getAsyncContext().getClassName(),
+                POP_FRAME_METHOD_NAME,
+                Type.getMethodDescriptor(Type.INT_TYPE),
+                false);
+        visitor.visitInsn(POP);
+
+        // if (this.hasFinallyFrame()) { this.state = this.peekFinallyFrame(); break; }
+        visitor.visitVarInsn(ALOAD, 0);
+        visitor.visitMethodInsn(
+                INVOKEVIRTUAL,
+                context.getAsyncContext().getClassName(),
+                HAS_FINALLY_FRAME_METHOD_NAME,
+                Type.getMethodDescriptor(Type.BOOLEAN_TYPE),
+                false);
+
+        {
+            Label end = new Label();
+
+            visitor.visitJumpInsn(IFEQ, end);
+
+            visitor.visitVarInsn(ALOAD, 0);
+            visitor.visitMethodInsn(
+                    INVOKEVIRTUAL,
+                    context.getAsyncContext().getClassName(),
+                    PEEK_FINALLY_FRAME_METHOD_NAME,
+                    Type.getMethodDescriptor(Type.INT_TYPE),
+                    false);
+            visitor.visitVarInsn(ALOAD, 0);
+            visitor.visitInsn(SWAP);
+            visitor.visitFieldInsn(
+                    PUTFIELD,
+                    context.getAsyncContext().getClassName(),
+                    "state",
+                    Type.getDescriptor(int.class));
+            compileGeneratorContinue(visitor, context);
+
+            visitor.visitLabel(end);
+        }
+
+        // if (this.exception != null) { this.state = -1; break; }
+        visitor.visitVarInsn(ALOAD, 0);
+        visitor.visitFieldInsn(
+                GETFIELD,
+                context.getAsyncContext().getClassName(),
+                "exception",
+                Type.getDescriptor(Throwable.class));
+
+        {
+            Label end = new Label();
+
+            visitor.visitJumpInsn(IFNULL, end);
+
+            visitor.visitVarInsn(ALOAD, 0);
+            visitor.visitLdcInsn(-1);
+            visitor.visitFieldInsn(
+                    PUTFIELD,
+                    context.getAsyncContext().getClassName(),
+                    "state",
+                    Type.getDescriptor(int.class));
+            compileGeneratorContinue(visitor, context);
+
+            visitor.visitLabel(end);
+        }
+
+        // if (this.hasPendingReturn) { return CompletableFuture.completedFuture(this.result); }
+        {
+            visitor.visitVarInsn(ALOAD, 0);
+            visitor.visitFieldInsn(GETFIELD, context.getAsyncContext().getClassName(), HAS_PENDING_RETURN_FIELD_NAME, Type.getDescriptor(boolean.class));
+
+            Label end2 = new Label();
+            visitor.visitJumpInsn(IFEQ, end2);
+
+            visitor.visitVarInsn(ALOAD, 0);
+            visitor.visitFieldInsn(
+                    GETFIELD,
+                    context.getAsyncContext().getClassName(),
+                    "result",
+                    Type.getDescriptor(Object.class));
+            visitor.visitMethodInsn(
+                    INVOKESTATIC,
+                    Type.getInternalName(CompletableFuture.class),
+                    "completedFuture",
+                    Type.getMethodDescriptor(Type.getType(CompletableFuture.class), Type.getType(Object.class)),
+                    false);
+            visitor.visitInsn(ARETURN);
+
+            visitor.visitLabel(end2);
+        }
+
+        if (context.getAsyncContext().hasPendingJump()) {
+            // if (this.hasPendingJump) { ... }
+
+            visitor.visitVarInsn(ALOAD, 0);
+            visitor.visitFieldInsn(GETFIELD, context.getAsyncContext().getClassName(), HAS_PENDING_JUMP_FIELD_NAME, Type.getDescriptor(boolean.class));
+
+            Label end3 = new Label();
+            visitor.visitJumpInsn(IFEQ, end3);
+
+            // TODO: too simple
+            visitor.visitVarInsn(ALOAD, 0);
+            visitor.visitFieldInsn(GETFIELD, context.getAsyncContext().getClassName(), JUMP_STATE_FIELD_NAME, Type.getDescriptor(int.class));
+
+            visitor.visitVarInsn(ALOAD, 0);
+            visitor.visitInsn(SWAP);
+            visitor.visitFieldInsn(PUTFIELD, context.getAsyncContext().getClassName(), "state", Type.getDescriptor(int.class));
+
+            visitor.visitVarInsn(ALOAD, 0);
+            visitor.visitLdcInsn(false);
+            visitor.visitFieldInsn(PUTFIELD, context.getAsyncContext().getClassName(), HAS_PENDING_JUMP_FIELD_NAME, Type.getDescriptor(boolean.class));
+
+            compileGeneratorContinue(visitor, context);
+
+            visitor.visitLabel(end3);
+        }
+
+        // this.state = nextState; break;
+        visitor.visitVarInsn(ALOAD, 0);
+        visitor.visitLdcInsn(context.getAsyncContext().getStateIndex(node.nextState));
+        visitor.visitFieldInsn(
+                PUTFIELD,
+                context.getAsyncContext().getClassName(),
+                "state",
+                Type.getDescriptor(int.class));
+        compileGeneratorContinue(visitor, context);
     }
 
     private void compileGeneratorFinallyDispatch(MethodVisitor visitor, CompilerContext context) {
         visitor.visitVarInsn(ALOAD, 0);
         visitor.visitMethodInsn(
                 INVOKEVIRTUAL,
-                context.getAsyncStateMachineClassName(),
-                "hasPendingFinallyState",
+                context.getAsyncContext().getClassName(),
+                HAS_FINALLY_FRAME_METHOD_NAME,
                 Type.getMethodDescriptor(Type.BOOLEAN_TYPE),
                 false);
 
@@ -2119,15 +2616,15 @@ public class Compiler {
         visitor.visitVarInsn(ALOAD, 0);
         visitor.visitMethodInsn(
                 INVOKEVIRTUAL,
-                context.getAsyncStateMachineClassName(),
-                "popPendingFinallyState",
+                context.getAsyncContext().getClassName(),
+                POP_FRAME_METHOD_NAME,
                 Type.getMethodDescriptor(Type.INT_TYPE),
                 false);
         visitor.visitVarInsn(ALOAD, 0);
         visitor.visitInsn(SWAP);
         visitor.visitFieldInsn(
                 PUTFIELD,
-                context.getAsyncStateMachineClassName(),
+                context.getAsyncContext().getClassName(),
                 "state",
                 Type.getDescriptor(int.class));
         compileGeneratorContinue(visitor, context);
@@ -2139,7 +2636,7 @@ public class Compiler {
         // set state to invalid to prevent consequent calls to next()
         visitor.visitVarInsn(ALOAD, 0);
         visitor.visitLdcInsn(-2);
-        visitor.visitFieldInsn(PUTFIELD, context.getAsyncStateMachineClassName(), "state", Type.getDescriptor(int.class));
+        visitor.visitFieldInsn(PUTFIELD, context.getAsyncContext().getClassName(), "state", Type.getDescriptor(int.class));
     }
 
     private void compileExpression(MethodVisitor visitor, CompilerContext context, BoundExpressionNode expression) {
@@ -2772,7 +3269,7 @@ public class Compiler {
             }
         } else {
             visitor.visitVarInsn(ALOAD, 0);
-            visitor.visitFieldInsn(GETFIELD, context.getAsyncStateMachineClassName(), fieldName, expression.type.getDescriptor());
+            visitor.visitFieldInsn(GETFIELD, context.getAsyncContext().getClassName(), fieldName, expression.type.getDescriptor());
         }
     }
 

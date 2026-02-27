@@ -33,19 +33,17 @@ public class CompilerContext {
     private final @Nullable Frame frame;
     private String className;
     private final List<RefHolder> refVariables = new ArrayList<>();
-    private String asyncStateMachineClassName;
     private String thisFieldName;
     private final List<LiftedVariable> lifted;
     private final List<CapturedVariable> captured;
     private final FunctionStack stack;
-    private Label generatorContinueLabel;
     private JavaInteropPolicy policy;
     private int lastEmittedLine;
     private final List<SGenericFunction> genericFunctions;
     private Label startLabel;
     private ClassLoaderContext classLoaderContext;
     private @Nullable MethodHandleCache methodHandleCache;
-    private @Nullable Map<StateBoundary, Integer> asyncStateBoundariesMap;
+    private @Nullable AsyncStateMachineContext asyncContext;
 
     private CompilerContext(
             @Nullable CompilerContext parent,
@@ -469,24 +467,6 @@ public class CompilerContext {
         return captured;
     }
 
-    public void setAsyncStateMachineClassName(String className) {
-        if (isFunctionRoot) {
-            asyncStateMachineClassName = className;
-        } else {
-            throw new InternalException("This is not a function root.");
-        }
-    }
-
-    public String getAsyncStateMachineClassName() {
-        CompilerContext current = this;
-        while (true) {
-            if (current.parent == null || current.isFunctionRoot) {
-                return current.asyncStateMachineClassName;
-            }
-            current = current.parent;
-        }
-    }
-
     public void setAsyncThisFieldName(String thisFieldName) {
         if (isFunctionRoot) {
             this.thisFieldName = thisFieldName;
@@ -503,14 +483,6 @@ public class CompilerContext {
             }
             current = current.parent;
         }
-    }
-
-    public Label getGeneratorContinueLabel() {
-        return getFunctionContext().generatorContinueLabel;
-    }
-
-    public void setGeneratorContinueLabel(Label label) {
-        generatorContinueLabel = label;
     }
 
     public void reserveStack(int index) {
@@ -622,16 +594,16 @@ public class CompilerContext {
         return methodHandleCache;
     }
 
-    public Map<StateBoundary, Integer> getAsyncStateBoundariesMap() {
-        Map<StateBoundary, Integer> map = getFunctionContext().asyncStateBoundariesMap;
-        if (map == null) {
+    public AsyncStateMachineContext getAsyncContext() {
+        AsyncStateMachineContext context = getFunctionContext().asyncContext;
+        if (context == null) {
             throw new InternalException();
         }
-        return map;
+        return context;
     }
 
-    public void setAsyncStateBoundariesMap(Map<StateBoundary, Integer> map) {
-        asyncStateBoundariesMap = map;
+    public void setAsyncContext(AsyncStateMachineContext asyncContext) {
+        this.asyncContext = asyncContext;
     }
 
     private void insertLocalVariable(SymbolRef variableRef) {
