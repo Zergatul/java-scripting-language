@@ -9,13 +9,22 @@ import java.util.List;
 
 public class StateBoundary {
 
+    public final boolean isMainCatch;
     public final Label label;
     public final List<BoundStatementNode> statements;
-    public final @Nullable StateBoundary tryCatchJumpState;
+    public final @Nullable StateBoundary catchState;
 
-    public StateBoundary(@Nullable StateBoundary tryCatchJumpState) {
+    public StateBoundary(boolean isMainCatch) {
+        this.isMainCatch = true;
         this.label = new Label();
         this.statements = new ArrayList<>();
-        this.tryCatchJumpState = tryCatchJumpState;
+        this.catchState = null;
+    }
+
+    public StateBoundary(@Nullable StateBoundary catchState) {
+        this.isMainCatch = false;
+        this.label = new Label();
+        this.statements = new ArrayList<>();
+        this.catchState = catchState;
     }
 }

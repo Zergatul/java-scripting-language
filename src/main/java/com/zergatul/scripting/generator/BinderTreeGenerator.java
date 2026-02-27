@@ -10,6 +10,7 @@ import com.zergatul.scripting.binding.BinderTreeVisitor;
 import com.zergatul.scripting.binding.nodes.*;
 import com.zergatul.scripting.binding.nodes.BoundNodeType;
 import com.zergatul.scripting.symbols.*;
+import com.zergatul.scripting.visitors.LoopControlFlowVisitor;
 import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
@@ -24,13 +25,15 @@ public class BinderTreeGenerator {
     private Frame frame;
     private StateBoundary currentBoundary;
     private boolean hasFinallyBlocks;
-    private int maxPendingFinallyStates;
+    private int currentInternalFrames;
+    private int maxInternalFrames;
 
     public BinderTreeGenerator() {
-        StateBoundary globalCatchState = new StateBoundary(null);
+        StateBoundary globalCatchState = new StateBoundary(true);
         boundaries.add(globalCatchState);
 
-        frame = new AsyncTryBlockFrame(new FunctionFrame(), globalCatchState);
+        Frame root = new FunctionFrame();
+        frame = new AsyncTryBlockFrame(root, new AsyncCatchBlockFrame(root, globalCatchState));
         currentBoundary = newBoundary();
     }
 
@@ -38,8 +41,8 @@ public class BinderTreeGenerator {
         return hasFinallyBlocks;
     }
 
-    public int getMaxPendingFinallyStates() {
-        return maxPendingFinallyStates;
+    public int getMaxInternalFrames() {
+        return maxInternalFrames;
     }
 
     public void generate(BoundStatementsListNode node) {
@@ -144,16 +147,16 @@ public class BinderTreeGenerator {
                             new BoundSetGeneratorStateNode(asyncLoop.breakState),
                             new BoundGeneratorContinueNode()));
         } else {
-            maxPendingFinallyStates = Math.max(maxPendingFinallyStates, finallyFrames.size());
+            maxInternalFrames = Math.max(maxInternalFrames, finallyFrames.size());
 
-            for (AsyncTryFinallyBlockFrame frame : finallyFrames) {
-                frame.hasPendingFinallyJumps = true;
-            }
+//            for (AsyncTryFinallyBlockFrame frame : finallyFrames) {
+//                frame.hasPendingFinallyJumps = true;
+//            }
 
             List<BoundStatementNode> statements = new ArrayList<>();
-            statements.add(new BoundGeneratorAddPendingFinallyStateNode(asyncLoop.breakState));
+            statements.add(new BoundGeneratorPushPendingFinallyStateNode(asyncLoop.breakState));
             for (int i = finallyFrames.size() - 1; i >= 1; i--) {
-                statements.add(new BoundGeneratorAddPendingFinallyStateNode(finallyFrames.get(i).finallyState));
+                statements.add(new BoundGeneratorPushPendingFinallyStateNode(finallyFrames.get(i).finallyState));
             }
             statements.add(new BoundSetGeneratorStateNode(finallyFrames.getFirst().finallyState));
             statements.add(new BoundGeneratorContinueNode());
@@ -175,12 +178,12 @@ public class BinderTreeGenerator {
                             new BoundSetGeneratorStateNode(asyncLoop.continueState),
                             new BoundGeneratorContinueNode()));
         } else {
-            maxPendingFinallyStates = Math.max(maxPendingFinallyStates, finallyFrames.size());
+            maxInternalFrames = Math.max(maxInternalFrames, finallyFrames.size());
 
             List<BoundStatementNode> statements = new ArrayList<>();
-            statements.add(new BoundGeneratorAddPendingFinallyStateNode(asyncLoop.continueState));
+            statements.add(new BoundGeneratorPushPendingFinallyStateNode(asyncLoop.continueState));
             for (int i = finallyFrames.size() - 1; i >= 1; i--) {
-                statements.add(new BoundGeneratorAddPendingFinallyStateNode(finallyFrames.get(i).finallyState));
+                statements.add(new BoundGeneratorPushPendingFinallyStateNode(finallyFrames.get(i).finallyState));
             }
             statements.add(new BoundSetGeneratorStateNode(finallyFrames.getFirst().finallyState));
             statements.add(new BoundGeneratorContinueNode());
@@ -189,13 +192,35 @@ public class BinderTreeGenerator {
     }
 
     private BoundStatementNode rewriteSync(BoundReturnStatementNode node) {
-        if (frame instanceof AsyncCatchBlockFrame) {
+        boolean forgetException = false;
+        StateBoundary pending = null;
+        for (Frame current = frame; current != null; current = current.parent) {
+            if (current instanceof AsyncTryBlockFrame tryFrame) {
+                if (tryFrame.finallyBlock != null) {
+                    pending = tryFrame.finallyBlock.finallyState;
+                    break;
+                }
+            }
+            if (current instanceof AsyncCatchBlockFrame catchFrame) {
+                forgetException = true;
+                if (catchFrame.finallyState != null) {
+                    pending = catchFrame.finallyState;
+                    break;
+                }
+            }
+            if (current instanceof AsyncFinallyBlockFrame finallyFrame) {
+                pending = finallyFrame.epilogueState;
+                break;
+            }
+        }
+
+        if (forgetException) {
             return new BoundBlockStatementNode(
                     List.of(
                             new BoundGeneratorForgetException(),
-                            new BoundGeneratorReturnNode(node.expression, frame.getCurrentFinallyState())));
+                            new BoundGeneratorReturnNode(node.expression, pending)));
         } else {
-            return new BoundGeneratorReturnNode(node.expression, frame.getCurrentFinallyState());
+            return new BoundGeneratorReturnNode(node.expression, pending);
         }
     }
 
@@ -292,6 +317,11 @@ public class BinderTreeGenerator {
     }
 
     private void rewriteAsync(BoundForLoopStatementNode node) {
+        LoopControlFlowVisitor visitor = new LoopControlFlowVisitor();
+        node.body.accept(visitor);
+        boolean hasBreak = visitor.hasBreak();
+        boolean hasContinue = visitor.hasContinue();
+
         if (node.init != null) {
             rewriteStatement(node.init);
         }
@@ -302,6 +332,11 @@ public class BinderTreeGenerator {
         add(new BoundSetGeneratorStateNode(begin));
 
         makeCurrent(begin);
+
+        if (hasBreak) {
+            incMaxFrames();
+            //add(new BoundGeneratorPushPendingFinallyStateNode(finallyBlockState));
+        }
 
         if (node.condition != null) {
             BoundExpressionNode expression = rewriteExpression(node.condition);
@@ -327,6 +362,9 @@ public class BinderTreeGenerator {
 
         add(new BoundSetGeneratorStateNode(begin));
 
+        if (hasBreak) {
+            decMaxFrames();
+        }
         makeCurrent(end);
     }
 
@@ -458,7 +496,8 @@ public class BinderTreeGenerator {
 
         StateBoundary catchBlockState = newDetachedBoundary();
         StateBoundary endState = newDetachedBoundary();
-        frame = new AsyncTryBlockFrame(frame, catchBlockState);
+        AsyncCatchBlockFrame catchFrame = new AsyncCatchBlockFrame(frame, catchBlockState);
+        frame = new AsyncTryBlockFrame(frame, catchFrame);
         StateBoundary tryBlockState = newDetachedBoundary();
 
         add(new BoundSetGeneratorStateNode(tryBlockState));
@@ -470,7 +509,7 @@ public class BinderTreeGenerator {
         frame = frame.getParent();
 
         makeCurrent(catchBlockState);
-        frame = new AsyncCatchBlockFrame(frame);
+        frame = catchFrame;
         rewriteStatement(node.catchBlock);
         frame = frame.getParent();
         add(new BoundGeneratorForgetException());
@@ -483,35 +522,32 @@ public class BinderTreeGenerator {
         assert node.finallyBlock != null;
 
         StateBoundary finallyBlockState = newDetachedBoundary();
+        StateBoundary finallyEpilogueState = new StateBoundary(null);
         StateBoundary endState = newDetachedBoundary();
-        AsyncTryFinallyBlockFrame finallyFrame = new AsyncTryFinallyBlockFrame(frame, finallyBlockState);
-        frame = finallyFrame;
+        AsyncFinallyBlockFrame finallyFrame = new AsyncFinallyBlockFrame(frame, finallyBlockState, finallyEpilogueState);
+        frame = new AsyncTryBlockFrame(frame, finallyFrame);
         StateBoundary tryBlockState = newDetachedBoundary();
 
         add(new BoundSetGeneratorStateNode(tryBlockState));
         makeCurrent(tryBlockState);
 
+        incMaxFrames();
+        add(new BoundGeneratorPushPendingFinallyStateNode(finallyBlockState));
         rewriteStatement(node.block);
         add(new BoundSetGeneratorStateNode(finallyBlockState));
 
         frame = frame.getParent();
 
         makeCurrent(finallyBlockState);
+        frame = finallyFrame;
         rewriteStatement(node.finallyBlock);
+        frame = frame.getParent();
+        add(new BoundSetGeneratorStateNode(finallyEpilogueState));
 
-        if (finallyFrame.hasPendingFinallyJumps) {
-            add(new BoundGeneratorFinallyDispatchNode());
-        }
+        makeCurrent(finallyEpilogueState);
+        add(new BoundGeneratorFinallyEpilogueNode(endState));
 
-        StateBoundary outerFinally = frame.getCurrentFinallyState();
-        if (outerFinally == null) {
-            add(new BoundGeneratorFinallyExitNode(frame.getCurrentCatchState()));
-        } else {
-            add(new BoundSetGeneratorStateNode(outerFinally));
-            add(new BoundGeneratorContinueNode());
-        }
-        add(new BoundSetGeneratorStateNode(endState));
-
+        decMaxFrames();
         makeCurrent(endState);
     }
 
@@ -526,43 +562,41 @@ public class BinderTreeGenerator {
 
         StateBoundary catchBlockState = newDetachedBoundary();
         StateBoundary finallyBlockState = newDetachedBoundary();
+        StateBoundary finallyEpilogueState = new StateBoundary(null);
         StateBoundary endState = newDetachedBoundary();
-        AsyncTryFinallyBlockFrame finallyFrame = new AsyncTryFinallyBlockFrame(frame, finallyBlockState);
-        frame = finallyFrame;
-        frame = new AsyncTryBlockFrame(frame, catchBlockState);
+        AsyncCatchBlockFrame catchFrame = new AsyncCatchBlockFrame(frame, catchBlockState, finallyBlockState);
+        AsyncFinallyBlockFrame finallyFrame = new AsyncFinallyBlockFrame(frame, finallyBlockState, finallyEpilogueState);
+
+        frame = new AsyncTryBlockFrame(frame, catchFrame, finallyFrame);
         StateBoundary tryBlockState = newDetachedBoundary();
 
         add(new BoundSetGeneratorStateNode(tryBlockState));
         makeCurrent(tryBlockState);
 
+        incMaxFrames();
+        add(new BoundGeneratorPushPendingFinallyStateNode(finallyBlockState));
         rewriteStatement(node.block);
         add(new BoundSetGeneratorStateNode(finallyBlockState));
 
-        frame = frame.getParent().getParent();
+        frame = frame.getParent();
 
         makeCurrent(catchBlockState);
-        frame = new AsyncCatchBlockFrame(frame);
+        frame = catchFrame;
         rewriteStatement(node.catchBlock);
         frame = frame.getParent();
         add(new BoundGeneratorForgetException());
         add(new BoundSetGeneratorStateNode(finallyBlockState));
 
         makeCurrent(finallyBlockState);
+        frame = finallyFrame;
         rewriteStatement(node.finallyBlock);
+        frame = frame.getParent();
+        add(new BoundSetGeneratorStateNode(finallyEpilogueState));
 
-        if (finallyFrame.hasPendingFinallyJumps) {
-            add(new BoundGeneratorFinallyDispatchNode());
-        }
+        makeCurrent(finallyEpilogueState);
+        add(new BoundGeneratorFinallyEpilogueNode(endState));
 
-        StateBoundary outerFinally = frame.getCurrentFinallyState();
-        if (outerFinally == null) {
-            add(new BoundGeneratorFinallyExitNode(frame.getCurrentCatchState()));
-        } else {
-            add(new BoundSetGeneratorStateNode(outerFinally));
-            add(new BoundGeneratorContinueNode());
-        }
-        add(new BoundSetGeneratorStateNode(endState));
-
+        decMaxFrames();
         makeCurrent(endState);
     }
 
@@ -586,7 +620,7 @@ public class BinderTreeGenerator {
 
     private BoundExpressionNode rewriteAsync(BoundAwaitExpressionNode node) {
         StateBoundary boundary = newBoundary();
-        add(new BoundGeneratorAwaitTransitionNode(node.expression, boundary, frame.getClosestTryCatchFinallyState()));
+        add(new BoundGeneratorAwaitTransitionNode(node.expression, boundary, frame.getClosestCatchOrFinallyEpilogue()));
         currentBoundary = boundary;
 
         return new BoundGeneratorGetValueNode(node.type);
@@ -772,6 +806,15 @@ public class BinderTreeGenerator {
         return visitor.isAsync();
     }
 
+    private void incMaxFrames() {
+        currentInternalFrames++;
+        maxInternalFrames = Math.max(maxInternalFrames, currentInternalFrames);
+    }
+
+    private void decMaxFrames() {
+        currentInternalFrames--;
+    }
+
     private static abstract class Frame {
 
         public final @Nullable Frame parent;
@@ -784,22 +827,27 @@ public class BinderTreeGenerator {
             return Objects.requireNonNull(parent);
         }
 
-        public StateBoundary getClosestTryCatchFinallyState() {
+        public StateBoundary getClosestCatchOrFinallyEpilogue() {
             for (Frame frame = this; frame != null; frame = frame.parent) {
-                if (frame instanceof AsyncTryBlockFrame asyncTryBlockFrame) {
-                    return asyncTryBlockFrame.catchState;
+                if (frame instanceof AsyncTryBlockFrame tryFrame && tryFrame.catchBlock != null) {
+                    return tryFrame.catchBlock.catchState;
                 }
-                if (frame instanceof AsyncTryFinallyBlockFrame asyncTryFinallyBlockFrame) {
-                    return asyncTryFinallyBlockFrame.finallyState;
+                if (frame instanceof AsyncFinallyBlockFrame finallyFrame) {
+                    return finallyFrame.epilogueState;
                 }
             }
             throw new InternalException();
         }
 
-        public StateBoundary getCurrentCatchState() {
+        public StateBoundary getClosestTryCatchFinallyState() {
             for (Frame frame = this; frame != null; frame = frame.parent) {
-                if (frame instanceof AsyncTryBlockFrame asyncTryBlockFrame) {
-                    return asyncTryBlockFrame.catchState;
+                if (frame instanceof AsyncTryBlockFrame tryFrame) {
+                    if (tryFrame.catchBlock != null) {
+                        return tryFrame.catchBlock.catchState;
+                    }
+                    if (tryFrame.finallyBlock != null) {
+                        return tryFrame.finallyBlock.finallyState;
+                    }
                 }
             }
             throw new InternalException();
@@ -860,28 +908,67 @@ public class BinderTreeGenerator {
 
     private static class AsyncTryBlockFrame extends Frame {
 
-        public final StateBoundary catchState;
+        public final @Nullable AsyncCatchBlockFrame catchBlock;
+        public final @Nullable AsyncFinallyBlockFrame finallyBlock;
 
-        public AsyncTryBlockFrame(Frame parent, StateBoundary catchState) {
+        public AsyncTryBlockFrame(Frame parent, AsyncCatchBlockFrame catchBlock) {
             super(parent);
-            this.catchState = catchState;
+            this.catchBlock = catchBlock;
+            this.finallyBlock = null;
+        }
+
+        public AsyncTryBlockFrame(Frame parent, AsyncFinallyBlockFrame finallyBlock) {
+            super(parent);
+            this.catchBlock = null;
+            this.finallyBlock = finallyBlock;
+        }
+
+        public AsyncTryBlockFrame(Frame parent, AsyncCatchBlockFrame catchBlock, AsyncFinallyBlockFrame finallyBlock) {
+            super(parent);
+            this.catchBlock = catchBlock;
+            this.finallyBlock = finallyBlock;
         }
     }
 
     private static class AsyncCatchBlockFrame extends Frame {
-        public AsyncCatchBlockFrame(Frame parent) {
+
+        public final StateBoundary catchState;
+        public final @Nullable StateBoundary finallyState;
+
+        public AsyncCatchBlockFrame(Frame parent, StateBoundary catchState) {
             super(parent);
+            this.catchState = catchState;
+            this.finallyState = null;
+        }
+
+        public AsyncCatchBlockFrame(Frame parent, StateBoundary catchState, StateBoundary finallyState) {
+            super(parent);
+            this.catchState = catchState;
+            this.finallyState = finallyState;
         }
     }
 
     private static class AsyncTryFinallyBlockFrame extends Frame {
 
         public final StateBoundary finallyState;
-        public boolean hasPendingFinallyJumps;
+        public final StateBoundary epilogueState;
 
-        public AsyncTryFinallyBlockFrame(Frame parent, StateBoundary finallyState) {
+        public AsyncTryFinallyBlockFrame(Frame parent, StateBoundary finallyState, StateBoundary epilogueState) {
             super(parent);
             this.finallyState = finallyState;
+            this.epilogueState = epilogueState;
+        }
+    }
+
+    private static class AsyncFinallyBlockFrame extends Frame {
+
+        public final StateBoundary finallyState;
+        public final StateBoundary epilogueState;
+
+        public AsyncFinallyBlockFrame(Frame parent, StateBoundary finallyState, StateBoundary epilogueState) {
+            super(parent);
+            this.finallyState = finallyState;
+            this.epilogueState = epilogueState;
         }
     }
 

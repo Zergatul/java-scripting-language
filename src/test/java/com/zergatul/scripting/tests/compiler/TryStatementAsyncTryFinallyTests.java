@@ -107,7 +107,7 @@ public class TryStatementAsyncTryFinallyTests {
     }
 
     @Test
-    public void nestedFinallyWithReturnTest() {
+    public void nestedFinallyReturnFromTryBlockTest() {
         String code = """
                 async int func(int param) {
                     try {
@@ -144,6 +144,55 @@ public class TryStatementAsyncTryFinallyTests {
 
         ApiRoot.futures.get(1).complete(null);
         Assertions.assertIterableEquals(List.of(1, 2, 3, 4, 6, 10), ApiRoot.intStorage.list);
+        Assertions.assertTrue(future.isDone());
+    }
+
+    @Test
+    public void nestedFinallyReturnFromFinallyBlockTest() {
+        String code = """
+                async int func(int param) {
+                    try {
+                        intStorage.add(1);
+                        await futures.create();
+                        try {
+                            intStorage.add(2);
+                            await futures.create();
+                            intStorage.add(3);
+                        } finally {
+                            intStorage.add(4);
+                            await futures.create();
+                            if (param > 0) {
+                                return 2 * param;
+                            }
+                        }
+                    } finally {
+                        intStorage.add(5);
+                    }
+                    return 0;
+                }
+                try {
+                    intStorage.add(await func(3));
+                } finally {
+                    intStorage.add(10);
+                }
+                """;
+
+        AsyncRunnable program = compileAsync(ApiRoot.class, code);
+        CompletableFuture<?> future = program.run();
+
+        Assertions.assertIterableEquals(List.of(1), ApiRoot.intStorage.list);
+        Assertions.assertFalse(future.isDone());
+
+        ApiRoot.futures.get(0).complete(null);
+        Assertions.assertIterableEquals(List.of(1, 2), ApiRoot.intStorage.list);
+        Assertions.assertFalse(future.isDone());
+
+        ApiRoot.futures.get(1).complete(null);
+        Assertions.assertIterableEquals(List.of(1, 2, 3, 4), ApiRoot.intStorage.list);
+        Assertions.assertFalse(future.isDone());
+
+        ApiRoot.futures.get(2).complete(null);
+        Assertions.assertIterableEquals(List.of(1, 2, 3, 4, 5, 6, 10), ApiRoot.intStorage.list);
         Assertions.assertTrue(future.isDone());
     }
 

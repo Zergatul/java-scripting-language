@@ -7,12 +7,12 @@ import com.zergatul.scripting.generator.StateBoundary;
 
 import java.util.List;
 
-public class BoundGeneratorAddPendingFinallyStateNode extends BoundStatementNode {
+public class BoundGeneratorPushPendingFinallyStateNode extends BoundStatementNode {
 
     public final StateBoundary state;
 
-    public BoundGeneratorAddPendingFinallyStateNode(StateBoundary state) {
-        super(BoundNodeType.GENERATOR_ADD_PENDING_FINALLY_STATE, TextRange.MISSING);
+    public BoundGeneratorPushPendingFinallyStateNode(StateBoundary state) {
+        super(BoundNodeType.GENERATOR_PUSH_PENDING_FINALLY_STATE, TextRange.MISSING);
         this.state = state;
     }
 
