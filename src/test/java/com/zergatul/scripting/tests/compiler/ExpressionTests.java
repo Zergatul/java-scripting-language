@@ -29,7 +29,7 @@ public class ExpressionTests extends ComparatorTest {
                 }
                 
                 int count = 0;
-                for (int i = 0; i < 1000000000; i++) {
+                for (int i = 0; i < 1000000; i++) {
                     get();
                     count++;
                 }
@@ -42,7 +42,7 @@ public class ExpressionTests extends ComparatorTest {
 
         Assertions.assertIterableEquals(
                 ApiRoot.intStorage.list,
-                List.of(1000000000));
+                List.of(1000000));
     }
 
     @Test

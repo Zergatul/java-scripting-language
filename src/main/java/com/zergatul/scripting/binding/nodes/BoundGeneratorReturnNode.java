@@ -11,12 +11,12 @@ import java.util.List;
 public class BoundGeneratorReturnNode extends BoundStatementNode {
 
     public final @Nullable BoundExpressionNode expression;
-    public final @Nullable StateBoundary finallyState;
+    public final @Nullable StateBoundary pendingState;
 
-    public BoundGeneratorReturnNode(@Nullable BoundExpressionNode expression, @Nullable StateBoundary finallyState) {
+    public BoundGeneratorReturnNode(@Nullable BoundExpressionNode expression, @Nullable StateBoundary pendingState) {
         super(BoundNodeType.GENERATOR_RETURN, TextRange.MISSING);
         this.expression = expression;
-        this.finallyState = finallyState;
+        this.pendingState = pendingState;
     }
 
     @Override
