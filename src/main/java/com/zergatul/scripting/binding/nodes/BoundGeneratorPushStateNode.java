@@ -3,16 +3,19 @@ package com.zergatul.scripting.binding.nodes;
 import com.zergatul.scripting.InternalException;
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
+import com.zergatul.scripting.generator.GeneratorStackEntryType;
 import com.zergatul.scripting.generator.StateBoundary;
 
 import java.util.List;
 
-public class BoundGeneratorPushPendingFinallyStateNode extends BoundStatementNode {
+public class BoundGeneratorPushStateNode extends BoundStatementNode {
 
+    public final GeneratorStackEntryType type;
     public final StateBoundary state;
 
-    public BoundGeneratorPushPendingFinallyStateNode(StateBoundary state) {
-        super(BoundNodeType.GENERATOR_PUSH_PENDING_FINALLY_STATE, TextRange.MISSING);
+    public BoundGeneratorPushStateNode(GeneratorStackEntryType type, StateBoundary state) {
+        super(BoundNodeType.GENERATOR_PUSH_STATE, TextRange.MISSING);
+        this.type = type;
         this.state = state;
     }
 

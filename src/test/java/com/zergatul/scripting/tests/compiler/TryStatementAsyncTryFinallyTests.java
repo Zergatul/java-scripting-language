@@ -6,7 +6,6 @@ import com.zergatul.scripting.tests.compiler.helpers.IntStorage;
 import com.zergatul.scripting.tests.compiler.helpers.StringStorage;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -496,7 +495,6 @@ public class TryStatementAsyncTryFinallyTests {
                     for (int i = 0; i < 3; i++) {
                         try {
                             if (i == 1) return 10;
-                            if (i == 2) break;
                             await futures.create();
                         } finally {
                             await futures.create();
@@ -590,7 +588,6 @@ public class TryStatementAsyncTryFinallyTests {
         Assertions.assertTrue(future.exceptionNow() instanceof RuntimeException);
     }
 
-    @Disabled("Limitation of current implementation")
     @Test
     public void loopWithInnerFinallyThrowsTest() {
         String code = """
@@ -622,6 +619,140 @@ public class TryStatementAsyncTryFinallyTests {
         Assertions.assertIterableEquals(List.of(0, 10, 20), ApiRoot.intStorage.list);
         Assertions.assertTrue(future.isDone());
         Assertions.assertTrue(future.exceptionNow() instanceof RuntimeException);
+    }
+
+    @Test
+    public void returnInFinallyOverridesExceptionTest() {
+        String code = """
+                async int func() {
+                    try {
+                        intStorage.add(1);
+                        await futures.create();
+                        intStorage.add(2);
+                        [1][2] = 3; // throws
+                        intStorage.add(999);
+                    } finally {
+                        intStorage.add(3);
+                        await futures.create();
+                        intStorage.add(4);
+                        return 7; // should override the exception from try
+                    }
+                }
+                intStorage.add(await func());
+                intStorage.add(8);
+                """;
+
+        AsyncRunnable program = compileAsync(ApiRoot.class, code);
+        CompletableFuture<?> future = program.run();
+
+        Assertions.assertIterableEquals(List.of(1), ApiRoot.intStorage.list);
+        Assertions.assertFalse(future.isDone());
+
+        ApiRoot.futures.get(0).complete(null);
+        Assertions.assertIterableEquals(List.of(1, 2, 3), ApiRoot.intStorage.list);
+        Assertions.assertFalse(future.isDone());
+
+        ApiRoot.futures.get(1).complete(null);
+        Assertions.assertIterableEquals(List.of(1, 2, 3, 4, 7, 8), ApiRoot.intStorage.list);
+        Assertions.assertTrue(future.isDone());
+    }
+
+    @Test
+    public void innerFinallyReturnsOuterFinallyThrowsTest() {
+        String code = """
+                async int func() {
+                    try {
+                        try {
+                            intStorage.add(1);
+                            await futures.create();      // F0
+                            [1][2] = 3;                  // throws
+                            intStorage.add(999);
+                        } finally {
+                            intStorage.add(2);
+                            await futures.create();      // F1
+                            intStorage.add(3);
+                            return 10;                   // overrides inner exception
+                        }
+                    } finally {
+                        intStorage.add(4);
+                        await futures.create();          // F2
+                        intStorage.add(5);
+                        [1][2] = 3;                      // throws, overrides pending return=10
+                    }
+                }
+                
+                try {
+                    intStorage.add(await func());
+                } catch (e) {
+                    intStorage.add(777);                // should execute (outer finally throws)
+                }
+                intStorage.add(888);
+                """;
+
+        AsyncRunnable program = compileAsync(ApiRoot.class, code);
+        CompletableFuture<?> future = program.run();
+
+        Assertions.assertIterableEquals(List.of(1), ApiRoot.intStorage.list);
+        Assertions.assertFalse(future.isDone());
+
+        ApiRoot.futures.get(0).complete(null);
+        Assertions.assertIterableEquals(List.of(1, 2), ApiRoot.intStorage.list);
+        Assertions.assertFalse(future.isDone());
+
+        ApiRoot.futures.get(1).complete(null);
+        Assertions.assertIterableEquals(List.of(1, 2, 3, 4), ApiRoot.intStorage.list);
+        Assertions.assertFalse(future.isDone());
+
+        ApiRoot.futures.get(2).complete(null);
+        Assertions.assertIterableEquals(List.of(1, 2, 3, 4, 5, 777, 888), ApiRoot.intStorage.list);
+        Assertions.assertTrue(future.isDone());
+    }
+
+    @Test
+    public void loopBreakContinueInFinallyTest() {
+        String code = """
+                for (int i = 0; i < 3; i++) {
+                    try {
+                        intStorage.add(i);
+                        await futures.create();            // F0, F2, ...
+                        intStorage.add(10 + i);
+                    } finally {
+                        intStorage.add(100 + i);
+                        await futures.create();            // F1, F3, ...
+                
+                        if (i == 0) {
+                            continue;                      // continue FROM FINALLY (after await)
+                        }
+                        if (i == 1) {
+                            break;                         // break FROM FINALLY (after await)
+                        }
+                
+                        intStorage.add(9999);              // should be unreachable
+                    }
+                
+                    intStorage.add(200 + i);               // for i=0 should be skipped by continue
+                }
+                
+                intStorage.add(7777);                      // should execute after break exits loop
+                """;
+
+        AsyncRunnable program = compileAsync(ApiRoot.class, code);
+        CompletableFuture<?> future = program.run();
+
+        Assertions.assertIterableEquals(List.of(0), ApiRoot.intStorage.list);
+        Assertions.assertFalse(future.isDone());
+
+        ApiRoot.futures.get(0).complete(null);
+        Assertions.assertIterableEquals(List.of(0, 10, 100), ApiRoot.intStorage.list);
+        Assertions.assertFalse(future.isDone());
+
+        ApiRoot.futures.get(1).complete(null);
+            Assertions.assertIterableEquals(List.of(0, 10, 100, 1, 11, 101), ApiRoot.intStorage.list);
+        Assertions.assertFalse(future.isDone());
+
+        ApiRoot.futures.get(2).complete(null);
+        Assertions.assertIterableEquals(List.of(0, 10, 100, 1, 11, 101, 7777), ApiRoot.intStorage.list);
+        Assertions.assertTrue(future.isDone());
     }
 
     public static class ApiRoot {
