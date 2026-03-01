@@ -24,7 +24,7 @@ public class AsyncExceptionVariable extends Variable {
         visitor.visitVarInsn(ALOAD, 0);
         visitor.visitFieldInsn(
                 GETFIELD,
-                context.getAsyncStateMachineClassName(),
+                context.getAsyncContext().getClassName(),
                 "exception",
                 Type.getDescriptor(Throwable.class));
     }

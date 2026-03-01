@@ -151,8 +151,14 @@ public class BinderTreeGenerator {
                             new BoundSetGeneratorStateNode(asyncLoop.breakState),
                             new BoundGeneratorContinueNode()));
         } else {
+            hasPendingJump = true;
+
+            // if we are inside finally we are exiting, we have to jump to epilogue
+            AsyncFinallyBlockFrame finallyFrame = frame.getCurrentFinallyFrame(asyncLoop);
+            StateBoundary epilogue = finallyFrame != null ? finallyFrame.epilogueState : null;
+
             List<BoundStatementNode> statements = new ArrayList<>();
-            statements.add(new BoundGeneratorJumpNode(asyncLoop.breakState));
+            statements.add(new BoundGeneratorJumpNode(asyncLoop.breakState, epilogue));
             statements.add(new BoundGeneratorContinueNode());
             return new BoundBlockStatementNode(statements);
         }
@@ -172,8 +178,13 @@ public class BinderTreeGenerator {
                             new BoundGeneratorContinueNode()));
         } else {
             hasPendingJump = true;
+
+            // if we are inside finally we are exiting, we have to jump to epilogue
+            AsyncFinallyBlockFrame finallyFrame = frame.getCurrentFinallyFrame(asyncLoop);
+            StateBoundary epilogue = finallyFrame != null ? finallyFrame.epilogueState : null;
+
             List<BoundStatementNode> statements = new ArrayList<>();
-            statements.add(new BoundGeneratorJumpNode(asyncLoop.continueState));
+            statements.add(new BoundGeneratorJumpNode(asyncLoop.continueState, epilogue));
             statements.add(new BoundGeneratorContinueNode());
             return new BoundBlockStatementNode(statements);
         }
@@ -783,7 +794,8 @@ public class BinderTreeGenerator {
     }
 
     private StateBoundary newDetachedBoundary() {
-        return new StateBoundary(frame.getClosestTryCatchFinallyState());
+        //return new StateBoundary(frame.getClosestTryCatchFinallyState());
+        return new StateBoundary(frame.getClosestCatchOrFinallyOrEpilogue());
     }
 
     private StateBoundary newBoundary() {
@@ -837,6 +849,23 @@ public class BinderTreeGenerator {
             throw new InternalException();
         }
 
+        public StateBoundary getClosestCatchOrFinallyOrEpilogue() {
+            for (Frame frame = this; frame != null; frame = frame.parent) {
+                if (frame instanceof AsyncTryBlockFrame tryFrame) {
+                    if (tryFrame.catchBlock != null) {
+                        return tryFrame.catchBlock.catchState;
+                    }
+                    if (tryFrame.finallyBlock != null) {
+                        return tryFrame.finallyBlock.finallyState;
+                    }
+                }
+                if (frame instanceof AsyncFinallyBlockFrame finallyFrame) {
+                    return finallyFrame.epilogueState;
+                }
+            }
+            throw new InternalException();
+        }
+
         public StateBoundary getClosestTryCatchFinallyState() {
             for (Frame frame = this; frame != null; frame = frame.parent) {
                 if (frame instanceof AsyncTryBlockFrame tryFrame) {
@@ -846,6 +875,9 @@ public class BinderTreeGenerator {
                     if (tryFrame.finallyBlock != null) {
                         return tryFrame.finallyBlock.finallyState;
                     }
+                }
+                if (frame instanceof AsyncFinallyBlockFrame finallyFrame) {
+                    return finallyFrame.epilogueState;
                 }
             }
             throw new InternalException();
@@ -860,14 +892,13 @@ public class BinderTreeGenerator {
             return null;
         }
 
-        public List<AsyncTryFinallyBlockFrame> getFinallyFrames(Frame destination) {
-            List<AsyncTryFinallyBlockFrame> frames = new ArrayList<>();
-            for (Frame frame = this; frame != destination; frame = frame.getParent()) {
-                if (frame instanceof AsyncTryFinallyBlockFrame finallyBlockFrame) {
-                    frames.add(finallyBlockFrame);
+        public @Nullable AsyncFinallyBlockFrame getCurrentFinallyFrame(Frame stop) {
+            for (Frame frame = this; frame != stop; frame = frame.getParent()) {
+                if (frame instanceof AsyncFinallyBlockFrame finallyBlockFrame) {
+                    return finallyBlockFrame;
                 }
             }
-            return frames;
+            return null;
         }
 
         public LoopFrame getCurrentLoop() {
