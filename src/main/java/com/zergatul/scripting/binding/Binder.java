@@ -2068,16 +2068,22 @@ public class Binder {
     }
 
     private void verifyMethodAccessible(MethodReference methodRef, Locatable locatable) {
-        if (methodRef.isPublic()) {
-            return;
+        if (methodRef instanceof NativeMethodReference nativeMethodRef) {
+            MethodUsagePolicy policy = parameters.getMethodUsagePolicy();
+            if (policy != null) {
+                policy.validate(nativeMethodRef.getUnderlying())
+                        .ifPresent(message -> addDiagnostic(BinderErrors.MethodUsageNotAllowed, locatable, message));
+            }
         }
 
-        if (methodRef instanceof NativeMethodReference nativeMethodRef) {
-            MethodHandles.Lookup lookup = MethodHandles.lookup();
-            try {
-                MethodHandles.privateLookupIn(nativeMethodRef.getUnderlying().getDeclaringClass(), lookup);
-            } catch (IllegalAccessException | SecurityException e) {
-                addDiagnostic(BinderErrors.PrivateAccessDenied, locatable, e.toString());
+        if (!methodRef.isPublic()) {
+            if (methodRef instanceof NativeMethodReference nativeMethodRef) {
+                MethodHandles.Lookup lookup = MethodHandles.lookup();
+                try {
+                    MethodHandles.privateLookupIn(nativeMethodRef.getUnderlying().getDeclaringClass(), lookup);
+                } catch (IllegalAccessException | SecurityException e) {
+                    addDiagnostic(BinderErrors.PrivateAccessDenied, locatable, e.toString());
+                }
             }
         }
     }

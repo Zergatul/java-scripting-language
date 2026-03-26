@@ -8,7 +8,6 @@ import com.zergatul.scripting.compiler.JavaInteropPolicy;
 import com.zergatul.scripting.parser.nodes.MemberAccessExpressionNode;
 import com.zergatul.scripting.parser.nodes.ParserNodeType;
 import com.zergatul.scripting.type.NativeMethodReference;
-import com.zergatul.scripting.type.PropertyReference;
 import com.zergatul.scripting.type.SType;
 import com.zergatul.scripting.type.SUnknown;
 
@@ -68,7 +67,7 @@ public class ObjectMemberCompletionProvider<T> extends AbstractCompletionProvide
                 .filter(p -> p.isPublic() ^ isPrivate)
                 .filter(m -> {
                     if (m instanceof NativeMethodReference nativeRef) {
-                        JavaInteropPolicy checker = parameters.getPolicy();
+                        JavaInteropPolicy checker = parameters.getInteropPolicy();
                         if (checker != null) {
                             return checker.isMethodVisible(nativeRef.getUnderlying());
                         } else {

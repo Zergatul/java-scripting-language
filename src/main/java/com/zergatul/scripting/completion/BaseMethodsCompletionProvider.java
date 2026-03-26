@@ -69,7 +69,7 @@ public class BaseMethodsCompletionProvider<T> extends AbstractCompletionProvider
             baseType.getInstanceMethods().stream()
                     .filter(m -> {
                         if (m instanceof NativeMethodReference nativeRef) {
-                            JavaInteropPolicy checker = parameters.getPolicy();
+                            JavaInteropPolicy checker = parameters.getInteropPolicy();
                             if (checker != null) {
                                 return checker.isMethodVisible(nativeRef.getUnderlying());
                             } else {
