@@ -1,6 +1,7 @@
 package com.zergatul.scripting.compiler;
 
 import com.zergatul.scripting.type.SType;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -13,6 +14,7 @@ public class CompilationParametersBuilder {
     private SType asyncReturnType;
     private List<Class<?>> customTypes;
     private JavaInteropPolicy policy;
+    private @Nullable MethodUsagePolicy methodUsagePolicy;
     private String mainClassName;
     private String sourceFile;
     private boolean emitLineNumbers;
@@ -60,6 +62,11 @@ public class CompilationParametersBuilder {
         return this;
     }
 
+    public CompilationParametersBuilder setPolicy(MethodUsagePolicy policy) {
+        this.methodUsagePolicy = policy;
+        return this;
+    }
+
     public CompilationParametersBuilder setMainClassName(String mainClassName) {
         this.mainClassName = mainClassName;
         return this;
@@ -92,6 +99,7 @@ public class CompilationParametersBuilder {
                 asyncReturnType,
                 customTypes,
                 policy,
+                methodUsagePolicy,
                 mainClassName,
                 sourceFile,
                 emitLineNumbers,

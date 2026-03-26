@@ -23,7 +23,8 @@ public class CompilationParameters {
     private final Class<?> functionalInterface;
     private final @Nullable SType asyncReturnType;
     private final List<Class<?>> customTypes;
-    private final JavaInteropPolicy policy;
+    private final @Nullable JavaInteropPolicy interopPolicy;
+    private final @Nullable MethodUsagePolicy methodUsagePolicy;
     private final @Nullable String mainClassName;
     private final @Nullable String sourceFile;
 
@@ -36,7 +37,8 @@ public class CompilationParameters {
             Class<?> functionalInterface,
             @Nullable SType asyncReturnType,
             List<Class<?>> customTypes,
-            JavaInteropPolicy policy,
+            @Nullable JavaInteropPolicy interopPolicy,
+            @Nullable MethodUsagePolicy methodUsagePolicy,
             @Nullable String mainClassName,
             @Nullable String sourceFile,
             boolean emitLineNumbers,
@@ -56,7 +58,8 @@ public class CompilationParameters {
         this.functionalInterface = functionalInterface;
         this.asyncReturnType = asyncReturnType;
         this.customTypes = addPredefinedTypes(customTypes);
-        this.policy = policy;
+        this.interopPolicy = interopPolicy;
+        this.methodUsagePolicy = methodUsagePolicy;
         this.mainClassName = mainClassName;
         this.sourceFile = sourceFile;
         this.emitLineNumbers = emitLineNumbers;
@@ -94,7 +97,7 @@ public class CompilationParameters {
 
     public CompilerContext getContext() {
         CompilerContext context = CompilerContext.create(getReturnType(), isAsync());
-        context.setPolicy(policy);
+        context.setInteropPolicy(interopPolicy);
         for (StaticVariable variable : staticVariables) {
             context.addStaticSymbol(variable.getName(), new ImmutableSymbolRef(variable));
         }
@@ -124,9 +127,12 @@ public class CompilationParameters {
         return customTypes;
     }
 
-    @SuppressWarnings("unused")
-    public JavaInteropPolicy getPolicy() {
-        return policy;
+    public @Nullable JavaInteropPolicy getInteropPolicy() {
+        return interopPolicy;
+    }
+
+    public @Nullable MethodUsagePolicy getMethodUsagePolicy() {
+        return methodUsagePolicy;
     }
 
     protected void addStaticVariable(StaticVariable variable) {

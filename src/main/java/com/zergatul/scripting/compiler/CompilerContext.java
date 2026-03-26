@@ -4,7 +4,6 @@ import com.zergatul.scripting.InternalException;
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.compiler.frames.Frame;
 import com.zergatul.scripting.compiler.frames.FunctionFrame;
-import com.zergatul.scripting.generator.StateBoundary;
 import com.zergatul.scripting.symbols.*;
 import com.zergatul.scripting.type.*;
 import org.jspecify.annotations.Nullable;
@@ -37,7 +36,7 @@ public class CompilerContext {
     private final List<LiftedVariable> lifted;
     private final List<CapturedVariable> captured;
     private final FunctionStack stack;
-    private JavaInteropPolicy policy;
+    private @Nullable JavaInteropPolicy interopPolicy;
     private int lastEmittedLine;
     private final List<SGenericFunction> genericFunctions;
     private Label startLabel;
@@ -521,23 +520,23 @@ public class CompilerContext {
     }
 
     public boolean isMethodVisible(Method method) {
-        return root.policy == null || root.policy.isMethodVisible(method);
+        return root.interopPolicy == null || root.interopPolicy.isMethodVisible(method);
     }
 
     public boolean isJavaTypeUsageAllowed() {
-        return root.policy == null || root.policy.isJavaTypeUsageAllowed();
+        return root.interopPolicy == null || root.interopPolicy.isJavaTypeUsageAllowed();
     }
 
     public ClassLoader getJavaTypeClassLoader() {
-        return root.policy == null ? Thread.currentThread().getContextClassLoader() : root.policy.getClassLoader();
+        return root.interopPolicy == null ? Thread.currentThread().getContextClassLoader() : root.interopPolicy.getClassLoader();
     }
 
     public String getJavaTypeUsageError() {
-        return root.policy.getJavaTypeUsageError();
+        return root.interopPolicy.getJavaTypeUsageError();
     }
 
-    public void setPolicy(JavaInteropPolicy policy) {
-        this.policy = policy;
+    public void setInteropPolicy(@Nullable JavaInteropPolicy interopPolicy) {
+        this.interopPolicy = interopPolicy;
     }
 
     public int getLastEmittedLine() {
