@@ -197,6 +197,21 @@ public class CharTests {
                 List.of("a", "1"));
     }
 
+    @Test
+    public void fromCodeTest() {
+        String code = """
+                stringStorage.add(char.fromCode(64).toString());
+                stringStorage.add(char.fromCode(1031).toString());
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(
+                ApiRoot.stringStorage.list,
+                List.of("@", "Ї"));
+    }
+
     public static class ApiRoot {
         public static BoolStorage boolStorage;
         public static IntStorage intStorage;

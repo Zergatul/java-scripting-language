@@ -224,6 +224,26 @@ public class JavaTypeTests {
         Assertions.assertIterableEquals(ApiRoot.boolStorage.list, List.of(true));
     }
 
+    @Test
+    public void characterTest() {
+        String code = """
+                typealias Character = Java<java.lang.Character>;
+                typealias String = Java<java.lang.String>;
+                
+                string test = "";
+                for (int i = 0; i < 6; i++) {
+                    let ch = Character.toChars('A' + i);
+                    test += String.valueOf(ch[0]);
+                }
+                stringStorage.add(test);
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(ApiRoot.stringStorage.list, List.of("ABCDEF"));
+    }
+
     public static class ApiRoot {
         public static BoolStorage boolStorage;
         public static IntStorage intStorage;

@@ -103,6 +103,11 @@ public class SChar extends SValueType {
     }
 
     @Override
+    public List<MethodReference> getStaticMethods() {
+        return List.of(METHOD_FROM_CODE.value());
+    }
+
+    @Override
     public List<BinaryOperation> getBinaryOperations() {
         return binaryOperations.value();
     }
@@ -172,6 +177,34 @@ public class SChar extends SValueType {
             "valueOf",
             "toString",
             SString.instance));
+
+    private static final Lazy<MethodReference> METHOD_FROM_CODE = new Lazy<>(() -> new MethodReference() {
+
+        @Override
+        public String getName() {
+            return "fromCode";
+        }
+
+        @Override
+        public SType getOwner() {
+            return instance;
+        }
+
+        @Override
+        public SType getReturn() {
+            return instance;
+        }
+
+        @Override
+        public List<MethodParameter> getParameters() {
+            return List.of(new MethodParameter("code", SInt.instance));
+        }
+
+        @Override
+        public void compileInvoke(MethodVisitor visitor, CompilerContext context, Runnable compileArguments) {
+            compileArguments.run();
+        }
+    });
 
     private static class CharComparisonOperation extends BinaryOperation {
 

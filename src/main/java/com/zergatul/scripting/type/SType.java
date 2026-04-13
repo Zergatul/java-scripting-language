@@ -260,6 +260,12 @@ public abstract class SType {
             if (clazz == Double.class) {
                 return SFloat.instance.getBoxed();
             }
+            if (clazz == char.class) {
+                return SChar.instance;
+            }
+            if (clazz == Character.class) {
+                return SChar.instance.getBoxed();
+            }
             if (clazz == String.class) {
                 return SString.instance;
             }
