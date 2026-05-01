@@ -2481,6 +2481,31 @@ public class Compiler {
                 false);
         visitor.visitInsn(POP);
 
+        if (node.exceptionState != null) {
+            // Exceptions thrown from a finally block leave that finally first,
+            // then continue through the enclosing catch/finally chain.
+            visitor.visitVarInsn(ALOAD, 0);
+            visitor.visitFieldInsn(
+                    GETFIELD,
+                    context.getAsyncContext().getClassName(),
+                    "exception",
+                    Type.getDescriptor(Throwable.class));
+
+            Label end = new Label();
+            visitor.visitJumpInsn(IFNULL, end);
+
+            visitor.visitVarInsn(ALOAD, 0);
+            visitor.visitLdcInsn(context.getAsyncContext().getStateIndex(node.exceptionState));
+            visitor.visitFieldInsn(
+                    PUTFIELD,
+                    context.getAsyncContext().getClassName(),
+                    "state",
+                    Type.getDescriptor(int.class));
+            compileGeneratorContinue(visitor, context);
+
+            visitor.visitLabel(end);
+        }
+
         // if (this.hasFinallyFrame()) { this.state = this.peekFinallyFrame(); break; }
         visitor.visitVarInsn(ALOAD, 0);
         visitor.visitMethodInsn(
