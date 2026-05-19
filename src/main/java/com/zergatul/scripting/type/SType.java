@@ -12,7 +12,9 @@ import java.lang.reflect.GenericArrayType;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.TypeVariable;
 import java.lang.reflect.WildcardType;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
 public abstract class SType {
@@ -79,6 +81,10 @@ public abstract class SType {
     }
 
     public boolean isAbstract() {
+        return false;
+    }
+
+    public boolean isInterface() {
         return false;
     }
 
@@ -184,7 +190,7 @@ public abstract class SType {
 
     public static SType fromJavaType(java.lang.reflect.Type type) {
         if (type instanceof TypeVariable<?> typeVariable) {
-            return fromJavaType(typeVariable.getBounds()[0]);
+            return fromJavaType(eraseTypeVariableBound(typeVariable));
         }
 
         if (type instanceof ParameterizedType parameterized) {
@@ -297,5 +303,33 @@ public abstract class SType {
         }
 
         throw new InternalException();
+    }
+
+    protected static java.lang.reflect.Type eraseTypeVariableBound(TypeVariable<?> typeVariable) {
+        return eraseTypeVariableBound(typeVariable, new HashSet<>());
+    }
+
+    private static java.lang.reflect.Type eraseTypeVariableBound(TypeVariable<?> typeVariable, Set<TypeVariable<?>> visited) {
+        if (!visited.add(typeVariable)) {
+            return Object.class;
+        }
+
+        return eraseType(typeVariable.getBounds()[0], visited);
+    }
+
+    private static java.lang.reflect.Type eraseType(java.lang.reflect.Type type, Set<TypeVariable<?>> visited) {
+        if (type instanceof ParameterizedType parameterized) {
+            return parameterized.getRawType();
+        }
+
+        if (type instanceof TypeVariable<?> typeVariable) {
+            return eraseTypeVariableBound(typeVariable, visited);
+        }
+
+        if (type instanceof WildcardType wildcard) {
+            return eraseType(wildcard.getUpperBounds()[0], visited);
+        }
+
+        return type;
     }
 }

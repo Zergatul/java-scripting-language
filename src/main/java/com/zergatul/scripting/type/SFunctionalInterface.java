@@ -1,7 +1,6 @@
 package com.zergatul.scripting.type;
 
 import com.zergatul.scripting.InterfaceHelper;
-import com.zergatul.scripting.InternalException;
 import org.objectweb.asm.Type;
 
 import java.lang.reflect.*;
@@ -46,35 +45,14 @@ public class SFunctionalInterface extends SFunction {
 
         SType rawReturnType = SType.fromJavaType(method.getReturnType());
         java.lang.reflect.Type genericReturnType = method.getGenericReturnType();
-        SType actualReturnType;
-        if (genericReturnType instanceof TypeVariable<?> typeVariable) {
-            actualReturnType = SType.fromJavaType(actualArgs[findTypeParamIndex(classTypeParams, typeVariable.getName())]);
-        } else {
-            actualReturnType = SType.fromJavaType(genericReturnType);
-        }
+        SType actualReturnType = SType.fromJavaType(resolveActualType(genericReturnType, classTypeParams, actualArgs));
 
         SType[] rawParameters = Arrays.stream(method.getParameters())
                 .map(Parameter::getType)
                 .map(SType::fromJavaType)
                 .toArray(SType[]::new);
         SType[] actualParameters = Arrays.stream(method.getGenericParameterTypes())
-                .map(t -> {
-                    if (t instanceof TypeVariable<?> typeVariable) {
-                        java.lang.reflect.Type actual = actualArgs[findTypeParamIndex(classTypeParams, typeVariable.getName())];
-                        if (actual instanceof WildcardType wildcard) {
-                            java.lang.reflect.Type bound = wildcard.getLowerBounds()[0];
-                            if (bound instanceof Class<?> clazz1) {
-                                return clazz1;
-                            } else {
-                                return ((TypeVariable<?>) bound).getBounds()[0];
-                            }
-                        } else {
-                            return actual;
-                        }
-                    } else {
-                        return t;
-                    }
-                })
+                .map(t -> resolveActualType(t, classTypeParams, actualArgs))
                 .map(SType::fromJavaType)
                 .toArray(SType[]::new);
 
@@ -167,9 +145,28 @@ public class SFunctionalInterface extends SFunction {
                     other.method.equals(method) &&
                     other.actualReturnType.equals(actualReturnType) &&
                     Arrays.equals(other.actualParameters, actualParameters);
+        } else if (obj instanceof SClassType other) {
+            return other.getJavaClass() == clazz;
         } else {
             return false;
         }
+    }
+
+    private static java.lang.reflect.Type resolveActualType(
+            java.lang.reflect.Type type,
+            TypeVariable<? extends Class<?>>[] classTypeParams,
+            java.lang.reflect.Type[] actualArgs
+    ) {
+        if (type instanceof TypeVariable<?> typeVariable) {
+            int index = findTypeParamIndex(classTypeParams, typeVariable.getName());
+            if (index != -1) {
+                return normalizeWildcard(actualArgs[index]);
+            }
+
+            return typeVariable.getBounds()[0];
+        }
+
+        return type;
     }
 
     private static int findTypeParamIndex(TypeVariable<? extends Class<?>>[] params, String name) {
@@ -180,9 +177,23 @@ public class SFunctionalInterface extends SFunction {
                 break;
             }
         }
-        if (index == -1) {
-            throw new InternalException();
-        }
         return index;
+    }
+
+    private static java.lang.reflect.Type normalizeWildcard(java.lang.reflect.Type type) {
+        if (type instanceof WildcardType wildcard) {
+            java.lang.reflect.Type[] lowerBounds = wildcard.getLowerBounds();
+            if (lowerBounds.length > 0) {
+                return normalizeWildcard(lowerBounds[0]);
+            }
+
+            return normalizeWildcard(wildcard.getUpperBounds()[0]);
+        }
+
+        if (type instanceof TypeVariable<?> typeVariable) {
+            return SType.eraseTypeVariableBound(typeVariable);
+        }
+
+        return type;
     }
 }

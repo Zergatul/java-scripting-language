@@ -15,7 +15,7 @@ public class ClassNode extends CompilationUnitMemberNode {
     public final Token keyword;
     public final NameExpressionNode name;
     public final @Nullable Token colon;
-    public final @Nullable TypeNode baseTypeNode;
+    public final SeparatedList<TypeNode> baseTypeNodes;
     public final Token openBrace;
     public final List<ClassMemberNode> members;
     public final Token closeBrace;
@@ -27,14 +27,14 @@ public class ClassNode extends CompilationUnitMemberNode {
             List<ClassMemberNode> members,
             Token closeBrace
     ) {
-        this(keyword, identifier, null, null, openBrace, members, closeBrace);
+        this(keyword, identifier, null, SeparatedList.of(), openBrace, members, closeBrace);
     }
 
     public ClassNode(
             Token keyword,
             ValueToken identifier,
             @Nullable Token colon,
-            @Nullable TypeNode baseTypeNode,
+            SeparatedList<TypeNode> baseTypeNodes,
             Token openBrace,
             List<ClassMemberNode> members,
             Token closeBrace
@@ -43,7 +43,7 @@ public class ClassNode extends CompilationUnitMemberNode {
         this.keyword = keyword;
         this.name = new NameExpressionNode(identifier);
         this.colon = colon;
-        this.baseTypeNode = baseTypeNode;
+        this.baseTypeNodes = baseTypeNodes;
         this.openBrace = openBrace;
         this.members = members;
         this.closeBrace = closeBrace;
@@ -57,7 +57,7 @@ public class ClassNode extends CompilationUnitMemberNode {
     @Override
     public void acceptChildren(ParserTreeVisitor visitor) {
         name.accept(visitor);
-        if (baseTypeNode != null) {
+        for (TypeNode baseTypeNode : baseTypeNodes.getNodes()) {
             baseTypeNode.accept(visitor);
         }
         for (ClassMemberNode member : members) {
@@ -73,9 +73,7 @@ public class ClassNode extends CompilationUnitMemberNode {
         if (colon != null) {
             nodes.add(colon);
         }
-        if (baseTypeNode != null) {
-            nodes.add(baseTypeNode);
-        }
+        nodes.addAll(baseTypeNodes.getChildNodes());
         nodes.add(openBrace);
         nodes.addAll(members);
         nodes.add(closeBrace);

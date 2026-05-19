@@ -47,7 +47,8 @@ public class InOperatorTests extends ComparatorTest {
                 boolStorage.add("" in 1);
                 """;
 
-        comparator.assertEquals(List.of(
+        comparator.assertEquals(
+                List.of(
                         new DiagnosticMessage(
                                 BinderErrors.CannotUseInOperator,
                                 new SingleLineTextRange(1, 17, 16, 7),

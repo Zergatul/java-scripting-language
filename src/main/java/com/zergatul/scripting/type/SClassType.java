@@ -36,6 +36,11 @@ public class SClassType extends SReferenceType {
     }
 
     @Override
+    public boolean isInterface() {
+        return clazz.isInterface();
+    }
+
+    @Override
     public boolean hasDefaultValue() {
         return false;
     }
@@ -146,6 +151,8 @@ public class SClassType extends SReferenceType {
     public boolean equals(Object obj) {
         if (obj instanceof SClassType other) {
             return other.clazz == clazz;
+        } else if (obj instanceof SFunctionalInterface other) {
+            return other.getJavaClass() == clazz;
         } else {
             return false;
         }

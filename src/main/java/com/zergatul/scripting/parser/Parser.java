@@ -700,11 +700,21 @@ public class Parser {
         ValueToken identifier = (ValueToken) advance();
 
         Token colon = null;
-        TypeNode baseTypeNode = null;
+        SeparatedList<TypeNode> baseTypeNodes = SeparatedList.of();
         if (current.is(TokenType.COLON)) {
             colon = advance(TokenType.COLON);
             if (isPossibleType()) {
-                baseTypeNode = parseTypeNode();
+                baseTypeNodes = new SeparatedList<>();
+                baseTypeNodes.add(parseTypeNode());
+                while (current.is(TokenType.COMMA)) {
+                    baseTypeNodes.add(advance(TokenType.COMMA));
+                    if (isPossibleType()) {
+                        baseTypeNodes.add(parseTypeNode());
+                    } else {
+                        addDiagnostic(ParserErrors.TypeExpected, current, current.getRawValue(code));
+                        break;
+                    }
+                }
             } else {
                 addDiagnostic(ParserErrors.TypeExpected, current, current.getRawValue(code));
             }
@@ -717,7 +727,7 @@ public class Parser {
                     keyword,
                     identifier,
                     colon,
-                    baseTypeNode,
+                    baseTypeNodes,
                     openBrace,
                     List.of(),
                     new Token(TokenType.RIGHT_SQUARE_BRACKET, range));
@@ -740,7 +750,7 @@ public class Parser {
         }
 
         Token closeBrace = advance(TokenType.RIGHT_CURLY_BRACKET);
-        return new ClassNode(keyword, identifier, colon, baseTypeNode, openBrace, members, closeBrace);
+        return new ClassNode(keyword, identifier, colon, baseTypeNodes, openBrace, members, closeBrace);
     }
 
     private boolean isPossibleClassMemberNode() {

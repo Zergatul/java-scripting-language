@@ -42,6 +42,16 @@ public class DeclaredMethodReference extends MethodReference {
     }
 
     @Override
+    public boolean isAbstract() {
+        return modifiers.isAbstract();
+    }
+
+    @Override
+    public boolean isFinal() {
+        return modifiers.isFinal();
+    }
+
+    @Override
     public void compileInvoke(MethodVisitor visitor, CompilerContext context, Runnable compileArguments) {
         compileArguments.run();
         visitor.visitMethodInsn(

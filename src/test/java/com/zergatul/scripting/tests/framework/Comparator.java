@@ -1,6 +1,7 @@
 package com.zergatul.scripting.tests.framework;
 
 import com.zergatul.scripting.DiagnosticMessage;
+import com.zergatul.scripting.ErrorCode;
 import com.zergatul.scripting.InternalException;
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.nodes.BoundCompilationUnitNode;
@@ -10,13 +11,18 @@ import com.zergatul.scripting.lexer.Token;
 import com.zergatul.scripting.lexer.TokenQueue;
 import com.zergatul.scripting.parser.nodes.CompilationUnitNode;
 import com.zergatul.scripting.symbols.SymbolRef;
+import com.zergatul.scripting.tests.utility.MarkedCode;
+import com.zergatul.scripting.tests.utility.MarkedDiagnostic;
 import com.zergatul.scripting.type.SType;
 import org.junit.jupiter.api.Assertions;
 
 import java.lang.reflect.Array;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+
+import static com.zergatul.scripting.tests.compiler.helpers.CompilerHelper.getDiagnostics;
 
 public class Comparator {
 
@@ -32,6 +38,20 @@ public class Comparator {
 
     public void assertEquals(CompilationUnitNode expected, CompilationUnitNode actual) {
         assertEquals("unit", expected, actual);
+    }
+
+    public void assertDiagnostics(Class<?> api, MarkedCode marked, String mark, ErrorCode expectedErrorCode, Object... parameters) {
+        assertEquals(
+                List.of(new DiagnosticMessage(expectedErrorCode, marked.getRange(mark), parameters)),
+                getDiagnostics(api, marked.getCode()));
+    }
+
+    public void assertDiagnostics(Class<?> api, MarkedCode marked, MarkedDiagnostic... expectedDiagnostics) {
+        assertEquals(
+                Arrays.stream(expectedDiagnostics)
+                        .map(d -> new DiagnosticMessage(d.errorCode(), marked.getRange(d.mark()), d.parameters()))
+                        .toList(),
+                getDiagnostics(api, marked.getCode()));
     }
 
     public void assertEquals(List<DiagnosticMessage> expected, List<DiagnosticMessage> actual) {

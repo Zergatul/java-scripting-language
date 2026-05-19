@@ -169,7 +169,7 @@ public class Compiler {
                     name,
                     null,
                     declaredType.getBaseType().getInternalName(),
-                    null);
+                    declaredType.getInterfaces().stream().map(SType::getInternalName).toArray(String[]::new));
 
             AnnotationVisitor annotationVisitor = innerWriter.visitAnnotation(Type.getDescriptor(CustomType.class), true);
             annotationVisitor.visit("name", classNode.name.value);

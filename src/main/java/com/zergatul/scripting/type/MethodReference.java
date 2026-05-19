@@ -31,6 +31,10 @@ public abstract class MethodReference extends MemberReference implements Invocab
         return false;
     }
 
+    public boolean isAbstract() {
+        return false;
+    }
+
     public boolean isFinal() {
         return false;
     }

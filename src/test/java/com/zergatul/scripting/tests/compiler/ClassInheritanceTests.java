@@ -1,8 +1,11 @@
 package com.zergatul.scripting.tests.compiler;
 
 import com.zergatul.scripting.DiagnosticMessage;
-import com.zergatul.scripting.SingleLineTextRange;
 import com.zergatul.scripting.binding.BinderErrors;
+import com.zergatul.scripting.parser.ParserErrors;
+import com.zergatul.scripting.tests.utility.MarkedCode;
+import com.zergatul.scripting.tests.utility.MarkedDiagnostic;
+import com.zergatul.scripting.type.CustomType;
 import com.zergatul.scripting.tests.compiler.helpers.IntStorage;
 import com.zergatul.scripting.tests.compiler.helpers.ObjectStorage;
 import com.zergatul.scripting.tests.compiler.helpers.StringStorage;
@@ -45,7 +48,7 @@ public class ClassInheritanceTests extends ComparatorTest {
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
-        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(123));
+        Assertions.assertIterableEquals(List.of(123), ApiRoot.intStorage.list);
     }
 
     @Test
@@ -66,73 +69,61 @@ public class ClassInheritanceTests extends ComparatorTest {
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
-        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(123));
+        Assertions.assertIterableEquals(List.of(123), ApiRoot.intStorage.list);
     }
 
     @Test
     public void noBaseDefaultConstructorTest() {
-        String code = """
+        MarkedCode marked = MarkedCode.from("""
                 class ClassA {
                     constructor(int x) {}
                 }
-                class ClassB : ClassA {}
-                """;
+                class ⟦ClassB⟧ : ClassA {}
+                """);
 
-        comparator.assertEquals(
-                List.of(
-                        new DiagnosticMessage(BinderErrors.BaseClassNoParameterlessConstructor, new SingleLineTextRange(4, 7, 49, 6))),
-                getDiagnostics(ApiRoot.class, code));
+        comparator.assertDiagnostics(ApiRoot.class, marked, "⟦⟧", BinderErrors.BaseClassNoParameterlessConstructor);
     }
 
     @Test
     public void baseFieldInheritedFieldTest() {
-        String code = """
+        MarkedCode marked = MarkedCode.from("""
                 class ClassA {
                     int value;
                 }
                 class ClassB : ClassA {
-                    int value;
+                    int ⟦value⟧;
                 }
-                """;
+                """);
 
-        comparator.assertEquals(
-                List.of(
-                        new DiagnosticMessage(BinderErrors.BaseClassAlreadyHasMember, new SingleLineTextRange(5, 9, 64, 5))),
-                getDiagnostics(ApiRoot.class, code));
+        comparator.assertDiagnostics(ApiRoot.class, marked, "⟦⟧", BinderErrors.BaseClassAlreadyHasMember);
     }
 
     @Test
     public void baseFieldInheritedMethodTest() {
-        String code = """
+        MarkedCode marked = MarkedCode.from("""
                 class ClassA {
                     int value;
                 }
                 class ClassB : ClassA {
-                    void value(){}
+                    void ⟦value⟧(){}
                 }
-                """;
+                """);
 
-        comparator.assertEquals(
-                List.of(
-                        new DiagnosticMessage(BinderErrors.BaseClassAlreadyHasMember, new SingleLineTextRange(5, 10, 65, 5))),
-                getDiagnostics(ApiRoot.class, code));
+        comparator.assertDiagnostics(ApiRoot.class, marked, "⟦⟧", BinderErrors.BaseClassAlreadyHasMember);
     }
 
     @Test
     public void baseMethodInheritedFieldTest() {
-        String code = """
+        MarkedCode marked = MarkedCode.from("""
                 class ClassA {
                     void value() {}
                 }
                 class ClassB : ClassA {
-                    int value;
+                    int ⟦value⟧;
                 }
-                """;
+                """);
 
-        comparator.assertEquals(
-                List.of(
-                        new DiagnosticMessage(BinderErrors.BaseClassAlreadyHasMember, new SingleLineTextRange(5, 9, 69, 5))),
-                getDiagnostics(ApiRoot.class, code));
+        comparator.assertDiagnostics(ApiRoot.class, marked, "⟦⟧", BinderErrors.BaseClassAlreadyHasMember);
     }
 
     @Test
@@ -153,58 +144,49 @@ public class ClassInheritanceTests extends ComparatorTest {
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
-        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(10, 11));
+        Assertions.assertIterableEquals(List.of(10, 11), ApiRoot.intStorage.list);
     }
 
     @Test
     public void differentReturnTypesOverrideModifierTest() {
-        String code = """
+        MarkedCode marked = MarkedCode.from("""
                 class ClassA {
                     void value() {}
                 }
                 class ClassB : ClassA {
-                    int value() => 1;
+                    int ⟦value⟧() => 1;
                 }
-                """;
+                """);
 
-        comparator.assertEquals(
-                List.of(
-                        new DiagnosticMessage(BinderErrors.MethodOverrideReturnMismatch, new SingleLineTextRange(5, 9, 69, 5))),
-                getDiagnostics(ApiRoot.class, code));
+        comparator.assertDiagnostics(ApiRoot.class, marked, "⟦⟧", BinderErrors.MethodOverrideReturnMismatch);
     }
 
     @Test
     public void missingOverrideModifierTest() {
-        String code = """
+        MarkedCode marked = MarkedCode.from("""
                 class ClassA {
                     void value() {}
                 }
                 class ClassB : ClassA {
-                    void value() {}
+                    void ⟦value⟧() {}
                 }
-                """;
+                """);
 
-        comparator.assertEquals(
-                List.of(
-                        new DiagnosticMessage(BinderErrors.OverrideMissing, new SingleLineTextRange(5, 10, 70, 5))),
-                getDiagnostics(ApiRoot.class, code));
+        comparator.assertDiagnostics(ApiRoot.class, marked, "⟦⟧", BinderErrors.OverrideMissing);
     }
 
     @Test
     public void missingVirtualModifierTest() {
-        String code = """
+        MarkedCode marked = MarkedCode.from("""
                 class ClassA {
                     void value() {}
                 }
                 class ClassB : ClassA {
-                    override void value() {}
+                    override void ⟦value⟧() {}
                 }
-                """;
+                """);
 
-        comparator.assertEquals(
-                List.of(
-                        new DiagnosticMessage(BinderErrors.NonVirtualOverride, new SingleLineTextRange(5, 19, 79, 5))),
-                getDiagnostics(ApiRoot.class, code));
+        comparator.assertDiagnostics(ApiRoot.class, marked, "⟦⟧", BinderErrors.NonVirtualOverride);
     }
 
     @Test
@@ -224,7 +206,7 @@ public class ClassInheritanceTests extends ComparatorTest {
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
-        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(1, 2));
+        Assertions.assertIterableEquals(List.of(1, 2), ApiRoot.intStorage.list);
     }
 
     @Test
@@ -244,7 +226,7 @@ public class ClassInheritanceTests extends ComparatorTest {
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
-        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(1, 2));
+        Assertions.assertIterableEquals(List.of(1, 2), ApiRoot.intStorage.list);
     }
 
     @Test
@@ -260,7 +242,7 @@ public class ClassInheritanceTests extends ComparatorTest {
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
-        Assertions.assertEquals(ApiRoot.objectStorage.list.size(), 1);
+        Assertions.assertEquals(1, ApiRoot.objectStorage.list.size());
 
         Method method = ApiRoot.objectStorage.list.getFirst().getClass().getMethod("method");
         Assertions.assertTrue(Modifier.isFinal(method.getModifiers()));
@@ -285,7 +267,7 @@ public class ClassInheritanceTests extends ComparatorTest {
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
-        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(1, 2));
+        Assertions.assertIterableEquals(List.of(1, 2), ApiRoot.intStorage.list);
     }
 
     @Test
@@ -308,63 +290,53 @@ public class ClassInheritanceTests extends ComparatorTest {
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
-        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(5, 6, 7));
+        Assertions.assertIterableEquals(List.of(5, 6, 7), ApiRoot.intStorage.list);
     }
 
     @Test
     public void cannotInstantiateAbstractClassTest() {
-        String code = """
-                let list = new Java<java.util.AbstractList>();
-                """;
+        MarkedCode marked = MarkedCode.from("""
+                let list = ⟦new Java<java.util.AbstractList>()⟧;
+                """);
 
-        comparator.assertEquals(
-                List.of(
-                        new DiagnosticMessage(BinderErrors.CannotInstantiateAbstractClass, new SingleLineTextRange(1, 12, 11, 34)),
-                        new DiagnosticMessage(BinderErrors.NoOverloadedConstructors, new SingleLineTextRange(1, 12, 11, 34), "Java<java.util.AbstractList>", 0)),
-                getDiagnostics(ApiRoot.class, code));
+        comparator.assertDiagnostics(ApiRoot.class, marked,
+                new MarkedDiagnostic("⟦⟧", BinderErrors.CannotInstantiateAbstractClass),
+                new MarkedDiagnostic("⟦⟧", BinderErrors.NoOverloadedConstructors, "Java<java.util.AbstractList>", 0));
     }
 
     @Test
     public void cannotInstantiateInterfaceTest() {
-        String code = """
-                let list = new Java<java.util.List>();
-                """;
+        MarkedCode marked = MarkedCode.from("""
+                let list = ⟦new Java<java.util.List>()⟧;
+                """);
 
-        comparator.assertEquals(
-                List.of(
-                        new DiagnosticMessage(BinderErrors.CannotInstantiateAbstractClass, new SingleLineTextRange(1, 12, 11, 26)),
-                        new DiagnosticMessage(BinderErrors.NoOverloadedConstructors, new SingleLineTextRange(1, 12, 11, 26), "Java<java.util.List>", 0)),
-                getDiagnostics(ApiRoot.class, code));
+        comparator.assertDiagnostics(ApiRoot.class, marked,
+                new MarkedDiagnostic("⟦⟧", BinderErrors.CannotInstantiateAbstractClass),
+                new MarkedDiagnostic("⟦⟧", BinderErrors.NoOverloadedConstructors, "Java<java.util.List>", 0));
     }
 
     @Test
     public void baseInExtensionTest() {
-        String code = """
+        MarkedCode marked = MarkedCode.from("""
                 extension(int) {
-                    void method() => base.toString();
+                    void method() => ⟦base⟧.toString();
                 }
-                """;
+                """);
 
-        comparator.assertEquals(
-                List.of(
-                        new DiagnosticMessage(BinderErrors.BaseInvalidContext, new SingleLineTextRange(2, 22, 38, 4))),
-                getDiagnostics(ApiRoot.class, code));
+        comparator.assertDiagnostics(ApiRoot.class, marked, "⟦⟧", BinderErrors.BaseInvalidContext);
     }
 
     @Test
     public void cannotUseBaseAsValueTest() {
-        String code = """
+        MarkedCode marked = MarkedCode.from("""
                 class Class {
                     void method() {
-                        let x = base;
+                        let x = ⟦base⟧;
                     }
                 }
-                """;
+                """);
 
-        comparator.assertEquals(
-                List.of(
-                        new DiagnosticMessage(BinderErrors.BaseInvalidUse, new SingleLineTextRange(3, 17, 50, 4))),
-                getDiagnostics(ApiRoot.class, code));
+        comparator.assertDiagnostics(ApiRoot.class, marked, "⟦⟧", BinderErrors.BaseInvalidUse);
     }
 
     @Test
@@ -381,23 +353,150 @@ public class ClassInheritanceTests extends ComparatorTest {
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
-        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(12));
+        Assertions.assertIterableEquals(List.of(12), ApiRoot.intStorage.list);
     }
 
     @Test
     public void cannotOverrideFinalMethodTest() {
-        String code = """
+        MarkedCode marked = MarkedCode.from("""
                 class Class {
-                    override void notify() {
+                    override void ⟦notify⟧() {
                         base.notify();
                     }
                 }
+                """);
+
+        comparator.assertDiagnostics(ApiRoot.class, marked, "⟦⟧", BinderErrors.NonVirtualOverride);
+    }
+
+    @Test
+    public void javaInterfaceImplementationMissingMethodTest() {
+        MarkedCode marked = MarkedCode.from("""
+                class ⟦Class⟧ : Java<java.lang.Runnable> {}
+                """);
+
+        comparator.assertDiagnostics(ApiRoot.class, marked, "⟦⟧", BinderErrors.MissingInheritedMethodImplementation, "run");
+    }
+
+    @Test
+    public void javaInterfaceImplementationTest() {
+        String code = """
+                class Class : Java<java.lang.Runnable> {
+                    override void run() {
+                        intStorage.add(123);
+                    }
+                }
+                
+                let instance = new Class();
+                Java<java.lang.Runnable> runnable = instance;
+                runnable.run();
+                objectStorage.add(instance);
                 """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(List.of(123), ApiRoot.intStorage.list);
+        Assertions.assertTrue(ApiRoot.objectStorage.list.getFirst() instanceof Runnable);
+    }
+
+    @Test
+    public void javaMultipleInterfaceImplementationTest() {
+        String code = """
+                class Class : Java<java.lang.Runnable>, Java<java.lang.AutoCloseable> {
+                    override void run() {
+                        intStorage.add(1);
+                    }
+                    override void close() {
+                        intStorage.add(2);
+                    }
+                }
+                
+                let instance = new Class();
+                instance.run();
+                instance.close();
+                objectStorage.add(instance);
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(List.of(1, 2), ApiRoot.intStorage.list);
+        Object object = ApiRoot.objectStorage.list.getFirst();
+        Assertions.assertTrue(object instanceof Runnable);
+        Assertions.assertTrue(object instanceof AutoCloseable);
+    }
+
+    @Test
+    public void javaClassAndInterfaceImplementationTest() {
+        String code = """
+                class Class : Java<java.util.ArrayList>, Java<java.lang.Runnable> {
+                    override void run() {
+                        intStorage.add(this.size());
+                    }
+                }
+                
+                let instance = new Class();
+                instance.add(10);
+                instance.add(20);
+                instance.run();
+                objectStorage.add(instance);
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(List.of(2), ApiRoot.intStorage.list);
+        Object object = ApiRoot.objectStorage.list.getFirst();
+        Assertions.assertTrue(object instanceof java.util.ArrayList);
+        Assertions.assertTrue(object instanceof Runnable);
+        Assertions.assertIterableEquals(List.of(10, 20), (List<?>) object);
+    }
+
+    @Test
+    public void multipleJavaBaseClassesTest() {
+        MarkedCode marked = MarkedCode.from("""
+                class Class : Java<java.util.ArrayList>, ⟦Java<java.util.Vector>⟧ {}
+                """);
+
+        comparator.assertDiagnostics(ApiRoot.class, marked, "⟦⟧", BinderErrors.MultipleBaseClasses);
+    }
+
+    @Test
+    public void javaAbstractClassMissingMethodTest() {
+        MarkedCode marked = MarkedCode.from("""
+                class ⟦Class⟧ : AbstractBase {}
+                """);
 
         comparator.assertEquals(
                 List.of(
-                        new DiagnosticMessage(BinderErrors.NonVirtualOverride, new SingleLineTextRange(2, 19, 32, 6))),
-                getDiagnostics(ApiRoot.class, code));
+                        new DiagnosticMessage(BinderErrors.MissingInheritedMethodImplementation, marked.getRange("⟦⟧"), "value")),
+                getDiagnostics(ApiRoot.class, marked.getCode(), AbstractBase.class));
+    }
+
+    @Test
+    public void javaAbstractClassImplementationRequiresOverrideTest() {
+        MarkedCode marked = MarkedCode.from("""
+                class Class : AbstractBase {
+                    int ⟦value⟧() => 1;
+                }
+                """);
+
+        comparator.assertEquals(
+                List.of(
+                        new DiagnosticMessage(BinderErrors.OverrideMissing, marked.getRange("⟦⟧"))),
+                getDiagnostics(ApiRoot.class, marked.getCode(), AbstractBase.class));
+    }
+
+    @Test
+    public void abstractMethodNotSupportedTest() {
+        MarkedCode marked = MarkedCode.from("""
+                class Class {
+                    abstract void ⟦run⟧() {}
+                }
+                """);
+
+        comparator.assertDiagnostics(ApiRoot.class, marked, "⟦⟧", BinderErrors.AbstractMethodNotSupported);
     }
 
     @Test
@@ -420,7 +519,7 @@ public class ClassInheritanceTests extends ComparatorTest {
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
-        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(14));
+        Assertions.assertIterableEquals(List.of(14), ApiRoot.intStorage.list);
     }
 
     @Test
@@ -441,69 +540,94 @@ public class ClassInheritanceTests extends ComparatorTest {
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
-        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(14));
+        Assertions.assertIterableEquals(List.of(14), ApiRoot.intStorage.list);
     }
 
     @Test
     public void noDefaultConstructorTest1() {
-        String code = """
+        MarkedCode marked = MarkedCode.from("""
                 class ClassA {
                     constructor(int x) {}
                 }
-                class ClassB : ClassA {}
-                """;
+                class ⟦ClassB⟧ : ClassA {}
+                """);
 
-        comparator.assertEquals(
-                List.of(
-                        new DiagnosticMessage(BinderErrors.BaseClassNoParameterlessConstructor, new SingleLineTextRange(4, 7, 49, 6))),
-                getDiagnostics(ApiRoot.class, code));
+        comparator.assertDiagnostics(ApiRoot.class, marked, "⟦⟧", BinderErrors.BaseClassNoParameterlessConstructor);
     }
 
     @Test
     public void noDefaultConstructorTest2() {
-        String code = """
+        MarkedCode marked = MarkedCode.from("""
                 class ClassA {
                     constructor(int x) {}
                 }
                 class ClassB : ClassA {
-                    constructor(int x) {}
+                    ⟦constructor⟧(int x) {}
                 }
-                """;
+                """);
 
-        comparator.assertEquals(
-                List.of(
-                        new DiagnosticMessage(BinderErrors.BaseClassNoParameterlessConstructor, new SingleLineTextRange(5, 5, 71, 11))),
-                getDiagnostics(ApiRoot.class, code));
+        comparator.assertDiagnostics(ApiRoot.class, marked, "⟦⟧", BinderErrors.BaseClassNoParameterlessConstructor);
     }
 
     @Test
     public void selfInheritTest() {
-        String code = """
-                class ClassA : ClassA {}
-                """;
+        MarkedCode marked = MarkedCode.from("""
+                class ClassA : ⟦ClassA⟧ {}
+                """);
 
-        comparator.assertEquals(
-                List.of(
-                        new DiagnosticMessage(BinderErrors.ClassCircularInheritance, new SingleLineTextRange(1, 16, 15, 6))),
-                getDiagnostics(ApiRoot.class, code));
+        comparator.assertDiagnostics(ApiRoot.class, marked, "⟦⟧", BinderErrors.ClassCircularInheritance);
     }
 
     @Test
     public void inheritanceLoopTest() {
-        String code = """
+        MarkedCode marked = MarkedCode.from("""
                 class ClassA : ClassB {}
-                class ClassB : ClassA {}
-                """;
+                class ClassB : ⟦ClassA⟧ {}
+                """);
 
-        comparator.assertEquals(
-                List.of(
-                        new DiagnosticMessage(BinderErrors.ClassCircularInheritance, new SingleLineTextRange(2, 16, 40, 6))),
-                getDiagnostics(ApiRoot.class, code));
+        comparator.assertDiagnostics(ApiRoot.class, marked, "⟦⟧", BinderErrors.ClassCircularInheritance);
+    }
+
+    @Test
+    public void inheritVoidTest() {
+        MarkedCode marked = MarkedCode.from("""
+                class Class : ⟦void⟧ ⟪{⟫}
+                """);
+
+        comparator.assertDiagnostics(ApiRoot.class, marked,
+                new MarkedDiagnostic("⟦⟧", ParserErrors.TypeExpected, "void"),
+                new MarkedDiagnostic("⟦⟧", ParserErrors.OpenCurlyBracketExpected, "void"),
+                new MarkedDiagnostic("⟪⟫", ParserErrors.IdentifierExpected, "{"));
+    }
+
+    @Test
+    public void inheritIntTest() {
+        MarkedCode marked = MarkedCode.from("""
+                class ⟦Class⟧ : int {}
+                """);
+
+        comparator.assertDiagnostics(ApiRoot.class, marked,
+                new MarkedDiagnostic("⟦⟧", BinderErrors.BaseClassNoParameterlessConstructor));
+    }
+
+    @Test
+    public void inheritFuncTest() {
+        MarkedCode marked = MarkedCode.from("""
+                class ⟦Class⟧ : fn<int => int> {}
+                """);
+
+        comparator.assertDiagnostics(ApiRoot.class, marked,
+                new MarkedDiagnostic("⟦⟧", BinderErrors.BaseClassNoParameterlessConstructor));
     }
 
     public static class ApiRoot {
         public static IntStorage intStorage;
         public static StringStorage stringStorage;
         public static ObjectStorage objectStorage;
+    }
+
+    @CustomType(name = "AbstractBase")
+    public static abstract class AbstractBase {
+        public abstract int value();
     }
 }

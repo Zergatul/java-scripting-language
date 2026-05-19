@@ -15,6 +15,7 @@ import com.zergatul.scripting.type.SDeclaredType;
 import com.zergatul.scripting.type.SType;
 import org.jspecify.annotations.Nullable;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -27,7 +28,7 @@ public class ClassDeclaration extends NamedDeclaration {
     private final Map<ClassMethodNode, ClassMethodDeclaration> methodNodeMap = new HashMap<>();
     private final Map<ClassOperatorOverloadNode, ClassUnaryOperationDeclaration> unaryOperationNodeMap = new HashMap<>();
     private final Map<ClassOperatorOverloadNode, ClassBinaryOperationDeclaration> binaryOperationNodeMap = new HashMap<>();
-    private @Nullable BoundTypeNode baseTypeNode;
+    private final List<BoundTypeNode> baseTypeNodes = new ArrayList<>();
 
     public ClassDeclaration(String name, SymbolRef symbolRef) {
         super(name, symbolRef);
@@ -35,8 +36,15 @@ public class ClassDeclaration extends NamedDeclaration {
     }
 
     public void setBaseType(BoundTypeNode typeNode) {
-        baseTypeNode = typeNode;
         classType.setBaseType(typeNode.type);
+    }
+
+    public void addInterface(BoundTypeNode typeNode) {
+        classType.addInterface(typeNode.type);
+    }
+
+    public void addBaseTypeNode(BoundTypeNode typeNode) {
+        baseTypeNodes.add(typeNode);
     }
 
     public void addField(ClassFieldNode node, ClassFieldDeclaration declaration) {
@@ -63,8 +71,8 @@ public class ClassDeclaration extends NamedDeclaration {
         return classType;
     }
 
-    public @Nullable BoundTypeNode getBaseTypeNode() {
-        return baseTypeNode;
+    public List<BoundTypeNode> getBaseTypeNodes() {
+        return baseTypeNodes;
     }
 
     public ClassFieldDeclaration getFieldDeclaration(ClassFieldNode node) {

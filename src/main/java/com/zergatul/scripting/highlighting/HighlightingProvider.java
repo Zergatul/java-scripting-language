@@ -269,9 +269,7 @@ public class HighlightingProvider {
         if (node.syntaxNode.colon != null) {
             process(node.syntaxNode.colon);
         }
-        if (node.baseTypeNode != null) {
-            process(node.baseTypeNode);
-        }
+        process(node.syntaxNode.baseTypeNodes, node.baseTypeNodes);
         process(node.syntaxNode.openBrace);
         for (BoundClassMemberNode member : node.members) {
             process(member);

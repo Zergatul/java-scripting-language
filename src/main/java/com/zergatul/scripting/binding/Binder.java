@@ -162,7 +162,7 @@ public class Binder {
         ConstructorReference defaultBaseConstructor = null;
         if (members.stream().noneMatch(m -> m.getNodeType() == BoundNodeType.CLASS_CONSTRUCTOR)) {
             SType baseType = declaration.getDeclaredType().getBaseType();
-            if (baseType != SUnknown.instance) {
+            if (baseType != SUnknown.instance && !baseType.isInterface()) {
                 defaultBaseConstructor = baseType.getConstructors().stream().filter(c -> c.getParameters().isEmpty()).findFirst().orElse(null);
                 if (defaultBaseConstructor == null) {
                     addDiagnostic(BinderErrors.BaseClassNoParameterlessConstructor, classNode.name);
@@ -172,7 +172,7 @@ public class Binder {
 
         popScope();
 
-        return new BoundClassNode(classNode, name, declaration.getBaseTypeNode(), members, defaultBaseConstructor);
+        return new BoundClassNode(classNode, name, declaration.getBaseTypeNodes(), members, defaultBaseConstructor);
     }
 
     private BoundClassFieldNode bindClassField(ClassDeclaration classDeclaration, ClassFieldNode fieldNode) {
@@ -239,6 +239,10 @@ public class Binder {
                     result.invocable);
         } else {
             SType baseType = context.getClassType().getBaseType();
+            if (baseType.isInterface()) {
+                baseType = SJavaObject.instance;
+            }
+
             ConstructorReference constructor = baseType.getConstructors().stream()
                     .filter(c -> c.getParameters().isEmpty())
                     .findFirst()
@@ -2258,11 +2262,16 @@ public class Binder {
             return bindUnconvertedLambda((BoundUnconvertedLambdaExpressionNode) expression, (SFunction) type);
         }
 
+        if (info.type() == ConversionType.LAMBDA_BINDING_TO_CLASS) {
+            SFunctionalInterface funcType = SFunctionalInterface.from(type.getJavaClass());
+            BoundExpressionNode inner = bindUnconvertedLambda((BoundUnconvertedLambdaExpressionNode) expression, funcType);
+            return new BoundImplicitCastExpressionNode(inner, new NoOpCastOperation(funcType, type));
+        }
+
         return new BoundConversionNode(expression, info, type, expression.getRange());
     }
 
-    @Nullable
-    private ConversionInfo getConversionInfo(BoundExpressionNode expression, SType type) {
+    private @Nullable ConversionInfo getConversionInfo(BoundExpressionNode expression, SType type) {
         if (expression.type.isInstanceOf(type)) {
             return new ConversionInfo(ConversionType.IDENTITY);
         }
@@ -2282,6 +2291,17 @@ public class Binder {
 
         if (expression.getNodeType() == BoundNodeType.UNCONVERTED_LAMBDA) {
             SUnconvertedLambda lambdaType = (SUnconvertedLambda) expression.type;
+            if (type instanceof SClassType classType) {
+                if (InterfaceHelper.isFuncInterface(classType.getJavaClass())) {
+                    SFunctionalInterface funcInterface = SFunctionalInterface.from(classType.getJavaClass());
+                    ConversionInfo info = getConversionInfo(expression, funcInterface);
+                    if (info == null) {
+                        return null;
+                    } else {
+                        return new ConversionInfo(ConversionType.LAMBDA_BINDING_TO_CLASS);
+                    }
+                }
+            }
             if (type instanceof SFunction function) {
                 if (function.getReturnType() == SVoidType.instance && !lambdaType.canBeAction()) {
                     return null;
@@ -2502,13 +2522,31 @@ public class Binder {
 
         // process inheritance
         declarationTable.forEachClassDeclaration((classNode, classDeclaration) -> {
-            if (classNode.baseTypeNode != null) {
-                classDeclaration.setBaseType(bindType(classNode.baseTypeNode));
+            boolean hasBaseClass = false;
+            for (TypeNode baseTypeSyntaxNode : classNode.baseTypeNodes.getNodes()) {
+                BoundTypeNode baseTypeNode = bindType(baseTypeSyntaxNode);
+                classDeclaration.addBaseTypeNode(baseTypeNode);
 
-                SType baseType = classDeclaration.getDeclaredType().getBaseType();
+                SType baseType = baseTypeNode.type;
+                if (baseType == SUnknown.instance) {
+                    continue;
+                }
+
+                if (baseType.isInterface()) {
+                    classDeclaration.addInterface(baseTypeNode);
+                    continue;
+                }
+
+                if (hasBaseClass) {
+                    addDiagnostic(BinderErrors.MultipleBaseClasses, baseTypeSyntaxNode);
+                    continue;
+                }
+
+                hasBaseClass = true;
+                classDeclaration.setBaseType(baseTypeNode);
                 if (baseType.isInstanceOf(classDeclaration.getDeclaredType())) {
                     classDeclaration.getDeclaredType().clearBaseType();
-                    addDiagnostic(BinderErrors.ClassCircularInheritance, classNode.baseTypeNode);
+                    addDiagnostic(BinderErrors.ClassCircularInheritance, baseTypeSyntaxNode);
                 }
             }
         });
@@ -2541,6 +2579,7 @@ public class Binder {
                     default -> throw new InternalException();
                 }
             }
+            validateInheritedMethods(classNode, classDeclaration);
         });
 
         // process extension methods
@@ -2740,6 +2779,62 @@ public class Binder {
         classDeclaration.addField(classFieldNode, new ClassFieldDeclaration(fieldName, symbolRef, typeNode, propertyRef, hasError));
     }
 
+    private void validateInheritedMethods(ClassNode classNode, ClassDeclaration classDeclaration) {
+        SDeclaredType declaredType = classDeclaration.getDeclaredType();
+        List<MethodReference> requiredMethods = new ArrayList<>();
+
+        collectAbstractMethods(declaredType.getBaseType(), requiredMethods);
+        for (SType interfaceType : declaredType.getInterfaces()) {
+            collectInterfaceMethods(interfaceType, requiredMethods);
+        }
+
+        for (MethodReference required : requiredMethods) {
+            boolean implemented = declaredType.getInstanceMethods().stream()
+                    .filter(m -> !m.isAbstract())
+                    .filter(m -> !m.getOwner().isInterface())
+                    .filter(m -> m.getName().equals(required.getName()))
+                    .filter(m -> m.signatureMatchesExactly(new SMethodFunction(required.getReturn(), required.getParameters().toArray(MethodParameter[]::new))))
+                    .anyMatch(m -> m.getReturn().equals(required.getReturn()));
+            if (!implemented) {
+                addDiagnostic(BinderErrors.MissingInheritedMethodImplementation, classNode.name, required.getName());
+            }
+        }
+    }
+
+    private List<MethodReference> getInheritedMethods(SDeclaredType declaredType) {
+        List<MethodReference> methods = new ArrayList<>();
+        methods.addAll(declaredType.getBaseType().getInstanceMethods());
+        for (SType interfaceType : declaredType.getInterfaces()) {
+            methods.addAll(interfaceType.getInstanceMethods());
+        }
+        return methods;
+    }
+
+    private void collectAbstractMethods(SType type, List<MethodReference> methods) {
+        if (type == SJavaObject.instance || type == SUnknown.instance) {
+            return;
+        }
+
+        type.getInstanceMethods().stream()
+                .filter(MethodReference::isAbstract)
+                .forEach(m -> addRequiredMethod(methods, m));
+    }
+
+    private void collectInterfaceMethods(SType type, List<MethodReference> methods) {
+        type.getInstanceMethods().forEach(m -> addRequiredMethod(methods, m));
+    }
+
+    private void addRequiredMethod(List<MethodReference> methods, MethodReference candidate) {
+        boolean exists = methods.stream()
+                .anyMatch(m ->
+                        m.getName().equals(candidate.getName()) &&
+                        m.getReturn().equals(candidate.getReturn()) &&
+                        m.getParameterTypes().equals(candidate.getParameterTypes()));
+        if (!exists) {
+            methods.add(candidate);
+        }
+    }
+
     private void buildClassConstructorDeclaration(ClassDeclaration classDeclaration, ClassConstructorNode constructorNode) {
         BoundParameterListNode parameters = bindParameterList(constructorNode.parameters);
         SMethodFunction functionType = new SMethodFunction(SVoidType.instance, parameters.parameters.stream().map(pn -> new MethodParameter(pn.getName().value, pn.getType())).toArray(MethodParameter[]::new));
@@ -2774,11 +2869,11 @@ public class Binder {
             hasError = true;
             addDiagnostic(BinderErrors.MethodAlreadyDeclared, methodNode.name);
         } else {
-            SType baseType = classDeclaration.getDeclaredType().getBaseType();
-            if (baseType.getInstanceProperties().stream().anyMatch(p -> p.getName().equals(methodName))) {
+            SType classType = classDeclaration.getDeclaredType();
+            if (classType.getBaseType().getInstanceProperties().stream().anyMatch(p -> p.getName().equals(methodName))) {
                 addDiagnostic(BinderErrors.BaseClassAlreadyHasMember, methodNode.name);
             }
-            MethodReference overrideCandidateBaseMethod = baseType.getInstanceMethods().stream()
+            MethodReference overrideCandidateBaseMethod = getInheritedMethods(classDeclaration.getDeclaredType()).stream()
                     .filter(m -> m.getName().equals(methodName) && m.signatureMatchesExactly(functionType))
                     .findFirst()
                     .orElse(null);
@@ -2794,6 +2889,9 @@ public class Binder {
                         addDiagnostic(BinderErrors.CannotOverrideFinal, methodNode.name);
                     }
                 }
+            }
+            if (methodNode.modifiers.isAbstract()) {
+                addDiagnostic(BinderErrors.AbstractMethodNotSupported, methodNode.name);
             }
 
             methodRef = classDeclaration.getDeclaredType().addMethod(methodNode.modifiers.toMemberModifiers(), functionType, methodName);

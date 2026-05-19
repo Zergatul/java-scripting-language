@@ -7,11 +7,38 @@ import com.zergatul.scripting.lexer.*;
 import com.zergatul.scripting.parser.ParserErrors;
 import com.zergatul.scripting.parser.ParserOutput;
 import com.zergatul.scripting.parser.nodes.*;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
 public class ClassTests extends ParserTestBase {
+
+    @Test
+    public void multipleBaseTypesTest() {
+        ParserOutput result = parse("""
+                class Region : Base, Java<java.lang.Runnable>, Java<java.io.Closeable> {}
+                """);
+
+        comparator.assertEquals(List.of(), result.diagnostics());
+        ClassNode node = (ClassNode) result.unit().members.members.getFirst();
+        Assertions.assertEquals(3, node.baseTypeNodes.size());
+        Assertions.assertEquals(2, node.baseTypeNodes.getCommas().size());
+    }
+
+    @Test
+    public void emptyBaseTypesAfterColonTest() {
+        ParserOutput result = parse("""
+                class Region : {}
+                """);
+
+        comparator.assertEquals(
+                List.of(
+                        new DiagnosticMessage(ParserErrors.TypeExpected, new SingleLineTextRange(1, 16, 15, 1), "{")),
+                result.diagnostics());
+        ClassNode node = (ClassNode) result.unit().members.members.getFirst();
+        Assertions.assertEquals(0, node.baseTypeNodes.size());
+    }
 
     @Test
     public void unfinishedMemberTest() {
@@ -33,11 +60,11 @@ public class ClassTests extends ParserTestBase {
                                 new ClassNode(
                                         new Token(TokenType.CLASS, new SingleLineTextRange(1, 1, 0, 5))
                                                 .withTrailingTrivia(new Trivia(TokenType.WHITESPACE, new SingleLineTextRange(1, 6, 5, 1))),
-                                        new ValueToken(TokenType.IDENTIFIER, "Region", new SingleLineTextRange(1, 7, 6, 6))
-                                                .withTrailingTrivia(new Trivia(TokenType.WHITESPACE, new SingleLineTextRange(1, 13, 12, 1))),
-                                        null,
-                                        null,
-                                        new Token(TokenType.LEFT_CURLY_BRACKET, new SingleLineTextRange(1, 14, 13, 1))
+                                         new ValueToken(TokenType.IDENTIFIER, "Region", new SingleLineTextRange(1, 7, 6, 6))
+                                                 .withTrailingTrivia(new Trivia(TokenType.WHITESPACE, new SingleLineTextRange(1, 13, 12, 1))),
+                                         null,
+                                         SeparatedList.of(),
+                                         new Token(TokenType.LEFT_CURLY_BRACKET, new SingleLineTextRange(1, 14, 13, 1))
                                                 .withTrailingTrivia(new Trivia(TokenType.LINE_BREAK, new MultiLineTextRange(1, 15, 2, 1, 14, 1))),
                                         List.of(
                                                 new ClassMethodNode(
@@ -85,11 +112,11 @@ public class ClassTests extends ParserTestBase {
                                 new ClassNode(
                                         new Token(TokenType.CLASS, new SingleLineTextRange(1, 1, 0, 5))
                                                 .withTrailingTrivia(new Trivia(TokenType.WHITESPACE, new SingleLineTextRange(1, 6, 5, 1))),
-                                        new ValueToken(TokenType.IDENTIFIER, "Region", new SingleLineTextRange(1, 7, 6, 6))
-                                                .withTrailingTrivia(new Trivia(TokenType.WHITESPACE, new SingleLineTextRange(1, 13, 12, 1))),
-                                        null,
-                                        null,
-                                        new Token(TokenType.LEFT_CURLY_BRACKET, new SingleLineTextRange(1, 14, 13, 1))
+                                         new ValueToken(TokenType.IDENTIFIER, "Region", new SingleLineTextRange(1, 7, 6, 6))
+                                                 .withTrailingTrivia(new Trivia(TokenType.WHITESPACE, new SingleLineTextRange(1, 13, 12, 1))),
+                                         null,
+                                         SeparatedList.of(),
+                                         new Token(TokenType.LEFT_CURLY_BRACKET, new SingleLineTextRange(1, 14, 13, 1))
                                                 .withTrailingTrivia(new Trivia(TokenType.LINE_BREAK, new MultiLineTextRange(1, 15, 2, 1, 14, 1))),
                                         List.of(
                                                 new ClassMethodNode(

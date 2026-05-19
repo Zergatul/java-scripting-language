@@ -25,6 +25,7 @@ public class SDeclaredType extends SReferenceType {
     private final List<MethodReference> methods = new ArrayList<>();
     private final List<DeclaredUnaryOperationReference> unaryOperations = new ArrayList<>();
     private final List<DeclaredBinaryOperationReference> binaryOperations = new ArrayList<>();
+    private final List<SType> interfaces = new ArrayList<>();
     private @Nullable SType baseType;
     private boolean hasDefaultConstructor;
     private @Nullable String internalName;
@@ -91,6 +92,14 @@ public class SDeclaredType extends SReferenceType {
         this.baseType = type;
     }
 
+    public void addInterface(SType type) {
+        interfaces.add(type);
+    }
+
+    public List<SType> getInterfaces() {
+        return interfaces;
+    }
+
     // returns how many SDeclaredType's are in inheritance chain
     public int getInheritanceDepth() {
         if (baseType instanceof SDeclaredType base) {
@@ -106,6 +115,9 @@ public class SDeclaredType extends SReferenceType {
             return true;
         }
         if (baseType != null && baseType.isInstanceOf(other)) {
+            return true;
+        }
+        if (interfaces.stream().anyMatch(i -> i.isInstanceOf(other))) {
             return true;
         }
         return !other.isSyntheticType() && other.equals(SJavaObject.instance);
@@ -135,6 +147,9 @@ public class SDeclaredType extends SReferenceType {
         }
         if (other instanceof SDeclaredType declaredType && declaredType.baseType != null) {
             return isAssignableFrom(declaredType.baseType);
+        }
+        if (other instanceof SDeclaredType declaredType) {
+            return declaredType.interfaces.stream().anyMatch(this::isAssignableFrom);
         }
         return false;
     }
@@ -178,9 +193,12 @@ public class SDeclaredType extends SReferenceType {
 
     @Override
     public List<PropertyReference> getInstanceProperties() {
-        if (baseType != null) {
+        if (baseType != null || !interfaces.isEmpty()) {
             List<PropertyReference> combined = new ArrayList<>();
-            combined.addAll(baseType.getInstanceProperties());
+            interfaces.forEach(i -> combined.addAll(i.getInstanceProperties()));
+            if (baseType != null) {
+                combined.addAll(baseType.getInstanceProperties());
+            }
             combined.addAll(properties);
             return combined;
         } else {
@@ -189,7 +207,7 @@ public class SDeclaredType extends SReferenceType {
     }
 
     public List<MethodReference> getInstanceMethods() {
-        if (getBaseType() == SJavaObject.instance) {
+        if (getBaseType() == SJavaObject.instance && interfaces.isEmpty()) {
             return getDeclaredInstanceMethods();
         }
 
@@ -198,6 +216,9 @@ public class SDeclaredType extends SReferenceType {
         SType current = this;
         while (current != null && current != SJavaObject.instance) {
             methods.addAll(current.getDeclaredInstanceMethods());
+            if (current instanceof SDeclaredType declared) {
+                declared.interfaces.forEach(i -> methods.addAll(i.getInstanceMethods()));
+            }
             current = current.getBaseType();
         }
 

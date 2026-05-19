@@ -14,24 +14,24 @@ public class BoundClassNode extends BoundCompilationUnitMemberNode {
 
     public final ClassNode syntaxNode;
     public final BoundNameExpressionNode name;
-    public final @Nullable BoundTypeNode baseTypeNode;
+    public final List<BoundTypeNode> baseTypeNodes;
     public final List<BoundClassMemberNode> members;
     public @Nullable ConstructorReference defaultBaseConstructor;
 
     public BoundClassNode(
             ClassNode node,
             BoundNameExpressionNode name,
-            @Nullable BoundTypeNode baseTypeNode,
+            List<BoundTypeNode> baseTypeNodes,
             List<BoundClassMemberNode> members,
             @Nullable ConstructorReference defaultBaseConstructor
     ) {
-        this(node, name, baseTypeNode, members, defaultBaseConstructor, node.getRange());
+        this(node, name, baseTypeNodes, members, defaultBaseConstructor, node.getRange());
     }
 
     public BoundClassNode(
             ClassNode node,
             BoundNameExpressionNode name,
-            @Nullable BoundTypeNode baseTypeNode,
+            List<BoundTypeNode> baseTypeNodes,
             List<BoundClassMemberNode> members,
             @Nullable ConstructorReference defaultBaseConstructor,
             TextRange range
@@ -39,7 +39,7 @@ public class BoundClassNode extends BoundCompilationUnitMemberNode {
         super(BoundNodeType.CLASS_DECLARATION, range);
         this.syntaxNode = node;
         this.name = name;
-        this.baseTypeNode = baseTypeNode;
+        this.baseTypeNodes = baseTypeNodes;
         this.members = members;
         this.defaultBaseConstructor = defaultBaseConstructor;
     }
@@ -56,7 +56,7 @@ public class BoundClassNode extends BoundCompilationUnitMemberNode {
     @Override
     public void acceptChildren(BinderTreeVisitor visitor) {
         name.accept(visitor);
-        if (baseTypeNode != null) {
+        for (BoundTypeNode baseTypeNode : baseTypeNodes) {
             baseTypeNode.accept(visitor);
         }
         for (BoundClassMemberNode member : members) {
@@ -66,11 +66,9 @@ public class BoundClassNode extends BoundCompilationUnitMemberNode {
 
     @Override
     public List<BoundNode> getChildren() {
-        List<BoundNode> list = new ArrayList<>(1 + members.size());
+        List<BoundNode> list = new ArrayList<>(1 + baseTypeNodes.size() + members.size());
         list.add(name);
-        if (baseTypeNode != null) {
-            list.add(baseTypeNode);
-        }
+        list.addAll(baseTypeNodes);
         list.addAll(members);
         return list;
     }

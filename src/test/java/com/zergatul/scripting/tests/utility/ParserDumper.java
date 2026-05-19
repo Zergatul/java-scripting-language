@@ -191,6 +191,10 @@ public class ParserDumper extends Dumper {
         commaBreak();
         dump(node.name.token);
         commaBreak();
+        dump(node.colon);
+        commaBreak();
+        dumpList(TypeNode.class, node.baseTypeNodes);
+        commaBreak();
         dump(node.openBrace);
         commaBreak();
         dumpList(node.members);

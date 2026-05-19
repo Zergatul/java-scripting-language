@@ -6,7 +6,9 @@ import com.zergatul.scripting.tests.completion.helpers.CompletionTestHelper;
 import com.zergatul.scripting.tests.completion.helpers.Lists;
 import com.zergatul.scripting.tests.completion.helpers.TestCompletionContext;
 import com.zergatul.scripting.tests.completion.suggestions.*;
+import com.zergatul.scripting.type.SAliasType;
 import com.zergatul.scripting.type.SJavaObject;
+import com.zergatul.scripting.type.SType;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -216,6 +218,30 @@ public class ClassTests {
                 """,
                 context -> List.of(
                         new ClassSuggestion(context, "ClassA")));
+    }
+
+    @Test
+    public void interfaceInheritanceTest() {
+        assertSuggestions("""
+                typealias Runnable = Java<java.lang.Runnable>;
+                class ClassA {}
+                class ClassB : <cursor>
+                """,
+                context -> List.of(
+                        new ClassSuggestion(context, "ClassA"),
+                        new TypeAliasSuggestion(new SAliasType("Runnable", SType.fromJavaType(Runnable.class)))));
+    }
+
+    @Test
+    public void multipleInheritanceTest() {
+        assertSuggestions("""
+                typealias Runnable = Java<java.lang.Runnable>;
+                class ClassA {}
+                class ClassB : ClassA, <cursor>
+                """,
+                context -> List.of(
+                        new ClassSuggestion(context, "ClassA"),
+                        new TypeAliasSuggestion(new SAliasType("Runnable", SType.fromJavaType(Runnable.class)))));
     }
 
     @Test

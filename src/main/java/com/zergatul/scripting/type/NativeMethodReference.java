@@ -71,6 +71,11 @@ public class NativeMethodReference extends MethodReference {
     }
 
     @Override
+    public boolean isAbstract() {
+        return Modifier.isAbstract(method.getModifiers());
+    }
+
+    @Override
     public boolean isFinal() {
         return Modifier.isFinal(method.getModifiers());
     }

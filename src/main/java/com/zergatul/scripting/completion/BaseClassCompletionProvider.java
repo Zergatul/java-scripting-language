@@ -2,10 +2,7 @@ package com.zergatul.scripting.completion;
 
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.BinderOutput;
-import com.zergatul.scripting.binding.nodes.BoundClassNode;
-import com.zergatul.scripting.binding.nodes.BoundCompilationUnitMemberNode;
-import com.zergatul.scripting.binding.nodes.BoundNodeType;
-import com.zergatul.scripting.binding.nodes.BoundTypeNode;
+import com.zergatul.scripting.binding.nodes.*;
 import com.zergatul.scripting.compiler.CompilationParameters;
 import com.zergatul.scripting.symbols.ClassSymbol;
 
@@ -37,6 +34,10 @@ public class BaseClassCompletionProvider<T> extends AbstractCompletionProvider<T
                 if (TextRange.isBetween(context.line, context.column, currentClassNode.syntaxNode.colon, currentClassNode.syntaxNode.openBrace)) {
                     List<T> suggestions = new ArrayList<>();
                     for (BoundCompilationUnitMemberNode memberNode : output.unit().members.members) {
+                        if (memberNode.getNodeType() == BoundNodeType.TYPE_ALIAS) {
+                            BoundTypeAliasNode typeAliasNode = (BoundTypeAliasNode) memberNode;
+                            suggestions.add(factory.getTypeAliasSuggestion(typeAliasNode.getAliasType()));
+                        }
                         if (memberNode.getNodeType() == BoundNodeType.CLASS_DECLARATION) {
                             BoundClassNode classNode = (BoundClassNode) memberNode;
                             if (classNode != currentClassNode && !classNode.name.value.isEmpty()) {

@@ -87,6 +87,9 @@ public class BinderErrors {
     public static final ErrorCode RethrowNotAllowed = new ErrorCode("B083", "Rethrow statement is only allowed inside catch-blocks");
     public static final ErrorCode ThrowExpressionNotAllowed = new ErrorCode("B084", "'throw' expression is not allowed in this context");
     public static final ErrorCode MethodUsageNotAllowed = new ErrorCode("B085", "%s");
+    public static final ErrorCode MultipleBaseClasses = new ErrorCode("B086", "Class cannot extend multiple classes");
+    public static final ErrorCode AbstractMethodNotSupported = new ErrorCode("B088", "Abstract methods are not supported");
+    public static final ErrorCode MissingInheritedMethodImplementation = new ErrorCode("B089", "Class does not implement inherited method '%s'");
 
     public static final ErrorCode InternalError = new ErrorCode("B999", "Internal error: %s");
 }

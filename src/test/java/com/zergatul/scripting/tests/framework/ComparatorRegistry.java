@@ -111,7 +111,7 @@ public class ComparatorRegistry {
                         .extract("keyword", node -> node.keyword)
                         .extract("name", node -> node.name)
                         .extract("colon", node -> node.colon)
-                        .extract("baseTypeNode", node -> node.baseTypeNode)
+                        .extract("baseTypeNodes", node -> node.baseTypeNodes)
                         .extract("openBrace", node -> node.openBrace)
                         .extract("members", node -> node.members)
                         .extract("closeBrace", node -> node.closeBrace))
