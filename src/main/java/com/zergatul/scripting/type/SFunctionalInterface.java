@@ -145,8 +145,6 @@ public class SFunctionalInterface extends SFunction {
                     other.method.equals(method) &&
                     other.actualReturnType.equals(actualReturnType) &&
                     Arrays.equals(other.actualParameters, actualParameters);
-        } else if (obj instanceof SClassType other) {
-            return other.getJavaClass() == clazz;
         } else {
             return false;
         }

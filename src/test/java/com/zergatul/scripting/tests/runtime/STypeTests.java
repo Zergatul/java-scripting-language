@@ -23,7 +23,10 @@ public class STypeTests {
         Method method = TestClass3.class.getMethod("getPlayers", Predicate.class);
         MethodReference methodReference = new NativeMethodReference(method);
         SType parameterType = methodReference.getParameterTypes().getFirst();
-        Assertions.assertEquals("fn<Java<com.zergatul.scripting.tests.runtime.STypeTests$ServerPlayer> => boolean>", parameterType.toString());
+        Assertions.assertEquals("Java<java.util.function.Predicate>", parameterType.toString());
+        Assertions.assertEquals(
+                "fn<Java<com.zergatul.scripting.tests.runtime.STypeTests$ServerPlayer> => boolean>",
+                parameterType.getCallableType().toString());
     }
 
     @Test

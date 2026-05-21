@@ -172,6 +172,10 @@ public abstract class SType {
         return null;
     }
 
+    public @Nullable SFunction getCallableType() {
+        return null;
+    }
+
     public Class<?> getReferenceClass() {
         throw new InternalException();
     }
@@ -194,19 +198,17 @@ public abstract class SType {
         }
 
         if (type instanceof ParameterizedType parameterized) {
-            java.lang.reflect.Type raw = parameterized.getRawType();
-            if (raw instanceof Class<?> clazz) {
-                if (InterfaceHelper.isFuncInterface(clazz)) {
-                    return SFunctionalInterface.from(parameterized);
-                }
-            }
-
             java.lang.reflect.Type[] arguments = parameterized.getActualTypeArguments();
             if (parameterized.getRawType() == CompletableFuture.class) {
                 return new SFuture(fromJavaType(arguments[0]));
             }
 
-            return SClassType.create((Class<?>) parameterized.getRawType());
+            Class<?> clazz = (Class<?>) parameterized.getRawType();
+            if (InterfaceHelper.isFuncInterface(clazz)) {
+                return SClassType.create(clazz, SFunctionalInterface.from(parameterized));
+            }
+
+            return SClassType.create(clazz);
         }
 
         if (type instanceof WildcardType wildcard) {
@@ -292,9 +294,6 @@ public abstract class SType {
             }
             if (clazz == CompletableFuture.class) {
                 return new SFuture(SVoidType.instance);
-            }
-            if (InterfaceHelper.isFuncInterface(clazz)) {
-                return SFunctionalInterface.from(clazz);
             }
             if (clazz.isAnnotationPresent(CustomType.class)) {
                 return new SCustomType(clazz);

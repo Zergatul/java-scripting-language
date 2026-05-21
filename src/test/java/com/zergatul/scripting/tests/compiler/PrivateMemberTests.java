@@ -8,6 +8,7 @@ import com.zergatul.scripting.tests.compiler.helpers.Int64Storage;
 import com.zergatul.scripting.tests.compiler.helpers.IntStorage;
 import com.zergatul.scripting.tests.compiler.helpers.StringStorage;
 import com.zergatul.scripting.tests.framework.ComparatorTest;
+import com.zergatul.scripting.tests.utility.MarkedCode;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -52,7 +53,7 @@ public class PrivateMemberTests extends ComparatorTest {
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
-        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(0, 1, 101, 102, 112));
+        Assertions.assertIterableEquals(List.of(0, 1, 101, 102, 112), ApiRoot.intStorage.list);
     }
 
     @Test
@@ -67,23 +68,36 @@ public class PrivateMemberTests extends ComparatorTest {
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
-        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(10));
+        Assertions.assertIterableEquals(List.of(10), ApiRoot.intStorage.list);
+    }
+
+    @Test
+    public void protectedFieldTest() {
+        String code = """
+                typealias MyClass = Java<com.zergatul.scripting.tests.compiler.PrivateMemberTests$MyClass2>;
+                
+                let instance = new MyClass(0);
+                instance.#protectedValue = 20;
+                intStorage.add(instance.#protectedValue);
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(List.of(20), ApiRoot.intStorage.list);
     }
 
     @Test
     public void instanceFinalFieldWriteTest() {
-        String code = """
+        MarkedCode marked = MarkedCode.from("""
                 typealias MyClass = Java<com.zergatul.scripting.tests.compiler.PrivateMemberTests$MyClass2>;
                 
                 let instance = new MyClass(10);
                 intStorage.add(instance.#value);
-                instance.#value = 100;
-                """;
+                ⟦instance.#value⟧ = 100;
+                """);
 
-        comparator.assertEquals(
-                List.of(
-                        new DiagnosticMessage(BinderErrors.ExpressionCannotBeSet, new SingleLineTextRange(5, 1, 159, 15))),
-                getDiagnostics(ApiRoot.class, code));
+        comparator.assertDiagnostics(ApiRoot.class, marked, "⟦⟧", BinderErrors.ExpressionCannotBeSet);
     }
 
     @Test
@@ -108,8 +122,8 @@ public class PrivateMemberTests extends ComparatorTest {
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
-        Assertions.assertIterableEquals(ApiRoot.stringStorage.list, List.of("q", "a", "ac"));
-        Assertions.assertIterableEquals(ApiRoot.int64Storage.list, List.of(100L, 101L, 111L));
+        Assertions.assertIterableEquals(List.of("q", "a", "ac"), ApiRoot.stringStorage.list);
+        Assertions.assertIterableEquals(List.of(100L, 101L, 111L), ApiRoot.int64Storage.list);
     }
 
     @Test
@@ -123,21 +137,18 @@ public class PrivateMemberTests extends ComparatorTest {
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
-        Assertions.assertIterableEquals(ApiRoot.stringStorage.list, List.of("a"));
+        Assertions.assertIterableEquals(List.of("a"), ApiRoot.stringStorage.list);
     }
 
     @Test
     public void staticFinalFieldWriteTest() {
-        String code = """
+        MarkedCode marked = MarkedCode.from("""
                 typealias MyClass = Java<com.zergatul.scripting.tests.compiler.PrivateMemberTests$MyClass2>;
                 
-                MyClass.#strValue = null;
-                """;
+                ⟦MyClass.#strValue⟧ = null;
+                """);
 
-        comparator.assertEquals(
-                List.of(
-                        new DiagnosticMessage(BinderErrors.ExpressionCannotBeSet, new SingleLineTextRange(3, 1, 94, 17))),
-                getDiagnostics(ApiRoot.class, code));
+        comparator.assertDiagnostics(ApiRoot.class, marked, "⟦⟧", BinderErrors.ExpressionCannotBeSet);
     }
 
     @Test
@@ -153,7 +164,7 @@ public class PrivateMemberTests extends ComparatorTest {
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
-        Assertions.assertIterableEquals(ApiRoot.stringStorage.list, List.of("q", "hello"));
+        Assertions.assertIterableEquals(List.of("q", "hello"), ApiRoot.stringStorage.list);
     }
 
     @Test
@@ -170,7 +181,23 @@ public class PrivateMemberTests extends ComparatorTest {
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
-        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(10, 20));
+        Assertions.assertIterableEquals(List.of(10, 20), ApiRoot.intStorage.list);
+    }
+
+    @Test
+    public void protectedMethodTest() {
+        String code = """
+                typealias MyClass = Java<com.zergatul.scripting.tests.compiler.PrivateMemberTests$MyClass2>;
+                
+                let instance = new MyClass(0);
+                instance.#setProtectedValue(8);
+                intStorage.add(instance.#protectedValue);
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(List.of(8), ApiRoot.intStorage.list);
     }
 
     @Test
@@ -263,6 +290,7 @@ public class PrivateMemberTests extends ComparatorTest {
         private static final long longValue = 100;
         private final int value;
         private int mutableValue;
+        protected int protectedValue;
 
         public MyClass2(int value) {
             this.value = value;
@@ -279,6 +307,10 @@ public class PrivateMemberTests extends ComparatorTest {
 
         private void setMutableValue(int value) {
             mutableValue = value;
+        }
+
+        protected void setProtectedValue(int value) {
+            protectedValue = value;
         }
     }
 }

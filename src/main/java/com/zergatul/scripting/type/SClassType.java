@@ -1,6 +1,7 @@
 package com.zergatul.scripting.type;
 
 import com.zergatul.scripting.Getter;
+import com.zergatul.scripting.InterfaceHelper;
 import com.zergatul.scripting.InternalException;
 import com.zergatul.scripting.Setter;
 import org.jspecify.annotations.Nullable;
@@ -12,16 +13,26 @@ import java.util.*;
 public class SClassType extends SReferenceType {
 
     private final Class<?> clazz;
+    private final @Nullable SFunctionalInterface callableType;
 
     protected SClassType(Class<?> clazz) {
+        this(clazz, null);
+    }
+
+    private SClassType(Class<?> clazz, @Nullable SFunctionalInterface callableType) {
         this.clazz = clazz;
+        this.callableType = callableType;
     }
 
     public static SClassType create(Class<?> clazz) {
+        return create(clazz, null);
+    }
+
+    public static SClassType create(Class<?> clazz, @Nullable SFunctionalInterface callableType) {
         if (clazz == Object.class) {
             return SJavaObject.instance;
         } else {
-            return new SClassType(clazz);
+            return new SClassType(clazz, callableType);
         }
     }
 
@@ -86,7 +97,7 @@ public class SClassType extends SReferenceType {
                 .toList());
         properties.addAll(Arrays.stream(clazz.getDeclaredFields())
                 .filter(f -> !Modifier.isStatic(f.getModifiers()))
-                .filter(f -> Modifier.isPrivate(f.getModifiers()))
+                .filter(f -> !Modifier.isPublic(f.getModifiers()))
                 .map(FieldPropertyReference::new)
                 .map(f -> (PropertyReference) f)
                 .toList());
@@ -148,11 +159,21 @@ public class SClassType extends SReferenceType {
     }
 
     @Override
+    public @Nullable SFunction getCallableType() {
+        if (callableType != null) {
+            return callableType;
+        }
+        if (InterfaceHelper.isFuncInterface(clazz)) {
+            return SFunctionalInterface.from(clazz);
+        } else {
+            return null;
+        }
+    }
+
+    @Override
     public boolean equals(Object obj) {
         if (obj instanceof SClassType other) {
             return other.clazz == clazz;
-        } else if (obj instanceof SFunctionalInterface other) {
-            return other.getJavaClass() == clazz;
         } else {
             return false;
         }

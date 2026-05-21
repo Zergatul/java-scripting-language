@@ -90,7 +90,7 @@ public class NativeMethodReference extends MethodReference {
                         Type.getInternalName(method.getDeclaringClass()),
                         method.getName(),
                         Type.getMethodDescriptor(method),
-                        false);
+                        method.getDeclaringClass().isInterface());
             } else {
                 visitor.visitMethodInsn(
                         method.getDeclaringClass().isInterface() ? INVOKEINTERFACE : INVOKEVIRTUAL,

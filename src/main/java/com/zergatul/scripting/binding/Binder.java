@@ -1478,8 +1478,9 @@ public class Binder {
                     context.releaseRefVariables());
         }
 
-        if (callee.type instanceof SFunction function) {
-            InvocableObject invocable = new InvocableObject(function);
+        SFunction callableType = callee.type.getCallableType();
+        if (callableType != null) {
+            InvocableObject invocable = new InvocableObject(callableType);
             BindInvocableArgsResult<InvocableObject> result = bindInvocableArguments(
                     invocation.arguments,
                     List.of(invocable));
@@ -1488,10 +1489,10 @@ public class Binder {
                 addDiagnostic(
                         BinderErrors.ArgumentCountMismatch2,
                         invocation.arguments,
-                        function.getParameters().size());
+                        callableType.getParameters().size());
             }
 
-            return new BoundObjectInvocationExpression(callee, result.argumentsListNode, invocation.getRange());
+            return new BoundObjectInvocationExpression(callee, callableType, result.argumentsListNode, invocation.getRange());
         }
 
         if (callee.type != SUnknown.instance) {
@@ -2258,14 +2259,17 @@ public class Binder {
             return new BoundCollectionExpressionNode((BoundEmptyCollectionExpressionNode) expression, type);
         }
 
-        if (info.type() == ConversionType.LAMBDA_BINDING) {
+        if (info.type() == ConversionType.LAMBDA_BINDING_TO_FUNCTION) {
             return bindUnconvertedLambda((BoundUnconvertedLambdaExpressionNode) expression, (SFunction) type);
         }
 
         if (info.type() == ConversionType.LAMBDA_BINDING_TO_CLASS) {
-            SFunctionalInterface funcType = SFunctionalInterface.from(type.getJavaClass());
+            SFunctionalInterface funcType = getFunctionalInterface(type);
+            if (funcType == null) {
+                throw new InternalException();
+            }
             BoundExpressionNode inner = bindUnconvertedLambda((BoundUnconvertedLambdaExpressionNode) expression, funcType);
-            return new BoundImplicitCastExpressionNode(inner, new NoOpCastOperation(funcType, type));
+            return new BoundImplicitCastExpressionNode(inner, new NoOpCastOperation(funcType, type), expression.getRange());
         }
 
         return new BoundConversionNode(expression, info, type, expression.getRange());
@@ -2291,15 +2295,12 @@ public class Binder {
 
         if (expression.getNodeType() == BoundNodeType.UNCONVERTED_LAMBDA) {
             SUnconvertedLambda lambdaType = (SUnconvertedLambda) expression.type;
-            if (type instanceof SClassType classType) {
-                if (InterfaceHelper.isFuncInterface(classType.getJavaClass())) {
-                    SFunctionalInterface funcInterface = SFunctionalInterface.from(classType.getJavaClass());
-                    ConversionInfo info = getConversionInfo(expression, funcInterface);
-                    if (info == null) {
-                        return null;
-                    } else {
-                        return new ConversionInfo(ConversionType.LAMBDA_BINDING_TO_CLASS);
-                    }
+            if (type instanceof SClassType && getFunctionalInterface(type) instanceof SFunctionalInterface funcInterface) {
+                ConversionInfo info = getConversionInfo(expression, funcInterface);
+                if (info != null) {
+                    return new ConversionInfo(ConversionType.LAMBDA_BINDING_TO_CLASS);
+                } else {
+                    return null;
                 }
             }
             if (type instanceof SFunction function) {
@@ -2312,14 +2313,15 @@ public class Binder {
                 if (function.getParameters().size() != lambdaType.getParametersCount()) {
                     return null;
                 }
-                return new ConversionInfo(ConversionType.LAMBDA_BINDING);
+                return new ConversionInfo(ConversionType.LAMBDA_BINDING_TO_FUNCTION);
             }
             return null;
         }
 
         if (expression.getNodeType() == BoundNodeType.FUNCTION_GROUP) {
             BoundFunctionGroupExpressionNode functionGroupExpressionNode = (BoundFunctionGroupExpressionNode) expression;
-            if (type instanceof SFunctionalInterface functionalInterface) {
+            SFunctionalInterface functionalInterface = getFunctionalInterface(type);
+            if (functionalInterface != null) {
                 for (Function candidate : functionGroupExpressionNode.candidates) {
                     if (candidate.getFunctionType().signatureMatchesWithBoxing(functionalInterface)) {
                         return new ConversionInfo(ConversionType.FUNCTION_TO_INTERFACE, candidate);
@@ -2338,7 +2340,8 @@ public class Binder {
 
         if (expression.getNodeType() == BoundNodeType.METHOD_GROUP) {
             BoundMethodGroupExpressionNode methodGroupExpressionNode = (BoundMethodGroupExpressionNode) expression;
-            if (type instanceof SFunctionalInterface functionalInterface) {
+            SFunctionalInterface functionalInterface = getFunctionalInterface(type);
+            if (functionalInterface != null) {
                 for (MethodReference method : methodGroupExpressionNode.candidates) {
                     if (method.signatureMatchesWithBoxing(functionalInterface)) {
                         return new ConversionInfo(ConversionType.METHOD_GROUP_TO_INTERFACE, method);
@@ -2355,6 +2358,21 @@ public class Binder {
                 return null;
             }
             return null;
+        }
+
+        return null;
+    }
+
+    private @Nullable SFunctionalInterface getFunctionalInterface(SType type) {
+        if (type instanceof SFunctionalInterface functionalInterface) {
+            return functionalInterface;
+        }
+
+        if (type instanceof SClassType) {
+            SFunction callableType = type.getCallableType();
+            if (callableType instanceof SFunctionalInterface functionalInterface) {
+                return functionalInterface;
+            }
         }
 
         return null;

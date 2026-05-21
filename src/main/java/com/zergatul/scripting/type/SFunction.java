@@ -29,6 +29,11 @@ public abstract class SFunction extends SReferenceType {
         return returnType;
     }
 
+    @Override
+    public SFunction getCallableType() {
+        return this;
+    }
+
     public boolean isFunction() {
         return returnType != SVoidType.instance;
     }

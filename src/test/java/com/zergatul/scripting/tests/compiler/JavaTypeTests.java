@@ -32,8 +32,8 @@ public class JavaTypeTests {
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
-        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(ApiRoot.api.getObject().hashCode()));
-        Assertions.assertIterableEquals(ApiRoot.stringStorage.list, List.of(ApiRoot.api.getObject().toString()));
+        Assertions.assertIterableEquals(List.of(ApiRoot.api.getObject().hashCode()), ApiRoot.intStorage.list);
+        Assertions.assertIterableEquals(List.of(ApiRoot.api.getObject().toString()), ApiRoot.stringStorage.list);
     }
 
     @Test
@@ -55,8 +55,8 @@ public class JavaTypeTests {
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
-        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(123456, 654321, 100, 110, 111));
-        Assertions.assertIterableEquals(ApiRoot.boolStorage.list, List.of(true, false));
+        Assertions.assertIterableEquals(List.of(123456, 654321, 100, 110, 111), ApiRoot.intStorage.list);
+        Assertions.assertIterableEquals(List.of(true, false), ApiRoot.boolStorage.list);
     }
 
     @Test
@@ -73,7 +73,7 @@ public class JavaTypeTests {
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
-        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(100, 200));
+        Assertions.assertIterableEquals(List.of(100, 200), ApiRoot.intStorage.list);
     }
 
     @Test
@@ -96,7 +96,7 @@ public class JavaTypeTests {
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
-        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(1, 2, 4, 3));
+        Assertions.assertIterableEquals(List.of(1, 2, 4, 3), ApiRoot.intStorage.list);
     }
 
     @Test
@@ -119,7 +119,7 @@ public class JavaTypeTests {
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
-        Assertions.assertIterableEquals(ApiRoot.stringStorage.list, List.of("false", "1", "4000000000", "1.25", "1.5", "a", "qq"));
+        Assertions.assertIterableEquals(List.of("false", "1", "4000000000", "1.25", "1.5", "a", "qq"), ApiRoot.stringStorage.list);
     }
 
     @Test
@@ -138,7 +138,7 @@ public class JavaTypeTests {
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
-        Assertions.assertIterableEquals(ApiRoot.stringStorage.list, List.of("ww", "true", "100"));
+        Assertions.assertIterableEquals(List.of("ww", "true", "100"), ApiRoot.stringStorage.list);
     }
 
     @Test
@@ -163,7 +163,7 @@ public class JavaTypeTests {
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
-        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(45));
+        Assertions.assertIterableEquals(List.of(45), ApiRoot.intStorage.list);
     }
 
     @Test
@@ -184,7 +184,7 @@ public class JavaTypeTests {
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
-        Assertions.assertIterableEquals(ApiRoot.stringStorage.list, List.of("Q", "10", "11", "12", "13", "14", "15"));
+        Assertions.assertIterableEquals(List.of("Q", "10", "11", "12", "13", "14", "15"), ApiRoot.stringStorage.list);
     }
 
     @Test
@@ -207,7 +207,7 @@ public class JavaTypeTests {
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
-        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(1, 2, 3, 4, 5));
+        Assertions.assertIterableEquals(List.of(1, 2, 3, 4, 5), ApiRoot.intStorage.list);
     }
 
     @Test
@@ -221,7 +221,7 @@ public class JavaTypeTests {
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
-        Assertions.assertIterableEquals(ApiRoot.boolStorage.list, List.of(true));
+        Assertions.assertIterableEquals(List.of(true), ApiRoot.boolStorage.list);
     }
 
     @Test
@@ -241,7 +241,77 @@ public class JavaTypeTests {
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
-        Assertions.assertIterableEquals(ApiRoot.stringStorage.list, List.of("ABCDEF"));
+        Assertions.assertIterableEquals(List.of("ABCDEF"), ApiRoot.stringStorage.list);
+    }
+
+    @Test
+    public void staticInterfaceMethodTest() {
+        String code = """
+                let instance = Java<com.zergatul.scripting.tests.compiler.JavaTypeTests$MyInterface>.getInstance();
+                stringStorage.add(instance.getName());
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(List.of("MyName"), ApiRoot.stringStorage.list);
+    }
+
+    @Test
+    public void functionalInterfaceDirectInvocationTest() {
+        String code = """
+                let instance = Java<com.zergatul.scripting.tests.compiler.JavaTypeTests$MyCallable>.getInstance();
+                stringStorage.add(instance());
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(List.of("called"), ApiRoot.stringStorage.list);
+    }
+
+    @Test
+    public void functionalInterfaceLambdaConversionTest() {
+        String code = """
+                typealias MyCallable = Java<com.zergatul.scripting.tests.compiler.JavaTypeTests$MyCallable>;
+                MyCallable callable = () => "lambda";
+                stringStorage.add(callable());
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(List.of("lambda"), ApiRoot.stringStorage.list);
+    }
+
+    @Test
+    public void functionalInterfaceFunctionGroupConversionTest() {
+        String code = """
+                typealias MyCallable = Java<com.zergatul.scripting.tests.compiler.JavaTypeTests$MyCallable>;
+                string getValue() => "function";
+                
+                MyCallable callable = getValue;
+                stringStorage.add(callable());
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(List.of("function"), ApiRoot.stringStorage.list);
+    }
+
+    @Test
+    public void functionalInterfaceMethodGroupConversionTest() {
+        String code = """
+                typealias MyCallable = Java<com.zergatul.scripting.tests.compiler.JavaTypeTests$MyCallable>;
+                MyCallable callable = api.getString;
+                stringStorage.add(callable());
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(List.of("method"), ApiRoot.stringStorage.list);
     }
 
     public static class ApiRoot {
@@ -262,6 +332,10 @@ public class JavaTypeTests {
 
         public float fromFloat64(double value) {
             return (float) value;
+        }
+
+        public String getString() {
+            return "method";
         }
     }
 
@@ -299,5 +373,36 @@ public class JavaTypeTests {
     @SuppressWarnings("unused")
     public static class InheritedClass1 extends BaseClass1 {
         public int color;
+    }
+
+    public interface MyInterface {
+
+        static MyInterface getInstance() {
+            return MyInterfaceImpl.INSTANCE;
+        }
+
+        String getName();
+    }
+
+    public static class MyInterfaceImpl implements MyInterface {
+
+        public static final MyInterfaceImpl INSTANCE = new MyInterfaceImpl();
+
+        private MyInterfaceImpl() {}
+
+        @Override
+        public String getName() {
+            return "MyName";
+        }
+    }
+
+    @SuppressWarnings("unused")
+    public interface MyCallable {
+
+        static MyCallable getInstance() {
+            return () -> "called";
+        }
+
+        String invoke();
     }
 }

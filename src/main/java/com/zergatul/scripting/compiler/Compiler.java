@@ -3115,7 +3115,7 @@ public class Compiler {
                     visitor,
                     context,
                     Objects.requireNonNull(expression.conversionInfo.function()),
-                    (SFunctionalInterface) expression.type);
+                    getFunctionalInterface(expression.type));
 
             case FUNCTION_TO_GENERIC -> compileFunctionToGeneric(
                     visitor,
@@ -3128,7 +3128,7 @@ public class Compiler {
                     context,
                     (BoundMethodGroupExpressionNode) expression.expression,
                     Objects.requireNonNull(expression.conversionInfo.method()),
-                    (SFunctionalInterface) expression.type);
+                    getFunctionalInterface(expression.type));
 
             case METHOD_GROUP_TO_GENERIC -> compileInstanceMethodToGeneric(
                     visitor,
@@ -3144,6 +3144,19 @@ public class Compiler {
     private void compileImplicitCastConversion(MethodVisitor visitor, CompilerContext context, BoundConversionNode expression) {
         compileExpression(visitor, context, expression.expression);
         expression.conversionInfo.cast().apply(visitor);
+    }
+
+    private SFunctionalInterface getFunctionalInterface(SType type) {
+        if (type instanceof SFunctionalInterface functionalInterface) {
+            return functionalInterface;
+        }
+
+        SFunction callableType = type.getCallableType();
+        if (callableType instanceof SFunctionalInterface functionalInterface) {
+            return functionalInterface;
+        }
+
+        throw new InternalException();
     }
 
     private void compileFunctionToInterfaceConversion(MethodVisitor visitor, CompilerContext context, Function function, SFunctionalInterface functionalInterface) {
@@ -3613,13 +3626,23 @@ public class Compiler {
             compileExpression(visitor, context, argument);
         }
 
-        SGenericFunction genericFunction = (SGenericFunction) expression.callee.type;
-        visitor.visitMethodInsn(
-                INVOKEINTERFACE,
-                genericFunction.getInternalName(),
-                genericFunction.getMethodName(),
-                genericFunction.getMethodDescriptor(),
-                true);
+        if (expression.callableType instanceof SGenericFunction genericFunction) {
+            visitor.visitMethodInsn(
+                    INVOKEINTERFACE,
+                    genericFunction.getInternalName(),
+                    genericFunction.getMethodName(),
+                    genericFunction.getMethodDescriptor(),
+                    true);
+        } else if (expression.callableType instanceof SFunctionalInterface functionalInterface) {
+            visitor.visitMethodInsn(
+                    INVOKEINTERFACE,
+                    functionalInterface.getInternalName(),
+                    functionalInterface.getMethodName(),
+                    functionalInterface.getRawMethodDescriptor(),
+                    true);
+        } else {
+            throw new InternalException();
+        }
     }
 
     private void compileGeneratorGetValue(MethodVisitor visitor, CompilerContext context, BoundGeneratorGetValueNode node) {
