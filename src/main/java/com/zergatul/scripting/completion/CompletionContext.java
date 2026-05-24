@@ -236,9 +236,60 @@ public class CompletionContext {
         if (type == ContextType.AFTER_LAST_NO_STATEMENTS) {
             return true;
         }
+
         if (type == ContextType.WITHIN) {
-            return entry.node.getNodeType() == BoundNodeType.COMPILATION_UNIT;
+            if (entry.node.getNodeType() == BoundNodeType.COMPILATION_UNIT) {
+                return true;
+            }
+
+            // below we check if unfinished first characters, for example "ty<cursor>"
+            // on the boundary between unit members and statements
+            // may become unit members
+
+            SearchEntry current = entry;
+            switch (current.node.getNodeType()) {
+                case NAME_EXPRESSION -> {
+                    SearchEntry parent = current.parent;
+                    if (parent.node.getNodeType() != BoundNodeType.EXPRESSION_STATEMENT) {
+                        return false;
+                    }
+
+                    SearchEntry grandParent = parent.parent;
+                    if (grandParent.node.getNodeType() != BoundNodeType.STATEMENTS_LIST) {
+                        return false;
+                    }
+
+                    BoundStatementsListNode statements = (BoundStatementsListNode) grandParent.node;
+                    BoundExpressionStatementNode statement = (BoundExpressionStatementNode) parent.node;
+                    if (statements.statements.getFirst() != statement) {
+                        return false;
+                    }
+
+                    // this is first statement, and it is open
+                    // meaning it can also be unit node
+                    return statement.isOpen();
+                }
+                case CUSTOM_TYPE, DECLARED_CLASS_TYPE, ALIASED_TYPE, LET_TYPE, INVALID_TYPE -> {
+                    SearchEntry parent = current.parent;
+                    if (parent.node.getNodeType() != BoundNodeType.VARIABLE_DECLARATION) {
+                        return false;
+                    }
+
+                    SearchEntry grandParent = parent.parent;
+                    if (grandParent.node.getNodeType() != BoundNodeType.STATEMENTS_LIST) {
+                        return false;
+                    }
+
+                    BoundStatementsListNode statements = (BoundStatementsListNode) grandParent.node;
+                    BoundVariableDeclarationNode declaration = (BoundVariableDeclarationNode) parent.node;
+                    return statements.statements.getFirst() == declaration;
+                }
+                default -> {
+                    return false;
+                }
+            }
         }
+
         return false;
     }
 
@@ -278,6 +329,7 @@ public class CompletionContext {
         if (entry.isSingleWordStatementStart(line, column)) {
             return true;
         }
+
         return switch (entry.node.getNodeType()) {
 
             case STATEMENTS_LIST, BLOCK_STATEMENT -> true;
@@ -439,6 +491,15 @@ public class CompletionContext {
             case ARGUMENTS_LIST, BINARY_EXPRESSION, IN_EXPRESSION -> true;
 
             case BINARY_OPERATOR -> entry.node.getRange().isBefore(line, column);
+
+            case UNCONVERTED_LAMBDA -> {
+                BoundUnconvertedLambdaExpressionNode lambda = (BoundUnconvertedLambdaExpressionNode) entry.node;
+                if (lambda.syntaxNode.arrow.getRange().isBefore(line, column)) {
+                    yield lambda.isOpen() || lambda.syntaxNode.body.getRange().isAfter(line, column);
+                } else {
+                    yield false;
+                }
+            }
 
             case LAMBDA_EXPRESSION -> {
                 BoundLambdaExpressionNode lambda = (BoundLambdaExpressionNode) entry.node;

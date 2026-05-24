@@ -51,6 +51,19 @@ public class VariableDeclarationTests {
     }
 
     @Test
+    public void singleWordStatementStartInvalidTypeTest() {
+        assertSuggestions("""
+                int x = 1;
+                f<cursor>
+                x = 2;
+                """,
+                context -> Lists.of(
+                        statements,
+                        new StaticConstantSuggestion(context, "intStorage"),
+                        new LocalVariableSuggestion(context, "x")));
+    }
+
+    @Test
     public void nestedScopesTest() {
         assertSuggestions("""
                 int a = 0;

@@ -89,6 +89,37 @@ public class LambdaTests {
                         new StaticConstantSuggestion(context, "run")));
     }
 
+    @Test
+    public void singleWordStatementStartTest() {
+        assertSuggestions("""
+                int x = 1;
+                fn<int => int> mapper = value => f<cursor>
+                x = 2;
+                """,
+                context -> Lists.of(
+                        expressions,
+                        new StaticConstantSuggestion(context, "run"),
+                        new LocalVariableSuggestion(context, "x"),
+                        new LocalVariableSuggestion(context, "mapper"),
+                        LocalVariableSuggestion.getParameter(context, "value")));
+    }
+
+    @Test
+    public void lambdaStartBetweenStatementsTest() {
+        // in this case "value" is SUnknown, but that's ok, because as soon as we have at least 1 character
+        // "value" will get bound properly
+        assertSuggestions("""
+                int x = 1;
+                fn<int => int> mapper = value => <cursor>
+                x = 2;
+                """,
+                context -> Lists.of(
+                        expressions,
+                        new StaticConstantSuggestion(context, "run"),
+                        new LocalVariableSuggestion(context, "x"),
+                        LocalVariableSuggestion.getParameter(context, "value")));
+    }
+
     private void assertSuggestions(String code, Function<TestCompletionContext, List<Suggestion>> expectedFactory) {
         CompletionTestHelper.assertSuggestions(ApiRoot.class, code, expectedFactory);
     }

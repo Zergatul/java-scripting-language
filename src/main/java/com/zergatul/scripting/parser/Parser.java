@@ -1701,7 +1701,7 @@ public class Parser {
         if (current.is(TokenType.LEFT_CURLY_BRACKET)) {
             statement = parseBlockStatement();
         } else {
-            if (isPossibleSimpleStatementNotDeclaration()) {
+            if (isPossibleExpression()) {
                 statement = parseSimpleStatementNotDeclaration(true);
             } else {
                 statement = new InvalidStatementNode(createMissingTokenRangeBeforeCurrent());

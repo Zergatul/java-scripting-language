@@ -152,6 +152,15 @@ public class ComparatorRegistry {
                         .extract("parameters", node -> node.parameters)
                         .extract("arrow", node -> node.arrow)
                         .extract("body", node -> node.body))
+                .register(FunctionTypeNode.class, builder -> builder
+                        .extract("fn", node -> node.fn)
+                        .extract("openBracket", node -> node.openBracket)
+                        .extract("openParen", node -> node.openParen)
+                        .extract("parameterTypes", node -> node.parameterTypes)
+                        .extract("closeParen", node -> node.closeParen)
+                        .extract("arrow", node -> node.arrow)
+                        .extract("returnTypeNode", node -> node.returnTypeNode)
+                        .extract("closeBracket", node -> node.closeBracket))
                 .register(IfStatementNode.class, builder -> builder
                         .extract("ifToken", node -> node.ifToken)
                         .extract("openParen", node -> node.openParen)

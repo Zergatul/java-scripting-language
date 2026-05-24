@@ -30,6 +30,10 @@ public class ParametersCompletionProvider<T> extends AbstractCompletionProvider<
                     BoundLambdaExpressionNode lambda = (BoundLambdaExpressionNode) current.entry.node;
                     yield lambda.parameters;
                 }
+                case UNCONVERTED_LAMBDA -> {
+                    BoundUnconvertedLambdaExpressionNode lambda = (BoundUnconvertedLambdaExpressionNode) current.entry.node;
+                    yield lambda.parameters;
+                }
                 case CLASS_CONSTRUCTOR -> {
                     BoundClassConstructorNode constructor = (BoundClassConstructorNode) current.entry.node;
                     yield constructor.parameters.parameters;

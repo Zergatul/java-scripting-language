@@ -834,7 +834,7 @@ public class HighlightingProvider {
     }
 
     private void process(BoundUnconvertedLambdaExpressionNode node) {
-        processRaw(node.lambda);
+        processRaw(node.syntaxNode);
     }
 
     private void process(BoundUnresolvedMethodNode node) {

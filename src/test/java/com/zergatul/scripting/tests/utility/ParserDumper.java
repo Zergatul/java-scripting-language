@@ -66,6 +66,7 @@ public class ParserDumper extends Dumper {
             case LAMBDA_EXPRESSION -> dump((LambdaExpressionNode) node);
             case IS_EXPRESSION -> dump((IsExpressionNode) node);
             case STATIC_REFERENCE -> dump((StaticReferenceNode) node);
+            case FUNCTION_TYPE -> dump((FunctionTypeNode) node);
             default -> throw new InternalException(node.getClass().getName());
         }
     }
@@ -311,7 +312,11 @@ public class ParserDumper extends Dumper {
         commaBreak();
         dump(node.init);
         commaBreak();
+        dump(node.semicolon1);
+        commaBreak();
         dump(node.condition);
+        commaBreak();
+        dump(node.semicolon2);
         commaBreak();
         dump(node.update);
         commaBreak();
@@ -669,6 +674,28 @@ public class ParserDumper extends Dumper {
         dump(node.typeNode);
         commaBreak();
         dump(node.getRange());
+        sb.append(")");
+        decIndent();
+    }
+
+    private void dump(FunctionTypeNode node) {
+        fullLine("new FunctionTypeNode(");
+        incIndent();
+        dump(node.fn);
+        commaBreak();
+        dump(node.openBracket);
+        commaBreak();
+        dump(node.openParen);
+        commaBreak();
+        dumpList(TypeNode.class, node.parameterTypes);
+        commaBreak();
+        dump(node.closeParen);
+        commaBreak();
+        dump(node.arrow);
+        commaBreak();
+        dump(node.returnTypeNode);
+        commaBreak();
+        dump(node.closeBracket);
         sb.append(")");
         decIndent();
     }

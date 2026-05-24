@@ -19,6 +19,80 @@ import static com.zergatul.scripting.tests.completion.helpers.CommonSuggestions.
 public class TypeAliasTests {
 
     @Test
+    public void suggestTypeAliasKeywordTest1() {
+        assertSuggestions("""
+                type<cursor>
+                """,
+                context -> Lists.of(
+                        unitMembers,
+                        statements,
+                        new KeywordSuggestion(TokenType.ASYNC),
+                        new StaticConstantSuggestion(context, "intStorage")));
+    }
+
+    @Test
+    public void suggestTypeAliasKeywordTest2() {
+        assertSuggestions("""
+                typealias Str = string;
+                type<cursor>
+                int x = 1;
+                """,
+                context -> Lists.of(
+                        unitMembers,
+                        statements,
+                        new KeywordSuggestion(TokenType.ASYNC),
+                        new TypeAliasSuggestion(new SAliasType("Str", SString.instance)),
+                        new StaticConstantSuggestion(context, "intStorage")));
+    }
+
+    @Test
+    public void suggestTypeAliasKeywordTest3() {
+        assertSuggestions("""
+                static int a = 1;
+                typealias Str = string;
+                type<cursor>
+                a = 2;
+                """,
+                context -> Lists.of(
+                        unitMembers,
+                        statements,
+                        new KeywordSuggestion(TokenType.ASYNC),
+                        new TypeAliasSuggestion(new SAliasType("Str", SString.instance)),
+                        new StaticConstantSuggestion(context, "intStorage"),
+                        new StaticFieldSuggestion(context, "a")));
+    }
+
+    @Test
+    public void singleWordStatementStartAliasedTypeTest() {
+        assertSuggestions("""
+                typealias Str = string;
+                int x = 1;
+                Str<cursor>
+                x = 2;
+                """,
+                context -> Lists.of(
+                        statements,
+                        new TypeAliasSuggestion(new SAliasType("Str", SString.instance)),
+                        new StaticConstantSuggestion(context, "intStorage"),
+                        new LocalVariableSuggestion(context, "x")));
+    }
+
+    @Test
+    public void singleWordStatementStartDeclaredClassTypeTest() {
+        assertSuggestions("""
+                class Class {}
+                int x = 1;
+                Class<cursor>
+                x = 2;
+                """,
+                context -> Lists.of(
+                        statements,
+                        new ClassSuggestion(context, "Class"),
+                        new StaticConstantSuggestion(context, "intStorage"),
+                        new LocalVariableSuggestion(context, "x")));
+    }
+
+    @Test
     public void suggestAliasTypeTest() {
         assertSuggestions("""
                 typealias Str = string;

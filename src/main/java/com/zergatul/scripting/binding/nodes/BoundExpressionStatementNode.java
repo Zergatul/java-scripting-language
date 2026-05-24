@@ -40,4 +40,9 @@ public class BoundExpressionStatementNode extends BoundStatementNode {
     public List<BoundNode> getChildren() {
         return List.of(expression);
     }
+
+    @Override
+    public boolean isOpen() {
+        return syntaxNode.semicolon == null || syntaxNode.semicolon.isMissing();
+    }
 }

@@ -1555,7 +1555,7 @@ public class Binder {
     private BoundExpressionNode bindUnconvertedLambda(BoundUnconvertedLambdaExpressionNode node, SFunction target) {
         if (target instanceof SFunctionalInterface functionalInterface) {
             return bindLambdaExpression(
-                    node.lambda,
+                    node.syntaxNode,
                     target,
                     functionalInterface.getRawReturnType(),
                     functionalInterface.getActualReturnType(),
@@ -1563,7 +1563,7 @@ public class Binder {
                     functionalInterface.getActualParameters());
         } else {
             return bindLambdaExpression(
-                    node.lambda,
+                    node.syntaxNode,
                     target,
                     target.getReturnType(),
                     target.getReturnType(),
@@ -1572,7 +1572,7 @@ public class Binder {
         }
     }
 
-    private BoundExpressionNode bindLambdaExpression(
+    private BoundLambdaExpressionNode bindLambdaExpression(
             LambdaExpressionNode node,
             SFunction functionType,
             SType rawReturnType,
@@ -2180,8 +2180,19 @@ public class Binder {
         LambdaAnalyzer analyzer = new LambdaAnalyzer();
         boolean canBeAction = analyzer.canBeAction(expression);
         boolean canBeFunction = analyzer.canBeFunction(expression);
+
+        // these parameters are needed for completion, they don't participate in anything else
+        List<BoundParameterNode> parameters = new ArrayList<>();
+        for (NameExpressionNode name : expression.parameters.getNodes()) {
+            LocalParameter parameter = new LocalParameter(name.value, SUnknown.instance, name.getRange());
+            SymbolRef symbolRef = new MutableSymbolRef(parameter);
+            BoundNameExpressionNode boundName = new BoundNameExpressionNode(name, symbolRef);
+            parameters.add(new BoundParameterNode(boundName, SUnknown.instance, name.getRange()));
+        }
+
         return new BoundUnconvertedLambdaExpressionNode(
                 expression,
+                parameters,
                 new SUnconvertedLambda(canBeAction, canBeFunction, expression.parameters.size()),
                 expression.getRange());
     }

@@ -14,11 +14,9 @@ public class FunctionTypeNode extends TypeNode {
 
     public final ValueToken fn;
     public final Token openBracket;
-    @Nullable
-    public final Token openParen;
+    public final @Nullable Token openParen;
     public final SeparatedList<TypeNode> parameterTypes;
-    @Nullable
-    public final Token closeParen;
+    public final @Nullable Token closeParen;
     public final Token arrow;
     public final TypeNode returnTypeNode;
     public final Token closeBracket;

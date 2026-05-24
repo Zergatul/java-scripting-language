@@ -54,4 +54,9 @@ public class LambdaExpressionNode extends ExpressionNode {
         nodes.add(body);
         return nodes;
     }
+
+    @Override
+    public boolean isOpen() {
+        return body.isOpen();
+    }
 }

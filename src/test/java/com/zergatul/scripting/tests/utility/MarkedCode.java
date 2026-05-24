@@ -55,7 +55,10 @@ public class MarkedCode {
                     new BracketPair('⟦', '⟧'),
                     new BracketPair('❬', '❭'),
                     new BracketPair('❰', '❱'),
-                    new BracketPair('⟨', '⟩'));
+                    new BracketPair('⟨', '⟩'),
+                    new BracketPair('⁅', '⁆'),
+                    new BracketPair('⟬', '⟭'),
+                    new BracketPair('⸨', '⸩'));
             this.line = 1;
             this.column = 1;
             this.inputPosition = 0;

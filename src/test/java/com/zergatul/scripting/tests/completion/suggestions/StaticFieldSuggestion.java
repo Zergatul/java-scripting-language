@@ -12,7 +12,7 @@ public class StaticFieldSuggestion extends Suggestion {
     private final DeclaredStaticVariable variable;
 
     public StaticFieldSuggestion(TestCompletionContext context, String name) {
-        this(extract(context.output(), "x"));
+        this(extract(context.output(), name));
     }
 
     public StaticFieldSuggestion(DeclaredStaticVariable variable) {

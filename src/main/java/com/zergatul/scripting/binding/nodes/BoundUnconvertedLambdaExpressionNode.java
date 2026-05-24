@@ -9,11 +9,18 @@ import java.util.List;
 
 public class BoundUnconvertedLambdaExpressionNode extends BoundExpressionNode {
 
-    public final LambdaExpressionNode lambda;
+    public final LambdaExpressionNode syntaxNode;
+    public final List<BoundParameterNode> parameters;
 
-    public BoundUnconvertedLambdaExpressionNode(LambdaExpressionNode lambda, SUnconvertedLambda type, TextRange range) {
+    public BoundUnconvertedLambdaExpressionNode(
+            LambdaExpressionNode node,
+            List<BoundParameterNode> parameters,
+            SUnconvertedLambda type,
+            TextRange range
+    ) {
         super(BoundNodeType.UNCONVERTED_LAMBDA, type, range);
-        this.lambda = lambda;
+        this.syntaxNode = node;
+        this.parameters = parameters;
     }
 
     @Override
@@ -22,10 +29,19 @@ public class BoundUnconvertedLambdaExpressionNode extends BoundExpressionNode {
     }
 
     @Override
-    public void acceptChildren(BinderTreeVisitor visitor) {}
+    public void acceptChildren(BinderTreeVisitor visitor) {
+        for (BoundParameterNode parameter : parameters) {
+            parameter.accept(visitor);
+        }
+    }
 
     @Override
     public List<BoundNode> getChildren() {
-        return List.of();
+        return List.of(parameters.toArray(BoundNode[]::new));
+    }
+
+    @Override
+    public boolean isOpen() {
+        return syntaxNode.isOpen();
     }
 }
