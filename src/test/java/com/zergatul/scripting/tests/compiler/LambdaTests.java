@@ -1,7 +1,6 @@
 package com.zergatul.scripting.tests.compiler;
 
 import com.zergatul.scripting.AsyncRunnable;
-import com.zergatul.scripting.DiagnosticMessage;
 import com.zergatul.scripting.Getter;
 import com.zergatul.scripting.SingleLineTextRange;
 import com.zergatul.scripting.binding.Binder;
@@ -16,6 +15,7 @@ import com.zergatul.scripting.parser.Parser;
 import com.zergatul.scripting.parser.ParserOutput;
 import com.zergatul.scripting.tests.compiler.helpers.*;
 import com.zergatul.scripting.tests.framework.ComparatorTest;
+import com.zergatul.scripting.tests.utility.MarkedCode;
 import com.zergatul.scripting.type.CustomType;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -24,7 +24,8 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 import java.util.function.Consumer;
 
-import static com.zergatul.scripting.tests.compiler.helpers.CompilerHelper.*;
+import static com.zergatul.scripting.tests.compiler.helpers.CompilerHelper.compile;
+import static com.zergatul.scripting.tests.compiler.helpers.CompilerHelper.compileAsyncWithCustomTypes;
 
 public class LambdaTests extends ComparatorTest {
 
@@ -239,12 +240,13 @@ public class LambdaTests extends ComparatorTest {
     @Test
     public void simpleFunctionCannotCastTest() {
         String code = """
-                run.sumInts(123, () => 123.0);
+                run.sumInts(123, () => ⟦123.0⟧);
                 """;
 
-        comparator.assertEquals(List.of(
-                new DiagnosticMessage(BinderErrors.CannotImplicitlyConvert, new SingleLineTextRange(1, 24, 23, 5), "float", "Boxed<int>")),
-                getDiagnostics(ApiRoot.class, code));
+        comparator.assertDiagnostics(
+                ApiRoot.class, code, "⟦⟧",
+                BinderErrors.CannotImplicitlyConvert,
+                "float", "Boxed<int>");
     }
 
     @Test
@@ -648,43 +650,50 @@ public class LambdaTests extends ComparatorTest {
 
     @Test
     public void failedArguments1Test() {
-        String code = """
-                run.once(10, () => {});
-                """;
+        MarkedCode marked = MarkedCode.from("""
+                run.⟦once⟧(10, () => {});
+                """);
 
-        comparator.assertEquals(List.of(
-                new DiagnosticMessage(
-                        BinderErrors.NoOverloadedMethods,
-                        new SingleLineTextRange(1, 5, 4, 4),
-                        "once",
-                        2)),
-                getDiagnostics(ApiRoot.class, code));
+        String candidates = """
+                Candidates:
+                void once(Java<java.lang.Runnable> runnable)""";
+
+        comparator.assertDiagnostics(
+                ApiRoot.class, marked, "⟦⟧",
+                BinderErrors.NoOverloadedMethods,
+                "once", 2, candidates);
     }
 
     @Test
     public void failedArguments2Test() {
-        String code = """
-                run.multiple("10", () => {});
-                """;
+        MarkedCode marked = MarkedCode.from("""
+                run.multiple⟦("10", () => {})⟧;
+                """);
 
-        comparator.assertEquals(List.of(
-                new DiagnosticMessage(
-                        BinderErrors.CannotCastArguments,
-                        new SingleLineTextRange(1, 13, 12, 16))),
-                getDiagnostics(ApiRoot.class, code));
+        String candidates = """
+                Candidates:
+                void multiple(int count, Java<java.lang.Runnable> runnable)""";
+
+        comparator.assertDiagnostics(
+                ApiRoot.class, marked, "⟦⟧",
+                BinderErrors.MethodInvalidArguments,
+                "multiple", candidates);
     }
 
     @Test
     public void failedArguments3Test() {
-        String code = """
-                run.multiple(10, (x) => {});
-                """;
+        MarkedCode marked = MarkedCode.from("""
+                run.multiple⟦(10, (x) => {})⟧;
+                """);
 
-        comparator.assertEquals(List.of(
-                new DiagnosticMessage(
-                        BinderErrors.CannotCastArguments,
-                        new SingleLineTextRange(1, 13, 12, 15))),
-                getDiagnostics(ApiRoot.class, code));
+        String candidates = """
+                Candidates:
+                void multiple(int count, Java<java.lang.Runnable> runnable)""";
+
+        comparator.assertDiagnostics(
+                ApiRoot.class, marked, "⟦⟧",
+                BinderErrors.MethodInvalidArguments,
+                "multiple", candidates);
     }
 
     @Test
@@ -704,12 +713,12 @@ public class LambdaTests extends ComparatorTest {
         BinderOutput binderOutput = binder.bind();
 
         List<BoundStatementNode> statements = binderOutput.unit().statements.statements;
-        Assertions.assertEquals(statements.size(), 1);
+        Assertions.assertEquals(1, statements.size());
 
         BoundExpressionStatementNode statement = (BoundExpressionStatementNode) binderOutput.unit().statements.statements.get(0);
         BoundMethodInvocationExpressionNode invocation = (BoundMethodInvocationExpressionNode) statement.expression;
         List<BoundExpressionNode> arguments = invocation.arguments.arguments;
-        Assertions.assertEquals(arguments.size(), 2);
+        Assertions.assertEquals(2, arguments.size());
 
         /*Assertions.assertEquals(arguments.get(0),
                 new BoundIntegerLiteralExpressionNode(10, new SingleLineTextRange(1, 14, 13, 2)));*/
@@ -717,7 +726,7 @@ public class LambdaTests extends ComparatorTest {
         Assertions.assertTrue(arguments.get(1) instanceof BoundUnconvertedLambdaExpressionNode);
 
         BoundUnconvertedLambdaExpressionNode lambda = (BoundUnconvertedLambdaExpressionNode) arguments.get(1);
-        Assertions.assertEquals(lambda.getRange(), new SingleLineTextRange(1, 18, 17, 9));
+        Assertions.assertEquals(new SingleLineTextRange(1, 18, 17, 9), lambda.getRange());
     }
 
     // TODO: capture function parameters?

@@ -30,7 +30,14 @@ public class ComplexMethodParameterTests extends ComparatorTest {
                 test.getAttachmentTarget().modifyAttached⟦(1, 2)⟧;
                 """);
 
-        comparator.assertDiagnostics(ApiRoot.class, marked, "⟦⟧", BinderErrors.CannotCastArguments);
+        String candidates = """
+                Candidates:
+                Java<java.lang.Object> modifyAttached(Java<com.zergatul.scripting.tests.compiler.ComplexMethodParameterTests$AttachmentType> type, Java<java.util.function.UnaryOperator> modifier)""";
+
+        comparator.assertDiagnostics(
+                ApiRoot.class, marked, "⟦⟧",
+                BinderErrors.MethodInvalidArguments,
+                "modifyAttached", candidates);
     }
 
     @Test
@@ -61,7 +68,14 @@ public class ComplexMethodParameterTests extends ComparatorTest {
                 test.getValueTarget().getValueOrElse⟦(1, 2)⟧;
                 """);
 
-        comparator.assertDiagnostics(ApiRoot.class, marked, "⟦⟧", BinderErrors.CannotCastArguments);
+        String candidates = """
+                Candidates:
+                Java<java.lang.Comparable> getValueOrElse(Java<com.zergatul.scripting.tests.compiler.ComplexMethodParameterTests$Property> property, Java<java.lang.Comparable> defaultValue)""";
+
+        comparator.assertDiagnostics(
+                ApiRoot.class, marked, "⟦⟧",
+                BinderErrors.MethodInvalidArguments,
+                "getValueOrElse", candidates);
     }
 
     @Test

@@ -3,6 +3,7 @@ package com.zergatul.scripting.symbols;
 import com.zergatul.scripting.type.Invocable;
 import com.zergatul.scripting.type.MethodParameter;
 import com.zergatul.scripting.type.SFunction;
+import com.zergatul.scripting.type.SType;
 
 import java.util.List;
 
@@ -17,5 +18,9 @@ public class InvocableObject implements Invocable {
     @Override
     public List<MethodParameter> getParameters() {
         return function.getParameters();
+    }
+
+    public SType getReturnType() {
+        return function.getReturnType();
     }
 }

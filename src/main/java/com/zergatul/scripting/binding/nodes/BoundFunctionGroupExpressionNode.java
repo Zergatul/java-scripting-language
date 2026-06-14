@@ -19,14 +19,10 @@ public class BoundFunctionGroupExpressionNode extends BoundExpressionNode {
     }
 
     @Override
-    public void accept(BinderTreeVisitor visitor) {
-
-    }
+    public void accept(BinderTreeVisitor visitor) {}
 
     @Override
-    public void acceptChildren(BinderTreeVisitor visitor) {
-
-    }
+    public void acceptChildren(BinderTreeVisitor visitor) {}
 
     @Override
     public List<BoundNode> getChildren() {

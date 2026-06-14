@@ -1,7 +1,5 @@
 package com.zergatul.scripting.tests.compiler;
 
-import com.zergatul.scripting.DiagnosticMessage;
-import com.zergatul.scripting.SingleLineTextRange;
 import com.zergatul.scripting.binding.BinderErrors;
 import com.zergatul.scripting.parser.ParserErrors;
 import com.zergatul.scripting.tests.compiler.helpers.FloatStorage;
@@ -9,6 +7,7 @@ import com.zergatul.scripting.tests.compiler.helpers.IntStorage;
 import com.zergatul.scripting.tests.compiler.helpers.Run;
 import com.zergatul.scripting.tests.compiler.helpers.StringStorage;
 import com.zergatul.scripting.tests.framework.ComparatorTest;
+import com.zergatul.scripting.tests.utility.MarkedCode;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -16,7 +15,6 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 
 import static com.zergatul.scripting.tests.compiler.helpers.CompilerHelper.compile;
-import static com.zergatul.scripting.tests.compiler.helpers.CompilerHelper.getDiagnostics;
 
 public class FunctionTests extends ComparatorTest {
 
@@ -440,28 +438,26 @@ public class FunctionTests extends ComparatorTest {
 
     @Test
     public void duplicateParameterTest() {
-        String code = """
-                void f(int x, string x) {}
-                """;
+        MarkedCode marked = MarkedCode.from("""
+                void f(int x, string ⟦x⟧) {}
+                """);
 
-        comparator.assertEquals(List.of(new DiagnosticMessage(
+        comparator.assertDiagnostics(
+                ApiRoot.class, marked, "⟦⟧",
                 BinderErrors.SymbolAlreadyDeclared,
-                new SingleLineTextRange(1, 22, 21, 1),
-                "x")),
-                getDiagnostics(ApiRoot.class, code));
+                "x");
     }
 
     @Test
     public void letParameterTest() {
-        String code = """
-                void f(let x) {}
-                """;
+        MarkedCode marked = MarkedCode.from("""
+                void f(⟦let⟧ x) {}
+                """);
 
-        comparator.assertEquals(List.of(new DiagnosticMessage(
+        comparator.assertDiagnostics(
+                ApiRoot.class, marked, "⟦⟧",
                 ParserErrors.TypeExpected,
-                new SingleLineTextRange(1, 8, 7, 3),
-                "let")),
-                getDiagnostics(ApiRoot.class, code));
+                "let");
     }
 
     @Test
@@ -484,67 +480,65 @@ public class FunctionTests extends ComparatorTest {
 
     @Test
     public void arrowFunctionTest2() {
-        String code = """
-                int sum(int i1, int i2) => intStorage.add(i1 + i2);
-                """;
+        MarkedCode marked = MarkedCode.from("""
+                int sum(int i1, int i2) => ⟦intStorage.add(i1 + i2)⟧;
+                """);
 
-        comparator.assertEquals(List.of(
-                new DiagnosticMessage(
-                        BinderErrors.CannotImplicitlyConvert,
-                        new SingleLineTextRange(1, 28, 27, 23),
-                        "void", "int")),
-                getDiagnostics(ApiRoot.class, code));
+        comparator.assertDiagnostics(
+                ApiRoot.class, marked, "⟦⟧",
+                BinderErrors.CannotImplicitlyConvert,
+                "void", "int");
     }
 
     @Test
     public void staticVariableConflictTest() {
-        String code = """
+        MarkedCode marked = MarkedCode.from("""
                 static int func;
-                void func(){}
-                """;
+                void ⟦func⟧(){}
+                """);
 
-        comparator.assertEquals(
-                List.of(
-                        new DiagnosticMessage(BinderErrors.SymbolAlreadyDeclared, new SingleLineTextRange(2, 6, 22, 4), "func")),
-                getDiagnostics(ApiRoot.class, code));
+        comparator.assertDiagnostics(
+                ApiRoot.class, marked, "⟦⟧",
+                BinderErrors.SymbolAlreadyDeclared,
+                "func");
     }
 
     @Test
     public void externalNameConflictTest() {
-        String code = """
-                void run(){}
-                """;
+        MarkedCode marked = MarkedCode.from("""
+                void ⟦run⟧(){}
+                """);
 
-        comparator.assertEquals(
-                List.of(
-                        new DiagnosticMessage(BinderErrors.SymbolAlreadyDeclared, new SingleLineTextRange(1, 6, 5, 3), "run")),
-                getDiagnostics(ApiRoot.class, code));
+        comparator.assertDiagnostics(
+                ApiRoot.class, marked, "⟦⟧",
+                BinderErrors.SymbolAlreadyDeclared,
+                "run");
     }
 
     @Test
     public void typeAliasConflictTest() {
-        String code = """
+        MarkedCode marked = MarkedCode.from("""
                 typealias func = int;
-                void func(){}
-                """;
+                void ⟦func⟧(){}
+                """);
 
-        comparator.assertEquals(
-                List.of(
-                        new DiagnosticMessage(BinderErrors.SymbolAlreadyDeclared, new SingleLineTextRange(2, 6, 27, 4), "func")),
-                getDiagnostics(ApiRoot.class, code));
+        comparator.assertDiagnostics(
+                ApiRoot.class, marked, "⟦⟧",
+                BinderErrors.SymbolAlreadyDeclared,
+                "func");
     }
 
     @Test
     public void classConflictTest() {
-        String code = """
+        MarkedCode marked = MarkedCode.from("""
                 class func {}
-                void func(){}
-                """;
+                void ⟦func⟧(){}
+                """);
 
-        comparator.assertEquals(
-                List.of(
-                        new DiagnosticMessage(BinderErrors.SymbolAlreadyDeclared, new SingleLineTextRange(2, 6, 19, 4), "func")),
-                getDiagnostics(ApiRoot.class, code));
+        comparator.assertDiagnostics(
+                ApiRoot.class, marked, "⟦⟧",
+                BinderErrors.SymbolAlreadyDeclared,
+                "func");
     }
 
     @Test
@@ -567,45 +561,54 @@ public class FunctionTests extends ComparatorTest {
 
     @Test
     public void functionOverloadTest2() {
-        String code = """
+        MarkedCode marked = MarkedCode.from("""
                 int max(int i1, int i2) => i1 > i2 ? i1 : i2;
                 int max(int i1, int i2, int i3) => max(max(i1, i2), i3);
                 int max(int i1, int i2, int i3, int i4) => max(max(i1, i2), max(i3, i4));
                 
-                intStorage.add(max(1));
-                """;
+                intStorage.add(⟦max⟧(1));
+                """);
 
-        comparator.assertEquals(
-                List.of(
-                        new DiagnosticMessage(BinderErrors.FunctionDoesNotExist, new SingleLineTextRange(5, 16, 193, 3), "max", 1)),
-                getDiagnostics(ApiRoot.class, code));
+        String candidates = """
+                Candidates:
+                int max(int i1, int i2)
+                int max(int i1, int i2, int i3)
+                int max(int i1, int i2, int i3, int i4)""";
+
+        comparator.assertDiagnostics(
+                ApiRoot.class, marked, "⟦⟧",
+                BinderErrors.NoOverloadedFunctions,
+                "max", 1, candidates);
     }
 
     @Test
     public void functionOverloadTest3() {
-        String code = """
+        MarkedCode marked = MarkedCode.from("""
                 int max(int i1, int i2) => i1 > i2 ? i1 : i2;
                 
-                intStorage.add(max(1));
-                """;
+                intStorage.add(⟦max⟧(1));
+                """);
 
-        comparator.assertEquals(
-                List.of(
-                        new DiagnosticMessage(BinderErrors.ArgumentCountMismatch, new SingleLineTextRange(3, 16, 62, 3), "max", 2)),
-                getDiagnostics(ApiRoot.class, code));
+        String candidates = """
+                Candidates:
+                int max(int i1, int i2)""";
+
+        comparator.assertDiagnostics(
+                ApiRoot.class, marked, "⟦⟧",
+                BinderErrors.FunctionArgumentCountMismatch,
+                "max", 2, candidates);
     }
 
     @Test
     public void functionOverloadTest4() {
-        String code = """
+        MarkedCode marked = MarkedCode.from("""
                 void func(int i1, int i2) {}
-                int func(int a1, int a2) => 0;
-                """;
+                int ⟦func⟧(int a1, int a2) => 0;
+                """);
 
-        comparator.assertEquals(
-                List.of(
-                        new DiagnosticMessage(BinderErrors.FunctionAlreadyDeclared, new SingleLineTextRange(2, 5, 33, 4))),
-                getDiagnostics(ApiRoot.class, code));
+        comparator.assertDiagnostics(
+                ApiRoot.class, marked, "⟦⟧",
+                BinderErrors.FunctionAlreadyDeclared);
     }
 
     public static class ApiRoot {

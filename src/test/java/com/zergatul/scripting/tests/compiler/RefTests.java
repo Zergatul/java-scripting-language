@@ -1,40 +1,40 @@
 package com.zergatul.scripting.tests.compiler;
 
-import com.zergatul.scripting.DiagnosticMessage;
-import com.zergatul.scripting.SingleLineTextRange;
 import com.zergatul.scripting.binding.BinderErrors;
 import com.zergatul.scripting.tests.framework.ComparatorTest;
-import org.junit.jupiter.api.Assertions;
+import com.zergatul.scripting.tests.utility.MarkedCode;
 import org.junit.jupiter.api.Test;
-
-import java.util.List;
-
-import static com.zergatul.scripting.tests.compiler.helpers.CompilerHelper.getDiagnostics;
 
 public class RefTests extends ComparatorTest {
 
     @Test
     public void invalidRefVariableTest() {
-        String code = """
+        MarkedCode marked = MarkedCode.from("""
                 long[] a = new long[45];
-                long.tryParse("123", ref a);
-                """;
+                long.tryParse("123", ⟦ref a⟧);
+                """);
 
-        comparator.assertEquals(List.of(
-                new DiagnosticMessage(BinderErrors.RefTypeNotSupported, new SingleLineTextRange(2, 22, 46, 5), "int64[]")),
-                getDiagnostics(ApiRoot.class, code));
+        comparator.assertDiagnostics(
+                ApiRoot.class, marked, "⟦⟧",
+                BinderErrors.RefTypeNotSupported,
+                "int64[]");
     }
 
     @Test
     public void refTypeMismatchTest() {
-        String code = """
+        MarkedCode marked = MarkedCode.from("""
                 float32 f;
-                float.tryParse("123", ref f);
-                """;
+                float.tryParse⟦("123", ref f)⟧;
+                """);
 
-        comparator.assertEquals(List.of(
-                new DiagnosticMessage(BinderErrors.CannotCastArguments, new SingleLineTextRange(2, 15, 25, 14))),
-                getDiagnostics(ApiRoot.class, code));
+        String candidates = """
+                Candidates:
+                boolean tryParse(string str, ref float result)""";
+
+        comparator.assertDiagnostics(
+                ApiRoot.class, marked, "⟦⟧",
+                BinderErrors.MethodInvalidArguments,
+                "tryParse", candidates);
     }
 
     public static class ApiRoot {}
