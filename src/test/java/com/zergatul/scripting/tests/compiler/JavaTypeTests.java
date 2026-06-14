@@ -1,8 +1,10 @@
 package com.zergatul.scripting.tests.compiler;
 
+import com.zergatul.scripting.binding.BinderErrors;
 import com.zergatul.scripting.tests.compiler.helpers.BoolStorage;
 import com.zergatul.scripting.tests.compiler.helpers.IntStorage;
 import com.zergatul.scripting.tests.compiler.helpers.StringStorage;
+import com.zergatul.scripting.tests.framework.ComparatorTest;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -11,7 +13,7 @@ import java.util.List;
 
 import static com.zergatul.scripting.tests.compiler.helpers.CompilerHelper.compile;
 
-public class JavaTypeTests {
+public class JavaTypeTests extends ComparatorTest {
 
     @BeforeEach
     public void clean() {
@@ -271,6 +273,19 @@ public class JavaTypeTests {
     }
 
     @Test
+    public void functionalInterfaceInvalidArgumentsTest() {
+        String code = """
+                let instance = Java<com.zergatul.scripting.tests.compiler.JavaTypeTests$IntCallable>.getInstance();
+                stringStorage.add(instance⟦("text")⟧);
+                """;
+
+        comparator.assertDiagnostics(
+                ApiRoot.class, code, "⟦⟧",
+                BinderErrors.CallableInvalidArguments,
+                "string <invocable>(int value)");
+    }
+
+    @Test
     public void functionalInterfaceLambdaConversionTest() {
         String code = """
                 typealias MyCallable = Java<com.zergatul.scripting.tests.compiler.JavaTypeTests$MyCallable>;
@@ -404,5 +419,15 @@ public class JavaTypeTests {
         }
 
         String invoke();
+    }
+
+    @SuppressWarnings("unused")
+    public interface IntCallable {
+
+        static IntCallable getInstance() {
+            return value -> Integer.toString(value);
+        }
+
+        String invoke(int value);
     }
 }

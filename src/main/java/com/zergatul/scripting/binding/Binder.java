@@ -1567,8 +1567,8 @@ public class Binder {
         } else if (result.noOverload) {
             addDiagnostic(
                     BinderErrors.NoOverloadedMethods,
-                    memberAccessNode,
-                    methodName, invocation.arguments.arguments.size());
+                    memberAccessNode.name,
+                    methodName, invocation.arguments.arguments.size(), formatMethodCandidates(candidates));
         } else if (result.noArgumentConversions) {
             addDiagnostic(
                     BinderErrors.MethodInvalidArguments,

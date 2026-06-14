@@ -565,6 +565,26 @@ public class ClassTests extends ComparatorTest {
     }
 
     @Test
+    public void constructorInvalidArgumentsTest() {
+        String code = """
+            class Class {
+                constructor(int x) {}
+            }
+
+            let c = new Class⟦("text")⟧;
+            """;
+
+        String candidates = """
+                Candidates:
+                constructor Class(int x)""";
+
+        comparator.assertDiagnostics(
+                ApiRoot.class, code, "⟦⟧",
+                BinderErrors.ConstructorInvalidArguments,
+                "Class", candidates);
+    }
+
+    @Test
     public void arrowMethodVoidTest() {
         String code = """
             class Class {

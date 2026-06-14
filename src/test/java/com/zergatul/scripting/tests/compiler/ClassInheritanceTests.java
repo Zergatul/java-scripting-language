@@ -230,6 +230,50 @@ public class ClassInheritanceTests extends ComparatorTest {
     }
 
     @Test
+    public void baseMethodInvalidArgumentsTest() {
+        String code = """
+                class ClassA {
+                    virtual void method(int x) {}
+                }
+                class ClassB : ClassA {
+                    override void method(int x) {}
+                    void test() => base.method⟦("text")⟧;
+                }
+                """;
+
+        String candidates = """
+                Candidates:
+                void method(int x)""";
+
+        comparator.assertDiagnostics(
+                ApiRoot.class, code, "⟦⟧",
+                BinderErrors.MethodInvalidArguments,
+                "method", candidates);
+    }
+
+    @Test
+    public void baseMethodArgumentCountMismatchTest() {
+        String code = """
+                class ClassA {
+                    virtual void method(int x) {}
+                }
+                class ClassB : ClassA {
+                    override void method(int x) {}
+                    void test() => base.⟦method⟧();
+                }
+                """;
+
+        String candidates = """
+                Candidates:
+                void method(int x)""";
+
+        comparator.assertDiagnostics(
+                ApiRoot.class, code, "⟦⟧",
+                BinderErrors.NoOverloadedMethods,
+                "method", 0, candidates);
+    }
+
+    @Test
     public void methodsShouldBeFinalByDefault() throws Exception {
         String code = """
                 class Class {
@@ -523,6 +567,27 @@ public class ClassInheritanceTests extends ComparatorTest {
     }
 
     @Test
+    public void constructorInitializerBaseInvalidArgumentsTest() {
+        String code = """
+                class ClassA {
+                    constructor(int value) {}
+                }
+                class ClassB : ClassA {
+                    constructor() : base⟦("text")⟧ {}
+                }
+                """;
+
+        String candidates = """
+                Candidates:
+                constructor ClassA(int value)""";
+
+        comparator.assertDiagnostics(
+                ApiRoot.class, code, "⟦⟧",
+                BinderErrors.ConstructorInvalidArguments,
+                "ClassA", candidates);
+    }
+
+    @Test
     public void constructorInitializerThisSimpleTest() {
         String code = """
                 class ClassA {
@@ -541,6 +606,26 @@ public class ClassInheritanceTests extends ComparatorTest {
         program.run();
 
         Assertions.assertIterableEquals(List.of(14), ApiRoot.intStorage.list);
+    }
+
+    @Test
+    public void constructorInitializerThisInvalidArgumentsTest() {
+        String code = """
+                class ClassA {
+                    constructor(int value) {}
+                    constructor() : this⟦("text")⟧ {}
+                }
+                """;
+
+        String candidates = """
+                Candidates:
+                constructor ClassA(int value)
+                constructor ClassA()""";
+
+        comparator.assertDiagnostics(
+                ApiRoot.class, code, "⟦⟧",
+                BinderErrors.ConstructorInvalidArguments,
+                "ClassA", candidates);
     }
 
     @Test
