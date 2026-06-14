@@ -343,7 +343,7 @@ public class ClassInheritanceTests extends ComparatorTest {
 
         comparator.assertDiagnostics(ApiRoot.class, code,
                 new MarkedDiagnostic("⟦⟧", BinderErrors.CannotInstantiateAbstractClass),
-                new MarkedDiagnostic("⟦⟧", BinderErrors.NoOverloadedConstructors, "Java<java.util.AbstractList>", 0));
+                new MarkedDiagnostic("⟦⟧", BinderErrors.NoOverloadedConstructors, "Java<java.util.AbstractList>", 0, "No candidates"));
     }
 
     @Test
@@ -354,7 +354,7 @@ public class ClassInheritanceTests extends ComparatorTest {
 
         comparator.assertDiagnostics(ApiRoot.class, code,
                 new MarkedDiagnostic("⟦⟧", BinderErrors.CannotInstantiateAbstractClass),
-                new MarkedDiagnostic("⟦⟧", BinderErrors.NoOverloadedConstructors, "Java<java.util.List>", 0));
+                new MarkedDiagnostic("⟦⟧", BinderErrors.NoOverloadedConstructors, "Java<java.util.List>", 0, "No candidates"));
     }
 
     @Test
@@ -618,8 +618,8 @@ public class ClassInheritanceTests extends ComparatorTest {
 
         String candidates = """
                 Candidates:
-                constructor ClassA(int value)
-                constructor ClassA()""";
+                constructor ClassA()
+                constructor ClassA(int value)""";
 
         comparator.assertDiagnostics(
                 ApiRoot.class, code, "⟦⟧",

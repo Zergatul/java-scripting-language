@@ -329,6 +329,25 @@ public class JavaTypeTests extends ComparatorTest {
         Assertions.assertIterableEquals(List.of("method"), ApiRoot.stringStorage.list);
     }
 
+    @Test
+    public void constructorInvalidArguments() {
+        String code = """
+                typealias ArrayList = Java<java.util.ArrayList>;
+                ⟦new ArrayList("hello", "world")⟧;
+                """;
+
+        String candidates = """
+                Candidates:
+                constructor Java<java.util.ArrayList>()
+                constructor Java<java.util.ArrayList>(int arg0)
+                constructor Java<java.util.ArrayList>(Java<java.util.Collection> arg0)""";
+
+        comparator.assertDiagnostics(
+                ApiRoot.class, code, "⟦⟧",
+                BinderErrors.NoOverloadedConstructors,
+                "Java<java.util.ArrayList>", 2, candidates);
+    }
+
     public static class ApiRoot {
         public static BoolStorage boolStorage;
         public static IntStorage intStorage;

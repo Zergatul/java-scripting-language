@@ -81,4 +81,25 @@ public abstract class MethodReference extends MemberReference implements Invocab
         }
         return true;
     }
+
+    @Override
+    public String toDiagnosticsString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append(getReturn());
+        sb.append(' ');
+        sb.append(getName());
+        sb.append('(');
+        List<MethodParameter> parameters = getParameters();
+        for (int i = 0; i < parameters.size(); i++) {
+            MethodParameter parameter = parameters.get(i);
+            sb.append(parameter.type());
+            sb.append(' ');
+            sb.append(parameter.name());
+            if (i < parameters.size() - 1) {
+                sb.append(", ");
+            }
+        }
+        sb.append(')');
+        return sb.toString();
+    }
 }

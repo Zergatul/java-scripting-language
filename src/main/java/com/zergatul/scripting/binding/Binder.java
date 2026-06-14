@@ -216,9 +216,10 @@ public class Binder {
             }
 
             SType constructorOwner = isBaseCall ? context.getClassType().getBaseType() : context.getClassType();
+            List<ConstructorReference> candidates = constructorOwner.getConstructors();
             BindInvocableArgsResult<ConstructorReference> result = bindInvocableArguments(
                     constructorNode.initializer.arguments,
-                    constructorOwner.getConstructors(),
+                    candidates,
                     UnknownConstructorReference.instance);
 
             if (result.noInvocables) {
@@ -230,13 +231,15 @@ public class Binder {
                 addDiagnostic(
                         BinderErrors.NoOverloadedConstructors,
                         constructorNode.initializer,
-                        constructorOwner.toString(), constructorNode.initializer.arguments.arguments.size());
+                        constructorOwner.toString(),
+                        constructorNode.initializer.arguments.arguments.size(),
+                        formatCandidates(candidates));
             } else if (result.noArgumentConversions) {
                 addDiagnostic(
                         BinderErrors.ConstructorInvalidArguments,
                         constructorNode.initializer.arguments,
                         constructorOwner,
-                        formatConstructorCandidates(constructorOwner.getConstructors()));
+                        formatCandidates(candidates));
             }
 
             return new BoundConstructorInitializerNode(
@@ -1436,21 +1439,21 @@ public class Binder {
                             functionGroup,
                             functionGroup.syntaxNode.value,
                             result.invocable.getParameters().size(),
-                            formatFunctionCandidates(functionGroup.candidates));
+                            formatCandidates(functionGroup.candidates));
                 } else {
                     addDiagnostic(
                             BinderErrors.NoOverloadedFunctions,
                             functionGroup,
                             functionGroup.syntaxNode.value,
                             invocation.arguments.arguments.size(),
-                            formatFunctionCandidates(functionGroup.candidates));
+                            formatCandidates(functionGroup.candidates));
                 }
             } else if (result.noArgumentConversions) {
                 addDiagnostic(
                         BinderErrors.FunctionInvalidArguments,
                         invocation.arguments,
                         functionGroup.syntaxNode.value,
-                        formatFunctionCandidates(functionGroup.candidates));
+                        formatCandidates(functionGroup.candidates));
             }
 
             BoundFunctionNode functionNode = new BoundFunctionNode(functionGroup.syntaxNode, result.invocable);
@@ -1480,13 +1483,13 @@ public class Binder {
                         methodGroup.method,
                         methodGroup.method.name,
                         invocation.arguments.arguments.size(),
-                        formatMethodCandidates(methodGroup.candidates));
+                        formatCandidates(methodGroup.candidates));
             } else if (result.noArgumentConversions) {
                 addDiagnostic(
                         BinderErrors.MethodInvalidArguments,
                         invocation.arguments,
                         methodGroup.method.name,
-                        formatMethodCandidates(methodGroup.candidates));
+                        formatCandidates(methodGroup.candidates));
             }
 
             verifyMethodAccessible(result.invocable, methodGroup.syntaxNode.name);
@@ -1516,7 +1519,7 @@ public class Binder {
                 addDiagnostic(
                         BinderErrors.CallableInvalidArguments,
                         invocation.arguments,
-                        formatInvocableObject(invocable));
+                        invocable.toDiagnosticsString());
             }
 
             return new BoundObjectInvocationExpression(callee, callableType, result.argumentsListNode, invocation.getRange());
@@ -1568,12 +1571,12 @@ public class Binder {
             addDiagnostic(
                     BinderErrors.NoOverloadedMethods,
                     memberAccessNode.name,
-                    methodName, invocation.arguments.arguments.size(), formatMethodCandidates(candidates));
+                    methodName, invocation.arguments.arguments.size(), formatCandidates(candidates));
         } else if (result.noArgumentConversions) {
             addDiagnostic(
                     BinderErrors.MethodInvalidArguments,
                     invocation.arguments,
-                    methodName, formatMethodCandidates(candidates));
+                    methodName, formatCandidates(candidates));
         }
 
         BoundMethodNode methodNode = new BoundMethodNode(memberAccessNode.name, result.invocable);
@@ -1780,21 +1783,22 @@ public class Binder {
                     expression);
         }
 
+        List<ConstructorReference> candidates = typeNode.type.getConstructors();
         BindInvocableArgsResult<ConstructorReference> result = bindInvocableArguments(
                 expression.arguments,
-                typeNode.type.getConstructors(),
+                candidates,
                 UnknownConstructorReference.instance);
 
         if (result.noOverload) {
             addDiagnostic(
                     BinderErrors.NoOverloadedConstructors,
                     expression,
-                    typeNode.type.toString(), expression.arguments.arguments.size());
+                    typeNode.type.toString(), expression.arguments.arguments.size(), formatCandidates(candidates));
         } else if (result.noArgumentConversions) {
             addDiagnostic(
                     BinderErrors.ConstructorInvalidArguments,
                     expression.arguments,
-                    typeNode.type, formatConstructorCandidates(typeNode.type.getConstructors()));
+                    typeNode.type, formatCandidates(candidates));
         }
 
         return new BoundObjectCreationExpressionNode(
@@ -2569,107 +2573,16 @@ public class Binder {
         return new BoundReturnStatementNode(syntaxNode, converted, expressionStatement.getRange());
     }
 
-    private String formatFunctionCandidates(List<Function> candidates) {
+    private <T extends Invocable> String formatCandidates(List<T> candidates) {
         if (candidates.isEmpty()) {
             return "No candidates";
         } else {
-            return "Candidates:\n" + String.join("\n", candidates.stream().map(this::formatFunction).toList());
+            List<String> lines = candidates.stream()
+                    .sorted(Invocable.SORT_ORDER)
+                    .map(Invocable::toDiagnosticsString)
+                    .toList();
+            return "Candidates:\n" + String.join("\n", lines);
         }
-    }
-
-    private String formatConstructorCandidates(List<ConstructorReference> candidates) {
-        if (candidates.isEmpty()) {
-            return "No candidates";
-        } else {
-            return "Candidates:\n" + String.join("\n", candidates.stream().map(this::formatConstructor).toList());
-        }
-    }
-
-    private String formatMethodCandidates(List<MethodReference> candidates) {
-        if (candidates.isEmpty()) {
-            return "No candidates";
-        } else {
-            return "Candidates:\n" + String.join("\n", candidates.stream().map(this::formatMethod).toList());
-        }
-    }
-
-    private String formatFunction(Function function) {
-        StringBuilder sb = new StringBuilder();
-        sb.append(function.getFunctionType().getReturnType());
-        sb.append(' ');
-        sb.append(function.getName());
-        sb.append('(');
-        List<MethodParameter> parameters = function.getParameters();
-        for (int i = 0; i < parameters.size(); i++) {
-            MethodParameter parameter = parameters.get(i);
-            sb.append(parameter.type());
-            sb.append(' ');
-            sb.append(parameter.name());
-            if (i < parameters.size() - 1) {
-                sb.append(", ");
-            }
-        }
-        sb.append(')');
-        return sb.toString();
-    }
-
-    private String formatConstructor(ConstructorReference constructor) {
-        StringBuilder sb = new StringBuilder();
-        sb.append("constructor ");
-        sb.append(constructor.getOwner());
-        sb.append('(');
-        List<MethodParameter> parameters = constructor.getParameters();
-        for (int i = 0; i < parameters.size(); i++) {
-            MethodParameter parameter = parameters.get(i);
-            sb.append(parameter.type());
-            sb.append(' ');
-            sb.append(parameter.name());
-            if (i < parameters.size() - 1) {
-                sb.append(", ");
-            }
-        }
-        sb.append(')');
-        return sb.toString();
-    }
-
-    private String formatMethod(MethodReference method) {
-        StringBuilder sb = new StringBuilder();
-        sb.append(method.getReturn());
-        sb.append(' ');
-        sb.append(method.getName());
-        sb.append('(');
-        List<MethodParameter> parameters = method.getParameters();
-        for (int i = 0; i < parameters.size(); i++) {
-            MethodParameter parameter = parameters.get(i);
-            sb.append(parameter.type());
-            sb.append(' ');
-            sb.append(parameter.name());
-            if (i < parameters.size() - 1) {
-                sb.append(", ");
-            }
-        }
-        sb.append(')');
-        return sb.toString();
-    }
-
-    private String formatInvocableObject(InvocableObject invocable) {
-        StringBuilder sb = new StringBuilder();
-        sb.append(invocable.getReturnType());
-        sb.append(' ');
-        sb.append("<invocable>");
-        sb.append('(');
-        List<MethodParameter> parameters = invocable.getParameters();
-        for (int i = 0; i < parameters.size(); i++) {
-            MethodParameter parameter = parameters.get(i);
-            sb.append(parameter.type());
-            sb.append(' ');
-            sb.append(parameter.name());
-            if (i < parameters.size() - 1) {
-                sb.append(", ");
-            }
-        }
-        sb.append(')');
-        return sb.toString();
     }
 
     private void buildDeclarationTable(CompilationUnitNode unit) {
