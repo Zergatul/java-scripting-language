@@ -1,13 +1,12 @@
 package com.zergatul.scripting.tests.compiler;
 
-import com.zergatul.scripting.DiagnosticMessage;
-import com.zergatul.scripting.SingleLineTextRange;
 import com.zergatul.scripting.binding.BinderErrors;
 import com.zergatul.scripting.tests.compiler.helpers.BoolStorage;
 import com.zergatul.scripting.tests.compiler.helpers.FloatStorage;
 import com.zergatul.scripting.tests.compiler.helpers.IntStorage;
 import com.zergatul.scripting.tests.compiler.helpers.StringStorage;
 import com.zergatul.scripting.tests.framework.ComparatorTest;
+import com.zergatul.scripting.tests.utility.MarkedDiagnostic;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -17,7 +16,6 @@ import java.util.Arrays;
 import java.util.List;
 
 import static com.zergatul.scripting.tests.compiler.helpers.CompilerHelper.compile;
-import static com.zergatul.scripting.tests.compiler.helpers.CompilerHelper.getDiagnostics;
 
 public class NullTests extends ComparatorTest {
 
@@ -32,35 +30,51 @@ public class NullTests extends ComparatorTest {
     @Test
     public void cannotAssignNullToValueTypesTest() {
         String code = """
-                boolean b = null;
-                int i = null;
-                char c = null;
-                float f = null;
+                boolean b = ⟦null⟧;
+                int i = ⟪null⟫;
+                char c = ⸨null⸩;
+                float f = ⟬null⟭;
                 """;
 
-        comparator.assertEquals(
-                List.of(
-                        new DiagnosticMessage(BinderErrors.CannotImplicitlyConvert, new SingleLineTextRange(1, 13, 12, 4), "null", "boolean"),
-                        new DiagnosticMessage(BinderErrors.CannotImplicitlyConvert, new SingleLineTextRange(2, 9, 26, 4), "null", "int"),
-                        new DiagnosticMessage(BinderErrors.CannotImplicitlyConvert, new SingleLineTextRange(3, 10, 41, 4), "null", "char"),
-                        new DiagnosticMessage(BinderErrors.CannotImplicitlyConvert, new SingleLineTextRange(4, 11, 57, 4), "null", "float")),
-                getDiagnostics(LetTests.ApiRoot.class, code));
+        comparator.assertDiagnostics(
+                ApiRoot.class, code,
+                new MarkedDiagnostic(
+                        "⟦⟧",
+                        BinderErrors.CannotImplicitlyConvert,
+                        "null", "boolean"),
+                new MarkedDiagnostic(
+                        "⟪⟫",
+                        BinderErrors.CannotImplicitlyConvert,
+                        "null", "int"),
+                new MarkedDiagnostic(
+                        "⸨⸩",
+                        BinderErrors.CannotImplicitlyConvert,
+                        "null", "char"),
+                new MarkedDiagnostic(
+                        "⟬⟭",
+                        BinderErrors.CannotImplicitlyConvert,
+                        "null", "float"));
     }
 
     @Test
     public void cannotReturnNullFromValueFunctionTest() {
         String code = """
-                int f() => null;
+                int f() => ⟦null⟧;
                 boolean g() {
-                    return null;
+                    return ⟪null⟫;
                 }
                 """;
 
-        comparator.assertEquals(
-                List.of(
-                        new DiagnosticMessage(BinderErrors.CannotImplicitlyConvert, new SingleLineTextRange(1, 12, 11, 4), "null", "int"),
-                        new DiagnosticMessage(BinderErrors.CannotImplicitlyConvert, new SingleLineTextRange(3, 12, 42, 4), "null", "boolean")),
-                getDiagnostics(LetTests.ApiRoot.class, code));
+        comparator.assertDiagnostics(
+                ApiRoot.class, code,
+                new MarkedDiagnostic(
+                        "⟦⟧",
+                        BinderErrors.CannotImplicitlyConvert,
+                        "null", "int"),
+                new MarkedDiagnostic(
+                        "⟪⟫",
+                        BinderErrors.CannotImplicitlyConvert,
+                        "null", "boolean"));
     }
 
     @Test
@@ -69,15 +83,22 @@ public class NullTests extends ComparatorTest {
                 void takesInt(int x) {}
                 void takesBool(boolean b) {}
                 
-                takesInt(null);
-                takesBool(null);
+                takesInt⟦(null)⟧;
+                takesBool⟪(null)⟫;
                 """;
 
-        comparator.assertEquals(
-                List.of(
-                        new DiagnosticMessage(BinderErrors.CannotCastArguments, new SingleLineTextRange(4, 9, 62, 6), "null", "int"),
-                        new DiagnosticMessage(BinderErrors.CannotCastArguments, new SingleLineTextRange(5, 10, 79, 6), "null", "boolean")),
-                getDiagnostics(ApiRoot.class, code));
+        comparator.assertDiagnostics(
+                ApiRoot.class, code,
+                new MarkedDiagnostic(
+                        "⟦⟧",
+                        BinderErrors.FunctionInvalidArguments,
+                        "takesInt",
+                        "Candidates:\nvoid takesInt(int x)"),
+                new MarkedDiagnostic(
+                        "⟪⟫",
+                        BinderErrors.FunctionInvalidArguments,
+                        "takesBool",
+                        "Candidates:\nvoid takesBool(boolean b)"));
     }
 
     @Test
@@ -180,13 +201,13 @@ public class NullTests extends ComparatorTest {
     public void conditionalExpressionIncompatibleTypesWithNullTest() {
         String code = """
                 boolean b = true;
-                let x = b ? null : 42;
+                let x = ⟦b ? null : 42⟧;
                 """;
 
-        comparator.assertEquals(
-                List.of(
-                        new DiagnosticMessage(BinderErrors.CannotDetermineConditionalExpressionType, new SingleLineTextRange(2,9,26,13), "null", "int")),
-                getDiagnostics(ApiRoot.class, code));
+        comparator.assertDiagnostics(
+                ApiRoot.class, code, "⟦⟧",
+                BinderErrors.CannotDetermineConditionalExpressionType,
+                "null", "int");
     }
 
     @Test
@@ -363,25 +384,23 @@ public class NullTests extends ComparatorTest {
     @Test
     public void letNullTest() {
         String code = """
-                let x = null;
+                ⟦let⟧ x = null;
                 """;
 
-        comparator.assertEquals(
-                List.of(
-                        new DiagnosticMessage(BinderErrors.LetNull, new SingleLineTextRange(1, 1, 0, 3))),
-                getDiagnostics(LetTests.ApiRoot.class, code));
+        comparator.assertDiagnostics(
+                ApiRoot.class, code, "⟦⟧",
+                BinderErrors.LetNull);
     }
 
     @Test
     public void nullMembersTest() {
         String code = """
-                null.abc();
+                null⟦.⟧abc();
                 """;
 
-        comparator.assertEquals(
-                List.of(
-                        new DiagnosticMessage(BinderErrors.CannotAccessNullMembers, new SingleLineTextRange(1, 5, 4, 1))),
-                getDiagnostics(LetTests.ApiRoot.class, code));
+        comparator.assertDiagnostics(
+                ApiRoot.class, code, "⟦⟧",
+                BinderErrors.CannotAccessNullMembers);
     }
 
     public static class ApiRoot {

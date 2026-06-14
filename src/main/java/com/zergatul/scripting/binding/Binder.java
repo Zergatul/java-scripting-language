@@ -216,9 +216,10 @@ public class Binder {
             }
 
             SType constructorOwner = isBaseCall ? context.getClassType().getBaseType() : context.getClassType();
+            List<ConstructorReference> candidates = constructorOwner.getConstructors();
             BindInvocableArgsResult<ConstructorReference> result = bindInvocableArguments(
                     constructorNode.initializer.arguments,
-                    constructorOwner.getConstructors(),
+                    candidates,
                     UnknownConstructorReference.instance);
 
             if (result.noInvocables) {
@@ -230,7 +231,15 @@ public class Binder {
                 addDiagnostic(
                         BinderErrors.NoOverloadedConstructors,
                         constructorNode.initializer,
-                        constructorOwner.toString(), constructorNode.initializer.arguments.arguments.size());
+                        constructorOwner.toString(),
+                        constructorNode.initializer.arguments.arguments.size(),
+                        formatCandidates(candidates));
+            } else if (result.noArgumentConversions) {
+                addDiagnostic(
+                        BinderErrors.ConstructorInvalidArguments,
+                        constructorNode.initializer.arguments,
+                        constructorOwner,
+                        formatCandidates(candidates));
             }
 
             return new BoundConstructorInitializerNode(
@@ -1424,19 +1433,27 @@ public class Binder {
                     result = new BindInvocableArgsResult<>(
                             functionGroup.candidates.getFirst(),
                             result.argumentsListNode(),
-                            false, false);
+                            false, false, false);
                     addDiagnostic(
-                            BinderErrors.ArgumentCountMismatch,
+                            BinderErrors.FunctionArgumentCountMismatch,
                             functionGroup,
                             functionGroup.syntaxNode.value,
-                            result.invocable.getParameters().size());
+                            result.invocable.getParameters().size(),
+                            formatCandidates(functionGroup.candidates));
                 } else {
                     addDiagnostic(
-                            BinderErrors.FunctionDoesNotExist,
+                            BinderErrors.NoOverloadedFunctions,
                             functionGroup,
                             functionGroup.syntaxNode.value,
-                            invocation.arguments.arguments.size());
+                            invocation.arguments.arguments.size(),
+                            formatCandidates(functionGroup.candidates));
                 }
+            } else if (result.noArgumentConversions) {
+                addDiagnostic(
+                        BinderErrors.FunctionInvalidArguments,
+                        invocation.arguments,
+                        functionGroup.syntaxNode.value,
+                        formatCandidates(functionGroup.candidates));
             }
 
             BoundFunctionNode functionNode = new BoundFunctionNode(functionGroup.syntaxNode, result.invocable);
@@ -1464,7 +1481,15 @@ public class Binder {
                 addDiagnostic(
                         BinderErrors.NoOverloadedMethods,
                         methodGroup.method,
-                        methodGroup.method.name, invocation.arguments.arguments.size());
+                        methodGroup.method.name,
+                        invocation.arguments.arguments.size(),
+                        formatCandidates(methodGroup.candidates));
+            } else if (result.noArgumentConversions) {
+                addDiagnostic(
+                        BinderErrors.MethodInvalidArguments,
+                        invocation.arguments,
+                        methodGroup.method.name,
+                        formatCandidates(methodGroup.candidates));
             }
 
             verifyMethodAccessible(result.invocable, methodGroup.syntaxNode.name);
@@ -1487,9 +1512,14 @@ public class Binder {
 
             if (result.noOverload) {
                 addDiagnostic(
-                        BinderErrors.ArgumentCountMismatch2,
+                        BinderErrors.CallableArgumentCountMismatch,
                         invocation.arguments,
                         callableType.getParameters().size());
+            } else if (result.noArgumentConversions) {
+                addDiagnostic(
+                        BinderErrors.CallableInvalidArguments,
+                        invocation.arguments,
+                        invocable.toDiagnosticsString());
             }
 
             return new BoundObjectInvocationExpression(callee, callableType, result.argumentsListNode, invocation.getRange());
@@ -1540,8 +1570,13 @@ public class Binder {
         } else if (result.noOverload) {
             addDiagnostic(
                     BinderErrors.NoOverloadedMethods,
-                    memberAccessNode,
-                    methodName, invocation.arguments.arguments.size());
+                    memberAccessNode.name,
+                    methodName, invocation.arguments.arguments.size(), formatCandidates(candidates));
+        } else if (result.noArgumentConversions) {
+            addDiagnostic(
+                    BinderErrors.MethodInvalidArguments,
+                    invocation.arguments,
+                    methodName, formatCandidates(candidates));
         }
 
         BoundMethodNode methodNode = new BoundMethodNode(memberAccessNode.name, result.invocable);
@@ -1748,16 +1783,22 @@ public class Binder {
                     expression);
         }
 
+        List<ConstructorReference> candidates = typeNode.type.getConstructors();
         BindInvocableArgsResult<ConstructorReference> result = bindInvocableArguments(
                 expression.arguments,
-                typeNode.type.getConstructors(),
+                candidates,
                 UnknownConstructorReference.instance);
 
         if (result.noOverload) {
             addDiagnostic(
                     BinderErrors.NoOverloadedConstructors,
                     expression,
-                    typeNode.type.toString(), expression.arguments.arguments.size());
+                    typeNode.type.toString(), expression.arguments.arguments.size(), formatCandidates(candidates));
+        } else if (result.noArgumentConversions) {
+            addDiagnostic(
+                    BinderErrors.ConstructorInvalidArguments,
+                    expression.arguments,
+                    typeNode.type, formatCandidates(candidates));
         }
 
         return new BoundObjectCreationExpressionNode(
@@ -1784,6 +1825,7 @@ public class Binder {
         T matchedInvocable = unknown == null ? candidates.getFirst() : unknown;
         boolean noInvocables = candidates.isEmpty();
         boolean noOverloads = false;
+        boolean noArgumentConversions = false;
 
         List<T> invocables = candidates.stream()
                 .filter(c -> c == unknown || c.getParameters().size() == argumentsSize)
@@ -1821,7 +1863,7 @@ public class Binder {
                     .toList();
 
             if (possibleArgumentsWithCasting.isEmpty()) {
-                addDiagnostic(BinderErrors.CannotCastArguments, argumentsListNode);
+                noArgumentConversions = true;
             } else {
                 ArgumentsCast<T> overload = possibleArgumentsWithCasting.getFirst();
                 for (int i = 0; i < argumentsSize; i++) {
@@ -1838,7 +1880,7 @@ public class Binder {
         }
 
         BoundArgumentsListNode boundArgumentsListNode = new BoundArgumentsListNode(argumentsListNode, arguments);
-        return new BindInvocableArgsResult<>(matchedInvocable, boundArgumentsListNode, noInvocables, noOverloads);
+        return new BindInvocableArgsResult<>(matchedInvocable, boundArgumentsListNode, noInvocables, noOverloads, noArgumentConversions);
     }
 
     private @Nullable UnaryOperation resolveUnaryOperation(UnaryOperator operator, SType type) {
@@ -2529,6 +2571,18 @@ public class Binder {
                 new InvalidExpressionNode(expression.getRange().getStart()),
                 semicolon);
         return new BoundReturnStatementNode(syntaxNode, converted, expressionStatement.getRange());
+    }
+
+    private <T extends Invocable> String formatCandidates(List<T> candidates) {
+        if (candidates.isEmpty()) {
+            return "No candidates";
+        } else {
+            List<String> lines = candidates.stream()
+                    .sorted(Invocable.SORT_ORDER)
+                    .map(Invocable::toDiagnosticsString)
+                    .toList();
+            return "Candidates:\n" + String.join("\n", lines);
+        }
     }
 
     private void buildDeclarationTable(CompilationUnitNode unit) {
@@ -3237,7 +3291,8 @@ public class Binder {
             T invocable,
             BoundArgumentsListNode argumentsListNode,
             boolean noInvocables,
-            boolean noOverload) {}
+            boolean noOverload,
+            boolean noArgumentConversions) {}
 
     private record PatternFlow(
             BoundPatternNode pattern,

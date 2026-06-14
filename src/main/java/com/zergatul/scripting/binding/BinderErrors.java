@@ -15,10 +15,9 @@ public class BinderErrors {
     public static final ErrorCode MemberDoesNotExist = new ErrorCode("B010", "'%s' does not contain a definition for '%s'");
     public static final ErrorCode FunctionExpected = new ErrorCode("B011", "Function expected");
     public static final ErrorCode NonInvocableMember = new ErrorCode("B012", "Non-invocable member '%s.%s' cannot be used like a method");
-    public static final ErrorCode NoOverloadedMethods = new ErrorCode("B013", "No overload for method '%s' takes %d arguments");
-    public static final ErrorCode NoOverloadedConstructors = new ErrorCode("B013", "No overload for constructor '%s' takes %d arguments");
-    public static final ErrorCode ArgumentCountMismatch = new ErrorCode("B014", "Function '%s' expects %d arguments");
-    public static final ErrorCode CannotCastArguments = new ErrorCode("B015", "Invalid arguments");
+    public static final ErrorCode NoOverloadedMethods = new ErrorCode("B013", "No overload for method '%s' takes %d arguments\n%s");
+    public static final ErrorCode NoOverloadedConstructors = new ErrorCode("B013", "No overload for constructor '%s' takes %d arguments\n%s");
+    public static final ErrorCode FunctionArgumentCountMismatch = new ErrorCode("B014", "Function '%s' expects %d arguments\n%s");
     public static final ErrorCode InvalidFloatConstant = new ErrorCode("B016", "Cannot parse float constant");
     public static final ErrorCode NoLoop = new ErrorCode("B017", "No enclosing loop out of which to break or continue");
     public static final ErrorCode CannotApplyIncDec = new ErrorCode("B018", "Cannot apply '%s' to operand of type '%s'");
@@ -51,7 +50,7 @@ public class BinderErrors {
     public static final ErrorCode CastOperationNotAllowed = new ErrorCode("B047", "Implicit casting is not allowed for node of type %s");
     public static final ErrorCode InvalidRefExpression = new ErrorCode("B048", "Invalid ref expression");
     public static final ErrorCode LetUnboundLambda = new ErrorCode("B049", "Cannot assign lambda to 'let' variable");
-    public static final ErrorCode ArgumentCountMismatch2 = new ErrorCode("B050", "Function expects %d arguments");
+    public static final ErrorCode CallableArgumentCountMismatch = new ErrorCode("B050", "Callable expects %d arguments");
     public static final ErrorCode CannotUseInOperator = new ErrorCode("B051", "Cannot use 'in' operator, since type '%s' does not have defined method 'contains' with parameter of type '%s' and return type 'boolean'");
     public static final ErrorCode ExtensionMethodAlreadyDeclared = new ErrorCode("B052", "Extension method with the same signature already declared");
     public static final ErrorCode BaseClassNoParameterlessConstructor = new ErrorCode("B053", "Base class does not have parameterless constructor");
@@ -79,7 +78,7 @@ public class BinderErrors {
     public static final ErrorCode UnaryOperationOverloadOneParameters = new ErrorCode("B075", "Unary operator overload should have 1 parameter");
     public static final ErrorCode UnaryOperationOverloadShouldHaveSameParameter = new ErrorCode("B076", "For unary operator overload the parameter should match current type");
     public static final ErrorCode UnaryOperationAlreadyDeclared = new ErrorCode("B077", "Unary operation with the same signature already declared");
-    public static final ErrorCode FunctionDoesNotExist = new ErrorCode("B078", "Function '%s' with %s arguments does not exist");
+    public static final ErrorCode NoOverloadedFunctions = new ErrorCode("B078", "Function '%s' with %s arguments does not exist\n%s");
     public static final ErrorCode FunctionAlreadyDeclared = new ErrorCode("B079", "Function with the same signature already declared");
     public static final ErrorCode PrivateAccessDenied = new ErrorCode("B080", "Access to private member denied by Java security system: %s");
     public static final ErrorCode TypeReferenceNotAllowed = new ErrorCode("B081", "%s is a type, which is not valid in the given context");
@@ -90,6 +89,10 @@ public class BinderErrors {
     public static final ErrorCode MultipleBaseClasses = new ErrorCode("B086", "Class cannot extend multiple classes");
     public static final ErrorCode AbstractMethodNotSupported = new ErrorCode("B088", "Abstract methods are not supported");
     public static final ErrorCode MissingInheritedMethodImplementation = new ErrorCode("B089", "Class does not implement inherited method '%s'");
+    public static final ErrorCode FunctionInvalidArguments = new ErrorCode("B090", "Invalid arguments for function '%s'\n%s");
+    public static final ErrorCode ConstructorInvalidArguments = new ErrorCode("B091", "Invalid arguments for '%s' constructor\n%s");
+    public static final ErrorCode MethodInvalidArguments = new ErrorCode("B092", "Invalid arguments for method '%s'\n%s");
+    public static final ErrorCode CallableInvalidArguments = new ErrorCode("B093", "Invalid arguments for callable\nSignature: %s");
 
     public static final ErrorCode InternalError = new ErrorCode("B999", "Internal error: %s");
 }

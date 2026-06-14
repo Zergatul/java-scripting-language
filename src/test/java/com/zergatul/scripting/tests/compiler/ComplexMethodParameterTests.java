@@ -4,7 +4,6 @@ import com.zergatul.scripting.binding.BinderErrors;
 import com.zergatul.scripting.tests.compiler.helpers.IntStorage;
 import com.zergatul.scripting.tests.compiler.helpers.StringStorage;
 import com.zergatul.scripting.tests.framework.ComparatorTest;
-import com.zergatul.scripting.tests.utility.MarkedCode;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -26,11 +25,18 @@ public class ComplexMethodParameterTests extends ComparatorTest {
 
     @Test
     public void unaryOperatorMethodFailedTest() {
-        MarkedCode marked = MarkedCode.from("""
+        String code = """
                 test.getAttachmentTarget().modifyAttached⟦(1, 2)⟧;
-                """);
+                """;
 
-        comparator.assertDiagnostics(ApiRoot.class, marked, "⟦⟧", BinderErrors.CannotCastArguments);
+        String candidates = """
+                Candidates:
+                Java<java.lang.Object> modifyAttached(Java<com.zergatul.scripting.tests.compiler.ComplexMethodParameterTests$AttachmentType> type, Java<java.util.function.UnaryOperator> modifier)""";
+
+        comparator.assertDiagnostics(
+                ApiRoot.class, code, "⟦⟧",
+                BinderErrors.MethodInvalidArguments,
+                "modifyAttached", candidates);
     }
 
     @Test
@@ -57,11 +63,18 @@ public class ComplexMethodParameterTests extends ComparatorTest {
 
     @Test
     public void recursiveComparableTypeParameterFailedTest() {
-        MarkedCode marked = MarkedCode.from("""
+        String code = """
                 test.getValueTarget().getValueOrElse⟦(1, 2)⟧;
-                """);
+                """;
 
-        comparator.assertDiagnostics(ApiRoot.class, marked, "⟦⟧", BinderErrors.CannotCastArguments);
+        String candidates = """
+                Candidates:
+                Java<java.lang.Comparable> getValueOrElse(Java<com.zergatul.scripting.tests.compiler.ComplexMethodParameterTests$Property> property, Java<java.lang.Comparable> defaultValue)""";
+
+        comparator.assertDiagnostics(
+                ApiRoot.class, code, "⟦⟧",
+                BinderErrors.MethodInvalidArguments,
+                "getValueOrElse", candidates);
     }
 
     @Test

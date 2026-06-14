@@ -40,13 +40,22 @@ public class Comparator {
         assertEquals("unit", expected, actual);
     }
 
-    public void assertDiagnostics(Class<?> api, MarkedCode marked, String mark, ErrorCode expectedErrorCode, Object... parameters) {
+    public void assertDiagnostics(Class<?> api, String code, String mark, ErrorCode expectedErrorCode, Object... parameters) {
+        MarkedCode marked = MarkedCode.from(code);
         assertEquals(
                 List.of(new DiagnosticMessage(expectedErrorCode, marked.getRange(mark), parameters)),
                 getDiagnostics(api, marked.getCode()));
     }
 
-    public void assertDiagnostics(Class<?> api, MarkedCode marked, MarkedDiagnostic... expectedDiagnostics) {
+    public void assertDiagnostics(ComparatorCompilationParameters compileParameters, String code, String mark, ErrorCode expectedErrorCode, Object... errorParameters) {
+        MarkedCode marked = MarkedCode.from(code);
+        assertEquals(
+                List.of(new DiagnosticMessage(expectedErrorCode, marked.getRange(mark), errorParameters)),
+                getDiagnostics(compileParameters.getApi(), marked.getCode(), compileParameters.getCustomTypes()));
+    }
+
+    public void assertDiagnostics(Class<?> api, String code, MarkedDiagnostic... expectedDiagnostics) {
+        MarkedCode marked = MarkedCode.from(code);
         assertEquals(
                 Arrays.stream(expectedDiagnostics)
                         .map(d -> new DiagnosticMessage(d.errorCode(), marked.getRange(d.mark()), d.parameters()))

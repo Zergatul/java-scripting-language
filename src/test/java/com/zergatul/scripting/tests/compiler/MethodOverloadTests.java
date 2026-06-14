@@ -1,7 +1,5 @@
 package com.zergatul.scripting.tests.compiler;
 
-import com.zergatul.scripting.DiagnosticMessage;
-import com.zergatul.scripting.SingleLineTextRange;
 import com.zergatul.scripting.binding.BinderErrors;
 import com.zergatul.scripting.tests.compiler.helpers.FloatStorage;
 import com.zergatul.scripting.tests.compiler.helpers.StringStorage;
@@ -13,7 +11,6 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 
 import static com.zergatul.scripting.tests.compiler.helpers.CompilerHelper.compile;
-import static com.zergatul.scripting.tests.compiler.helpers.CompilerHelper.getDiagnostics;
 
 public class MethodOverloadTests extends ComparatorTest {
 
@@ -56,22 +53,28 @@ public class MethodOverloadTests extends ComparatorTest {
     @Test
     public void noOverloadTest() {
         String code = """
-                floatStorage.add(methods.m1(1, 2, 3, 4));
+                floatStorage.add(methods.m1⟦(1, 2, 3, 4)⟧);
                 """;
 
-        comparator.assertEquals(List.of(
-                new DiagnosticMessage(
-                        BinderErrors.CannotCastArguments,
-                        new SingleLineTextRange(1, 28,27, 12))),
-                getDiagnostics(ApiRoot.class, code));
+        String candidates = """
+                Candidates:
+                float m1(float x, float y, float z, string s)
+                float m1(int x, int y, int z, string s)""";
+
+        comparator.assertDiagnostics(
+                ApiRoot.class, code, "⟦⟧",
+                BinderErrors.MethodInvalidArguments,
+                "m1", candidates);
     }
 
+    @SuppressWarnings("unused")
     public static class ApiRoot {
         public static Methods methods = new Methods();
         public static FloatStorage floatStorage;
         public static StringStorage stringStorage;
     }
 
+    @SuppressWarnings("unused")
     public static class Methods {
 
         public double m1(int x, int y, int z, String s) {
