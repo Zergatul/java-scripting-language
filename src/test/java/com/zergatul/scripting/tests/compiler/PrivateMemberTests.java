@@ -8,7 +8,6 @@ import com.zergatul.scripting.tests.compiler.helpers.Int64Storage;
 import com.zergatul.scripting.tests.compiler.helpers.IntStorage;
 import com.zergatul.scripting.tests.compiler.helpers.StringStorage;
 import com.zergatul.scripting.tests.framework.ComparatorTest;
-import com.zergatul.scripting.tests.utility.MarkedCode;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -89,15 +88,15 @@ public class PrivateMemberTests extends ComparatorTest {
 
     @Test
     public void instanceFinalFieldWriteTest() {
-        MarkedCode marked = MarkedCode.from("""
+        String code = """
                 typealias MyClass = Java<com.zergatul.scripting.tests.compiler.PrivateMemberTests$MyClass2>;
                 
                 let instance = new MyClass(10);
                 intStorage.add(instance.#value);
                 ⟦instance.#value⟧ = 100;
-                """);
+                """;
 
-        comparator.assertDiagnostics(ApiRoot.class, marked, "⟦⟧", BinderErrors.ExpressionCannotBeSet);
+        comparator.assertDiagnostics(ApiRoot.class, code, "⟦⟧", BinderErrors.ExpressionCannotBeSet);
     }
 
     @Test
@@ -142,13 +141,13 @@ public class PrivateMemberTests extends ComparatorTest {
 
     @Test
     public void staticFinalFieldWriteTest() {
-        MarkedCode marked = MarkedCode.from("""
+        String code = """
                 typealias MyClass = Java<com.zergatul.scripting.tests.compiler.PrivateMemberTests$MyClass2>;
                 
                 ⟦MyClass.#strValue⟧ = null;
-                """);
+                """;
 
-        comparator.assertDiagnostics(ApiRoot.class, marked, "⟦⟧", BinderErrors.ExpressionCannotBeSet);
+        comparator.assertDiagnostics(ApiRoot.class, code, "⟦⟧", BinderErrors.ExpressionCannotBeSet);
     }
 
     @Test

@@ -15,7 +15,6 @@ import com.zergatul.scripting.parser.Parser;
 import com.zergatul.scripting.parser.ParserOutput;
 import com.zergatul.scripting.tests.compiler.helpers.*;
 import com.zergatul.scripting.tests.framework.ComparatorTest;
-import com.zergatul.scripting.tests.utility.MarkedCode;
 import com.zergatul.scripting.type.CustomType;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -650,48 +649,48 @@ public class LambdaTests extends ComparatorTest {
 
     @Test
     public void failedArguments1Test() {
-        MarkedCode marked = MarkedCode.from("""
+        String code = """
                 run.⟦once⟧(10, () => {});
-                """);
+                """;
 
         String candidates = """
                 Candidates:
                 void once(Java<java.lang.Runnable> runnable)""";
 
         comparator.assertDiagnostics(
-                ApiRoot.class, marked, "⟦⟧",
+                ApiRoot.class, code, "⟦⟧",
                 BinderErrors.NoOverloadedMethods,
                 "once", 2, candidates);
     }
 
     @Test
     public void failedArguments2Test() {
-        MarkedCode marked = MarkedCode.from("""
+        String code = """
                 run.multiple⟦("10", () => {})⟧;
-                """);
+                """;
 
         String candidates = """
                 Candidates:
                 void multiple(int count, Java<java.lang.Runnable> runnable)""";
 
         comparator.assertDiagnostics(
-                ApiRoot.class, marked, "⟦⟧",
+                ApiRoot.class, code, "⟦⟧",
                 BinderErrors.MethodInvalidArguments,
                 "multiple", candidates);
     }
 
     @Test
     public void failedArguments3Test() {
-        MarkedCode marked = MarkedCode.from("""
+        String code = """
                 run.multiple⟦(10, (x) => {})⟧;
-                """);
+                """;
 
         String candidates = """
                 Candidates:
                 void multiple(int count, Java<java.lang.Runnable> runnable)""";
 
         comparator.assertDiagnostics(
-                ApiRoot.class, marked, "⟦⟧",
+                ApiRoot.class, code, "⟦⟧",
                 BinderErrors.MethodInvalidArguments,
                 "multiple", candidates);
     }

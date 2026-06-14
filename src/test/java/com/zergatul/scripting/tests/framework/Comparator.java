@@ -47,6 +47,13 @@ public class Comparator {
                 getDiagnostics(api, marked.getCode()));
     }
 
+    public void assertDiagnostics(ComparatorCompilationParameters compileParameters, String code, String mark, ErrorCode expectedErrorCode, Object... errorParameters) {
+        MarkedCode marked = MarkedCode.from(code);
+        assertEquals(
+                List.of(new DiagnosticMessage(expectedErrorCode, marked.getRange(mark), errorParameters)),
+                getDiagnostics(compileParameters.getApi(), marked.getCode(), compileParameters.getCustomTypes()));
+    }
+
     public void assertDiagnostics(Class<?> api, MarkedCode marked, String mark, ErrorCode expectedErrorCode, Object... parameters) {
         assertEquals(
                 List.of(new DiagnosticMessage(expectedErrorCode, marked.getRange(mark), parameters)),

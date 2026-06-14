@@ -1,12 +1,9 @@
 package com.zergatul.scripting.tests.compiler;
 
-import com.zergatul.scripting.DiagnosticMessage;
-import com.zergatul.scripting.SingleLineTextRange;
 import com.zergatul.scripting.binding.BinderErrors;
 import com.zergatul.scripting.tests.compiler.helpers.FloatStorage;
 import com.zergatul.scripting.tests.compiler.helpers.StringStorage;
 import com.zergatul.scripting.tests.framework.ComparatorTest;
-import com.zergatul.scripting.tests.utility.MarkedCode;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -14,7 +11,6 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 
 import static com.zergatul.scripting.tests.compiler.helpers.CompilerHelper.compile;
-import static com.zergatul.scripting.tests.compiler.helpers.CompilerHelper.getDiagnostics;
 
 public class MethodOverloadTests extends ComparatorTest {
 
@@ -56,9 +52,9 @@ public class MethodOverloadTests extends ComparatorTest {
 
     @Test
     public void noOverloadTest() {
-        MarkedCode marked = MarkedCode.from("""
+        String code = """
                 floatStorage.add(methods.m1⟦(1, 2, 3, 4)⟧);
-                """);
+                """;
 
         String candidates = """
                 Candidates:
@@ -66,7 +62,7 @@ public class MethodOverloadTests extends ComparatorTest {
                 float m1(float x, float y, float z, string s)""";
 
         comparator.assertDiagnostics(
-                ApiRoot.class, marked, "⟦⟧",
+                ApiRoot.class, code, "⟦⟧",
                 BinderErrors.MethodInvalidArguments,
                 "m1", candidates);
     }
