@@ -1,17 +1,12 @@
 package com.zergatul.scripting.tests.hover;
 
 import com.zergatul.scripting.SingleLineTextRange;
-import com.zergatul.scripting.binding.Binder;
-import com.zergatul.scripting.binding.BinderOutput;
+import com.zergatul.scripting.analysis.AnalysisResult;
+import com.zergatul.scripting.analysis.Analyzer;
 import com.zergatul.scripting.compiler.CompilationParameters;
 import com.zergatul.scripting.compiler.CompilationParametersBuilder;
 import com.zergatul.scripting.hover.DocumentationProvider;
 import com.zergatul.scripting.hover.HoverProvider;
-import com.zergatul.scripting.lexer.Lexer;
-import com.zergatul.scripting.lexer.LexerInput;
-import com.zergatul.scripting.lexer.LexerOutput;
-import com.zergatul.scripting.parser.Parser;
-import com.zergatul.scripting.parser.ParserOutput;
 import com.zergatul.scripting.tests.compiler.helpers.IntStorage;
 import com.zergatul.scripting.tests.framework.ComparatorTest;
 import com.zergatul.scripting.type.*;
@@ -343,19 +338,8 @@ public class HoverTests extends ComparatorTest {
                 .setRoot(root)
                 .setInterface(functionalInterface)
                 .build();
-
-        LexerInput lexerInput = new LexerInput(code);
-        Lexer lexer = new Lexer(lexerInput);
-        LexerOutput lexerOutput = lexer.lex();
-
-        Parser parser = new Parser(lexerOutput);
-        ParserOutput parserOutput = parser.parse();
-
-        Binder binder = new Binder(parserOutput, parameters);
-        BinderOutput binderOutput = binder.bind();
-
-        HoverProvider provider = new HoverProvider();
-        return provider.get(binderOutput, line, column);
+        AnalysisResult result = new Analyzer().analyze(code, parameters);
+        return new HoverProvider().get(result.binderOutput(), line, column);
     }
 
     private static class ApiRoot {

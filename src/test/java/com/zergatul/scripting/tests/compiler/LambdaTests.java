@@ -3,16 +3,11 @@ package com.zergatul.scripting.tests.compiler;
 import com.zergatul.scripting.AsyncRunnable;
 import com.zergatul.scripting.Getter;
 import com.zergatul.scripting.SingleLineTextRange;
-import com.zergatul.scripting.binding.Binder;
+import com.zergatul.scripting.analysis.Analyzer;
 import com.zergatul.scripting.binding.BinderErrors;
 import com.zergatul.scripting.binding.BinderOutput;
 import com.zergatul.scripting.binding.nodes.*;
 import com.zergatul.scripting.compiler.CompilationParametersBuilder;
-import com.zergatul.scripting.lexer.Lexer;
-import com.zergatul.scripting.lexer.LexerInput;
-import com.zergatul.scripting.lexer.LexerOutput;
-import com.zergatul.scripting.parser.Parser;
-import com.zergatul.scripting.parser.ParserOutput;
 import com.zergatul.scripting.tests.compiler.helpers.*;
 import com.zergatul.scripting.tests.framework.ComparatorTest;
 import com.zergatul.scripting.type.CustomType;
@@ -701,15 +696,9 @@ public class LambdaTests extends ComparatorTest {
                 run.multiple(10, (x) => {});
                 """;
 
-        LexerInput lexerInput = new LexerInput(code);
-        Lexer lexer = new Lexer(lexerInput);
-        LexerOutput lexerOutput = lexer.lex();
-
-        Parser parser = new Parser(lexerOutput);
-        ParserOutput parserOutput = parser.parse();
-
-        Binder binder = new Binder(parserOutput, new CompilationParametersBuilder().setRoot(ApiRoot.class).build());
-        BinderOutput binderOutput = binder.bind();
+        BinderOutput binderOutput = new Analyzer()
+                .analyze(code, new CompilationParametersBuilder().setRoot(ApiRoot.class).build())
+                .binderOutput();
 
         List<BoundStatementNode> statements = binderOutput.unit().statements.statements;
         Assertions.assertEquals(1, statements.size());

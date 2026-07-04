@@ -1,13 +1,10 @@
 package com.zergatul.scripting.tests.completion.helpers;
 
-import com.zergatul.scripting.binding.Binder;
+import com.zergatul.scripting.analysis.Analyzer;
 import com.zergatul.scripting.binding.BinderOutput;
 import com.zergatul.scripting.compiler.CompilationParameters;
 import com.zergatul.scripting.compiler.CompilationParametersBuilder;
 import com.zergatul.scripting.completion.CompletionProviderFactory;
-import com.zergatul.scripting.lexer.Lexer;
-import com.zergatul.scripting.lexer.LexerInput;
-import com.zergatul.scripting.parser.Parser;
 import com.zergatul.scripting.tests.completion.suggestions.Suggestion;
 import com.zergatul.scripting.type.SType;
 import org.junit.jupiter.api.Assertions;
@@ -68,7 +65,7 @@ public class CompletionTestHelper {
                 .setInterface(functionalInterface)
                 .setAsyncReturnType(asyncReturnType)
                 .build();
-        BinderOutput output = new Binder(new Parser(new Lexer(new LexerInput(code)).lex()).parse(), parameters).bind();
+        BinderOutput output = new Analyzer().analyze(code, parameters).binderOutput();
         CompletionProviderFactory<Suggestion> factory = new CompletionProviderFactory<>(new TestSuggestionFactory());
         List<Suggestion> actual = factory.getSuggestions(parameters, output, line, column);
         CompletionTestHelper.assertSuggestions(expectedFactory.apply(new TestCompletionContext(parameters, output)), actual);

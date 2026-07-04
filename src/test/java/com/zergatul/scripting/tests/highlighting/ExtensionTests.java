@@ -1,19 +1,11 @@
 package com.zergatul.scripting.tests.highlighting;
 
 import com.zergatul.scripting.SingleLineTextRange;
-import com.zergatul.scripting.binding.Binder;
-import com.zergatul.scripting.binding.BinderOutput;
-import com.zergatul.scripting.compiler.CompilationParametersBuilder;
-import com.zergatul.scripting.highlighting.HighlightingProvider;
 import com.zergatul.scripting.highlighting.SemanticToken;
 import com.zergatul.scripting.highlighting.SemanticTokenModifier;
 import com.zergatul.scripting.highlighting.SemanticTokenType;
-import com.zergatul.scripting.lexer.Lexer;
-import com.zergatul.scripting.lexer.LexerInput;
-import com.zergatul.scripting.lexer.LexerOutput;
-import com.zergatul.scripting.parser.Parser;
-import com.zergatul.scripting.parser.ParserOutput;
 import com.zergatul.scripting.tests.framework.ComparatorTest;
+import com.zergatul.scripting.tests.highlighting.helpers.HighlightingHelper;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -84,12 +76,7 @@ public class ExtensionTests extends ComparatorTest {
     }
 
     private List<SemanticToken> highlight(String code) {
-        LexerOutput lexerOutput = new Lexer(new LexerInput(code)).lex();
-        ParserOutput parserOutput = new Parser(lexerOutput).parse();
-        BinderOutput binderOutput = new Binder(parserOutput, new CompilationParametersBuilder()
-                .setRoot(ApiRoot.class)
-                .build()).bind();
-        return new HighlightingProvider(lexerOutput, binderOutput).get();
+        return HighlightingHelper.highlight(ApiRoot.class, code);
     }
 
     public static class ApiRoot {}

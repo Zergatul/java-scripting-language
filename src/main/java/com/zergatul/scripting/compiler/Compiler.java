@@ -3,19 +3,16 @@ package com.zergatul.scripting.compiler;
 import com.zergatul.scripting.InternalException;
 import com.zergatul.scripting.Locatable;
 import com.zergatul.scripting.TextRange;
+import com.zergatul.scripting.analysis.AnalysisResult;
+import com.zergatul.scripting.analysis.Analyzer;
 import com.zergatul.scripting.binding.*;
 import com.zergatul.scripting.binding.nodes.*;
 import com.zergatul.scripting.compiler.frames.*;
 import com.zergatul.scripting.generator.BinderTreeGenerator;
 import com.zergatul.scripting.generator.GeneratorStackEntryType;
 import com.zergatul.scripting.generator.StateBoundary;
-import com.zergatul.scripting.lexer.Lexer;
-import com.zergatul.scripting.lexer.LexerInput;
-import com.zergatul.scripting.lexer.LexerOutput;
 import com.zergatul.scripting.parser.AssignmentOperator;
 import com.zergatul.scripting.binding.nodes.BoundNodeType;
-import com.zergatul.scripting.parser.Parser;
-import com.zergatul.scripting.parser.ParserOutput;
 import com.zergatul.scripting.runtime.AsyncStateMachineException;
 import com.zergatul.scripting.runtime.RuntimeType;
 import com.zergatul.scripting.runtime.RuntimeTypes;
@@ -48,15 +45,8 @@ public class Compiler {
     }
 
     public CompilationResult compile(String code) {
-        LexerInput lexerInput = new LexerInput(code);
-        Lexer lexer = new Lexer(lexerInput);
-        LexerOutput lexerOutput = lexer.lex();
-
-        Parser parser = new Parser(lexerOutput);
-        ParserOutput parserOutput = parser.parse();
-
-        Binder binder = new Binder(parserOutput, parameters);
-        BinderOutput binderOutput = binder.bind();
+        AnalysisResult analysis = new Analyzer().analyze(code, parameters);
+        BinderOutput binderOutput = analysis.binderOutput();
 
         if (binderOutput.diagnostics().isEmpty()) {
             return CompilationResult.success(compileUnit(binderOutput));
