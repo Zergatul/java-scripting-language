@@ -29,6 +29,10 @@ public class Parser {
         return new ParserOutput(code, parseCompilationUnit(), diagnostics);
     }
 
+    public ParserExpressionOutput parseAsExpression() {
+        return new ParserExpressionOutput(code, parseExpressionUnit(), diagnostics);
+    }
+
     private CompilationUnitNode parseCompilationUnit() {
         List<CompilationUnitMemberNode> members = new ArrayList<>();
         while (!current.is(TokenType.END_OF_FILE)) {
@@ -76,6 +80,14 @@ public class Parser {
                         TextRange.combine(statements.getFirst(), statements.getLast()));
 
         return new CompilationUnitNode(membersList, statementsList, end);
+    }
+
+    private ExpressionUnitNode parseExpressionUnit() {
+        ExpressionNode expression = parseExpression();
+        if (current.isNot(TokenType.END_OF_FILE)) {
+            addDiagnostic(ParserErrors.UnexpectedToken, current, current.getRawValue(code));
+        }
+        return new ExpressionUnitNode(expression);
     }
 
     private BlockStatementNode parseBlockStatement() {

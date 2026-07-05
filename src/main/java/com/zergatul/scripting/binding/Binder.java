@@ -25,24 +25,29 @@ import java.util.stream.Stream;
 public class Binder {
 
     private final String code;
-    private final CompilationUnitNode unit;
     private final List<DiagnosticMessage> diagnostics;
     private final CompilationParameters parameters;
     private final DeclarationTable declarationTable;
     private CompilerContext context;
 
-    public Binder(ParserOutput input, CompilationParameters parameters) {
-        this.code = input.code();
-        this.unit = input.unit();
-        this.diagnostics = input.diagnostics();
+    public Binder(String code, List<DiagnosticMessage> diagnostics, CompilationParameters parameters) {
+        this.code = code;
+        this.diagnostics = diagnostics;
         this.parameters = parameters;
         this.declarationTable = new DeclarationTable();
         this.context = parameters.getContext();
     }
 
-    public BinderOutput bind() {
-        BoundCompilationUnitNode unit = bindCompilationUnit(this.unit);
-        return new BinderOutput(code, unit, context, diagnostics);
+    public static BinderOutput bind(ParserOutput input, CompilationParameters parameters) {
+        Binder binder = new Binder(input.code(), input.diagnostics(), parameters);
+        BoundCompilationUnitNode unit = binder.bindCompilationUnit(input.unit());
+        return new BinderOutput(binder.code, unit, binder.context, binder.diagnostics);
+    }
+
+    public static BinderExpressionOutput bind(ParserExpressionOutput input, CompilationParameters parameters) {
+        Binder binder = new Binder(input.code(), input.diagnostics(), parameters);
+        BoundExpressionUnitNode unit = binder.bindExpressionUnit(input.unit());
+        return new BinderExpressionOutput(binder.code, unit, binder.context, binder.diagnostics);
     }
 
     private BoundCompilationUnitNode bindCompilationUnit(CompilationUnitNode node) {
@@ -56,6 +61,13 @@ public class Binder {
                 node,
                 new BoundCompilationUnitMembersListNode(node.members, members),
                 statements);
+    }
+
+    private BoundExpressionUnitNode bindExpressionUnit(ExpressionUnitNode node) {
+        pushFunctionScope(SVoidType.instance, false);
+        BoundExpressionNode expression = bindExpression(node.expression);
+        popScope();
+        return new BoundExpressionUnitNode(expression);
     }
 
     private List<BoundCompilationUnitMemberNode> bindCompilationUnitMembers(List<CompilationUnitMemberNode> nodes) {
@@ -2601,7 +2613,7 @@ public class Binder {
         }
 
         // resolve type aliases
-        resolveTypeAliases();
+        resolveTypeAliases(unit);
 
         // process inheritance
         declarationTable.forEachClassDeclaration((classNode, classDeclaration) -> {
@@ -2698,7 +2710,7 @@ public class Binder {
         declarationTable.addTypeAlias(name, typeAliasNode, new TypeAliasDeclaration(name, symbolRef));
     }
 
-    private void resolveTypeAliases() {
+    private void resolveTypeAliases(CompilationUnitNode unit) {
         List<TypeAliasNode> unresolved = new ArrayList<>();
         for (CompilationUnitMemberNode member : unit.members.members) {
             if (member.is(ParserNodeType.TYPE_ALIAS)) {

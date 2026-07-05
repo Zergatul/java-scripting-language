@@ -119,4 +119,5 @@ public enum BoundNodeType {
     TRY_STATEMENT,
     THROW_EXPRESSION,
     THROW_STATEMENT,
+    EXPRESSION_UNIT,
 }

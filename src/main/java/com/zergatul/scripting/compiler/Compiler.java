@@ -5,6 +5,7 @@ import com.zergatul.scripting.Locatable;
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.analysis.AnalysisResult;
 import com.zergatul.scripting.analysis.Analyzer;
+import com.zergatul.scripting.analysis.ExpressionAnalysisResult;
 import com.zergatul.scripting.binding.*;
 import com.zergatul.scripting.binding.nodes.*;
 import com.zergatul.scripting.compiler.frames.*;
@@ -13,9 +14,7 @@ import com.zergatul.scripting.generator.GeneratorStackEntryType;
 import com.zergatul.scripting.generator.StateBoundary;
 import com.zergatul.scripting.parser.AssignmentOperator;
 import com.zergatul.scripting.binding.nodes.BoundNodeType;
-import com.zergatul.scripting.runtime.AsyncStateMachineException;
-import com.zergatul.scripting.runtime.RuntimeType;
-import com.zergatul.scripting.runtime.RuntimeTypes;
+import com.zergatul.scripting.runtime.*;
 import com.zergatul.scripting.symbols.*;
 import com.zergatul.scripting.type.*;
 import com.zergatul.scripting.visitors.ExternalParameterVisitor;
@@ -55,6 +54,17 @@ public class Compiler {
         }
     }
 
+    public ExpressionCompilationResult compileAsExpression(String code) {
+        ExpressionAnalysisResult analysis = new Analyzer().analyzeAsExpression(code, parameters);
+        BinderExpressionOutput binderOutput = analysis.binderOutput();
+
+        if (binderOutput.diagnostics().isEmpty()) {
+            return ExpressionCompilationResult.success(compileExpressionUnit(binderOutput));
+        } else {
+            return ExpressionCompilationResult.failed(binderOutput.diagnostics());
+        }
+    }
+
     private <T> T compileUnit(BinderOutput output) {
         BoundCompilationUnitNode unit = output.unit();
 
@@ -88,6 +98,39 @@ public class Compiler {
 
         @SuppressWarnings("unchecked")
         Class<T> dynamic = (Class<T>) context.defineClass(name.replace('/', '.'), bytecode);
+        return createInstance(dynamic);
+    }
+
+    private ExpressionEvaluator compileExpressionUnit(BinderExpressionOutput output) {
+        BoundExpressionUnitNode unit = output.unit();
+
+        ClassWriter writer = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
+        emitSourceFile(writer);
+        String name = "com/zergatul/scripting/dynamic/" + parameters.getMainClassName();
+        writer.visit(
+                V1_8,
+                ACC_PUBLIC,
+                name,
+                null,
+                Type.getInternalName(Object.class),
+                new String[] { Type.getInternalName(ExpressionEvaluator.class) });
+
+        CompilerContext context = parameters.getContext();
+        context.setClassLoaderContext(new ClassLoaderContext());
+        context.setClassName(name);
+
+        buildEmptyConstructor(writer);
+        buildExpressionEvaluatorMainMethod(unit, writer, context);
+
+        writer.visitEnd();
+
+        compileMethodHandleCache(context);
+
+        byte[] bytecode = writer.toByteArray();
+        saveClassFile(name, bytecode);
+
+        @SuppressWarnings("unchecked")
+        Class<ExpressionEvaluator> dynamic = (Class<ExpressionEvaluator>) context.defineClass(name.replace('/', '.'), bytecode);
         return createInstance(dynamic);
     }
 
@@ -581,7 +624,7 @@ public class Compiler {
         return constructorDescriptor;
     }
 
-    private void buildMainMethod(BoundCompilationUnitNode unit, ClassWriter writer, String className, CompilerContext context1) {
+    private void buildMainMethod(BoundCompilationUnitNode unit, ClassWriter writer, String className, CompilerContext classContext) {
         Class<?> functionalInterface = parameters.getFunctionalInterface();
         if (!functionalInterface.isInterface()) {
             throw new InternalException();
@@ -596,7 +639,7 @@ public class Compiler {
         MethodVisitor visitor = writer.visitMethod(ACC_PUBLIC, method.getName(), Type.getMethodDescriptor(method), null, null);
         visitor.visitCode();
 
-        CompilerContext context = context1.createInstanceMethod(parameters.getReturnType(), parameters.isAsync());
+        CompilerContext context = classContext.createInstanceMethod(parameters.getReturnType(), parameters.isAsync());
         context.reserveStack(1 + method.getParameterCount()); // assuming all parameters size = 1
 
         processContextStart(visitor, context);
@@ -635,6 +678,153 @@ public class Compiler {
         if (!parameters.isAsync() && parameters.getReturnType() == SVoidType.instance) {
             visitor.visitInsn(RETURN);
         }
+
+        processContextEnd(visitor, context);
+        visitor.visitMaxs(0, 0);
+        visitor.visitEnd();
+    }
+
+    private void buildExpressionEvaluatorMainMethod(BoundExpressionUnitNode unit, ClassWriter writer, CompilerContext classContext) {
+        Method method;
+        try {
+            method = ExpressionEvaluator.class.getMethod("evaluate");
+        } catch (NoSuchMethodException e) {
+            throw new InternalException();
+        }
+
+        MethodVisitor visitor = writer.visitMethod(ACC_PUBLIC, method.getName(), Type.getMethodDescriptor(method), null, null);
+        visitor.visitCode();
+
+        CompilerContext context = classContext.createInstanceMethod(SType.fromJavaType(ExpressionEvaluationResult.class), false);
+        context.reserveStack(1);
+
+        processContextStart(visitor, context);
+
+        // due to language limitations, there is no way we will have closures in the main expression
+
+        /*ExternalParameterVisitor treeVisitor = new ExternalParameterVisitor();
+        unit.expression.accept(treeVisitor);
+        List<BoundVariableDeclarationNode> prepend = new ArrayList<>();
+        for (Variable variable : treeVisitor.getParameters()) {
+            int parameterStackIndex;
+            if (variable instanceof LiftedVariable lifted) {
+                parameterStackIndex = 1 + ((ExternalParameter) lifted.getUnderlying()).getIndex();
+            } else if (variable instanceof ExternalParameter external) {
+                parameterStackIndex = 1 + external.getIndex();
+                external.setStackIndex(parameterStackIndex);
+            } else {
+                throw new InternalException();
+            }
+
+            BoundVariableDeclarationNode declaration = new BoundVariableDeclarationNode(
+                    new BoundNameExpressionNode(new MutableSymbolRef(variable)),
+                    new BoundStackLoadNode(parameterStackIndex, variable.getType()));
+
+            prepend.add(declaration);
+        }
+
+        if (!prepend.isEmpty()) {
+            unit = unit.withStatements(unit.statements.withPrepend(prepend));
+        }*/
+
+
+        Label tryBlockBegin = new Label();
+        Label tryBlockEnd = new Label();
+        Label catchBlockBegin = new Label();
+
+        visitor.visitLabel(tryBlockBegin);
+        context = context.createChild();
+        compileExpression(visitor, context, unit.expression);
+        if (unit.expression.type == SVoidType.instance) {
+            visitor.visitMethodInsn(
+                    INVOKESTATIC,
+                    Type.getInternalName(ExpressionEvaluationResult.class),
+                    "fromVoid",
+                    Type.getMethodDescriptor(Type.getType(ExpressionEvaluationResult.class)),
+                    false);
+        } else {
+            if (unit.expression.type.isReference()) {
+                Label notNullLabel = new Label();
+                Label nullCheckEnd = new Label();
+                // result
+                visitor.visitInsn(DUP);
+                // result, result
+                visitor.visitJumpInsn(IFNONNULL, notNullLabel);
+                // result(null)
+                visitor.visitInsn(POP);
+                // <empty>
+                if (unit.expression.type == SNull.instance) {
+                    SJavaObject.instance.loadClassObject(visitor);
+                } else {
+                    unit.expression.type.loadClassObject(visitor); // load potential type, best effort information
+                }
+                // Class<?>
+                visitor.visitMethodInsn(
+                        INVOKESTATIC,
+                        Type.getInternalName(ExpressionEvaluationResult.class),
+                        "fromNull",
+                        Type.getMethodDescriptor(Type.getType(ExpressionEvaluationResult.class), Type.getType(Class.class)),
+                        false);
+                // eval_result
+                visitor.visitJumpInsn(GOTO, nullCheckEnd);
+                visitor.visitLabel(notNullLabel);
+                // result
+                visitor.visitInsn(DUP);
+                // result, result
+                visitor.visitMethodInsn(
+                        INVOKEVIRTUAL,
+                        Type.getInternalName(Object.class),
+                        "getClass",
+                        Type.getMethodDescriptor(Type.getType(Class.class)),
+                        false);
+                // result, Class<?>
+                visitor.visitInsn(SWAP);
+                // Class<?>, result
+                visitor.visitMethodInsn(
+                        INVOKESTATIC,
+                        Type.getInternalName(ExpressionEvaluationResult.class),
+                        "fromValue",
+                        Type.getMethodDescriptor(Type.getType(ExpressionEvaluationResult.class), Type.getType(Class.class), Type.getType(Object.class)),
+                        false);
+                // eval_result
+                visitor.visitLabel(nullCheckEnd);
+            } else {
+                // result (ValueType)
+                ((SValueType) unit.expression.type).compileBoxing(visitor);
+                // Boxed<result>
+                unit.expression.type.loadClassObject(visitor);
+                // Boxed<result>, Class<?>
+                visitor.visitInsn(SWAP);
+                // Class<?>, Boxed<result>
+                visitor.visitMethodInsn(
+                        INVOKESTATIC,
+                        Type.getInternalName(ExpressionEvaluationResult.class),
+                        "fromValue",
+                        Type.getMethodDescriptor(Type.getType(ExpressionEvaluationResult.class), Type.getType(Class.class), Type.getType(Object.class)),
+                        false);
+                // eval_result
+            }
+        }
+        visitor.visitInsn(ARETURN);
+        context = context.getParent();
+        visitor.visitLabel(tryBlockEnd);
+
+        visitor.visitLabel(catchBlockBegin);
+
+        context = context.createChild();
+        // exception
+        visitor.visitMethodInsn(
+                INVOKESTATIC,
+                Type.getInternalName(ExpressionEvaluationResult.class),
+                "fromException",
+                Type.getMethodDescriptor(Type.getType(ExpressionEvaluationResult.class), Type.getType(Throwable.class)),
+                false);
+        // eval_result
+        visitor.visitInsn(ARETURN);
+
+        context = context.getParent();
+
+        visitor.visitTryCatchBlock(tryBlockBegin, tryBlockEnd, catchBlockBegin, null);
 
         processContextEnd(visitor, context);
         visitor.visitMaxs(0, 0);

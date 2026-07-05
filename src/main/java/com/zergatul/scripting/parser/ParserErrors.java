@@ -51,4 +51,5 @@ public class ParserErrors {
     public static final ErrorCode InvalidOperatorDeclaration = new ErrorCode("C046", "Invalid operator declaration, use 'operator [+] ReturnType(...)'");
     public static final ErrorCode CatchOrFinallyExpected = new ErrorCode("C047", "'catch' or 'finally' expected, found %s");
     public static final ErrorCode OpenParenOrBraceExpected = new ErrorCode("C048", "'(' or '{' expected, found %s");
+    public static final ErrorCode UnexpectedToken = new ErrorCode("C049", "Unexpected token '%s'");
 }

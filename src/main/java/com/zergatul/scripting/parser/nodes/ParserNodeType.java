@@ -89,4 +89,5 @@ public enum ParserNodeType {
     FINALLY_CLAUSE,
     THROW_STATEMENT,
     THROW_EXPRESSION,
+    EXPRESSION_UNIT,
 }
