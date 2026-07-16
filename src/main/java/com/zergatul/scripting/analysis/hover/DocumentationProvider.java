@@ -1,4 +1,4 @@
-package com.zergatul.scripting.hover;
+package com.zergatul.scripting.analysis.hover;
 
 import com.zergatul.scripting.type.*;
 
@@ -30,5 +30,9 @@ public class DocumentationProvider {
 
     public Optional<String> getMethodDocumentation(MethodReference method) {
         return method.getDescription();
+    }
+
+    public Optional<String> getPropertyDocumentation(PropertyReference property) {
+        return property.getDescription();
     }
 }

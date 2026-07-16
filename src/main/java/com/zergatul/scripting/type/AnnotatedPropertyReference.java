@@ -1,12 +1,14 @@
 package com.zergatul.scripting.type;
 
 import com.zergatul.scripting.InternalException;
+import com.zergatul.scripting.PropertyDescription;
 import com.zergatul.scripting.compiler.CompilerContext;
 import org.jspecify.annotations.Nullable;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Type;
 
 import java.lang.reflect.Method;
+import java.util.Optional;
 
 import static org.objectweb.asm.Opcodes.DUP;
 import static org.objectweb.asm.Opcodes.INVOKEVIRTUAL;
@@ -43,6 +45,15 @@ public class AnnotatedPropertyReference extends PropertyReference {
     @Override
     public String getName() {
         return name;
+    }
+
+    @Override
+    public Optional<String> getDescription() {
+        if (getter == null) {
+            return Optional.empty();
+        }
+        PropertyDescription description = getter.getAnnotation(PropertyDescription.class);
+        return description != null ? Optional.of(description.value()) : Optional.empty();
     }
 
     @Override

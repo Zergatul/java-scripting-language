@@ -3,7 +3,7 @@ package com.zergatul.scripting.tests.framework;
 import com.zergatul.scripting.*;
 import com.zergatul.scripting.binding.nodes.*;
 import com.zergatul.scripting.highlighting.SemanticToken;
-import com.zergatul.scripting.hover.HoverProvider;
+import com.zergatul.scripting.analysis.hover.HoverProvider;
 import com.zergatul.scripting.lexer.*;
 import com.zergatul.scripting.parser.nodes.*;
 import com.zergatul.scripting.type.NativeMethodReference;

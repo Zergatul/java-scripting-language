@@ -1,4 +1,4 @@
-package com.zergatul.scripting.hover;
+package com.zergatul.scripting.analysis.hover;
 
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.BinderOutput;
@@ -156,7 +156,13 @@ public class HoverProvider {
                 }
                 BoundPropertyAccessExpressionNode access = (BoundPropertyAccessExpressionNode) chain.get(1);
                 String text = formatDescription("(property)") + " " + formatType(property.getType()) + " " + formatType(access.callee.type) + "." + formatIdentifier(property.getName());
-                yield new HoverResponse(text, range);
+                List<String> lines = new ArrayList<>();
+                lines.add(text);
+                Optional<String> documentation = documentationProvider.getPropertyDocumentation(property);
+                if (documentation.isPresent()) {
+                    lines.add(documentation.get().replace("\n", "<br>"));
+                }
+                yield new HoverResponse(lines, range);
             }
             case BINARY_OPERATOR -> {
                 BoundBinaryOperatorNode operator = (BoundBinaryOperatorNode) node;

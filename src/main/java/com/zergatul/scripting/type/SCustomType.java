@@ -185,6 +185,9 @@ public class SCustomType extends SReferenceType {
             }
             Setter setter = method.getAnnotation(Setter.class);
             if (setter != null) {
+                if (getter == null && method.isAnnotationPresent(PropertyDescription.class)) {
+                    throw new InternalException(String.format("Method %s has invalid @PropertyDescription. It should be placed on @Getter method.", method.getName()));
+                }
                 if (list.stream().anyMatch(p -> p.getName().equals(setter.name())) || setters.containsKey(setter.name())) {
                     throw new InternalException(String.format("Method %s has invalid @Setter.", method.getName()));
                 }

@@ -1,12 +1,14 @@
 package com.zergatul.scripting.tests.hover;
 
+import com.zergatul.scripting.Getter;
+import com.zergatul.scripting.PropertyDescription;
 import com.zergatul.scripting.SingleLineTextRange;
 import com.zergatul.scripting.analysis.AnalysisResult;
 import com.zergatul.scripting.analysis.Analyzer;
 import com.zergatul.scripting.compiler.CompilationParameters;
 import com.zergatul.scripting.compiler.CompilationParametersBuilder;
-import com.zergatul.scripting.hover.DocumentationProvider;
-import com.zergatul.scripting.hover.HoverProvider;
+import com.zergatul.scripting.analysis.hover.DocumentationProvider;
+import com.zergatul.scripting.analysis.hover.HoverProvider;
 import com.zergatul.scripting.tests.compiler.helpers.IntStorage;
 import com.zergatul.scripting.tests.framework.ComparatorTest;
 import com.zergatul.scripting.type.*;
@@ -201,6 +203,51 @@ public class HoverTests extends ComparatorTest {
     }
 
     @Test
+    public void methodDocumentationTest() {
+        HoverProvider.HoverResponse hover = getHover("""
+                "".matches("");
+                """, 1, 4);
+        comparator.assertEquals(
+                new HoverProvider.HoverResponse(
+                        List.of(
+                                "boolean string.matches(string regex)",
+                                "Returns true if string instance matches specified regex.<br>" +
+                                "For more documentation check https://docs.oracle.com/javase/8/docs/api/java/util/regex/Pattern.html<br>"),
+                        new SingleLineTextRange(1, 4, 3, 7)),
+                hover);
+    }
+
+    @Test
+    public void fieldPropertyDocumentationTest() {
+        HoverProvider.HoverResponse hover = getHover("""
+                TestType value;
+                value.field;
+                """, TestType.class, 2, 7);
+        comparator.assertEquals(
+                new HoverProvider.HoverResponse(
+                        List.of(
+                                "(property) int TestType.field",
+                                "Field description."),
+                        new SingleLineTextRange(2, 7, 22, 5)),
+                hover);
+    }
+
+    @Test
+    public void getterPropertyDocumentationTest() {
+        HoverProvider.HoverResponse hover = getHover("""
+                TestType value;
+                value.property;
+                """, TestType.class, 2, 7);
+        comparator.assertEquals(
+                new HoverProvider.HoverResponse(
+                        List.of(
+                                "(property) int TestType.property",
+                                "Getter description."),
+                        new SingleLineTextRange(2, 7, 22, 8)),
+                hover);
+    }
+
+    @Test
     public void extensionTest1() {
         HoverProvider.HoverResponse hover = getHover("""
                 extension(int) {
@@ -333,6 +380,16 @@ public class HoverTests extends ComparatorTest {
         return getHover(code, ApiRoot.class, Runnable.class, line, column);
     }
 
+    private static HoverProvider.HoverResponse getHover(String code, Class<?> customType, int line, int column) {
+        CompilationParameters parameters = new CompilationParametersBuilder()
+                .setRoot(ApiRoot.class)
+                .setInterface(Runnable.class)
+                .addCustomType(customType)
+                .build();
+        AnalysisResult result = new Analyzer().analyze(code, parameters);
+        return new HoverProvider().get(result.binderOutput(), line, column);
+    }
+
     private static HoverProvider.HoverResponse getHover(String code, Class<?> root, Class<?> functionalInterface, int line, int column) {
         CompilationParameters parameters = new CompilationParametersBuilder()
                 .setRoot(root)
@@ -344,5 +401,18 @@ public class HoverTests extends ComparatorTest {
 
     private static class ApiRoot {
         public static IntStorage intStorage;
+    }
+
+    @CustomType(name = "TestType")
+    public static class TestType {
+
+        @PropertyDescription("Field description.")
+        public int field;
+
+        @Getter(name = "property")
+        @PropertyDescription("Getter description.")
+        public int getProperty() {
+            return 0;
+        }
     }
 }

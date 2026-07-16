@@ -4,6 +4,8 @@ import com.zergatul.scripting.InternalException;
 import com.zergatul.scripting.compiler.CompilerContext;
 import org.objectweb.asm.MethodVisitor;
 
+import java.util.Optional;
+
 public abstract class PropertyReference extends MemberReference {
 
     public abstract SType getType();
@@ -12,6 +14,10 @@ public abstract class PropertyReference extends MemberReference {
 
     public boolean isPublic() {
         return true;
+    }
+
+    public Optional<String> getDescription() {
+        return Optional.empty();
     }
 
     public void compileLoad(MethodVisitor visitor, CompilerContext context, Runnable compileCallee) {

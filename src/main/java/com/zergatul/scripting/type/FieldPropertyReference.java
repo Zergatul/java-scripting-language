@@ -1,5 +1,6 @@
 package com.zergatul.scripting.type;
 
+import com.zergatul.scripting.PropertyDescription;
 import com.zergatul.scripting.compiler.CompilerContext;
 import com.zergatul.scripting.compiler.MethodHandleCache;
 import com.zergatul.scripting.symbols.LocalVariable;
@@ -9,6 +10,7 @@ import org.objectweb.asm.Type;
 import java.lang.invoke.VarHandle;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
+import java.util.Optional;
 
 import static org.objectweb.asm.Opcodes.*;
 
@@ -47,6 +49,12 @@ public final class FieldPropertyReference extends PropertyReference {
     @Override
     public boolean canStore() {
         return !Modifier.isFinal(field.getModifiers());
+    }
+
+    @Override
+    public Optional<String> getDescription() {
+        PropertyDescription description = field.getAnnotation(PropertyDescription.class);
+        return description != null ? Optional.of(description.value()) : Optional.empty();
     }
 
     @Override

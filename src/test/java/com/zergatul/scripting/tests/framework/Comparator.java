@@ -6,7 +6,7 @@ import com.zergatul.scripting.InternalException;
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.nodes.BoundCompilationUnitNode;
 import com.zergatul.scripting.highlighting.SemanticToken;
-import com.zergatul.scripting.hover.HoverProvider;
+import com.zergatul.scripting.analysis.hover.HoverProvider;
 import com.zergatul.scripting.lexer.Token;
 import com.zergatul.scripting.lexer.TokenQueue;
 import com.zergatul.scripting.parser.nodes.CompilationUnitNode;
