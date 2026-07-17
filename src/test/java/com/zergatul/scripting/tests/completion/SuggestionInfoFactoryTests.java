@@ -3,6 +3,7 @@ package com.zergatul.scripting.tests.completion;
 import com.zergatul.scripting.MethodDescription;
 import com.zergatul.scripting.PropertyDescription;
 import com.zergatul.scripting.completion.*;
+import com.zergatul.scripting.formatting.TypeDisplayFormatter;
 import com.zergatul.scripting.lexer.TokenType;
 import com.zergatul.scripting.type.*;
 import org.junit.jupiter.api.Assertions;
@@ -79,6 +80,21 @@ public class SuggestionInfoFactoryTests {
                 mapped.getTypeSuggestion(SInt.instance));
     }
 
+    @Test
+    public void customTypeFormatterTest() {
+        MethodReference method = SType.fromJavaType(JavaType.class)
+                .getInstanceMethods()
+                .stream()
+                .filter(candidate -> candidate.getName().equals("convert"))
+                .findFirst()
+                .orElseThrow();
+        SuggestionInfoFactory factory = new SuggestionInfoFactory(new TypeDisplayFormatter(Class::getSimpleName));
+
+        Assertions.assertEquals(
+                "JavaType JavaType.convert(JavaType value)",
+                factory.getMethodSuggestion(method).detail());
+    }
+
     @SuppressWarnings("unused")
     @CustomType(name = "TestType")
     public static class TestType {
@@ -89,6 +105,13 @@ public class SuggestionInfoFactoryTests {
         @MethodDescription("Method documentation.")
         public boolean parse(String text) {
             return false;
+        }
+    }
+
+    @SuppressWarnings("unused")
+    public static class JavaType {
+        public JavaType convert(JavaType value) {
+            return value;
         }
     }
 }

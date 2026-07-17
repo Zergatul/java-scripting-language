@@ -1,5 +1,7 @@
 package com.zergatul.scripting.completion;
 
+import com.zergatul.scripting.formatting.MethodSignatureFormatter;
+import com.zergatul.scripting.formatting.TypeDisplayFormatter;
 import com.zergatul.scripting.lexer.TokenType;
 import com.zergatul.scripting.symbols.*;
 import com.zergatul.scripting.type.*;
@@ -9,6 +11,18 @@ import java.util.List;
 import java.util.Locale;
 
 public class SuggestionInfoFactory implements SuggestionFactory<SuggestionInfo> {
+
+    private final TypeDisplayFormatter typeFormatter;
+    private final MethodSignatureFormatter methodSignatureFormatter;
+
+    public SuggestionInfoFactory() {
+        this(new TypeDisplayFormatter());
+    }
+
+    public SuggestionInfoFactory(TypeDisplayFormatter typeFormatter) {
+        this.typeFormatter = typeFormatter;
+        this.methodSignatureFormatter = new MethodSignatureFormatter(typeFormatter);
+    }
 
     @Override
     public SuggestionInfo getKeywordSuggestion(TokenType type) {
@@ -62,19 +76,19 @@ public class SuggestionInfoFactory implements SuggestionFactory<SuggestionInfo> 
 
     @Override
     public SuggestionInfo getThisSuggestion(SType type) {
-        return suggestion("this", getTypeName(type), null, SuggestionKind.KEYWORD);
+        return suggestion("this", typeFormatter.format(type), null, SuggestionKind.KEYWORD);
     }
 
     @Override
     public SuggestionInfo getBaseSuggestion(SType type) {
-        return suggestion("base", getTypeName(type), null, SuggestionKind.KEYWORD);
+        return suggestion("base", typeFormatter.format(type), null, SuggestionKind.KEYWORD);
     }
 
     @Override
     public SuggestionInfo getPropertySuggestion(PropertyReference property) {
         return suggestion(
                 property.getName(),
-                getTypeName(property.getType()),
+                typeFormatter.format(property.getType()),
                 property.getDescription().orElse(null),
                 SuggestionKind.PROPERTY);
     }
@@ -87,19 +101,19 @@ public class SuggestionInfoFactory implements SuggestionFactory<SuggestionInfo> 
 
         return suggestion(
                 method.getName(),
-                getMethodSignature(method),
+                methodSignatureFormatter.format(method),
                 method.getDescription().orElse(null),
                 SuggestionKind.METHOD);
     }
 
     @Override
     public SuggestionInfo getStaticConstantSuggestion(StaticFieldConstantStaticVariable variable) {
-        return suggestion(variable.getName(), getTypeName(variable.getType()), null, SuggestionKind.CONSTANT);
+        return suggestion(variable.getName(), typeFormatter.format(variable.getType()), null, SuggestionKind.CONSTANT);
     }
 
     @Override
     public SuggestionInfo getStaticFieldSuggestion(DeclaredStaticVariable variable) {
-        return suggestion(variable.getName(), getTypeName(variable.getType()), null, SuggestionKind.VARIABLE);
+        return suggestion(variable.getName(), typeFormatter.format(variable.getType()), null, SuggestionKind.VARIABLE);
     }
 
     @Override
@@ -109,12 +123,12 @@ public class SuggestionInfoFactory implements SuggestionFactory<SuggestionInfo> 
 
     @Override
     public SuggestionInfo getLocalVariableSuggestion(LocalVariable variable) {
-        return suggestion(variable.getName(), getTypeName(variable.getType()), null, SuggestionKind.VARIABLE);
+        return suggestion(variable.getName(), typeFormatter.format(variable.getType()), null, SuggestionKind.VARIABLE);
     }
 
     @Override
     public SuggestionInfo getInputParameterSuggestion(String name, SType type) {
-        return suggestion(name, getTypeName(type), null, SuggestionKind.VARIABLE);
+        return suggestion(name, typeFormatter.format(type), null, SuggestionKind.VARIABLE);
     }
 
     private SuggestionInfo typeSuggestion(String text, SType type) {
@@ -127,34 +141,6 @@ public class SuggestionInfoFactory implements SuggestionFactory<SuggestionInfo> 
 
     private SuggestionInfo suggestion(String text, @Nullable String detail, @Nullable String documentation, SuggestionKind kind) {
         return new SuggestionInfo(text, detail, documentation, text, kind);
-    }
-
-    private String getMethodSignature(MethodReference method) {
-        StringBuilder builder = new StringBuilder();
-        builder.append(getTypeName(method.getReturn()));
-        builder.append(' ');
-        builder.append(getTypeName(method.getOwner()));
-        builder.append('.');
-        builder.append(method.getName());
-        builder.append('(');
-        List<MethodParameter> parameters = method.getParameters();
-        for (int i = 0; i < parameters.size(); i++) {
-            builder.append(getTypeName(parameters.get(i).type()));
-            builder.append(' ');
-            builder.append(parameters.get(i).name());
-            if (i < parameters.size() - 1) {
-                builder.append(", ");
-            }
-        }
-        builder.append(')');
-        return builder.toString();
-    }
-
-    private String getTypeName(SType type) {
-        if (type instanceof SClassType classType) {
-            return classType.getJavaClass().getName();
-        }
-        return type.toString();
     }
 
     private @Nullable String getTypeDocumentation(SType type) {
