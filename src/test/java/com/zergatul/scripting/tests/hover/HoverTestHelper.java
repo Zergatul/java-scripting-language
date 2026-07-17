@@ -1,6 +1,8 @@
 package com.zergatul.scripting.tests.hover;
 
 import com.zergatul.scripting.analysis.Analyzer;
+import com.zergatul.scripting.analysis.hover.HoverInfo;
+import com.zergatul.scripting.analysis.hover.HoverInfoFactory;
 import com.zergatul.scripting.analysis.hover.HoverProvider;
 import com.zergatul.scripting.binding.BinderOutput;
 import com.zergatul.scripting.compiler.CompilationParameters;
@@ -24,9 +26,15 @@ public class HoverTestHelper {
         CursorHelper.Result result = CursorHelper.parse(code);
 
         BinderOutput output = new Analyzer().analyze(result.code(), parameters).binderOutput();
-        HoverProvider.HoverResponse actual = new HoverProvider().get(output, result.line(), result.column());
+        HoverProvider.HoverResponse<HoverInfo> actual =
+                new HoverProvider<>(new HoverInfoFactory()).get(output, result.line(), result.column());
+        Assertions.assertNotNull(actual);
 
-        Assertions.assertIterableEquals(expected, actual.content());
+        HoverInfo hover = actual.content();
+        List<String> content = hover.documentation() == null ?
+                List.of(hover.signature()) :
+                List.of(hover.signature(), hover.documentation());
+        Assertions.assertIterableEquals(expected, content);
         Assertions.assertEquals(result.range().extend(length), actual.range());
     }
 

@@ -1,5 +1,6 @@
 package com.zergatul.scripting.completion;
 
+import com.zergatul.scripting.documentation.DocumentationProvider;
 import com.zergatul.scripting.formatting.MethodSignatureFormatter;
 import com.zergatul.scripting.formatting.TypeDisplayFormatter;
 import com.zergatul.scripting.lexer.TokenType;
@@ -14,14 +15,20 @@ public class SuggestionInfoFactory implements SuggestionFactory<SuggestionInfo> 
 
     private final TypeDisplayFormatter typeFormatter;
     private final MethodSignatureFormatter methodSignatureFormatter;
+    private final DocumentationProvider documentationProvider;
 
     public SuggestionInfoFactory() {
-        this(new TypeDisplayFormatter());
+        this(new TypeDisplayFormatter(), new DocumentationProvider());
     }
 
     public SuggestionInfoFactory(TypeDisplayFormatter typeFormatter) {
+        this(typeFormatter, new DocumentationProvider());
+    }
+
+    public SuggestionInfoFactory(TypeDisplayFormatter typeFormatter, DocumentationProvider documentationProvider) {
         this.typeFormatter = typeFormatter;
         this.methodSignatureFormatter = new MethodSignatureFormatter(typeFormatter);
+        this.documentationProvider = documentationProvider;
     }
 
     @Override
@@ -89,7 +96,7 @@ public class SuggestionInfoFactory implements SuggestionFactory<SuggestionInfo> 
         return suggestion(
                 property.getName(),
                 typeFormatter.format(property.getType()),
-                property.getDescription().orElse(null),
+                documentationProvider.getPropertyDocumentation(property).orElse(null),
                 SuggestionKind.PROPERTY);
     }
 
@@ -102,7 +109,7 @@ public class SuggestionInfoFactory implements SuggestionFactory<SuggestionInfo> 
         return suggestion(
                 method.getName(),
                 methodSignatureFormatter.format(method),
-                method.getDescription().orElse(null),
+                documentationProvider.getMethodDocumentation(method).orElse(null),
                 SuggestionKind.METHOD);
     }
 
@@ -132,7 +139,7 @@ public class SuggestionInfoFactory implements SuggestionFactory<SuggestionInfo> 
     }
 
     private SuggestionInfo typeSuggestion(String text, SType type) {
-        return new SuggestionInfo(text, null, getTypeDocumentation(type), text, SuggestionKind.TYPE);
+        return new SuggestionInfo(text, null, documentationProvider.getTypeDocs(type), text, SuggestionKind.TYPE);
     }
 
     private SuggestionInfo suggestion(String text, SuggestionKind kind) {
@@ -141,36 +148,5 @@ public class SuggestionInfoFactory implements SuggestionFactory<SuggestionInfo> 
 
     private SuggestionInfo suggestion(String text, @Nullable String detail, @Nullable String documentation, SuggestionKind kind) {
         return new SuggestionInfo(text, detail, documentation, text, kind);
-    }
-
-    private @Nullable String getTypeDocumentation(SType type) {
-        if (type == SBoolean.instance) {
-            return "true or false value";
-        }
-        if (type == SInt8.instance) {
-            return "8-bit signed integer";
-        }
-        if (type == SInt16.instance) {
-            return "16-bit signed integer";
-        }
-        if (type == SInt.instance) {
-            return "32-bit signed integer";
-        }
-        if (type == SInt64.instance) {
-            return "64-bit signed integer";
-        }
-        if (type == SChar.instance) {
-            return "Single character";
-        }
-        if (type == SFloat32.instance) {
-            return "Single-precision floating-point number";
-        }
-        if (type == SFloat.instance) {
-            return "Double-precision floating-point number";
-        }
-        if (type == SString.instance) {
-            return "Text as sequence of characters";
-        }
-        return null;
     }
 }

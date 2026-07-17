@@ -3,6 +3,7 @@ package com.zergatul.scripting.tests.completion;
 import com.zergatul.scripting.MethodDescription;
 import com.zergatul.scripting.PropertyDescription;
 import com.zergatul.scripting.completion.*;
+import com.zergatul.scripting.documentation.DocumentationProvider;
 import com.zergatul.scripting.formatting.TypeDisplayFormatter;
 import com.zergatul.scripting.lexer.TokenType;
 import com.zergatul.scripting.type.*;
@@ -14,6 +15,7 @@ import java.util.List;
 public class SuggestionInfoFactoryTests {
 
     private final SuggestionInfoFactory factory = new SuggestionInfoFactory();
+    private final DocumentationProvider documentationProvider = new DocumentationProvider();
 
     @Test
     public void keywordTest() {
@@ -29,18 +31,18 @@ public class SuggestionInfoFactoryTests {
     public void predefinedTypesTest() {
         Assertions.assertEquals(
                 List.of(
-                        new SuggestionInfo("int", null, "32-bit signed integer", "int", SuggestionKind.TYPE),
-                        new SuggestionInfo("int32", null, "32-bit signed integer", "int32", SuggestionKind.TYPE)),
+                        new SuggestionInfo("int", null, documentationProvider.getTypeDocs(SInt.instance), "int", SuggestionKind.TYPE),
+                        new SuggestionInfo("int32", null, documentationProvider.getTypeDocs(SInt.instance), "int32", SuggestionKind.TYPE)),
                 factory.getTypeSuggestion(SInt.instance));
         Assertions.assertEquals(
                 List.of(
-                        new SuggestionInfo("long", null, "64-bit signed integer", "long", SuggestionKind.TYPE),
-                        new SuggestionInfo("int64", null, "64-bit signed integer", "int64", SuggestionKind.TYPE)),
+                        new SuggestionInfo("long", null, documentationProvider.getTypeDocs(SInt64.instance), "long", SuggestionKind.TYPE),
+                        new SuggestionInfo("int64", null, documentationProvider.getTypeDocs(SInt64.instance), "int64", SuggestionKind.TYPE)),
                 factory.getTypeSuggestion(SInt64.instance));
         Assertions.assertEquals(
                 List.of(
-                        new SuggestionInfo("float", null, "Double-precision floating-point number", "float", SuggestionKind.TYPE),
-                        new SuggestionInfo("float64", null, "Double-precision floating-point number", "float64", SuggestionKind.TYPE)),
+                        new SuggestionInfo("float", null, documentationProvider.getTypeDocs(SFloat.instance), "float", SuggestionKind.TYPE),
+                        new SuggestionInfo("float64", null, documentationProvider.getTypeDocs(SFloat.instance), "float64", SuggestionKind.TYPE)),
                 factory.getTypeSuggestion(SFloat.instance));
     }
 

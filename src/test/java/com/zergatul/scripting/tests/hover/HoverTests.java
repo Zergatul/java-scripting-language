@@ -2,7 +2,7 @@ package com.zergatul.scripting.tests.hover;
 
 import com.zergatul.scripting.Getter;
 import com.zergatul.scripting.PropertyDescription;
-import com.zergatul.scripting.analysis.hover.DocumentationProvider;
+import com.zergatul.scripting.documentation.DocumentationProvider;
 import com.zergatul.scripting.tests.compiler.helpers.IntStorage;
 import com.zergatul.scripting.tests.framework.ComparatorTest;
 import com.zergatul.scripting.type.*;
@@ -162,8 +162,8 @@ public class HoverTests extends ComparatorTest {
                 7,
                 List.of(
                         "boolean string.matches(string regex)",
-                        "Returns true if string instance matches specified regex.<br>" +
-                        "For more documentation check https://docs.oracle.com/javase/8/docs/api/java/util/regex/Pattern.html<br>"));
+                        "Returns true if string instance matches specified regex.\n" +
+                        "For more documentation check https://docs.oracle.com/javase/8/docs/api/java/util/regex/Pattern.html\n"));
     }
 
     @Test
