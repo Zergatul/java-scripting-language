@@ -1802,10 +1802,12 @@ public class Binder {
                 UnknownConstructorReference.instance);
 
         if (result.noOverload) {
-            addDiagnostic(
-                    BinderErrors.NoOverloadedConstructors,
-                    expression,
-                    typeNode.type.toString(), expression.arguments.arguments.size(), formatCandidates(candidates));
+            if (typeNode.type != SUnknown.instance) {
+                addDiagnostic(
+                        BinderErrors.NoOverloadedConstructors,
+                        expression,
+                        typeNode.type.toString(), expression.arguments.arguments.size(), formatCandidates(candidates));
+            }
         } else if (result.noArgumentConversions) {
             addDiagnostic(
                     BinderErrors.ConstructorInvalidArguments,

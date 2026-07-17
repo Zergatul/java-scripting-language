@@ -13,10 +13,9 @@ public class BinderErrors {
     public static final ErrorCode SymbolAlreadyDeclared = new ErrorCode("B008", "A symbol named '%s' is already defined in this or one of the parent scopes");
     public static final ErrorCode NameDoesNotExist = new ErrorCode("B009", "The name '%s' does not exist in the current context");
     public static final ErrorCode MemberDoesNotExist = new ErrorCode("B010", "'%s' does not contain a definition for '%s'");
-    public static final ErrorCode FunctionExpected = new ErrorCode("B011", "Function expected");
     public static final ErrorCode NonInvocableMember = new ErrorCode("B012", "Non-invocable member '%s.%s' cannot be used like a method");
     public static final ErrorCode NoOverloadedMethods = new ErrorCode("B013", "No overload for method '%s' takes %d arguments\n%s");
-    public static final ErrorCode NoOverloadedConstructors = new ErrorCode("B013", "No overload for constructor '%s' takes %d arguments\n%s");
+    public static final ErrorCode NoOverloadedConstructors = new ErrorCode("B011", "No overload for constructor '%s' takes %d arguments\n%s");
     public static final ErrorCode FunctionArgumentCountMismatch = new ErrorCode("B014", "Function '%s' expects %d arguments\n%s");
     public static final ErrorCode InvalidFloatConstant = new ErrorCode("B016", "Cannot parse float constant");
     public static final ErrorCode NoLoop = new ErrorCode("B017", "No enclosing loop out of which to break or continue");
