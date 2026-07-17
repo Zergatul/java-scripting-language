@@ -81,6 +81,7 @@ public class SClassType extends SReferenceType {
     @Override
     public List<ConstructorReference> getConstructors() {
         return Arrays.stream(clazz.getConstructors())
+                .filter(c -> !c.isSynthetic())
                 .map(NativeConstructorReference::new)
                 .map(c -> (ConstructorReference) c)
                 .toList();
@@ -92,12 +93,14 @@ public class SClassType extends SReferenceType {
         properties.addAll(Arrays.stream(clazz.getFields())
                 .filter(f -> !Modifier.isStatic(f.getModifiers()))
                 .filter(f -> Modifier.isPublic(f.getModifiers()))
+                .filter(f -> !f.isSynthetic())
                 .map(FieldPropertyReference::new)
                 .map(f -> (PropertyReference) f)
                 .toList());
         properties.addAll(Arrays.stream(clazz.getDeclaredFields())
                 .filter(f -> !Modifier.isStatic(f.getModifiers()))
                 .filter(f -> !Modifier.isPublic(f.getModifiers()))
+                .filter(f -> !f.isSynthetic())
                 .map(FieldPropertyReference::new)
                 .map(f -> (PropertyReference) f)
                 .toList());
@@ -111,6 +114,9 @@ public class SClassType extends SReferenceType {
             if (Modifier.isStatic(method.getModifiers())) {
                 continue;
             }
+            if (method.isSynthetic() || method.isBridge()) {
+                continue;
+            }
             if (method.getDeclaringClass() == Object.class) {
                 continue;
             }
@@ -118,6 +124,9 @@ public class SClassType extends SReferenceType {
         }
         for (Method method : this.clazz.getDeclaredMethods()) {
             if (Modifier.isStatic(method.getModifiers())) {
+                continue;
+            }
+            if (method.isSynthetic() || method.isBridge()) {
                 continue;
             }
             if (method.getDeclaringClass() == Object.class) {
@@ -133,6 +142,8 @@ public class SClassType extends SReferenceType {
         return Arrays.stream(this.clazz.getDeclaredMethods())
                 .filter(m -> Modifier.isPublic(m.getModifiers()))
                 .filter(m -> !Modifier.isStatic(m.getModifiers()))
+                .filter(m -> !m.isSynthetic())
+                .filter(m -> !m.isBridge())
                 .map(NativeMethodReference::new)
                 .map(r -> (MethodReference) r)
                 .toList();
@@ -142,6 +153,7 @@ public class SClassType extends SReferenceType {
     public List<PropertyReference> getStaticProperties() {
         return Arrays.stream(clazz.getDeclaredFields())
                 .filter(m -> Modifier.isStatic(m.getModifiers()))
+                .filter(m -> !m.isSynthetic())
                 .map(FieldPropertyReference::new)
                 .map(r -> (PropertyReference) r)
                 .toList();
@@ -151,6 +163,8 @@ public class SClassType extends SReferenceType {
     public List<MethodReference> getStaticMethods() {
         return Arrays.stream(this.clazz.getDeclaredMethods())
                 .filter(m -> Modifier.isStatic(m.getModifiers()))
+                .filter(m -> !m.isSynthetic())
+                .filter(m -> !m.isBridge())
                 .filter(m -> !m.isAnnotationPresent(Getter.class))
                 .filter(m -> !m.isAnnotationPresent(Setter.class))
                 .map(NativeMethodReference::new)

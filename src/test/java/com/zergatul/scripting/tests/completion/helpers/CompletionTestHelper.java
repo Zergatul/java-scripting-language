@@ -6,6 +6,7 @@ import com.zergatul.scripting.compiler.CompilationParameters;
 import com.zergatul.scripting.compiler.CompilationParametersBuilder;
 import com.zergatul.scripting.completion.CompletionProviderFactory;
 import com.zergatul.scripting.tests.completion.suggestions.Suggestion;
+import com.zergatul.scripting.tests.utility.CursorHelper;
 import com.zergatul.scripting.type.SType;
 import org.junit.jupiter.api.Assertions;
 
@@ -14,8 +15,6 @@ import java.util.List;
 import java.util.function.Function;
 
 public class CompletionTestHelper {
-
-    private static final String CURSOR = "<cursor>";
 
     public static void assertSuggestions(Class<?> root, String code, Function<TestCompletionContext, List<Suggestion>> expectedFactory) {
         assertSuggestions(root, code, Runnable.class, null, expectedFactory);
@@ -38,36 +37,16 @@ public class CompletionTestHelper {
             Function<TestCompletionContext,
             List<Suggestion>> expectedFactory
     ) {
-        if (!code.contains(CURSOR)) {
-            Assertions.fail();
-            return;
-        }
-
-        int line = -1, column = -1;
-        String[] lines = code.lines().toArray(String[]::new);
-        for (int i = 0; i < lines.length; i++) {
-            int index = lines[i].indexOf(CURSOR);
-            if (index >= 0) {
-                line = i + 1;
-                column = index + 1;
-                break;
-            }
-        }
-        if (line == -1) {
-            Assertions.fail();
-            return;
-        }
-
-        code = code.replace(CURSOR, "");
+        CursorHelper.Result result = CursorHelper.parse(code);
 
         CompilationParameters parameters = new CompilationParametersBuilder()
                 .setRoot(root)
                 .setInterface(functionalInterface)
                 .setAsyncReturnType(asyncReturnType)
                 .build();
-        BinderOutput output = new Analyzer().analyze(code, parameters).binderOutput();
+        BinderOutput output = new Analyzer().analyze(result.code(), parameters).binderOutput();
         CompletionProviderFactory<Suggestion> factory = new CompletionProviderFactory<>(new TestSuggestionFactory());
-        List<Suggestion> actual = factory.getSuggestions(parameters, output, line, column);
+        List<Suggestion> actual = factory.getSuggestions(parameters, output, result.line(), result.column());
         CompletionTestHelper.assertSuggestions(expectedFactory.apply(new TestCompletionContext(parameters, output)), actual);
     }
 

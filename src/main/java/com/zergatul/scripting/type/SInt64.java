@@ -179,7 +179,7 @@ public class SInt64 extends SValueType {
 
     @Override
     public String toString() {
-        return "int64";
+        return "long";
     }
 
     private static final Lazy<BinaryOperation> ADD = new Lazy<>(() ->

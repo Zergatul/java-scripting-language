@@ -16,7 +16,7 @@ public class RefTests extends ComparatorTest {
         comparator.assertDiagnostics(
                 ApiRoot.class, code, "⟦⟧",
                 BinderErrors.RefTypeNotSupported,
-                "int64[]");
+                "long[]");
     }
 
     @Test

@@ -49,6 +49,10 @@ public class SingleLineTextRange extends TextRange {
         return new SingleLineTextRange(line, column + skip, position + skip, length - skip);
     }
 
+    public TextRange extend(int length) {
+        return new SingleLineTextRange(line, column, position, this.length + length);
+    }
+
     @Override
     public boolean equals(Object obj) {
         if (obj instanceof SingleLineTextRange other) {

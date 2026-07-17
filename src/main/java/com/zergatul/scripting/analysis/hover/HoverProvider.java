@@ -8,339 +8,142 @@ import com.zergatul.scripting.parser.nodes.ParserNode;
 import com.zergatul.scripting.parser.nodes.ParserNodeType;
 import com.zergatul.scripting.symbols.*;
 import com.zergatul.scripting.type.*;
-import com.zergatul.scripting.type.operation.BinaryOperation;
+import org.jspecify.annotations.Nullable;
 
-import java.lang.reflect.Parameter;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
-public class HoverProvider {
+public class HoverProvider<T> {
 
-    protected final DocumentationProvider documentationProvider;
+    private final HoverFactory<T> factory;
 
-    public HoverProvider() {
-        this.documentationProvider = new DocumentationProvider();
+    public HoverProvider(HoverFactory<T> factory) {
+        this.factory = factory;
     }
 
-    public HoverResponse get(BinderOutput output, int line, int column) {
+    public @Nullable HoverResponse<T> get(BinderOutput output, int line, int column) {
         List<BoundNode> chain = new ArrayList<>();
         findChain(chain, output.unit(), line, column);
         return get(chain, line, column);
     }
 
-    private HoverResponse get(List<BoundNode> chain, int line, int column) {
+    private @Nullable HoverResponse<T> get(List<BoundNode> chain, int line, int column) {
         if (chain.isEmpty()) {
             return null;
         }
 
         BoundNode node = chain.getFirst();
-        if (node == null) {
-            return null;
-        }
-
         TextRange range = node.getRange();
         return switch (node.getNodeType()) {
-            case BOOLEAN_LITERAL -> getBooleanHover(range);
-            case INTEGER_LITERAL -> getInt32Hover(range);
-            case INTEGER64_LITERAL -> getInt64Hover(range);
-            case CHAR_LITERAL -> getCharHover(range);
-            case FLOAT_LITERAL -> getFloat64Hover(range);
-            case STRING_LITERAL -> getStringHover(range);
+            case BOOLEAN_LITERAL -> response(factory.getTypeHover(SBoolean.instance), range);
+            case INTEGER_LITERAL -> response(factory.getTypeHover(SInt.instance), range);
+            case INTEGER64_LITERAL -> response(factory.getTypeHover(SInt64.instance), range);
+            case CHAR_LITERAL -> response(factory.getTypeHover(SChar.instance), range);
+            case FLOAT_LITERAL -> response(factory.getTypeHover(SFloat.instance), range);
+            case STRING_LITERAL -> response(factory.getTypeHover(SString.instance), range);
 
             case ALIASED_TYPE -> {
                 BoundAliasedTypeNode aliasedTypeNode = (BoundAliasedTypeNode) node;
-                String text =
-                        formatKeyword("typealias") + " " +
-                        formatType(aliasedTypeNode.syntaxNode.value) + " = " +
-                        formatType(aliasedTypeNode.getSymbol().getAliasType().getFinalType());
-                yield new HoverResponse(text, range);
+                yield response(factory.getTypeAliasHover(aliasedTypeNode.getSymbol().getAliasType()), range);
             }
+            case CUSTOM_TYPE -> response(factory.getTypeHover(((BoundCustomTypeNode) node).type), range);
+            case DECLARED_CLASS_TYPE -> response(factory.getTypeHover(((BoundDeclaredClassTypeNode) node).type), range);
+            case PREDEFINED_TYPE -> response(factory.getTypeHover(((BoundPredefinedTypeNode) node).type), range);
 
-            case CUSTOM_TYPE -> new HoverResponse(formatType(((BoundCustomTypeNode) node).type), range);
-            case DECLARED_CLASS_TYPE -> new HoverResponse(formatType(((BoundDeclaredClassTypeNode) node).type), range);
-            case PREDEFINED_TYPE -> {
-                SType type = ((BoundPredefinedTypeNode) node).type;
-                if (type == SBoolean.instance) {
-                    yield getBooleanHover(range);
-                } else if (type == SInt.instance) {
-                    yield getInt32Hover(range);
-                } else if (type == SInt64.instance) {
-                    yield getInt64Hover(range);
-                } else if (type == SChar.instance) {
-                    yield getCharHover(range);
-                } else if (type == SFloat.instance) {
-                    yield getFloat64Hover(range);
-                } else if (type == SString.instance) {
-                    yield getStringHover(range);
-                } else {
-                    yield null;
-                }
-            }
             case NAME_EXPRESSION -> {
                 BoundNameExpressionNode name = (BoundNameExpressionNode) node;
                 if (name.getSymbol() instanceof ExternalParameter external) {
-                    String text = formatDescription("(external parameter)") + " " + formatType(external.getType()) + " " + formatIdentifier(external.getName());
-                    yield new HoverResponse(text, range);
+                    yield response(factory.getExternalParameterHover(external), range);
                 } else if (name.getSymbol() instanceof LocalParameter local) {
-                    String text = formatDescription("(parameter)") + " " + formatType(local.getType()) + " " + formatIdentifier(local.getName());
-                    yield new HoverResponse(text, range);
+                    yield response(factory.getParameterHover(local), range);
                 } else if (name.getSymbol() instanceof LocalRefParameter local) {
-                    String text = formatDescription("(parameter)") + " " + formatPredefinedType("ref") + " " + formatType(local.getType()) + " " + formatIdentifier(local.getName());
-                    yield new HoverResponse(text, range);
+                    yield response(factory.getRefParameterHover(local), range);
                 } else if (name.getSymbol() instanceof LocalVariable local) {
-                    String text = formatDescription("(local variable)") + " " + formatType(local.getType()) + " " + formatIdentifier(local.getName());
-                    yield new HoverResponse(text, range);
+                    yield response(factory.getLocalVariableHover(local), range);
                 } else if (name.getSymbol() instanceof StaticFieldConstantStaticVariable field) {
-                    String text = formatDescription("(external static constant)") + " " + formatType(field.getType()) + " " + formatIdentifier(field.getName());
-                    yield new HoverResponse(text, range);
+                    yield response(factory.getStaticConstantHover(field), range);
                 } else if (name.getSymbol() instanceof StaticVariable staticVariable) {
-                    String text = formatDescription("(static variable)") + " " + formatType(staticVariable.getType()) + " " + formatIdentifier(staticVariable.getName());
-                    yield new HoverResponse(text, range);
+                    yield response(factory.getStaticVariableHover(staticVariable), range);
                 } else if (name.getSymbol() instanceof Function function) {
-                    SStaticFunction type = function.getFunctionType();
-                    StringBuilder sb = new StringBuilder();
-                    sb.append(formatType(type.getReturnType())).append(' ');
-                    sb.append(formatMethod(function.getName()));
-                    sb.append(formatBrackets("("));
-                    List<MethodParameter> parameters = type.getParameters();
-                    for (int i = 0; i < parameters.size(); i++) {
-                        sb.append(formatType(parameters.get(i).type())).append(' ');
-                        sb.append(formatParameter(parameters.get(i).name()));
-                        if (i < parameters.size() - 1) {
-                            sb.append(", ");
-                        }
-                    }
-                    sb.append(formatBrackets(")"));
-                    yield new HoverResponse(sb.toString(), range);
+                    yield response(factory.getFunctionHover(function), range);
                 } else {
                     yield null;
                 }
             }
-            case THIS_EXPRESSION -> {
-                BoundThisExpressionNode expression = (BoundThisExpressionNode) node;
-                String text = formatType(expression.type) + " " + formatPredefinedType("this");
-                yield new HoverResponse(text, range);
-            }
-            case METHOD -> {
-                BoundMethodNode methodNode = (BoundMethodNode) node;
-                MethodReference methodReference = methodNode.method;
-                if (methodReference instanceof UnknownMethodReference) {
+            case SYMBOL -> {
+                BoundSymbolNode symbolNode = (BoundSymbolNode) node;
+                if (symbolNode.symbolRef.get() instanceof LocalVariable local) {
+                    yield response(factory.getLocalVariableHover(local), range);
+                } else {
                     yield null;
                 }
-
-                StringBuilder sb = new StringBuilder();
-                if (methodReference instanceof ExtensionMethodReference) {
-                    sb.append(formatDescription("(extension)")).append(' ');
+            }
+            case THIS_EXPRESSION -> response(factory.getThisHover(((BoundThisExpressionNode) node).type), range);
+            case METHOD -> {
+                MethodReference method = ((BoundMethodNode) node).method;
+                if (method instanceof UnknownMethodReference) {
+                    yield null;
                 }
-
-                sb.append(formatType(methodReference.getReturn())).append(' ');
-                sb.append(formatType(methodReference.getOwner()));
-                sb.append(".");
-                sb.append(formatMethod(methodReference.getName()));
-                sb.append(formatMethodParameters(methodReference.getParameters()));
-
-                List<String> lines = new ArrayList<>();
-                lines.add(sb.toString());
-                Optional<String> documentation = documentationProvider.getMethodDocumentation(methodReference);
-                if (documentation.isPresent()) {
-                    lines.add(documentation.get().replace("\n", "<br>"));
-                }
-                yield new HoverResponse(lines, range);
+                yield response(factory.getMethodHover(method), range);
             }
             case PROPERTY -> {
-                BoundPropertyNode propertyNode = (BoundPropertyNode) node;
-                PropertyReference property = propertyNode.property;
+                PropertyReference property = ((BoundPropertyNode) node).property;
                 if (property instanceof UnknownPropertyReference) {
                     yield null;
                 }
                 BoundPropertyAccessExpressionNode access = (BoundPropertyAccessExpressionNode) chain.get(1);
-                String text = formatDescription("(property)") + " " + formatType(property.getType()) + " " + formatType(access.callee.type) + "." + formatIdentifier(property.getName());
-                List<String> lines = new ArrayList<>();
-                lines.add(text);
-                Optional<String> documentation = documentationProvider.getPropertyDocumentation(property);
-                if (documentation.isPresent()) {
-                    lines.add(documentation.get().replace("\n", "<br>"));
-                }
-                yield new HoverResponse(lines, range);
+                yield response(factory.getPropertyHover(access.callee.type, property), range);
             }
-            case BINARY_OPERATOR -> {
-                BoundBinaryOperatorNode operator = (BoundBinaryOperatorNode) node;
-                BinaryOperation operation = operator.operation;
-                String text = formatType(operation.getResultType()) + " " + formatDescription(operation.getOperator().toString()) + formatBrackets("(") + formatType(operation.getLeft()) + " " + formatParameter("left") + "," + " " + formatType(operation.getRight()) + " " + formatParameter("right") + formatBrackets(")");
-                yield new HoverResponse(text, range);
-            }
-
-            case FUNCTION -> {
-                BoundFunctionNode functionNode = (BoundFunctionNode) node;
-                SStaticFunction functionType = functionNode.function.getFunctionType();
-                String text = formatDescription("(function)") + " " + formatType(functionType.getReturnType()) + " " + formatIdentifier(functionNode.function.getName()) + formatMethodParameters(functionType.getParameters());
-                yield new HoverResponse(text, range);
-            }
+            case BINARY_OPERATOR -> response(
+                    factory.getBinaryOperationHover(((BoundBinaryOperatorNode) node).operation),
+                    range);
+            case FUNCTION -> response(
+                    factory.getFunctionDeclarationHover(((BoundFunctionNode) node).function),
+                    range);
 
             case BASE_METHOD_INVOCATION_EXPRESSION -> {
-                BoundBaseMethodInvocationExpressionNode invocationExpression = (BoundBaseMethodInvocationExpressionNode) node;
-                BaseExpressionNode baseExpression = invocationExpression.getBaseExpressionSyntaxNode();
+                BoundBaseMethodInvocationExpressionNode invocation = (BoundBaseMethodInvocationExpressionNode) node;
+                BaseExpressionNode baseExpression = invocation.getBaseExpressionSyntaxNode();
                 if (baseExpression.getRange().contains(line, column)) {
                     BoundClassNode classNode = closestNodeOfType(chain, BoundNodeType.CLASS_DECLARATION, BoundClassNode.class);
                     if (classNode != null) {
                         SDeclaredType classType = (SDeclaredType) classNode.name.getSymbolOrThrow().getType();
-                        String text = formatType(classType.getBaseType()) + " " + formatPredefinedType("base");
-                        yield new HoverResponse(text, baseExpression.getRange());
+                        yield response(factory.getBaseHover(classType.getBaseType()), baseExpression.getRange());
                     }
                 }
                 yield null;
             }
-
             case CONSTRUCTOR_INITIALIZER -> {
                 BoundConstructorInitializerNode initializer = (BoundConstructorInitializerNode) node;
                 if (initializer.syntaxNode.keyword.getRange().contains(line, column)) {
-                    String text =
-                            formatKeyword("constructor") + " " +
-                            formatType(initializer.constructor.getOwner()) +
-                            formatMethodParameters(initializer.constructor.getParameters());
-                    yield new HoverResponse(text, initializer.syntaxNode.keyword.getRange());
+                    yield response(
+                            factory.getConstructorHover(initializer.constructor),
+                            initializer.syntaxNode.keyword.getRange());
                 }
-
                 yield null;
             }
-
             case INVALID_EXPRESSION -> {
                 BoundInvalidExpressionNode invalidExpression = (BoundInvalidExpressionNode) node;
+                HoverResponse<T> hover = null;
                 for (ParserNode syntaxNode : invalidExpression.unboundNodes) {
                     if (syntaxNode.is(ParserNodeType.BASE_EXPRESSION) && syntaxNode.getRange().contains(line, column)) {
                         BoundClassNode classNode = closestNodeOfType(chain, BoundNodeType.CLASS_DECLARATION, BoundClassNode.class);
                         if (classNode != null) {
                             SDeclaredType classType = (SDeclaredType) classNode.name.getSymbolOrThrow().getType();
-                            String text = formatType(classType.getBaseType()) + " " + formatPredefinedType("base");
-                            yield new HoverResponse(text, syntaxNode.getRange());
+                            hover = response(factory.getBaseHover(classType.getBaseType()), syntaxNode.getRange());
+                            break;
                         }
                     }
                 }
-                yield null;
+                yield hover;
             }
 
             default -> null;
         };
     }
 
-    protected HoverResponse getBooleanHover(TextRange range) {
-        return new HoverResponse(List.of(formatPredefinedType("boolean"), formatDescription(documentationProvider.getTypeDocs(SBoolean.instance))), range);
-    }
-
-    protected HoverResponse getInt32Hover(TextRange range) {
-        return new HoverResponse(List.of(formatPredefinedType("int"), formatDescription(documentationProvider.getTypeDocs(SInt.instance))), range);
-    }
-
-    protected HoverResponse getInt64Hover(TextRange range) {
-        return new HoverResponse(List.of(formatPredefinedType("long"), formatDescription(documentationProvider.getTypeDocs(SInt64.instance))), range);
-    }
-
-    protected HoverResponse getCharHover(TextRange range) {
-        return new HoverResponse(List.of(formatPredefinedType("char"), formatDescription(documentationProvider.getTypeDocs(SChar.instance))), range);
-    }
-
-    protected HoverResponse getFloat64Hover(TextRange range) {
-        return new HoverResponse(List.of(formatPredefinedType("float"), formatDescription(documentationProvider.getTypeDocs(SFloat.instance))), range);
-    }
-
-    protected HoverResponse getStringHover(TextRange range) {
-        return new HoverResponse(List.of(formatPredefinedType("string"), formatDescription(documentationProvider.getTypeDocs(SString.instance))), range);
-    }
-
-    protected String formatKeyword(String keyword) {
-        return keyword;
-    }
-
-    protected String formatType(SType type) {
-        if (type.isPredefined()) {
-            return formatPredefinedType(type.toString());
-        }
-        return switch (type) {
-            case SArrayType array -> formatType(array.getElementsType()) + formatBrackets("[]");
-            case SFunctionalInterface func -> {
-                StringBuilder sb = new StringBuilder();
-                sb.append(formatType("Lambda<"));
-                sb.append('(');
-                SType[] types = func.getActualParameters();
-                Parameter[] parameters = func.getInterfaceMethod().getParameters();
-                for (int i = 0; i < types.length; i++) {
-                    sb.append(formatType(types[i]));
-                    sb.append(' ');
-                    sb.append(parameters[i].getName());
-                    if (i != types.length - 1) {
-                        sb.append(", ");
-                    }
-                }
-                sb.append(')');
-                sb.append(" => ");
-                sb.append(formatType(func.getActualReturnType()));
-                sb.append(formatType(">"));
-                yield sb.toString();
-            }
-            case SFuture future -> {
-                if (future.getUnderlying() == SVoidType.instance) {
-                    yield formatType("Future");
-                } else {
-                    yield formatType("Future<") + formatType(future.getUnderlying()) + formatType(">");
-                }
-            }
-            case SCustomType sCustomType -> {
-                yield formatType(type.toString());
-            }
-            case SClassType sClassType -> {
-                Class<?> clazz = type.getJavaClass();
-                yield formatType(clazz.getName());
-            }
-            case SDeclaredType declaredType -> {
-                yield formatType(type.toString());
-            }
-            default -> {
-                yield formatType(type.toString());
-            }
-        };
-    }
-
-    protected String formatPredefinedType(String text) {
-        return text;
-    }
-
-    protected String formatType(String text) {
-        return text;
-    }
-
-    protected String formatMethod(String text) {
-        return text;
-    }
-
-    protected String formatIdentifier(String text) {
-        return text;
-    }
-
-    protected String formatMethodParameters(List<MethodParameter> parameters) {
-        StringBuilder sb = new StringBuilder();
-        sb.append(formatBrackets("("));
-        for (int i = 0; i < parameters.size(); i++) {
-            sb.append(formatType(parameters.get(i).type())).append(' ');
-            sb.append(formatParameter(parameters.get(i).name()));
-            if (i < parameters.size() - 1) {
-                sb.append(", ");
-            }
-        }
-        sb.append(formatBrackets(")"));
-        return sb.toString();
-    }
-
-    protected String formatParameter(String text) {
-        return text;
-    }
-
-    protected String formatBrackets(String text) {
-        return text;
-    }
-
-    protected String formatDescription(String text) {
-        return text;
+    private HoverResponse<T> response(T content, TextRange range) {
+        return new HoverResponse<>(content, range);
     }
 
     private static void findChain(List<BoundNode> chain, BoundNode node, int line, int column) {
@@ -355,7 +158,7 @@ public class HoverProvider {
     }
 
     private static <T extends BoundNode> T closestNodeOfType(List<BoundNode> chain, BoundNodeType type, Class<T> clazz) {
-        for (var node : chain) {
+        for (BoundNode node : chain) {
             if (node.is(type)) {
                 return clazz.cast(node);
             }
@@ -363,9 +166,5 @@ public class HoverProvider {
         return null;
     }
 
-    public record HoverResponse(List<String> content, TextRange range) {
-        public HoverResponse(String line, TextRange range) {
-            this(List.of(line), range);
-        }
-    }
+    public record HoverResponse<T>(T content, TextRange range) {}
 }
