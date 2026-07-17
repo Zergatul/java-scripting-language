@@ -117,6 +117,15 @@ public class HoverProvider {
                     yield null;
                 }
             }
+            case SYMBOL -> {
+                BoundSymbolNode symbolNode = (BoundSymbolNode) node;
+                if (symbolNode.symbolRef.get() instanceof LocalVariable local) {
+                    String text = formatDescription("(local variable)") + " " + formatType(local.getType()) + " " + formatIdentifier(local.getName());
+                    yield new HoverResponse(text, range);
+                } else {
+                    yield null;
+                }
+            }
             case THIS_EXPRESSION -> {
                 BoundThisExpressionNode expression = (BoundThisExpressionNode) node;
                 String text = formatType(expression.type) + " " + formatPredefinedType("this");

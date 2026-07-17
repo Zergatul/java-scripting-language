@@ -2,13 +2,7 @@ package com.zergatul.scripting.tests.hover;
 
 import com.zergatul.scripting.Getter;
 import com.zergatul.scripting.PropertyDescription;
-import com.zergatul.scripting.SingleLineTextRange;
-import com.zergatul.scripting.analysis.AnalysisResult;
-import com.zergatul.scripting.analysis.Analyzer;
-import com.zergatul.scripting.compiler.CompilationParameters;
-import com.zergatul.scripting.compiler.CompilationParametersBuilder;
 import com.zergatul.scripting.analysis.hover.DocumentationProvider;
-import com.zergatul.scripting.analysis.hover.HoverProvider;
 import com.zergatul.scripting.tests.compiler.helpers.IntStorage;
 import com.zergatul.scripting.tests.framework.ComparatorTest;
 import com.zergatul.scripting.type.*;
@@ -20,389 +14,313 @@ public class HoverTests extends ComparatorTest {
 
     @Test
     public void booleanLiteralTest() {
-        HoverProvider.HoverResponse hover = getHover("""
-                let x = true;
-                """, 1, 9);
-        comparator.assertEquals(
-                new HoverProvider.HoverResponse(
-                        List.of(
-                            "boolean",
-                            new DocumentationProvider().getTypeDocs(SBoolean.instance)),
-                        new SingleLineTextRange(1, 9, 8, 4)),
-                hover);
+        assertHover("""
+                let x = <cursor>true;
+                """,
+                4,
+                List.of(
+                        "boolean",
+                        new DocumentationProvider().getTypeDocs(SBoolean.instance)));
     }
 
     @Test
     public void charLiteralTest() {
-        HoverProvider.HoverResponse hover = getHover("""
-                let x = 'a';
-                """, 1, 9);
-        comparator.assertEquals(
-                new HoverProvider.HoverResponse(
-                        List.of(
-                                "char",
-                                new DocumentationProvider().getTypeDocs(SChar.instance)),
-                        new SingleLineTextRange(1, 9, 8, 3)),
-                hover);
+        assertHover("""
+                let x = <cursor>'a';
+                """,
+                3,
+                List.of(
+                        "char",
+                        new DocumentationProvider().getTypeDocs(SChar.instance)));
     }
 
     @Test
     public void int32LiteralTest() {
-        HoverProvider.HoverResponse hover = getHover("""
-                let x = 1234;
-                """, 1, 9);
-        comparator.assertEquals(
-                new HoverProvider.HoverResponse(
-                        List.of(
-                                "int",
-                                new DocumentationProvider().getTypeDocs(SInt.instance)),
-                        new SingleLineTextRange(1, 9, 8, 4)),
-                hover);
+        assertHover("""
+                let x = <cursor>1234;
+                """,
+                4,
+                List.of(
+                        "int",
+                        new DocumentationProvider().getTypeDocs(SInt.instance)));
     }
 
     @Test
     public void int64LiteralTest() {
-        HoverProvider.HoverResponse hover = getHover("""
-                let x = 123L;
-                """, 1, 9);
-        comparator.assertEquals(
-                new HoverProvider.HoverResponse(
-                        List.of(
-                                "long",
-                                new DocumentationProvider().getTypeDocs(SInt64.instance)),
-                        new SingleLineTextRange(1, 9, 8, 4)),
-                hover);
+        assertHover("""
+                let x = <cursor>123L;
+                """,
+                4,
+                List.of(
+                        "long",
+                        new DocumentationProvider().getTypeDocs(SInt64.instance)));
     }
 
     @Test
     public void floatLiteralTest() {
-        HoverProvider.HoverResponse hover = getHover("""
-                let x = 0.03;
-                """, 1, 9);
-        comparator.assertEquals(
-                new HoverProvider.HoverResponse(
-                        List.of(
-                                "float",
-                                new DocumentationProvider().getTypeDocs(SFloat.instance)),
-                        new SingleLineTextRange(1, 9, 8, 4)),
-                hover);
+        assertHover("""
+                let x = <cursor>0.03;
+                """,
+                4,
+                List.of(
+                        "float",
+                        new DocumentationProvider().getTypeDocs(SFloat.instance)));
     }
 
     @Test
     public void stringLiteralTest() {
-        HoverProvider.HoverResponse hover = getHover("""
-                let x = "aa";
-                """, 1, 9);
-        comparator.assertEquals(
-                new HoverProvider.HoverResponse(
-                        List.of(
-                                "string",
-                                new DocumentationProvider().getTypeDocs(SString.instance)),
-                        new SingleLineTextRange(1, 9, 8, 4)),
-                hover);
+        assertHover("""
+                let x = <cursor>"aa";
+                """,
+                4,
+                List.of(
+                        "string",
+                        new DocumentationProvider().getTypeDocs(SString.instance)));
     }
 
     @Test
     public void localVariableTest() {
-        HoverProvider.HoverResponse hover = getHover("""
-                let x = "aa";
-                """, 1, 5);
-        comparator.assertEquals(
-                new HoverProvider.HoverResponse(
-                        List.of("(local variable) string x"),
-                        new SingleLineTextRange(1, 5, 4, 1)),
-                hover);
+        assertHover("""
+                let <cursor>x = "aa";
+                """,
+                1,
+                List.of("(local variable) string x"));
     }
 
     @Test
     public void parameterTest() {
-        HoverProvider.HoverResponse hover = getHover("""
+        assertHover("""
                 void func(int a) {
-                    a
+                    <cursor>a
                 }
-                """, 2, 5);
-        comparator.assertEquals(
-                new HoverProvider.HoverResponse(
-                        List.of("(parameter) int a"),
-                        new SingleLineTextRange(2, 5, 23, 1)),
-                hover);
+                """,
+                1,
+                List.of("(parameter) int a"));
     }
 
     @Test
     public void externalStaticConstantTest() {
-        HoverProvider.HoverResponse hover = getHover("""
-                intStorage
-                """, 1, 1);
-        comparator.assertEquals(
-                new HoverProvider.HoverResponse(
-                        List.of("(external static constant) com.zergatul.scripting.tests.compiler.helpers.IntStorage intStorage"),
-                        new SingleLineTextRange(1, 1, 0, 10)),
-                hover);
+        assertHover("""
+                <cursor>intStorage
+                """,
+                10,
+                List.of("(external static constant) com.zergatul.scripting.tests.compiler.helpers.IntStorage intStorage"));
     }
 
     @Test
     public void binaryOperationTest1() {
-        HoverProvider.HoverResponse hover = getHover("""
-                let x = 1 + 2;
-                """, 1, 11);
-        comparator.assertEquals(
-                new HoverProvider.HoverResponse(
-                        List.of("int +(int left, int right)"),
-                        new SingleLineTextRange(1, 11, 10, 1)),
-                hover);
+        assertHover("""
+                let x = 1 <cursor>+ 2;
+                """,
+                1,
+                List.of("int +(int left, int right)"));
     }
 
     @Test
     public void binaryOperationTest2() {
-        HoverProvider.HoverResponse hover = getHover("""
-                let x = [1, 2, 3] + 4;
-                """, 1, 19);
-        comparator.assertEquals(
-                new HoverProvider.HoverResponse(
-                        List.of("int[] +(int[] left, int right)"),
-                        new SingleLineTextRange(1, 19, 18, 1)),
-                hover);
+        assertHover("""
+                let x = [1, 2, 3] <cursor>+ 4;
+                """,
+                1,
+                List.of("int[] +(int[] left, int right)"));
     }
 
     @Test
     public void classTest() {
-        HoverProvider.HoverResponse hover = getHover("""
+        assertHover("""
                 class MyType {}
-                MyType x;
-                """, 2, 8);
-        comparator.assertEquals(
-                new HoverProvider.HoverResponse(
-                        List.of("(local variable) MyType x"),
-                        new SingleLineTextRange(2, 8, 23, 1)),
-                hover);
+                MyType <cursor>x;
+                """,
+                1,
+                List.of("(local variable) MyType x"));
     }
 
     @Test
     public void functionTest() {
-        HoverProvider.HoverResponse hover = getHover("""
+        assertHover("""
                 void func(int abc){}
-                func();
-                """, 2, 1);
-        comparator.assertEquals(
-                new HoverProvider.HoverResponse(
-                        List.of("(function) void func(int abc)"),
-                        new SingleLineTextRange(2, 1, 21, 4)),
-                hover);
+                <cursor>func();
+                """,
+                4,
+                List.of("(function) void func(int abc)"));
     }
 
     @Test
     public void methodTest() {
-        HoverProvider.HoverResponse hover = getHover("""
-                "".contains("");
-                """, 1, 4);
-        comparator.assertEquals(
-                new HoverProvider.HoverResponse(
-                        List.of("boolean string.contains(string str)"),
-                        new SingleLineTextRange(1, 4, 3, 8)),
-                hover);
+        assertHover("""
+                "".<cursor>contains("");
+                """,
+                8,
+                List.of("boolean string.contains(string str)"));
     }
 
     @Test
     public void methodDocumentationTest() {
-        HoverProvider.HoverResponse hover = getHover("""
-                "".matches("");
-                """, 1, 4);
-        comparator.assertEquals(
-                new HoverProvider.HoverResponse(
-                        List.of(
-                                "boolean string.matches(string regex)",
-                                "Returns true if string instance matches specified regex.<br>" +
-                                "For more documentation check https://docs.oracle.com/javase/8/docs/api/java/util/regex/Pattern.html<br>"),
-                        new SingleLineTextRange(1, 4, 3, 7)),
-                hover);
+        assertHover("""
+                "".<cursor>matches("");
+                """,
+                7,
+                List.of(
+                        "boolean string.matches(string regex)",
+                        "Returns true if string instance matches specified regex.<br>" +
+                        "For more documentation check https://docs.oracle.com/javase/8/docs/api/java/util/regex/Pattern.html<br>"));
     }
 
     @Test
     public void fieldPropertyDocumentationTest() {
-        HoverProvider.HoverResponse hover = getHover("""
+        assertHover("""
                 TestType value;
-                value.field;
-                """, TestType.class, 2, 7);
-        comparator.assertEquals(
-                new HoverProvider.HoverResponse(
-                        List.of(
-                                "(property) int TestType.field",
-                                "Field description."),
-                        new SingleLineTextRange(2, 7, 22, 5)),
-                hover);
+                value.<cursor>field;
+                """,
+                TestType.class,
+                5,
+                List.of(
+                        "(property) int TestType.field",
+                        "Field description."));
     }
 
     @Test
     public void getterPropertyDocumentationTest() {
-        HoverProvider.HoverResponse hover = getHover("""
+        assertHover("""
                 TestType value;
-                value.property;
-                """, TestType.class, 2, 7);
-        comparator.assertEquals(
-                new HoverProvider.HoverResponse(
-                        List.of(
-                                "(property) int TestType.property",
-                                "Getter description."),
-                        new SingleLineTextRange(2, 7, 22, 8)),
-                hover);
+                value.<cursor>property;
+                """,
+                TestType.class,
+                8,
+                List.of(
+                        "(property) int TestType.property",
+                        "Getter description."));
     }
 
     @Test
     public void extensionTest1() {
-        HoverProvider.HoverResponse hover = getHover("""
+        assertHover("""
                 extension(int) {
-                    int next() => this + 1;
+                    int next() => <cursor>this + 1;
                 }
-                """, 2, 20);
-        comparator.assertEquals(
-                new HoverProvider.HoverResponse(
-                        List.of("int this"),
-                        new SingleLineTextRange(2, 19, 35, 4)),
-                hover);
+                """,
+                4,
+                List.of("int this"));
     }
 
     @Test
     public void extensionTest2() {
-        HoverProvider.HoverResponse hover = getHover("""
+        assertHover("""
                 extension(int) {
                     int next() => this + 1;
                 }
                 
-                (0).next();
-                """, 5, 6);
-        comparator.assertEquals(
-                new HoverProvider.HoverResponse(
-                        List.of("(extension) int int.next()"),
-                        new SingleLineTextRange(5, 5, 52, 4)),
-                hover);
+                (0).<cursor>next();
+                """,
+                4,
+                List.of("(extension) int int.next()"));
     }
 
     @Test
     public void baseKeywordInvalidExpressionTest() {
-        HoverProvider.HoverResponse hover = getHover("""
+        assertHover("""
                 class ClassA {
                     void method() {}
                 }
                 class ClassB : ClassA {
                     void method2() {
-                        base.
+                        <cursor>base.
                     }
                 }
-                """, 6, 9);
-        comparator.assertEquals(
-                new HoverProvider.HoverResponse(
-                        List.of("ClassA base"),
-                        new SingleLineTextRange(6, 9, 91, 4)),
-                hover);
+                """,
+                4,
+                List.of("ClassA base"));
     }
 
     @Test
     public void baseKeywordValidExpressionTest() {
-        HoverProvider.HoverResponse hover = getHover("""
+        assertHover("""
                 class ClassA {
                     void method() {}
                 }
                 class ClassB : ClassA {
                     void method2() {
-                        base.method();
+                        <cursor>base.method();
                     }
                 }
-                """, 6, 9);
-        comparator.assertEquals(
-                new HoverProvider.HoverResponse(
-                        List.of("ClassA base"),
-                        new SingleLineTextRange(6, 9, 91, 4)),
-                hover);
+                """,
+                4,
+                List.of("ClassA base"));
     }
 
     @Test
     public void classInitializerTest1() {
-        HoverProvider.HoverResponse hover = getHover("""
+        assertHover("""
                 class ClassA {
                     constructor(int x) {}
                 }
                 class ClassB : ClassA {
-                    constructor(int a, int b) : base(a + b) {}
+                    constructor(int a, int b) : <cursor>base(a + b) {}
                 }
-                """, 5, 34);
-        comparator.assertEquals(
-                new HoverProvider.HoverResponse(
-                        List.of("constructor ClassA(int x)"),
-                        new SingleLineTextRange(5, 33, 99, 4)),
-                hover);
+                """,
+                4,
+                List.of("constructor ClassA(int x)"));
     }
 
     @Test
     public void classInitializerTest2() {
-        HoverProvider.HoverResponse hover = getHover("""
+        assertHover("""
                 class ClassA {
                     constructor(int x) {}
-                    constructor(int x, int y) : this(x + y) {}
+                    constructor(int x, int y) : <cursor>this(x + y) {}
                 }
-                """, 3, 34);
-        comparator.assertEquals(
-                new HoverProvider.HoverResponse(
-                        List.of("constructor ClassA(int x)"),
-                        new SingleLineTextRange(3, 33, 73, 4)),
-                hover);
+                """,
+                4,
+                List.of("constructor ClassA(int x)"));
     }
 
     @Test
     public void typeAliasTest1() {
-        HoverProvider.HoverResponse hover = getHover("""
+        assertHover("""
                 typealias Int = int;
-                Int i = 123;
-                """, 2, 1);
-        comparator.assertEquals(
-                new HoverProvider.HoverResponse(
-                        List.of("typealias Int = int"),
-                        new SingleLineTextRange(2, 1, 21, 3)),
-                hover);
+                <cursor>Int i = 123;
+                """,
+                3,
+                List.of("typealias Int = int"));
     }
 
     @Test
     public void typeAliasTest2() {
-        HoverProvider.HoverResponse hover = getHover("""
+        assertHover("""
                 typealias Int1 = Int2;
                 typealias Int2 = Int3;
                 typealias Int3 = Int4;
                 typealias Int4 = int;
-                Int1 i = 123;
-                """, 5, 1);
-        comparator.assertEquals(
-                new HoverProvider.HoverResponse(
-                        List.of("typealias Int1 = int"),
-                        new SingleLineTextRange(5, 1, 91, 4)),
-                hover);
+                <cursor>Int1 i = 123;
+                """,
+                4,
+                List.of("typealias Int1 = int"));
     }
 
-    private static HoverProvider.HoverResponse getHover(String code, int line, int column) {
-        return getHover(code, ApiRoot.class, Runnable.class, line, column);
+    @Test
+    public void patternVariableTest() {
+        assertHover("""
+                typealias ArrayList = Java<java.util.ArrayList>;
+                if (new ArrayList().get(0) is string <cursor>str) {}
+                """,
+                3,
+                List.of("(local variable) string str"));
     }
 
-    private static HoverProvider.HoverResponse getHover(String code, Class<?> customType, int line, int column) {
-        CompilationParameters parameters = new CompilationParametersBuilder()
-                .setRoot(ApiRoot.class)
-                .setInterface(Runnable.class)
-                .addCustomType(customType)
-                .build();
-        AnalysisResult result = new Analyzer().analyze(code, parameters);
-        return new HoverProvider().get(result.binderOutput(), line, column);
+    private static void assertHover(String code, int length, List<String> expected) {
+        HoverTestHelper.assertHover(code, ApiRoot.class, length, expected);
     }
 
-    private static HoverProvider.HoverResponse getHover(String code, Class<?> root, Class<?> functionalInterface, int line, int column) {
-        CompilationParameters parameters = new CompilationParametersBuilder()
-                .setRoot(root)
-                .setInterface(functionalInterface)
-                .build();
-        AnalysisResult result = new Analyzer().analyze(code, parameters);
-        return new HoverProvider().get(result.binderOutput(), line, column);
+    private static void assertHover(String code, Class<?> customType, int length, List<String> expected) {
+        HoverTestHelper.assertHover(code, ApiRoot.class, customType, length, expected);
     }
 
+    @SuppressWarnings("unused")
     private static class ApiRoot {
         public static IntStorage intStorage;
     }
 
+    @SuppressWarnings("unused")
     @CustomType(name = "TestType")
     public static class TestType {
 
