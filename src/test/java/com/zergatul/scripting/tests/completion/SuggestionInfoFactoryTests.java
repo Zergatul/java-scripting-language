@@ -1,0 +1,94 @@
+package com.zergatul.scripting.tests.completion;
+
+import com.zergatul.scripting.MethodDescription;
+import com.zergatul.scripting.PropertyDescription;
+import com.zergatul.scripting.completion.*;
+import com.zergatul.scripting.lexer.TokenType;
+import com.zergatul.scripting.type.*;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
+
+import java.util.List;
+
+public class SuggestionInfoFactoryTests {
+
+    private final SuggestionInfoFactory factory = new SuggestionInfoFactory();
+
+    @Test
+    public void keywordTest() {
+        Assertions.assertEquals(
+                new SuggestionInfo("#typeof", null, null, "#typeof", SuggestionKind.KEYWORD),
+                factory.getKeywordSuggestion(TokenType.META_TYPE_OF));
+        Assertions.assertEquals(
+                new SuggestionInfo("while", null, null, "while", SuggestionKind.KEYWORD),
+                factory.getKeywordSuggestion(TokenType.WHILE));
+    }
+
+    @Test
+    public void predefinedTypesTest() {
+        Assertions.assertEquals(
+                List.of(
+                        new SuggestionInfo("int", null, "32-bit signed integer", "int", SuggestionKind.TYPE),
+                        new SuggestionInfo("int32", null, "32-bit signed integer", "int32", SuggestionKind.TYPE)),
+                factory.getTypeSuggestion(SInt.instance));
+        Assertions.assertEquals(
+                List.of(
+                        new SuggestionInfo("long", null, "64-bit signed integer", "long", SuggestionKind.TYPE),
+                        new SuggestionInfo("int64", null, "64-bit signed integer", "int64", SuggestionKind.TYPE)),
+                factory.getTypeSuggestion(SInt64.instance));
+        Assertions.assertEquals(
+                List.of(
+                        new SuggestionInfo("float", null, "Double-precision floating-point number", "float", SuggestionKind.TYPE),
+                        new SuggestionInfo("float64", null, "Double-precision floating-point number", "float64", SuggestionKind.TYPE)),
+                factory.getTypeSuggestion(SFloat.instance));
+    }
+
+    @Test
+    public void memberDocumentationTest() {
+        SType type = SType.fromJavaType(TestType.class);
+        PropertyReference property = type.getInstanceProperties().stream()
+                .filter(candidate -> candidate.getName().equals("value"))
+                .findFirst()
+                .orElseThrow();
+        MethodReference method = type.getInstanceMethods().stream()
+                .filter(candidate -> candidate.getName().equals("parse"))
+                .findFirst()
+                .orElseThrow();
+
+        Assertions.assertEquals(
+                new SuggestionInfo("value", "int", "Value documentation.", "value", SuggestionKind.PROPERTY),
+                factory.getPropertySuggestion(property));
+        Assertions.assertEquals(
+                new SuggestionInfo(
+                        "parse",
+                        "boolean TestType.parse(string text)",
+                        "Method documentation.",
+                        "parse",
+                        SuggestionKind.METHOD),
+                factory.getMethodSuggestion(method));
+    }
+
+    @Test
+    public void mappedFactoryTest() {
+        MappedSuggestionFactory<String> mapped = new MappedSuggestionFactory<>(
+                suggestion -> suggestion.kind() + ":" + suggestion.label());
+
+        Assertions.assertEquals("KEYWORD:return", mapped.getKeywordSuggestion(TokenType.RETURN));
+        Assertions.assertEquals(
+                List.of("TYPE:int", "TYPE:int32"),
+                mapped.getTypeSuggestion(SInt.instance));
+    }
+
+    @SuppressWarnings("unused")
+    @CustomType(name = "TestType")
+    public static class TestType {
+
+        @PropertyDescription("Value documentation.")
+        public int value;
+
+        @MethodDescription("Method documentation.")
+        public boolean parse(String text) {
+            return false;
+        }
+    }
+}
