@@ -16,11 +16,17 @@ public class SSyntheticInterface extends SSyntheticType {
 
     @Override
     public boolean isCompatibleWith(SType other) {
-        return other.getInstanceMethods().stream().anyMatch(definition::matches);
+        return MemberLookup.getMethods(other).stream()
+                .filter(m -> !m.isStatic())
+                .anyMatch(definition::matches);
     }
 
     public MethodReference extractMethod(SType other) {
-        return other.getInstanceMethods().stream().filter(definition::matches).findFirst().orElseThrow();
+        return MemberLookup.getMethods(other).stream()
+                .filter(m -> !m.isStatic())
+                .filter(definition::matches)
+                .findFirst()
+                .orElseThrow();
     }
 
     @Override

@@ -56,7 +56,7 @@ public class SString extends SReferenceType {
     }
 
     @Override
-    public List<PropertyReference> getInstanceProperties() {
+    public List<PropertyReference> getDeclaredProperties() {
         return List.of(PROP_LENGTH);
     }
 
@@ -66,7 +66,7 @@ public class SString extends SReferenceType {
     }
 
     @Override
-    public List<MethodReference> getDeclaredInstanceMethods() {
+    public List<MethodReference> getDeclaredMethods() {
         return List.of(
                 METHOD_CONTAINS,
                 METHOD_INDEX_OF,
@@ -201,7 +201,7 @@ public class SString extends SReferenceType {
     private static final BinaryOperation STRING_ADD_STRING_CONVERTIBLE = new BinaryOperation(BinaryOperator.PLUS, SString.instance, SString.instance, SStringConvertible.instance) {
         @Override
         public void apply(MethodVisitor left, BufferedMethodVisitor right, CompilerContext context, SType leftType, SType rightType) {
-            SStringConvertible.instance.extractMethod(rightType).compileInvoke(right, context, () -> {}, false);
+            SStringConvertible.instance.extractMethod(rightType).compileInvoke(right, context, () -> {});
             SString.STRING_ADD_STRING.apply(left, right, context, SString.instance, SString.instance);
         }
     };
@@ -209,7 +209,7 @@ public class SString extends SReferenceType {
     private static final BinaryOperation STRING_CONVERTIBLE_ADD_STRING = new BinaryOperation(BinaryOperator.PLUS, SString.instance, SStringConvertible.instance, SString.instance) {
         @Override
         public void apply(MethodVisitor left, BufferedMethodVisitor right, CompilerContext context, SType leftType, SType rightType) {
-            SStringConvertible.instance.extractMethod(leftType).compileInvoke(left, context, () -> {}, false);
+            SStringConvertible.instance.extractMethod(leftType).compileInvoke(left, context, () -> {});
             SString.STRING_ADD_STRING.apply(left, right, context, SString.instance, SString.instance);
         }
     };
@@ -269,7 +269,7 @@ public class SString extends SReferenceType {
         }
 
         @Override
-        public void compileInvoke(MethodVisitor visitor, CompilerContext context, Runnable compileArguments, boolean isPrivate) {
+        public void compileInvoke(MethodVisitor visitor, CompilerContext context, Runnable compileArguments) {
             compileArguments.run();
             visitor.visitMethodInsn(
                     INVOKEVIRTUAL,
@@ -324,7 +324,7 @@ public class SString extends SReferenceType {
         }
 
         @Override
-        public void compileInvoke(MethodVisitor visitor, CompilerContext context, Runnable compileArguments, boolean isPrivate) {
+        public void compileInvoke(MethodVisitor visitor, CompilerContext context, Runnable compileArguments) {
             compileArguments.run();
             visitor.visitFieldInsn(
                     GETSTATIC,
@@ -363,7 +363,7 @@ public class SString extends SReferenceType {
         }
 
         @Override
-        public void compileInvoke(MethodVisitor visitor, CompilerContext context, Runnable compileArguments, boolean isPrivate) {
+        public void compileInvoke(MethodVisitor visitor, CompilerContext context, Runnable compileArguments) {
             compileArguments.run();
             visitor.visitFieldInsn(
                     GETSTATIC,
@@ -434,7 +434,7 @@ public class SString extends SReferenceType {
         }
 
         @Override
-        public void compileInvoke(MethodVisitor visitor, CompilerContext context, Runnable compileArguments, boolean isPrivate) {
+        public void compileInvoke(MethodVisitor visitor, CompilerContext context, Runnable compileArguments) {
             compileArguments.run();
             visitor.visitMethodInsn(
                     INVOKEVIRTUAL,

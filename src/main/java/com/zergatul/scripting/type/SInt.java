@@ -150,17 +150,12 @@ public class SInt extends SValueType {
     }
 
     @Override
-    public List<MethodReference> getDeclaredInstanceMethods() {
-        return List.of(METHOD_TO_INT8.value(), METHOD_TO_INT16.value(), METHOD_TO_STRING.value(), METHOD_TO_STANDARD_STRING.value());
+    public List<MethodReference> getDeclaredMethods() {
+        return List.of(METHOD_TO_INT8.value(), METHOD_TO_INT16.value(), METHOD_TO_STRING.value(), METHOD_TO_STANDARD_STRING.value(), METHOD_TRY_PARSE.value());
     }
 
     @Override
-    public List<MethodReference> getStaticMethods() {
-        return List.of(METHOD_TRY_PARSE.value());
-    }
-
-    @Override
-    public List<PropertyReference> getStaticProperties() {
+    public List<PropertyReference> getDeclaredProperties() {
         return List.of(PROPERTY_MIN_VALUE.value(), PROPERTY_MAX_VALUE.value());
     }
 
@@ -276,7 +271,7 @@ public class SInt extends SValueType {
 
     private static final Lazy<MethodReference> METHOD_TO_INT8 = new Lazy<>(() -> new NoArgsByteCodeMethodReference(instance, SInt8.instance, "toInt8") {
         @Override
-        public void compileInvoke(MethodVisitor visitor, CompilerContext context, Runnable compileArguments, boolean isPrivate) {
+        public void compileInvoke(MethodVisitor visitor, CompilerContext context, Runnable compileArguments) {
             compileArguments.run();
             visitor.visitInsn(I2B);
         }
@@ -284,7 +279,7 @@ public class SInt extends SValueType {
 
     private static final Lazy<MethodReference> METHOD_TO_INT16 = new Lazy<>(() -> new NoArgsByteCodeMethodReference(instance, SInt16.instance, "toInt16") {
         @Override
-        public void compileInvoke(MethodVisitor visitor, CompilerContext context, Runnable compileArguments, boolean isPrivate) {
+        public void compileInvoke(MethodVisitor visitor, CompilerContext context, Runnable compileArguments) {
             compileArguments.run();
             visitor.visitInsn(I2S);
         }

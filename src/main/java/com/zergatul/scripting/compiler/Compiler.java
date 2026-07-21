@@ -2933,7 +2933,7 @@ public class Compiler {
         expression.method.compileInvoke(visitor, context, () -> {
             compileExpression(visitor, context, expression.right);
             compileExpression(visitor, context, expression.left);
-        }, false);
+        });
     }
 
     private void compileIsExpression(MethodVisitor visitor, CompilerContext context, BoundIsExpressionNode is) {
@@ -3517,38 +3517,44 @@ public class Compiler {
     }
 
     private void compileMethodInvocationExpression(MethodVisitor visitor, CompilerContext context, BoundMethodInvocationExpressionNode invocation) {
-        invocation.method.method.compileInvoke(
-                visitor, context,
+        compileMethodCallTarget(
+                visitor,
+                context,
+                invocation.target,
                 () -> {
                     compileExpression(visitor, context, invocation.objectReference);
                     for (BoundExpressionNode expression : invocation.arguments.arguments) {
                         compileExpression(visitor, context, expression);
                     }
-                },
-                invocation.isPrivate);
+                });
 
         releaseRefVariables(visitor, context, invocation.refVariables);
     }
 
     private void compileBaseMethodInvocationExpression(MethodVisitor visitor, CompilerContext context, BoundBaseMethodInvocationExpressionNode invocation) {
-        // TODO: find better way?
-        invocation.method.method.compileInvoke(new MethodVisitor(ASM9, visitor) {
-            @Override
-            public void visitMethodInsn(int opcode, String owner, String name, String descriptor, boolean isInterface) {
-                if (opcode == INVOKEVIRTUAL) {
-                    super.visitMethodInsn(INVOKESPECIAL, owner, name, descriptor, isInterface);
-                } else {
-                    throw new InternalException();
-                }
-            }
-        }, context, () -> {
+        compileMethodCallTarget(visitor, context, invocation.target, () -> {
             visitor.visitVarInsn(ALOAD, 0);
             for (BoundExpressionNode expression : invocation.arguments.arguments) {
                 compileExpression(visitor, context, expression);
             }
-        }, false);
+        });
 
         releaseRefVariables(visitor, context, invocation.refVariables);
+    }
+
+    private void compileMethodCallTarget(
+            MethodVisitor visitor,
+            CompilerContext context,
+            BoundCallTarget target,
+            Runnable compileArguments
+    ) {
+        if (target.dispatch() == BoundCallTarget.DispatchKind.BASE) {
+            target.method().compileBaseInvoke(visitor, context, compileArguments);
+        } else if (target.access() == BoundCallTarget.AccessStrategy.METHOD_HANDLE) {
+            target.method().compileMethodHandleInvoke(visitor, context, compileArguments);
+        } else {
+            target.method().compileInvoke(visitor, context, compileArguments);
+        }
     }
 
     private void compilePropertyAccessExpression(MethodVisitor visitor, CompilerContext context, BoundPropertyAccessExpressionNode propertyAccess) {

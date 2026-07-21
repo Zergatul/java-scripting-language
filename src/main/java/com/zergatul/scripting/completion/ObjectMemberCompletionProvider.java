@@ -8,8 +8,13 @@ import com.zergatul.scripting.compiler.JavaInteropPolicy;
 import com.zergatul.scripting.parser.nodes.MemberAccessExpressionNode;
 import com.zergatul.scripting.parser.nodes.ParserNodeType;
 import com.zergatul.scripting.type.NativeMethodReference;
+import com.zergatul.scripting.type.MemberLookup;
+import com.zergatul.scripting.type.MethodReference;
+import com.zergatul.scripting.type.PropertyReference;
+import com.zergatul.scripting.type.SStaticTypeReference;
 import com.zergatul.scripting.type.SType;
 import com.zergatul.scripting.type.SUnknown;
+import com.zergatul.scripting.type.Visibility;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -58,13 +63,16 @@ public class ObjectMemberCompletionProvider<T> extends AbstractCompletionProvide
         }
 
         List<T> suggestions = new ArrayList<>();
+        boolean staticMembers = type instanceof SStaticTypeReference;
 
-        type.getInstanceProperties().stream()
-                .filter(p -> p.isPublic() ^ isPrivate)
+        MemberLookup.getProperties(type).stream()
+                .filter(p -> p.isStatic() == staticMembers)
+                .filter(p -> isPrivate ? p.getVisibility() != Visibility.PUBLIC : p.getVisibility() == Visibility.PUBLIC)
                 .forEach(p -> suggestions.add(factory.getPropertySuggestion(p)));
 
-        type.getInstanceMethods().stream()
-                .filter(p -> p.isPublic() ^ isPrivate)
+        MemberLookup.getMethods(type).stream()
+                .filter(m -> m.isStatic() == staticMembers)
+                .filter(m -> isPrivate ? m.getVisibility() != Visibility.PUBLIC : m.getVisibility() == Visibility.PUBLIC)
                 .filter(m -> {
                     if (m instanceof NativeMethodReference nativeRef) {
                         JavaInteropPolicy checker = parameters.getInteropPolicy();
@@ -78,6 +86,10 @@ public class ObjectMemberCompletionProvider<T> extends AbstractCompletionProvide
                     }
                 })
                 .forEach(m -> suggestions.add(factory.getMethodSuggestion(m)));
+
+        if (isPrivate) {
+            return suggestions;
+        }
 
         for (BoundCompilationUnitMemberNode memberNode : output.unit().members.members) {
             if (memberNode.isNot(BoundNodeType.EXTENSION_DECLARATION)) {

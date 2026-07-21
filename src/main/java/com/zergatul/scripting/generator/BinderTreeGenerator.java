@@ -5,6 +5,7 @@ import com.zergatul.scripting.binding.FallthroughFlow;
 import com.zergatul.scripting.parser.AssignmentOperator;
 import com.zergatul.scripting.type.SBoolean;
 import com.zergatul.scripting.type.SInt;
+import com.zergatul.scripting.type.MemberLookup;
 import com.zergatul.scripting.visitors.AwaitVisitor;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
 import com.zergatul.scripting.binding.nodes.*;
@@ -408,7 +409,11 @@ public class BinderTreeGenerator {
                 new BoundNameExpressionNode(length),
                 new BoundPropertyAccessExpressionNode(
                         new BoundNameExpressionNode(iterable),
-                        iterable.getType().getInstanceProperties().stream().filter(p -> p.getName().equals("length")).findFirst().orElseThrow(),
+                        MemberLookup.getProperties(iterable.getType()).stream()
+                                .filter(p -> !p.isStatic())
+                                .filter(p -> p.getName().equals("length"))
+                                .findFirst()
+                                .orElseThrow(),
                         false)));
         add(new BoundVariableDeclarationNode(new BoundNameExpressionNode(item)));
 
@@ -700,7 +705,7 @@ public class BinderTreeGenerator {
                 node.method,
                 arguments,
                 node.refVariables,
-                node.isPrivate);
+                node.target);
     }
 
     private BoundExpressionNode rewriteAsync(BoundUnaryExpressionNode node) {

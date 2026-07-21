@@ -3,7 +3,9 @@ package com.zergatul.scripting.tests.completion.suggestions;
 import com.zergatul.scripting.tests.completion.helpers.SuggestionHelper;
 import com.zergatul.scripting.tests.completion.helpers.TestCompletionContext;
 import com.zergatul.scripting.type.PropertyReference;
+import com.zergatul.scripting.type.MemberLookup;
 import com.zergatul.scripting.type.SType;
+import com.zergatul.scripting.type.Visibility;
 import org.junit.jupiter.api.Assertions;
 
 import java.util.Optional;
@@ -17,9 +19,8 @@ public class PropertySuggestion extends Suggestion {
     }
 
     public static PropertySuggestion getInstance(Class<?> clazz, String name) {
-        PropertyReference property = SType.fromJavaType(clazz)
-                .getInstanceProperties()
-                .stream()
+        PropertyReference property = MemberLookup.getProperties(SType.fromJavaType(clazz)).stream()
+                .filter(p -> !p.isStatic())
                 .filter(p -> p.getName().equals(name))
                 .findFirst()
                 .orElseThrow();
@@ -27,9 +28,8 @@ public class PropertySuggestion extends Suggestion {
     }
 
     public static PropertySuggestion getStatic(Class<?> clazz, String name) {
-        PropertyReference property = SType.fromJavaType(clazz)
-                .getStaticProperties()
-                .stream()
+        PropertyReference property = MemberLookup.getProperties(SType.fromJavaType(clazz)).stream()
+                .filter(PropertyReference::isStatic)
                 .filter(p -> p.getName().equals(name))
                 .findFirst()
                 .orElseThrow();
@@ -37,9 +37,8 @@ public class PropertySuggestion extends Suggestion {
     }
 
     public static PropertySuggestion getInstance(TestCompletionContext context, String className, String propertyName) {
-        PropertyReference property = SuggestionHelper.extractClassType(context, className)
-                .getInstanceProperties()
-                .stream()
+        PropertyReference property = MemberLookup.getProperties(SuggestionHelper.extractClassType(context, className)).stream()
+                .filter(p -> !p.isStatic())
                 .filter(p -> p.getName().equals(propertyName))
                 .findFirst()
                 .orElseThrow();
@@ -47,7 +46,10 @@ public class PropertySuggestion extends Suggestion {
     }
 
     public static PropertySuggestion getStatic(SType type, String name) {
-        Optional<PropertyReference> optional = type.getStaticProperties().stream().filter(r -> r.getName().equals(name)).findFirst();
+        Optional<PropertyReference> optional = MemberLookup.getProperties(type).stream()
+                .filter(PropertyReference::isStatic)
+                .filter(r -> r.getName().equals(name))
+                .findFirst();
         if (optional.isEmpty()) {
             Assertions.fail();
             throw new AssertionError();
@@ -67,6 +69,6 @@ public class PropertySuggestion extends Suggestion {
 
     @Override
     public String toString() {
-        return String.format("%s %s %s", property.isPublic() ? "public" : "private", property.getType(), property.getName());
+        return String.format("%s %s %s", property.getVisibility() == Visibility.PUBLIC ? "public" : "private", property.getType(), property.getName());
     }
 }

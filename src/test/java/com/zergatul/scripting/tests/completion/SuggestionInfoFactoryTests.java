@@ -51,11 +51,13 @@ public class SuggestionInfoFactoryTests {
     @Test
     public void memberDocumentationTest() {
         SType type = SType.fromJavaType(TestType.class);
-        PropertyReference property = type.getInstanceProperties().stream()
+        PropertyReference property = MemberLookup.getProperties(type).stream()
+                .filter(candidate -> !candidate.isStatic())
                 .filter(candidate -> candidate.getName().equals("value"))
                 .findFirst()
                 .orElseThrow();
-        MethodReference method = type.getInstanceMethods().stream()
+        MethodReference method = MemberLookup.getMethods(type).stream()
+                .filter(candidate -> !candidate.isStatic())
                 .filter(candidate -> candidate.getName().equals("parse"))
                 .findFirst()
                 .orElseThrow();
@@ -86,9 +88,8 @@ public class SuggestionInfoFactoryTests {
 
     @Test
     public void customTypeFormatterTest() {
-        MethodReference method = SType.fromJavaType(JavaType.class)
-                .getInstanceMethods()
-                .stream()
+        MethodReference method = MemberLookup.getMethods(SType.fromJavaType(JavaType.class)).stream()
+                .filter(candidate -> !candidate.isStatic())
                 .filter(candidate -> candidate.getName().equals("convert"))
                 .findFirst()
                 .orElseThrow();

@@ -37,8 +37,19 @@ public final class FieldPropertyReference extends PropertyReference {
     }
 
     @Override
-    public boolean isPublic() {
-        return Modifier.isPublic(field.getModifiers());
+    public Visibility getVisibility() {
+        if (Modifier.isPublic(field.getModifiers())) {
+            return Visibility.PUBLIC;
+        } else if (Modifier.isProtected(field.getModifiers())) {
+            return Visibility.PROTECTED;
+        } else {
+            return Visibility.PRIVATE;
+        }
+    }
+
+    @Override
+    public boolean isStatic() {
+        return Modifier.isStatic(field.getModifiers());
     }
 
     @Override
@@ -59,7 +70,7 @@ public final class FieldPropertyReference extends PropertyReference {
 
     @Override
     public void compileLoad(MethodVisitor visitor, CompilerContext context, Runnable compileCallee) {
-        if (isPublic()) {
+        if (getVisibility() == Visibility.PUBLIC) {
             if (isStatic()) {
                 visitor.visitFieldInsn(
                         GETSTATIC,
@@ -111,7 +122,7 @@ public final class FieldPropertyReference extends PropertyReference {
 
     @Override
     public void compileStore(MethodVisitor visitor, CompilerContext context, Runnable compileCallee, Runnable compileValue) {
-        if (isPublic()) {
+        if (getVisibility() == Visibility.PUBLIC) {
             compileCallee.run();
             compileValue.run();
             if (isStatic()) {
@@ -168,7 +179,7 @@ public final class FieldPropertyReference extends PropertyReference {
 
     @Override
     public void compileLoadModifyStore(MethodVisitor visitor, CompilerContext context, Runnable compileCallee, Runnable compileModify) {
-        if (isPublic()) {
+        if (getVisibility() == Visibility.PUBLIC) {
             if (isStatic()) {
                 visitor.visitFieldInsn(
                         GETSTATIC,
@@ -291,7 +302,4 @@ public final class FieldPropertyReference extends PropertyReference {
         }
     }
 
-    private boolean isStatic() {
-        return Modifier.isStatic(field.getModifiers());
-    }
 }

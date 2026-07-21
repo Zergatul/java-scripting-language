@@ -16,16 +16,16 @@ public class BoundMethodGroupExpressionNode extends BoundExpressionNode {
     public final BoundExpressionNode callee;
     public final List<MethodReference> candidates;
     public final BoundUnresolvedMethodNode method;
-    public final boolean isPrivate;
+    public final BoundCallTarget.AccessStrategy access;
 
     public BoundMethodGroupExpressionNode(
             MemberAccessExpressionNode node,
             BoundExpressionNode callee,
             List<MethodReference> candidates,
             BoundUnresolvedMethodNode method,
-            boolean isPrivate
+            BoundCallTarget.AccessStrategy access
     ) {
-        this(node, callee, candidates, method, isPrivate, node.getRange());
+        this(node, callee, candidates, method, access, node.getRange());
     }
 
     public BoundMethodGroupExpressionNode(
@@ -33,7 +33,7 @@ public class BoundMethodGroupExpressionNode extends BoundExpressionNode {
             BoundExpressionNode callee,
             List<MethodReference> candidates,
             BoundUnresolvedMethodNode method,
-            boolean isPrivate,
+            BoundCallTarget.AccessStrategy access,
             TextRange range
     ) {
         super(BoundNodeType.METHOD_GROUP, new SMethodGroup(), range);
@@ -46,7 +46,7 @@ public class BoundMethodGroupExpressionNode extends BoundExpressionNode {
         this.callee = callee;
         this.candidates = candidates;
         this.method = method;
-        this.isPrivate = isPrivate;
+        this.access = access;
     }
 
     @Override

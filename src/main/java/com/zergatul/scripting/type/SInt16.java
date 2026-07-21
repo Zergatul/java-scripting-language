@@ -140,17 +140,12 @@ public class SInt16 extends SValueType {
     }
 
     @Override
-    public List<MethodReference> getDeclaredInstanceMethods() {
-        return List.of(METHOD_TO_STRING.value(), METHOD_TO_STANDARD_STRING.value());
+    public List<MethodReference> getDeclaredMethods() {
+        return List.of(METHOD_TO_STRING.value(), METHOD_TO_STANDARD_STRING.value(), METHOD_TRY_PARSE.value());
     }
 
     @Override
-    public List<MethodReference> getStaticMethods() {
-        return List.of(METHOD_TRY_PARSE.value());
-    }
-
-    @Override
-    public List<PropertyReference> getStaticProperties() {
+    public List<PropertyReference> getDeclaredProperties() {
         return List.of(PROPERTY_MIN_VALUE.value(), PROPERTY_MAX_VALUE.value());
     }
 

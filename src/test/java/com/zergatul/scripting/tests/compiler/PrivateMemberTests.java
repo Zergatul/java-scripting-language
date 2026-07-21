@@ -200,6 +200,21 @@ public class PrivateMemberTests extends ComparatorTest {
     }
 
     @Test
+    public void packagePrivateMethodTest() {
+        String code = """
+                typealias MyClass = Java<com.zergatul.scripting.tests.compiler.PrivateMemberTests$MyClass2>;
+
+                let instance = new MyClass(0);
+                instance.#addPackagePrivateValue(17);
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(List.of(17), ApiRoot.intStorage.list);
+    }
+
+    @Test
     public void accessDeniedPropertiesTest() {
         String code = """
                 typealias Hashtable = Java<java.util.Hashtable>;
@@ -310,6 +325,10 @@ public class PrivateMemberTests extends ComparatorTest {
 
         protected void setProtectedValue(int value) {
             protectedValue = value;
+        }
+
+        void addPackagePrivateValue(int value) {
+            ApiRoot.intStorage.add(value);
         }
     }
 }

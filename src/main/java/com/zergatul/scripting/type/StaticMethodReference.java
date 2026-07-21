@@ -45,7 +45,12 @@ public class StaticMethodReference extends MethodReference {
     }
 
     @Override
-    public void compileInvoke(MethodVisitor visitor, CompilerContext context, Runnable compileArguments, boolean isPrivate) {
+    public boolean isStatic() {
+        return true;
+    }
+
+    @Override
+    public void compileInvoke(MethodVisitor visitor, CompilerContext context, Runnable compileArguments) {
         compileArguments.run();
         visitor.visitMethodInsn(
                 INVOKESTATIC,

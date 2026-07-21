@@ -41,8 +41,9 @@ public class SBoxedType extends SReferenceType {
     }
 
     @Override
-    public List<MethodReference> getDeclaredInstanceMethods() {
-        return underlying.getDeclaredInstanceMethods().stream()
+    public List<MethodReference> getDeclaredMethods() {
+        return underlying.getDeclaredMethods().stream()
+                .filter(method -> !method.isStatic())
                 .map(method -> new WrappedMethodReference(this, method))
                 .map(wrapped -> (MethodReference) wrapped)
                 .toList();
@@ -167,10 +168,10 @@ public class SBoxedType extends SReferenceType {
         }
 
         @Override
-        public void compileInvoke(MethodVisitor visitor, CompilerContext context, Runnable compileArguments, boolean isPrivate) {
+        public void compileInvoke(MethodVisitor visitor, CompilerContext context, Runnable compileArguments) {
             compileArguments.run();
             boxed.underlying.compileUnboxing(visitor);
-            underlying.compileInvoke(visitor, context, () -> {}, false);
+            underlying.compileInvoke(visitor, context, () -> {});
         }
 
         @Override

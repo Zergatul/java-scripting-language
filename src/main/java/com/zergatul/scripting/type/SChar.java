@@ -97,13 +97,8 @@ public class SChar extends SValueType {
     }
 
     @Override
-    public List<MethodReference> getDeclaredInstanceMethods() {
-        return List.of(METHOD_TO_STRING.value());
-    }
-
-    @Override
-    public List<MethodReference> getStaticMethods() {
-        return List.of(METHOD_FROM_CODE.value());
+    public List<MethodReference> getDeclaredMethods() {
+        return List.of(METHOD_TO_STRING.value(), METHOD_FROM_CODE.value());
     }
 
     @Override
@@ -200,7 +195,12 @@ public class SChar extends SValueType {
         }
 
         @Override
-        public void compileInvoke(MethodVisitor visitor, CompilerContext context, Runnable compileArguments, boolean isPrivate) {
+        public boolean isStatic() {
+            return true;
+        }
+
+        @Override
+        public void compileInvoke(MethodVisitor visitor, CompilerContext context, Runnable compileArguments) {
             compileArguments.run();
         }
     });

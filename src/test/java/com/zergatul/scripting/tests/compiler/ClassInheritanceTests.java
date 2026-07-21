@@ -5,6 +5,7 @@ import com.zergatul.scripting.parser.ParserErrors;
 import com.zergatul.scripting.tests.framework.ComparatorCompilationParameters;
 import com.zergatul.scripting.tests.utility.MarkedDiagnostic;
 import com.zergatul.scripting.type.CustomType;
+import com.zergatul.scripting.type.SType;
 import com.zergatul.scripting.tests.compiler.helpers.IntStorage;
 import com.zergatul.scripting.tests.compiler.helpers.ObjectStorage;
 import com.zergatul.scripting.tests.compiler.helpers.StringStorage;
@@ -387,6 +388,64 @@ public class ClassInheritanceTests extends ComparatorTest {
         program.run();
 
         Assertions.assertIterableEquals(List.of(123), ApiRoot.intStorage.list);
+    }
+
+    @Test
+    public void protectedJavaMethodFromJdkModuleTest() {
+        String code = """
+                class Class : Java<java.util.Vector> {
+                    constructor() {
+                        base.add(1);
+                        base.add(2);
+                        base.removeRange(0, 1);
+                        intStorage.add(base.size());
+                    }
+                }
+
+                new Class();
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(List.of(1), ApiRoot.intStorage.list);
+    }
+
+    @Test
+    public void protectedJavaMethodOnSubclassReceiverTest() {
+        String code = """
+                class Class : Java<com.zergatul.scripting.tests.compiler.ClassInheritanceTests$ProtectedMethodBase> {
+                    void call(Class other) {
+                        other.add(321);
+                    }
+                }
+
+                new Class().call(new Class());
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(List.of(321), ApiRoot.intStorage.list);
+    }
+
+    @Test
+    public void protectedJavaMethodOnBaseReceiverTest() {
+        String code = """
+                class Class : Java<com.zergatul.scripting.tests.compiler.ClassInheritanceTests$ProtectedMethodBase> {
+                    void call(Java<com.zergatul.scripting.tests.compiler.ClassInheritanceTests$ProtectedMethodBase> other) {
+                        other.⟦add⟧(321);
+                    }
+                }
+                """;
+
+        comparator.assertDiagnostics(
+                ApiRoot.class,
+                code,
+                "⟦⟧",
+                BinderErrors.MemberDoesNotExist,
+                SType.fromJavaType(ProtectedMethodBase.class),
+                "add");
     }
 
     @Test

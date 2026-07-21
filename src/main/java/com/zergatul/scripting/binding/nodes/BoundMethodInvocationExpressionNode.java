@@ -17,16 +17,16 @@ public class BoundMethodInvocationExpressionNode extends BoundExpressionNode {
     public final BoundMethodNode method;
     public final BoundArgumentsListNode arguments;
     public final List<RefHolder> refVariables;
-    public final boolean isPrivate;
+    public final BoundCallTarget target;
 
     public BoundMethodInvocationExpressionNode(
             BoundExpressionNode objectReference,
             BoundMethodNode method,
             BoundArgumentsListNode arguments,
             List<RefHolder> refVariables,
-            boolean isPrivate
+            BoundCallTarget target
     ) {
-        this(SyntaxFactory.missingInvocationExpression(), objectReference, method, arguments, refVariables, isPrivate, TextRange.MISSING);
+        this(SyntaxFactory.missingInvocationExpression(), objectReference, method, arguments, refVariables, target, TextRange.MISSING);
     }
 
     public BoundMethodInvocationExpressionNode(
@@ -35,9 +35,9 @@ public class BoundMethodInvocationExpressionNode extends BoundExpressionNode {
             BoundMethodNode method,
             BoundArgumentsListNode arguments,
             List<RefHolder> refVariables,
-            boolean isPrivate
+            BoundCallTarget target
     ) {
-        this(node, objectReference, method, arguments, refVariables, isPrivate, node.getRange());
+        this(node, objectReference, method, arguments, refVariables, target, node.getRange());
     }
 
     public BoundMethodInvocationExpressionNode(
@@ -46,7 +46,7 @@ public class BoundMethodInvocationExpressionNode extends BoundExpressionNode {
             BoundMethodNode method,
             BoundArgumentsListNode arguments,
             List<RefHolder> refVariables,
-            boolean isPrivate,
+            BoundCallTarget target,
             TextRange range
     ) {
         super(BoundNodeType.METHOD_INVOCATION_EXPRESSION, method.method.getReturn(), range);
@@ -55,7 +55,7 @@ public class BoundMethodInvocationExpressionNode extends BoundExpressionNode {
         this.method = method;
         this.arguments = arguments;
         this.refVariables = refVariables;
-        this.isPrivate = isPrivate;
+        this.target = target;
     }
 
     public Token getDotToken() {

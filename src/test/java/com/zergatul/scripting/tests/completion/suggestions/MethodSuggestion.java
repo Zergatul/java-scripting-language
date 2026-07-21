@@ -5,6 +5,7 @@ import com.zergatul.scripting.tests.completion.helpers.SuggestionHelper;
 import com.zergatul.scripting.tests.completion.helpers.TestCompletionContext;
 import com.zergatul.scripting.type.MethodParameter;
 import com.zergatul.scripting.type.MethodReference;
+import com.zergatul.scripting.type.MemberLookup;
 import com.zergatul.scripting.type.SType;
 import org.junit.jupiter.api.Assertions;
 
@@ -29,7 +30,10 @@ public class MethodSuggestion extends Suggestion {
     }
 
     public static MethodSuggestion getInstance(SType type, String name) {
-        Optional<MethodReference> optional = type.getInstanceMethods().stream().filter(r -> r.getName().equals(name)).findFirst();
+        Optional<MethodReference> optional = MemberLookup.getMethods(type).stream()
+                .filter(r -> !r.isStatic())
+                .filter(r -> r.getName().equals(name))
+                .findFirst();
         if (optional.isEmpty()) {
             Assertions.fail();
             throw new AssertionError();
@@ -39,7 +43,8 @@ public class MethodSuggestion extends Suggestion {
     }
 
     public static MethodSuggestion getInstance(SType type, Method method) {
-        return new MethodSuggestion(type.getInstanceMethods().stream()
+        return new MethodSuggestion(MemberLookup.getMethods(type).stream()
+                .filter(ref -> !ref.isStatic())
                 .filter(ref -> ref.getName().equals(method.getName()))
                 .filter(ref -> ref.getParameters().size() == method.getParameters().length)
                 .filter(ref -> ref.getReturn().equals(SType.fromJavaType(method.getReturnType())))
@@ -52,7 +57,10 @@ public class MethodSuggestion extends Suggestion {
     }
 
     public static MethodSuggestion getStatic(SType type, String name) {
-        Optional<MethodReference> optional = type.getStaticMethods().stream().filter(r -> r.getName().equals(name)).findFirst();
+        Optional<MethodReference> optional = MemberLookup.getMethods(type).stream()
+                .filter(MethodReference::isStatic)
+                .filter(r -> r.getName().equals(name))
+                .findFirst();
         if (optional.isEmpty()) {
             Assertions.fail();
             throw new AssertionError();

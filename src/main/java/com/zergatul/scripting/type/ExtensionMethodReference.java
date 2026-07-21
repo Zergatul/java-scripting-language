@@ -59,7 +59,7 @@ public class ExtensionMethodReference extends MethodReference {
     }
 
     @Override
-    public void compileInvoke(MethodVisitor visitor, CompilerContext context, Runnable compileArguments, boolean isPrivate) {
+    public void compileInvoke(MethodVisitor visitor, CompilerContext context, Runnable compileArguments) {
         compileArguments.run();
         visitor.visitMethodInsn(
                 INVOKESTATIC,

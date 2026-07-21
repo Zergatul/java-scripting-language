@@ -12,10 +12,6 @@ public abstract class PropertyReference extends MemberReference {
     public abstract boolean canLoad();
     public abstract boolean canStore();
 
-    public boolean isPublic() {
-        return true;
-    }
-
     public Optional<String> getDescription() {
         return Optional.empty();
     }

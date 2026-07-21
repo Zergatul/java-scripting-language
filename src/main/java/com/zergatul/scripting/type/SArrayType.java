@@ -83,7 +83,7 @@ public class SArrayType extends SType {
     }
 
     @Override
-    public List<PropertyReference> getInstanceProperties() {
+    public List<PropertyReference> getDeclaredProperties() {
         return List.of(PROP_LENGTH.value());
     }
 
