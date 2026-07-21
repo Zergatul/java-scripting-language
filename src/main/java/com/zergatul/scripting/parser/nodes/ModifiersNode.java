@@ -6,6 +6,7 @@ import com.zergatul.scripting.lexer.Token;
 import com.zergatul.scripting.lexer.TokenType;
 import com.zergatul.scripting.parser.ParserTreeVisitor;
 import com.zergatul.scripting.type.MemberModifiers;
+import com.zergatul.scripting.type.Visibility;
 
 import java.util.List;
 
@@ -32,6 +33,32 @@ public class ModifiersNode extends ParserNode {
 
     public boolean isVirtual() {
         return tokens.stream().anyMatch(t -> t.is(TokenType.VIRTUAL));
+    }
+
+    public boolean isPublic() {
+        return tokens.stream().anyMatch(t -> t.is(TokenType.PUBLIC));
+    }
+
+    public boolean isProtected() {
+        return tokens.stream().anyMatch(t -> t.is(TokenType.PROTECTED));
+    }
+
+    public boolean isPrivate() {
+        return tokens.stream().anyMatch(t -> t.is(TokenType.PRIVATE));
+    }
+
+    public boolean hasVisibilityModifier() {
+        return isPublic() || isProtected() || isPrivate();
+    }
+
+    public Visibility getVisibility() {
+        if (isProtected()) {
+            return Visibility.PROTECTED;
+        }
+        if (isPrivate()) {
+            return Visibility.PRIVATE;
+        }
+        return Visibility.PUBLIC;
     }
 
     public boolean isFinal() {
@@ -61,6 +88,6 @@ public class ModifiersNode extends ParserNode {
     }
 
     public MemberModifiers toMemberModifiers() {
-        return new MemberModifiers(isAsync(), isAbstract(), isVirtual(), isOverride(), false);
+        return new MemberModifiers(isAsync(), isAbstract(), isVirtual(), isOverride(), false, getVisibility());
     }
 }

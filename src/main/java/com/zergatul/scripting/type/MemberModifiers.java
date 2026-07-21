@@ -9,14 +9,16 @@ public class MemberModifiers {
     private static final int FINAL = 0x10;
 
     private final int flags;
+    private final Visibility visibility;
 
-    public MemberModifiers(boolean isAsync, boolean isAbstract, boolean isVirtual, boolean isOverride, boolean isFinal) {
+    public MemberModifiers(boolean isAsync, boolean isAbstract, boolean isVirtual, boolean isOverride, boolean isFinal, Visibility visibility) {
         flags =
                 (isAsync ? ASYNC : 0) |
                 (isAbstract ? ABSTRACT : 0) |
                 (isVirtual ? VIRTUAL : 0) |
                 (isOverride ? OVERRIDE : 0) |
                 (isFinal ? FINAL : 0);
+        this.visibility = visibility;
     }
 
     public boolean isAsync() {
@@ -37,5 +39,9 @@ public class MemberModifiers {
 
     public boolean isFinal() {
         return (flags & FINAL) != 0;
+    }
+
+    public Visibility getVisibility() {
+        return visibility;
     }
 }

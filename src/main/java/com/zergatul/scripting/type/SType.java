@@ -144,27 +144,15 @@ public abstract class SType {
         return List.of();
     }
 
-    public List<ConstructorReference> getSubclassConstructors() {
-        return getConstructors();
-    }
-
-    public List<MethodReference> getInstanceMethods() {
-        return getDeclaredInstanceMethods();
-    }
-
-    public List<MethodReference> getDeclaredInstanceMethods() {
+    public List<MethodReference> getDeclaredMethods() {
         return List.of();
     }
 
-    public List<MethodReference> getStaticMethods() {
+    public List<PropertyReference> getDeclaredProperties() {
         return List.of();
     }
 
-    public List<PropertyReference> getInstanceProperties() {
-        return List.of();
-    }
-
-    public List<PropertyReference> getStaticProperties() {
+    public List<SType> getInterfaces() {
         return List.of();
     }
 

@@ -526,6 +526,15 @@ class MyClass {
 }
 ```
 
+Fields, constructors, and methods can use `public`, `protected`, or `private` visibility. Omitting the modifier remains equivalent to `public`:
+```c#
+class MyClass {
+    private int value;
+    protected constructor(int value) => this.value = value;
+    public int getValue() => value;
+}
+```
+
 Async methods supported.
 
 Inheritance supported:

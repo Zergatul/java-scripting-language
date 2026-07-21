@@ -539,7 +539,7 @@ public class Parser {
     }
 
     private boolean isPossibleFunction() {
-        if (current.is(TokenType.ASYNC)) {
+        if (current.is(TokenType.ASYNC) || isVisibilityModifier(current.getTokenType())) {
             return true;
         }
         if (current.is(TokenType.VOID)) {
@@ -783,14 +783,20 @@ public class Parser {
     }
 
     private ClassMemberNode parseClassMemberNode() {
+        ModifiersNode modifiersNode = parseModifiers();
         if (current.is(TokenType.CONSTRUCTOR)) {
-            return parseClassConstructor();
+            if (modifiersNode.tokens.stream().anyMatch(token -> !isVisibilityModifier(token.getTokenType()))) {
+                addDiagnostic(ParserErrors.ClassMemberModifiersNotAllowed, modifiersNode);
+            }
+            return parseClassConstructor(modifiersNode);
         }
         if (current.is(ContextualKeywords.OPERATOR)) {
+            if (!modifiersNode.tokens.isEmpty()) {
+                addDiagnostic(ParserErrors.ClassMemberModifiersNotAllowed, modifiersNode);
+            }
             return parseClassOperatorOverload();
         }
 
-        ModifiersNode modifiersNode = parseModifiers();
         if (current.is(TokenType.VOID) || modifiersNode.hasMethodModifiers()) {
             return parseClassMethod(modifiersNode);
         }
@@ -800,7 +806,7 @@ public class Parser {
             ValueToken identifier = (ValueToken) advance();
             if (current.is(TokenType.SEMICOLON)) {
                 Token semicolon = advance(TokenType.SEMICOLON);
-                return new ClassFieldNode(typeNode, new NameExpressionNode(identifier), semicolon, TextRange.combine(typeNode, semicolon));
+                return new ClassFieldNode(modifiersNode, typeNode, new NameExpressionNode(identifier), semicolon);
             } else if (current.is(TokenType.LEFT_PARENTHESES)) {
                 return parseClassMethod(modifiersNode, typeNode, identifier);
             } else {
@@ -810,17 +816,17 @@ public class Parser {
                     addDiagnostic(ParserErrors.SemicolonOrParenthesisExpected, current, current.getRawValue(code));
                 }
                 Token semicolon = new Token(TokenType.SEMICOLON, createMissingTokenRangeAfterLast());
-                return new ClassFieldNode(typeNode, new NameExpressionNode(identifier), semicolon, TextRange.combine(typeNode, semicolon));
+                return new ClassFieldNode(modifiersNode, typeNode, new NameExpressionNode(identifier), semicolon);
             }
         } else {
             addDiagnostic(ParserErrors.IdentifierExpected, current, current.getRawValue(code));
             ValueToken identifier = new ValueToken(TokenType.IDENTIFIER, "", createMissingTokenRangeBeforeCurrent());
             Token semicolon = new Token(TokenType.SEMICOLON, createMissingTokenRangeBeforeCurrent());
-            return new ClassFieldNode(typeNode, new NameExpressionNode(identifier), semicolon, TextRange.combine(typeNode, semicolon));
+            return new ClassFieldNode(modifiersNode, typeNode, new NameExpressionNode(identifier), semicolon);
         }
     }
 
-    private ClassConstructorNode parseClassConstructor() {
+    private ClassConstructorNode parseClassConstructor(ModifiersNode modifiers) {
         if (current.isNot(TokenType.CONSTRUCTOR)) {
             throw new InternalException();
         }
@@ -852,7 +858,7 @@ public class Parser {
             body = createMissingBlockStatement();
         }
 
-        return new ClassConstructorNode(keyword, parameters, colon, initializer, arrow, body, TextRange.combine(keyword, body));
+        return new ClassConstructorNode(modifiers, keyword, parameters, colon, initializer, arrow, body, TextRange.combine(modifiers, body));
     }
 
     private ConstructorInitializerNode parseConstructorInitializer() {
@@ -1136,6 +1142,8 @@ public class Parser {
             if (isModifier(current.getTokenType())) {
                 if (modifiers.stream().anyMatch(token -> token.is(current.getTokenType()))) {
                     addDiagnostic(ParserErrors.DuplicateModifier, current, current.getRawValue(code));
+                } else if (isVisibilityModifier(current.getTokenType()) && modifiers.stream().anyMatch(token -> isVisibilityModifier(token.getTokenType()))) {
+                    addDiagnostic(ParserErrors.ConflictingVisibilityModifiers, current);
                 }
                 modifiers.add(advance());
             } else {
@@ -1150,9 +1158,13 @@ public class Parser {
 
     private boolean isModifier(TokenType type) {
         return switch (type) {
-            case ASYNC, ABSTRACT, VIRTUAL, OVERRIDE -> true;
+            case ASYNC, ABSTRACT, VIRTUAL, OVERRIDE, PUBLIC, PROTECTED, PRIVATE -> true;
             default -> false;
         };
+    }
+
+    private boolean isVisibilityModifier(TokenType type) {
+        return type == TokenType.PUBLIC || type == TokenType.PROTECTED || type == TokenType.PRIVATE;
     }
 
     private ParameterListNode parseParameterList() {

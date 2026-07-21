@@ -6,7 +6,6 @@ import com.zergatul.scripting.compiler.CompilerContext;
 import com.zergatul.scripting.parser.BinaryOperator;
 import com.zergatul.scripting.type.operation.BinaryOperation;
 import com.zergatul.scripting.type.operation.CastOperation;
-import org.jspecify.annotations.Nullable;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Type;
@@ -98,13 +97,8 @@ public class SChar extends SValueType {
     }
 
     @Override
-    public List<MethodReference> getDeclaredInstanceMethods() {
-        return List.of(METHOD_TO_STRING.value());
-    }
-
-    @Override
-    public List<MethodReference> getStaticMethods() {
-        return List.of(METHOD_FROM_CODE.value());
+    public List<MethodReference> getDeclaredMethods() {
+        return List.of(METHOD_TO_STRING.value(), METHOD_FROM_CODE.value());
     }
 
     @Override
@@ -198,6 +192,11 @@ public class SChar extends SValueType {
         @Override
         public List<MethodParameter> getParameters() {
             return List.of(new MethodParameter("code", SInt.instance));
+        }
+
+        @Override
+        public boolean isStatic() {
+            return true;
         }
 
         @Override

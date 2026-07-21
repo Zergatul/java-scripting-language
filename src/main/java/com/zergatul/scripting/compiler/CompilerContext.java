@@ -7,6 +7,7 @@ import com.zergatul.scripting.compiler.frames.FunctionFrame;
 import com.zergatul.scripting.symbols.*;
 import com.zergatul.scripting.type.*;
 import org.jspecify.annotations.Nullable;
+import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 
@@ -27,6 +28,7 @@ public class CompilerContext {
     private final boolean isClassMethod;
     private final boolean isFunctionRoot;
     private final boolean isGenericFunction;
+    private final @Nullable String sourceMethodName;
     private final SType returnType;
     private final boolean isAsync;
     private final @Nullable Frame frame;
@@ -39,6 +41,7 @@ public class CompilerContext {
     private @Nullable JavaInteropPolicy interopPolicy;
     private int lastEmittedLine;
     private final List<SGenericFunction> genericFunctions;
+    private @Nullable ClassWriter classWriter;
     private Label startLabel;
     private ClassLoaderContext classLoaderContext;
     private @Nullable MethodHandleCache methodHandleCache;
@@ -56,6 +59,7 @@ public class CompilerContext {
             @Nullable SType extensionType,
             boolean isClassMethod,
             boolean isStatic,
+            @Nullable String sourceMethodName,
             @Nullable Frame frame
     ) {
         this.root = parent == null ? this : parent.root;
@@ -65,6 +69,7 @@ public class CompilerContext {
         this.extensionType = extensionType;
         this.isFunctionRoot = isFunctionRoot;
         this.isGenericFunction = isGenericFunction;
+        this.sourceMethodName = sourceMethodName;
         this.returnType = returnType;
         this.isAsync = isAsync;
         this.isStatic = isStatic;
@@ -203,6 +208,7 @@ public class CompilerContext {
                 .setClassType(this.classType)
                 .setExtensionType(this.extensionType)
                 .setClassMethod(this.isClassMethod)
+                .setSourceMethodName(this.sourceMethodName)
                 .setInitialStackIndex(stack.get())
                 .setGenericFunction(isGenericFunction)
                 .setReturnType(returnType)
@@ -212,9 +218,14 @@ public class CompilerContext {
     }
 
     public CompilerContext createStaticFunction(SType returnType, boolean isAsync) {
+        return createStaticFunction(returnType, isAsync, sourceMethodName);
+    }
+
+    public CompilerContext createStaticFunction(SType returnType, boolean isAsync, @Nullable String sourceMethodName) {
         return new CompilerContext.Builder()
                 .setParent(this)
                 .setFunctionRoot(true)
+                .setSourceMethodName(sourceMethodName)
                 .setReturnType(returnType)
                 .setAsync(isAsync)
                 .setFrame(new FunctionFrame())
@@ -225,14 +236,57 @@ public class CompilerContext {
         return createInstanceMethod(returnType, isAsync, false);
     }
 
+    public CompilerContext createInstanceMethod(SType returnType, boolean isAsync, String sourceMethodName) {
+        return createInstanceMethod(returnType, isAsync, false, sourceMethodName);
+    }
+
     public CompilerContext createInstanceMethod(SType returnType, boolean isAsync, boolean generic) {
+        return createInstanceMethod(returnType, isAsync, generic, sourceMethodName);
+    }
+
+    private CompilerContext createInstanceMethod(
+            SType returnType,
+            boolean isAsync,
+            boolean generic,
+            @Nullable String sourceMethodName
+    ) {
         return new Builder()
                 .setParent(this)
                 .setInitialStackIndex(1)
                 .setFunctionRoot(true)
                 .setGenericFunction(generic)
+                .setSourceMethodName(sourceMethodName)
                 .setReturnType(returnType)
                 .setAsync(isAsync)
+                .setFrame(new FunctionFrame())
+                .build();
+    }
+
+    public CompilerContext createLambdaBodyMethod(SType returnType, boolean generic) {
+        return new Builder()
+                .setParent(this)
+                .setStatic()
+                .setInitialStackIndex(0)
+                .setFunctionRoot(true)
+                .setGenericFunction(generic)
+                .setSourceMethodName(this.sourceMethodName)
+                .setReturnType(returnType)
+                .setAsync(false)
+                .setFrame(new FunctionFrame())
+                .build();
+    }
+
+    public CompilerContext createAsyncStateMachineMethod(SType returnType) {
+        return new Builder()
+                .setParent(this)
+                .setClassType(this.classType)
+                .setExtensionType(this.extensionType)
+                .setClassMethod(this.isClassMethod)
+                .setInitialStackIndex(1)
+                .setFunctionRoot(true)
+                .setSourceMethodName(this.sourceMethodName)
+                .setReturnType(returnType)
+                .setAsync(false)
                 .setFrame(new FunctionFrame())
                 .build();
     }
@@ -246,12 +300,17 @@ public class CompilerContext {
     }
 
     public CompilerContext createClassMethod(SType returnType, boolean isAsync) {
+        return createClassMethod(returnType, isAsync, sourceMethodName);
+    }
+
+    public CompilerContext createClassMethod(SType returnType, boolean isAsync, @Nullable String sourceMethodName) {
         return new Builder()
                 .setParent(this)
                 .setClassType(classType)
                 .setExtensionType(extensionType)
                 .setClassMethod(true)
                 .setFunctionRoot(true)
+                .setSourceMethodName(sourceMethodName)
                 .setReturnType(returnType)
                 .setInitialStackIndex(1)
                 .setAsync(isAsync)
@@ -260,6 +319,10 @@ public class CompilerContext {
     }
 
     public CompilerContext createClassStaticMethod(SType returnType) {
+        return createClassStaticMethod(returnType, sourceMethodName);
+    }
+
+    public CompilerContext createClassStaticMethod(SType returnType, @Nullable String sourceMethodName) {
         return new Builder()
                 .setParent(this)
                 .setClassType(classType)
@@ -267,6 +330,7 @@ public class CompilerContext {
                 .setStatic()
                 .setClassMethod(true)
                 .setFunctionRoot(true)
+                .setSourceMethodName(sourceMethodName)
                 .setReturnType(returnType)
                 .setInitialStackIndex(0)
                 .setAsync(false)
@@ -283,10 +347,15 @@ public class CompilerContext {
     }
 
     public CompilerContext createExtensionMethod(SType returnType, boolean isAsync) {
+        return createExtensionMethod(returnType, isAsync, sourceMethodName);
+    }
+
+    public CompilerContext createExtensionMethod(SType returnType, boolean isAsync, @Nullable String sourceMethodName) {
         return new Builder()
                 .setParent(this)
                 .setExtensionType(extensionType)
                 .setFunctionRoot(true)
+                .setSourceMethodName(sourceMethodName)
                 .setReturnType(returnType)
                 .setAsync(isAsync)
                 .setFrame(new FunctionFrame())
@@ -301,6 +370,10 @@ public class CompilerContext {
         return isAsync;
     }
 
+    public @Nullable String getSourceMethodName() {
+        return sourceMethodName;
+    }
+
     public CompilerContext getParent() {
         if (parent == null) {
             throw new InternalException();
@@ -310,6 +383,15 @@ public class CompilerContext {
 
     public boolean isClassMethod() {
         return isClassMethod;
+    }
+
+    public @Nullable SDeclaredType getMemberAccessClassType() {
+        for (CompilerContext current = this; current != null; current = current.parent) {
+            if (current.isClassMethod && current.classType != null && current.extensionType == null) {
+                return current.classType;
+            }
+        }
+        return null;
     }
 
     public boolean isDeclaredClass() {
@@ -456,6 +538,22 @@ public class CompilerContext {
 
     public String getClassName() {
         return root.className;
+    }
+
+    public void setClassWriter(ClassWriter classWriter) {
+        if (this.classWriter != null) {
+            throw new InternalException("Class writer is already set.");
+        }
+        this.classWriter = classWriter;
+    }
+
+    public ClassWriter getClassWriter() {
+        for (CompilerContext current = this; current != null; current = current.parent) {
+            if (current.classWriter != null) {
+                return current.classWriter;
+            }
+        }
+        throw new InternalException("Cannot find class writer.");
     }
 
     public List<LiftedVariable> getLifted() {
@@ -642,6 +740,7 @@ public class CompilerContext {
         private SType extensionType;
         private boolean isStatic;
         private boolean isClassMethod;
+        private @Nullable String sourceMethodName;
         public SType returnType;
         public boolean isAsync;
         public int initialStackIndex;
@@ -675,6 +774,11 @@ public class CompilerContext {
 
         public Builder setClassMethod(boolean value) {
             this.isClassMethod = value;
+            return this;
+        }
+
+        public Builder setSourceMethodName(@Nullable String value) {
+            this.sourceMethodName = value;
             return this;
         }
 
@@ -721,6 +825,7 @@ public class CompilerContext {
                     extensionType,
                     isClassMethod,
                     isStatic,
+                    sourceMethodName,
                     frame);
         }
     }

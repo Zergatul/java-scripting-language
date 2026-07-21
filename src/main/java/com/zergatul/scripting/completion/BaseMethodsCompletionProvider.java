@@ -9,7 +9,9 @@ import com.zergatul.scripting.parser.nodes.InvocationExpressionNode;
 import com.zergatul.scripting.parser.nodes.MemberAccessExpressionNode;
 import com.zergatul.scripting.parser.nodes.ParserNodeType;
 import com.zergatul.scripting.type.NativeMethodReference;
+import com.zergatul.scripting.type.MemberLookup;
 import com.zergatul.scripting.type.SType;
+import com.zergatul.scripting.type.Visibility;
 import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
@@ -66,7 +68,9 @@ public class BaseMethodsCompletionProvider<T> extends AbstractCompletionProvider
         if (classNode != null) {
             List<T> suggestions = new ArrayList<>();
             SType baseType = classNode.getDeclaredType().getBaseType();
-            baseType.getInstanceMethods().stream()
+            MemberLookup.getMethods(baseType).stream()
+                    .filter(m -> !m.isStatic())
+                    .filter(m -> m.getVisibility() != Visibility.PRIVATE)
                     .filter(m -> {
                         if (m instanceof NativeMethodReference nativeRef) {
                             JavaInteropPolicy checker = parameters.getInteropPolicy();

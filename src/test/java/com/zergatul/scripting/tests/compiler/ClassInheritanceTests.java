@@ -5,19 +5,26 @@ import com.zergatul.scripting.parser.ParserErrors;
 import com.zergatul.scripting.tests.framework.ComparatorCompilationParameters;
 import com.zergatul.scripting.tests.utility.MarkedDiagnostic;
 import com.zergatul.scripting.type.CustomType;
+import com.zergatul.scripting.type.SType;
 import com.zergatul.scripting.tests.compiler.helpers.IntStorage;
 import com.zergatul.scripting.tests.compiler.helpers.ObjectStorage;
 import com.zergatul.scripting.tests.compiler.helpers.StringStorage;
 import com.zergatul.scripting.tests.framework.ComparatorTest;
+import org.objectweb.asm.ClassWriter;
+import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.Type;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.util.Arrays;
 import java.util.List;
 
 import static com.zergatul.scripting.tests.compiler.helpers.CompilerHelper.compile;
+import static org.objectweb.asm.Opcodes.*;
 
 public class ClassInheritanceTests extends ComparatorTest {
 
@@ -336,6 +343,535 @@ public class ClassInheritanceTests extends ComparatorTest {
     }
 
     @Test
+    public void protectedJavaMethodOverrideTest() throws Exception {
+        String code = """
+                class Class : Java<com.zergatul.scripting.tests.compiler.ClassInheritanceTests$ProtectedOverrideBase> {
+                    protected override int transform(int value) => value + 1;
+                }
+
+                let instance = new Class();
+                intStorage.add(instance.invoke(10));
+                objectStorage.add(instance);
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(List.of(11), ApiRoot.intStorage.list);
+        Method method = ApiRoot.objectStorage.list.getFirst().getClass().getDeclaredMethod("transform", int.class);
+        Assertions.assertTrue(Modifier.isProtected(method.getModifiers()));
+    }
+
+    @Test
+    public void protectedScriptConstructorTest() throws Exception {
+        String code = """
+                class Base {
+                    protected int value;
+                    protected constructor(int value) {
+                        this.value = value;
+                    }
+                }
+                class Child : Base {
+                    public constructor() : base(17) {}
+                    public int getValue() => value;
+                }
+
+                let instance = new Child();
+                intStorage.add(instance.getValue());
+                objectStorage.add(instance);
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(List.of(17), ApiRoot.intStorage.list);
+        Class<?> baseClass = ApiRoot.objectStorage.list.getFirst().getClass().getSuperclass();
+        Assertions.assertTrue(Modifier.isProtected(baseClass.getDeclaredConstructor(int.class).getModifiers()));
+    }
+
+    @Test
+    public void protectedScriptMembersOnSubclassReceiverTest() {
+        String code = """
+                class Base {
+                    protected int value;
+
+                    protected void setValue(int value) {
+                        this.value = value;
+                    }
+                }
+                class Child : Base {
+                    public void copyFrom(Child other) {
+                        other.setValue(43);
+                        value = other.value;
+                    }
+
+                    public int getValue() => value;
+                }
+
+                let instance = new Child();
+                instance.copyFrom(new Child());
+                intStorage.add(instance.getValue());
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(List.of(43), ApiRoot.intStorage.list);
+    }
+
+    @Test
+    public void protectedScriptMemberOnBaseReceiverTest() {
+        String code = """
+                class Base {
+                    protected int value;
+                }
+                class Child : Base {
+                    public int read(Base other) => other.⟦value⟧;
+                }
+                """;
+
+        comparator.assertDiagnostics(
+                ApiRoot.class,
+                code,
+                "⟦⟧",
+                BinderErrors.MemberDoesNotExist,
+                "Base",
+                "value");
+    }
+
+    @Test
+    public void protectedScriptMemberOnSiblingReceiverTest() {
+        String code = """
+                class Base {
+                    protected void method() {}
+                }
+                class First : Base {
+                    public void call(Second other) => other.⟦method⟧();
+                }
+                class Second : Base {}
+                """;
+
+        comparator.assertDiagnostics(
+                ApiRoot.class,
+                code,
+                "⟦⟧",
+                BinderErrors.MemberDoesNotExist,
+                "Second",
+                "method");
+    }
+
+    @Test
+    public void publicOverrideCanWidenProtectedMethodVisibilityTest() throws Exception {
+        String code = """
+                class Base {
+                    protected virtual int getValue() => 47;
+                }
+                class Child : Base {
+                    public override int getValue() => base.getValue() + 1;
+                }
+
+                let instance = new Child();
+                intStorage.add(instance.getValue());
+                objectStorage.add(instance);
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(List.of(48), ApiRoot.intStorage.list);
+        Method method = ApiRoot.objectStorage.list.getFirst().getClass().getDeclaredMethod("getValue");
+        Assertions.assertTrue(Modifier.isPublic(method.getModifiers()));
+    }
+
+    @Test
+    public void privateBaseConstructorCannotBeCalledExplicitlyTest() {
+        String code = """
+                class Base {
+                    private constructor(int value) {}
+                }
+                class Child : Base {
+                    constructor() : ⟦base(1)⟧ {}
+                }
+                """;
+
+        comparator.assertDiagnostics(
+                ApiRoot.class,
+                code,
+                "⟦⟧",
+                BinderErrors.NoConstructors,
+                "Base");
+    }
+
+    @Test
+    public void cannotReducePublicMethodVisibilityTest() {
+        String code = """
+                class Base {
+                    public virtual void method() {}
+                }
+                class Child : Base {
+                    ⟦protected⟧ override void method() {}
+                }
+                """;
+
+        comparator.assertDiagnostics(ApiRoot.class, code, "⟦⟧", BinderErrors.CannotReduceMethodVisibility);
+    }
+
+    @Test
+    public void cannotReduceProtectedMethodVisibilityTest() {
+        String code = """
+                class Base {
+                    protected virtual void method() {}
+                }
+                class Child : Base {
+                    ⟦private⟧ override void method() {}
+                }
+                """;
+
+        comparator.assertDiagnostics(ApiRoot.class, code, "⟦⟧", BinderErrors.CannotReduceMethodVisibility);
+    }
+
+    @Test
+    public void privateBaseMembersCanBeRedeclaredTest() {
+        String code = """
+                class Base {
+                    private int value;
+                    private int method() => 1;
+                    public int getBaseValue() => value + method();
+                }
+                class Child : Base {
+                    public int value;
+                    public int method() => 2;
+                }
+
+                let instance = new Child();
+                instance.value = 3;
+                intStorage.add(instance.getBaseValue());
+                intStorage.add(instance.method());
+                intStorage.add(instance.value);
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(List.of(1, 2, 3), ApiRoot.intStorage.list);
+    }
+
+    @Test
+    public void protectedMethodDoesNotImplementPublicInterfaceMethodTest() {
+        String code = """
+                class Base {
+                    protected virtual void run() {}
+                }
+                class ⟦Child⟧ : Base, Java<java.lang.Runnable> {}
+                """;
+
+        comparator.assertDiagnostics(
+                ApiRoot.class,
+                code,
+                "⟦⟧",
+                BinderErrors.MissingInheritedMethodImplementation,
+                "run");
+    }
+
+    @Test
+    public void protectedJavaMethodBaseCallTest1() {
+        String code = """
+                class Class : Java<com.zergatul.scripting.tests.compiler.ClassInheritanceTests$ProtectedMethodBase> {
+                    constructor() {
+                        base.add(123);
+                    }
+                }
+
+                new Class();
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(List.of(123), ApiRoot.intStorage.list);
+    }
+
+    @Test
+    public void protectedJavaMethodBaseCallTest2() {
+        String code = """
+                class Class : Java<com.zergatul.scripting.tests.compiler.ClassInheritanceTests$ProtectedMethodBase> {
+                    constructor() {
+                        this.add(123);
+                    }
+                }
+
+                new Class();
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(List.of(123), ApiRoot.intStorage.list);
+    }
+
+    @Test
+    public void protectedJavaMethodBaseCallTest3() {
+        String code = """
+                class Class : Java<com.zergatul.scripting.tests.compiler.ClassInheritanceTests$ProtectedMethodBase> {
+                    constructor() {
+                        add(123);
+                    }
+                }
+
+                new Class();
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(List.of(123), ApiRoot.intStorage.list);
+    }
+
+    @Test
+    public void protectedJavaMethodOnCapturedThisInLambdaTest() {
+        String code = """
+                typealias Run = Java<com.zergatul.scripting.tests.compiler.helpers.Run>;
+
+                class Class : Java<com.zergatul.scripting.tests.compiler.ClassInheritanceTests$ProtectedMethodBase> {
+                    void execute() {
+                        let run = new Run();
+                        let self = this;
+                        run.once(() => {
+                            self.value = 100;
+                            self.value += 23;
+                            self.add(self.value);
+                        });
+                    }
+                }
+
+                new Class().execute();
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(List.of(123), ApiRoot.intStorage.list);
+    }
+
+    @Test
+    public void protectedScriptMembersOnSubclassReceiverInLambdaTest() {
+        String code = """
+                typealias Run = Java<com.zergatul.scripting.tests.compiler.helpers.Run>;
+
+                class Base {
+                    protected int value;
+
+                    protected void setValue(int value) {
+                        this.value = value;
+                    }
+                }
+                class Child : Base {
+                    public void copyFrom(Child other) {
+                        let self = this;
+                        new Run().once(() => {
+                            other.setValue(61);
+                            self.value = other.value;
+                        });
+                    }
+
+                    public int getValue() => value;
+                }
+
+                let instance = new Child();
+                instance.copyFrom(new Child());
+                intStorage.add(instance.getValue());
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(List.of(61), ApiRoot.intStorage.list);
+    }
+
+    @Test
+    public void protectedScriptMemberOnBaseReceiverInLambdaTest() {
+        String code = """
+                typealias Run = Java<com.zergatul.scripting.tests.compiler.helpers.Run>;
+
+                class Base {
+                    protected int value;
+                }
+                class Child : Base {
+                    public void read(Base other) {
+                        new Run().once(() => intStorage.add(other.⟦value⟧));
+                    }
+                }
+                """;
+
+        comparator.assertDiagnostics(
+                ApiRoot.class,
+                code,
+                "⟦⟧",
+                BinderErrors.MemberDoesNotExist,
+                "Base",
+                "value");
+    }
+
+    @Test
+    public void protectedJavaMethodFromJdkModuleTest() {
+        String code = """
+                class Class : Java<java.util.Vector> {
+                    constructor() {
+                        base.add(1);
+                        base.add(2);
+                        base.removeRange(0, 1);
+                        intStorage.add(base.size());
+                    }
+                }
+
+                new Class();
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(List.of(1), ApiRoot.intStorage.list);
+    }
+
+    @Test
+    public void protectedJavaMethodOnSubclassReceiverTest() {
+        String code = """
+                class Class : Java<com.zergatul.scripting.tests.compiler.ClassInheritanceTests$ProtectedMethodBase> {
+                    void call(Class other) {
+                        other.add(321);
+                    }
+                }
+
+                new Class().call(new Class());
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(List.of(321), ApiRoot.intStorage.list);
+    }
+
+    @Test
+    public void protectedJavaMethodOnBaseReceiverTest() {
+        String code = """
+                class Class : Java<com.zergatul.scripting.tests.compiler.ClassInheritanceTests$ProtectedMethodBase> {
+                    void call(Java<com.zergatul.scripting.tests.compiler.ClassInheritanceTests$ProtectedMethodBase> other) {
+                        other.⟦add⟧(321);
+                    }
+                }
+                """;
+
+        comparator.assertDiagnostics(
+                ApiRoot.class,
+                code,
+                "⟦⟧",
+                BinderErrors.MemberDoesNotExist,
+                SType.fromJavaType(ProtectedMethodBase.class),
+                "add");
+    }
+
+    @Test
+    public void protectedJavaFieldDirectAccessTest() {
+        String code = """
+                class Class : Java<com.zergatul.scripting.tests.compiler.ClassInheritanceTests$ProtectedFieldBase> {
+                    constructor() {
+                        value = 10;
+                        this.value += 5;
+                        value++;
+                        intStorage.add(this.value);
+                    }
+                }
+
+                new Class();
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(List.of(16), ApiRoot.intStorage.list);
+    }
+
+    @Test
+    public void protectedJavaFieldOnSubclassReceiverTest() {
+        String code = """
+                class Class : Java<com.zergatul.scripting.tests.compiler.ClassInheritanceTests$ProtectedFieldBase> {
+                    void call(Class other) {
+                        other.value = 321;
+                        intStorage.add(other.value);
+                    }
+                }
+
+                new Class().call(new Class());
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(List.of(321), ApiRoot.intStorage.list);
+    }
+
+    @Test
+    public void protectedJavaFieldOnBaseReceiverTest() {
+        String code = """
+                class Class : Java<com.zergatul.scripting.tests.compiler.ClassInheritanceTests$ProtectedFieldBase> {
+                    void call(Java<com.zergatul.scripting.tests.compiler.ClassInheritanceTests$ProtectedFieldBase> other) {
+                        intStorage.add(other.⟦value⟧);
+                    }
+                }
+                """;
+
+        comparator.assertDiagnostics(
+                ApiRoot.class,
+                code,
+                "⟦⟧",
+                BinderErrors.MemberDoesNotExist,
+                SType.fromJavaType(ProtectedFieldBase.class),
+                "value");
+    }
+
+    @Test
+    public void protectedJavaFieldFromJdkModuleTest() {
+        String code = """
+                class Class : Java<java.io.ByteArrayInputStream> {
+                    constructor() : base(new int8[0]) {
+                        this.pos = 7;
+                        intStorage.add(this.pos);
+                    }
+                }
+
+                new Class();
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(List.of(7), ApiRoot.intStorage.list);
+    }
+
+    @Test
+    public void protectedStaticJavaFieldDirectAccessTest() {
+        String code = """
+                typealias Base = Java<com.zergatul.scripting.tests.compiler.ClassInheritanceTests$ProtectedFieldBase>;
+
+                class Class : Base {
+                    constructor() {
+                        Base.staticValue = 10;
+                        Base.staticValue++;
+                        Base.staticValue += 5;
+                        intStorage.add(Base.staticValue);
+                    }
+                }
+
+                new Class();
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(List.of(16), ApiRoot.intStorage.list);
+    }
+
+    @Test
     public void cannotInstantiateAbstractClassTest() {
         String code = """
                 let list = ⟦new Java<java.util.AbstractList>()⟧;
@@ -440,6 +976,158 @@ public class ClassInheritanceTests extends ComparatorTest {
 
         Assertions.assertIterableEquals(List.of(123), ApiRoot.intStorage.list);
         Assertions.assertTrue(ApiRoot.objectStorage.list.getFirst() instanceof Runnable);
+    }
+
+    @Test
+    public void syntheticJavaMethodImplementsInterfaceMethodTest() throws Exception {
+        Class<?> baseClass = SyntheticMethodBaseHolder.TYPE;
+        Method method = baseClass.getDeclaredMethod("value");
+
+        Assertions.assertTrue(method.isSynthetic());
+        Assertions.assertFalse(method.isBridge());
+        Assertions.assertFalse(Modifier.isAbstract(method.getModifiers()));
+        Assertions.assertEquals(SyntheticMethodContract.class, baseClass.getInterfaces()[0]);
+
+        String code = """
+                class Class : Java<com.zergatul.scripting.tests.compiler.ClassInheritanceTests$SyntheticMethodBase> {}
+
+                objectStorage.add(new Class());
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Object object = ApiRoot.objectStorage.list.getFirst();
+        Assertions.assertTrue(object instanceof SyntheticMethodContract);
+        Assertions.assertEquals(123, ((SyntheticMethodContract) object).value());
+    }
+
+    @Test
+    public void bridgeJavaMethodImplementsExplicitRawInterfaceMethodTest() {
+        Method bridge = Arrays.stream(GenericValueBase.class.getDeclaredMethods())
+                .filter(Method::isBridge)
+                .findFirst()
+                .orElseThrow();
+
+        Assertions.assertTrue(bridge.isSynthetic());
+        Assertions.assertFalse(Modifier.isAbstract(bridge.getModifiers()));
+        Assertions.assertEquals(Object.class, bridge.getReturnType());
+
+        String code = """
+                class Class :
+                    Java<com.zergatul.scripting.tests.compiler.ClassInheritanceTests$GenericValueBase>,
+                    Java<com.zergatul.scripting.tests.compiler.ClassInheritanceTests$GenericValue> {}
+
+                objectStorage.add(new Class());
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Object object = ApiRoot.objectStorage.list.getFirst();
+        Assertions.assertTrue(object instanceof GenericValue);
+        Assertions.assertEquals("bridge", ((GenericValue<?>) object).value());
+    }
+
+    @Test
+    public void javaDefaultInterfaceMethodDoesNotRequireImplementationTest() {
+        String code = """
+                class Class : Java<com.zergatul.scripting.tests.compiler.ClassInheritanceTests$DefaultMethodInterface> {}
+
+                objectStorage.add(new Class());
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Object object = ApiRoot.objectStorage.list.getFirst();
+        Assertions.assertTrue(object instanceof DefaultMethodInterface);
+        Assertions.assertEquals(123, ((DefaultMethodInterface) object).value());
+    }
+
+    @Test
+    public void moreSpecificDefaultInterfaceMethodImplementsAbstractBaseContractTest() {
+        String code = """
+                class Class :
+                    Java<com.zergatul.scripting.tests.compiler.ClassInheritanceTests$AbstractInterfaceBase>,
+                    Java<com.zergatul.scripting.tests.compiler.ClassInheritanceTests$MoreSpecificDefaultInterface> {}
+
+                objectStorage.add(new Class());
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Object object = ApiRoot.objectStorage.list.getFirst();
+        Assertions.assertTrue(object instanceof AbstractMethodInterface);
+        Assertions.assertEquals(123, ((AbstractMethodInterface) object).value());
+    }
+
+    @Test
+    public void abstractClassMethodTakesPrecedenceOverDefaultInterfaceMethodTest() {
+        String code = """
+                class ⟦Class⟧ :
+                    Java<com.zergatul.scripting.tests.compiler.ClassInheritanceTests$AbstractMethodBase>,
+                    Java<com.zergatul.scripting.tests.compiler.ClassInheritanceTests$MoreSpecificDefaultInterface> {}
+                """;
+
+        comparator.assertDiagnostics(
+                ApiRoot.class,
+                code,
+                "⟦⟧",
+                BinderErrors.MissingInheritedMethodImplementation,
+                "value");
+    }
+
+    @Test
+    public void conflictingDefaultInterfaceMethodsRequireImplementationTest() {
+        String code = """
+                class ⟦Class⟧ :
+                    Java<com.zergatul.scripting.tests.compiler.ClassInheritanceTests$FirstDefaultMethodInterface>,
+                    Java<com.zergatul.scripting.tests.compiler.ClassInheritanceTests$SecondDefaultMethodInterface> {}
+                """;
+
+        // we probably need another error for this
+        // java compiler reports:
+        // com.zergatul.scripting.tests.compiler.ClassInheritanceTests.TestClass inherits unrelated defaults for value() from types com.zergatul.scripting.tests.compiler.ClassInheritanceTests.FirstDefaultMethodInterface and com.zergatul.scripting.tests.compiler.ClassInheritanceTests.SecondDefaultMethodInterface
+        comparator.assertDiagnostics(
+                ApiRoot.class,
+                code,
+                "⟦⟧",
+                BinderErrors.MissingInheritedMethodImplementation,
+                "value");
+    }
+
+    @Test
+    public void unrelatedDefaultMethodDoesNotImplementAbstractInterfaceMethodTest() {
+        String code = """
+                class ⟦Class⟧ :
+                    Java<com.zergatul.scripting.tests.compiler.ClassInheritanceTests$AbstractMethodInterface>,
+                    Java<com.zergatul.scripting.tests.compiler.ClassInheritanceTests$DefaultMethodInterface> {}
+                """;
+
+        comparator.assertDiagnostics(
+                ApiRoot.class,
+                code,
+                "⟦⟧",
+                BinderErrors.MissingInheritedMethodImplementation,
+                "value");
+    }
+
+    @Test
+    public void abstractSubinterfaceMethodSuppressesParentDefaultMethodTest() {
+        String code = """
+                class ⟦Class⟧ :
+                    Java<com.zergatul.scripting.tests.compiler.ClassInheritanceTests$DefaultMethodInterface>,
+                    Java<com.zergatul.scripting.tests.compiler.ClassInheritanceTests$AbstractRedeclaringInterface> {}
+                """;
+
+        comparator.assertDiagnostics(
+                ApiRoot.class,
+                code,
+                "⟦⟧",
+                BinderErrors.MissingInheritedMethodImplementation,
+                "value");
     }
 
     @Test
@@ -815,8 +1503,152 @@ public class ClassInheritanceTests extends ComparatorTest {
         }
     }
 
+    @SuppressWarnings("unused")
+    public static class ProtectedMethodBase {
+
+        protected int value;
+
+        protected void add(int value) {
+            ApiRoot.intStorage.add(value);
+        }
+    }
+
+    @SuppressWarnings("unused")
+    public static class ProtectedOverrideBase {
+
+        public int invoke(int value) {
+            return transform(value);
+        }
+
+        protected int transform(int value) {
+            return value;
+        }
+    }
+
+    @SuppressWarnings("unused")
+    public static class ProtectedFieldBase {
+        protected int value;
+        protected static int staticValue;
+    }
+
     @CustomType(name = "AbstractBase")
     public static abstract class AbstractBase {
         public abstract int value();
+    }
+
+    public interface SyntheticMethodContract {
+        int value();
+    }
+
+    public interface GenericValue<T> {
+        T value();
+    }
+
+    public static class GenericValueBase implements GenericValue<String> {
+        @Override
+        public String value() {
+            return "bridge";
+        }
+    }
+
+    public interface DefaultMethodInterface {
+        default int value() {
+            return 123;
+        }
+    }
+
+    @SuppressWarnings("unused")
+    public interface AbstractRedeclaringInterface extends DefaultMethodInterface {
+        int value();
+    }
+
+    public interface AbstractMethodInterface {
+        int value();
+    }
+
+    @SuppressWarnings("unused")
+    public static abstract class AbstractInterfaceBase implements AbstractMethodInterface {}
+
+    @SuppressWarnings("unused")
+    public static abstract class AbstractMethodBase implements AbstractMethodInterface {
+        @Override
+        public abstract int value();
+    }
+
+    @SuppressWarnings("unused")
+    public interface MoreSpecificDefaultInterface extends AbstractMethodInterface {
+        default int value() {
+            return 123;
+        }
+    }
+
+    @SuppressWarnings("unused")
+    public interface FirstDefaultMethodInterface {
+        default int value() {
+            return 1;
+        }
+    }
+
+    @SuppressWarnings("unused")
+    public interface SecondDefaultMethodInterface {
+        default int value() {
+            return 2;
+        }
+    }
+
+    private static class SyntheticMethodBaseHolder {
+        private static final Class<?> TYPE = defineSyntheticMethodBase();
+    }
+
+    private static Class<?> defineSyntheticMethodBase() {
+        String className = ClassInheritanceTests.class.getName() + "$SyntheticMethodBase";
+        String internalName = className.replace('.', '/');
+
+        ClassWriter writer = new ClassWriter(0);
+        writer.visit(
+                V21,
+                ACC_PUBLIC | ACC_SUPER,
+                internalName,
+                null,
+                Type.getInternalName(Object.class),
+                new String[] { Type.getInternalName(SyntheticMethodContract.class) });
+
+        MethodVisitor constructor = writer.visitMethod(
+                ACC_PUBLIC,
+                "<init>",
+                "()V",
+                null,
+                null);
+        constructor.visitCode();
+        constructor.visitVarInsn(ALOAD, 0);
+        constructor.visitMethodInsn(
+                INVOKESPECIAL,
+                Type.getInternalName(Object.class),
+                "<init>",
+                "()V",
+                false);
+        constructor.visitInsn(RETURN);
+        constructor.visitMaxs(1, 1);
+        constructor.visitEnd();
+
+        MethodVisitor value = writer.visitMethod(
+                ACC_PUBLIC | ACC_SYNTHETIC,
+                "value",
+                "()I",
+                null,
+                null);
+        value.visitCode();
+        value.visitIntInsn(BIPUSH, 123);
+        value.visitInsn(IRETURN);
+        value.visitMaxs(1, 1);
+        value.visitEnd();
+
+        writer.visitEnd();
+
+        try {
+            return MethodHandles.lookup().defineClass(writer.toByteArray());
+        } catch (IllegalAccessException e) {
+            throw new AssertionError(e);
+        }
     }
 }

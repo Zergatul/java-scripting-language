@@ -15,13 +15,17 @@ public class SStaticTypeReference extends SSyntheticType {
     }
 
     @Override
-    public List<MethodReference> getDeclaredInstanceMethods() {
-        return underlying.getStaticMethods();
+    public List<MethodReference> getDeclaredMethods() {
+        return MemberLookup.getMethods(underlying).stream()
+                .filter(MethodReference::isStatic)
+                .toList();
     }
 
     @Override
-    public List<PropertyReference> getInstanceProperties() {
-        return underlying.getStaticProperties();
+    public List<PropertyReference> getDeclaredProperties() {
+        return MemberLookup.getProperties(underlying).stream()
+                .filter(PropertyReference::isStatic)
+                .toList();
     }
 
     @Override

@@ -55,6 +55,17 @@ public class SCustomType extends SReferenceType {
     }
 
     @Override
+    public @Nullable SType getBaseType() {
+        Class<?> superclass = clazz.getSuperclass();
+        return superclass != null ? SType.fromJavaType(superclass) : null;
+    }
+
+    @Override
+    public List<SType> getInterfaces() {
+        return Arrays.stream(clazz.getInterfaces()).map(SType::fromJavaType).toList();
+    }
+
+    @Override
     public boolean hasDefaultValue() {
         return false;
     }
@@ -110,16 +121,7 @@ public class SCustomType extends SReferenceType {
 
     @Override
     public List<ConstructorReference> getConstructors() {
-        return Arrays.stream(clazz.getConstructors())
-                .map(NativeConstructorReference::new)
-                .map(c -> (ConstructorReference) c)
-                .toList();
-    }
-
-    @Override
-    public List<ConstructorReference> getSubclassConstructors() {
         return Arrays.stream(clazz.getDeclaredConstructors())
-                .filter(c -> Modifier.isPublic(c.getModifiers()) || Modifier.isProtected(c.getModifiers()))
                 .filter(c -> !c.isSynthetic())
                 .map(NativeConstructorReference::new)
                 .map(c -> (ConstructorReference) c)
@@ -127,28 +129,17 @@ public class SCustomType extends SReferenceType {
     }
 
     @Override
-    public List<PropertyReference> getInstanceProperties() {
-        return instanceProperties.value();
+    public List<PropertyReference> getDeclaredProperties() {
+        List<PropertyReference> properties = new ArrayList<>(instanceProperties.value());
+        properties.addAll(staticProperties.value());
+        return properties;
     }
 
     @Override
-    public List<MethodReference> getDeclaredInstanceMethods() {
-        return instanceMethods.value();
-    }
-
-    @Override
-    public List<MethodReference> getStaticMethods() {
-        return staticMethods.value();
-    }
-
-    @Override
-    public List<PropertyReference> getStaticProperties() {
-        return Arrays.stream(clazz.getDeclaredFields())
-                .filter(m -> Modifier.isPublic(m.getModifiers()))
-                .filter(m -> Modifier.isStatic(m.getModifiers()))
-                .map(FieldPropertyReference::new)
-                .map(r -> (PropertyReference) r)
-                .toList();
+    public List<MethodReference> getDeclaredMethods() {
+        List<MethodReference> methods = new ArrayList<>(instanceMethods.value());
+        methods.addAll(staticMethods.value());
+        return methods;
     }
 
     @Override
@@ -217,7 +208,7 @@ public class SCustomType extends SReferenceType {
     }
 
     private List<MethodReference> loadInstanceMethods() {
-        return Arrays.stream(this.clazz.getMethods())
+        return Arrays.stream(this.clazz.getDeclaredMethods())
                 .filter(m -> Modifier.isPublic(m.getModifiers()))
                 .filter(m -> !Modifier.isStatic(m.getModifiers()))
                 .filter(m -> m.getDeclaringClass() != Object.class)

@@ -41,8 +41,9 @@ public class SBoxedType extends SReferenceType {
     }
 
     @Override
-    public List<MethodReference> getDeclaredInstanceMethods() {
-        return underlying.getDeclaredInstanceMethods().stream()
+    public List<MethodReference> getDeclaredMethods() {
+        return underlying.getDeclaredMethods().stream()
+                .filter(method -> !method.isStatic())
                 .map(method -> new WrappedMethodReference(this, method))
                 .map(wrapped -> (MethodReference) wrapped)
                 .toList();

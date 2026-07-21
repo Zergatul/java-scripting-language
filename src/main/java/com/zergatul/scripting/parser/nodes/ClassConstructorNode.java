@@ -11,6 +11,7 @@ import java.util.List;
 
 public class ClassConstructorNode extends ClassMemberNode {
 
+    public final ModifiersNode modifiers;
     public final Token keyword;
     public final ParameterListNode parameters;
     public final @Nullable Token colon;
@@ -19,6 +20,7 @@ public class ClassConstructorNode extends ClassMemberNode {
     public final StatementNode body;
 
     public ClassConstructorNode(
+            ModifiersNode modifiers,
             Token keyword,
             ParameterListNode parameters,
             @Nullable Token colon,
@@ -28,6 +30,7 @@ public class ClassConstructorNode extends ClassMemberNode {
             TextRange range
     ) {
         super(ParserNodeType.CLASS_CONSTRUCTOR, range);
+        this.modifiers = modifiers;
         this.keyword = keyword;
         this.parameters = parameters;
         this.colon = colon;
@@ -43,6 +46,7 @@ public class ClassConstructorNode extends ClassMemberNode {
 
     @Override
     public void acceptChildren(ParserTreeVisitor visitor) {
+        modifiers.accept(visitor);
         parameters.accept(visitor);
         if (initializer != null) {
             initializer.accept(visitor);
@@ -53,6 +57,7 @@ public class ClassConstructorNode extends ClassMemberNode {
     @Override
     public List<Locatable> getChildNodes() {
         List<Locatable> nodes = new ArrayList<>();
+        nodes.add(modifiers);
         nodes.add(keyword);
         nodes.add(parameters);
         if (colon != null) {

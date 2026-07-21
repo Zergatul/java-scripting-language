@@ -6,6 +6,7 @@ import com.zergatul.scripting.parser.BinaryOperator;
 import com.zergatul.scripting.runtime.StringUtils;
 import com.zergatul.scripting.type.operation.BinaryOperation;
 import com.zergatul.scripting.type.operation.IndexOperation;
+import com.zergatul.scripting.type.operation.StringConcatOperation;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Type;
 
@@ -56,7 +57,7 @@ public class SString extends SReferenceType {
     }
 
     @Override
-    public List<PropertyReference> getInstanceProperties() {
+    public List<PropertyReference> getDeclaredProperties() {
         return List.of(PROP_LENGTH);
     }
 
@@ -66,7 +67,7 @@ public class SString extends SReferenceType {
     }
 
     @Override
-    public List<MethodReference> getDeclaredInstanceMethods() {
+    public List<MethodReference> getDeclaredMethods() {
         return List.of(
                 METHOD_CONTAINS,
                 METHOD_INDEX_OF,
@@ -93,89 +94,11 @@ public class SString extends SReferenceType {
 
     private static final PropertyReference PROP_LENGTH = new InstanceMethodBasedPropertyReference("length", String.class, "length");
 
-    private static final BinaryOperation STRING_ADD_STRING = new BinaryOperation(BinaryOperator.PLUS, SString.instance, SString.instance, SString.instance) {
-        @Override
-        public void apply(MethodVisitor left, BufferedMethodVisitor right, CompilerContext context, SType leftType, SType rightType) {
-            // stack = ..., left
-            left.visitTypeInsn(NEW, Type.getInternalName(StringBuilder.class));
-            // stack = ..., left, builder
-            left.visitInsn(DUP);
-            // stack = ..., left, builder, builder
-            left.visitMethodInsn(
-                    INVOKESPECIAL,
-                    Type.getInternalName(StringBuilder.class),
-                    "<init>",
-                    Type.getMethodDescriptor(Type.VOID_TYPE),
-                    false);
-            // stack = ..., left, builder
-            left.visitInsn(SWAP);
-            // stack = ..., builder, left
-            left.visitMethodInsn(
-                    INVOKEVIRTUAL,
-                    Type.getInternalName(StringBuilder.class),
-                    "append",
-                    Type.getMethodDescriptor(Type.getType(StringBuilder.class), Type.getType(String.class)),
-                    false);
-            // stack = ..., builder
-            right.release(left);
-            // stack = ..., builder, left
-            left.visitMethodInsn(
-                    INVOKEVIRTUAL,
-                    Type.getInternalName(StringBuilder.class),
-                    "append",
-                    Type.getMethodDescriptor(Type.getType(StringBuilder.class), Type.getType(String.class)),
-                    false);
-            // stack = ..., builder
-            left.visitMethodInsn(
-                    INVOKEVIRTUAL,
-                    Type.getInternalName(StringBuilder.class),
-                    "toString",
-                    Type.getMethodDescriptor(Type.getType(String.class)),
-                    false);
-        }
-    };
+    private static final BinaryOperation STRING_ADD_STRING =
+            new StringConcatOperation(SString.instance, SString.instance, false, false);
 
-    private static final BinaryOperation STRING_ADD_CHAR = new BinaryOperation(BinaryOperator.PLUS, SString.instance, SString.instance, SChar.instance) {
-        @Override
-        public void apply(MethodVisitor left, BufferedMethodVisitor right, CompilerContext context, SType leftType, SType rightType) {
-            // stack = ..., left
-            left.visitTypeInsn(NEW, Type.getInternalName(StringBuilder.class));
-            // stack = ..., left, builder
-            left.visitInsn(DUP);
-            // stack = ..., left, builder, builder
-            left.visitMethodInsn(
-                    INVOKESPECIAL,
-                    Type.getInternalName(StringBuilder.class),
-                    "<init>",
-                    Type.getMethodDescriptor(Type.VOID_TYPE),
-                    false);
-            // stack = ..., left, builder
-            left.visitInsn(SWAP);
-            // stack = ..., builder, left
-            left.visitMethodInsn(
-                    INVOKEVIRTUAL,
-                    Type.getInternalName(StringBuilder.class),
-                    "append",
-                    Type.getMethodDescriptor(Type.getType(StringBuilder.class), Type.getType(String.class)),
-                    false);
-            // stack = ..., builder
-            right.release(left);
-            // stack = ..., builder, left
-            left.visitMethodInsn(
-                    INVOKEVIRTUAL,
-                    Type.getInternalName(StringBuilder.class),
-                    "append",
-                    Type.getMethodDescriptor(Type.getType(StringBuilder.class), Type.CHAR_TYPE),
-                    false);
-            // stack = ..., builder
-            left.visitMethodInsn(
-                    INVOKEVIRTUAL,
-                    Type.getInternalName(StringBuilder.class),
-                    "toString",
-                    Type.getMethodDescriptor(Type.getType(String.class)),
-                    false);
-        }
-    };
+    private static final BinaryOperation STRING_ADD_CHAR =
+            new StringConcatOperation(SString.instance, SChar.instance, false, false);
 
     private static final BinaryOperation STRING_EQUALS_STRING = new BinaryOperation(BinaryOperator.EQUALS, SBoolean.instance, SString.instance, SString.instance) {
         @Override
@@ -198,21 +121,11 @@ public class SString extends SReferenceType {
         }
     };
 
-    private static final BinaryOperation STRING_ADD_STRING_CONVERTIBLE = new BinaryOperation(BinaryOperator.PLUS, SString.instance, SString.instance, SStringConvertible.instance) {
-        @Override
-        public void apply(MethodVisitor left, BufferedMethodVisitor right, CompilerContext context, SType leftType, SType rightType) {
-            SStringConvertible.instance.extractMethod(rightType).compileInvoke(right, context, () -> {});
-            SString.STRING_ADD_STRING.apply(left, right, context, SString.instance, SString.instance);
-        }
-    };
+    private static final BinaryOperation STRING_ADD_STRING_CONVERTIBLE =
+            new StringConcatOperation(SString.instance, SStringConvertible.instance, false, true);
 
-    private static final BinaryOperation STRING_CONVERTIBLE_ADD_STRING = new BinaryOperation(BinaryOperator.PLUS, SString.instance, SStringConvertible.instance, SString.instance) {
-        @Override
-        public void apply(MethodVisitor left, BufferedMethodVisitor right, CompilerContext context, SType leftType, SType rightType) {
-            SStringConvertible.instance.extractMethod(leftType).compileInvoke(left, context, () -> {});
-            SString.STRING_ADD_STRING.apply(left, right, context, SString.instance, SString.instance);
-        }
-    };
+    private static final BinaryOperation STRING_CONVERTIBLE_ADD_STRING =
+            new StringConcatOperation(SStringConvertible.instance, SString.instance, true, false);
 
     private static final IndexOperation INDEX_INT = new IndexOperation(SInt.instance, SChar.instance) {
         @Override

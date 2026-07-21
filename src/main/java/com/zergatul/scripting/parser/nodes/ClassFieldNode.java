@@ -9,12 +9,14 @@ import java.util.List;
 
 public class ClassFieldNode extends ClassMemberNode {
 
+    public final ModifiersNode modifiers;
     public final TypeNode type;
     public final NameExpressionNode name;
     public final Token semicolon;
 
-    public ClassFieldNode(TypeNode type, NameExpressionNode name, Token semicolon, TextRange range) {
-        super(ParserNodeType.CLASS_FIELD, range);
+    public ClassFieldNode(ModifiersNode modifiers, TypeNode type, NameExpressionNode name, Token semicolon) {
+        super(ParserNodeType.CLASS_FIELD, TextRange.combine(modifiers, semicolon));
+        this.modifiers = modifiers;
         this.type = type;
         this.name = name;
         this.semicolon = semicolon;
@@ -27,12 +29,13 @@ public class ClassFieldNode extends ClassMemberNode {
 
     @Override
     public void acceptChildren(ParserTreeVisitor visitor) {
+        modifiers.accept(visitor);
         type.accept(visitor);
         name.accept(visitor);
     }
 
     @Override
     public List<Locatable> getChildNodes() {
-        return List.of(type, name, semicolon);
+        return List.of(modifiers, type, name, semicolon);
     }
 }

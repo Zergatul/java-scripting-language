@@ -92,6 +92,9 @@ public class BinderErrors {
     public static final ErrorCode ConstructorInvalidArguments = new ErrorCode("B091", "Invalid arguments for '%s' constructor\n%s");
     public static final ErrorCode MethodInvalidArguments = new ErrorCode("B092", "Invalid arguments for method '%s'\n%s");
     public static final ErrorCode CallableInvalidArguments = new ErrorCode("B093", "Invalid arguments for callable\nSignature: %s");
+    public static final ErrorCode VisibilityModifierNotAllowed = new ErrorCode("B094", "Visibility modifiers are only allowed on class fields, constructors, and methods");
+    public static final ErrorCode PrivateMethodCannotBeVirtual = new ErrorCode("B095", "Private methods cannot be abstract or virtual");
+    public static final ErrorCode CannotReduceMethodVisibility = new ErrorCode("B096", "Cannot reduce visibility when overriding a method");
 
     public static final ErrorCode InternalError = new ErrorCode("B999", "Internal error: %s");
 }

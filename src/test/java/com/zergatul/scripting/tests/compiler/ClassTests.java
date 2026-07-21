@@ -5,6 +5,7 @@ import com.zergatul.scripting.DiagnosticMessage;
 import com.zergatul.scripting.MultiLineTextRange;
 import com.zergatul.scripting.SingleLineTextRange;
 import com.zergatul.scripting.binding.BinderErrors;
+import com.zergatul.scripting.parser.ParserErrors;
 import com.zergatul.scripting.tests.compiler.helpers.FutureHelper;
 import com.zergatul.scripting.tests.compiler.helpers.IntStorage;
 import com.zergatul.scripting.tests.compiler.helpers.ObjectStorage;
@@ -14,6 +15,8 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.lang.reflect.Member;
+import java.lang.reflect.Modifier;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
@@ -106,6 +109,292 @@ public class ClassTests extends ComparatorTest {
         program.run();
 
         Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(126));
+    }
+
+    @Test
+    public void memberVisibilityTest() throws Exception {
+        String code = """
+                class Class {
+                    int defaultField;
+                    public int publicField;
+                    protected int protectedField;
+                    private int privateField;
+
+                    public constructor() : this(7) {}
+                    private constructor(int value) {
+                        privateField = value;
+                    }
+
+                    int defaultMethod() => defaultField;
+                    public int publicMethod() => publicField;
+                    protected int protectedMethod() => protectedField;
+                    private int privateMethod() => privateField;
+
+                    public int callPrivate(Class other) => other.privateField + other.privateMethod();
+                }
+
+                let instance = new Class();
+                objectStorage.add(instance);
+                intStorage.add(instance.callPrivate(new Class()));
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(List.of(14), ApiRoot.intStorage.list);
+        Class<?> clazz = ApiRoot.objectStorage.list.getFirst().getClass();
+
+        assertVisibility(clazz.getDeclaredField("defaultField"), Modifier.PUBLIC);
+        assertVisibility(clazz.getDeclaredField("publicField"), Modifier.PUBLIC);
+        assertVisibility(clazz.getDeclaredField("protectedField"), Modifier.PROTECTED);
+        assertVisibility(clazz.getDeclaredField("privateField"), Modifier.PRIVATE);
+
+        assertVisibility(clazz.getDeclaredMethod("defaultMethod"), Modifier.PUBLIC);
+        assertVisibility(clazz.getDeclaredMethod("publicMethod"), Modifier.PUBLIC);
+        assertVisibility(clazz.getDeclaredMethod("protectedMethod"), Modifier.PROTECTED);
+        assertVisibility(clazz.getDeclaredMethod("privateMethod"), Modifier.PRIVATE);
+
+        assertVisibility(clazz.getDeclaredConstructor(), Modifier.PUBLIC);
+        assertVisibility(clazz.getDeclaredConstructor(int.class), Modifier.PRIVATE);
+    }
+
+    @Test
+    public void privateMembersOnCapturedThisInLambdaTest() {
+        String code = """
+                typealias Run = Java<com.zergatul.scripting.tests.compiler.helpers.Run>;
+
+                class Class {
+                    private int field;
+
+                    private void add(int value) {
+                        field += value;
+                    }
+
+                    public void execute() {
+                        let self = this;
+                        new Run().once(() => {
+                            self.field = 100;
+                            self.add(23);
+                            intStorage.add(self.field);
+                        });
+                    }
+                }
+
+                new Class().execute();
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(List.of(123), ApiRoot.intStorage.list);
+    }
+
+    @Test
+    public void privateConstructorFromLambdaTest() {
+        String code = """
+                typealias Run = Java<com.zergatul.scripting.tests.compiler.helpers.Run>;
+
+                class Class {
+                    private int value;
+
+                    public constructor() : this(0) {}
+
+                    private constructor(int value) {
+                        this.value = value;
+                    }
+
+                    private int getValue() => value;
+
+                    public void execute() {
+                        new Run().once(() => {
+                            let instance = new Class(53);
+                            intStorage.add(instance.getValue());
+                        });
+                    }
+                }
+
+                new Class().execute();
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(List.of(53), ApiRoot.intStorage.list);
+    }
+
+    @Test
+    public void privateMembersFromNestedLambdaTest() {
+        String code = """
+                typealias Run = Java<com.zergatul.scripting.tests.compiler.helpers.Run>;
+
+                class Class {
+                    private int value;
+
+                    private void add(int delta) {
+                        value += delta;
+                    }
+
+                    public void execute() {
+                        let self = this;
+                        int outer = 7;
+                        new Run().once(() => {
+                            int inner = 11;
+                            new Run().once(() => {
+                                self.add(outer + inner);
+                                intStorage.add(self.value);
+                            });
+                        });
+                    }
+                }
+
+                new Class().execute();
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(List.of(18), ApiRoot.intStorage.list);
+    }
+
+    @Test
+    public void privateMembersFromDeferredGenericLambdaTest() {
+        String code = """
+                typealias Run = Java<com.zergatul.scripting.tests.compiler.helpers.Run>;
+
+                class Class {
+                    private int value;
+
+                    public Run createHandler() {
+                        let run = new Run();
+                        let self = this;
+                        run.onInteger(delta => self.value += delta);
+                        return run;
+                    }
+
+                    public int getValue() => value;
+                }
+
+                let instance = new Class();
+                let run = instance.createHandler();
+                run.triggerInteger(59);
+                intStorage.add(instance.getValue());
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(List.of(59), ApiRoot.intStorage.list);
+    }
+
+    @Test
+    public void privateMemberCannotBeAccessedOutsideClassTest() {
+        String code = """
+                class Class {
+                    private int value;
+                }
+
+                new Class().⟦value⟧ = 1;
+                """;
+
+        comparator.assertDiagnostics(
+                ApiRoot.class,
+                code,
+                "⟦⟧",
+                BinderErrors.MemberDoesNotExist,
+                "Class",
+                "value");
+    }
+
+    @Test
+    public void protectedMemberCannotBeAccessedOutsideClassTest() {
+        String code = """
+                class Class {
+                    protected void method() {}
+                }
+
+                new Class().⟦method⟧();
+                """;
+
+        comparator.assertDiagnostics(
+                ApiRoot.class,
+                code,
+                "⟦⟧",
+                BinderErrors.MemberDoesNotExist,
+                "Class",
+                "method");
+    }
+
+    @Test
+    public void privateConstructorCannotBeCalledOutsideClassTest() {
+        String code = """
+                class Class {
+                    private constructor() {}
+                }
+
+                ⟦new Class()⟧;
+                """;
+
+        comparator.assertDiagnostics(
+                ApiRoot.class,
+                code,
+                "⟦⟧",
+                BinderErrors.NoOverloadedConstructors,
+                "Class",
+                0,
+                "No candidates");
+    }
+
+    @Test
+    public void visibilityModifierOnFunctionTest() {
+        String code = """
+                ⟦private⟧ void function() {}
+                """;
+
+        comparator.assertDiagnostics(ApiRoot.class, code, "⟦⟧", BinderErrors.VisibilityModifierNotAllowed);
+    }
+
+    @Test
+    public void visibilityModifierOnExtensionMethodTest() {
+        String code = """
+                extension(int) {
+                    ⟦protected⟧ void method() {}
+                }
+                """;
+
+        comparator.assertDiagnostics(ApiRoot.class, code, "⟦⟧", BinderErrors.VisibilityModifierNotAllowed);
+    }
+
+    @Test
+    public void privateVirtualMethodTest() {
+        String code = """
+                class Class {
+                    ⟦private⟧ virtual void method() {}
+                }
+                """;
+
+        comparator.assertDiagnostics(ApiRoot.class, code, "⟦⟧", BinderErrors.PrivateMethodCannotBeVirtual);
+    }
+
+    @Test
+    public void conflictingVisibilityModifiersTest() {
+        String code = """
+                class Class {
+                    public ⟦private⟧ int value;
+                }
+                """;
+
+        comparator.assertDiagnostics(ApiRoot.class, code, "⟦⟧", ParserErrors.ConflictingVisibilityModifiers);
+    }
+
+    @Test
+    public void invalidConstructorModifierTest() {
+        String code = """
+                class Class {
+                    ⟦async⟧ constructor() {}
+                }
+                """;
+
+        comparator.assertDiagnostics(ApiRoot.class, code, "⟦⟧", ParserErrors.ClassMemberModifiersNotAllowed);
     }
 
     @Test
@@ -713,6 +1002,11 @@ public class ClassTests extends ComparatorTest {
         comparator.assertEquals(List.of(
                         new DiagnosticMessage(BinderErrors.NoDefaultValue, new SingleLineTextRange(2, 1, 15, 8), "Class")),
                 getDiagnostics(ApiRoot.class, code));
+    }
+
+    private static void assertVisibility(Member member, int expected) {
+        int mask = Modifier.PUBLIC | Modifier.PROTECTED | Modifier.PRIVATE;
+        Assertions.assertEquals(expected, member.getModifiers() & mask);
     }
 
     public static class ApiRoot {

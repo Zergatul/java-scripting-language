@@ -128,9 +128,122 @@ public class LineNumberTests {
             program.run();
         } catch (ArrayIndexOutOfBoundsException exception) {
             assertStackTrace(exception, List.of(
-                    new StackTraceElement("com.zergatul.scripting.dynamic.DynamicLambdaClass_3", "accept", "<TestScript>", 3),
+                    new StackTraceElement("com.zergatul.scripting.dynamic.Script", "run$lambda$3", "<TestScript>", 3),
+                    new StackTraceElement("com.zergatul.scripting.dynamic.DynamicLambdaClass_3", "accept", "<TestScript>", -1),
                     new StackTraceElement("com.zergatul.scripting.tests.compiler.LineNumberTests$LambdasApi", "iterate", "LineNumberTests.java", 0),
                     new StackTraceElement("com.zergatul.scripting.dynamic.Script", "run", "<TestScript>", 2)));
+            return;
+        }
+
+        Assertions.fail();
+    }
+
+    @Test
+    public void lambdaInFunctionTest() {
+        Runnable program = compile("""
+                void fail() {
+                    let array = [1, 2, 3];
+                    lambdas.iterate(0, 4, index => {
+                        array[index]++;
+                    });
+                }
+
+                fail();
+                """);
+
+        try {
+            program.run();
+        } catch (ArrayIndexOutOfBoundsException exception) {
+            assertStackTrace(exception, List.of(
+                    new StackTraceElement("com.zergatul.scripting.dynamic.Script", "fail$lambda$1", "<TestScript>", 4),
+                    new StackTraceElement("com.zergatul.scripting.dynamic.DynamicLambdaClass_1", "accept", "<TestScript>", -1),
+                    new StackTraceElement("com.zergatul.scripting.tests.compiler.LineNumberTests$LambdasApi", "iterate", "LineNumberTests.java", 0),
+                    new StackTraceElement("com.zergatul.scripting.dynamic.Script", "fail", "<TestScript>", 3),
+                    new StackTraceElement("com.zergatul.scripting.dynamic.Script", "run", "<TestScript>", 8)));
+            return;
+        }
+
+        Assertions.fail();
+    }
+
+    @Test
+    public void lambdaInClassMethodTest() {
+        Runnable program = compile("""
+                class Class {
+                    void fail() {
+                        let array = [1, 2, 3];
+                        lambdas.iterate(0, 4, index => {
+                            array[index]++;
+                        });
+                    }
+                }
+
+                new Class().fail();
+                """);
+
+        try {
+            program.run();
+        } catch (ArrayIndexOutOfBoundsException exception) {
+            assertStackTrace(exception, List.of(
+                    new StackTraceElement("com.zergatul.scripting.dynamic.Script$Class", "fail$lambda$1", null, 5),
+                    new StackTraceElement("com.zergatul.scripting.dynamic.DynamicLambdaClass_1", "accept", "<TestScript>", -1),
+                    new StackTraceElement("com.zergatul.scripting.tests.compiler.LineNumberTests$LambdasApi", "iterate", "LineNumberTests.java", 0),
+                    new StackTraceElement("com.zergatul.scripting.dynamic.Script$Class", "fail", null, 4),
+                    new StackTraceElement("com.zergatul.scripting.dynamic.Script", "run", "<TestScript>", 10)));
+            return;
+        }
+
+        Assertions.fail();
+    }
+
+    @Test
+    public void lambdaInConstructorTest() {
+        Runnable program = compile("""
+                class Class {
+                    constructor() {
+                        let array = [1, 2, 3];
+                        lambdas.iterate(0, 4, index => {
+                            array[index]++;
+                        });
+                    }
+                }
+
+                new Class();
+                """);
+
+        try {
+            program.run();
+        } catch (ArrayIndexOutOfBoundsException exception) {
+            assertStackTrace(exception, List.of(
+                    new StackTraceElement("com.zergatul.scripting.dynamic.Script$Class", "constructor$lambda$1", null, 5),
+                    new StackTraceElement("com.zergatul.scripting.dynamic.DynamicLambdaClass_1", "accept", "<TestScript>", -1),
+                    new StackTraceElement("com.zergatul.scripting.tests.compiler.LineNumberTests$LambdasApi", "iterate", "LineNumberTests.java", 0),
+                    new StackTraceElement("com.zergatul.scripting.dynamic.Script$Class", "<init>", null, 4),
+                    new StackTraceElement("com.zergatul.scripting.dynamic.Script", "run", "<TestScript>", 10)));
+            return;
+        }
+
+        Assertions.fail();
+    }
+
+    @Test
+    public void lambdaInStaticInitializerTest() {
+        Runnable program = compile("""
+                static fn<int => void> fail = index => {
+                    let array = [1, 2, 3];
+                    array[index]++;
+                };
+
+                fail(3);
+                """);
+
+        try {
+            program.run();
+        } catch (ArrayIndexOutOfBoundsException exception) {
+            assertStackTrace(exception, List.of(
+                    new StackTraceElement("com.zergatul.scripting.dynamic.Script", "staticInitializer$lambda$1", "<TestScript>", 3),
+                    new StackTraceElement("com.zergatul.scripting.dynamic.DynamicLambdaClass_1", "apply", "<TestScript>", -1),
+                    new StackTraceElement("com.zergatul.scripting.dynamic.Script", "run", "<TestScript>", 6)));
             return;
         }
 
@@ -160,7 +273,61 @@ public class LineNumberTests {
             future.get();
         } catch (ExecutionException exception) {
             assertStackTrace(exception.getCause(), List.of(
-                    new StackTraceElement("com.zergatul.scripting.dynamic.DynamicAsyncStateMachine_2", "next", "<TestScript>", 7)));
+                    new StackTraceElement("com.zergatul.scripting.dynamic.Script", "run$async$next$1", "<TestScript>", 7)));
+            return;
+        } catch (Throwable ignored) {}
+
+        Assertions.fail();
+    }
+
+    @Test
+    public void asyncFunctionTest() {
+        AsyncRunnable program = compileAsync("""
+                async void fail() {
+                    let array = [1, 2, 3];
+                    await futures.create();
+                    array[3]++;
+                }
+
+                await fail();
+                """);
+
+        Future<?> future = program.run();
+        ApiRoot.futures.get(0).complete(null);
+
+        try {
+            future.get();
+        } catch (ExecutionException exception) {
+            assertStackTrace(exception.getCause(), List.of(
+                    new StackTraceElement("com.zergatul.scripting.dynamic.Script", "fail$async$next$1", "<TestScript>", 4)));
+            return;
+        } catch (Throwable ignored) {}
+
+        Assertions.fail();
+    }
+
+    @Test
+    public void asyncClassMethodTest() {
+        AsyncRunnable program = compileAsync("""
+                class Class {
+                    async void fail() {
+                        let array = [1, 2, 3];
+                        await futures.create();
+                        array[3]++;
+                    }
+                }
+
+                await new Class().fail();
+                """);
+
+        Future<?> future = program.run();
+        ApiRoot.futures.get(0).complete(null);
+
+        try {
+            future.get();
+        } catch (ExecutionException exception) {
+            assertStackTrace(exception.getCause(), List.of(
+                    new StackTraceElement("com.zergatul.scripting.dynamic.Script$Class", "fail$async$next$1", null, 5)));
             return;
         } catch (Throwable ignored) {}
 
@@ -170,7 +337,9 @@ public class LineNumberTests {
     private static void assertStackTrace(Throwable throwable, List<StackTraceElement> expected) {
         StackTraceElement[] actual = throwable.getStackTrace();
         for (int i = 0; i < expected.size(); i++) {
-            Assertions.assertTrue(stackTraceElementsEqual(actual[i], expected.get(i)));
+            Assertions.assertTrue(
+                    stackTraceElementsEqual(actual[i], expected.get(i)),
+                    "Expected: " + expected.get(i) + ", actual: " + actual[i]);
         }
     }
 
@@ -187,7 +356,12 @@ public class LineNumberTests {
             }
         }
         if (!Objects.equals(actual.getMethodName(), expected.getMethodName())) {
-            return false;
+            boolean isLambdaBody = generatedLambdaMethodNamesEqual(
+                    actual.getMethodName(),
+                    expected.getMethodName());
+            if (!isLambdaBody) {
+                return false;
+            }
         }
         if (!Objects.equals(actual.getFileName(), expected.getFileName())) {
             return false;
@@ -196,6 +370,15 @@ public class LineNumberTests {
             return Objects.equals(actual.getLineNumber(), expected.getLineNumber());
         }
         return true;
+    }
+
+    private static boolean generatedLambdaMethodNamesEqual(String actual, String expected) {
+        String marker = "$lambda$";
+        int actualIndex = actual.lastIndexOf(marker);
+        int expectedIndex = expected.lastIndexOf(marker);
+        return actualIndex >= 0 &&
+                expectedIndex >= 0 &&
+                actual.substring(0, actualIndex).equals(expected.substring(0, expectedIndex));
     }
 
     private static Runnable compile(String code) {

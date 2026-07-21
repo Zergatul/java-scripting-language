@@ -139,13 +139,8 @@ public class SFloat extends SValueType {
     }
 
     @Override
-    public List<MethodReference> getDeclaredInstanceMethods() {
-        return List.of(METHOD_TO_STRING.value(), METHOD_TO_STANDARD_STRING.value());
-    }
-
-    @Override
-    public List<MethodReference> getStaticMethods() {
-        return List.of(METHOD_TRY_PARSE.value());
+    public List<MethodReference> getDeclaredMethods() {
+        return List.of(METHOD_TO_STRING.value(), METHOD_TO_STANDARD_STRING.value(), METHOD_TRY_PARSE.value());
     }
 
     @Override

@@ -18,7 +18,10 @@ public class ModifiersCompletionProvider<T> extends AbstractCompletionProvider<T
             return List.of(
                     factory.getKeywordSuggestion(TokenType.ASYNC),
                     factory.getKeywordSuggestion(TokenType.VIRTUAL),
-                    factory.getKeywordSuggestion(TokenType.OVERRIDE));
+                    factory.getKeywordSuggestion(TokenType.OVERRIDE),
+                    factory.getKeywordSuggestion(TokenType.PUBLIC),
+                    factory.getKeywordSuggestion(TokenType.PROTECTED),
+                    factory.getKeywordSuggestion(TokenType.PRIVATE));
         } else {
             return List.of();
         }

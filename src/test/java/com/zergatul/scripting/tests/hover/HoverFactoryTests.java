@@ -28,9 +28,8 @@ public class HoverFactoryTests {
 
     @Test
     public void customTypeFormatterTest() {
-        MethodReference method = SType.fromJavaType(JavaType.class)
-                .getInstanceMethods()
-                .stream()
+        MethodReference method = MemberLookup.getMethods(SType.fromJavaType(JavaType.class)).stream()
+                .filter(candidate -> !candidate.isStatic())
                 .filter(candidate -> candidate.getName().equals("convert"))
                 .findFirst()
                 .orElseThrow();

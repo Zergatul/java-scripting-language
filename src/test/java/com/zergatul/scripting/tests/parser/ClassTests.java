@@ -7,12 +7,32 @@ import com.zergatul.scripting.lexer.*;
 import com.zergatul.scripting.parser.ParserErrors;
 import com.zergatul.scripting.parser.ParserOutput;
 import com.zergatul.scripting.parser.nodes.*;
+import com.zergatul.scripting.type.Visibility;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
 public class ClassTests extends ParserTestBase {
+
+    @Test
+    public void visibilityModifiersTest() {
+        ParserOutput result = parse("""
+                class Class {
+                    int defaultField;
+                    public int publicField;
+                    protected void protectedMethod() {}
+                    private constructor() {}
+                }
+                """);
+
+        comparator.assertEquals(List.of(), result.diagnostics());
+        ClassNode classNode = (ClassNode) result.unit().members.members.getFirst();
+        Assertions.assertEquals(Visibility.PUBLIC, ((ClassFieldNode) classNode.members.get(0)).modifiers.getVisibility());
+        Assertions.assertEquals(Visibility.PUBLIC, ((ClassFieldNode) classNode.members.get(1)).modifiers.getVisibility());
+        Assertions.assertEquals(Visibility.PROTECTED, ((ClassMethodNode) classNode.members.get(2)).modifiers.getVisibility());
+        Assertions.assertEquals(Visibility.PRIVATE, ((ClassConstructorNode) classNode.members.get(3)).modifiers.getVisibility());
+    }
 
     @Test
     public void multipleBaseTypesTest() {

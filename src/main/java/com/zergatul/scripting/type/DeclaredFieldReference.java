@@ -10,11 +10,13 @@ public class DeclaredFieldReference extends PropertyReference {
     private final SDeclaredType owner;
     private final SType type;
     private final String name;
+    private final Visibility visibility;
 
-    public DeclaredFieldReference(SDeclaredType owner, SType type, String name) {
+    public DeclaredFieldReference(SDeclaredType owner, SType type, String name, Visibility visibility) {
         this.owner = owner;
         this.type = type;
         this.name = name;
+        this.visibility = visibility;
     }
 
     @Override
@@ -35,6 +37,11 @@ public class DeclaredFieldReference extends PropertyReference {
     @Override
     public String getName() {
         return name;
+    }
+
+    @Override
+    public Visibility getVisibility() {
+        return visibility;
     }
 
     @Override

@@ -3,7 +3,6 @@ package com.zergatul.scripting.symbols;
 import com.zergatul.scripting.compiler.CompilerContext;
 import com.zergatul.scripting.compiler.StackHelper;
 import org.objectweb.asm.MethodVisitor;
-import org.objectweb.asm.Type;
 
 import static org.objectweb.asm.Opcodes.GETFIELD;
 import static org.objectweb.asm.Opcodes.PUTFIELD;
@@ -37,13 +36,13 @@ public class CapturedVariable extends Variable {
     public void compileStore(CompilerContext context, MethodVisitor visitor) {
         closure.get().compileLoad(context, visitor);
         StackHelper.swap(visitor, context, variable.getType(), closure.get().getType());
-        visitor.visitFieldInsn(PUTFIELD, getClosureClassName(), getClosureFieldName(), Type.getDescriptor(variable.getType().getJavaClass()));
+        visitor.visitFieldInsn(PUTFIELD, getClosureClassName(), getClosureFieldName(), variable.getType().getDescriptor());
     }
 
     @Override
     public void compileLoad(CompilerContext context, MethodVisitor visitor) {
         closure.get().compileLoad(context, visitor);
-        visitor.visitFieldInsn(GETFIELD, getClosureClassName(), getClosureFieldName(), Type.getDescriptor(variable.getType().getJavaClass()));
+        visitor.visitFieldInsn(GETFIELD, getClosureClassName(), getClosureFieldName(), variable.getType().getDescriptor());
     }
 
     public SymbolRef getClosure() {

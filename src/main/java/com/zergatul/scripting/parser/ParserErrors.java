@@ -52,4 +52,6 @@ public class ParserErrors {
     public static final ErrorCode CatchOrFinallyExpected = new ErrorCode("C047", "'catch' or 'finally' expected, found %s");
     public static final ErrorCode OpenParenOrBraceExpected = new ErrorCode("C048", "'(' or '{' expected, found %s");
     public static final ErrorCode UnexpectedToken = new ErrorCode("C049", "Unexpected token '%s'");
+    public static final ErrorCode ConflictingVisibilityModifiers = new ErrorCode("C050", "Conflicting visibility modifiers");
+    public static final ErrorCode ClassMemberModifiersNotAllowed = new ErrorCode("C051", "These modifiers are not allowed on constructors or operator overloads");
 }

@@ -38,6 +38,11 @@ public class StaticCustomGetterPropertyReference extends PropertyReference {
     }
 
     @Override
+    public boolean isStatic() {
+        return true;
+    }
+
+    @Override
     public void compileLoad(MethodVisitor visitor, CompilerContext context, Runnable compileCallee) {
         getter.accept(visitor);
     }

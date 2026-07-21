@@ -13,21 +13,24 @@ public class BoundBaseMethodInvocationExpressionNode extends BoundExpressionNode
 
     public final InvocationExpressionNode syntaxNode;
     public final BoundMethodNode method;
+    public final BoundCallTarget target;
     public final BoundArgumentsListNode arguments;
     public final List<RefHolder> refVariables;
 
     public BoundBaseMethodInvocationExpressionNode(
             InvocationExpressionNode node,
             BoundMethodNode method,
+            BoundCallTarget target,
             BoundArgumentsListNode arguments,
             List<RefHolder> refVariables
     ) {
-        this(node, method, arguments, refVariables, node.getRange());
+        this(node, method, target, arguments, refVariables, node.getRange());
     }
 
     public BoundBaseMethodInvocationExpressionNode(
             InvocationExpressionNode node,
             BoundMethodNode method,
+            BoundCallTarget target,
             BoundArgumentsListNode arguments,
             List<RefHolder> refVariables,
             TextRange range
@@ -35,6 +38,7 @@ public class BoundBaseMethodInvocationExpressionNode extends BoundExpressionNode
         super(BoundNodeType.BASE_METHOD_INVOCATION_EXPRESSION, method.method.getReturn(), range);
         this.syntaxNode = node;
         this.method = method;
+        this.target = target;
         this.arguments = arguments;
         this.refVariables = refVariables;
     }

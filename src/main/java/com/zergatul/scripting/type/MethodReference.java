@@ -1,5 +1,6 @@
 package com.zergatul.scripting.type;
 
+import com.zergatul.scripting.InternalException;
 import com.zergatul.scripting.compiler.CompilerContext;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Type;
@@ -23,10 +24,6 @@ public abstract class MethodReference extends MemberReference implements Invocab
         return Optional.empty();
     }
 
-    public boolean isPublic() {
-        return true;
-    }
-
     public boolean isVirtual() {
         return false;
     }
@@ -40,6 +37,23 @@ public abstract class MethodReference extends MemberReference implements Invocab
     }
 
     public abstract void compileInvoke(MethodVisitor visitor, CompilerContext context, Runnable compileArguments);
+
+    public void compileBaseInvoke(MethodVisitor visitor, CompilerContext context, Runnable compileArguments) {
+        compileInvoke(new MethodVisitor(org.objectweb.asm.Opcodes.ASM9, visitor) {
+            @Override
+            public void visitMethodInsn(int opcode, String owner, String name, String descriptor, boolean isInterface) {
+                if (opcode == org.objectweb.asm.Opcodes.INVOKEVIRTUAL) {
+                    super.visitMethodInsn(org.objectweb.asm.Opcodes.INVOKESPECIAL, owner, name, descriptor, isInterface);
+                } else {
+                    throw new InternalException();
+                }
+            }
+        }, context, compileArguments);
+    }
+
+    public void compileMethodHandleInvoke(MethodVisitor visitor, CompilerContext context, Runnable compileArguments) {
+        throw new InternalException();
+    }
 
     public List<SType> getParameterTypes() {
         return getParameters().stream().map(MethodParameter::type).toList();

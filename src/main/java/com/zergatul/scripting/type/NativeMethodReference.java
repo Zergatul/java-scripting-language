@@ -61,8 +61,14 @@ public class NativeMethodReference extends MethodReference {
     }
 
     @Override
-    public boolean isPublic() {
-        return Modifier.isPublic(method.getModifiers());
+    public Visibility getVisibility() {
+        if (Modifier.isPublic(method.getModifiers())) {
+            return Visibility.PUBLIC;
+        } else if (Modifier.isProtected(method.getModifiers())) {
+            return Visibility.PROTECTED;
+        } else {
+            return Visibility.PRIVATE;
+        }
     }
 
     @Override
@@ -81,62 +87,61 @@ public class NativeMethodReference extends MethodReference {
     }
 
     @Override
+    public boolean isStatic() {
+        return Modifier.isStatic(method.getModifiers());
+    }
+
+    @Override
     public void compileInvoke(MethodVisitor visitor, CompilerContext context, Runnable compileArguments) {
-        if (isPublic()) {
-            compileArguments.run();
-            if (isStatic()) {
-                visitor.visitMethodInsn(
-                        INVOKESTATIC,
-                        Type.getInternalName(method.getDeclaringClass()),
-                        method.getName(),
-                        Type.getMethodDescriptor(method),
-                        method.getDeclaringClass().isInterface());
-            } else {
-                visitor.visitMethodInsn(
-                        method.getDeclaringClass().isInterface() ? INVOKEINTERFACE : INVOKEVIRTUAL,
-                        Type.getInternalName(method.getDeclaringClass()),
-                        method.getName(),
-                        Type.getMethodDescriptor(method),
-                        method.getDeclaringClass().isInterface());
-            }
+        compileArguments.run();
+        if (isStatic()) {
+            visitor.visitMethodInsn(
+                    INVOKESTATIC,
+                    Type.getInternalName(method.getDeclaringClass()),
+                    method.getName(),
+                    Type.getMethodDescriptor(method),
+                    method.getDeclaringClass().isInterface());
         } else {
-            if (isStatic()) {
-                String methodHandleFieldName = context.createCachedPrivateMethodHandle(this);
-                visitor.visitFieldInsn(
-                        GETSTATIC,
-                        MethodHandleCache.INTERNAL_NAME,
-                        methodHandleFieldName,
-                        Type.getDescriptor(MethodHandle.class));
-                compileArguments.run();
-                visitor.visitMethodInsn(
-                        INVOKEVIRTUAL,
-                        Type.getInternalName(MethodHandle.class),
-                        "invokeExact",
-                        getDescriptor(),
-                        false);
-            } else {
-                String methodHandleFieldName = context.createCachedPrivateMethodHandle(this);
-                visitor.visitFieldInsn(
-                        GETSTATIC,
-                        MethodHandleCache.INTERNAL_NAME,
-                        methodHandleFieldName,
-                        Type.getDescriptor(MethodHandle.class));
-                compileArguments.run();
+            visitor.visitMethodInsn(
+                    method.getDeclaringClass().isInterface() ? INVOKEINTERFACE : INVOKEVIRTUAL,
+                    Type.getInternalName(method.getDeclaringClass()),
+                    method.getName(),
+                    Type.getMethodDescriptor(method),
+                    method.getDeclaringClass().isInterface());
+        }
+    }
 
-                List<SType> types = getParameterTypes();
-                Type[] argumentTypes = new Type[types.size() + 1];
-                argumentTypes[0] = getOwner().getAsmType();
-                for (int i = 1; i < argumentTypes.length; i++) {
-                    argumentTypes[i] = types.get(i - 1).getAsmType();
-                }
+    @Override
+    public void compileMethodHandleInvoke(MethodVisitor visitor, CompilerContext context, Runnable compileArguments) {
+        String methodHandleFieldName = context.createCachedPrivateMethodHandle(this);
+        visitor.visitFieldInsn(
+                GETSTATIC,
+                MethodHandleCache.INTERNAL_NAME,
+                methodHandleFieldName,
+                Type.getDescriptor(MethodHandle.class));
+        compileArguments.run();
 
-                visitor.visitMethodInsn(
-                        INVOKEVIRTUAL,
-                        Type.getInternalName(MethodHandle.class),
-                        "invokeExact",
-                        Type.getMethodDescriptor(getReturn().getAsmType(), argumentTypes),
-                        false);
+        if (isStatic()) {
+            visitor.visitMethodInsn(
+                    INVOKEVIRTUAL,
+                    Type.getInternalName(MethodHandle.class),
+                    "invokeExact",
+                    getDescriptor(),
+                    false);
+        } else {
+            List<SType> types = getParameterTypes();
+            Type[] argumentTypes = new Type[types.size() + 1];
+            argumentTypes[0] = getOwner().getAsmType();
+            for (int i = 1; i < argumentTypes.length; i++) {
+                argumentTypes[i] = types.get(i - 1).getAsmType();
             }
+
+            visitor.visitMethodInsn(
+                    INVOKEVIRTUAL,
+                    Type.getInternalName(MethodHandle.class),
+                    "invokeExact",
+                    Type.getMethodDescriptor(getReturn().getAsmType(), argumentTypes),
+                    false);
         }
     }
 
@@ -147,9 +152,5 @@ public class NativeMethodReference extends MethodReference {
         } else {
             return false;
         }
-    }
-
-    private boolean isStatic() {
-        return Modifier.isStatic(method.getModifiers());
     }
 }
