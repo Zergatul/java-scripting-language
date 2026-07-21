@@ -566,6 +566,95 @@ public class ClassInheritanceTests extends ComparatorTest {
     }
 
     @Test
+    public void protectedJavaConstructorExplicitBaseCallTest() {
+        String code = """
+                class Class : Java<com.zergatul.scripting.tests.compiler.ClassInheritanceTests$ProtectedConstructorBase> {
+                    constructor(string value) : base(value) {}
+                }
+
+                let instance = new Class("aa");
+                stringStorage.add(instance.getValue());
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(List.of("aa"), ApiRoot.stringStorage.list);
+    }
+
+    @Test
+    public void protectedJavaConstructorImplicitBaseCallTest() {
+        String code = """
+                class Class : Java<com.zergatul.scripting.tests.compiler.ClassInheritanceTests$ProtectedConstructorBase> {
+                    constructor() {}
+                }
+
+                let instance = new Class();
+                stringStorage.add(instance.getValue());
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(List.of("default"), ApiRoot.stringStorage.list);
+    }
+
+    @Test
+    public void protectedJavaConstructorSynthesizedBaseCallTest() {
+        String code = """
+                class Class : Java<com.zergatul.scripting.tests.compiler.ClassInheritanceTests$ProtectedConstructorBase> {}
+
+                let instance = new Class();
+                stringStorage.add(instance.getValue());
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(List.of("default"), ApiRoot.stringStorage.list);
+    }
+
+    @Test
+    public void protectedJavaConstructorObjectCreationTest() {
+        String code = """
+                let instance = ⟦new Java<com.zergatul.scripting.tests.compiler.ClassInheritanceTests$ProtectedConstructorBase>("aa")⟧;
+                """;
+
+        comparator.assertDiagnostics(
+                ApiRoot.class,
+                code,
+                "⟦⟧",
+                BinderErrors.NoOverloadedConstructors,
+                "Java<com.zergatul.scripting.tests.compiler.ClassInheritanceTests$ProtectedConstructorBase>",
+                1,
+                "No candidates");
+    }
+
+    @Test
+    public void confuseBaseAndThisConstructorTest() {
+        String code = """
+                class ClassA {
+                    constructor(string value) {}
+                }
+                class ClassB : ClassA {
+                    constructor() : base("default") {}
+                    constructor(string value) : ⟦base()⟧ {}
+                }
+                """;
+
+        comparator.assertDiagnostics(
+                ApiRoot.class,
+                code,
+                "⟦⟧",
+                BinderErrors.NoOverloadedConstructors,
+                "ClassA",
+                0,
+                """
+                Candidates:
+                constructor ClassA(string value)""");
+    }
+
+    @Test
     public void constructorInitializerBaseInvalidArgumentsTest() {
         String code = """
                 class ClassA {
@@ -706,6 +795,24 @@ public class ClassInheritanceTests extends ComparatorTest {
         public static IntStorage intStorage;
         public static StringStorage stringStorage;
         public static ObjectStorage objectStorage;
+    }
+
+    @SuppressWarnings("unused")
+    public static class ProtectedConstructorBase {
+
+        private final String value;
+
+        protected ProtectedConstructorBase() {
+            this.value = "default";
+        }
+
+        protected ProtectedConstructorBase(String value) {
+            this.value = value;
+        }
+
+        public String getValue() {
+            return value;
+        }
     }
 
     @CustomType(name = "AbstractBase")

@@ -175,7 +175,7 @@ public class Binder {
         if (members.stream().noneMatch(m -> m.getNodeType() == BoundNodeType.CLASS_CONSTRUCTOR)) {
             SType baseType = declaration.getDeclaredType().getBaseType();
             if (baseType != SUnknown.instance && !baseType.isInterface()) {
-                defaultBaseConstructor = baseType.getConstructors().stream().filter(c -> c.getParameters().isEmpty()).findFirst().orElse(null);
+                defaultBaseConstructor = baseType.getSubclassConstructors().stream().filter(c -> c.getParameters().isEmpty()).findFirst().orElse(null);
                 if (defaultBaseConstructor == null) {
                     addDiagnostic(BinderErrors.BaseClassNoParameterlessConstructor, classNode.name);
                 }
@@ -228,7 +228,7 @@ public class Binder {
             }
 
             SType constructorOwner = isBaseCall ? context.getClassType().getBaseType() : context.getClassType();
-            List<ConstructorReference> candidates = constructorOwner.getConstructors();
+            List<ConstructorReference> candidates = isBaseCall ? constructorOwner.getSubclassConstructors() : constructorOwner.getConstructors();
             BindInvocableArgsResult<ConstructorReference> result = bindInvocableArguments(
                     constructorNode.initializer.arguments,
                     candidates,
@@ -264,7 +264,7 @@ public class Binder {
                 baseType = SJavaObject.instance;
             }
 
-            ConstructorReference constructor = baseType.getConstructors().stream()
+            ConstructorReference constructor = baseType.getSubclassConstructors().stream()
                     .filter(c -> c.getParameters().isEmpty())
                     .findFirst()
                     .orElse(null);

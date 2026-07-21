@@ -144,6 +144,10 @@ public abstract class SType {
         return List.of();
     }
 
+    public List<ConstructorReference> getSubclassConstructors() {
+        return getConstructors();
+    }
+
     public List<MethodReference> getInstanceMethods() {
         return getDeclaredInstanceMethods();
     }

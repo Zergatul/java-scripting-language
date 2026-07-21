@@ -117,6 +117,16 @@ public class SCustomType extends SReferenceType {
     }
 
     @Override
+    public List<ConstructorReference> getSubclassConstructors() {
+        return Arrays.stream(clazz.getDeclaredConstructors())
+                .filter(c -> Modifier.isPublic(c.getModifiers()) || Modifier.isProtected(c.getModifiers()))
+                .filter(c -> !c.isSynthetic())
+                .map(NativeConstructorReference::new)
+                .map(c -> (ConstructorReference) c)
+                .toList();
+    }
+
+    @Override
     public List<PropertyReference> getInstanceProperties() {
         return instanceProperties.value();
     }

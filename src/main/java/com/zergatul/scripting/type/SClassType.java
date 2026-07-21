@@ -88,6 +88,16 @@ public class SClassType extends SReferenceType {
     }
 
     @Override
+    public List<ConstructorReference> getSubclassConstructors() {
+        return Arrays.stream(clazz.getDeclaredConstructors())
+                .filter(c -> Modifier.isPublic(c.getModifiers()) || Modifier.isProtected(c.getModifiers()))
+                .filter(c -> !c.isSynthetic())
+                .map(NativeConstructorReference::new)
+                .map(c -> (ConstructorReference) c)
+                .toList();
+    }
+
+    @Override
     public List<PropertyReference> getInstanceProperties() {
         List<PropertyReference> properties = new ArrayList<>();
         properties.addAll(Arrays.stream(clazz.getFields())
