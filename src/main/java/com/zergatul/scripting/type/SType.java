@@ -149,10 +149,18 @@ public abstract class SType {
     }
 
     public List<MethodReference> getInstanceMethods() {
-        return getDeclaredInstanceMethods();
+        return getDeclaredInstanceMethods(false);
+    }
+
+    public List<MethodReference> getInstanceMethods(boolean includeProtected) {
+        return getDeclaredInstanceMethods(includeProtected);
     }
 
     public List<MethodReference> getDeclaredInstanceMethods() {
+        return getInstanceMethods(false);
+    }
+
+    public List<MethodReference> getDeclaredInstanceMethods(boolean includeProtected) {
         return List.of();
     }
 

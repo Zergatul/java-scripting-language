@@ -226,7 +226,27 @@ public class SDeclaredType extends SReferenceType {
     }
 
     @Override
-    public List<MethodReference> getDeclaredInstanceMethods() {
+    public List<MethodReference> getInstanceMethods(boolean includeProtected) {
+        if (getBaseType() == SJavaObject.instance && interfaces.isEmpty()) {
+            return getDeclaredInstanceMethods(includeProtected);
+        }
+
+        List<MethodReference> methods = new ArrayList<>();
+
+        SType current = this;
+        while (current != null && current != SJavaObject.instance) {
+            methods.addAll(current.getDeclaredInstanceMethods(includeProtected));
+            if (current instanceof SDeclaredType declared) {
+                declared.interfaces.forEach(i -> methods.addAll(i.getInstanceMethods()));
+            }
+            current = current.getBaseType();
+        }
+
+        return methods;
+    }
+
+    @Override
+    public List<MethodReference> getDeclaredInstanceMethods(boolean includeProtected) {
         return methods;
     }
 

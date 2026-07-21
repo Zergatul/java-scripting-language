@@ -407,8 +407,9 @@ public class BinderTreeGenerator {
         add(new BoundVariableDeclarationNode(
                 new BoundNameExpressionNode(length),
                 new BoundPropertyAccessExpressionNode(
-                    new BoundNameExpressionNode(iterable),
-                    iterable.getType().getInstanceProperties().stream().filter(p -> p.getName().equals("length")).findFirst().orElseThrow())));
+                        new BoundNameExpressionNode(iterable),
+                        iterable.getType().getInstanceProperties().stream().filter(p -> p.getName().equals("length")).findFirst().orElseThrow(),
+                        false)));
         add(new BoundVariableDeclarationNode(new BoundNameExpressionNode(item)));
 
         StateBoundary begin = newDetachedBoundary();
@@ -698,7 +699,8 @@ public class BinderTreeGenerator {
                 objectRef,
                 node.method,
                 arguments,
-                node.refVariables);
+                node.refVariables,
+                node.isPrivate);
     }
 
     private BoundExpressionNode rewriteAsync(BoundUnaryExpressionNode node) {

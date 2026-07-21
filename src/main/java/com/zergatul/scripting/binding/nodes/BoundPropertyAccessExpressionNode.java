@@ -13,20 +13,33 @@ public class BoundPropertyAccessExpressionNode extends BoundExpressionNode {
     public final MemberAccessExpressionNode syntaxNode;
     public final BoundExpressionNode callee;
     public final BoundPropertyNode property;
+    public final boolean isPrivate;
 
-    public BoundPropertyAccessExpressionNode(BoundExpressionNode callee, PropertyReference property) {
-        this(SyntaxFactory.missingMemberAccessExpression(), callee, new BoundPropertyNode(property), TextRange.MISSING);
+    public BoundPropertyAccessExpressionNode(BoundExpressionNode callee, PropertyReference property, boolean isPrivate) {
+        this(SyntaxFactory.missingMemberAccessExpression(), callee, new BoundPropertyNode(property), isPrivate, TextRange.MISSING);
     }
 
-    public BoundPropertyAccessExpressionNode(MemberAccessExpressionNode node, BoundExpressionNode callee, BoundPropertyNode property) {
-        this(node, callee, property, node.getRange());
+    public BoundPropertyAccessExpressionNode(
+            MemberAccessExpressionNode node,
+            BoundExpressionNode callee,
+            BoundPropertyNode property,
+            boolean isPrivate
+    ) {
+        this(node, callee, property, isPrivate, node.getRange());
     }
 
-    public BoundPropertyAccessExpressionNode(MemberAccessExpressionNode node, BoundExpressionNode callee, BoundPropertyNode property, TextRange range) {
+    public BoundPropertyAccessExpressionNode(
+            MemberAccessExpressionNode node,
+            BoundExpressionNode callee,
+            BoundPropertyNode property,
+            boolean isPrivate,
+            TextRange range
+    ) {
         super(BoundNodeType.PROPERTY_ACCESS_EXPRESSION, property.property.getType(), range);
         this.syntaxNode = node;
         this.callee = callee;
         this.property = property;
+        this.isPrivate = isPrivate;
     }
 
     @Override

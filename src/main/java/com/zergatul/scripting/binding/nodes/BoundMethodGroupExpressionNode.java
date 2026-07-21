@@ -16,12 +16,26 @@ public class BoundMethodGroupExpressionNode extends BoundExpressionNode {
     public final BoundExpressionNode callee;
     public final List<MethodReference> candidates;
     public final BoundUnresolvedMethodNode method;
+    public final boolean isPrivate;
 
-    public BoundMethodGroupExpressionNode(MemberAccessExpressionNode node, BoundExpressionNode callee, List<MethodReference> candidates, BoundUnresolvedMethodNode method) {
-        this(node, callee, candidates, method, node.getRange());
+    public BoundMethodGroupExpressionNode(
+            MemberAccessExpressionNode node,
+            BoundExpressionNode callee,
+            List<MethodReference> candidates,
+            BoundUnresolvedMethodNode method,
+            boolean isPrivate
+    ) {
+        this(node, callee, candidates, method, isPrivate, node.getRange());
     }
 
-    public BoundMethodGroupExpressionNode(MemberAccessExpressionNode node, BoundExpressionNode callee, List<MethodReference> candidates, BoundUnresolvedMethodNode method, TextRange range) {
+    public BoundMethodGroupExpressionNode(
+            MemberAccessExpressionNode node,
+            BoundExpressionNode callee,
+            List<MethodReference> candidates,
+            BoundUnresolvedMethodNode method,
+            boolean isPrivate,
+            TextRange range
+    ) {
         super(BoundNodeType.METHOD_GROUP, new SMethodGroup(), range);
 
         if (node.isNot(ParserNodeType.NAME_EXPRESSION) && node.isNot(ParserNodeType.MEMBER_ACCESS_EXPRESSION)) {
@@ -32,6 +46,7 @@ public class BoundMethodGroupExpressionNode extends BoundExpressionNode {
         this.callee = callee;
         this.candidates = candidates;
         this.method = method;
+        this.isPrivate = isPrivate;
     }
 
     @Override

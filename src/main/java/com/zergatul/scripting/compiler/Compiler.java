@@ -2933,7 +2933,7 @@ public class Compiler {
         expression.method.compileInvoke(visitor, context, () -> {
             compileExpression(visitor, context, expression.right);
             compileExpression(visitor, context, expression.left);
-        });
+        }, false);
     }
 
     private void compileIsExpression(MethodVisitor visitor, CompilerContext context, BoundIsExpressionNode is) {
@@ -3524,7 +3524,8 @@ public class Compiler {
                     for (BoundExpressionNode expression : invocation.arguments.arguments) {
                         compileExpression(visitor, context, expression);
                     }
-                });
+                },
+                invocation.isPrivate);
 
         releaseRefVariables(visitor, context, invocation.refVariables);
     }
@@ -3545,7 +3546,7 @@ public class Compiler {
             for (BoundExpressionNode expression : invocation.arguments.arguments) {
                 compileExpression(visitor, context, expression);
             }
-        });
+        }, false);
 
         releaseRefVariables(visitor, context, invocation.refVariables);
     }

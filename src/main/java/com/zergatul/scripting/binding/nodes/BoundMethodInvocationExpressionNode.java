@@ -17,24 +17,16 @@ public class BoundMethodInvocationExpressionNode extends BoundExpressionNode {
     public final BoundMethodNode method;
     public final BoundArgumentsListNode arguments;
     public final List<RefHolder> refVariables;
+    public final boolean isPrivate;
 
     public BoundMethodInvocationExpressionNode(
             BoundExpressionNode objectReference,
             BoundMethodNode method,
             BoundArgumentsListNode arguments,
-            List<RefHolder> refVariables
+            List<RefHolder> refVariables,
+            boolean isPrivate
     ) {
-        this(SyntaxFactory.missingInvocationExpression(), objectReference, method, arguments, refVariables, TextRange.MISSING);
-    }
-
-    public BoundMethodInvocationExpressionNode(
-            InvocationExpressionNode node,
-            BoundExpressionNode objectReference,
-            BoundMethodNode method,
-            BoundArgumentsListNode arguments,
-            List<RefHolder> refVariables
-    ) {
-        this(node, objectReference, method, arguments, refVariables, node.getRange());
+        this(SyntaxFactory.missingInvocationExpression(), objectReference, method, arguments, refVariables, isPrivate, TextRange.MISSING);
     }
 
     public BoundMethodInvocationExpressionNode(
@@ -43,6 +35,18 @@ public class BoundMethodInvocationExpressionNode extends BoundExpressionNode {
             BoundMethodNode method,
             BoundArgumentsListNode arguments,
             List<RefHolder> refVariables,
+            boolean isPrivate
+    ) {
+        this(node, objectReference, method, arguments, refVariables, isPrivate, node.getRange());
+    }
+
+    public BoundMethodInvocationExpressionNode(
+            InvocationExpressionNode node,
+            BoundExpressionNode objectReference,
+            BoundMethodNode method,
+            BoundArgumentsListNode arguments,
+            List<RefHolder> refVariables,
+            boolean isPrivate,
             TextRange range
     ) {
         super(BoundNodeType.METHOD_INVOCATION_EXPRESSION, method.method.getReturn(), range);
@@ -51,6 +55,7 @@ public class BoundMethodInvocationExpressionNode extends BoundExpressionNode {
         this.method = method;
         this.arguments = arguments;
         this.refVariables = refVariables;
+        this.isPrivate = isPrivate;
     }
 
     public Token getDotToken() {

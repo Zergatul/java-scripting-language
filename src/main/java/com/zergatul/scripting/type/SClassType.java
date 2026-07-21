@@ -148,9 +148,9 @@ public class SClassType extends SReferenceType {
     }
 
     @Override
-    public List<MethodReference> getDeclaredInstanceMethods() {
+    public List<MethodReference> getDeclaredInstanceMethods(boolean includeProtected) {
         return Arrays.stream(this.clazz.getDeclaredMethods())
-                .filter(m -> Modifier.isPublic(m.getModifiers()))
+                .filter(m -> Modifier.isPublic(m.getModifiers()) || (includeProtected && Modifier.isProtected(m.getModifiers())))
                 .filter(m -> !Modifier.isStatic(m.getModifiers()))
                 .filter(m -> !m.isSynthetic())
                 .filter(m -> !m.isBridge())

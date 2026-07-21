@@ -1512,7 +1512,8 @@ public class Binder {
                     methodGroup.callee,
                     methodNode,
                     result.argumentsListNode,
-                    context.releaseRefVariables());
+                    context.releaseRefVariables(),
+                    methodGroup.isPrivate);
         }
 
         SFunction callableType = callee.type.getCallableType();
@@ -1702,6 +1703,7 @@ public class Binder {
                                 context.getClassType(),
                                 name.getRange().getStart()),
                         new BoundPropertyNode(name, property),
+                        false,
                         name.getRange());
             }
 
@@ -1719,7 +1721,8 @@ public class Binder {
                                 context.getClassType(),
                                 name.getRange().getStart()),
                         methods,
-                        new BoundUnresolvedMethodNode(name));
+                        new BoundUnresolvedMethodNode(name),
+                        false);
             }
         }
 
@@ -2012,16 +2015,16 @@ public class Binder {
 
     private BoundExpressionNode bindMemberAccessExpression(MemberAccessExpressionNode expression) {
         BoundExpressionNode callee = bindExpressionOrStaticRef(expression.callee);
+        boolean isPrivate = expression.isPrivate();
 
         if (callee.type == SNull.instance) {
             addDiagnostic(BinderErrors.CannotAccessNullMembers, expression.operator);
             return new BoundPropertyAccessExpressionNode(
                     expression,
                     callee,
-                    new BoundPropertyNode(expression.name, UnknownPropertyReference.instance));
+                    new BoundPropertyNode(expression.name, UnknownPropertyReference.instance),
+                    isPrivate);
         }
-
-        boolean isPrivate = expression.isPrivate();
 
         if (callee.type instanceof SStaticTypeReference staticType) {
             PropertyReference property = staticType.getUnderlying().getStaticProperties().stream()
@@ -2034,7 +2037,8 @@ public class Binder {
                 return new BoundPropertyAccessExpressionNode(
                         expression,
                         callee,
-                        new BoundPropertyNode(expression.name, property));
+                        new BoundPropertyNode(expression.name, property),
+                        isPrivate);
             }
 
             List<MethodReference> methods = staticType.getUnderlying().getStaticMethods().stream()
@@ -2056,14 +2060,16 @@ public class Binder {
                 return new BoundPropertyAccessExpressionNode(
                         expression,
                         callee,
-                        new BoundPropertyNode(expression.name, UnknownPropertyReference.instance));
+                        new BoundPropertyNode(expression.name, UnknownPropertyReference.instance),
+                        isPrivate);
             }
 
             return new BoundMethodGroupExpressionNode(
                     expression,
                     callee,
                     methods,
-                    new BoundUnresolvedMethodNode(expression.name));
+                    new BoundUnresolvedMethodNode(expression.name),
+                    isPrivate);
         } else {
             PropertyReference property;
             if (callee.type == SUnknown.instance || expression.name.value.isEmpty()) {
@@ -2080,7 +2086,8 @@ public class Binder {
                 return new BoundPropertyAccessExpressionNode(
                         expression,
                         callee,
-                        new BoundPropertyNode(expression.name, property));
+                        new BoundPropertyNode(expression.name, property),
+                        isPrivate);
             }
 
             List<MethodReference> methods = getInstanceMethodsWithExtensions(callee.type, isPrivate)
@@ -2102,14 +2109,16 @@ public class Binder {
                 return new BoundPropertyAccessExpressionNode(
                         expression,
                         callee,
-                        new BoundPropertyNode(expression.name, UnknownPropertyReference.instance));
+                        new BoundPropertyNode(expression.name, UnknownPropertyReference.instance),
+                        isPrivate);
             }
 
             return new BoundMethodGroupExpressionNode(
                     expression,
                     callee,
                     methods,
-                    new BoundUnresolvedMethodNode(expression.name));
+                    new BoundUnresolvedMethodNode(expression.name),
+                    isPrivate);
         }
     }
 
@@ -2150,9 +2159,14 @@ public class Binder {
     }
 
     private List<MethodReference> getInstanceMethodsWithExtensions(SType type, boolean isPrivate) {
+        boolean includeProtected = context.isClassMethod() && context.getClassType() == type;
+
         List<MethodReference> methods = new ArrayList<>();
-        for (MethodReference method : type.getInstanceMethods()) {
-            if (method.isPublic() ^ isPrivate) {
+        for (MethodReference method : type.getInstanceMethods(includeProtected)) {
+            boolean ok =
+                    (isPrivate ^ method.isPublic()) ||
+                    (includeProtected && method.isProtected());
+            if (ok) {
                 methods.add(method);
             }
         }

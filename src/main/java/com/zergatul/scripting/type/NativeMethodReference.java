@@ -66,6 +66,11 @@ public class NativeMethodReference extends MethodReference {
     }
 
     @Override
+    public boolean isProtected() {
+        return Modifier.isProtected(method.getModifiers());
+    }
+
+    @Override
     public boolean isVirtual() {
         return !Modifier.isFinal(method.getModifiers());
     }
@@ -81,8 +86,8 @@ public class NativeMethodReference extends MethodReference {
     }
 
     @Override
-    public void compileInvoke(MethodVisitor visitor, CompilerContext context, Runnable compileArguments) {
-        if (isPublic()) {
+    public void compileInvoke(MethodVisitor visitor, CompilerContext context, Runnable compileArguments, boolean isPrivate) {
+        if (!isPrivate) {
             compileArguments.run();
             if (isStatic()) {
                 visitor.visitMethodInsn(

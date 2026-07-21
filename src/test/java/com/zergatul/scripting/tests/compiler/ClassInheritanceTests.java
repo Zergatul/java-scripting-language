@@ -336,6 +336,60 @@ public class ClassInheritanceTests extends ComparatorTest {
     }
 
     @Test
+    public void protectedJavaMethodBaseCallTest1() {
+        String code = """
+                class Class : Java<com.zergatul.scripting.tests.compiler.ClassInheritanceTests$ProtectedMethodBase> {
+                    constructor() {
+                        base.add(123);
+                    }
+                }
+
+                new Class();
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(List.of(123), ApiRoot.intStorage.list);
+    }
+
+    @Test
+    public void protectedJavaMethodBaseCallTest2() {
+        String code = """
+                class Class : Java<com.zergatul.scripting.tests.compiler.ClassInheritanceTests$ProtectedMethodBase> {
+                    constructor() {
+                        this.add(123);
+                    }
+                }
+
+                new Class();
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(List.of(123), ApiRoot.intStorage.list);
+    }
+
+    @Test
+    public void protectedJavaMethodBaseCallTest3() {
+        String code = """
+                class Class : Java<com.zergatul.scripting.tests.compiler.ClassInheritanceTests$ProtectedMethodBase> {
+                    constructor() {
+                        add(123);
+                    }
+                }
+
+                new Class();
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(List.of(123), ApiRoot.intStorage.list);
+    }
+
+    @Test
     public void cannotInstantiateAbstractClassTest() {
         String code = """
                 let list = ⟦new Java<java.util.AbstractList>()⟧;
@@ -812,6 +866,14 @@ public class ClassInheritanceTests extends ComparatorTest {
 
         public String getValue() {
             return value;
+        }
+    }
+
+    @SuppressWarnings("unused")
+    public static class ProtectedMethodBase {
+
+        protected void add(int value) {
+            ApiRoot.intStorage.add(value);
         }
     }
 

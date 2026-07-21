@@ -167,10 +167,10 @@ public class SBoxedType extends SReferenceType {
         }
 
         @Override
-        public void compileInvoke(MethodVisitor visitor, CompilerContext context, Runnable compileArguments) {
+        public void compileInvoke(MethodVisitor visitor, CompilerContext context, Runnable compileArguments, boolean isPrivate) {
             compileArguments.run();
             boxed.underlying.compileUnboxing(visitor);
-            underlying.compileInvoke(visitor, context, () -> {});
+            underlying.compileInvoke(visitor, context, () -> {}, false);
         }
 
         @Override

@@ -276,7 +276,7 @@ public class SInt extends SValueType {
 
     private static final Lazy<MethodReference> METHOD_TO_INT8 = new Lazy<>(() -> new NoArgsByteCodeMethodReference(instance, SInt8.instance, "toInt8") {
         @Override
-        public void compileInvoke(MethodVisitor visitor, CompilerContext context, Runnable compileArguments) {
+        public void compileInvoke(MethodVisitor visitor, CompilerContext context, Runnable compileArguments, boolean isPrivate) {
             compileArguments.run();
             visitor.visitInsn(I2B);
         }
@@ -284,7 +284,7 @@ public class SInt extends SValueType {
 
     private static final Lazy<MethodReference> METHOD_TO_INT16 = new Lazy<>(() -> new NoArgsByteCodeMethodReference(instance, SInt16.instance, "toInt16") {
         @Override
-        public void compileInvoke(MethodVisitor visitor, CompilerContext context, Runnable compileArguments) {
+        public void compileInvoke(MethodVisitor visitor, CompilerContext context, Runnable compileArguments, boolean isPrivate) {
             compileArguments.run();
             visitor.visitInsn(I2S);
         }

@@ -40,7 +40,7 @@ public class DeclaredBinaryOperationReference extends MethodReference {
     }
 
     @Override
-    public void compileInvoke(MethodVisitor visitor, CompilerContext context, Runnable compileArguments) {
+    public void compileInvoke(MethodVisitor visitor, CompilerContext context, Runnable compileArguments, boolean isPrivate) {
         throw new InternalException();
     }
 
