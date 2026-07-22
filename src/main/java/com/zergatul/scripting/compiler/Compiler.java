@@ -258,14 +258,19 @@ public class Compiler {
 
     private void compileClassField(ClassWriter writer, BoundClassFieldNode field) {
         writer.visitField(
-                ACC_PUBLIC,
+                getVisibilityModifier(field.property.getVisibility()),
                 field.name.value,
                 field.typeNode.type.getDescriptor(),
                 null, null);
     }
 
     private void compileClassConstructor(ClassWriter writer, BoundClassConstructorNode constructor, CompilerContext context) {
-        MethodVisitor constructorVisitor = writer.visitMethod(ACC_PUBLIC, "<init>", constructor.functionType.getMethodDescriptor(), null, null);
+        MethodVisitor constructorVisitor = writer.visitMethod(
+                getVisibilityModifier(constructor.constructor.getVisibility()),
+                "<init>",
+                constructor.functionType.getMethodDescriptor(),
+                null,
+                null);
         constructorVisitor.visitCode();
 
         context = context.createClassMethod(SVoidType.instance, false);
@@ -292,7 +297,7 @@ public class Compiler {
     }
 
     private void compileClassMethod(ClassWriter writer, BoundClassMethodNode methodNode, CompilerContext context) {
-        int methodModifiers = ACC_PUBLIC;
+        int methodModifiers = getVisibilityModifier(methodNode.method.getVisibility());
         if (methodNode.syntaxNode.modifiers.isFinal()) {
             methodModifiers |= ACC_FINAL;
         }
@@ -320,6 +325,14 @@ public class Compiler {
 
         methodVisitor.visitMaxs(0, 0);
         methodVisitor.visitEnd();
+    }
+
+    private int getVisibilityModifier(Visibility visibility) {
+        return switch (visibility) {
+            case PUBLIC -> ACC_PUBLIC;
+            case PROTECTED -> ACC_PROTECTED;
+            case PRIVATE -> ACC_PRIVATE;
+        };
     }
 
     private void compileClassUnaryOperation(ClassWriter writer, BoundClassUnaryOperationNode unaryOperationNode, CompilerContext context) {

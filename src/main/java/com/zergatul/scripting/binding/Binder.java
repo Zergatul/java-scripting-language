@@ -1820,7 +1820,9 @@ public class Binder {
                     expression);
         }
 
-        List<ConstructorReference> candidates = typeNode.type.getConstructors();
+        List<ConstructorReference> candidates = typeNode.type.getConstructors().stream()
+                .filter(this::isConstructorAccessibleForObjectCreation)
+                .toList();
         BindInvocableArgsResult<ConstructorReference> result = bindInvocableArguments(
                 expression.arguments,
                 candidates,
@@ -2216,18 +2218,24 @@ public class Binder {
             BoundPropertyTarget.AccessStrategy access
     ) {
         if (access == BoundPropertyTarget.AccessStrategy.VAR_HANDLE) {
-            return property.getVisibility() != Visibility.PUBLIC;
+            return property instanceof FieldPropertyReference && property.getVisibility() != Visibility.PUBLIC;
         }
         if (property.getVisibility() == Visibility.PUBLIC) {
             return true;
         }
-        if (property.getVisibility() != Visibility.PROTECTED || !(property instanceof FieldPropertyReference field)) {
+        SType ownerType;
+        if (property instanceof FieldPropertyReference field) {
+            ownerType = SType.fromJavaType(field.getUnderlyingField().getDeclaringClass());
+        } else if (property instanceof DeclaredFieldReference field) {
+            ownerType = field.getOwner();
+        } else {
             return false;
         }
-        return isProtectedMemberAccessible(
-                SType.fromJavaType(field.getUnderlyingField().getDeclaringClass()),
-                receiverType,
-                property.isStatic());
+        if (property.getVisibility() == Visibility.PRIVATE) {
+            return isPrivateDeclaredMemberAccessible(ownerType);
+        }
+        return property.getVisibility() == Visibility.PROTECTED &&
+                isProtectedMemberAccessible(ownerType, receiverType, property.isStatic());
     }
 
     private boolean isMethodAccessibleForLookup(
@@ -2236,11 +2244,28 @@ public class Binder {
             BoundCallTarget.AccessStrategy access
     ) {
         if (access == BoundCallTarget.AccessStrategy.METHOD_HANDLE) {
-            return method.getVisibility() != Visibility.PUBLIC;
+            return method instanceof NativeMethodReference && method.getVisibility() != Visibility.PUBLIC;
         }
-        return method.getVisibility() == Visibility.PUBLIC ||
-                (method.getVisibility() == Visibility.PROTECTED &&
-                        isProtectedMemberAccessible(method.getOwner(), receiverType, method.isStatic()));
+        if (method.getVisibility() == Visibility.PUBLIC) {
+            return true;
+        }
+        if (method.getVisibility() == Visibility.PRIVATE) {
+            return method instanceof DeclaredMethodReference && isPrivateDeclaredMemberAccessible(method.getOwner());
+        }
+        return isProtectedMemberAccessible(method.getOwner(), receiverType, method.isStatic());
+    }
+
+    private boolean isPrivateDeclaredMemberAccessible(SType ownerType) {
+        return context.isClassMethod() &&
+                context.isDeclaredClass() &&
+                !context.isExtension() &&
+                context.getClassType().equals(ownerType);
+    }
+
+    private boolean isConstructorAccessibleForObjectCreation(ConstructorReference constructor) {
+        return constructor.getVisibility() == Visibility.PUBLIC ||
+                constructor instanceof DeclaredConstructorReference &&
+                        isPrivateDeclaredMemberAccessible(constructor.getOwner());
     }
 
     private boolean isProtectedMemberAccessible(SType ownerType, SType receiverType, boolean isStatic) {
@@ -2891,6 +2916,7 @@ public class Binder {
     }
 
     private void buildFunctionDeclaration(FunctionNode functionNode) {
+        validateVisibilityModifierNotAllowed(functionNode.modifiers);
         String name = functionNode.name.value;
 
         FunctionGroupDeclaration groupDeclaration = null;
@@ -2958,16 +2984,21 @@ public class Binder {
             SType baseType = classDeclaration.getDeclaredType().getBaseType();
             if (MemberLookup.getProperties(baseType).stream()
                     .filter(p -> !p.isStatic())
+                    .filter(p -> p.getVisibility() != Visibility.PRIVATE)
                     .anyMatch(p -> p.getName().equals(fieldName))) {
                 addDiagnostic(BinderErrors.BaseClassAlreadyHasMember, classFieldNode.name);
             }
             if (MemberLookup.getMethods(baseType).stream()
                     .filter(m -> !m.isStatic())
+                    .filter(m -> m.getVisibility() != Visibility.PRIVATE)
                     .anyMatch(m -> m.getName().equals(fieldName))) {
                 addDiagnostic(BinderErrors.BaseClassAlreadyHasMember, classFieldNode.name);
             }
 
-            propertyRef = classDeclaration.getDeclaredType().addField(typeNode.type, fieldName);
+            propertyRef = classDeclaration.getDeclaredType().addField(
+                    typeNode.type,
+                    fieldName,
+                    classFieldNode.modifiers.getVisibility());
         }
 
         SymbolRef symbolRef = new ImmutableSymbolRef(new ClassPropertySymbol(fieldName, typeNode.type, TextRange.combine(classFieldNode.type, classFieldNode.name)));
@@ -2990,6 +3021,7 @@ public class Binder {
                     .filter(m -> !m.getOwner().isInterface())
                     .filter(m -> m.getName().equals(required.getName()))
                     .filter(m -> m.signatureMatchesExactly(new SMethodFunction(required.getReturn(), required.getParameters().toArray(MethodParameter[]::new))))
+                    .filter(m -> !reducesVisibility(m.getVisibility(), required.getVisibility()))
                     .anyMatch(m -> m.getReturn().equals(required.getReturn()));
             if (!implemented) {
                 addDiagnostic(BinderErrors.MissingInheritedMethodImplementation, classNode.name, required.getName());
@@ -3001,10 +3033,12 @@ public class Binder {
         List<MethodReference> methods = new ArrayList<>();
         methods.addAll(MemberLookup.getMethods(declaredType.getBaseType()).stream()
                 .filter(m -> !m.isStatic())
+                .filter(m -> m.getVisibility() != Visibility.PRIVATE)
                 .toList());
         for (SType interfaceType : declaredType.getInterfaces()) {
             methods.addAll(MemberLookup.getMethods(interfaceType).stream()
                     .filter(m -> !m.isStatic())
+                    .filter(m -> m.getVisibility() != Visibility.PRIVATE)
                     .toList());
         }
         return methods;
@@ -3017,6 +3051,7 @@ public class Binder {
 
         MemberLookup.getMethods(type).stream()
                 .filter(m -> !m.isStatic())
+                .filter(m -> m.getVisibility() != Visibility.PRIVATE)
                 .filter(MethodReference::isAbstract)
                 .forEach(m -> addRequiredMethod(methods, m));
     }
@@ -3024,6 +3059,7 @@ public class Binder {
     private void collectInterfaceMethods(SType type, List<MethodReference> methods) {
         MemberLookup.getMethods(type).stream()
                 .filter(m -> !m.isStatic())
+                .filter(m -> m.getVisibility() != Visibility.PRIVATE)
                 .forEach(m -> addRequiredMethod(methods, m));
     }
 
@@ -3048,7 +3084,9 @@ public class Binder {
             hasError = true;
             addDiagnostic(BinderErrors.ConstructorAlreadyDeclared, constructorNode.keyword);
         } else {
-            constructorRef = classDeclaration.getDeclaredType().addConstructor(functionType);
+            constructorRef = classDeclaration.getDeclaredType().addConstructor(
+                    functionType,
+                    constructorNode.modifiers.getVisibility());
         }
 
         SymbolRef symbolRef = new ImmutableSymbolRef(new ConstructorSymbol(functionType, constructorNode.keyword.getRange()));
@@ -3056,6 +3094,10 @@ public class Binder {
     }
 
     private void buildClassMethodDeclaration(ClassDeclaration classDeclaration, ClassMethodNode methodNode) {
+        if (methodNode.modifiers.isPrivate() && (methodNode.modifiers.isAbstract() || methodNode.modifiers.isVirtual())) {
+            addDiagnostic(BinderErrors.PrivateMethodCannotBeVirtual, getVisibilityModifier(methodNode.modifiers));
+        }
+
         boolean isAsync = methodNode.modifiers.isAsync();
         BoundTypeNode typeNode = bindType(methodNode.type);
         SType actualReturnType = isAsync ? new SFuture(typeNode.type) : typeNode.type;
@@ -3075,17 +3117,25 @@ public class Binder {
             SType classType = classDeclaration.getDeclaredType();
             if (MemberLookup.getProperties(classType.getBaseType()).stream()
                     .filter(p -> !p.isStatic())
+                    .filter(p -> p.getVisibility() != Visibility.PRIVATE)
                     .anyMatch(p -> p.getName().equals(methodName))) {
                 addDiagnostic(BinderErrors.BaseClassAlreadyHasMember, methodNode.name);
             }
-            MethodReference overrideCandidateBaseMethod = getInheritedMethods(classDeclaration.getDeclaredType()).stream()
+            List<MethodReference> overrideCandidates = getInheritedMethods(classDeclaration.getDeclaredType()).stream()
                     .filter(m -> m.getName().equals(methodName) && m.signatureMatchesExactly(functionType))
-                    .findFirst()
-                    .orElse(null);
+                    .toList();
+            MethodReference overrideCandidateBaseMethod = overrideCandidates.stream().findFirst().orElse(null);
             if (overrideCandidateBaseMethod != null) {
                 if (!overrideCandidateBaseMethod.getReturn().equals(actualReturnType)) {
                     addDiagnostic(BinderErrors.MethodOverrideReturnMismatch, methodNode.name);
                 } else {
+                    if (overrideCandidates.stream()
+                            .filter(candidate -> candidate.getReturn().equals(actualReturnType))
+                            .anyMatch(candidate -> reducesVisibility(
+                                    methodNode.modifiers.getVisibility(),
+                                    candidate.getVisibility()))) {
+                        addDiagnostic(BinderErrors.CannotReduceMethodVisibility, getVisibilityModifier(methodNode.modifiers));
+                    }
                     if (!methodNode.modifiers.isOverride()) {
                         addDiagnostic(BinderErrors.OverrideMissing, methodNode.name);
                     } else if (!overrideCandidateBaseMethod.isVirtual()) {
@@ -3181,6 +3231,7 @@ public class Binder {
     }
 
     private void buildExtensionMethodDeclaration(ExtensionDeclaration extensionDeclaration, ClassMethodNode methodNode) {
+        validateVisibilityModifierNotAllowed(methodNode.modifiers);
         boolean isAsync = methodNode.modifiers.isAsync();
         BoundTypeNode typeNode = bindType(methodNode.type);
         SType actualReturnType = isAsync ? new SFuture(typeNode.type) : typeNode.type;
@@ -3322,6 +3373,33 @@ public class Binder {
         }
 
         return false;
+    }
+
+    private void validateVisibilityModifierNotAllowed(ModifiersNode modifiers) {
+        for (Token token : modifiers.tokens) {
+            if (isVisibilityModifier(token)) {
+                addDiagnostic(BinderErrors.VisibilityModifierNotAllowed, token);
+            }
+        }
+    }
+
+    private Token getVisibilityModifier(ModifiersNode modifiers) {
+        return modifiers.tokens.stream()
+                .filter(this::isVisibilityModifier)
+                .findFirst()
+                .orElseThrow(InternalException::new);
+    }
+
+    private boolean isVisibilityModifier(Token token) {
+        return token.is(TokenType.PUBLIC) || token.is(TokenType.PROTECTED) || token.is(TokenType.PRIVATE);
+    }
+
+    private boolean reducesVisibility(Visibility visibility, Visibility baseVisibility) {
+        return switch (baseVisibility) {
+            case PUBLIC -> visibility != Visibility.PUBLIC;
+            case PROTECTED -> visibility == Visibility.PRIVATE;
+            case PRIVATE -> false;
+        };
     }
 
     private void addVariablesToContext(List<SymbolRef> refs) {

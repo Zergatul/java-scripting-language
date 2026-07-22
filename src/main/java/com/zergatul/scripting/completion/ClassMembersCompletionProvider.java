@@ -9,7 +9,6 @@ import com.zergatul.scripting.compiler.JavaInteropPolicy;
 import com.zergatul.scripting.symbols.ClassSymbol;
 import com.zergatul.scripting.type.NativeMethodReference;
 import com.zergatul.scripting.type.MemberLookup;
-import com.zergatul.scripting.type.Visibility;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -45,11 +44,9 @@ public class ClassMembersCompletionProvider<T> extends AbstractCompletionProvide
                     List<T> suggestions = new ArrayList<>();
                     MemberLookup.getProperties(symbol.getDeclaredType()).stream()
                             .filter(p -> !p.isStatic())
-                            .filter(p -> p.getVisibility() != Visibility.PRIVATE)
                             .forEach(p -> suggestions.add(factory.getPropertySuggestion(p)));
                     MemberLookup.getMethods(symbol.getDeclaredType()).stream()
                             .filter(m -> !m.isStatic())
-                            .filter(m -> m.getVisibility() != Visibility.PRIVATE)
                             .filter(m -> {
                                 if (m instanceof NativeMethodReference nativeRef) {
                                     JavaInteropPolicy checker = parameters.getInteropPolicy();

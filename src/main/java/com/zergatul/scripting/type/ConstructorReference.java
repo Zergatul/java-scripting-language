@@ -13,6 +13,10 @@ public abstract class ConstructorReference implements Invocable {
 
     public abstract SType getOwner();
 
+    public Visibility getVisibility() {
+        return Visibility.PUBLIC;
+    }
+
     public abstract void compileInvoke(MethodVisitor visitor);
     public abstract List<MethodParameter> getParameters();
 

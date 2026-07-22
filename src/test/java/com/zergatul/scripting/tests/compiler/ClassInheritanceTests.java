@@ -337,6 +337,124 @@ public class ClassInheritanceTests extends ComparatorTest {
     }
 
     @Test
+    public void protectedJavaMethodOverrideTest() throws Exception {
+        String code = """
+                class Class : Java<com.zergatul.scripting.tests.compiler.ClassInheritanceTests$ProtectedOverrideBase> {
+                    protected override int transform(int value) => value + 1;
+                }
+
+                let instance = new Class();
+                intStorage.add(instance.invoke(10));
+                objectStorage.add(instance);
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(List.of(11), ApiRoot.intStorage.list);
+        Method method = ApiRoot.objectStorage.list.getFirst().getClass().getDeclaredMethod("transform", int.class);
+        Assertions.assertTrue(Modifier.isProtected(method.getModifiers()));
+    }
+
+    @Test
+    public void protectedScriptConstructorTest() throws Exception {
+        String code = """
+                class Base {
+                    protected int value;
+                    protected constructor(int value) {
+                        this.value = value;
+                    }
+                }
+                class Child : Base {
+                    public constructor() : base(17) {}
+                    public int getValue() => value;
+                }
+
+                let instance = new Child();
+                intStorage.add(instance.getValue());
+                objectStorage.add(instance);
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(List.of(17), ApiRoot.intStorage.list);
+        Class<?> baseClass = ApiRoot.objectStorage.list.getFirst().getClass().getSuperclass();
+        Assertions.assertTrue(Modifier.isProtected(baseClass.getDeclaredConstructor(int.class).getModifiers()));
+    }
+
+    @Test
+    public void cannotReducePublicMethodVisibilityTest() {
+        String code = """
+                class Base {
+                    public virtual void method() {}
+                }
+                class Child : Base {
+                    ⟦protected⟧ override void method() {}
+                }
+                """;
+
+        comparator.assertDiagnostics(ApiRoot.class, code, "⟦⟧", BinderErrors.CannotReduceMethodVisibility);
+    }
+
+    @Test
+    public void cannotReduceProtectedMethodVisibilityTest() {
+        String code = """
+                class Base {
+                    protected virtual void method() {}
+                }
+                class Child : Base {
+                    ⟦private⟧ override void method() {}
+                }
+                """;
+
+        comparator.assertDiagnostics(ApiRoot.class, code, "⟦⟧", BinderErrors.CannotReduceMethodVisibility);
+    }
+
+    @Test
+    public void privateBaseMembersCanBeRedeclaredTest() {
+        String code = """
+                class Base {
+                    private int value;
+                    private int method() => 1;
+                    public int getBaseValue() => value + method();
+                }
+                class Child : Base {
+                    public int value;
+                    public int method() => 2;
+                }
+
+                let instance = new Child();
+                instance.value = 3;
+                intStorage.add(instance.getBaseValue());
+                intStorage.add(instance.method());
+                intStorage.add(instance.value);
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(List.of(1, 2, 3), ApiRoot.intStorage.list);
+    }
+
+    @Test
+    public void protectedMethodDoesNotImplementPublicInterfaceMethodTest() {
+        String code = """
+                class Base {
+                    protected virtual void run() {}
+                }
+                class ⟦Child⟧ : Base, Java<java.lang.Runnable> {}
+                """;
+
+        comparator.assertDiagnostics(
+                ApiRoot.class,
+                code,
+                "⟦⟧",
+                BinderErrors.MissingInheritedMethodImplementation,
+                "run");
+    }
+
+    @Test
     public void protectedJavaMethodBaseCallTest1() {
         String code = """
                 class Class : Java<com.zergatul.scripting.tests.compiler.ClassInheritanceTests$ProtectedMethodBase> {
@@ -1059,6 +1177,18 @@ public class ClassInheritanceTests extends ComparatorTest {
 
         protected void add(int value) {
             ApiRoot.intStorage.add(value);
+        }
+    }
+
+    @SuppressWarnings("unused")
+    public static class ProtectedOverrideBase {
+
+        public int invoke(int value) {
+            return transform(value);
+        }
+
+        protected int transform(int value) {
+            return value;
         }
     }
 

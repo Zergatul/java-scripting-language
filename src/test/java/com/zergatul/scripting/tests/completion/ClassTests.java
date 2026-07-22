@@ -45,6 +45,9 @@ public class ClassTests {
                         new KeywordSuggestion(TokenType.ASYNC),
                         new KeywordSuggestion(TokenType.VIRTUAL),
                         new KeywordSuggestion(TokenType.OVERRIDE),
+                        new KeywordSuggestion(TokenType.PUBLIC),
+                        new KeywordSuggestion(TokenType.PROTECTED),
+                        new KeywordSuggestion(TokenType.PRIVATE),
                         new ClassSuggestion(context, "Class"),
                         new KeywordSuggestion(TokenType.CONSTRUCTOR)));
     }
@@ -63,6 +66,9 @@ public class ClassTests {
                         new KeywordSuggestion(TokenType.ASYNC),
                         new KeywordSuggestion(TokenType.VIRTUAL),
                         new KeywordSuggestion(TokenType.OVERRIDE),
+                        new KeywordSuggestion(TokenType.PUBLIC),
+                        new KeywordSuggestion(TokenType.PROTECTED),
+                        new KeywordSuggestion(TokenType.PRIVATE),
                         new ClassSuggestion(context, "Class"),
                         new KeywordSuggestion(TokenType.CONSTRUCTOR)));
     }
@@ -82,6 +88,9 @@ public class ClassTests {
                         new KeywordSuggestion(TokenType.ASYNC),
                         new KeywordSuggestion(TokenType.VIRTUAL),
                         new KeywordSuggestion(TokenType.OVERRIDE),
+                        new KeywordSuggestion(TokenType.PUBLIC),
+                        new KeywordSuggestion(TokenType.PROTECTED),
+                        new KeywordSuggestion(TokenType.PRIVATE),
                         new ClassSuggestion(context, "Class"),
                         new KeywordSuggestion(TokenType.CONSTRUCTOR)));
     }
@@ -457,6 +466,74 @@ public class ClassTests {
                         LocalVariableSuggestion.getParameter(context, "instance1"),
                         LocalVariableSuggestion.getParameter(context, "instance2"),
                         new StaticConstantSuggestion(context, "intStorage")));
+    }
+
+    @Test
+    public void visibilityMembersOnThisTest() {
+        assertSuggestions("""
+                class Class {
+                    public int publicField;
+                    protected int protectedField;
+                    private int privateField;
+                    public void publicMethod() {}
+                    protected void protectedMethod() {}
+                    private void privateMethod() {}
+                    void test() {
+                        this.<cursor>
+                    }
+                }
+                """,
+                context -> List.of(
+                        PropertySuggestion.getInstance(context, "Class", "publicField"),
+                        PropertySuggestion.getInstance(context, "Class", "protectedField"),
+                        PropertySuggestion.getInstance(context, "Class", "privateField"),
+                        MethodSuggestion.getInstance(context, "Class", "publicMethod"),
+                        MethodSuggestion.getInstance(context, "Class", "protectedMethod"),
+                        MethodSuggestion.getInstance(context, "Class", "privateMethod"),
+                        MethodSuggestion.getInstance(context, "Class", "test")));
+    }
+
+    @Test
+    public void visibilityMembersOutsideClassTest() {
+        assertSuggestions("""
+                class Class {
+                    public int publicField;
+                    protected int protectedField;
+                    private int privateField;
+                    public void publicMethod() {}
+                    protected void protectedMethod() {}
+                    private void privateMethod() {}
+                }
+                new Class().<cursor>
+                """,
+                context -> List.of(
+                        PropertySuggestion.getInstance(context, "Class", "publicField"),
+                        MethodSuggestion.getInstance(context, "Class", "publicMethod")));
+    }
+
+    @Test
+    public void inheritedVisibilityMembersTest() {
+        assertSuggestions("""
+                class Base {
+                    public int publicField;
+                    protected int protectedField;
+                    private int privateField;
+                    public void publicMethod() {}
+                    protected void protectedMethod() {}
+                    private void privateMethod() {}
+                }
+                class Child : Base {
+                    void test() {
+                        this.<cursor>
+                    }
+                }
+                """,
+                context -> List.of(
+                        PropertySuggestion.getInstance(context, "Child", "publicField"),
+                        PropertySuggestion.getInstance(context, "Child", "protectedField"),
+                        MethodSuggestion.getInstance(context, "Child", "test"),
+                        MethodSuggestion.getInstance(context, "Child", "publicMethod"),
+                        MethodSuggestion.getInstance(context, "Child", "protectedMethod")));
     }
 
     @Test

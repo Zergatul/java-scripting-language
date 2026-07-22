@@ -52,6 +52,11 @@ public class DeclaredMethodReference extends MethodReference {
     }
 
     @Override
+    public Visibility getVisibility() {
+        return modifiers.getVisibility();
+    }
+
+    @Override
     public void compileInvoke(MethodVisitor visitor, CompilerContext context, Runnable compileArguments) {
         compileArguments.run();
         visitor.visitMethodInsn(

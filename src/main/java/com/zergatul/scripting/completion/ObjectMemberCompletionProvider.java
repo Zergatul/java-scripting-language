@@ -71,16 +71,16 @@ public class ObjectMemberCompletionProvider<T> extends AbstractCompletionProvide
 
         List<T> suggestions = new ArrayList<>();
         boolean staticMembers = type instanceof SStaticTypeReference;
-        boolean includeProtected = objectReference instanceof BoundThisExpressionNode && isInsideClass(context);
+        boolean includeClassMembers = objectReference instanceof BoundThisExpressionNode && isInsideClass(context);
 
         MemberLookup.getProperties(type).stream()
                 .filter(p -> p.isStatic() == staticMembers)
-                .filter(p -> isVisible(p.getVisibility(), isPrivate, includeProtected))
+                .filter(p -> isVisible(p.getVisibility(), isPrivate, includeClassMembers))
                 .forEach(p -> suggestions.add(factory.getPropertySuggestion(p)));
 
         MemberLookup.getMethods(type).stream()
                 .filter(m -> m.isStatic() == staticMembers)
-                .filter(m -> isVisible(m.getVisibility(), isPrivate, includeProtected))
+                .filter(m -> isVisible(m.getVisibility(), isPrivate, includeClassMembers))
                 .filter(m -> {
                     if (m instanceof NativeMethodReference nativeRef) {
                         JavaInteropPolicy checker = parameters.getInteropPolicy();
@@ -119,11 +119,11 @@ public class ObjectMemberCompletionProvider<T> extends AbstractCompletionProvide
         return suggestions;
     }
 
-    private static boolean isVisible(Visibility visibility, boolean isPrivate, boolean includeProtected) {
+    private static boolean isVisible(Visibility visibility, boolean isPrivate, boolean includeClassMembers) {
         if (isPrivate) {
             return visibility != Visibility.PUBLIC;
-        } else if (includeProtected) {
-            return visibility != Visibility.PRIVATE;
+        } else if (includeClassMembers) {
+            return true;
         } else {
             return visibility == Visibility.PUBLIC;
         }

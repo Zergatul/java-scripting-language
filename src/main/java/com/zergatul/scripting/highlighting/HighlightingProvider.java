@@ -249,6 +249,7 @@ public class HighlightingProvider {
     }
 
     private void process(BoundClassConstructorNode node) {
+        process(node.syntaxNode.modifiers);
         process(node.syntaxNode.keyword);
         process(node.parameters);
         if (node.syntaxNode.colon != null) {
@@ -278,6 +279,7 @@ public class HighlightingProvider {
     }
 
     private void process(BoundClassFieldNode node) {
+        process(node.syntaxNode.modifiers);
         process(node.typeNode);
         process(node.name);
         process(node.syntaxNode.semicolon);
@@ -926,7 +928,7 @@ public class HighlightingProvider {
                 case BOOLEAN, INT8, INT16, INT, INT32, INT64, LONG, CHAR, FLOAT32, FLOAT, FLOAT64, STRING, IF, ELSE, BREAK,
                      CONTINUE, WHILE, FOR, FOREACH, FALSE, TRUE, IN, NEW, REF, RETURN, STATIC, VOID, ASYNC, AWAIT, LET, IS,
                      AS, META_UNKNOWN, META_CAST, META_TYPE, META_TYPE_OF, CLASS, CONSTRUCTOR, THIS, EXTENSION, ABSTRACT,
-                     VIRTUAL, OVERRIDE, BASE, TYPEALIAS, NULL, TRY, CATCH, FINALLY, THROW -> SemanticTokenType.KEYWORD;
+                     VIRTUAL, OVERRIDE, PUBLIC, PROTECTED, PRIVATE, BASE, TYPEALIAS, NULL, TRY, CATCH, FINALLY, THROW -> SemanticTokenType.KEYWORD;
                 case INTEGER_LITERAL, INTEGER64_LITERAL, FLOAT_LITERAL, INVALID_NUMBER -> SemanticTokenType.NUMBER;
                 case CHAR_LITERAL, STRING_LITERAL -> SemanticTokenType.STRING;
                 case LINE_BREAK, WHITESPACE, SINGLE_LINE_COMMENT, MULTI_LINE_COMMENT, END_OF_FILE, INVALID -> throw new InternalException();

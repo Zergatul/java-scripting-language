@@ -10,19 +10,26 @@ public class DeclaredConstructorReference extends ConstructorReference {
 
     private final SDeclaredType classType;
     private final SMethodFunction constructorType;
+    private final Visibility visibility;
 
     public DeclaredConstructorReference(SDeclaredType classType) {
-        this(classType, new SMethodFunction(SVoidType.instance, new MethodParameter[0]));
+        this(classType, new SMethodFunction(SVoidType.instance, new MethodParameter[0]), Visibility.PUBLIC);
     }
 
-    public DeclaredConstructorReference(SDeclaredType classType, SMethodFunction constructorType) {
+    public DeclaredConstructorReference(SDeclaredType classType, SMethodFunction constructorType, Visibility visibility) {
         this.classType = classType;
         this.constructorType = constructorType;
+        this.visibility = visibility;
     }
 
     @Override
     public SType getOwner() {
         return classType;
+    }
+
+    @Override
+    public Visibility getVisibility() {
+        return visibility;
     }
 
     @Override

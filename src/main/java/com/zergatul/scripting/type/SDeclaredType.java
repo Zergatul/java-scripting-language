@@ -45,19 +45,19 @@ public class SDeclaredType extends SReferenceType {
         this.clazz = clazz;
     }
 
-    public DeclaredFieldReference addField(SType type, String name) {
-        DeclaredFieldReference property = new DeclaredFieldReference(this, type, name);
+    public DeclaredFieldReference addField(SType type, String name, Visibility visibility) {
+        DeclaredFieldReference property = new DeclaredFieldReference(this, type, name, visibility);
         properties.add(property);
         return property;
     }
 
-    public DeclaredConstructorReference addConstructor(SMethodFunction function) {
+    public DeclaredConstructorReference addConstructor(SMethodFunction function, Visibility visibility) {
         if (hasDefaultConstructor) {
             constructors.clear();
             hasDefaultConstructor = false;
         }
 
-        DeclaredConstructorReference constructor = new DeclaredConstructorReference(this, function);
+        DeclaredConstructorReference constructor = new DeclaredConstructorReference(this, function, visibility);
         constructors.add(constructor);
         return constructor;
     }
@@ -176,6 +176,13 @@ public class SDeclaredType extends SReferenceType {
     @Override
     public List<ConstructorReference> getConstructors() {
         return constructors;
+    }
+
+    @Override
+    public List<ConstructorReference> getSubclassConstructors() {
+        return constructors.stream()
+                .filter(constructor -> constructor.getVisibility() != Visibility.PRIVATE)
+                .toList();
     }
 
     @Override

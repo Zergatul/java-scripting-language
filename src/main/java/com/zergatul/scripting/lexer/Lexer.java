@@ -607,6 +607,9 @@ public class Lexer {
             case "abstract" -> TokenType.ABSTRACT;
             case "virtual" -> TokenType.VIRTUAL;
             case "override" -> TokenType.OVERRIDE;
+            case "public" -> TokenType.PUBLIC;
+            case "protected" -> TokenType.PROTECTED;
+            case "private" -> TokenType.PRIVATE;
             case "typealias" -> TokenType.TYPEALIAS;
             case "null" -> TokenType.NULL;
             case "try" -> TokenType.TRY;

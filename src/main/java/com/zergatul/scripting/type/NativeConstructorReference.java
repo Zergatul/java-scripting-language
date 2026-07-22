@@ -4,6 +4,7 @@ import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Type;
 
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Modifier;
 import java.lang.reflect.Parameter;
 import java.util.ArrayList;
 import java.util.List;
@@ -21,6 +22,17 @@ public class NativeConstructorReference extends ConstructorReference {
     @Override
     public SType getOwner() {
         return SType.fromJavaType(constructor.getDeclaringClass());
+    }
+
+    @Override
+    public Visibility getVisibility() {
+        if (Modifier.isPublic(constructor.getModifiers())) {
+            return Visibility.PUBLIC;
+        } else if (Modifier.isProtected(constructor.getModifiers())) {
+            return Visibility.PROTECTED;
+        } else {
+            return Visibility.PRIVATE;
+        }
     }
 
     public void compileInvoke(MethodVisitor visitor) {
