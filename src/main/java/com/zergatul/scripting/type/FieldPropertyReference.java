@@ -70,226 +70,185 @@ public final class FieldPropertyReference extends PropertyReference {
 
     @Override
     public void compileLoad(MethodVisitor visitor, CompilerContext context, Runnable compileCallee) {
-        if (getVisibility() == Visibility.PUBLIC) {
-            if (isStatic()) {
-                visitor.visitFieldInsn(
-                        GETSTATIC,
-                        Type.getInternalName(field.getDeclaringClass()),
-                        field.getName(),
-                        Type.getDescriptor(field.getType()));
-            } else {
-                compileCallee.run();
-                visitor.visitFieldInsn(
-                        GETFIELD,
-                        Type.getInternalName(field.getDeclaringClass()),
-                        field.getName(),
-                        Type.getDescriptor(field.getType()));
-            }
+        if (isStatic()) {
+            visitor.visitFieldInsn(
+                    GETSTATIC,
+                    Type.getInternalName(field.getDeclaringClass()),
+                    field.getName(),
+                    Type.getDescriptor(field.getType()));
         } else {
-            if (isStatic()) {
-                String varHandleFieldName = context.createCachedPrivateFieldHandle(this);
-                visitor.visitFieldInsn(
-                        GETSTATIC,
-                        MethodHandleCache.INTERNAL_NAME,
-                        varHandleFieldName,
-                        Type.getDescriptor(VarHandle.class));
-                visitor.visitMethodInsn(
-                        INVOKEVIRTUAL,
-                        Type.getInternalName(VarHandle.class),
-                        "get",
-                        Type.getMethodDescriptor(
-                                Type.getType(field.getType())),
-                        false);
-            } else {
-                String varHandleFieldName = context.createCachedPrivateFieldHandle(this);
-                visitor.visitFieldInsn(
-                        GETSTATIC,
-                        MethodHandleCache.INTERNAL_NAME,
-                        varHandleFieldName,
-                        Type.getDescriptor(VarHandle.class));
-                compileCallee.run();
-                visitor.visitMethodInsn(
-                        INVOKEVIRTUAL,
-                        Type.getInternalName(VarHandle.class),
-                        "get",
-                        Type.getMethodDescriptor(
-                                Type.getType(field.getType()),
-                                Type.getType(field.getDeclaringClass())),
-                        false);
-            }
+            compileCallee.run();
+            visitor.visitFieldInsn(
+                    GETFIELD,
+                    Type.getInternalName(field.getDeclaringClass()),
+                    field.getName(),
+                    Type.getDescriptor(field.getType()));
+        }
+    }
+
+    @Override
+    public void compileVarHandleLoad(MethodVisitor visitor, CompilerContext context, Runnable compileCallee) {
+        String varHandleFieldName = context.createCachedPrivateFieldHandle(this);
+        visitor.visitFieldInsn(
+                GETSTATIC,
+                MethodHandleCache.INTERNAL_NAME,
+                varHandleFieldName,
+                Type.getDescriptor(VarHandle.class));
+        if (isStatic()) {
+            visitor.visitMethodInsn(
+                    INVOKEVIRTUAL,
+                    Type.getInternalName(VarHandle.class),
+                    "get",
+                    Type.getMethodDescriptor(Type.getType(field.getType())),
+                    false);
+        } else {
+            compileCallee.run();
+            visitor.visitMethodInsn(
+                    INVOKEVIRTUAL,
+                    Type.getInternalName(VarHandle.class),
+                    "get",
+                    Type.getMethodDescriptor(
+                            Type.getType(field.getType()),
+                            Type.getType(field.getDeclaringClass())),
+                    false);
         }
     }
 
     @Override
     public void compileStore(MethodVisitor visitor, CompilerContext context, Runnable compileCallee, Runnable compileValue) {
-        if (getVisibility() == Visibility.PUBLIC) {
+        if (isStatic()) {
+            compileValue.run();
+            visitor.visitFieldInsn(
+                    PUTSTATIC,
+                    Type.getInternalName(field.getDeclaringClass()),
+                    field.getName(),
+                    Type.getDescriptor(field.getType()));
+        } else {
             compileCallee.run();
             compileValue.run();
-            if (isStatic()) {
-                visitor.visitFieldInsn(
-                        PUTSTATIC,
-                        Type.getInternalName(field.getDeclaringClass()),
-                        field.getName(),
-                        Type.getDescriptor(field.getType()));
-            } else {
-                visitor.visitFieldInsn(
-                        PUTFIELD,
-                        Type.getInternalName(field.getDeclaringClass()),
-                        field.getName(),
-                        Type.getDescriptor(field.getType()));
-            }
+            visitor.visitFieldInsn(
+                    PUTFIELD,
+                    Type.getInternalName(field.getDeclaringClass()),
+                    field.getName(),
+                    Type.getDescriptor(field.getType()));
+        }
+    }
+
+    @Override
+    public void compileVarHandleStore(MethodVisitor visitor, CompilerContext context, Runnable compileCallee, Runnable compileValue) {
+        String varHandleFieldName = context.createCachedPrivateFieldHandle(this);
+        visitor.visitFieldInsn(
+                GETSTATIC,
+                MethodHandleCache.INTERNAL_NAME,
+                varHandleFieldName,
+                Type.getDescriptor(VarHandle.class));
+        if (isStatic()) {
+            compileValue.run();
+            visitor.visitMethodInsn(
+                    INVOKEVIRTUAL,
+                    Type.getInternalName(VarHandle.class),
+                    "set",
+                    Type.getMethodDescriptor(Type.VOID_TYPE, Type.getType(field.getType())),
+                    false);
         } else {
-            if (isStatic()) {
-                String varHandleFieldName = context.createCachedPrivateFieldHandle(this);
-                visitor.visitFieldInsn(
-                        GETSTATIC,
-                        MethodHandleCache.INTERNAL_NAME,
-                        varHandleFieldName,
-                        Type.getDescriptor(VarHandle.class));
-                compileValue.run();
-                visitor.visitMethodInsn(
-                        INVOKEVIRTUAL,
-                        Type.getInternalName(VarHandle.class),
-                        "set",
-                        Type.getMethodDescriptor(
-                                Type.VOID_TYPE,
-                                Type.getType(field.getType())),
-                        false);
-            } else {
-                String varHandleFieldName = context.createCachedPrivateFieldHandle(this);
-                visitor.visitFieldInsn(
-                        GETSTATIC,
-                        MethodHandleCache.INTERNAL_NAME,
-                        varHandleFieldName,
-                        Type.getDescriptor(VarHandle.class));
-                compileCallee.run();
-                compileValue.run();
-                visitor.visitMethodInsn(
-                        INVOKEVIRTUAL,
-                        Type.getInternalName(VarHandle.class),
-                        "set",
-                        Type.getMethodDescriptor(
-                                Type.VOID_TYPE,
-                                Type.getType(field.getDeclaringClass()),
-                                Type.getType(field.getType())),
-                        false);
-            }
+            compileCallee.run();
+            compileValue.run();
+            visitor.visitMethodInsn(
+                    INVOKEVIRTUAL,
+                    Type.getInternalName(VarHandle.class),
+                    "set",
+                    Type.getMethodDescriptor(
+                            Type.VOID_TYPE,
+                            Type.getType(field.getDeclaringClass()),
+                            Type.getType(field.getType())),
+                    false);
         }
     }
 
     @Override
     public void compileLoadModifyStore(MethodVisitor visitor, CompilerContext context, Runnable compileCallee, Runnable compileModify) {
-        if (getVisibility() == Visibility.PUBLIC) {
-            if (isStatic()) {
-                visitor.visitFieldInsn(
-                        GETSTATIC,
-                        Type.getInternalName(field.getDeclaringClass()),
-                        field.getName(),
-                        Type.getDescriptor(field.getType()));
-                // ..., odlValue
-                compileModify.run();
-                // ..., newValue
-                visitor.visitFieldInsn(
-                        PUTSTATIC,
-                        Type.getInternalName(field.getDeclaringClass()),
-                        field.getName(),
-                        Type.getDescriptor(field.getType()));
-            } else {
-                compileCallee.run();
-                // ..., callee
-                visitor.visitInsn(DUP);
-                // ..., callee, callee
-                visitor.visitFieldInsn(
-                        GETFIELD,
-                        Type.getInternalName(field.getDeclaringClass()),
-                        field.getName(),
-                        Type.getDescriptor(field.getType()));
-                // ..., callee, odlValue
-                compileModify.run();
-                // ..., callee, newValue
-                visitor.visitFieldInsn(
-                        PUTFIELD,
-                        Type.getInternalName(field.getDeclaringClass()),
-                        field.getName(),
-                        Type.getDescriptor(field.getType()));
-            }
+        if (isStatic()) {
+            visitor.visitFieldInsn(
+                    GETSTATIC,
+                    Type.getInternalName(field.getDeclaringClass()),
+                    field.getName(),
+                    Type.getDescriptor(field.getType()));
+            compileModify.run();
+            visitor.visitFieldInsn(
+                    PUTSTATIC,
+                    Type.getInternalName(field.getDeclaringClass()),
+                    field.getName(),
+                    Type.getDescriptor(field.getType()));
         } else {
-            if (isStatic()) {
-                String varHandleFieldName = context.createCachedPrivateFieldHandle(this);
-                visitor.visitFieldInsn(
-                        GETSTATIC,
-                        MethodHandleCache.INTERNAL_NAME,
-                        varHandleFieldName,
-                        Type.getDescriptor(VarHandle.class));
-                // ..., varHandle
-                visitor.visitInsn(DUP);
-                // ..., varHandle, varHandle
-                visitor.visitMethodInsn(
-                        INVOKEVIRTUAL,
-                        Type.getInternalName(VarHandle.class),
-                        "get",
-                        Type.getMethodDescriptor(
-                                Type.getType(field.getType())),
-                        false);
-                // ..., varHandle, oldValue
-                compileModify.run();
-                // ..., varHandle, newValue
-                visitor.visitMethodInsn(
-                        INVOKEVIRTUAL,
-                        Type.getInternalName(VarHandle.class),
-                        "set",
-                        Type.getMethodDescriptor(
-                                Type.VOID_TYPE,
-                                Type.getType(field.getType())),
-                        false);
-            } else {
-                context = context.createChild();
-                String varHandleFieldName = context.createCachedPrivateFieldHandle(this);
-                visitor.visitFieldInsn(
-                        GETSTATIC,
-                        MethodHandleCache.INTERNAL_NAME,
-                        varHandleFieldName,
-                        Type.getDescriptor(VarHandle.class));
-                // ..., varHandle
-                visitor.visitInsn(DUP);
-                // ..., varHandle, varHandle
-                compileCallee.run();
-                // ..., varHandle, varHandle, callee
-                visitor.visitInsn(DUP);
-                // ..., varHandle, varHandle, callee, callee
-                LocalVariable calleeVariable = new LocalVariable(null, SType.fromJavaType(field.getDeclaringClass()), null);
-                context.setStackIndex(calleeVariable);
-                calleeVariable.compileStore(context, visitor);
-                // ..., varHandle, varHandle, callee
-                visitor.visitMethodInsn(
-                        INVOKEVIRTUAL,
-                        Type.getInternalName(VarHandle.class),
-                        "get",
-                        Type.getMethodDescriptor(
-                                Type.getType(field.getType()),
-                                Type.getType(field.getDeclaringClass())),
-                        false);
-                // ..., varHandle, oldValue
-                compileModify.run();
-                // ..., varHandle, newValue
-                LocalVariable valueVariable = new LocalVariable(null, SType.fromJavaType(field.getType()), null);
-                context.setStackIndex(valueVariable);
-                valueVariable.compileStore(context, visitor);
-                // ..., varHandle
-                calleeVariable.compileLoad(context, visitor);
-                // ..., varHandle, callee
-                valueVariable.compileLoad(context, visitor);
-                // ..., varHandle, callee, newValue
-                visitor.visitMethodInsn(
-                        INVOKEVIRTUAL,
-                        Type.getInternalName(VarHandle.class),
-                        "set",
-                        Type.getMethodDescriptor(
-                                Type.VOID_TYPE,
-                                Type.getType(field.getDeclaringClass()),
-                                Type.getType(field.getType())),
-                        false);
-            }
+            compileCallee.run();
+            visitor.visitInsn(DUP);
+            visitor.visitFieldInsn(
+                    GETFIELD,
+                    Type.getInternalName(field.getDeclaringClass()),
+                    field.getName(),
+                    Type.getDescriptor(field.getType()));
+            compileModify.run();
+            visitor.visitFieldInsn(
+                    PUTFIELD,
+                    Type.getInternalName(field.getDeclaringClass()),
+                    field.getName(),
+                    Type.getDescriptor(field.getType()));
+        }
+    }
+
+    @Override
+    public void compileVarHandleLoadModifyStore(MethodVisitor visitor, CompilerContext context, Runnable compileCallee, Runnable compileModify) {
+        String varHandleFieldName = context.createCachedPrivateFieldHandle(this);
+        visitor.visitFieldInsn(
+                GETSTATIC,
+                MethodHandleCache.INTERNAL_NAME,
+                varHandleFieldName,
+                Type.getDescriptor(VarHandle.class));
+        visitor.visitInsn(DUP);
+        if (isStatic()) {
+            visitor.visitMethodInsn(
+                    INVOKEVIRTUAL,
+                    Type.getInternalName(VarHandle.class),
+                    "get",
+                    Type.getMethodDescriptor(Type.getType(field.getType())),
+                    false);
+            compileModify.run();
+            visitor.visitMethodInsn(
+                    INVOKEVIRTUAL,
+                    Type.getInternalName(VarHandle.class),
+                    "set",
+                    Type.getMethodDescriptor(Type.VOID_TYPE, Type.getType(field.getType())),
+                    false);
+        } else {
+            context = context.createChild();
+            compileCallee.run();
+            visitor.visitInsn(DUP);
+            LocalVariable calleeVariable = new LocalVariable(null, SType.fromJavaType(field.getDeclaringClass()), null);
+            context.setStackIndex(calleeVariable);
+            calleeVariable.compileStore(context, visitor);
+            visitor.visitMethodInsn(
+                    INVOKEVIRTUAL,
+                    Type.getInternalName(VarHandle.class),
+                    "get",
+                    Type.getMethodDescriptor(
+                            Type.getType(field.getType()),
+                            Type.getType(field.getDeclaringClass())),
+                    false);
+            compileModify.run();
+            LocalVariable valueVariable = new LocalVariable(null, SType.fromJavaType(field.getType()), null);
+            context.setStackIndex(valueVariable);
+            valueVariable.compileStore(context, visitor);
+            calleeVariable.compileLoad(context, visitor);
+            valueVariable.compileLoad(context, visitor);
+            visitor.visitMethodInsn(
+                    INVOKEVIRTUAL,
+                    Type.getInternalName(VarHandle.class),
+                    "set",
+                    Type.getMethodDescriptor(
+                            Type.VOID_TYPE,
+                            Type.getType(field.getDeclaringClass()),
+                            Type.getType(field.getType())),
+                    false);
         }
     }
 
@@ -301,5 +260,4 @@ public final class FieldPropertyReference extends PropertyReference {
             return false;
         }
     }
-
 }

@@ -906,8 +906,9 @@ public class Compiler {
                 }
                 case PROPERTY_ACCESS_EXPRESSION -> {
                     BoundPropertyAccessExpressionNode access = (BoundPropertyAccessExpressionNode) assignment.left;
-                    access.property.property.compileStore(
+                    compilePropertyStore(
                             visitor, context,
+                            access.target,
                             () -> compileExpression(visitor, context, access.callee),
                             () -> compileExpression(visitor, context, assignment.right));
                 }
@@ -945,8 +946,9 @@ public class Compiler {
             }
             case PROPERTY_ACCESS_EXPRESSION -> {
                 BoundPropertyAccessExpressionNode propertyAccess = (BoundPropertyAccessExpressionNode) assignment.left;
-                propertyAccess.property.property.compileLoadModifyStore(
+                compilePropertyLoadModifyStore(
                         visitor, context,
+                        propertyAccess.target,
                         () -> compileExpression(visitor, context, propertyAccess.callee),
                         () -> {
                             BufferedMethodVisitor buffer = new BufferedMethodVisitor();
@@ -1196,8 +1198,9 @@ public class Compiler {
             }
             case PROPERTY_ACCESS_EXPRESSION -> {
                 BoundPropertyAccessExpressionNode propertyExpression = (BoundPropertyAccessExpressionNode) statement.expression;
-                propertyExpression.property.property.compileLoadModifyStore(
+                compilePropertyLoadModifyStore(
                         visitor, context,
+                        propertyExpression.target,
                         () -> compileExpression(visitor, context, propertyExpression.callee),
                         () -> statement.operation.apply(visitor));
             }
@@ -3562,9 +3565,51 @@ public class Compiler {
             throw new InternalException();
         }
 
-        propertyAccess.property.property.compileLoad(
+        compilePropertyLoad(
                 visitor, context,
+                propertyAccess.target,
                 () -> compileExpression(visitor, context, propertyAccess.callee));
+    }
+
+    private void compilePropertyLoad(
+            MethodVisitor visitor,
+            CompilerContext context,
+            BoundPropertyTarget target,
+            Runnable compileCallee
+    ) {
+        if (target.access() == BoundPropertyTarget.AccessStrategy.VAR_HANDLE) {
+            target.property().compileVarHandleLoad(visitor, context, compileCallee);
+        } else {
+            target.property().compileLoad(visitor, context, compileCallee);
+        }
+    }
+
+    private void compilePropertyStore(
+            MethodVisitor visitor,
+            CompilerContext context,
+            BoundPropertyTarget target,
+            Runnable compileCallee,
+            Runnable compileValue
+    ) {
+        if (target.access() == BoundPropertyTarget.AccessStrategy.VAR_HANDLE) {
+            target.property().compileVarHandleStore(visitor, context, compileCallee, compileValue);
+        } else {
+            target.property().compileStore(visitor, context, compileCallee, compileValue);
+        }
+    }
+
+    private void compilePropertyLoadModifyStore(
+            MethodVisitor visitor,
+            CompilerContext context,
+            BoundPropertyTarget target,
+            Runnable compileCallee,
+            Runnable compileModify
+    ) {
+        if (target.access() == BoundPropertyTarget.AccessStrategy.VAR_HANDLE) {
+            target.property().compileVarHandleLoadModifyStore(visitor, context, compileCallee, compileModify);
+        } else {
+            target.property().compileLoadModifyStore(visitor, context, compileCallee, compileModify);
+        }
     }
 
     private void compileArrayCreationExpression(MethodVisitor visitor, CompilerContext context, BoundArrayCreationExpressionNode expression) {

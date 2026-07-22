@@ -35,7 +35,7 @@ public class ObjectMemberCompletionProvider<T> extends AbstractCompletionProvide
             case PROPERTY_ACCESS_EXPRESSION -> {
                 BoundPropertyAccessExpressionNode propertyAccess = (BoundPropertyAccessExpressionNode) context.entry.node;
                 if (TextRange.combineFromEnd(propertyAccess.syntaxNode.operator, propertyAccess.property).containsOrEnds(context.line, context.column)) {
-                    return getMembers(output, parameters, propertyAccess.callee.type, propertyAccess.syntaxNode.isPrivate());
+                    return getMembers(output, parameters, context, propertyAccess.callee, propertyAccess.syntaxNode.isPrivate());
                 }
             }
             case METHOD_INVOCATION_EXPRESSION -> {
@@ -43,9 +43,9 @@ public class ObjectMemberCompletionProvider<T> extends AbstractCompletionProvide
                 if (TextRange.combineFromEnd(methodInvocation.getDotToken(), methodInvocation.method).containsOrEnds(context.line, context.column)) {
                     if (methodInvocation.syntaxNode.callee.is(ParserNodeType.MEMBER_ACCESS_EXPRESSION)) {
                         MemberAccessExpressionNode memberAccess = (MemberAccessExpressionNode) methodInvocation.syntaxNode.callee;
-                        return getMembers(output, parameters, methodInvocation.objectReference.type, memberAccess.isPrivate());
+                        return getMembers(output, parameters, context, methodInvocation.objectReference, memberAccess.isPrivate());
                     } else {
-                        return getMembers(output, parameters, methodInvocation.objectReference.type, false);
+                        return getMembers(output, parameters, context, methodInvocation.objectReference, false);
                     }
                 }
             }
@@ -57,22 +57,30 @@ public class ObjectMemberCompletionProvider<T> extends AbstractCompletionProvide
         return List.of();
     }
 
-    private List<T> getMembers(BinderOutput output, CompilationParameters parameters, SType type, boolean isPrivate) {
+    private List<T> getMembers(
+            BinderOutput output,
+            CompilationParameters parameters,
+            CompletionContext context,
+            BoundExpressionNode objectReference,
+            boolean isPrivate
+    ) {
+        SType type = objectReference.type;
         if (type == SUnknown.instance) {
             return List.of();
         }
 
         List<T> suggestions = new ArrayList<>();
         boolean staticMembers = type instanceof SStaticTypeReference;
+        boolean includeProtected = objectReference instanceof BoundThisExpressionNode && isInsideClass(context);
 
         MemberLookup.getProperties(type).stream()
                 .filter(p -> p.isStatic() == staticMembers)
-                .filter(p -> isPrivate ? p.getVisibility() != Visibility.PUBLIC : p.getVisibility() == Visibility.PUBLIC)
+                .filter(p -> isVisible(p.getVisibility(), isPrivate, includeProtected))
                 .forEach(p -> suggestions.add(factory.getPropertySuggestion(p)));
 
         MemberLookup.getMethods(type).stream()
                 .filter(m -> m.isStatic() == staticMembers)
-                .filter(m -> isPrivate ? m.getVisibility() != Visibility.PUBLIC : m.getVisibility() == Visibility.PUBLIC)
+                .filter(m -> isVisible(m.getVisibility(), isPrivate, includeProtected))
                 .filter(m -> {
                     if (m instanceof NativeMethodReference nativeRef) {
                         JavaInteropPolicy checker = parameters.getInteropPolicy();
@@ -109,5 +117,27 @@ public class ObjectMemberCompletionProvider<T> extends AbstractCompletionProvide
         }
 
         return suggestions;
+    }
+
+    private static boolean isVisible(Visibility visibility, boolean isPrivate, boolean includeProtected) {
+        if (isPrivate) {
+            return visibility != Visibility.PUBLIC;
+        } else if (includeProtected) {
+            return visibility != Visibility.PRIVATE;
+        } else {
+            return visibility == Visibility.PUBLIC;
+        }
+    }
+
+    private static boolean isInsideClass(CompletionContext context) {
+        for (CompletionContext current = context; current != null && current.entry != null; current = current.up()) {
+            if (current.entry.node.is(BoundNodeType.CLASS_DECLARATION)) {
+                return true;
+            }
+            if (current.entry.node.is(BoundNodeType.EXTENSION_DECLARATION)) {
+                return false;
+            }
+        }
+        return false;
     }
 }

@@ -45,7 +45,7 @@ public class ClassMembersCompletionProvider<T> extends AbstractCompletionProvide
                     List<T> suggestions = new ArrayList<>();
                     MemberLookup.getProperties(symbol.getDeclaredType()).stream()
                             .filter(p -> !p.isStatic())
-                            .filter(p -> p.getVisibility() == Visibility.PUBLIC)
+                            .filter(p -> p.getVisibility() != Visibility.PRIVATE)
                             .forEach(p -> suggestions.add(factory.getPropertySuggestion(p)));
                     MemberLookup.getMethods(symbol.getDeclaredType()).stream()
                             .filter(m -> !m.isStatic())

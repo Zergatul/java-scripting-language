@@ -459,11 +459,67 @@ public class ClassTests {
                         new StaticConstantSuggestion(context, "intStorage")));
     }
 
+    @Test
+    public void protectedMembersTest1() {
+        assertSuggestions("""
+                class Class : Java<com.zergatul.scripting.tests.completion.ClassTests$TestClass> {
+                    constructor() {
+                        <cursor>
+                    }
+                }
+                """,
+                context -> Lists.of(
+                        statements,
+                        new ThisSuggestion(context, "Class"),
+                        new BaseSuggestion(SType.fromJavaType(TestClass.class)),
+                        new ClassSuggestion(context, "Class"),
+                        PropertySuggestion.getInstance(context, "Class", "field"),
+                        MethodSuggestion.getInstance(context, "Class", "method"),
+                        new StaticConstantSuggestion(context, "intStorage")));
+    }
+
+    @Test
+    public void protectedMembersTest2() {
+        assertSuggestions("""
+                class Class : Java<com.zergatul.scripting.tests.completion.ClassTests$TestClass> {
+                    constructor() {
+                        base.<cursor>
+                    }
+                }
+                """,
+                context -> List.of(
+                        MethodSuggestion.getInstance(context, "Class", "method")));
+    }
+
+    @Test
+    public void protectedMembersTest3() {
+        assertSuggestions("""
+                class Class : Java<com.zergatul.scripting.tests.completion.ClassTests$TestClass> {
+                    constructor() {
+                        this.<cursor>
+                    }
+                }
+                """,
+                context -> List.of(
+                        PropertySuggestion.getInstance(context, "Class", "field"),
+                        MethodSuggestion.getInstance(context, "Class", "method")));
+    }
+
     private void assertSuggestions(String code, Function<TestCompletionContext, List<Suggestion>> expectedFactory) {
         CompletionTestHelper.assertSuggestions(ApiRoot.class, code, expectedFactory);
     }
 
     public static class ApiRoot {
         public static IntStorage intStorage;
+    }
+
+    @SuppressWarnings("unused")
+    public static class TestClass {
+
+        protected int field;
+
+        protected int method() {
+            return 123;
+        }
     }
 }

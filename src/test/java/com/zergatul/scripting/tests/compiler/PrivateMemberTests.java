@@ -87,6 +87,24 @@ public class PrivateMemberTests extends ComparatorTest {
     }
 
     @Test
+    public void packagePrivateFieldTest() {
+        String code = """
+                typealias MyClass = Java<com.zergatul.scripting.tests.compiler.PrivateMemberTests$MyClass2>;
+
+                let instance = new MyClass(0);
+                instance.#packagePrivateValue = 30;
+                instance.#packagePrivateValue++;
+                instance.#packagePrivateValue += 10;
+                intStorage.add(instance.#packagePrivateValue);
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(List.of(41), ApiRoot.intStorage.list);
+    }
+
+    @Test
     public void instanceFinalFieldWriteTest() {
         String code = """
                 typealias MyClass = Java<com.zergatul.scripting.tests.compiler.PrivateMemberTests$MyClass2>;
@@ -305,6 +323,7 @@ public class PrivateMemberTests extends ComparatorTest {
         private final int value;
         private int mutableValue;
         protected int protectedValue;
+        int packagePrivateValue;
 
         public MyClass2(int value) {
             this.value = value;

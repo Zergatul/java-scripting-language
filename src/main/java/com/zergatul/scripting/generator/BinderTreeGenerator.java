@@ -6,6 +6,7 @@ import com.zergatul.scripting.parser.AssignmentOperator;
 import com.zergatul.scripting.type.SBoolean;
 import com.zergatul.scripting.type.SInt;
 import com.zergatul.scripting.type.MemberLookup;
+import com.zergatul.scripting.type.PropertyReference;
 import com.zergatul.scripting.visitors.AwaitVisitor;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
 import com.zergatul.scripting.binding.nodes.*;
@@ -403,18 +404,21 @@ public class BinderTreeGenerator {
             node.name.symbolRef.set(item);
         }
 
+        PropertyReference lengthProperty = MemberLookup.getProperties(iterable.getType()).stream()
+                .filter(p -> !p.isStatic())
+                .filter(p -> p.getName().equals("length"))
+                .findFirst()
+                .orElseThrow();
         add(new BoundVariableDeclarationNode(new BoundNameExpressionNode(iterable), iterableExpression));
         add(new BoundVariableDeclarationNode(new BoundNameExpressionNode(index), new BoundIntegerLiteralExpressionNode(0)));
         add(new BoundVariableDeclarationNode(
                 new BoundNameExpressionNode(length),
                 new BoundPropertyAccessExpressionNode(
                         new BoundNameExpressionNode(iterable),
-                        MemberLookup.getProperties(iterable.getType()).stream()
-                                .filter(p -> !p.isStatic())
-                                .filter(p -> p.getName().equals("length"))
-                                .findFirst()
-                                .orElseThrow(),
-                        false)));
+                        lengthProperty,
+                        new BoundPropertyTarget(
+                                lengthProperty,
+                                BoundPropertyTarget.AccessStrategy.DIRECT))));
         add(new BoundVariableDeclarationNode(new BoundNameExpressionNode(item)));
 
         StateBoundary begin = newDetachedBoundary();

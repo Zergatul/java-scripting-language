@@ -449,6 +449,107 @@ public class ClassInheritanceTests extends ComparatorTest {
     }
 
     @Test
+    public void protectedJavaFieldDirectAccessTest() {
+        String code = """
+                class Class : Java<com.zergatul.scripting.tests.compiler.ClassInheritanceTests$ProtectedFieldBase> {
+                    constructor() {
+                        value = 10;
+                        this.value += 5;
+                        value++;
+                        intStorage.add(this.value);
+                    }
+                }
+
+                new Class();
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(List.of(16), ApiRoot.intStorage.list);
+    }
+
+    @Test
+    public void protectedJavaFieldOnSubclassReceiverTest() {
+        String code = """
+                class Class : Java<com.zergatul.scripting.tests.compiler.ClassInheritanceTests$ProtectedFieldBase> {
+                    void call(Class other) {
+                        other.value = 321;
+                        intStorage.add(other.value);
+                    }
+                }
+
+                new Class().call(new Class());
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(List.of(321), ApiRoot.intStorage.list);
+    }
+
+    @Test
+    public void protectedJavaFieldOnBaseReceiverTest() {
+        String code = """
+                class Class : Java<com.zergatul.scripting.tests.compiler.ClassInheritanceTests$ProtectedFieldBase> {
+                    void call(Java<com.zergatul.scripting.tests.compiler.ClassInheritanceTests$ProtectedFieldBase> other) {
+                        intStorage.add(other.⟦value⟧);
+                    }
+                }
+                """;
+
+        comparator.assertDiagnostics(
+                ApiRoot.class,
+                code,
+                "⟦⟧",
+                BinderErrors.MemberDoesNotExist,
+                SType.fromJavaType(ProtectedFieldBase.class),
+                "value");
+    }
+
+    @Test
+    public void protectedJavaFieldFromJdkModuleTest() {
+        String code = """
+                class Class : Java<java.io.ByteArrayInputStream> {
+                    constructor() : base(new int8[0]) {
+                        this.pos = 7;
+                        intStorage.add(this.pos);
+                    }
+                }
+
+                new Class();
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(List.of(7), ApiRoot.intStorage.list);
+    }
+
+    @Test
+    public void protectedStaticJavaFieldDirectAccessTest() {
+        String code = """
+                typealias Base = Java<com.zergatul.scripting.tests.compiler.ClassInheritanceTests$ProtectedFieldBase>;
+
+                class Class : Base {
+                    constructor() {
+                        Base.staticValue = 10;
+                        Base.staticValue++;
+                        Base.staticValue += 5;
+                        intStorage.add(Base.staticValue);
+                    }
+                }
+
+                new Class();
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(List.of(16), ApiRoot.intStorage.list);
+    }
+
+    @Test
     public void cannotInstantiateAbstractClassTest() {
         String code = """
                 let list = ⟦new Java<java.util.AbstractList>()⟧;
@@ -934,6 +1035,12 @@ public class ClassInheritanceTests extends ComparatorTest {
         protected void add(int value) {
             ApiRoot.intStorage.add(value);
         }
+    }
+
+    @SuppressWarnings("unused")
+    public static class ProtectedFieldBase {
+        protected int value;
+        protected static int staticValue;
     }
 
     @CustomType(name = "AbstractBase")

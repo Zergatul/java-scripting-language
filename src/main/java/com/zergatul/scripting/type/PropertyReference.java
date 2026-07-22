@@ -20,11 +20,23 @@ public abstract class PropertyReference extends MemberReference {
         throw new InternalException();
     }
 
+    public void compileVarHandleLoad(MethodVisitor visitor, CompilerContext context, Runnable compileCallee) {
+        throw new InternalException();
+    }
+
     public void compileStore(MethodVisitor visitor, CompilerContext context, Runnable compileCallee, Runnable compileValue) {
         throw new InternalException();
     }
 
+    public void compileVarHandleStore(MethodVisitor visitor, CompilerContext context, Runnable compileCallee, Runnable compileValue) {
+        throw new InternalException();
+    }
+
     public void compileLoadModifyStore(MethodVisitor visitor, CompilerContext context, Runnable compileCallee, Runnable compileModify) {
+        throw new InternalException();
+    }
+
+    public void compileVarHandleLoadModifyStore(MethodVisitor visitor, CompilerContext context, Runnable compileCallee, Runnable compileModify) {
         throw new InternalException();
     }
 }

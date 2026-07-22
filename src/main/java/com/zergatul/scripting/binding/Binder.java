@@ -1565,7 +1565,8 @@ public class Binder {
         List<MethodReference> candidates = MemberLookup.getMethods(baseType).stream()
                 .filter(m -> !m.isStatic())
                 .filter(m -> m.getVisibility() == Visibility.PUBLIC ||
-                        (m.getVisibility() == Visibility.PROTECTED && isProtectedMethodAccessible(m, context.getClassType(), false)))
+                        (m.getVisibility() == Visibility.PROTECTED &&
+                                isProtectedMemberAccessible(m.getOwner(), context.getClassType(), false)))
                 .filter(m -> m.getName().equals(methodName))
                 .toList();
         if (candidates.isEmpty()) {
@@ -1702,7 +1703,10 @@ public class Binder {
         if (context.isClassMethod() && !context.isExtension()) {
             PropertyReference property = MemberLookup.getProperties(context.getClassType()).stream()
                     .filter(p -> !p.isStatic())
-                    .filter(p -> p.getVisibility() == Visibility.PUBLIC)
+                    .filter(p -> isPropertyAccessibleForLookup(
+                            p,
+                            context.getClassType(),
+                            BoundPropertyTarget.AccessStrategy.DIRECT))
                     .filter(p -> p.getName().equals(name.value))
                     .findFirst()
                     .orElse(null);
@@ -1719,7 +1723,7 @@ public class Binder {
                                 context.getClassType(),
                                 name.getRange().getStart()),
                         new BoundPropertyNode(name, property),
-                        false,
+                        new BoundPropertyTarget(property, BoundPropertyTarget.AccessStrategy.DIRECT),
                         name.getRange());
             }
 
@@ -2034,9 +2038,12 @@ public class Binder {
     private BoundExpressionNode bindMemberAccessExpression(MemberAccessExpressionNode expression) {
         BoundExpressionNode callee = bindExpressionOrStaticRef(expression.callee);
         boolean isPrivate = expression.isPrivate();
-        BoundCallTarget.AccessStrategy access = isPrivate
+        BoundCallTarget.AccessStrategy methodAccess = isPrivate
                 ? BoundCallTarget.AccessStrategy.METHOD_HANDLE
                 : BoundCallTarget.AccessStrategy.DIRECT;
+        BoundPropertyTarget.AccessStrategy propertyAccess = isPrivate
+                ? BoundPropertyTarget.AccessStrategy.VAR_HANDLE
+                : BoundPropertyTarget.AccessStrategy.DIRECT;
 
         if (callee.type == SNull.instance) {
             addDiagnostic(BinderErrors.CannotAccessNullMembers, expression.operator);
@@ -2044,30 +2051,28 @@ public class Binder {
                     expression,
                     callee,
                     new BoundPropertyNode(expression.name, UnknownPropertyReference.instance),
-                    isPrivate);
+                    new BoundPropertyTarget(UnknownPropertyReference.instance, propertyAccess));
         }
 
         if (callee.type instanceof SStaticTypeReference staticType) {
             PropertyReference property = MemberLookup.getProperties(staticType.getUnderlying()).stream()
                     .filter(PropertyReference::isStatic)
-                    .filter(p -> isPrivate
-                            ? p.getVisibility() != Visibility.PUBLIC
-                            : p.getVisibility() == Visibility.PUBLIC)
+                    .filter(p -> isPropertyAccessibleForLookup(p, staticType.getUnderlying(), propertyAccess))
                     .filter(p -> p.getName().equals(expression.name.value))
                     .findFirst()
                     .orElse(null);
             if (property != null) {
-                verifyPropertyAccessible(property, expression.name);
+                verifyPropertyAccessible(property, expression.name, propertyAccess);
                 return new BoundPropertyAccessExpressionNode(
                         expression,
                         callee,
                         new BoundPropertyNode(expression.name, property),
-                        isPrivate);
+                        new BoundPropertyTarget(property, propertyAccess));
             }
 
             List<MethodReference> methods = MemberLookup.getMethods(staticType.getUnderlying()).stream()
                     .filter(MethodReference::isStatic)
-                    .filter(m -> isMethodAccessibleForLookup(m, staticType.getUnderlying(), access))
+                    .filter(m -> isMethodAccessibleForLookup(m, staticType.getUnderlying(), methodAccess))
                     .filter(m -> m.getName().equals(expression.name.value))
                     .filter(m -> {
                         if (m instanceof NativeMethodReference ref) {
@@ -2086,7 +2091,7 @@ public class Binder {
                         expression,
                         callee,
                         new BoundPropertyNode(expression.name, UnknownPropertyReference.instance),
-                        isPrivate);
+                        new BoundPropertyTarget(UnknownPropertyReference.instance, propertyAccess));
             }
 
             return new BoundMethodGroupExpressionNode(
@@ -2094,7 +2099,7 @@ public class Binder {
                     callee,
                     methods,
                     new BoundUnresolvedMethodNode(expression.name),
-                    access);
+                    methodAccess);
         } else {
             PropertyReference property;
             if (callee.type == SUnknown.instance || expression.name.value.isEmpty()) {
@@ -2102,23 +2107,21 @@ public class Binder {
             } else {
                 property = MemberLookup.getProperties(callee.type).stream()
                         .filter(p -> !p.isStatic())
-                        .filter(p -> isPrivate
-                                ? p.getVisibility() != Visibility.PUBLIC
-                                : p.getVisibility() == Visibility.PUBLIC)
+                        .filter(p -> isPropertyAccessibleForLookup(p, callee.type, propertyAccess))
                         .filter(p -> p.getName().equals(expression.name.value))
                         .findFirst()
                         .orElse(null);
             }
             if (property != null) {
-                verifyPropertyAccessible(property, expression.name);
+                verifyPropertyAccessible(property, expression.name, propertyAccess);
                 return new BoundPropertyAccessExpressionNode(
                         expression,
                         callee,
                         new BoundPropertyNode(expression.name, property),
-                        isPrivate);
+                        new BoundPropertyTarget(property, propertyAccess));
             }
 
-            List<MethodReference> methods = getInstanceMethodsWithExtensions(callee.type, access)
+            List<MethodReference> methods = getInstanceMethodsWithExtensions(callee.type, methodAccess)
                     .stream()
                     .filter(m -> m.getName().equals(expression.name.value))
                     .filter(m -> {
@@ -2138,7 +2141,7 @@ public class Binder {
                         expression,
                         callee,
                         new BoundPropertyNode(expression.name, UnknownPropertyReference.instance),
-                        isPrivate);
+                        new BoundPropertyTarget(UnknownPropertyReference.instance, propertyAccess));
             }
 
             return new BoundMethodGroupExpressionNode(
@@ -2146,12 +2149,16 @@ public class Binder {
                     callee,
                     methods,
                     new BoundUnresolvedMethodNode(expression.name),
-                    access);
+                    methodAccess);
         }
     }
 
-    private void verifyPropertyAccessible(PropertyReference propertyRef, Locatable locatable) {
-        if (propertyRef.getVisibility() == Visibility.PUBLIC) {
+    private void verifyPropertyAccessible(
+            PropertyReference propertyRef,
+            Locatable locatable,
+            BoundPropertyTarget.AccessStrategy access
+    ) {
+        if (access != BoundPropertyTarget.AccessStrategy.VAR_HANDLE) {
             return;
         }
 
@@ -2203,6 +2210,26 @@ public class Binder {
         return methods;
     }
 
+    private boolean isPropertyAccessibleForLookup(
+            PropertyReference property,
+            SType receiverType,
+            BoundPropertyTarget.AccessStrategy access
+    ) {
+        if (access == BoundPropertyTarget.AccessStrategy.VAR_HANDLE) {
+            return property.getVisibility() != Visibility.PUBLIC;
+        }
+        if (property.getVisibility() == Visibility.PUBLIC) {
+            return true;
+        }
+        if (property.getVisibility() != Visibility.PROTECTED || !(property instanceof FieldPropertyReference field)) {
+            return false;
+        }
+        return isProtectedMemberAccessible(
+                SType.fromJavaType(field.getUnderlyingField().getDeclaringClass()),
+                receiverType,
+                property.isStatic());
+    }
+
     private boolean isMethodAccessibleForLookup(
             MethodReference method,
             SType receiverType,
@@ -2212,16 +2239,17 @@ public class Binder {
             return method.getVisibility() != Visibility.PUBLIC;
         }
         return method.getVisibility() == Visibility.PUBLIC ||
-                (method.getVisibility() == Visibility.PROTECTED && isProtectedMethodAccessible(method, receiverType, method.isStatic()));
+                (method.getVisibility() == Visibility.PROTECTED &&
+                        isProtectedMemberAccessible(method.getOwner(), receiverType, method.isStatic()));
     }
 
-    private boolean isProtectedMethodAccessible(MethodReference method, SType receiverType, boolean isStatic) {
+    private boolean isProtectedMemberAccessible(SType ownerType, SType receiverType, boolean isStatic) {
         if (!context.isClassMethod() || !context.isDeclaredClass() || context.isExtension()) {
             return false;
         }
 
         SDeclaredType currentType = context.getClassType();
-        if (!currentType.isInstanceOf(method.getOwner())) {
+        if (!currentType.isInstanceOf(ownerType)) {
             return false;
         }
 
