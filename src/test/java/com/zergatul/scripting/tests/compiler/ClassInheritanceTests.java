@@ -391,6 +391,31 @@ public class ClassInheritanceTests extends ComparatorTest {
     }
 
     @Test
+    public void protectedJavaMethodOnCapturedThisInLambdaTest() {
+        String code = """
+                typealias Run = Java<com.zergatul.scripting.tests.compiler.helpers.Run>;
+
+                class Class : Java<com.zergatul.scripting.tests.compiler.ClassInheritanceTests$ProtectedMethodBase> {
+                    void execute() {
+                        let run = new Run();
+                        let self = this;
+                        run.once(() => self.⟦add⟧(123));
+                    }
+                }
+
+                new Class().execute();
+                """;
+
+        comparator.assertDiagnostics(
+                ApiRoot.class,
+                code,
+                "⟦⟧",
+                BinderErrors.MemberDoesNotExist,
+                "Class",
+                "add");
+    }
+
+    @Test
     public void protectedJavaMethodFromJdkModuleTest() {
         String code = """
                 class Class : Java<java.util.Vector> {

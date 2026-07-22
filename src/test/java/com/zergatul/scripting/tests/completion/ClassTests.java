@@ -505,6 +505,23 @@ public class ClassTests {
                         MethodSuggestion.getInstance(context, "Class", "method")));
     }
 
+    @Test
+    public void protectedMembersOnCapturedThisInLambdaTest() {
+        assertSuggestions("""
+                typealias Run = Java<com.zergatul.scripting.tests.compiler.helpers.Run>;
+
+                class Class : Java<com.zergatul.scripting.tests.completion.ClassTests$TestClass> {
+                    void execute() {
+                        let run = new Run();
+                        let self = this;
+                        run.once(() => self.<cursor>);
+                    }
+                }
+                """,
+                context -> List.of(
+                        MethodSuggestion.getInstance(context, "Class", "execute")));
+    }
+
     private void assertSuggestions(String code, Function<TestCompletionContext, List<Suggestion>> expectedFactory) {
         CompletionTestHelper.assertSuggestions(ApiRoot.class, code, expectedFactory);
     }
