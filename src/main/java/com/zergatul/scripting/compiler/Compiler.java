@@ -37,6 +37,8 @@ import static org.objectweb.asm.Opcodes.*;
 
 public class Compiler {
 
+    private static final int CLASS_FILE_VERSION = V21;
+
     private final CompilationParameters parameters;
 
     public Compiler(CompilationParameters parameters) {
@@ -72,7 +74,7 @@ public class Compiler {
         emitSourceFile(writer);
         String name = "com/zergatul/scripting/dynamic/" + parameters.getMainClassName();
         writer.visit(
-                V1_8,
+                CLASS_FILE_VERSION,
                 ACC_PUBLIC,
                 name,
                 null,
@@ -108,7 +110,7 @@ public class Compiler {
         emitSourceFile(writer);
         String name = "com/zergatul/scripting/dynamic/" + parameters.getMainClassName();
         writer.visit(
-                V1_8,
+                CLASS_FILE_VERSION,
                 ACC_PUBLIC,
                 name,
                 null,
@@ -197,7 +199,7 @@ public class Compiler {
 
             ClassWriter innerWriter = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
             innerWriter.visit(
-                    V1_8,
+                    CLASS_FILE_VERSION,
                     ACC_PUBLIC,
                     name,
                     null,
@@ -512,7 +514,7 @@ public class Compiler {
 
             ClassWriter writer = new ClassWriter(0);
             writer.visit(
-                    V1_8,
+                    CLASS_FILE_VERSION,
                     ACC_PUBLIC | ACC_ABSTRACT | ACC_INTERFACE,
                     function.getInternalName(),
                     null,
@@ -1437,7 +1439,7 @@ public class Compiler {
         emitSourceFile(writer);
         String name = "com/zergatul/scripting/dynamic/DynamicClosure_" + parentContext.getNextUniqueIndex();
         writer.visit(
-                V1_8,
+                CLASS_FILE_VERSION,
                 ACC_PUBLIC,
                 name,
                 null,
@@ -1563,7 +1565,7 @@ public class Compiler {
                 Type.getObjectType(name),
                 Type.getType(Object.class));
         writer.visit(
-                V1_8,
+                CLASS_FILE_VERSION,
                 ACC_PUBLIC,
                 name,
                 null,
@@ -3786,7 +3788,7 @@ public class Compiler {
         emitSourceFile(writer);
         String name = "com/zergatul/scripting/dynamic/DynamicLambdaClass_" + context.getNextUniqueIndex();
         writer.visit(
-                V1_8,
+                CLASS_FILE_VERSION,
                 ACC_PUBLIC,
                 name,
                 null,
@@ -4173,7 +4175,7 @@ public class Compiler {
         ClassWriter writer = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
         emitSourceFile(writer);
         writer.visit(
-                V1_8,
+                CLASS_FILE_VERSION,
                 ACC_PUBLIC,
                 MethodHandleCache.INTERNAL_NAME,
                 null,
