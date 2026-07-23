@@ -7,14 +7,19 @@ import com.zergatul.scripting.compiler.CompilationParameters;
 import com.zergatul.scripting.compiler.JavaInteropPolicy;
 import com.zergatul.scripting.parser.nodes.MemberAccessExpressionNode;
 import com.zergatul.scripting.parser.nodes.ParserNodeType;
-import com.zergatul.scripting.type.NativeMethodReference;
+import com.zergatul.scripting.type.DeclaredFieldReference;
+import com.zergatul.scripting.type.DeclaredMethodReference;
+import com.zergatul.scripting.type.FieldPropertyReference;
 import com.zergatul.scripting.type.MemberLookup;
 import com.zergatul.scripting.type.MethodReference;
+import com.zergatul.scripting.type.NativeMethodReference;
 import com.zergatul.scripting.type.PropertyReference;
+import com.zergatul.scripting.type.SDeclaredType;
 import com.zergatul.scripting.type.SStaticTypeReference;
 import com.zergatul.scripting.type.SType;
 import com.zergatul.scripting.type.SUnknown;
 import com.zergatul.scripting.type.Visibility;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -71,16 +76,16 @@ public class ObjectMemberCompletionProvider<T> extends AbstractCompletionProvide
 
         List<T> suggestions = new ArrayList<>();
         boolean staticMembers = type instanceof SStaticTypeReference;
-        boolean includeClassMembers = objectReference instanceof BoundThisExpressionNode && isInsideClass(context);
+        SDeclaredType currentType = getEnclosingClassType(context);
 
         MemberLookup.getProperties(type).stream()
                 .filter(p -> p.isStatic() == staticMembers)
-                .filter(p -> isVisible(p.getVisibility(), isPrivate, includeClassMembers))
+                .filter(p -> isVisible(p, type, currentType, isPrivate))
                 .forEach(p -> suggestions.add(factory.getPropertySuggestion(p)));
 
         MemberLookup.getMethods(type).stream()
                 .filter(m -> m.isStatic() == staticMembers)
-                .filter(m -> isVisible(m.getVisibility(), isPrivate, includeClassMembers))
+                .filter(m -> isVisible(m, type, currentType, isPrivate))
                 .filter(m -> {
                     if (m instanceof NativeMethodReference nativeRef) {
                         JavaInteropPolicy checker = parameters.getInteropPolicy();
@@ -119,25 +124,69 @@ public class ObjectMemberCompletionProvider<T> extends AbstractCompletionProvide
         return suggestions;
     }
 
-    private static boolean isVisible(Visibility visibility, boolean isPrivate, boolean includeClassMembers) {
+    private static boolean isVisible(
+            PropertyReference property,
+            SType receiverType,
+            @Nullable SDeclaredType currentType,
+            boolean isPrivate
+    ) {
         if (isPrivate) {
-            return visibility != Visibility.PUBLIC;
-        } else if (includeClassMembers) {
-            return true;
-        } else {
-            return visibility == Visibility.PUBLIC;
+            return property.getVisibility() != Visibility.PUBLIC;
         }
+        if (property.getVisibility() == Visibility.PUBLIC) {
+            return true;
+        }
+        if (currentType == null) {
+            return false;
+        }
+
+        SType ownerType;
+        if (property instanceof FieldPropertyReference field) {
+            ownerType = SType.fromJavaType(field.getUnderlyingField().getDeclaringClass());
+        } else if (property instanceof DeclaredFieldReference field) {
+            ownerType = field.getOwner();
+        } else {
+            return false;
+        }
+
+        if (property.getVisibility() == Visibility.PRIVATE) {
+            return property instanceof DeclaredFieldReference && currentType.equals(ownerType);
+        }
+        return currentType.isInstanceOf(ownerType) &&
+                (property.isStatic() || currentType.isAssignableFrom(receiverType));
     }
 
-    private static boolean isInsideClass(CompletionContext context) {
+    private static boolean isVisible(
+            MethodReference method,
+            SType receiverType,
+            @Nullable SDeclaredType currentType,
+            boolean isPrivate
+    ) {
+        if (isPrivate) {
+            return method.getVisibility() != Visibility.PUBLIC;
+        }
+        if (method.getVisibility() == Visibility.PUBLIC) {
+            return true;
+        }
+        if (currentType == null) {
+            return false;
+        }
+        if (method.getVisibility() == Visibility.PRIVATE) {
+            return method instanceof DeclaredMethodReference && currentType.equals(method.getOwner());
+        }
+        return currentType.isInstanceOf(method.getOwner()) &&
+                (method.isStatic() || currentType.isAssignableFrom(receiverType));
+    }
+
+    private static @Nullable SDeclaredType getEnclosingClassType(CompletionContext context) {
         for (CompletionContext current = context; current != null && current.entry != null; current = current.up()) {
             if (current.entry.node.is(BoundNodeType.CLASS_DECLARATION)) {
-                return true;
+                return ((BoundClassNode) current.entry.node).getDeclaredType();
             }
             if (current.entry.node.is(BoundNodeType.EXTENSION_DECLARATION)) {
-                return false;
+                return null;
             }
         }
-        return false;
+        return null;
     }
 }

@@ -2256,10 +2256,8 @@ public class Binder {
     }
 
     private boolean isPrivateDeclaredMemberAccessible(SType ownerType) {
-        return context.isClassMethod() &&
-                context.isDeclaredClass() &&
-                !context.isExtension() &&
-                context.getClassType().equals(ownerType);
+        SDeclaredType currentType = context.getMemberAccessClassType();
+        return currentType != null && currentType.equals(ownerType);
     }
 
     private boolean isConstructorAccessibleForObjectCreation(ConstructorReference constructor) {
@@ -2269,11 +2267,11 @@ public class Binder {
     }
 
     private boolean isProtectedMemberAccessible(SType ownerType, SType receiverType, boolean isStatic) {
-        if (!context.isClassMethod() || !context.isDeclaredClass() || context.isExtension()) {
+        SDeclaredType currentType = context.getMemberAccessClassType();
+        if (currentType == null) {
             return false;
         }
 
-        SDeclaredType currentType = context.getClassType();
         if (!currentType.isInstanceOf(ownerType)) {
             return false;
         }

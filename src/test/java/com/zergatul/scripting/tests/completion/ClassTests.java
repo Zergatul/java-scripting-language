@@ -596,6 +596,30 @@ public class ClassTests {
                 }
                 """,
                 context -> List.of(
+                        PropertySuggestion.getInstance(context, "Class", "field"),
+                        MethodSuggestion.getInstance(context, "Class", "method"),
+                        MethodSuggestion.getInstance(context, "Class", "execute")));
+    }
+
+    @Test
+    public void privateMembersOnCapturedThisInLambdaTest() {
+        assertSuggestions("""
+                typealias Run = Java<com.zergatul.scripting.tests.compiler.helpers.Run>;
+
+                class Class {
+                    private int field;
+                    private void method() {}
+
+                    void execute() {
+                        let run = new Run();
+                        let self = this;
+                        run.once(() => self.<cursor>);
+                    }
+                }
+                """,
+                context -> List.of(
+                        PropertySuggestion.getInstance(context, "Class", "field"),
+                        MethodSuggestion.getInstance(context, "Class", "method"),
                         MethodSuggestion.getInstance(context, "Class", "execute")));
     }
 

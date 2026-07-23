@@ -630,20 +630,21 @@ public class ClassInheritanceTests extends ComparatorTest {
                     void execute() {
                         let run = new Run();
                         let self = this;
-                        run.once(() => self.⟦add⟧(123));
+                        run.once(() => {
+                            self.value = 100;
+                            self.value += 23;
+                            self.add(self.value);
+                        });
                     }
                 }
 
                 new Class().execute();
                 """;
 
-        comparator.assertDiagnostics(
-                ApiRoot.class,
-                code,
-                "⟦⟧",
-                BinderErrors.MemberDoesNotExist,
-                "Class",
-                "add");
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(List.of(123), ApiRoot.intStorage.list);
     }
 
     @Test
@@ -1287,6 +1288,8 @@ public class ClassInheritanceTests extends ComparatorTest {
 
     @SuppressWarnings("unused")
     public static class ProtectedMethodBase {
+
+        protected int value;
 
         protected void add(int value) {
             ApiRoot.intStorage.add(value);

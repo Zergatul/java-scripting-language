@@ -159,6 +159,37 @@ public class ClassTests extends ComparatorTest {
     }
 
     @Test
+    public void privateMembersOnCapturedThisInLambdaTest() {
+        String code = """
+                typealias Run = Java<com.zergatul.scripting.tests.compiler.helpers.Run>;
+
+                class Class {
+                    private int field;
+
+                    private void add(int value) {
+                        field += value;
+                    }
+
+                    public void execute() {
+                        let self = this;
+                        new Run().once(() => {
+                            self.field = 100;
+                            self.add(23);
+                            intStorage.add(self.field);
+                        });
+                    }
+                }
+
+                new Class().execute();
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(List.of(123), ApiRoot.intStorage.list);
+    }
+
+    @Test
     public void privateMemberCannotBeAccessedOutsideClassTest() {
         String code = """
                 class Class {

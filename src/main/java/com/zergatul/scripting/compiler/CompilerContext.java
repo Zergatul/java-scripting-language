@@ -237,6 +237,19 @@ public class CompilerContext {
                 .build();
     }
 
+    public CompilerContext createLambdaBodyMethod(SType returnType, boolean generic) {
+        return new Builder()
+                .setParent(this)
+                .setStatic()
+                .setInitialStackIndex(0)
+                .setFunctionRoot(true)
+                .setGenericFunction(generic)
+                .setReturnType(returnType)
+                .setAsync(false)
+                .setFrame(new FunctionFrame())
+                .build();
+    }
+
     public CompilerContext createAsyncStateMachineMethod(SType returnType) {
         return new Builder()
                 .setParent(this)
@@ -324,6 +337,15 @@ public class CompilerContext {
 
     public boolean isClassMethod() {
         return isClassMethod;
+    }
+
+    public @Nullable SDeclaredType getMemberAccessClassType() {
+        for (CompilerContext current = this; current != null; current = current.parent) {
+            if (current.isClassMethod && current.classType != null && current.extensionType == null) {
+                return current.classType;
+            }
+        }
+        return null;
     }
 
     public boolean isDeclaredClass() {

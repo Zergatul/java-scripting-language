@@ -128,7 +128,8 @@ public class LineNumberTests {
             program.run();
         } catch (ArrayIndexOutOfBoundsException exception) {
             assertStackTrace(exception, List.of(
-                    new StackTraceElement("com.zergatul.scripting.dynamic.DynamicLambdaClass_3", "accept", "<TestScript>", 3),
+                    new StackTraceElement("com.zergatul.scripting.dynamic.Script", "$lambda$3", "<TestScript>", 3),
+                    new StackTraceElement("com.zergatul.scripting.dynamic.DynamicLambdaClass_3", "accept", "<TestScript>", -1),
                     new StackTraceElement("com.zergatul.scripting.tests.compiler.LineNumberTests$LambdasApi", "iterate", "LineNumberTests.java", 0),
                     new StackTraceElement("com.zergatul.scripting.dynamic.Script", "run", "<TestScript>", 2)));
             return;
@@ -224,7 +225,9 @@ public class LineNumberTests {
     private static void assertStackTrace(Throwable throwable, List<StackTraceElement> expected) {
         StackTraceElement[] actual = throwable.getStackTrace();
         for (int i = 0; i < expected.size(); i++) {
-            Assertions.assertTrue(stackTraceElementsEqual(actual[i], expected.get(i)));
+            Assertions.assertTrue(
+                    stackTraceElementsEqual(actual[i], expected.get(i)),
+                    "Expected: " + expected.get(i) + ", actual: " + actual[i]);
         }
     }
 
@@ -241,7 +244,12 @@ public class LineNumberTests {
             }
         }
         if (!Objects.equals(actual.getMethodName(), expected.getMethodName())) {
-            return false;
+            boolean isLambdaBody =
+                    actual.getMethodName().startsWith("$lambda$") &&
+                    expected.getMethodName().startsWith("$lambda$");
+            if (!isLambdaBody) {
+                return false;
+            }
         }
         if (!Objects.equals(actual.getFileName(), expected.getFileName())) {
             return false;

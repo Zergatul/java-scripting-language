@@ -41,6 +41,7 @@ public class Compiler {
     private static final int CLASS_FILE_VERSION = V21;
 
     private final CompilationParameters parameters;
+    private final Map<String, ClassWriter> ownerWriters = new HashMap<>();
 
     public Compiler(CompilationParameters parameters) {
         this.parameters = parameters;
@@ -71,6 +72,7 @@ public class Compiler {
     private <T> T compileUnit(BinderOutput output) {
         BoundCompilationUnitNode unit = output.unit();
 
+        ownerWriters.clear();
         ClassWriter writer = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
         emitSourceFile(writer);
         String name = "com/zergatul/scripting/dynamic/" + parameters.getMainClassName();
@@ -81,6 +83,7 @@ public class Compiler {
                 null,
                 Type.getInternalName(Object.class),
                 new String[] { Type.getInternalName(parameters.getFunctionalInterface()) });
+        ownerWriters.put(name, writer);
 
         CompilerContext context = parameters.getContext();
         context.setClassLoaderContext(new ClassLoaderContext());
@@ -107,6 +110,7 @@ public class Compiler {
     private ExpressionEvaluator compileExpressionUnit(BinderExpressionOutput output) {
         BoundExpressionUnitNode unit = output.unit();
 
+        ownerWriters.clear();
         ClassWriter writer = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
         emitSourceFile(writer);
         String name = "com/zergatul/scripting/dynamic/" + parameters.getMainClassName();
@@ -117,6 +121,7 @@ public class Compiler {
                 null,
                 Type.getInternalName(Object.class),
                 new String[] { Type.getInternalName(ExpressionEvaluator.class) });
+        ownerWriters.put(name, writer);
 
         CompilerContext context = parameters.getContext();
         context.setClassLoaderContext(new ClassLoaderContext());
@@ -199,6 +204,7 @@ public class Compiler {
                     ACC_PUBLIC | ACC_STATIC);
 
             ClassWriter innerWriter = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
+            ownerWriters.put(name, innerWriter);
             innerWriter.visit(
                     CLASS_FILE_VERSION,
                     ACC_PUBLIC,
@@ -1461,7 +1467,7 @@ public class Compiler {
         for (int i = 0; i < variables.size(); i++) {
             LiftedVariable variable = variables.get(i);
             variable.setField(name, fieldNames[i]);
-            writer.visitField(ACC_PUBLIC, fieldNames[i], Type.getDescriptor(variable.getType().getJavaClass()), null, null);
+            writer.visitField(ACC_PUBLIC, fieldNames[i], variable.getType().getDescriptor(), null, null);
         }
 
         writer.visitEnd();
@@ -3862,7 +3868,8 @@ public class Compiler {
 
         ClassWriter writer = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
         emitSourceFile(writer);
-        String name = "com/zergatul/scripting/dynamic/DynamicLambdaClass_" + context.getNextUniqueIndex();
+        int lambdaIndex = context.getNextUniqueIndex();
+        String name = "com/zergatul/scripting/dynamic/DynamicLambdaClass_" + lambdaIndex;
         writer.visit(
                 CLASS_FILE_VERSION,
                 ACC_PUBLIC,
@@ -3888,6 +3895,104 @@ public class Compiler {
 
         String constructorDescriptor = buildLambdaConstructor(name, writer, closures);
 
+        SDeclaredType memberAccessClassType = context.getMemberAccessClassType();
+        String ownerName = memberAccessClassType != null ?
+                memberAccessClassType.getInternalName() :
+                context.getClassName();
+        ClassWriter ownerWriter = ownerWriters.get(ownerName);
+        if (ownerWriter == null) {
+            throw new InternalException("Cannot find lambda owner writer.");
+        }
+
+        Type[] bodyArgumentTypes = new Type[closures.size() + rawParameters.length];
+        for (int i = 0; i < closures.size(); i++) {
+            bodyArgumentTypes[i] = Type.getType(closures.get(i).getType().getDescriptor());
+        }
+        for (int i = 0; i < rawParameters.length; i++) {
+            bodyArgumentTypes[closures.size() + i] = Type.getType(rawParameters[i].getDescriptor());
+        }
+
+        String bodyMethodName = "$lambda$" + lambdaIndex;
+        String bodyMethodDescriptor = Type.getMethodDescriptor(
+                Type.getType(rawReturnType.getDescriptor()),
+                bodyArgumentTypes);
+
+        MethodVisitor bodyVisitor = ownerWriter.visitMethod(
+                ACC_STATIC | ACC_SYNTHETIC,
+                bodyMethodName,
+                bodyMethodDescriptor,
+                null,
+                null);
+        bodyVisitor.visitCode();
+
+        CompilerContext lambdaContext = context.createLambdaBodyMethod(
+                actualReturnType,
+                !actualReturnType.equals(rawReturnType));
+        processContextStart(bodyVisitor, lambdaContext);
+
+        LocalVariable[] closureParameters = new LocalVariable[closures.size()];
+        for (int i = 0; i < closures.size(); i++) {
+            closureParameters[i] = lambdaContext.addLocalParameter(null, closures.get(i).getType(), null);
+            lambdaContext.setStackIndex(closureParameters[i]);
+        }
+
+        for (CapturedVariable captured : expression.captured) {
+            Variable closure = context.getVariableOfType(captured.getClosureClassName());
+            int index = closures.indexOf(closure);
+            if (index < 0) {
+                throw new InternalException();
+            }
+
+            captured.getClosure().set(closureParameters[index]);
+        }
+
+        LocalVariable[] rawArguments = new LocalVariable[rawParameters.length];
+        for (int i = 0; i < rawParameters.length; i++) {
+            rawArguments[i] = lambdaContext.addLocalParameter(null, rawParameters[i], null);
+            lambdaContext.setStackIndex(rawArguments[i]);
+        }
+
+        for (int i = 0; i < expression.parameters.size(); i++) {
+            BoundParameterNode parameter = expression.parameters.get(i);
+            Variable variable = parameter.getName().symbolRef.asVariable();
+            LocalVariable actualArgument;
+            if (variable instanceof LocalVariable local) {
+                actualArgument = local;
+            } else if (variable instanceof LiftedVariable lifted) {
+                actualArgument = lifted.getUnderlying();
+            } else {
+                throw new InternalException();
+            }
+
+            lambdaContext.addLocalVariable(parameter.getName().symbolRef);
+            if (rawParameters[i].equals(actualParameters[i])) {
+                actualArgument.setStackIndex(rawArguments[i].getStackIndex());
+            } else {
+                lambdaContext.setStackIndex(actualArgument);
+                rawArguments[i].compileLoad(lambdaContext, bodyVisitor);
+                if (parameter.getType() instanceof SValueType valueType) {
+                    bodyVisitor.visitTypeInsn(CHECKCAST, valueType.getBoxed().getInternalName());
+                    valueType.compileUnboxing(bodyVisitor);
+                } else {
+                    bodyVisitor.visitTypeInsn(CHECKCAST, parameter.getType().getInternalName());
+                }
+                actualArgument.compileStore(lambdaContext, bodyVisitor);
+            }
+        }
+
+        if (!expression.lifted.isEmpty()) {
+            compileClosureClass(bodyVisitor, lambdaContext, expression.lifted);
+        }
+
+        compileStatement(bodyVisitor, lambdaContext, expression.body);
+        if (!functionType.isFunction()) {
+            bodyVisitor.visitInsn(RETURN);
+        }
+
+        processContextEnd(bodyVisitor, lambdaContext);
+        bodyVisitor.visitMaxs(0, 0);
+        bodyVisitor.visitEnd();
+
         MethodVisitor invokeVisitor = writer.visitMethod(
                 ACC_PUBLIC,
                 methodName,
@@ -3896,76 +4001,24 @@ public class Compiler {
                 null);
         invokeVisitor.visitCode();
 
-        CompilerContext lambdaContext = context.createInstanceMethod(actualReturnType, false, !actualReturnType.equals(rawReturnType));
-        lambdaContext.setClassName(name);
-
-        processContextStart(invokeVisitor, lambdaContext);
-
-        if (!expression.captured.isEmpty()) {
-            FieldVariable[] closureFieldVariables = new FieldVariable[closures.size()];
-            for (int i = 0; i < closures.size(); i++) {
-                Variable closure = closures.get(i);
-                closureFieldVariables[i] = new FieldVariable(closure.getType(), name, "closure" + i);
-            }
-
-            for (CapturedVariable captured : expression.captured) {
-                Variable closure = context.getVariableOfType(captured.getClosureClassName());
-                int index = closures.indexOf(closure);
-                if (index < 0) {
-                    throw new InternalException();
-                }
-
-                captured.getClosure().set(closureFieldVariables[index]);
-            }
+        for (int i = 0; i < closures.size(); i++) {
+            invokeVisitor.visitVarInsn(ALOAD, 0);
+            invokeVisitor.visitFieldInsn(
+                    GETFIELD,
+                    name,
+                    "closure" + i,
+                    closures.get(i).getType().getDescriptor());
         }
-
-        LocalVariable[] arguments = new LocalVariable[expression.parameters.size()];
-        for (int i = 0; i < expression.parameters.size(); i++) {
-            SymbolRef symbolRef = lambdaContext.addLocalVariable(null, SJavaObject.instance, null);
-            arguments[i] = symbolRef.asLocalVariable();
-            lambdaContext.setStackIndex(arguments[i]);
+        for (int i = 0; i < rawParameters.length; i++) {
+            invokeVisitor.visitVarInsn(rawParameters[i].getLoadInst(), paramStackIndexes[i]);
         }
-        for (int i = 0; i < expression.parameters.size(); i++) {
-            SType raw = rawParameters[i];
-            SType actual = actualParameters[i];
-            if (!raw.equals(actual)) {
-                BoundParameterNode parameter = expression.parameters.get(i);
-                LocalVariable unboxed = parameter.getName().symbolRef.asLocalVariable();
-                lambdaContext.addLocalVariable(parameter.getName().symbolRef);
-                lambdaContext.setStackIndex(unboxed);
-
-                arguments[i].compileLoad(context, invokeVisitor); // load argument
-                if (parameter.getType() instanceof SValueType valueType) {
-                    invokeVisitor.visitTypeInsn(CHECKCAST, valueType.getBoxed().getInternalName()); // cast to boxed, example: java.lang.Integer
-                    valueType.compileUnboxing(invokeVisitor); // convert to unboxed
-                } else {
-                    invokeVisitor.visitTypeInsn(CHECKCAST, parameter.getType().getInternalName());
-                }
-                unboxed.compileStore(context, invokeVisitor);
-            } else {
-                Variable variable = expression.parameters.get(i).getName().symbolRef.asVariable();
-                LocalVariable localVariable;
-                if (variable instanceof LocalVariable) {
-                    localVariable = (LocalVariable) variable;
-                } else if (variable instanceof LiftedVariable lifted) {
-                    localVariable = lifted.getUnderlying();
-                } else {
-                    throw new InternalException();
-                }
-                lambdaContext.addLocalVariable(expression.parameters.get(i).getName().symbolRef);
-                localVariable.setStackIndex(paramStackIndexes[i]);
-            }
-        }
-        if (!expression.lifted.isEmpty()) {
-            compileClosureClass(invokeVisitor, lambdaContext, expression.lifted);
-        }
-
-        compileStatement(invokeVisitor, lambdaContext, expression.body);
-        if (!functionType.isFunction()) {
-            invokeVisitor.visitInsn(RETURN);
-        }
-
-        processContextEnd(invokeVisitor, lambdaContext);
+        invokeVisitor.visitMethodInsn(
+                INVOKESTATIC,
+                ownerName,
+                bodyMethodName,
+                bodyMethodDescriptor,
+                false);
+        invokeVisitor.visitInsn(rawReturnType.getReturnInst());
         invokeVisitor.visitMaxs(0, 0);
         invokeVisitor.visitEnd();
 
