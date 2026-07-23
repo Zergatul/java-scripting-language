@@ -41,7 +41,7 @@ public class CompilerContext {
     private @Nullable JavaInteropPolicy interopPolicy;
     private int lastEmittedLine;
     private final List<SGenericFunction> genericFunctions;
-    private final Map<String, ClassWriter> ownerWriters;
+    private @Nullable ClassWriter classWriter;
     private Label startLabel;
     private ClassLoaderContext classLoaderContext;
     private @Nullable MethodHandleCache methodHandleCache;
@@ -92,10 +92,8 @@ public class CompilerContext {
 
         if (parent == null) {
             genericFunctions = new ArrayList<>();
-            ownerWriters = new HashMap<>();
         } else {
             genericFunctions = null;
-            ownerWriters = null;
         }
     }
 
@@ -542,18 +540,20 @@ public class CompilerContext {
         return root.className;
     }
 
-    public void registerOwnerWriter(String className, ClassWriter writer) {
-        if (root.ownerWriters.putIfAbsent(className, writer) != null) {
-            throw new InternalException("Owner writer is already registered.");
+    public void setClassWriter(ClassWriter classWriter) {
+        if (this.classWriter != null) {
+            throw new InternalException("Class writer is already set.");
         }
+        this.classWriter = classWriter;
     }
 
-    public ClassWriter getOwnerWriter(String className) {
-        ClassWriter writer = root.ownerWriters.get(className);
-        if (writer == null) {
-            throw new InternalException("Cannot find owner writer.");
+    public ClassWriter getClassWriter() {
+        for (CompilerContext current = this; current != null; current = current.parent) {
+            if (current.classWriter != null) {
+                return current.classWriter;
+            }
         }
-        return writer;
+        throw new InternalException("Cannot find class writer.");
     }
 
     public List<LiftedVariable> getLifted() {

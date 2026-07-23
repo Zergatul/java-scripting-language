@@ -84,7 +84,7 @@ public class Compiler {
         CompilerContext context = parameters.getContext();
         context.setClassLoaderContext(new ClassLoaderContext());
         context.setClassName(name);
-        context.registerOwnerWriter(name, writer);
+        context.setClassWriter(writer);
 
         context.copyGenericFunctionsFrom(output.context());
 
@@ -120,7 +120,7 @@ public class Compiler {
         CompilerContext context = parameters.getContext();
         context.setClassLoaderContext(new ClassLoaderContext());
         context.setClassName(name);
-        context.registerOwnerWriter(name, writer);
+        context.setClassWriter(writer);
 
         buildEmptyConstructor(writer);
         buildExpressionEvaluatorMainMethod(unit, writer, context);
@@ -199,7 +199,6 @@ public class Compiler {
                     ACC_PUBLIC | ACC_STATIC);
 
             ClassWriter innerWriter = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
-            context.registerOwnerWriter(name, innerWriter);
             innerWriter.visit(
                     CLASS_FILE_VERSION,
                     ACC_PUBLIC,
@@ -219,6 +218,7 @@ public class Compiler {
                     ACC_PUBLIC | ACC_STATIC);
 
             CompilerContext classContext = context.createClass(classNode.getDeclaredType());
+            classContext.setClassWriter(innerWriter);
             for (BoundClassMemberNode member : classNode.members) {
                 compileClassMember(innerWriter, member, classContext);
             }
@@ -3925,7 +3925,7 @@ public class Compiler {
         String ownerName = memberAccessClassType != null ?
                 memberAccessClassType.getInternalName() :
                 context.getClassName();
-        ClassWriter ownerWriter = context.getOwnerWriter(ownerName);
+        ClassWriter ownerWriter = context.getClassWriter();
 
         Type[] bodyArgumentTypes = new Type[closures.size() + rawParameters.length];
         for (int i = 0; i < closures.size(); i++) {
