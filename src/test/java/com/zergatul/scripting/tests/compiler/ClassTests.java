@@ -190,6 +190,103 @@ public class ClassTests extends ComparatorTest {
     }
 
     @Test
+    public void privateConstructorFromLambdaTest() {
+        String code = """
+                typealias Run = Java<com.zergatul.scripting.tests.compiler.helpers.Run>;
+
+                class Class {
+                    private int value;
+
+                    public constructor() : this(0) {}
+
+                    private constructor(int value) {
+                        this.value = value;
+                    }
+
+                    private int getValue() => value;
+
+                    public void execute() {
+                        new Run().once(() => {
+                            let instance = new Class(53);
+                            intStorage.add(instance.getValue());
+                        });
+                    }
+                }
+
+                new Class().execute();
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(List.of(53), ApiRoot.intStorage.list);
+    }
+
+    @Test
+    public void privateMembersFromNestedLambdaTest() {
+        String code = """
+                typealias Run = Java<com.zergatul.scripting.tests.compiler.helpers.Run>;
+
+                class Class {
+                    private int value;
+
+                    private void add(int delta) {
+                        value += delta;
+                    }
+
+                    public void execute() {
+                        let self = this;
+                        int outer = 7;
+                        new Run().once(() => {
+                            int inner = 11;
+                            new Run().once(() => {
+                                self.add(outer + inner);
+                                intStorage.add(self.value);
+                            });
+                        });
+                    }
+                }
+
+                new Class().execute();
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(List.of(18), ApiRoot.intStorage.list);
+    }
+
+    @Test
+    public void privateMembersFromDeferredGenericLambdaTest() {
+        String code = """
+                typealias Run = Java<com.zergatul.scripting.tests.compiler.helpers.Run>;
+
+                class Class {
+                    private int value;
+
+                    public Run createHandler() {
+                        let run = new Run();
+                        let self = this;
+                        run.onInteger(delta => self.value += delta);
+                        return run;
+                    }
+
+                    public int getValue() => value;
+                }
+
+                let instance = new Class();
+                let run = instance.createHandler();
+                run.triggerInteger(59);
+                intStorage.add(instance.getValue());
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(List.of(59), ApiRoot.intStorage.list);
+    }
+
+    @Test
     public void privateMemberCannotBeAccessedOutsideClassTest() {
         String code = """
                 class Class {

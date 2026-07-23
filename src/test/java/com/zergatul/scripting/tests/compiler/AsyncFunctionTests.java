@@ -558,6 +558,72 @@ public class AsyncFunctionTests extends ComparatorTest {
     }
 
     @Test
+    public void privateAndProtectedMembersFromNestedLambdaAfterAwaitTest() {
+        String code = """
+                typealias Run = Java<com.zergatul.scripting.tests.compiler.helpers.Run>;
+
+                class Class : Java<com.zergatul.scripting.tests.compiler.AsyncFunctionTests$ProtectedBase> {
+                    private int ownValue;
+
+                    async int execute() {
+                        await futures.create();
+                        let self = this;
+                        new Run().once(() => {
+                            new Run().once(() => {
+                                self.ownValue += self.value;
+                                self.ownValue += self.getProtectedValue();
+                            });
+                        });
+                        return ownValue;
+                    }
+                }
+
+                intStorage.add(await new Class().execute());
+                """;
+
+        AsyncRunnable program = compileAsync(ApiRoot.class, code);
+        CompletableFuture<?> future = program.run();
+
+        Assertions.assertFalse(future.isDone());
+        ApiRoot.futures.get(0).complete(null);
+        Assertions.assertDoesNotThrow(future::join);
+        Assertions.assertIterableEquals(List.of(90), ApiRoot.intStorage.list);
+    }
+
+    @Test
+    public void privateMembersFromLambdaSurvivingAwaitTest() {
+        String code = """
+                typealias Runnable = Java<java.lang.Runnable>;
+
+                class Class {
+                    private int value;
+
+                    private void setValue(int value) {
+                        this.value = value;
+                    }
+
+                    async int execute() {
+                        let self = this;
+                        Runnable action = () => self.setValue(73);
+                        await futures.create();
+                        action.run();
+                        return value;
+                    }
+                }
+
+                intStorage.add(await new Class().execute());
+                """;
+
+        AsyncRunnable program = compileAsync(ApiRoot.class, code);
+        CompletableFuture<?> future = program.run();
+
+        Assertions.assertFalse(future.isDone());
+        ApiRoot.futures.get(0).complete(null);
+        Assertions.assertDoesNotThrow(future::join);
+        Assertions.assertIterableEquals(List.of(73), ApiRoot.intStorage.list);
+    }
+
+    @Test
     public void missingAwaitTest() {
         String code = """
                 async int count() => 1;

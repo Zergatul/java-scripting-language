@@ -648,6 +648,65 @@ public class ClassInheritanceTests extends ComparatorTest {
     }
 
     @Test
+    public void protectedScriptMembersOnSubclassReceiverInLambdaTest() {
+        String code = """
+                typealias Run = Java<com.zergatul.scripting.tests.compiler.helpers.Run>;
+
+                class Base {
+                    protected int value;
+
+                    protected void setValue(int value) {
+                        this.value = value;
+                    }
+                }
+                class Child : Base {
+                    public void copyFrom(Child other) {
+                        let self = this;
+                        new Run().once(() => {
+                            other.setValue(61);
+                            self.value = other.value;
+                        });
+                    }
+
+                    public int getValue() => value;
+                }
+
+                let instance = new Child();
+                instance.copyFrom(new Child());
+                intStorage.add(instance.getValue());
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(List.of(61), ApiRoot.intStorage.list);
+    }
+
+    @Test
+    public void protectedScriptMemberOnBaseReceiverInLambdaTest() {
+        String code = """
+                typealias Run = Java<com.zergatul.scripting.tests.compiler.helpers.Run>;
+
+                class Base {
+                    protected int value;
+                }
+                class Child : Base {
+                    public void read(Base other) {
+                        new Run().once(() => intStorage.add(other.⟦value⟧));
+                    }
+                }
+                """;
+
+        comparator.assertDiagnostics(
+                ApiRoot.class,
+                code,
+                "⟦⟧",
+                BinderErrors.MemberDoesNotExist,
+                "Base",
+                "value");
+    }
+
+    @Test
     public void protectedJavaMethodFromJdkModuleTest() {
         String code = """
                 class Class : Java<java.util.Vector> {
