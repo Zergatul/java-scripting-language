@@ -160,7 +160,61 @@ public class LineNumberTests {
             future.get();
         } catch (ExecutionException exception) {
             assertStackTrace(exception.getCause(), List.of(
-                    new StackTraceElement("com.zergatul.scripting.dynamic.Script", "$async$next$1", "<TestScript>", 7)));
+                    new StackTraceElement("com.zergatul.scripting.dynamic.Script", "run$async$next$1", "<TestScript>", 7)));
+            return;
+        } catch (Throwable ignored) {}
+
+        Assertions.fail();
+    }
+
+    @Test
+    public void asyncFunctionTest() {
+        AsyncRunnable program = compileAsync("""
+                async void fail() {
+                    let array = [1, 2, 3];
+                    await futures.create();
+                    array[3]++;
+                }
+
+                await fail();
+                """);
+
+        Future<?> future = program.run();
+        ApiRoot.futures.get(0).complete(null);
+
+        try {
+            future.get();
+        } catch (ExecutionException exception) {
+            assertStackTrace(exception.getCause(), List.of(
+                    new StackTraceElement("com.zergatul.scripting.dynamic.Script", "fail$async$next$1", "<TestScript>", 4)));
+            return;
+        } catch (Throwable ignored) {}
+
+        Assertions.fail();
+    }
+
+    @Test
+    public void asyncClassMethodTest() {
+        AsyncRunnable program = compileAsync("""
+                class Class {
+                    async void fail() {
+                        let array = [1, 2, 3];
+                        await futures.create();
+                        array[3]++;
+                    }
+                }
+
+                await new Class().fail();
+                """);
+
+        Future<?> future = program.run();
+        ApiRoot.futures.get(0).complete(null);
+
+        try {
+            future.get();
+        } catch (ExecutionException exception) {
+            assertStackTrace(exception.getCause(), List.of(
+                    new StackTraceElement("com.zergatul.scripting.dynamic.Script$Class", "fail$async$next$1", null, 5)));
             return;
         } catch (Throwable ignored) {}
 

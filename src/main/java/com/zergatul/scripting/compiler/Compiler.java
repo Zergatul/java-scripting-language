@@ -315,6 +315,7 @@ public class Compiler {
                     methodVisitor,
                     writer,
                     methodNode.method.getOwner().getInternalName(),
+                    methodNode.name.value,
                     context,
                     new BoundStatementsListNode(List.of(methodNode.body)));
         } else {
@@ -429,6 +430,7 @@ public class Compiler {
                     visitor,
                     writer,
                     context.getClassName(),
+                    methodNode.method.getInternalName(),
                     methodContext,
                     new BoundStatementsListNode(List.of(methodNode.body)));
         } else {
@@ -593,6 +595,7 @@ public class Compiler {
                         visitor,
                         writer,
                         context.getClassName(),
+                        function.name.value,
                         functionContext,
                         new BoundStatementsListNode(List.of(function.body)));
             } else {
@@ -698,7 +701,7 @@ public class Compiler {
         }
 
         if (parameters.isAsync()) {
-            compileAsyncBoundStatementList(visitor, writer, className, context, unit.statements);
+            compileAsyncBoundStatementList(visitor, writer, className, method.getName(), context, unit.statements);
         } else {
             compileStatementList(visitor, context, unit.statements);
         }
@@ -1533,6 +1536,7 @@ public class Compiler {
             MethodVisitor parentVisitor,
             ClassWriter ownerWriter,
             String ownerClassName,
+            String ownerMethodName,
             CompilerContext context,
             BoundStatementsListNode node
     ) {
@@ -1550,7 +1554,7 @@ public class Compiler {
         emitSourceFile(writer);
         int asyncIndex = context.getNextUniqueIndex();
         String name = "com/zergatul/scripting/dynamic/DynamicAsyncStateMachine_" + asyncIndex;
-        String nextMethodName = "$async$next$" + asyncIndex;
+        String nextMethodName = ownerMethodName + "$async$next$" + asyncIndex;
         String nextMethodDescriptor = Type.getMethodDescriptor(
                 Type.getType(CompletableFuture.class),
                 Type.getType(Object.class));
