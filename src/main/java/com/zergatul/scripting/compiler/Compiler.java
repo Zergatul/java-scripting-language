@@ -311,7 +311,12 @@ public class Compiler {
         }
 
         if (methodNode.isAsync()) {
-            compileAsyncBoundStatementList(methodVisitor, context, new BoundStatementsListNode(List.of(methodNode.body)));
+            compileAsyncBoundStatementList(
+                    methodVisitor,
+                    writer,
+                    methodNode.method.getOwner().getInternalName(),
+                    context,
+                    new BoundStatementsListNode(List.of(methodNode.body)));
         } else {
             if (!methodNode.lifted.isEmpty()) {
                 compileClosureClass(methodVisitor, context, methodNode.lifted);
@@ -420,7 +425,12 @@ public class Compiler {
         }
 
         if (methodNode.isAsync()) {
-            compileAsyncBoundStatementList(visitor, methodContext, new BoundStatementsListNode(List.of(methodNode.body)));
+            compileAsyncBoundStatementList(
+                    visitor,
+                    writer,
+                    context.getClassName(),
+                    methodContext,
+                    new BoundStatementsListNode(List.of(methodNode.body)));
         } else {
             if (!methodNode.lifted.isEmpty()) {
                 compileClosureClass(visitor, methodContext, methodNode.lifted);
@@ -579,7 +589,12 @@ public class Compiler {
             }
 
             if (function.isAsync()) {
-                compileAsyncBoundStatementList(visitor, functionContext, new BoundStatementsListNode(List.of(function.body)));
+                compileAsyncBoundStatementList(
+                        visitor,
+                        writer,
+                        context.getClassName(),
+                        functionContext,
+                        new BoundStatementsListNode(List.of(function.body)));
             } else {
                 if (!function.lifted.isEmpty()) {
                     compileClosureClass(visitor, functionContext, function.lifted);
@@ -683,7 +698,7 @@ public class Compiler {
         }
 
         if (parameters.isAsync()) {
-            compileAsyncBoundStatementList(visitor, context, unit.statements);
+            compileAsyncBoundStatementList(visitor, writer, className, context, unit.statements);
         } else {
             compileStatementList(visitor, context, unit.statements);
         }
@@ -1514,7 +1529,13 @@ public class Compiler {
         }
     }
 
-    private void compileAsyncBoundStatementList(MethodVisitor parentVisitor, CompilerContext context, BoundStatementsListNode node) {
+    private void compileAsyncBoundStatementList(
+            MethodVisitor parentVisitor,
+            ClassWriter ownerWriter,
+            String ownerClassName,
+            CompilerContext context,
+            BoundStatementsListNode node
+    ) {
         for (BoundVariableDeclarationNode declaration : node.prepend) {
             if (declaration.name.getSymbol() instanceof ExternalParameter parameter) {
                 LiftedVariable lifted = new LiftedVariable(parameter);
@@ -1527,7 +1548,16 @@ public class Compiler {
 
         ClassWriter writer = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
         emitSourceFile(writer);
-        String name = "com/zergatul/scripting/dynamic/DynamicAsyncStateMachine_" + context.getNextUniqueIndex();
+        int asyncIndex = context.getNextUniqueIndex();
+        String name = "com/zergatul/scripting/dynamic/DynamicAsyncStateMachine_" + asyncIndex;
+        String nextMethodName = "$async$next$" + asyncIndex;
+        String nextMethodDescriptor = Type.getMethodDescriptor(
+                Type.getType(CompletableFuture.class),
+                Type.getType(Object.class));
+        String nextImplementationDescriptor = Type.getMethodDescriptor(
+                Type.getType(CompletableFuture.class),
+                Type.getObjectType(name),
+                Type.getType(Object.class));
         writer.visit(
                 V1_8,
                 ACC_PUBLIC,
@@ -1537,26 +1567,26 @@ public class Compiler {
                 null);
 
         // state field
-        writer.visitField(ACC_PRIVATE, "state", Type.getDescriptor(int.class), null, null);
+        writer.visitField(ACC_SYNTHETIC, "state", Type.getDescriptor(int.class), null, null);
 
         // exception field
-        writer.visitField(ACC_PRIVATE, "exception", Type.getDescriptor(Throwable.class), null, null);
+        writer.visitField(ACC_SYNTHETIC, "exception", Type.getDescriptor(Throwable.class), null, null);
 
         if (generator.hasFinallyBlocks()) {
-            writer.visitField(ACC_PRIVATE, HAS_PENDING_RETURN_FIELD_NAME, Type.getDescriptor(boolean.class), null, null);
-            writer.visitField(ACC_PRIVATE, "result", Type.getDescriptor(Object.class), null, null);
+            writer.visitField(ACC_SYNTHETIC, HAS_PENDING_RETURN_FIELD_NAME, Type.getDescriptor(boolean.class), null, null);
+            writer.visitField(ACC_SYNTHETIC, "result", Type.getDescriptor(Object.class), null, null);
         }
 
         if (generator.hasPendingJump()) {
-            writer.visitField(ACC_PRIVATE, HAS_PENDING_JUMP_FIELD_NAME, Type.getDescriptor(boolean.class), null, null);
-            writer.visitField(ACC_PRIVATE, JUMP_STATE_FIELD_NAME, Type.getDescriptor(int.class), null, null);
+            writer.visitField(ACC_SYNTHETIC, HAS_PENDING_JUMP_FIELD_NAME, Type.getDescriptor(boolean.class), null, null);
+            writer.visitField(ACC_SYNTHETIC, JUMP_STATE_FIELD_NAME, Type.getDescriptor(int.class), null, null);
         }
 
         if (generator.getMaxInternalFrames() > 0) {
-            writer.visitField(ACC_PRIVATE, FRAMES_COUNT_FIELD_NAME, Type.getDescriptor(int.class), null, null);
+            writer.visitField(ACC_SYNTHETIC, FRAMES_COUNT_FIELD_NAME, Type.getDescriptor(int.class), null, null);
             for (int i = 0; i < generator.getMaxInternalFrames(); i++) {
-                writer.visitField(ACC_PRIVATE, FRAME_TYPE_FIELD_NAME + i, Type.getDescriptor(int.class), null, null);
-                writer.visitField(ACC_PRIVATE, FRAME_STATE_FIELD_NAME + i, Type.getDescriptor(int.class), null, null);
+                writer.visitField(ACC_SYNTHETIC, FRAME_TYPE_FIELD_NAME + i, Type.getDescriptor(int.class), null, null);
+                writer.visitField(ACC_SYNTHETIC, FRAME_STATE_FIELD_NAME + i, Type.getDescriptor(int.class), null, null);
             }
         }
 
@@ -1571,6 +1601,11 @@ public class Compiler {
                 statement.accept(treeVisitor);
                 statement.accept(parameterVisitor);
             }
+        }
+        if (context.isClassMethod()) {
+            // Base calls do not contain a BoundThisExpressionNode, but the owner-side async step
+            // still needs the original receiver for invokespecial.
+            parameterVisitor.ensureThisLocalVariable(context.getClassType());
         }
 
         List<LiftedVariable> variables = new ArrayList<>();
@@ -1613,13 +1648,34 @@ public class Compiler {
         constructorVisitor.visitMaxs(0, 0);
         constructorVisitor.visitEnd();
 
-        // build next method
+        // State-machine callbacks enter through this method. The implementation is emitted on the
+        // lexical owner so JVM access checks use the class where the async method was declared.
         MethodVisitor nextMethodVisitor = writer.visitMethod(
                 ACC_PUBLIC,
                 "next",
-                Type.getMethodDescriptor(Type.getType(CompletableFuture.class), Type.getType(Object.class)),
+                nextMethodDescriptor,
                 null,
                 null);
+        nextMethodVisitor.visitCode();
+        nextMethodVisitor.visitVarInsn(ALOAD, 0);
+        nextMethodVisitor.visitVarInsn(ALOAD, 1);
+        nextMethodVisitor.visitMethodInsn(
+                INVOKESTATIC,
+                ownerClassName,
+                nextMethodName,
+                nextImplementationDescriptor,
+                false);
+        nextMethodVisitor.visitInsn(ARETURN);
+        nextMethodVisitor.visitMaxs(0, 0);
+        nextMethodVisitor.visitEnd();
+
+        nextMethodVisitor = ownerWriter.visitMethod(
+                ACC_STATIC | ACC_SYNTHETIC,
+                nextMethodName,
+                nextImplementationDescriptor,
+                null,
+                null);
+        nextMethodVisitor.visitCode();
 
         Map<StateBoundary, Integer> stateMap = new HashMap<>();
         for (int i = 0; i < generator.boundaries.size(); i++) {
@@ -1627,7 +1683,7 @@ public class Compiler {
             stateMap.put(generator.boundaries.get(i), i - 1);
         }
 
-        CompilerContext nextMethodContext = context.createInstanceMethod(SType.fromJavaType(CompletableFuture.class), false);
+        CompilerContext nextMethodContext = context.createAsyncStateMachineMethod(SType.fromJavaType(CompletableFuture.class));
 
         Label loop = new Label();
         nextMethodContext.setAsyncContext(new AsyncStateMachineContext.Builder()
@@ -1816,14 +1872,14 @@ public class Compiler {
                 INVOKEVIRTUAL,
                 name,
                 "next",
-                Type.getMethodDescriptor(Type.getType(CompletableFuture.class), Type.getType(Object.class)),
+                nextMethodDescriptor,
                 false);
         parentVisitor.visitInsn(ARETURN);
     }
 
     private void compileAwaitTransitionMethod(ClassWriter classWriter, String classInternalName, boolean hasFinallyBlocks, boolean hasPendingJump) {
         MethodVisitor mv = classWriter.visitMethod(
-                ACC_PRIVATE,
+                ACC_SYNTHETIC,
                 AWAIT_TRANSITION_METHOD_NAME,
                 "(Ljava/util/concurrent/CompletableFuture;II)Ljava/util/concurrent/CompletableFuture;",
                 "(Ljava/util/concurrent/CompletableFuture<*>;II)Ljava/util/concurrent/CompletableFuture<Ljava/lang/Object;>;",
@@ -2032,7 +2088,7 @@ public class Compiler {
 
     private void compilePushState(ClassWriter classWriter, String classInternalName, int maxPending) {
         MethodVisitor visitor = classWriter.visitMethod(
-                ACC_PRIVATE,
+                ACC_SYNTHETIC,
                 PUSH_FRAME_METHOD_NAME,
                 Type.getMethodDescriptor(Type.VOID_TYPE, Type.INT_TYPE, Type.INT_TYPE),
                 null,
@@ -2126,7 +2182,7 @@ public class Compiler {
 
     private void compileHasFinallyFrame(ClassWriter classWriter, String classInternalName, int maxFrames, boolean hasPendingJump) {
         MethodVisitor visitor = classWriter.visitMethod(
-                ACC_PRIVATE,
+                ACC_SYNTHETIC,
                 HAS_FINALLY_FRAME_METHOD_NAME,
                 Type.getMethodDescriptor(Type.BOOLEAN_TYPE),
                 null,
@@ -2212,7 +2268,7 @@ public class Compiler {
 
     private void compileHasFinallyFrameBeforeState(ClassWriter classWriter, String classInternalName, int maxFrames) {
         MethodVisitor visitor = classWriter.visitMethod(
-                ACC_PRIVATE,
+                ACC_SYNTHETIC,
                 HAS_FINALLY_FRAME_BEFORE_STATE_METHOD_NAME,
                 Type.getMethodDescriptor(Type.BOOLEAN_TYPE, Type.INT_TYPE),
                 null,
@@ -2290,7 +2346,7 @@ public class Compiler {
 
     private void compilePopPendingFinallyState(ClassWriter classWriter, String classInternalName, int maxInternalFrames) {
         MethodVisitor visitor = classWriter.visitMethod(
-                ACC_PRIVATE,
+                ACC_SYNTHETIC,
                 POP_FRAME_METHOD_NAME,
                 Type.getMethodDescriptor(Type.INT_TYPE),
                 null,
@@ -2352,7 +2408,7 @@ public class Compiler {
 
     private void compilePeekPendingFinallyState(ClassWriter classWriter, String classInternalName, int maxInternalFrames) {
         MethodVisitor visitor = classWriter.visitMethod(
-                ACC_PRIVATE,
+                ACC_SYNTHETIC,
                 PEEK_FINALLY_FRAME_METHOD_NAME,
                 Type.getMethodDescriptor(Type.INT_TYPE),
                 null,
@@ -3494,16 +3550,20 @@ public class Compiler {
     }
 
     private void compileThisExpression(MethodVisitor visitor, CompilerContext context, BoundThisExpressionNode expression) {
+        compileThisReference(visitor, context, expression.type);
+    }
+
+    private void compileThisReference(MethodVisitor visitor, CompilerContext context, SType type) {
         String fieldName = context.getAsyncThisFieldName();
         if (fieldName == null) {
             if (context.isExtension()) {
-                visitor.visitVarInsn(expression.type.getLoadInst(), 0);
+                visitor.visitVarInsn(type.getLoadInst(), 0);
             } else {
                 visitor.visitVarInsn(ALOAD, 0);
             }
         } else {
             visitor.visitVarInsn(ALOAD, 0);
-            visitor.visitFieldInsn(GETFIELD, context.getAsyncContext().getClassName(), fieldName, expression.type.getDescriptor());
+            visitor.visitFieldInsn(GETFIELD, context.getAsyncContext().getClassName(), fieldName, type.getDescriptor());
         }
     }
 
@@ -3549,7 +3609,7 @@ public class Compiler {
 
     private void compileBaseMethodInvocationExpression(MethodVisitor visitor, CompilerContext context, BoundBaseMethodInvocationExpressionNode invocation) {
         compileMethodCallTarget(visitor, context, invocation.target, () -> {
-            visitor.visitVarInsn(ALOAD, 0);
+            compileThisReference(visitor, context, context.getClassType());
             for (BoundExpressionNode expression : invocation.arguments.arguments) {
                 compileExpression(visitor, context, expression);
             }

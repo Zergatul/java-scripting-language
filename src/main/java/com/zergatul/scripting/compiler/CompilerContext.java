@@ -237,6 +237,20 @@ public class CompilerContext {
                 .build();
     }
 
+    public CompilerContext createAsyncStateMachineMethod(SType returnType) {
+        return new Builder()
+                .setParent(this)
+                .setClassType(this.classType)
+                .setExtensionType(this.extensionType)
+                .setClassMethod(this.isClassMethod)
+                .setInitialStackIndex(1)
+                .setFunctionRoot(true)
+                .setReturnType(returnType)
+                .setAsync(false)
+                .setFrame(new FunctionFrame())
+                .build();
+    }
+
     public CompilerContext createClass(SDeclaredType type) {
         return new Builder()
                 .setParent(this)

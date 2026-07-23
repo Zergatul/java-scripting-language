@@ -160,7 +160,7 @@ public class LineNumberTests {
             future.get();
         } catch (ExecutionException exception) {
             assertStackTrace(exception.getCause(), List.of(
-                    new StackTraceElement("com.zergatul.scripting.dynamic.DynamicAsyncStateMachine_2", "next", "<TestScript>", 7)));
+                    new StackTraceElement("com.zergatul.scripting.dynamic.Script", "$async$next$1", "<TestScript>", 7)));
             return;
         } catch (Throwable ignored) {}
 

@@ -384,6 +384,119 @@ public class ClassInheritanceTests extends ComparatorTest {
     }
 
     @Test
+    public void protectedScriptMembersOnSubclassReceiverTest() {
+        String code = """
+                class Base {
+                    protected int value;
+
+                    protected void setValue(int value) {
+                        this.value = value;
+                    }
+                }
+                class Child : Base {
+                    public void copyFrom(Child other) {
+                        other.setValue(43);
+                        value = other.value;
+                    }
+
+                    public int getValue() => value;
+                }
+
+                let instance = new Child();
+                instance.copyFrom(new Child());
+                intStorage.add(instance.getValue());
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(List.of(43), ApiRoot.intStorage.list);
+    }
+
+    @Test
+    public void protectedScriptMemberOnBaseReceiverTest() {
+        String code = """
+                class Base {
+                    protected int value;
+                }
+                class Child : Base {
+                    public int read(Base other) => other.⟦value⟧;
+                }
+                """;
+
+        comparator.assertDiagnostics(
+                ApiRoot.class,
+                code,
+                "⟦⟧",
+                BinderErrors.MemberDoesNotExist,
+                "Base",
+                "value");
+    }
+
+    @Test
+    public void protectedScriptMemberOnSiblingReceiverTest() {
+        String code = """
+                class Base {
+                    protected void method() {}
+                }
+                class First : Base {
+                    public void call(Second other) => other.⟦method⟧();
+                }
+                class Second : Base {}
+                """;
+
+        comparator.assertDiagnostics(
+                ApiRoot.class,
+                code,
+                "⟦⟧",
+                BinderErrors.MemberDoesNotExist,
+                "Second",
+                "method");
+    }
+
+    @Test
+    public void publicOverrideCanWidenProtectedMethodVisibilityTest() throws Exception {
+        String code = """
+                class Base {
+                    protected virtual int getValue() => 47;
+                }
+                class Child : Base {
+                    public override int getValue() => base.getValue() + 1;
+                }
+
+                let instance = new Child();
+                intStorage.add(instance.getValue());
+                objectStorage.add(instance);
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(List.of(48), ApiRoot.intStorage.list);
+        Method method = ApiRoot.objectStorage.list.getFirst().getClass().getDeclaredMethod("getValue");
+        Assertions.assertTrue(Modifier.isPublic(method.getModifiers()));
+    }
+
+    @Test
+    public void privateBaseConstructorCannotBeCalledExplicitlyTest() {
+        String code = """
+                class Base {
+                    private constructor(int value) {}
+                }
+                class Child : Base {
+                    constructor() : ⟦base(1)⟧ {}
+                }
+                """;
+
+        comparator.assertDiagnostics(
+                ApiRoot.class,
+                code,
+                "⟦⟧",
+                BinderErrors.NoConstructors,
+                "Base");
+    }
+
+    @Test
     public void cannotReducePublicMethodVisibilityTest() {
         String code = """
                 class Base {

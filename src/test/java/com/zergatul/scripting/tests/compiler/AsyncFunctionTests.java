@@ -366,6 +366,198 @@ public class AsyncFunctionTests extends ComparatorTest {
     }
 
     @Test
+    public void privateFieldFromAsyncClassMethodTest() {
+        String code = """
+                class Class {
+                    private int value;
+
+                    constructor(int value) {
+                        this.value = value;
+                    }
+
+                    async int getValue() => value;
+                }
+
+                intStorage.add(await new Class(17).getValue());
+                """;
+
+        AsyncRunnable program = compileAsync(ApiRoot.class, code);
+        CompletableFuture<?> future = program.run();
+
+        Assertions.assertDoesNotThrow(future::join);
+        Assertions.assertIterableEquals(List.of(17), ApiRoot.intStorage.list);
+    }
+
+    @Test
+    public void protectedFieldFromAsyncClassMethodTest() {
+        String code = """
+                class Class {
+                    protected int value;
+
+                    constructor(int value) {
+                        this.value = value;
+                    }
+
+                    async int getValue() => value;
+                }
+
+                intStorage.add(await new Class(23).getValue());
+                """;
+
+        AsyncRunnable program = compileAsync(ApiRoot.class, code);
+        CompletableFuture<?> future = program.run();
+
+        Assertions.assertDoesNotThrow(future::join);
+        Assertions.assertIterableEquals(List.of(23), ApiRoot.intStorage.list);
+    }
+
+    @Test
+    public void privateMethodFromAsyncClassMethodTest() {
+        String code = """
+                class Class {
+                    private int getValue() => 31;
+
+                    async int execute() => getValue();
+                }
+
+                intStorage.add(await new Class().execute());
+                """;
+
+        AsyncRunnable program = compileAsync(ApiRoot.class, code);
+        CompletableFuture<?> future = program.run();
+
+        Assertions.assertDoesNotThrow(future::join);
+        Assertions.assertIterableEquals(List.of(31), ApiRoot.intStorage.list);
+    }
+
+    @Test
+    public void protectedMethodFromAsyncClassMethodTest() {
+        String code = """
+                class Class {
+                    protected int getValue() => 37;
+
+                    async int execute() => getValue();
+                }
+
+                intStorage.add(await new Class().execute());
+                """;
+
+        AsyncRunnable program = compileAsync(ApiRoot.class, code);
+        CompletableFuture<?> future = program.run();
+
+        Assertions.assertDoesNotThrow(future::join);
+        Assertions.assertIterableEquals(List.of(37), ApiRoot.intStorage.list);
+    }
+
+    @Test
+    public void protectedJavaFieldFromAsyncClassMethodTest() {
+        String code = """
+                class Class : Java<com.zergatul.scripting.tests.compiler.AsyncFunctionTests$ProtectedBase> {
+                    async int getValue() => value;
+                }
+
+                intStorage.add(await new Class().getValue());
+                """;
+
+        AsyncRunnable program = compileAsync(ApiRoot.class, code);
+        CompletableFuture<?> future = program.run();
+
+        Assertions.assertDoesNotThrow(future::join);
+        Assertions.assertIterableEquals(List.of(43), ApiRoot.intStorage.list);
+    }
+
+    @Test
+    public void protectedJavaMethodFromAsyncClassMethodTest() {
+        String code = """
+                class Class : Java<com.zergatul.scripting.tests.compiler.AsyncFunctionTests$ProtectedBase> {
+                    async int execute() => getProtectedValue();
+                }
+
+                intStorage.add(await new Class().execute());
+                """;
+
+        AsyncRunnable program = compileAsync(ApiRoot.class, code);
+        CompletableFuture<?> future = program.run();
+
+        Assertions.assertDoesNotThrow(future::join);
+        Assertions.assertIterableEquals(List.of(47), ApiRoot.intStorage.list);
+    }
+
+    @Test
+    public void protectedJavaBaseMethodFromAsyncClassMethodTest() {
+        String code = """
+                class Class : Java<com.zergatul.scripting.tests.compiler.AsyncFunctionTests$ProtectedBase> {
+                    async int execute() => base.getProtectedValue();
+                }
+
+                intStorage.add(await new Class().execute());
+                """;
+
+        AsyncRunnable program = compileAsync(ApiRoot.class, code);
+        CompletableFuture<?> future = program.run();
+
+        Assertions.assertDoesNotThrow(future::join);
+        Assertions.assertIterableEquals(List.of(47), ApiRoot.intStorage.list);
+    }
+
+    @Test
+    public void nonPublicMembersAfterAwaitFromAsyncClassMethodTest() {
+        String code = """
+                class Class : Java<com.zergatul.scripting.tests.compiler.AsyncFunctionTests$ProtectedBase> {
+                    private int ownValue;
+
+                    constructor(int value) {
+                        ownValue = value;
+                    }
+
+                    private int getOwnValue() => ownValue + 2;
+
+                    async int execute() {
+                        await futures.create();
+                        return ownValue + getOwnValue() + value + base.getProtectedValue();
+                    }
+                }
+
+                intStorage.add(await new Class(5).execute());
+                """;
+
+        AsyncRunnable program = compileAsync(ApiRoot.class, code);
+        CompletableFuture<?> future = program.run();
+
+        Assertions.assertFalse(future.isDone());
+        ApiRoot.futures.get(0).complete(null);
+        Assertions.assertDoesNotThrow(future::join);
+        Assertions.assertIterableEquals(List.of(102), ApiRoot.intStorage.list);
+    }
+
+    @Test
+    public void privateConstructorFromAsyncClassMethodTest() {
+        String code = """
+                class Class {
+                    private int value;
+
+                    public constructor() : this(0) {}
+
+                    private constructor(int value) {
+                        this.value = value;
+                    }
+
+                    private int getValue() => value;
+
+                    async int createAndGetValue() => new Class(41).getValue();
+                }
+
+                intStorage.add(await new Class().createAndGetValue());
+                """;
+
+        AsyncRunnable program = compileAsync(ApiRoot.class, code);
+        CompletableFuture<?> future = program.run();
+
+        Assertions.assertDoesNotThrow(future::join);
+        Assertions.assertIterableEquals(List.of(41), ApiRoot.intStorage.list);
+    }
+
+    @Test
     public void missingAwaitTest() {
         String code = """
                 async int count() => 1;
@@ -383,5 +575,14 @@ public class AsyncFunctionTests extends ComparatorTest {
         public static Int64Storage int64Storage;
         public static FloatStorage floatStorage;
         public static StringStorage stringStorage;
+    }
+
+    @SuppressWarnings("unused")
+    public static class ProtectedBase {
+        protected int value = 43;
+
+        protected int getProtectedValue() {
+            return 47;
+        }
     }
 }
