@@ -10,15 +10,20 @@ import com.zergatul.scripting.tests.compiler.helpers.IntStorage;
 import com.zergatul.scripting.tests.compiler.helpers.ObjectStorage;
 import com.zergatul.scripting.tests.compiler.helpers.StringStorage;
 import com.zergatul.scripting.tests.framework.ComparatorTest;
+import org.objectweb.asm.ClassWriter;
+import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.Type;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.List;
 
 import static com.zergatul.scripting.tests.compiler.helpers.CompilerHelper.compile;
+import static org.objectweb.asm.Opcodes.*;
 
 public class ClassInheritanceTests extends ComparatorTest {
 
@@ -973,6 +978,46 @@ public class ClassInheritanceTests extends ComparatorTest {
     }
 
     @Test
+    public void syntheticJavaMethodImplementsInterfaceMethodTest() throws Exception {
+        Class<?> baseClass = SyntheticMethodBaseHolder.TYPE;
+        Method method = baseClass.getDeclaredMethod("value");
+
+        Assertions.assertTrue(method.isSynthetic());
+        Assertions.assertFalse(method.isBridge());
+        Assertions.assertFalse(Modifier.isAbstract(method.getModifiers()));
+        Assertions.assertEquals(SyntheticMethodContract.class, baseClass.getInterfaces()[0]);
+
+        String code = """
+                class Class : Java<com.zergatul.scripting.tests.compiler.ClassInheritanceTests$SyntheticMethodBase> {}
+
+                objectStorage.add(new Class());
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Object object = ApiRoot.objectStorage.list.getFirst();
+        Assertions.assertTrue(object instanceof SyntheticMethodContract);
+        Assertions.assertEquals(123, ((SyntheticMethodContract) object).value());
+    }
+
+    @Test
+    public void javaDefaultInterfaceMethodDoesNotRequireImplementationTest() {
+        String code = """
+                class Class : Java<com.zergatul.scripting.tests.compiler.ClassInheritanceTests$DefaultMethodInterface> {}
+
+                objectStorage.add(new Class());
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Object object = ApiRoot.objectStorage.list.getFirst();
+        Assertions.assertTrue(object instanceof DefaultMethodInterface);
+        Assertions.assertEquals(123, ((DefaultMethodInterface) object).value());
+    }
+
+    @Test
     public void javaMultipleInterfaceImplementationTest() {
         String code = """
                 class Class : Java<java.lang.Runnable>, Java<java.lang.AutoCloseable> {
@@ -1376,5 +1421,71 @@ public class ClassInheritanceTests extends ComparatorTest {
     @CustomType(name = "AbstractBase")
     public static abstract class AbstractBase {
         public abstract int value();
+    }
+
+    public interface SyntheticMethodContract {
+        int value();
+    }
+
+    public interface DefaultMethodInterface {
+        default int value() {
+            return 123;
+        }
+    }
+
+    private static class SyntheticMethodBaseHolder {
+        private static final Class<?> TYPE = defineSyntheticMethodBase();
+    }
+
+    private static Class<?> defineSyntheticMethodBase() {
+        String className = ClassInheritanceTests.class.getName() + "$SyntheticMethodBase";
+        String internalName = className.replace('.', '/');
+
+        ClassWriter writer = new ClassWriter(0);
+        writer.visit(
+                V21,
+                ACC_PUBLIC | ACC_SUPER,
+                internalName,
+                null,
+                Type.getInternalName(Object.class),
+                new String[] { Type.getInternalName(SyntheticMethodContract.class) });
+
+        MethodVisitor constructor = writer.visitMethod(
+                ACC_PUBLIC,
+                "<init>",
+                "()V",
+                null,
+                null);
+        constructor.visitCode();
+        constructor.visitVarInsn(ALOAD, 0);
+        constructor.visitMethodInsn(
+                INVOKESPECIAL,
+                Type.getInternalName(Object.class),
+                "<init>",
+                "()V",
+                false);
+        constructor.visitInsn(RETURN);
+        constructor.visitMaxs(1, 1);
+        constructor.visitEnd();
+
+        MethodVisitor value = writer.visitMethod(
+                ACC_PUBLIC | ACC_SYNTHETIC,
+                "value",
+                "()I",
+                null,
+                null);
+        value.visitCode();
+        value.visitIntInsn(BIPUSH, 123);
+        value.visitInsn(IRETURN);
+        value.visitMaxs(1, 1);
+        value.visitEnd();
+
+        writer.visitEnd();
+
+        try {
+            return MethodHandles.lookup().defineClass(writer.toByteArray());
+        } catch (IllegalAccessException e) {
+            throw new AssertionError(e);
+        }
     }
 }

@@ -3037,15 +3037,7 @@ public class Binder {
         }
 
         for (MethodReference required : requiredMethods) {
-            boolean implemented = MemberLookup.getMethods(declaredType).stream()
-                    .filter(m -> !m.isStatic())
-                    .filter(m -> !m.isAbstract())
-                    .filter(m -> !m.getOwner().isInterface())
-                    .filter(m -> m.getName().equals(required.getName()))
-                    .filter(m -> m.signatureMatchesExactly(new SMethodFunction(required.getReturn(), required.getParameters().toArray(MethodParameter[]::new))))
-                    .filter(m -> !reducesVisibility(m.getVisibility(), required.getVisibility()))
-                    .anyMatch(m -> m.getReturn().equals(required.getReturn()));
-            if (!implemented) {
+            if (!declaredType.hasConcreteImplementation(required)) {
                 addDiagnostic(BinderErrors.MissingInheritedMethodImplementation, classNode.name, required.getName());
             }
         }

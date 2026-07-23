@@ -12,8 +12,13 @@ import org.jspecify.annotations.Nullable;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Type;
 
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import static org.objectweb.asm.Opcodes.*;
 
@@ -66,6 +71,10 @@ public class SDeclaredType extends SReferenceType {
         DeclaredMethodReference method = new DeclaredMethodReference(this, modifiers, name, functionType);
         methods.add(method);
         return method;
+    }
+
+    public boolean hasConcreteImplementation(MethodReference contract) {
+        return findImplementation(contract, new HashSet<>(), new HashSet<>()) == Implementation.CONCRETE;
     }
 
     public DeclaredUnaryOperationReference addUnaryOperation(UnaryOperator operator, SMethodFunction functionType) {
@@ -201,8 +210,173 @@ public class SDeclaredType extends SReferenceType {
         return methods;
     }
 
+    private Implementation findImplementation(
+            MethodReference contract,
+            Set<SDeclaredType> visitedDeclaredTypes,
+            Set<Class<?>> visitedJavaTypes
+    ) {
+        if (!visitedDeclaredTypes.add(this)) {
+            return Implementation.NONE;
+        }
+
+        Implementation implementation = findDeclaredImplementation(methods, contract);
+        if (implementation != Implementation.NONE) {
+            return implementation;
+        }
+
+        if (baseType != null) {
+            implementation = findImplementation(baseType, contract, visitedDeclaredTypes, visitedJavaTypes);
+            if (implementation != Implementation.NONE) {
+                return implementation;
+            }
+        }
+
+        implementation = Implementation.NONE;
+        for (SType interfaceType : interfaces) {
+            implementation = Implementation.combine(
+                    implementation,
+                    findImplementation(interfaceType, contract, visitedDeclaredTypes, visitedJavaTypes));
+        }
+        return implementation;
+    }
+
+    private static Implementation findImplementation(
+            SType type,
+            MethodReference contract,
+            Set<SDeclaredType> visitedDeclaredTypes,
+            Set<Class<?>> visitedJavaTypes
+    ) {
+        if (type instanceof SDeclaredType declaredType) {
+            return declaredType.findImplementation(contract, visitedDeclaredTypes, visitedJavaTypes);
+        }
+        if (type instanceof SClassType || type instanceof SCustomType) {
+            return findJavaImplementation(type.getJavaClass(), contract, visitedJavaTypes);
+        }
+        return Implementation.NONE;
+    }
+
+    private static Implementation findJavaImplementation(
+            Class<?> clazz,
+            MethodReference contract,
+            Set<Class<?>> visitedJavaTypes
+    ) {
+        if (!visitedJavaTypes.add(clazz)) {
+            return Implementation.NONE;
+        }
+
+        Implementation implementation = findDeclaredJavaImplementation(clazz, contract);
+        if (implementation != Implementation.NONE) {
+            return implementation;
+        }
+
+        Class<?> superclass = clazz.getSuperclass();
+        if (superclass != null) {
+            implementation = findJavaImplementation(superclass, contract, visitedJavaTypes);
+            if (implementation != Implementation.NONE) {
+                return implementation;
+            }
+        }
+
+        implementation = Implementation.NONE;
+        for (Class<?> interfaceClass : clazz.getInterfaces()) {
+            implementation = Implementation.combine(
+                    implementation,
+                    findJavaImplementation(interfaceClass, contract, visitedJavaTypes));
+        }
+        return implementation;
+    }
+
+    private static Implementation findDeclaredJavaImplementation(Class<?> clazz, MethodReference contract) {
+        Implementation implementation = Implementation.NONE;
+        for (Method method : clazz.getDeclaredMethods()) {
+            if (Modifier.isStatic(method.getModifiers()) || !signatureMatches(method, contract)) {
+                continue;
+            }
+
+            NativeMethodReference reference = new NativeMethodReference(method);
+            if (reducesVisibility(reference.getVisibility(), contract.getVisibility())) {
+                continue;
+            }
+
+            implementation = Implementation.combine(
+                    implementation,
+                    Modifier.isAbstract(method.getModifiers()) ?
+                            Implementation.ABSTRACT :
+                            Implementation.CONCRETE);
+        }
+        return implementation;
+    }
+
+    private static Implementation findDeclaredImplementation(
+            List<MethodReference> methods,
+            MethodReference contract
+    ) {
+        Implementation implementation = Implementation.NONE;
+        for (MethodReference method : methods) {
+            if (method.isStatic() || !signatureMatches(method, contract)) {
+                continue;
+            }
+            if (reducesVisibility(method.getVisibility(), contract.getVisibility())) {
+                continue;
+            }
+
+            implementation = Implementation.combine(
+                    implementation,
+                    method.isAbstract() ? Implementation.ABSTRACT : Implementation.CONCRETE);
+        }
+        return implementation;
+    }
+
+    private static boolean signatureMatches(Method method, MethodReference contract) {
+        if (!method.getName().equals(contract.getName())) {
+            return false;
+        }
+
+        if (contract instanceof NativeMethodReference nativeContract) {
+            Method contractMethod = nativeContract.getUnderlying();
+            return method.getReturnType() == contractMethod.getReturnType() &&
+                    Arrays.equals(method.getParameterTypes(), contractMethod.getParameterTypes());
+        }
+
+        return SType.fromJavaType(method.getReturnType()).equals(contract.getReturn()) &&
+                Arrays.stream(method.getParameterTypes())
+                        .map(SType::fromJavaType)
+                        .toList()
+                        .equals(contract.getParameterTypes());
+    }
+
+    private static boolean signatureMatches(MethodReference method, MethodReference contract) {
+        return method.getName().equals(contract.getName()) &&
+                method.getReturn().equals(contract.getReturn()) &&
+                method.getParameterTypes().equals(contract.getParameterTypes());
+    }
+
+    private static boolean reducesVisibility(Visibility visibility, Visibility contractVisibility) {
+        return switch (contractVisibility) {
+            case PUBLIC -> visibility != Visibility.PUBLIC;
+            case PROTECTED -> visibility == Visibility.PRIVATE;
+            case PRIVATE -> false;
+        };
+    }
+
     @Override
     public String toString() {
         return name;
+    }
+
+    private enum Implementation {
+        NONE,
+        ABSTRACT,
+        CONCRETE;
+
+        private static Implementation combine(Implementation first, Implementation second) {
+            if (first == CONCRETE || second == CONCRETE) {
+                return CONCRETE;
+            }
+            if (first == ABSTRACT || second == ABSTRACT) {
+                return ABSTRACT;
+            }
+            return NONE;
+        }
     }
 }
