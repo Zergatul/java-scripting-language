@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.util.Collections;
 import java.util.List;
 
 import static com.zergatul.scripting.tests.compiler.helpers.CompilerHelper.compile;
@@ -78,6 +79,42 @@ public class StringTests {
                         "false=",
                         "100!",
                         "3.25#"));
+    }
+
+    @Test
+    public void concatChainTest() {
+        String code = """
+                class Value {
+                    int value;
+
+                    constructor(int value) {
+                        this.value = value;
+                    }
+
+                    override string toString() {
+                        intStorage.add(value);
+                        return value.toString();
+                    }
+                }
+
+                stringStorage.add("[" + new Value(1) + '-' + new Value(2) + 3 + ']');
+                stringStorage.add("sum=" + (1 + 2) + ".");
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(ApiRoot.stringStorage.list, List.of("[1-23]", "sum=3."));
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(1, 2));
+    }
+
+    @Test
+    public void longConcatChainTest() {
+        String expression = String.join(" + ", Collections.nCopies(250, "\"x\""));
+        Runnable program = compile(ApiRoot.class, "stringStorage.add(" + expression + ");");
+        program.run();
+
+        Assertions.assertIterableEquals(ApiRoot.stringStorage.list, List.of("x".repeat(250)));
     }
 
     @Test

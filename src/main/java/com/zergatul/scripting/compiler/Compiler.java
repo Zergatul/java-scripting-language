@@ -17,6 +17,7 @@ import com.zergatul.scripting.binding.nodes.BoundNodeType;
 import com.zergatul.scripting.runtime.*;
 import com.zergatul.scripting.symbols.*;
 import com.zergatul.scripting.type.*;
+import com.zergatul.scripting.type.operation.StringConcatOperation;
 import com.zergatul.scripting.visitors.ExternalParameterVisitor;
 import com.zergatul.scripting.visitors.LiftedVariablesVisitor;
 import com.zergatul.scripting.visitors.LocalParameterVisitor;
@@ -3001,10 +3002,85 @@ public class Compiler {
     }
 
     private void compileBinaryExpression(MethodVisitor visitor, CompilerContext context, BoundBinaryExpressionNode expression) {
+        if (expression.operator.operation instanceof StringConcatOperation) {
+            compileStringConcatExpression(visitor, context, expression);
+            return;
+        }
+
         BufferedMethodVisitor buffer = new BufferedMethodVisitor();
         compileExpression(visitor, context, expression.left);
         compileExpression(buffer, context, expression.right);
         expression.operator.operation.apply(visitor, buffer, context, expression.left.type, expression.right.type);
+    }
+
+    private void compileStringConcatExpression(MethodVisitor visitor, CompilerContext context, BoundBinaryExpressionNode expression) {
+        List<StringConcatPart> parts = new ArrayList<>();
+        collectStringConcatParts(expression, parts);
+
+        int index = 0;
+        boolean hasPreviousResult = false;
+        while (index < parts.size()) {
+            List<SType> types = new ArrayList<>();
+            if (hasPreviousResult) {
+                types.add(SString.instance);
+            }
+
+            int capacity = StringConcatOperation.MAX_INDY_CONCAT_ARG_SLOTS - types.size();
+            int end = Math.min(index + capacity, parts.size());
+            while (index < end) {
+                StringConcatPart part = parts.get(index++);
+                compileExpression(visitor, context, part.expression);
+                types.add(part.compileConversion(visitor, context));
+            }
+
+            StringConcatOperation.compileInvokeDynamic(visitor, types);
+            hasPreviousResult = true;
+        }
+    }
+
+    private void collectStringConcatParts(BoundExpressionNode expression, List<StringConcatPart> parts) {
+        BoundExpressionNode unwrapped = expression;
+        while (unwrapped instanceof BoundParenthesizedExpressionNode parenthesized) {
+            unwrapped = parenthesized.inner;
+        }
+
+        if (unwrapped instanceof BoundBinaryExpressionNode binary &&
+                binary.operator.operation instanceof StringConcatOperation operation) {
+            collectStringConcatParts(binary.left, operation, true, parts);
+            collectStringConcatParts(binary.right, operation, false, parts);
+        } else {
+            throw new InternalException();
+        }
+    }
+
+    private void collectStringConcatParts(
+            BoundExpressionNode expression,
+            StringConcatOperation operation,
+            boolean left,
+            List<StringConcatPart> parts
+    ) {
+        BoundExpressionNode unwrapped = expression;
+        while (unwrapped instanceof BoundParenthesizedExpressionNode parenthesized) {
+            unwrapped = parenthesized.inner;
+        }
+
+        if (unwrapped instanceof BoundBinaryExpressionNode binary &&
+                binary.operator.operation instanceof StringConcatOperation) {
+            collectStringConcatParts(binary, parts);
+        } else {
+            parts.add(new StringConcatPart(expression, operation, left));
+        }
+    }
+
+    private record StringConcatPart(BoundExpressionNode expression, StringConcatOperation operation, boolean left) {
+
+        public SType compileConversion(MethodVisitor visitor, CompilerContext context) {
+            if (left) {
+                return operation.compileLeftConversion(visitor, context, expression.type);
+            } else {
+                return operation.compileRightConversion(visitor, context, expression.type);
+            }
+        }
     }
 
     private void compileInExpression(MethodVisitor visitor, CompilerContext context, BoundInExpressionNode expression) {

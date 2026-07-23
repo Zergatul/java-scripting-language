@@ -1,5 +1,6 @@
 package com.zergatul.scripting.compiler;
 
+import org.objectweb.asm.Handle;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 
@@ -58,6 +59,12 @@ public class BufferedMethodVisitor extends MethodVisitor {
     @Override
     public void visitMethodInsn(int opcode, String owner, String name, String descriptor, boolean isInterface) {
         buffer.add(visitor -> visitor.visitMethodInsn(opcode, owner, name, descriptor, isInterface));
+    }
+
+    @Override
+    public void visitInvokeDynamicInsn(String name, String descriptor, Handle bootstrapMethodHandle, Object... bootstrapMethodArguments) {
+        Object[] arguments = bootstrapMethodArguments.clone();
+        buffer.add(visitor -> visitor.visitInvokeDynamicInsn(name, descriptor, bootstrapMethodHandle, arguments));
     }
 
     @Override
