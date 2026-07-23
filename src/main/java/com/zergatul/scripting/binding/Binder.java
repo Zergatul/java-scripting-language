@@ -178,7 +178,11 @@ public class Binder {
         if (members.stream().noneMatch(m -> m.getNodeType() == BoundNodeType.CLASS_CONSTRUCTOR)) {
             SType baseType = declaration.getDeclaredType().getBaseType();
             if (baseType != SUnknown.instance && !baseType.isInterface()) {
-                defaultBaseConstructor = baseType.getSubclassConstructors().stream().filter(c -> c.getParameters().isEmpty()).findFirst().orElse(null);
+                defaultBaseConstructor = baseType.getConstructors().stream()
+                        .filter(this::isConstructorAccessibleFromSubclass)
+                        .filter(c -> c.getParameters().isEmpty())
+                        .findFirst()
+                        .orElse(null);
                 if (defaultBaseConstructor == null) {
                     addDiagnostic(BinderErrors.BaseClassNoParameterlessConstructor, classNode.name);
                 }
@@ -231,7 +235,12 @@ public class Binder {
             }
 
             SType constructorOwner = isBaseCall ? context.getClassType().getBaseType() : context.getClassType();
-            List<ConstructorReference> candidates = isBaseCall ? constructorOwner.getSubclassConstructors() : constructorOwner.getConstructors();
+            List<ConstructorReference> candidates = constructorOwner.getConstructors();
+            if (isBaseCall) {
+                candidates = candidates.stream()
+                        .filter(this::isConstructorAccessibleFromSubclass)
+                        .toList();
+            }
             BindInvocableArgsResult<ConstructorReference> result = bindInvocableArguments(
                     constructorNode.initializer.arguments,
                     candidates,
@@ -267,7 +276,8 @@ public class Binder {
                 baseType = SJavaObject.instance;
             }
 
-            ConstructorReference constructor = baseType.getSubclassConstructors().stream()
+            ConstructorReference constructor = baseType.getConstructors().stream()
+                    .filter(this::isConstructorAccessibleFromSubclass)
                     .filter(c -> c.getParameters().isEmpty())
                     .findFirst()
                     .orElse(null);
@@ -2274,6 +2284,10 @@ public class Binder {
         return constructor.getVisibility() == Visibility.PUBLIC ||
                 constructor instanceof DeclaredConstructorReference &&
                         isPrivateDeclaredMemberAccessible(constructor.getOwner());
+    }
+
+    private boolean isConstructorAccessibleFromSubclass(ConstructorReference constructor) {
+        return constructor.getVisibility() != Visibility.PRIVATE;
     }
 
     private boolean isProtectedMemberAccessible(SType ownerType, SType receiverType, boolean isStatic) {

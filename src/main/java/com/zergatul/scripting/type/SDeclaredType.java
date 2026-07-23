@@ -179,13 +179,6 @@ public class SDeclaredType extends SReferenceType {
     }
 
     @Override
-    public List<ConstructorReference> getSubclassConstructors() {
-        return constructors.stream()
-                .filter(constructor -> constructor.getVisibility() != Visibility.PRIVATE)
-                .toList();
-    }
-
-    @Override
     public List<UnaryOperation> getUnaryOperations() {
         return new ArrayList<>(unaryOperations.stream().map(OverloadUnaryOperation::new).toList());
     }
