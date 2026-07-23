@@ -7,6 +7,7 @@ import com.zergatul.scripting.compiler.frames.FunctionFrame;
 import com.zergatul.scripting.symbols.*;
 import com.zergatul.scripting.type.*;
 import org.jspecify.annotations.Nullable;
+import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 
@@ -40,6 +41,7 @@ public class CompilerContext {
     private @Nullable JavaInteropPolicy interopPolicy;
     private int lastEmittedLine;
     private final List<SGenericFunction> genericFunctions;
+    private final Map<String, ClassWriter> ownerWriters;
     private Label startLabel;
     private ClassLoaderContext classLoaderContext;
     private @Nullable MethodHandleCache methodHandleCache;
@@ -90,8 +92,10 @@ public class CompilerContext {
 
         if (parent == null) {
             genericFunctions = new ArrayList<>();
+            ownerWriters = new HashMap<>();
         } else {
             genericFunctions = null;
+            ownerWriters = null;
         }
     }
 
@@ -536,6 +540,20 @@ public class CompilerContext {
 
     public String getClassName() {
         return root.className;
+    }
+
+    public void registerOwnerWriter(String className, ClassWriter writer) {
+        if (root.ownerWriters.putIfAbsent(className, writer) != null) {
+            throw new InternalException("Owner writer is already registered.");
+        }
+    }
+
+    public ClassWriter getOwnerWriter(String className) {
+        ClassWriter writer = root.ownerWriters.get(className);
+        if (writer == null) {
+            throw new InternalException("Cannot find owner writer.");
+        }
+        return writer;
     }
 
     public List<LiftedVariable> getLifted() {

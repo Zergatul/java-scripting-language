@@ -41,7 +41,6 @@ public class Compiler {
     private static final int CLASS_FILE_VERSION = V21;
 
     private final CompilationParameters parameters;
-    private final Map<String, ClassWriter> ownerWriters = new HashMap<>();
 
     public Compiler(CompilationParameters parameters) {
         this.parameters = parameters;
@@ -72,7 +71,6 @@ public class Compiler {
     private <T> T compileUnit(BinderOutput output) {
         BoundCompilationUnitNode unit = output.unit();
 
-        ownerWriters.clear();
         ClassWriter writer = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
         emitSourceFile(writer);
         String name = "com/zergatul/scripting/dynamic/" + parameters.getMainClassName();
@@ -83,11 +81,10 @@ public class Compiler {
                 null,
                 Type.getInternalName(Object.class),
                 new String[] { Type.getInternalName(parameters.getFunctionalInterface()) });
-        ownerWriters.put(name, writer);
-
         CompilerContext context = parameters.getContext();
         context.setClassLoaderContext(new ClassLoaderContext());
         context.setClassName(name);
+        context.registerOwnerWriter(name, writer);
 
         context.copyGenericFunctionsFrom(output.context());
 
@@ -110,7 +107,6 @@ public class Compiler {
     private ExpressionEvaluator compileExpressionUnit(BinderExpressionOutput output) {
         BoundExpressionUnitNode unit = output.unit();
 
-        ownerWriters.clear();
         ClassWriter writer = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
         emitSourceFile(writer);
         String name = "com/zergatul/scripting/dynamic/" + parameters.getMainClassName();
@@ -121,11 +117,10 @@ public class Compiler {
                 null,
                 Type.getInternalName(Object.class),
                 new String[] { Type.getInternalName(ExpressionEvaluator.class) });
-        ownerWriters.put(name, writer);
-
         CompilerContext context = parameters.getContext();
         context.setClassLoaderContext(new ClassLoaderContext());
         context.setClassName(name);
+        context.registerOwnerWriter(name, writer);
 
         buildEmptyConstructor(writer);
         buildExpressionEvaluatorMainMethod(unit, writer, context);
@@ -204,7 +199,7 @@ public class Compiler {
                     ACC_PUBLIC | ACC_STATIC);
 
             ClassWriter innerWriter = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
-            ownerWriters.put(name, innerWriter);
+            context.registerOwnerWriter(name, innerWriter);
             innerWriter.visit(
                     CLASS_FILE_VERSION,
                     ACC_PUBLIC,
@@ -3930,10 +3925,7 @@ public class Compiler {
         String ownerName = memberAccessClassType != null ?
                 memberAccessClassType.getInternalName() :
                 context.getClassName();
-        ClassWriter ownerWriter = ownerWriters.get(ownerName);
-        if (ownerWriter == null) {
-            throw new InternalException("Cannot find lambda owner writer.");
-        }
+        ClassWriter ownerWriter = context.getOwnerWriter(ownerName);
 
         Type[] bodyArgumentTypes = new Type[closures.size() + rawParameters.length];
         for (int i = 0; i < closures.size(); i++) {
