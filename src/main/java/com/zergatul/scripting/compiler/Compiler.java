@@ -282,7 +282,7 @@ public class Compiler {
                 null);
         constructorVisitor.visitCode();
 
-        context = context.createClassMethod(SVoidType.instance, false);
+        context = context.createClassMethod(SVoidType.instance, false, "<init>");
         for (BoundParameterNode parameter : constructor.parameters.parameters) {
             context.setStackIndex((LocalVariable) parameter.getName().getSymbolOrThrow());
         }
@@ -314,7 +314,10 @@ public class Compiler {
         MethodVisitor methodVisitor = writer.visitMethod(methodModifiers, methodNode.name.value, methodNode.functionType.getMethodDescriptor(), null, null);
         methodVisitor.visitCode();
 
-        context = context.createClassMethod(methodNode.functionType.getReturnType(), methodNode.isAsync());
+        context = context.createClassMethod(
+                methodNode.functionType.getReturnType(),
+                methodNode.isAsync(),
+                methodNode.name.value);
         for (BoundParameterNode parameter : methodNode.parameters.parameters) {
             context.setStackIndex((LocalVariable) parameter.getName().getSymbolOrThrow());
         }
@@ -324,7 +327,6 @@ public class Compiler {
                     methodVisitor,
                     writer,
                     methodNode.method.getOwner().getInternalName(),
-                    methodNode.name.value,
                     context,
                     new BoundStatementsListNode(List.of(methodNode.body)));
         } else {
@@ -356,7 +358,9 @@ public class Compiler {
         MethodVisitor methodVisitor = writer.visitMethod(methodModifiers, unaryOperationNode.method.getName(), unaryOperationNode.functionType.getMethodDescriptor(), null, null);
         methodVisitor.visitCode();
 
-        context = context.createClassStaticMethod(unaryOperationNode.functionType.getReturnType());
+        context = context.createClassStaticMethod(
+                unaryOperationNode.functionType.getReturnType(),
+                unaryOperationNode.method.getName());
         for (BoundParameterNode parameter : unaryOperationNode.parameters.parameters) {
             context.setStackIndex((LocalVariable) parameter.getName().getSymbolOrThrow());
         }
@@ -380,7 +384,9 @@ public class Compiler {
         MethodVisitor methodVisitor = writer.visitMethod(methodModifiers, binaryOperationNode.method.getName(), binaryOperationNode.functionType.getMethodDescriptor(), null, null);
         methodVisitor.visitCode();
 
-        context = context.createClassStaticMethod(binaryOperationNode.functionType.getReturnType());
+        context = context.createClassStaticMethod(
+                binaryOperationNode.functionType.getReturnType(),
+                binaryOperationNode.method.getName());
         for (BoundParameterNode parameter : binaryOperationNode.parameters.parameters) {
             context.setStackIndex((LocalVariable) parameter.getName().getSymbolOrThrow());
         }
@@ -424,7 +430,10 @@ public class Compiler {
                 null);
         visitor.visitCode();
 
-        CompilerContext methodContext = context.createExtensionMethod(type.getReturnType(), false /*function.isAsync()*/);
+        CompilerContext methodContext = context.createExtensionMethod(
+                type.getReturnType(),
+                false /*function.isAsync()*/,
+                methodNode.method.getInternalName());
         processContextStart(visitor, methodContext);
 
         LocalVariable thisParameter = methodContext.addLocalParameter("@this", methodNode.method.getOwner(), null);
@@ -439,7 +448,6 @@ public class Compiler {
                     visitor,
                     writer,
                     context.getClassName(),
-                    methodNode.method.getInternalName(),
                     methodContext,
                     new BoundStatementsListNode(List.of(methodNode.body)));
         } else {
@@ -468,7 +476,7 @@ public class Compiler {
                 null, null);
         methodVisitor.visitCode();
 
-        context = context.createClassStaticMethod(operation.getResultType());
+        context = context.createClassStaticMethod(operation.getResultType(), operation.getInternalName());
         for (BoundParameterNode parameter : operationNode.parameters.parameters) {
             context.setStackIndex((LocalVariable) parameter.getName().getSymbolOrThrow());
         }
@@ -496,7 +504,7 @@ public class Compiler {
                 null, null);
         methodVisitor.visitCode();
 
-        context = context.createClassStaticMethod(operation.getResultType());
+        context = context.createClassStaticMethod(operation.getResultType(), operation.getInternalName());
         for (BoundParameterNode parameter : operationNode.parameters.parameters) {
             context.setStackIndex((LocalVariable) parameter.getName().getSymbolOrThrow());
         }
@@ -564,15 +572,19 @@ public class Compiler {
         // set static variables values in static constructor
         MethodVisitor visitor = writer.visitMethod(ACC_STATIC, "<clinit>", Type.getMethodDescriptor(Type.VOID_TYPE), null, null);
         visitor.visitCode();
+        CompilerContext staticInitializerContext = context.createStaticFunction(
+                SVoidType.instance,
+                false,
+                "<clinit>");
         for (BoundStaticVariableNode staticVariableNode : staticVariableNodes) {
             StaticVariable symbol = (StaticVariable) staticVariableNode.name.getSymbolOrThrow();
             context.addStaticSymbol(staticVariableNode.name.value, staticVariableNode.name.symbolRef);
             if (staticVariableNode.expression != null) {
-                compileExpression(visitor, context, staticVariableNode.expression);
+                compileExpression(visitor, staticInitializerContext, staticVariableNode.expression);
             } else {
                 staticVariableNode.type.type.storeDefaultValue(visitor);
             }
-            symbol.compileStore(context, visitor);
+            symbol.compileStore(staticInitializerContext, visitor);
         }
         visitor.visitInsn(RETURN);
         visitor.visitMaxs(0, 0);
@@ -592,7 +604,10 @@ public class Compiler {
                     null);
             visitor.visitCode();
 
-            CompilerContext functionContext = context.createStaticFunction(type.getReturnType(), function.isAsync());
+            CompilerContext functionContext = context.createStaticFunction(
+                    type.getReturnType(),
+                    function.isAsync(),
+                    function.name.value);
             processContextStart(visitor, functionContext);
 
             for (BoundParameterNode parameter : function.parameters.parameters) {
@@ -604,7 +619,6 @@ public class Compiler {
                         visitor,
                         writer,
                         context.getClassName(),
-                        function.name.value,
                         functionContext,
                         new BoundStatementsListNode(List.of(function.body)));
             } else {
@@ -679,7 +693,10 @@ public class Compiler {
         MethodVisitor visitor = writer.visitMethod(ACC_PUBLIC, method.getName(), Type.getMethodDescriptor(method), null, null);
         visitor.visitCode();
 
-        CompilerContext context = classContext.createInstanceMethod(parameters.getReturnType(), parameters.isAsync());
+        CompilerContext context = classContext.createInstanceMethod(
+                parameters.getReturnType(),
+                parameters.isAsync(),
+                method.getName());
         context.reserveStack(1 + method.getParameterCount()); // assuming all parameters size = 1
 
         processContextStart(visitor, context);
@@ -710,7 +727,7 @@ public class Compiler {
         }
 
         if (parameters.isAsync()) {
-            compileAsyncBoundStatementList(visitor, writer, className, method.getName(), context, unit.statements);
+            compileAsyncBoundStatementList(visitor, writer, className, context, unit.statements);
         } else {
             compileStatementList(visitor, context, unit.statements);
         }
@@ -735,7 +752,10 @@ public class Compiler {
         MethodVisitor visitor = writer.visitMethod(ACC_PUBLIC, method.getName(), Type.getMethodDescriptor(method), null, null);
         visitor.visitCode();
 
-        CompilerContext context = classContext.createInstanceMethod(SType.fromJavaType(ExpressionEvaluationResult.class), false);
+        CompilerContext context = classContext.createInstanceMethod(
+                SType.fromJavaType(ExpressionEvaluationResult.class),
+                false,
+                method.getName());
         context.reserveStack(1);
 
         processContextStart(visitor, context);
@@ -1545,7 +1565,6 @@ public class Compiler {
             MethodVisitor parentVisitor,
             ClassWriter ownerWriter,
             String ownerClassName,
-            String ownerMethodName,
             CompilerContext context,
             BoundStatementsListNode node
     ) {
@@ -1563,7 +1582,11 @@ public class Compiler {
         emitSourceFile(writer);
         int asyncIndex = context.getNextUniqueIndex();
         String name = "com/zergatul/scripting/dynamic/DynamicAsyncStateMachine_" + asyncIndex;
-        String nextMethodName = ownerMethodName + "$async$next$" + asyncIndex;
+        String sourceMethodName = context.getSourceMethodName();
+        if (sourceMethodName == null) {
+            throw new InternalException("Source method name is not set.");
+        }
+        String nextMethodName = sourceMethodName + "$async$next$" + asyncIndex;
         String nextMethodDescriptor = Type.getMethodDescriptor(
                 Type.getType(CompletableFuture.class),
                 Type.getType(Object.class));
@@ -3838,6 +3861,14 @@ public class Compiler {
         expression.operation.compileGet(visitor);
     }
 
+    private static String getSyntheticMethodPrefix(String sourceMethodName) {
+        return switch (sourceMethodName) {
+            case "<init>" -> "constructor";
+            case "<clinit>" -> "staticInitializer";
+            default -> sourceMethodName;
+        };
+    }
+
     private void compileLambdaExpression(MethodVisitor visitor, CompilerContext context, BoundLambdaExpressionNode expression) {
         String methodName;
         SType rawReturnType;
@@ -3912,7 +3943,11 @@ public class Compiler {
             bodyArgumentTypes[closures.size() + i] = Type.getType(rawParameters[i].getDescriptor());
         }
 
-        String bodyMethodName = "$lambda$" + lambdaIndex;
+        String sourceMethodName = context.getSourceMethodName();
+        if (sourceMethodName == null) {
+            throw new InternalException("Source method name is not set.");
+        }
+        String bodyMethodName = getSyntheticMethodPrefix(sourceMethodName) + "$lambda$" + lambdaIndex;
         String bodyMethodDescriptor = Type.getMethodDescriptor(
                 Type.getType(rawReturnType.getDescriptor()),
                 bodyArgumentTypes);

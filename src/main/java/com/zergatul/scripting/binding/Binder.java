@@ -53,7 +53,10 @@ public class Binder {
     private BoundCompilationUnitNode bindCompilationUnit(CompilationUnitNode node) {
         buildDeclarationTable(node);
         List<BoundCompilationUnitMemberNode> members = bindCompilationUnitMembers(node.members.members);
-        pushFunctionScope(parameters.getReturnType(), parameters.isAsync());
+        pushFunctionScope(
+                parameters.getReturnType(),
+                parameters.isAsync(),
+                InterfaceHelper.getFuncInterfaceMethod(parameters.getFunctionalInterface()).getName());
         parameters.addFunctionalInterfaceParameters(context);
         BoundStatementsListNode statements = bindStatementList(node.statements);
         popScope();
@@ -64,7 +67,7 @@ public class Binder {
     }
 
     private BoundExpressionUnitNode bindExpressionUnit(ExpressionUnitNode node) {
-        pushFunctionScope(SVoidType.instance, false);
+        pushFunctionScope(SVoidType.instance, false, "evaluate");
         BoundExpressionNode expression = bindExpression(node.expression);
         popScope();
         return new BoundExpressionUnitNode(expression);
@@ -114,7 +117,7 @@ public class Binder {
     private BoundFunctionDeclarationNode bindFunction(FunctionNode functionNode) {
         FunctionDeclaration declaration = declarationTable.getFunctionDeclaration(functionNode);
 
-        pushStaticFunctionScope(declaration.getReturnType(), declaration.isAsync());
+        pushStaticFunctionScope(declaration.getReturnType(), declaration.isAsync(), declaration.getName());
         addParametersToContext(declaration.getParameters());
 
         if (!declaration.getGroup().hasError()) {
@@ -288,7 +291,7 @@ public class Binder {
 
         SType returnType = methodDeclaration.getTypeNode().type;
 
-        pushMethodScope(returnType, methodDeclaration.isAsync());
+        pushMethodScope(returnType, methodDeclaration.isAsync(), methodNode.name.value);
         addParametersToContext(methodDeclaration.getParameters());
 
         BoundStatementNode body;
@@ -338,7 +341,7 @@ public class Binder {
     private BoundClassUnaryOperationNode bindClassUnaryOperatorOverload(ClassUnaryOperationDeclaration unaryOperationDeclaration, ClassOperatorOverloadNode operatorOverloadNode) {
         SType returnType = unaryOperationDeclaration.getReturnType();
 
-        pushStaticMethodScope(returnType);
+        pushStaticMethodScope(returnType, unaryOperationDeclaration.getMethodRef().getName());
         addParametersToContext(unaryOperationDeclaration.getParameters());
 
         BoundStatementNode body;
@@ -380,7 +383,7 @@ public class Binder {
             }
         }
 
-        pushStaticMethodScope(returnType);
+        pushStaticMethodScope(returnType, binaryOperationDeclaration.getMethodRef().getName());
         addParametersToContext(binaryOperationDeclaration.getParameters());
 
         BoundStatementNode body;
@@ -434,7 +437,10 @@ public class Binder {
 
         SType returnType = methodDeclaration.getTypeNode().type;
 
-        pushMethodScope(returnType, methodDeclaration.isAsync());
+        pushMethodScope(
+                returnType,
+                methodDeclaration.isAsync(),
+                methodDeclaration.getMethodReference().getInternalName());
         addParametersToContext(methodDeclaration.getParameters());
 
         BoundStatementNode body;
@@ -484,7 +490,9 @@ public class Binder {
     private BoundExtensionUnaryOperationNode bindExtensionUnaryOperatorOverload(ExtensionUnaryOperationDeclaration unaryOperationDeclaration, ClassOperatorOverloadNode operatorOverloadNode) {
         SType returnType = unaryOperationDeclaration.getReturnType();
 
-        pushStaticMethodScope(returnType);
+        pushStaticMethodScope(
+                returnType,
+                ((ExtensionUnaryOperation) unaryOperationDeclaration.getOperation()).getInternalName());
         addParametersToContext(unaryOperationDeclaration.getParameters());
 
         BoundStatementNode body;
@@ -524,7 +532,9 @@ public class Binder {
             }
         }
 
-        pushStaticMethodScope(returnType);
+        pushStaticMethodScope(
+                returnType,
+                ((ExtensionBinaryOperation) binaryOperationDeclaration.getOperation()).getInternalName());
         addParametersToContext(binaryOperationDeclaration.getParameters());
 
         BoundStatementNode body;
@@ -3428,8 +3438,12 @@ public class Binder {
         context = context.createInstanceMethod(returnType, isAsync);
     }
 
-    private void pushStaticFunctionScope(SType returnType, boolean isAsync) {
-        context = context.createStaticFunction(returnType, isAsync);
+    private void pushFunctionScope(SType returnType, boolean isAsync, String sourceMethodName) {
+        context = context.createInstanceMethod(returnType, isAsync, sourceMethodName);
+    }
+
+    private void pushStaticFunctionScope(SType returnType, boolean isAsync, String sourceMethodName) {
+        context = context.createStaticFunction(returnType, isAsync, sourceMethodName);
     }
 
     private void pushClassScope(SDeclaredType type) {
@@ -3441,15 +3455,15 @@ public class Binder {
     }
 
     private void pushConstructorScope() {
-        context = context.createClassMethod(SVoidType.instance, false);
+        context = context.createClassMethod(SVoidType.instance, false, "<init>");
     }
 
-    private void pushMethodScope(SType returnType, boolean isAsync) {
-        context = context.createClassMethod(returnType, isAsync);
+    private void pushMethodScope(SType returnType, boolean isAsync, String sourceMethodName) {
+        context = context.createClassMethod(returnType, isAsync, sourceMethodName);
     }
 
-    private void pushStaticMethodScope(SType returnType) {
-        context = context.createClassStaticMethod(returnType);
+    private void pushStaticMethodScope(SType returnType, String sourceMethodName) {
+        context = context.createClassStaticMethod(returnType, sourceMethodName);
     }
 
     private void popScope() {

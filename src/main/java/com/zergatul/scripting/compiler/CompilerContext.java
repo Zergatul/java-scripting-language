@@ -27,6 +27,7 @@ public class CompilerContext {
     private final boolean isClassMethod;
     private final boolean isFunctionRoot;
     private final boolean isGenericFunction;
+    private final @Nullable String sourceMethodName;
     private final SType returnType;
     private final boolean isAsync;
     private final @Nullable Frame frame;
@@ -56,6 +57,7 @@ public class CompilerContext {
             @Nullable SType extensionType,
             boolean isClassMethod,
             boolean isStatic,
+            @Nullable String sourceMethodName,
             @Nullable Frame frame
     ) {
         this.root = parent == null ? this : parent.root;
@@ -65,6 +67,7 @@ public class CompilerContext {
         this.extensionType = extensionType;
         this.isFunctionRoot = isFunctionRoot;
         this.isGenericFunction = isGenericFunction;
+        this.sourceMethodName = sourceMethodName;
         this.returnType = returnType;
         this.isAsync = isAsync;
         this.isStatic = isStatic;
@@ -203,6 +206,7 @@ public class CompilerContext {
                 .setClassType(this.classType)
                 .setExtensionType(this.extensionType)
                 .setClassMethod(this.isClassMethod)
+                .setSourceMethodName(this.sourceMethodName)
                 .setInitialStackIndex(stack.get())
                 .setGenericFunction(isGenericFunction)
                 .setReturnType(returnType)
@@ -212,9 +216,14 @@ public class CompilerContext {
     }
 
     public CompilerContext createStaticFunction(SType returnType, boolean isAsync) {
+        return createStaticFunction(returnType, isAsync, sourceMethodName);
+    }
+
+    public CompilerContext createStaticFunction(SType returnType, boolean isAsync, @Nullable String sourceMethodName) {
         return new CompilerContext.Builder()
                 .setParent(this)
                 .setFunctionRoot(true)
+                .setSourceMethodName(sourceMethodName)
                 .setReturnType(returnType)
                 .setAsync(isAsync)
                 .setFrame(new FunctionFrame())
@@ -225,12 +234,26 @@ public class CompilerContext {
         return createInstanceMethod(returnType, isAsync, false);
     }
 
+    public CompilerContext createInstanceMethod(SType returnType, boolean isAsync, String sourceMethodName) {
+        return createInstanceMethod(returnType, isAsync, false, sourceMethodName);
+    }
+
     public CompilerContext createInstanceMethod(SType returnType, boolean isAsync, boolean generic) {
+        return createInstanceMethod(returnType, isAsync, generic, sourceMethodName);
+    }
+
+    private CompilerContext createInstanceMethod(
+            SType returnType,
+            boolean isAsync,
+            boolean generic,
+            @Nullable String sourceMethodName
+    ) {
         return new Builder()
                 .setParent(this)
                 .setInitialStackIndex(1)
                 .setFunctionRoot(true)
                 .setGenericFunction(generic)
+                .setSourceMethodName(sourceMethodName)
                 .setReturnType(returnType)
                 .setAsync(isAsync)
                 .setFrame(new FunctionFrame())
@@ -244,6 +267,7 @@ public class CompilerContext {
                 .setInitialStackIndex(0)
                 .setFunctionRoot(true)
                 .setGenericFunction(generic)
+                .setSourceMethodName(this.sourceMethodName)
                 .setReturnType(returnType)
                 .setAsync(false)
                 .setFrame(new FunctionFrame())
@@ -258,6 +282,7 @@ public class CompilerContext {
                 .setClassMethod(this.isClassMethod)
                 .setInitialStackIndex(1)
                 .setFunctionRoot(true)
+                .setSourceMethodName(this.sourceMethodName)
                 .setReturnType(returnType)
                 .setAsync(false)
                 .setFrame(new FunctionFrame())
@@ -273,12 +298,17 @@ public class CompilerContext {
     }
 
     public CompilerContext createClassMethod(SType returnType, boolean isAsync) {
+        return createClassMethod(returnType, isAsync, sourceMethodName);
+    }
+
+    public CompilerContext createClassMethod(SType returnType, boolean isAsync, @Nullable String sourceMethodName) {
         return new Builder()
                 .setParent(this)
                 .setClassType(classType)
                 .setExtensionType(extensionType)
                 .setClassMethod(true)
                 .setFunctionRoot(true)
+                .setSourceMethodName(sourceMethodName)
                 .setReturnType(returnType)
                 .setInitialStackIndex(1)
                 .setAsync(isAsync)
@@ -287,6 +317,10 @@ public class CompilerContext {
     }
 
     public CompilerContext createClassStaticMethod(SType returnType) {
+        return createClassStaticMethod(returnType, sourceMethodName);
+    }
+
+    public CompilerContext createClassStaticMethod(SType returnType, @Nullable String sourceMethodName) {
         return new Builder()
                 .setParent(this)
                 .setClassType(classType)
@@ -294,6 +328,7 @@ public class CompilerContext {
                 .setStatic()
                 .setClassMethod(true)
                 .setFunctionRoot(true)
+                .setSourceMethodName(sourceMethodName)
                 .setReturnType(returnType)
                 .setInitialStackIndex(0)
                 .setAsync(false)
@@ -310,10 +345,15 @@ public class CompilerContext {
     }
 
     public CompilerContext createExtensionMethod(SType returnType, boolean isAsync) {
+        return createExtensionMethod(returnType, isAsync, sourceMethodName);
+    }
+
+    public CompilerContext createExtensionMethod(SType returnType, boolean isAsync, @Nullable String sourceMethodName) {
         return new Builder()
                 .setParent(this)
                 .setExtensionType(extensionType)
                 .setFunctionRoot(true)
+                .setSourceMethodName(sourceMethodName)
                 .setReturnType(returnType)
                 .setAsync(isAsync)
                 .setFrame(new FunctionFrame())
@@ -326,6 +366,10 @@ public class CompilerContext {
 
     public boolean isAsync() {
         return isAsync;
+    }
+
+    public @Nullable String getSourceMethodName() {
+        return sourceMethodName;
     }
 
     public CompilerContext getParent() {
@@ -678,6 +722,7 @@ public class CompilerContext {
         private SType extensionType;
         private boolean isStatic;
         private boolean isClassMethod;
+        private @Nullable String sourceMethodName;
         public SType returnType;
         public boolean isAsync;
         public int initialStackIndex;
@@ -711,6 +756,11 @@ public class CompilerContext {
 
         public Builder setClassMethod(boolean value) {
             this.isClassMethod = value;
+            return this;
+        }
+
+        public Builder setSourceMethodName(@Nullable String value) {
+            this.sourceMethodName = value;
             return this;
         }
 
@@ -757,6 +807,7 @@ public class CompilerContext {
                     extensionType,
                     isClassMethod,
                     isStatic,
+                    sourceMethodName,
                     frame);
         }
     }
