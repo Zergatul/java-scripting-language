@@ -11,6 +11,7 @@ public interface SuggestionFactory<T> {
     List<T> getTypeSuggestion(SType type);
     T getCustomTypeSuggestion(Class<?> clazz);
     T getClassSuggestion(ClassSymbol clazz);
+    T getJavaTypeSuggestion(ClassSuggestion suggestion);
     T getTypeAliasSuggestion(SAliasType type);
     T getThisSuggestion(SType type);
     T getBaseSuggestion(SType type);

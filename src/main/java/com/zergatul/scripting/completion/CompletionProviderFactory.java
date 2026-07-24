@@ -3,6 +3,7 @@ package com.zergatul.scripting.completion;
 import com.zergatul.scripting.binding.BinderOutput;
 import com.zergatul.scripting.binding.nodes.BoundCompilationUnitNode;
 import com.zergatul.scripting.compiler.CompilationParameters;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -12,7 +13,14 @@ public class CompletionProviderFactory<T> {
     private final List<AbstractCompletionProvider<T>> providers;
 
     public CompletionProviderFactory(SuggestionFactory<T> factory) {
-        providers = List.of(
+        this(factory, null);
+    }
+
+    public CompletionProviderFactory(
+            SuggestionFactory<T> factory,
+            @Nullable JavaInteropSuggestionProvider javaInteropSuggestionProvider
+    ) {
+        List<AbstractCompletionProvider<T>> providers = new ArrayList<>(List.of(
                 new UnitMemberCompletionProvider<>(factory),
                 new StaticConstantsCompletionProvider<>(factory),
                 new ConstructorCompletionProvider<>(factory),
@@ -37,7 +45,11 @@ public class CompletionProviderFactory<T> {
                 new ClassMembersCompletionProvider<>(factory),
                 new BasicExpressionStartCompletionProvider<>(factory),
                 new BaseClassCompletionProvider<>(factory),
-                new BaseMethodsCompletionProvider<>(factory));
+                new BaseMethodsCompletionProvider<>(factory)));
+        if (javaInteropSuggestionProvider != null) {
+            providers.add(new JavaTypeCompletionProvider<>(factory, javaInteropSuggestionProvider));
+        }
+        this.providers = List.copyOf(providers);
     }
 
     public List<T> getSuggestions(CompilationParameters parameters, BinderOutput output, int line, int column) {

@@ -34,6 +34,11 @@ public class TestSuggestionFactory implements SuggestionFactory<Suggestion> {
     }
 
     @Override
+    public Suggestion getJavaTypeSuggestion(com.zergatul.scripting.completion.ClassSuggestion suggestion) {
+        return new JavaTypeNameSuggestion(suggestion);
+    }
+
+    @Override
     public Suggestion getTypeAliasSuggestion(SAliasType type) {
         return new TypeAliasSuggestion(type);
     }

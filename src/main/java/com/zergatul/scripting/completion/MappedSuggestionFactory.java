@@ -41,6 +41,11 @@ public class MappedSuggestionFactory<T> implements SuggestionFactory<T> {
     }
 
     @Override
+    public T getJavaTypeSuggestion(ClassSuggestion suggestion) {
+        return map(factory.getJavaTypeSuggestion(suggestion));
+    }
+
+    @Override
     public T getTypeAliasSuggestion(SAliasType type) {
         return map(factory.getTypeAliasSuggestion(type));
     }
