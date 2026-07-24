@@ -17,7 +17,9 @@ import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import static org.objectweb.asm.Opcodes.*;
@@ -74,7 +76,29 @@ public class SDeclaredType extends SReferenceType {
     }
 
     public boolean hasConcreteImplementation(MethodReference contract) {
-        return findImplementation(contract, new HashSet<>(), new HashSet<>()) == Implementation.CONCRETE;
+        Implementation classImplementation = findClassImplementation(
+                contract,
+                new HashSet<>(),
+                new HashSet<>());
+        if (classImplementation != Implementation.NONE) {
+            return classImplementation == Implementation.CONCRETE;
+        }
+
+        Map<Class<?>, Implementation> interfaceImplementations = new LinkedHashMap<>();
+        collectInterfaceImplementations(
+                contract,
+                interfaceImplementations,
+                new HashSet<>(),
+                new HashSet<>(),
+                new HashSet<>());
+
+        List<Map.Entry<Class<?>, Implementation>> maximallySpecific = interfaceImplementations.entrySet().stream()
+                .filter(candidate -> interfaceImplementations.keySet().stream()
+                        .filter(other -> other != candidate.getKey())
+                        .noneMatch(other -> candidate.getKey().isAssignableFrom(other)))
+                .toList();
+        return maximallySpecific.size() == 1 &&
+                maximallySpecific.getFirst().getValue() == Implementation.CONCRETE;
     }
 
     public DeclaredUnaryOperationReference addUnaryOperation(UnaryOperator operator, SMethodFunction functionType) {
@@ -210,7 +234,7 @@ public class SDeclaredType extends SReferenceType {
         return methods;
     }
 
-    private Implementation findImplementation(
+    private Implementation findClassImplementation(
             MethodReference contract,
             Set<SDeclaredType> visitedDeclaredTypes,
             Set<Class<?>> visitedJavaTypes
@@ -225,42 +249,32 @@ public class SDeclaredType extends SReferenceType {
         }
 
         if (baseType != null) {
-            implementation = findImplementation(baseType, contract, visitedDeclaredTypes, visitedJavaTypes);
-            if (implementation != Implementation.NONE) {
-                return implementation;
-            }
+            return findClassImplementation(baseType, contract, visitedDeclaredTypes, visitedJavaTypes);
         }
-
-        implementation = Implementation.NONE;
-        for (SType interfaceType : interfaces) {
-            implementation = Implementation.combine(
-                    implementation,
-                    findImplementation(interfaceType, contract, visitedDeclaredTypes, visitedJavaTypes));
-        }
-        return implementation;
+        return Implementation.NONE;
     }
 
-    private static Implementation findImplementation(
+    private static Implementation findClassImplementation(
             SType type,
             MethodReference contract,
             Set<SDeclaredType> visitedDeclaredTypes,
             Set<Class<?>> visitedJavaTypes
     ) {
         if (type instanceof SDeclaredType declaredType) {
-            return declaredType.findImplementation(contract, visitedDeclaredTypes, visitedJavaTypes);
+            return declaredType.findClassImplementation(contract, visitedDeclaredTypes, visitedJavaTypes);
         }
         if (type instanceof SClassType || type instanceof SCustomType) {
-            return findJavaImplementation(type.getJavaClass(), contract, visitedJavaTypes);
+            return findJavaClassImplementation(type.getJavaClass(), contract, visitedJavaTypes);
         }
         return Implementation.NONE;
     }
 
-    private static Implementation findJavaImplementation(
+    private static Implementation findJavaClassImplementation(
             Class<?> clazz,
             MethodReference contract,
             Set<Class<?>> visitedJavaTypes
     ) {
-        if (!visitedJavaTypes.add(clazz)) {
+        if (clazz.isInterface() || !visitedJavaTypes.add(clazz)) {
             return Implementation.NONE;
         }
 
@@ -271,19 +285,144 @@ public class SDeclaredType extends SReferenceType {
 
         Class<?> superclass = clazz.getSuperclass();
         if (superclass != null) {
-            implementation = findJavaImplementation(superclass, contract, visitedJavaTypes);
-            if (implementation != Implementation.NONE) {
-                return implementation;
-            }
+            return findJavaClassImplementation(superclass, contract, visitedJavaTypes);
+        }
+        return Implementation.NONE;
+    }
+
+    private void collectInterfaceImplementations(
+            MethodReference contract,
+            Map<Class<?>, Implementation> implementations,
+            Set<SDeclaredType> visitedDeclaredTypes,
+            Set<Class<?>> visitedJavaClasses,
+            Set<Class<?>> visitedJavaInterfaces
+    ) {
+        if (!visitedDeclaredTypes.add(this)) {
+            return;
         }
 
-        implementation = Implementation.NONE;
-        for (Class<?> interfaceClass : clazz.getInterfaces()) {
-            implementation = Implementation.combine(
-                    implementation,
-                    findJavaImplementation(interfaceClass, contract, visitedJavaTypes));
+        for (SType interfaceType : interfaces) {
+            collectInterfaceImplementations(
+                    interfaceType,
+                    contract,
+                    implementations,
+                    visitedDeclaredTypes,
+                    visitedJavaClasses,
+                    visitedJavaInterfaces);
         }
-        return implementation;
+
+        if (baseType != null) {
+            collectClassInterfaceImplementations(
+                    baseType,
+                    contract,
+                    implementations,
+                    visitedDeclaredTypes,
+                    visitedJavaClasses,
+                    visitedJavaInterfaces);
+        }
+    }
+
+    private static void collectClassInterfaceImplementations(
+            SType type,
+            MethodReference contract,
+            Map<Class<?>, Implementation> implementations,
+            Set<SDeclaredType> visitedDeclaredTypes,
+            Set<Class<?>> visitedJavaClasses,
+            Set<Class<?>> visitedJavaInterfaces
+    ) {
+        if (type instanceof SDeclaredType declaredType) {
+            declaredType.collectInterfaceImplementations(
+                    contract,
+                    implementations,
+                    visitedDeclaredTypes,
+                    visitedJavaClasses,
+                    visitedJavaInterfaces);
+        } else if (type instanceof SClassType || type instanceof SCustomType) {
+            collectJavaClassInterfaceImplementations(
+                    type.getJavaClass(),
+                    contract,
+                    implementations,
+                    visitedJavaClasses,
+                    visitedJavaInterfaces);
+        }
+    }
+
+    private static void collectJavaClassInterfaceImplementations(
+            Class<?> clazz,
+            MethodReference contract,
+            Map<Class<?>, Implementation> implementations,
+            Set<Class<?>> visitedJavaClasses,
+            Set<Class<?>> visitedJavaInterfaces
+    ) {
+        if (clazz.isInterface() || !visitedJavaClasses.add(clazz)) {
+            return;
+        }
+
+        for (Class<?> interfaceClass : clazz.getInterfaces()) {
+            collectJavaInterfaceImplementations(
+                    interfaceClass,
+                    contract,
+                    implementations,
+                    visitedJavaInterfaces);
+        }
+
+        Class<?> superclass = clazz.getSuperclass();
+        if (superclass != null) {
+            collectJavaClassInterfaceImplementations(
+                    superclass,
+                    contract,
+                    implementations,
+                    visitedJavaClasses,
+                    visitedJavaInterfaces);
+        }
+    }
+
+    private static void collectInterfaceImplementations(
+            SType type,
+            MethodReference contract,
+            Map<Class<?>, Implementation> implementations,
+            Set<SDeclaredType> visitedDeclaredTypes,
+            Set<Class<?>> visitedJavaClasses,
+            Set<Class<?>> visitedJavaInterfaces
+    ) {
+        if (type instanceof SDeclaredType declaredType) {
+            declaredType.collectInterfaceImplementations(
+                    contract,
+                    implementations,
+                    visitedDeclaredTypes,
+                    visitedJavaClasses,
+                    visitedJavaInterfaces);
+        } else if (type instanceof SClassType || type instanceof SCustomType) {
+            collectJavaInterfaceImplementations(
+                    type.getJavaClass(),
+                    contract,
+                    implementations,
+                    visitedJavaInterfaces);
+        }
+    }
+
+    private static void collectJavaInterfaceImplementations(
+            Class<?> interfaceClass,
+            MethodReference contract,
+            Map<Class<?>, Implementation> implementations,
+            Set<Class<?>> visitedJavaInterfaces
+    ) {
+        if (!interfaceClass.isInterface() || !visitedJavaInterfaces.add(interfaceClass)) {
+            return;
+        }
+
+        Implementation implementation = findDeclaredJavaImplementation(interfaceClass, contract);
+        if (implementation != Implementation.NONE) {
+            implementations.put(interfaceClass, implementation);
+        }
+
+        for (Class<?> parentInterface : interfaceClass.getInterfaces()) {
+            collectJavaInterfaceImplementations(
+                    parentInterface,
+                    contract,
+                    implementations,
+                    visitedJavaInterfaces);
+        }
     }
 
     private static Implementation findDeclaredJavaImplementation(Class<?> clazz, MethodReference contract) {

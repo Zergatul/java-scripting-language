@@ -20,6 +20,7 @@ import org.junit.jupiter.api.Test;
 import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.util.Arrays;
 import java.util.List;
 
 import static com.zergatul.scripting.tests.compiler.helpers.CompilerHelper.compile;
@@ -1002,6 +1003,33 @@ public class ClassInheritanceTests extends ComparatorTest {
     }
 
     @Test
+    public void bridgeJavaMethodImplementsExplicitRawInterfaceMethodTest() {
+        Method bridge = Arrays.stream(GenericValueBase.class.getDeclaredMethods())
+                .filter(Method::isBridge)
+                .findFirst()
+                .orElseThrow();
+
+        Assertions.assertTrue(bridge.isSynthetic());
+        Assertions.assertFalse(Modifier.isAbstract(bridge.getModifiers()));
+        Assertions.assertEquals(Object.class, bridge.getReturnType());
+
+        String code = """
+                class Class :
+                    Java<com.zergatul.scripting.tests.compiler.ClassInheritanceTests$GenericValueBase>,
+                    Java<com.zergatul.scripting.tests.compiler.ClassInheritanceTests$GenericValue> {}
+
+                objectStorage.add(new Class());
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Object object = ApiRoot.objectStorage.list.getFirst();
+        Assertions.assertTrue(object instanceof GenericValue);
+        Assertions.assertEquals("bridge", ((GenericValue<?>) object).value());
+    }
+
+    @Test
     public void javaDefaultInterfaceMethodDoesNotRequireImplementationTest() {
         String code = """
                 class Class : Java<com.zergatul.scripting.tests.compiler.ClassInheritanceTests$DefaultMethodInterface> {}
@@ -1015,6 +1043,91 @@ public class ClassInheritanceTests extends ComparatorTest {
         Object object = ApiRoot.objectStorage.list.getFirst();
         Assertions.assertTrue(object instanceof DefaultMethodInterface);
         Assertions.assertEquals(123, ((DefaultMethodInterface) object).value());
+    }
+
+    @Test
+    public void moreSpecificDefaultInterfaceMethodImplementsAbstractBaseContractTest() {
+        String code = """
+                class Class :
+                    Java<com.zergatul.scripting.tests.compiler.ClassInheritanceTests$AbstractInterfaceBase>,
+                    Java<com.zergatul.scripting.tests.compiler.ClassInheritanceTests$MoreSpecificDefaultInterface> {}
+
+                objectStorage.add(new Class());
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Object object = ApiRoot.objectStorage.list.getFirst();
+        Assertions.assertTrue(object instanceof AbstractMethodInterface);
+        Assertions.assertEquals(123, ((AbstractMethodInterface) object).value());
+    }
+
+    @Test
+    public void abstractClassMethodTakesPrecedenceOverDefaultInterfaceMethodTest() {
+        String code = """
+                class ⟦Class⟧ :
+                    Java<com.zergatul.scripting.tests.compiler.ClassInheritanceTests$AbstractMethodBase>,
+                    Java<com.zergatul.scripting.tests.compiler.ClassInheritanceTests$MoreSpecificDefaultInterface> {}
+                """;
+
+        comparator.assertDiagnostics(
+                ApiRoot.class,
+                code,
+                "⟦⟧",
+                BinderErrors.MissingInheritedMethodImplementation,
+                "value");
+    }
+
+    @Test
+    public void conflictingDefaultInterfaceMethodsRequireImplementationTest() {
+        String code = """
+                class ⟦Class⟧ :
+                    Java<com.zergatul.scripting.tests.compiler.ClassInheritanceTests$FirstDefaultMethodInterface>,
+                    Java<com.zergatul.scripting.tests.compiler.ClassInheritanceTests$SecondDefaultMethodInterface> {}
+                """;
+
+        // we probably need another error for this
+        // java compiler reports:
+        // com.zergatul.scripting.tests.compiler.ClassInheritanceTests.TestClass inherits unrelated defaults for value() from types com.zergatul.scripting.tests.compiler.ClassInheritanceTests.FirstDefaultMethodInterface and com.zergatul.scripting.tests.compiler.ClassInheritanceTests.SecondDefaultMethodInterface
+        comparator.assertDiagnostics(
+                ApiRoot.class,
+                code,
+                "⟦⟧",
+                BinderErrors.MissingInheritedMethodImplementation,
+                "value");
+    }
+
+    @Test
+    public void unrelatedDefaultMethodDoesNotImplementAbstractInterfaceMethodTest() {
+        String code = """
+                class ⟦Class⟧ :
+                    Java<com.zergatul.scripting.tests.compiler.ClassInheritanceTests$AbstractMethodInterface>,
+                    Java<com.zergatul.scripting.tests.compiler.ClassInheritanceTests$DefaultMethodInterface> {}
+                """;
+
+        comparator.assertDiagnostics(
+                ApiRoot.class,
+                code,
+                "⟦⟧",
+                BinderErrors.MissingInheritedMethodImplementation,
+                "value");
+    }
+
+    @Test
+    public void abstractSubinterfaceMethodSuppressesParentDefaultMethodTest() {
+        String code = """
+                class ⟦Class⟧ :
+                    Java<com.zergatul.scripting.tests.compiler.ClassInheritanceTests$DefaultMethodInterface>,
+                    Java<com.zergatul.scripting.tests.compiler.ClassInheritanceTests$AbstractRedeclaringInterface> {}
+                """;
+
+        comparator.assertDiagnostics(
+                ApiRoot.class,
+                code,
+                "⟦⟧",
+                BinderErrors.MissingInheritedMethodImplementation,
+                "value");
     }
 
     @Test
@@ -1427,9 +1540,56 @@ public class ClassInheritanceTests extends ComparatorTest {
         int value();
     }
 
+    public interface GenericValue<T> {
+        T value();
+    }
+
+    public static class GenericValueBase implements GenericValue<String> {
+        @Override
+        public String value() {
+            return "bridge";
+        }
+    }
+
     public interface DefaultMethodInterface {
         default int value() {
             return 123;
+        }
+    }
+
+    @SuppressWarnings("unused")
+    public interface AbstractRedeclaringInterface extends DefaultMethodInterface {
+        int value();
+    }
+
+    public interface AbstractMethodInterface {
+        int value();
+    }
+
+    @SuppressWarnings("unused")
+    public static abstract class AbstractInterfaceBase implements AbstractMethodInterface {}
+
+    public static abstract class AbstractMethodBase implements AbstractMethodInterface {
+        @Override
+        public abstract int value();
+    }
+
+    @SuppressWarnings("unused")
+    public interface MoreSpecificDefaultInterface extends AbstractMethodInterface {
+        default int value() {
+            return 123;
+        }
+    }
+
+    public interface FirstDefaultMethodInterface {
+        default int value() {
+            return 1;
+        }
+    }
+
+    public interface SecondDefaultMethodInterface {
+        default int value() {
+            return 2;
         }
     }
 
