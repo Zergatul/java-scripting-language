@@ -49,6 +49,16 @@ public class SuggestionInfoFactoryTests {
     }
 
     @Test
+    public void javaTypesTest() {
+        Assertions.assertEquals(
+                new SuggestionInfo("lang", null, null, "lang", SuggestionKind.PACKAGE),
+                factory.getJavaTypeSuggestion(new ClassSuggestion("lang", ClassSuggestionType.PACKAGE)));
+        Assertions.assertEquals(
+                new SuggestionInfo("String", null, null, "String", SuggestionKind.TYPE),
+                factory.getJavaTypeSuggestion(new ClassSuggestion("String", ClassSuggestionType.CLASS)));
+    }
+
+    @Test
     public void memberDocumentationTest() {
         SType type = SType.fromJavaType(TestType.class);
         PropertyReference property = MemberLookup.getProperties(type).stream()
@@ -84,6 +94,9 @@ public class SuggestionInfoFactoryTests {
         Assertions.assertEquals(
                 List.of("TYPE:int", "TYPE:int32"),
                 mapped.getTypeSuggestion(SInt.instance));
+        Assertions.assertEquals(
+                "PACKAGE:lang",
+                mapped.getJavaTypeSuggestion(new ClassSuggestion("lang", ClassSuggestionType.PACKAGE)));
     }
 
     @Test

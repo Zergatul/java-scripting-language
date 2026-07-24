@@ -5,6 +5,7 @@ import com.zergatul.scripting.binding.BinderOutput;
 import com.zergatul.scripting.compiler.CompilationParameters;
 import com.zergatul.scripting.compiler.CompilationParametersBuilder;
 import com.zergatul.scripting.completion.CompletionProviderFactory;
+import com.zergatul.scripting.completion.JavaInteropSuggestionProvider;
 import com.zergatul.scripting.tests.completion.suggestions.Suggestion;
 import com.zergatul.scripting.tests.utility.CursorHelper;
 import com.zergatul.scripting.type.SType;
@@ -37,6 +38,26 @@ public class CompletionTestHelper {
             Function<TestCompletionContext,
             List<Suggestion>> expectedFactory
     ) {
+        assertSuggestions(root, code, functionalInterface, asyncReturnType, null, expectedFactory);
+    }
+
+    public static void assertSuggestions(
+            Class<?> root,
+            String code,
+            JavaInteropSuggestionProvider javaInteropSuggestionProvider,
+            Function<TestCompletionContext, List<Suggestion>> expectedFactory
+    ) {
+        assertSuggestions(root, code, Runnable.class, null, javaInteropSuggestionProvider, expectedFactory);
+    }
+
+    private static void assertSuggestions(
+            Class<?> root,
+            String code,
+            Class<?> functionalInterface,
+            SType asyncReturnType,
+            JavaInteropSuggestionProvider javaInteropSuggestionProvider,
+            Function<TestCompletionContext, List<Suggestion>> expectedFactory
+    ) {
         CursorHelper.Result result = CursorHelper.parse(code);
 
         CompilationParameters parameters = new CompilationParametersBuilder()
@@ -45,7 +66,9 @@ public class CompletionTestHelper {
                 .setAsyncReturnType(asyncReturnType)
                 .build();
         BinderOutput output = new Analyzer().analyze(result.code(), parameters).binderOutput();
-        CompletionProviderFactory<Suggestion> factory = new CompletionProviderFactory<>(new TestSuggestionFactory());
+        CompletionProviderFactory<Suggestion> factory = new CompletionProviderFactory<>(
+                new TestSuggestionFactory(),
+                javaInteropSuggestionProvider);
         List<Suggestion> actual = factory.getSuggestions(parameters, output, result.line(), result.column());
         CompletionTestHelper.assertSuggestions(expectedFactory.apply(new TestCompletionContext(parameters, output)), actual);
     }

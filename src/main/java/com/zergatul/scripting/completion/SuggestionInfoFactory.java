@@ -77,6 +77,15 @@ public class SuggestionInfoFactory implements SuggestionFactory<SuggestionInfo> 
     }
 
     @Override
+    public SuggestionInfo getJavaTypeSuggestion(ClassSuggestion suggestion) {
+        SuggestionKind kind = switch (suggestion.type()) {
+            case PACKAGE -> SuggestionKind.PACKAGE;
+            case CLASS -> SuggestionKind.TYPE;
+        };
+        return suggestion(suggestion.value(), kind);
+    }
+
+    @Override
     public SuggestionInfo getTypeAliasSuggestion(SAliasType type) {
         return suggestion(type.toString(), SuggestionKind.TYPE);
     }

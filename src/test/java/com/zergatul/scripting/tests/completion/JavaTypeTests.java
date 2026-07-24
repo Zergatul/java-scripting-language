@@ -1,14 +1,19 @@
 package com.zergatul.scripting.tests.completion;
 
+import com.zergatul.scripting.completion.ClassSuggestion;
+import com.zergatul.scripting.completion.ClassSuggestionType;
+import com.zergatul.scripting.completion.JavaInteropSuggestionProvider;
 import com.zergatul.scripting.tests.compiler.helpers.IntStorage;
 import com.zergatul.scripting.tests.completion.helpers.CompletionTestHelper;
 import com.zergatul.scripting.tests.completion.helpers.TestCompletionContext;
+import com.zergatul.scripting.tests.completion.suggestions.JavaTypeNameSuggestion;
 import com.zergatul.scripting.tests.completion.suggestions.MethodSuggestion;
 import com.zergatul.scripting.tests.completion.suggestions.PropertySuggestion;
 import com.zergatul.scripting.tests.completion.suggestions.Suggestion;
 import com.zergatul.scripting.type.FieldPropertyReference;
 import com.zergatul.scripting.type.NativeMethodReference;
 import com.zergatul.scripting.type.SType;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Field;
@@ -24,10 +29,42 @@ public class JavaTypeTests {
 
     @Test
     public void packageTest() {
-        assertSuggestions("""
-                Java<<cursor>
-                """,
-                context -> List.of());
+        assertJavaTypeSuggestions("Java<<cursor>", "");
+    }
+
+    @Test
+    public void partialRootPackageTest() {
+        assertJavaTypeSuggestions("Java<a<cursor>", "");
+    }
+
+    @Test
+    public void rootPackageTest() {
+        assertJavaTypeSuggestions("Java<java.<cursor>", "java");
+    }
+
+    @Test
+    public void nestedPackageTest() {
+        assertJavaTypeSuggestions("Java<java.lang.<cursor>", "java.lang");
+    }
+
+    @Test
+    public void partialClassNameTest() {
+        assertJavaTypeSuggestions("Java<java.lang.Str<cursor>", "java.lang");
+    }
+
+    @Test
+    public void cursorInMiddleOfNameTest() {
+        assertJavaTypeSuggestions("Java<java.la<cursor>ng.String>", "java");
+    }
+
+    @Test
+    public void dollarIsNotSeparatorTest() {
+        assertJavaTypeSuggestions("Java<com.example.Outer$In<cursor>", "com.example");
+    }
+
+    @Test
+    public void noProviderTest() {
+        assertSuggestions("Java<<cursor>", context -> List.of());
     }
 
     @Test
@@ -95,6 +132,27 @@ public class JavaTypeTests {
 
     private void assertSuggestions(String code, Function<TestCompletionContext, List<Suggestion>> expectedFactory) {
         CompletionTestHelper.assertSuggestions(ApiRoot.class, code, expectedFactory);
+    }
+
+    private void assertJavaTypeSuggestions(String code, String expectedPrefix) {
+        List<String> prefixes = new ArrayList<>();
+        List<ClassSuggestion> suggestions = List.of(
+                new ClassSuggestion("reflect", ClassSuggestionType.PACKAGE),
+                new ClassSuggestion("String", ClassSuggestionType.CLASS));
+        JavaInteropSuggestionProvider provider = prefix -> {
+            prefixes.add(prefix);
+            return suggestions;
+        };
+
+        CompletionTestHelper.assertSuggestions(
+                ApiRoot.class,
+                code,
+                provider,
+                context -> suggestions.stream()
+                        .map(JavaTypeNameSuggestion::new)
+                        .map(suggestion -> (Suggestion) suggestion)
+                        .toList());
+        Assertions.assertEquals(List.of(expectedPrefix), prefixes);
     }
 
     public static class ApiRoot {
