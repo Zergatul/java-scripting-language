@@ -12,8 +12,12 @@ import java.util.List;
 
 public class Function extends Symbol implements Invocable {
 
+    private static final String INTERNAL_NAME_PREFIX = "$function$";
+    private String internalName;
+
     public Function(String name, SStaticFunction type, TextRange definition) {
         super(name, type, definition);
+        this.internalName = name;
     }
 
     @Override
@@ -23,6 +27,14 @@ public class Function extends Symbol implements Invocable {
 
     public SStaticFunction getFunctionType() {
         return (SStaticFunction) getType();
+    }
+
+    public String getInternalName() {
+        return internalName;
+    }
+
+    public void useGeneratedInternalName() {
+        internalName = INTERNAL_NAME_PREFIX + getName();
     }
 
     @Override

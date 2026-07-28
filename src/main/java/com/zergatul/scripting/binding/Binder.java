@@ -840,10 +840,10 @@ public class Binder {
             }
         }
 
-        SymbolRef existingRef = context.getSymbol(statement.name.value);
+        boolean exists = context.hasLocalSymbol(statement.name.value);
         BoundNameExpressionNode name;
-        if (existingRef != null) {
-            name = new BoundNameExpressionNode(new InvalidSymbolRef());
+        if (exists) {
+            name = new BoundNameExpressionNode(statement.name, new InvalidSymbolRef(), variableType.type);
             addDiagnostic(
                     BinderErrors.SymbolAlreadyDeclared,
                     statement.name,
@@ -1279,10 +1279,9 @@ public class Binder {
                 BoundTypeNode typeNode = bindType(declarationPatternNode.typeNode);
                 String name = declarationPatternNode.identifier.value;
 
-                SymbolRef existingRef = context.getSymbol(name);
                 SymbolRef symbolRef;
                 List<SymbolRef> whenTrueLocals;
-                if (existingRef != null) {
+                if (context.hasLocalSymbol(name)) {
                     symbolRef = new InvalidSymbolRef();
                     whenTrueLocals = List.of();
                     addDiagnostic(
@@ -1678,9 +1677,15 @@ public class Binder {
         for (int i = 0; i < parametersCount; i++) {
             NameExpressionNode name = node.parameters.getNodeAt(i);
             SType type = actualParameterTypes[i];
-            SymbolRef symbolRef = context.addLocalParameter2(name.value, type, node.parameters.getNodeAt(i).getRange());
+            SymbolRef symbolRef;
+            if (context.hasLocalSymbol(name.value)) {
+                symbolRef = new InvalidSymbolRef();
+                addDiagnostic(BinderErrors.SymbolAlreadyDeclared, name, name.value);
+            } else {
+                symbolRef = context.addLocalParameter2(name.value, type, node.parameters.getNodeAt(i).getRange());
+            }
             TextRange range = name.getRange();
-            BoundNameExpressionNode boundName = new BoundNameExpressionNode(name, symbolRef);
+            BoundNameExpressionNode boundName = new BoundNameExpressionNode(name, symbolRef, type);
             parameters.add(new BoundParameterNode(boundName, type, range));
         }
 
@@ -2926,7 +2931,7 @@ public class Binder {
     private void buildStaticFieldDeclaration(StaticVariableNode fieldNode) {
         String name = fieldNode.name.value;
         boolean hasError = false;
-        if (!name.isEmpty() && (declarationTable.hasSymbol(name) || context.hasSymbol(name))) {
+        if (!name.isEmpty() && declarationTable.hasSymbol(name)) {
             hasError = true;
             addDiagnostic(BinderErrors.SymbolAlreadyDeclared, fieldNode.name, name);
         }
@@ -2945,9 +2950,7 @@ public class Binder {
 
         boolean hasGroupError = false;
         if (!name.isEmpty()) {
-            if (context.hasSymbol(name)) {
-                hasGroupError = true;
-            } else if (declarationTable.hasSymbol(name)) {
+            if (declarationTable.hasSymbol(name)) {
                 groupDeclaration = declarationTable.getFunctionGroupDeclaration(name);
                 if (groupDeclaration == null) {
                     hasGroupError = true;
@@ -3424,12 +3427,17 @@ public class Binder {
 
     @Nullable
     private SymbolRef getSymbol(String name) {
-        SymbolRef symbolRef = context.getSymbol(name);
+        SymbolRef symbolRef = context.getLocalSymbol(name);
         if (symbolRef != null) {
             return symbolRef;
         }
 
-        return declarationTable.getSymbol(name);
+        symbolRef = declarationTable.getSymbol(name);
+        if (symbolRef != null) {
+            return symbolRef;
+        }
+
+        return context.getStaticSymbol(name);
     }
 
     private void pushScope() {

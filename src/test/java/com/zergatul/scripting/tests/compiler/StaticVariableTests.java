@@ -176,14 +176,16 @@ public class StaticVariableTests extends ComparatorTest {
     }
 
     @Test
-    public void externalNameConflictTest() {
+    public void externalNameOverrideTest() {
         String code = """
-                static int run = 1;
+                static int run = 123;
+                intStorage.add(run);
                 """;
 
-        comparator.assertEquals(List.of(
-                        new DiagnosticMessage(BinderErrors.SymbolAlreadyDeclared, new SingleLineTextRange(1, 12, 11, 3), "run")),
-                getDiagnostics(ApiRoot.class, code));
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(List.of(123), ApiRoot.intStorage.list);
     }
 
     public static class ApiRoot {

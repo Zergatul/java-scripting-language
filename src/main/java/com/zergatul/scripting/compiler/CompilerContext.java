@@ -19,6 +19,7 @@ public class CompilerContext {
     private final CompilerContext root;
     private final @Nullable CompilerContext parent;
     private final Map<String, SymbolRef> staticSymbols = new HashMap<>();
+    private final Map<String, SymbolRef> externalStaticSymbols = new HashMap<>();
     private final Map<String, SymbolRef> localSymbols = new HashMap<>();
     private final List<SymbolRef> anonymousLocalSymbols = new ArrayList<>();
     private final boolean isClassRoot;
@@ -107,11 +108,19 @@ public class CompilerContext {
     }
 
     public void addStaticSymbol(String name, SymbolRef symbolRef) {
-        if (hasSymbol(name)) {
+        if (root.staticSymbols.containsKey(name)) {
             throw new InternalException();
         }
 
-        staticSymbols.put(name, symbolRef);
+        root.staticSymbols.put(name, symbolRef);
+    }
+
+    public void addExternalStaticSymbol(String name, SymbolRef symbolRef) {
+        if (root.externalStaticSymbols.containsKey(name)) {
+            throw new InternalException();
+        }
+
+        root.externalStaticSymbols.put(name, symbolRef);
     }
 
     public SymbolRef addLocalVariable(String name, SType type, TextRange definition) {
@@ -122,18 +131,15 @@ public class CompilerContext {
     }
 
     public void addLocalVariable(SymbolRef variableRef) {
-        if (variableRef.get().getName() != null) {
-            SymbolRef symbolRef = getSymbol(variableRef.get().getName());
-            if (symbolRef != null && symbolRef.get() instanceof LocalVariable) {
-                throw new InternalException();
-            }
+        if (variableRef.get().getName() != null && hasLocalSymbol(variableRef.get().getName())) {
+            throw new InternalException();
         }
 
         insertLocalVariable(variableRef);
     }
 
     public ExternalParameter addExternalParameter(String name, SType type, int index) {
-        if (name != null && hasSymbol(name)) {
+        if (name != null && hasLocalSymbol(name)) {
             throw new InternalException();
         }
 
@@ -143,11 +149,8 @@ public class CompilerContext {
     }
 
     public LocalVariable addLocalParameter(String name, SType type, TextRange definition) {
-        if (name != null) {
-            SymbolRef symbolRef = getSymbol(name);
-            if (symbolRef != null && symbolRef.get() instanceof LocalVariable) {
-                throw new InternalException();
-            }
+        if (name != null && hasLocalSymbol(name)) {
+            throw new InternalException();
         }
 
         LocalVariable variable = new LocalParameter(name, type, definition);
@@ -419,7 +422,9 @@ public class CompilerContext {
     }
 
     public Collection<SymbolRef> getStaticSymbols() {
-        return staticSymbols.values();
+        Map<String, SymbolRef> symbols = new HashMap<>(root.externalStaticSymbols);
+        symbols.putAll(root.staticSymbols);
+        return symbols.values();
     }
 
     public boolean hasLocalSymbol(String name) {
@@ -435,7 +440,7 @@ public class CompilerContext {
         }
     }
 
-    public @Nullable SymbolRef getSymbol(String name) {
+    public @Nullable SymbolRef getLocalSymbol(String name) {
         List<CompilerContext> functions = List.of(); // function boundaries
         for (CompilerContext context = this; context != null; ) {
             SymbolRef localSymbolRef = context.localSymbols.get(name);
@@ -472,12 +477,25 @@ public class CompilerContext {
             context = context.parent;
         }
 
+        return null;
+    }
+
+    public @Nullable SymbolRef getStaticSymbol(String name) {
         SymbolRef staticSymbolRef = root.staticSymbols.get(name);
         if (staticSymbolRef != null) {
             return staticSymbolRef;
         }
 
-        return null;
+        return root.externalStaticSymbols.get(name);
+    }
+
+    public @Nullable SymbolRef getSymbol(String name) {
+        SymbolRef localSymbolRef = getLocalSymbol(name);
+        if (localSymbolRef != null) {
+            return localSymbolRef;
+        }
+
+        return getStaticSymbol(name);
     }
 
     public Variable getVariableOfType(String type) {

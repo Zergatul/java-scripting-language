@@ -91,12 +91,17 @@ public class CompilerHelper {
         return result.getProgram();
     }
 
-    public static void assertDiagnostic(List<DiagnosticMessage> diagnostics, DiagnosticMessage expected) {
-        for (DiagnosticMessage message : diagnostics) {
-            if (message.equals(expected)) {
-                return;
-            }
+    public static void assertTopStackTrace(List<StackTraceElement> expected, List<StackTraceElement> actual) {
+        Assertions.assertNotNull(expected);
+        Assertions.assertNotNull(actual);
+        Assertions.assertTrue(expected.size() <= actual.size());
+        for (int i = 0; i < expected.size(); i++) {
+            StackTraceElement expectedElement = expected.get(i);
+            StackTraceElement actualElement = actual.get(i);
+            Assertions.assertEquals(expectedElement.getClassName(), actualElement.getClassName());
+            Assertions.assertEquals(expectedElement.getMethodName(), actualElement.getMethodName());
+            Assertions.assertEquals(expectedElement.getFileName(), actualElement.getFileName());
+            Assertions.assertEquals(expectedElement.getLineNumber(), actualElement.getLineNumber());
         }
-        Assertions.fail();
     }
 }

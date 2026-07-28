@@ -15,7 +15,9 @@ import java.lang.reflect.Parameter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 public class CompilationParameters {
 
@@ -49,15 +51,22 @@ public class CompilationParameters {
             throw new InternalException(String.format("%s is not a functional interface.", functionalInterface));
         }
 
-        for (Class<?> type : customTypes) {
-            if (type.getAnnotation(CustomType.class) == null) {
+        List<Class<?>> allCustomTypes = addPredefinedTypes(customTypes);
+        Set<String> customTypeNames = new HashSet<>();
+        for (Class<?> type : allCustomTypes) {
+            CustomType annotation = type.getAnnotation(CustomType.class);
+            if (annotation == null) {
                 throw new InternalException(String.format("%s is not a valid custom type.", type.getName()));
+            }
+            String name = annotation.name();
+            if (!customTypeNames.add(name)) {
+                throw new InternalException(String.format("Custom type \"%s\" is already registered.", name));
             }
         }
 
         this.functionalInterface = functionalInterface;
         this.asyncReturnType = asyncReturnType;
-        this.customTypes = addPredefinedTypes(customTypes);
+        this.customTypes = allCustomTypes;
         this.interopPolicy = interopPolicy;
         this.methodUsagePolicy = methodUsagePolicy;
         this.mainClassName = mainClassName;
@@ -99,7 +108,7 @@ public class CompilationParameters {
         CompilerContext context = CompilerContext.create(getReturnType(), isAsync());
         context.setInteropPolicy(interopPolicy);
         for (StaticVariable variable : staticVariables) {
-            context.addStaticSymbol(variable.getName(), new ImmutableSymbolRef(variable));
+            context.addExternalStaticSymbol(variable.getName(), new ImmutableSymbolRef(variable));
         }
         return context;
     }

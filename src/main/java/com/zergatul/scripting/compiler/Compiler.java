@@ -1,6 +1,7 @@
 package com.zergatul.scripting.compiler;
 
 import com.zergatul.scripting.InternalException;
+import com.zergatul.scripting.InterfaceHelper;
 import com.zergatul.scripting.Locatable;
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.analysis.AnalysisResult;
@@ -172,11 +173,25 @@ public class Compiler {
         }
 
         // have to be compiled first, because JVM requires parent classes/interfaces to be defined before defining child
+        configureFunctionInternalNames(functions);
         compileGenericFunctions(context.getGenericFunctions(), context);
         compileClasses(classes, writer, context);
         compileExtensions(extensions, writer, context);
         compileStaticVariables(fields, writer, context);
         compileFunctions(functions, writer, context);
+    }
+
+    private void configureFunctionInternalNames(List<BoundFunctionDeclarationNode> functions) {
+        Method entryMethod = InterfaceHelper.getFuncInterfaceMethod(parameters.getFunctionalInterface());
+        String entryDescriptor = Type.getMethodDescriptor(entryMethod);
+        for (BoundFunctionDeclarationNode function : functions) {
+            Function symbol = (Function) function.name.getSymbolOrThrow();
+            if (symbol.getName().equals(entryMethod.getName()) &&
+                    symbol.getFunctionType().getParameters().size() == entryMethod.getParameterCount() &&
+                    symbol.getFunctionType().getMethodDescriptor().equals(entryDescriptor)) {
+                symbol.useGeneratedInternalName();
+            }
+        }
     }
 
     private void compileClasses(List<BoundClassNode> classNodes, ClassWriter writer, CompilerContext context) {
@@ -593,7 +608,7 @@ public class Compiler {
 
             MethodVisitor visitor = writer.visitMethod(
                     ACC_PUBLIC | ACC_STATIC,
-                    function.name.value,
+                    symbol.getInternalName(),
                     type.getMethodDescriptor(),
                     null,
                     null);
@@ -3534,7 +3549,7 @@ public class Compiler {
         Handle impl = new Handle(
                 H_INVOKESTATIC,
                 context.getClassName(),
-                function.getName(),
+                function.getInternalName(),
                 function.getFunctionType().getMethodDescriptor(),
                 false);
 
@@ -3564,7 +3579,7 @@ public class Compiler {
         Handle impl = new Handle(
                 H_INVOKESTATIC,
                 context.getClassName(),
-                function.getName(),
+                function.getInternalName(),
                 genericFunction.getMethodDescriptor(),
                 false);
 
@@ -4079,7 +4094,7 @@ public class Compiler {
         visitor.visitMethodInsn(
                 INVOKESTATIC,
                 context.getClassName(),
-                symbol.getName(),
+                symbol.getInternalName(),
                 type.getMethodDescriptor(),
                 false);
 

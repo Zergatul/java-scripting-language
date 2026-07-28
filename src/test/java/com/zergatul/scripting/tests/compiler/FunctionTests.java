@@ -503,15 +503,18 @@ public class FunctionTests extends ComparatorTest {
     }
 
     @Test
-    public void externalNameConflictTest() {
+    public void externalNameOverrideTest() {
         String code = """
-                void ⟦run⟧(){}
+                void run() {
+                    intStorage.add(123);
+                }
+                run();
                 """;
 
-        comparator.assertDiagnostics(
-                ApiRoot.class, code, "⟦⟧",
-                BinderErrors.SymbolAlreadyDeclared,
-                "run");
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(List.of(123), ApiRoot.intStorage.list);
     }
 
     @Test
