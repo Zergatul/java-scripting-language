@@ -5,6 +5,7 @@ import org.objectweb.asm.MethodVisitor;
 
 import java.util.List;
 
+import static org.objectweb.asm.Opcodes.INVOKESPECIAL;
 import static org.objectweb.asm.Opcodes.INVOKEVIRTUAL;
 
 public class DeclaredMethodReference extends MethodReference {
@@ -58,17 +59,26 @@ public class DeclaredMethodReference extends MethodReference {
 
     @Override
     public void compileInvoke(MethodVisitor visitor, CompilerContext context, Runnable compileArguments) {
-        compileArguments.run();
-        visitor.visitMethodInsn(
-                INVOKEVIRTUAL,
-                owner.getInternalName(),
-                name,
-                functionType.getMethodDescriptor(),
-                false);
+        compileInvoke(visitor, compileArguments, INVOKEVIRTUAL);
+    }
+
+    @Override
+    public void compileBaseInvoke(MethodVisitor visitor, CompilerContext context, Runnable compileArguments) {
+        compileInvoke(visitor, compileArguments, INVOKESPECIAL);
     }
 
     @Override
     public String getName() {
         return name;
+    }
+
+    private void compileInvoke(MethodVisitor visitor, Runnable compileArguments, int opcode) {
+        compileArguments.run();
+        visitor.visitMethodInsn(
+                opcode,
+                owner.getInternalName(),
+                name,
+                functionType.getMethodDescriptor(),
+                false);
     }
 }

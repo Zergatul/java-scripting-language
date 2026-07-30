@@ -39,16 +39,7 @@ public abstract class MethodReference extends MemberReference implements Invocab
     public abstract void compileInvoke(MethodVisitor visitor, CompilerContext context, Runnable compileArguments);
 
     public void compileBaseInvoke(MethodVisitor visitor, CompilerContext context, Runnable compileArguments) {
-        compileInvoke(new MethodVisitor(org.objectweb.asm.Opcodes.ASM9, visitor) {
-            @Override
-            public void visitMethodInsn(int opcode, String owner, String name, String descriptor, boolean isInterface) {
-                if (opcode == org.objectweb.asm.Opcodes.INVOKEVIRTUAL) {
-                    super.visitMethodInsn(org.objectweb.asm.Opcodes.INVOKESPECIAL, owner, name, descriptor, isInterface);
-                } else {
-                    throw new InternalException();
-                }
-            }
-        }, context, compileArguments);
+        throw new InternalException();
     }
 
     public void compileMethodHandleInvoke(MethodVisitor visitor, CompilerContext context, Runnable compileArguments) {

@@ -93,22 +93,17 @@ public class NativeMethodReference extends MethodReference {
 
     @Override
     public void compileInvoke(MethodVisitor visitor, CompilerContext context, Runnable compileArguments) {
-        compileArguments.run();
         if (isStatic()) {
-            visitor.visitMethodInsn(
-                    INVOKESTATIC,
-                    Type.getInternalName(method.getDeclaringClass()),
-                    method.getName(),
-                    Type.getMethodDescriptor(method),
-                    method.getDeclaringClass().isInterface());
+            compileInvoke(visitor, compileArguments, INVOKESTATIC);
         } else {
-            visitor.visitMethodInsn(
-                    method.getDeclaringClass().isInterface() ? INVOKEINTERFACE : INVOKEVIRTUAL,
-                    Type.getInternalName(method.getDeclaringClass()),
-                    method.getName(),
-                    Type.getMethodDescriptor(method),
-                    method.getDeclaringClass().isInterface());
+            int opcode = method.getDeclaringClass().isInterface() ? INVOKEINTERFACE : INVOKEVIRTUAL;
+            compileInvoke(visitor, compileArguments, opcode);
         }
+    }
+
+    @Override
+    public void compileBaseInvoke(MethodVisitor visitor, CompilerContext context, Runnable compileArguments) {
+        compileInvoke(visitor, compileArguments, INVOKESPECIAL);
     }
 
     @Override
@@ -152,5 +147,15 @@ public class NativeMethodReference extends MethodReference {
         } else {
             return false;
         }
+    }
+
+    private void compileInvoke(MethodVisitor visitor, Runnable compileArguments, int opcode) {
+        compileArguments.run();
+        visitor.visitMethodInsn(
+                opcode,
+                Type.getInternalName(method.getDeclaringClass()),
+                method.getName(),
+                Type.getMethodDescriptor(method),
+                method.getDeclaringClass().isInterface());
     }
 }
