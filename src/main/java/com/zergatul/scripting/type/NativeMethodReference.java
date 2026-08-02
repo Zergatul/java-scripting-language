@@ -3,6 +3,7 @@ package com.zergatul.scripting.type;
 import com.zergatul.scripting.MethodDescription;
 import com.zergatul.scripting.compiler.CompilerContext;
 import com.zergatul.scripting.compiler.MethodHandleCache;
+import org.jspecify.annotations.Nullable;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Type;
 
@@ -18,10 +19,24 @@ import static org.objectweb.asm.Opcodes.*;
 
 public class NativeMethodReference extends MethodReference {
 
+    private final SType owner;
     private final Method method;
+    private final @Nullable GenericSubstitution substitution;
 
     public NativeMethodReference(Method method) {
+        this(SType.fromJavaType(method.getDeclaringClass()), method);
+    }
+
+    public NativeMethodReference(SType owner, Method method) {
+        this.owner = owner;
         this.method = method;
+        this.substitution = null;
+    }
+
+    public NativeMethodReference(SType owner, Method method, GenericSubstitution substitution) {
+        this.owner = owner;
+        this.method = method;
+        this.substitution = substitution;
     }
 
     public Method getUnderlying() {
@@ -30,7 +45,7 @@ public class NativeMethodReference extends MethodReference {
 
     @Override
     public SType getOwner() {
-        return SType.fromJavaType(method.getDeclaringClass());
+        return owner;
     }
 
     @Override
@@ -40,7 +55,11 @@ public class NativeMethodReference extends MethodReference {
 
     @Override
     public SType getReturn() {
-        return SType.fromJavaType(method.getGenericReturnType());
+        if (substitution == null) {
+            return SType.fromJavaType(method.getGenericReturnType());
+        } else {
+            return substitution.resolveType(method.getGenericReturnType());
+        }
     }
 
     @Override
@@ -49,7 +68,13 @@ public class NativeMethodReference extends MethodReference {
         java.lang.reflect.Type[] types = method.getGenericParameterTypes();
         List<MethodParameter> list = new ArrayList<>(parameters.length);
         for (int i = 0; i < parameters.length; i++) {
-            list.add(new MethodParameter(parameters[i].getName(), SType.fromJavaType(types[i])));
+            SType type;
+            if (substitution == null) {
+                type = SType.fromJavaType(types[i]);
+            } else {
+                type = substitution.resolveType(types[i]);
+            }
+            list.add(new MethodParameter(parameters[i].getName(), type));
         }
         return list;
     }

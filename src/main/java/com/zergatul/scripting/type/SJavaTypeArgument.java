@@ -24,8 +24,8 @@ public interface SJavaTypeArgument {
             }
 
             return new SJavaWildcardTypeArgument(
-                    Arrays.stream(lower).map(SType::fromJavaType).toList(),
-                    Arrays.stream(upper).map(SType::fromJavaType).toList());
+                    Arrays.stream(upper).map(SType::fromJavaType).toList(),
+                    Arrays.stream(lower).map(SType::fromJavaType).toList());
         }
         throw new InternalException();
     }

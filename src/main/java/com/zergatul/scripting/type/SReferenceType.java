@@ -1,6 +1,5 @@
 package com.zergatul.scripting.type;
 
-import com.zergatul.scripting.InternalException;
 import com.zergatul.scripting.compiler.BufferedMethodVisitor;
 import com.zergatul.scripting.compiler.CompilerContext;
 import com.zergatul.scripting.parser.BinaryOperator;

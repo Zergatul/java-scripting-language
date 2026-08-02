@@ -2,17 +2,14 @@ package com.zergatul.scripting.type;
 
 import com.zergatul.scripting.InternalException;
 
-import java.lang.reflect.GenericArrayType;
-import java.lang.reflect.ParameterizedType;
-import java.lang.reflect.TypeVariable;
-import java.lang.reflect.WildcardType;
+import java.lang.reflect.*;
 import java.util.*;
 
 public class GenericSubstitution {
 
-    private final Map<GenericParameterKey, SJavaTypeArgument> mappings;
+    private final Map<GenericDeclaration, SJavaTypeArgument> mappings;
 
-    private GenericSubstitution(Map<GenericParameterKey, SJavaTypeArgument> mappings) {
+    private GenericSubstitution(Map<GenericDeclaration, SJavaTypeArgument> mappings) {
         this.mappings = mappings;
     }
 
@@ -23,18 +20,15 @@ public class GenericSubstitution {
             throw new InternalException("Generic arity mismatch.");
         }
 
-        Map<GenericParameterKey, SJavaTypeArgument> mappings = new LinkedHashMap<>();
-
+        Map<GenericDeclaration, SJavaTypeArgument> mappings = new LinkedHashMap<>();
         for (int i = 0; i < parameters.length; i++) {
-            mappings.put(
-                    GenericParameterKey.from(parameters[i]),
-                    arguments.get(i));
+            mappings.put(parameters[i].getGenericDeclaration(), arguments.get(i));
         }
 
         return new GenericSubstitution(mappings);
     }
 
-    public Optional<SJavaTypeArgument> find(GenericParameterKey key) {
+    public Optional<SJavaTypeArgument> find(GenericDeclaration key) {
         throw new InternalException();
     }
 
@@ -50,7 +44,11 @@ public class GenericSubstitution {
     }
 
     public SJavaTypeArgument resolveArgument(java.lang.reflect.Type type) {
-        throw new InternalException();
+        if (type instanceof TypeVariable<?> variable) {
+            return mappings.get(variable.getGenericDeclaration());
+        } else {
+            return SJavaTypeArgument.from(type);
+        }
     }
 
     public GenericSubstitution combine(GenericSubstitution inner) {
@@ -69,6 +67,17 @@ public class GenericSubstitution {
     }
 
     private SType resolveVariable(TypeVariable<?> variable) {
+        GenericDeclaration declaration = variable.getGenericDeclaration();
+        SJavaTypeArgument type = mappings.get(declaration);
+        if (type instanceof SJavaExactTypeArgument exact) {
+            return exact.type();
+        } else {
+            throw new InternalException();
+        }
+    }
+
+    private SJavaTypeVariable resolveVariable2(TypeVariable<?> variable) {
+        GenericDeclaration declaration = variable.getGenericDeclaration();
         throw new InternalException();
     }
 

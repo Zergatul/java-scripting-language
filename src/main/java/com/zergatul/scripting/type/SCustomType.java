@@ -216,7 +216,7 @@ public class SCustomType extends SReferenceType {
                 .filter(m -> !m.isAnnotationPresent(Setter.class))
                 .filter(m -> !m.isAnnotationPresent(IndexGetter.class))
                 .filter(m -> !m.isAnnotationPresent(IndexSetter.class))
-                .map(NativeMethodReference::new)
+                .map(m -> new NativeMethodReference(this, m))
                 .map(r -> (MethodReference) r)
                 .toList();
     }
@@ -280,7 +280,7 @@ public class SCustomType extends SReferenceType {
                 .filter(m -> !m.isAnnotationPresent(Getter.class))
                 .filter(m -> !m.isAnnotationPresent(Setter.class))
                 .filter(m -> !m.isAnnotationPresent(BinaryOperatorMethod.class))
-                .map(NativeMethodReference::new)
+                .map(m -> new NativeMethodReference(this, m))
                 .map(r -> (MethodReference) r)
                 .toList();
     }

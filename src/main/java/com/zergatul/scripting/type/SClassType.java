@@ -103,7 +103,7 @@ public class SClassType extends SReferenceType {
                 .filter(m -> !m.isBridge())
                 .filter(m -> !Modifier.isStatic(m.getModifiers()) ||
                         (!m.isAnnotationPresent(Getter.class) && !m.isAnnotationPresent(Setter.class)))
-                .map(NativeMethodReference::new)
+                .map(m -> new NativeMethodReference(this, m))
                 .map(r -> (MethodReference) r)
                 .toList();
     }

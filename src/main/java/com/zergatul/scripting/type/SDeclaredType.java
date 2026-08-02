@@ -427,12 +427,13 @@ public class SDeclaredType extends SReferenceType {
 
     private static Implementation findDeclaredJavaImplementation(Class<?> clazz, MethodReference contract) {
         Implementation implementation = Implementation.NONE;
+        SType owner = SType.fromJavaType(clazz);
         for (Method method : clazz.getDeclaredMethods()) {
             if (Modifier.isStatic(method.getModifiers()) || !signatureMatches(method, contract)) {
                 continue;
             }
 
-            NativeMethodReference reference = new NativeMethodReference(method);
+            NativeMethodReference reference = new NativeMethodReference(owner, method);
             if (reducesVisibility(reference.getVisibility(), contract.getVisibility())) {
                 continue;
             }

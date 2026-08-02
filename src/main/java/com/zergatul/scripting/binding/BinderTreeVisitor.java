@@ -1,6 +1,7 @@
 package com.zergatul.scripting.binding;
 
 import com.zergatul.scripting.binding.nodes.*;
+import com.zergatul.scripting.parser.nodes.BoundGenericTypeNode;
 
 public abstract class BinderTreeVisitor {
 
@@ -245,6 +246,11 @@ public abstract class BinderTreeVisitor {
     }
 
     public void explicitVisit(BoundGeneratorReturnNode node) {
+        visit(node);
+        node.acceptChildren(this);
+    }
+
+    public void explicitVisit(BoundGenericTypeNode node) {
         visit(node);
         node.acceptChildren(this);
     }
@@ -538,6 +544,7 @@ public abstract class BinderTreeVisitor {
     public void visit(BoundFunctionDeclarationNode node) {}
     public void visit(BoundFunctionNode node) {}
     public void visit(BoundGeneratorReturnNode node) {}
+    public void visit(BoundGenericTypeNode node) {}
     public void visit(BoundJavaTypeNode node) {}
     public void visit(BoundIfStatementNode node) {}
     public void visit(BoundImplicitCastExpressionNode node) {}

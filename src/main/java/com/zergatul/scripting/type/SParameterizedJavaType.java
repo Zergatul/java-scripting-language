@@ -1,8 +1,12 @@
 package com.zergatul.scripting.type;
 
+import com.zergatul.scripting.Getter;
 import com.zergatul.scripting.InternalException;
+import com.zergatul.scripting.Setter;
+import org.jspecify.annotations.Nullable;
 import org.objectweb.asm.MethodVisitor;
 
+import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
 import java.util.Arrays;
 import java.util.List;
@@ -47,11 +51,36 @@ public class SParameterizedJavaType extends SReferenceType {
     }
 
     @Override
+    public @Nullable SType getBaseType() {
+        java.lang.reflect.Type base = rawType.getGenericSuperclass();
+        return base == null ? null : substitution.resolveType(base);
+    }
+
+    @Override
+    public List<SType> getInterfaces() {
+        return Arrays.stream(rawType.getGenericInterfaces())
+                .map(substitution::resolveType)
+                .toList();
+    }
+
+    @Override
     public List<ConstructorReference> getConstructors() {
         return Arrays.stream(rawType.getDeclaredConstructors())
                 .filter(c -> !c.isSynthetic())
-                .map(NativeConstructorReference::new)
+                .map(c -> new NativeConstructorReference(c, substitution))
                 .map(c -> (ConstructorReference) c)
+                .toList();
+    }
+
+    @Override
+    public List<MethodReference> getDeclaredMethods() {
+        return Arrays.stream(rawType.getDeclaredMethods())
+                .filter(m -> !m.isSynthetic())
+                .filter(m -> !m.isBridge())
+                .filter(m -> !Modifier.isStatic(m.getModifiers()) ||
+                        (!m.isAnnotationPresent(Getter.class) && !m.isAnnotationPresent(Setter.class)))
+                .map(m -> new NativeMethodReference(this, m, substitution))
+                .map(r -> (MethodReference) r)
                 .toList();
     }
 
