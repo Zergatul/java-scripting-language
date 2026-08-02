@@ -1,5 +1,6 @@
 package com.zergatul.scripting.type;
 
+import com.zergatul.scripting.InternalException;
 import com.zergatul.scripting.MethodDescription;
 import com.zergatul.scripting.compiler.CompilerContext;
 import com.zergatul.scripting.compiler.MethodHandleCache;
@@ -162,6 +163,49 @@ public class NativeMethodReference extends MethodReference {
                     "invokeExact",
                     Type.getMethodDescriptor(getReturn().getAsmType(), argumentTypes),
                     false);
+        }
+    }
+
+    @Override
+    public void compileReturnBridge(MethodVisitor visitor) {
+        if (substitution == null) {
+            return;
+        }
+
+        java.lang.reflect.Type actualType = method.getGenericReturnType();
+        Class<?> expectedType = method.getReturnType();
+        if (actualType.equals(expectedType)) {
+            return;
+        }
+
+        SType actual = substitution.resolveType(actualType);
+        SType expected = SType.fromJavaType(expectedType);
+
+        if (actual instanceof SValueType valueType && expected.isReference()) {
+            if (!valueType.getBoxed().isAssignableFrom(expected)) {
+                visitor.visitTypeInsn(CHECKCAST, Type.getInternalName(valueType.getBoxed().getJavaClass()));
+            }
+            valueType.compileUnboxing(visitor);
+        }
+    }
+
+    @Override
+    public void compileArgumentBridge(MethodVisitor visitor, int index) {
+        if (substitution == null) {
+            return;
+        }
+
+        java.lang.reflect.Type actualType = method.getGenericParameterTypes()[index];
+        Class<?> expectedType = method.getParameterTypes()[index];
+        if (actualType.equals(expectedType)) {
+            return;
+        }
+
+        SType actual = substitution.resolveType(actualType);
+        SType expected = SType.fromJavaType(expectedType);
+
+        if (actual instanceof SValueType valueType && expected.isReference()) {
+            valueType.compileBoxing(visitor);
         }
     }
 

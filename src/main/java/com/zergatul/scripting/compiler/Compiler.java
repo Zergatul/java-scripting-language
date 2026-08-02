@@ -3721,14 +3721,10 @@ public class Compiler {
                 () -> {
                     compileExpression(visitor, context, invocation.objectReference);
                     List<BoundExpressionNode> arguments = invocation.arguments.arguments;
-                    List<MethodParameter> parameters = invocation.method.method.getParameters();
                     for (int i = 0; i < arguments.size(); i++) {
                         BoundExpressionNode expression = arguments.get(i);
                         compileExpression(visitor, context, expression);
-
-                        if (parameters.get(i).type() instanceof SJavaTypeVariable variable) {
-                            throw new InternalException();
-                        }
+                        invocation.target.method().compileArgumentBridge(visitor, i);
                     }
                 });
 
@@ -3741,6 +3737,7 @@ public class Compiler {
             for (BoundExpressionNode expression : invocation.arguments.arguments) {
                 compileExpression(visitor, context, expression);
             }
+            // TODO: add generic?
         });
 
         releaseRefVariables(visitor, context, invocation.refVariables);
@@ -3759,6 +3756,8 @@ public class Compiler {
         } else {
             target.method().compileInvoke(visitor, context, compileArguments);
         }
+
+        target.method().compileReturnBridge(visitor);
     }
 
     private void compilePropertyAccessExpression(MethodVisitor visitor, CompilerContext context, BoundPropertyAccessExpressionNode propertyAccess) {

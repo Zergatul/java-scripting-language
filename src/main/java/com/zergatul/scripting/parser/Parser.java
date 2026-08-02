@@ -2191,6 +2191,7 @@ public class Parser {
                     advanceFnType();
                 }
             }
+            advanceGenericParameters();
             advanceArrayMarkers();
             return true;
         } else {
@@ -2300,6 +2301,33 @@ public class Parser {
             return;
         }
         advance();
+    }
+
+    private void advanceGenericParameters() {
+        while (true) {
+            if (current.isNot(TokenType.LESS)) {
+                return;
+            }
+
+            advance();
+
+            while (true) {
+                if (!isPossibleType()) {
+                    break;
+                }
+                tryAdvanceType();
+
+                if (current.is(TokenType.COMMA)) {
+                    advance();
+                } else {
+                    break;
+                }
+            }
+
+            if (current.is(TokenType.GREATER)) {
+                advance();
+            }
+        }
     }
 
     private void advanceArrayMarkers() {

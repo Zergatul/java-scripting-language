@@ -123,7 +123,7 @@ public class SCustomType extends SReferenceType {
     public List<ConstructorReference> getConstructors() {
         return Arrays.stream(clazz.getDeclaredConstructors())
                 .filter(c -> !c.isSynthetic())
-                .map(NativeConstructorReference::new)
+                .map(c -> new NativeConstructorReference(this, c))
                 .map(c -> (ConstructorReference) c)
                 .toList();
     }

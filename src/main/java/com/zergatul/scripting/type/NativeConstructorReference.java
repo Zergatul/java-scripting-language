@@ -14,22 +14,25 @@ import static org.objectweb.asm.Opcodes.INVOKESPECIAL;
 
 public class NativeConstructorReference extends ConstructorReference {
 
+    private final SType owner;
     private final Constructor<?> constructor;
     private final @Nullable GenericSubstitution substitution;
 
-    public NativeConstructorReference(Constructor<?> constructor) {
+    public NativeConstructorReference(SType owner, Constructor<?> constructor) {
+        this.owner = owner;
         this.constructor = constructor;
         this.substitution = null;
     }
 
-    public NativeConstructorReference(Constructor<?> constructor, GenericSubstitution substitution) {
+    public NativeConstructorReference(SType owner, Constructor<?> constructor, GenericSubstitution substitution) {
+        this.owner = owner;
         this.constructor = constructor;
         this.substitution = substitution;
     }
 
     @Override
     public SType getOwner() {
-        return SType.fromJavaType(constructor.getDeclaringClass());
+        return owner;
     }
 
     @Override

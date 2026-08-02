@@ -67,7 +67,7 @@ public class SParameterizedJavaType extends SReferenceType {
     public List<ConstructorReference> getConstructors() {
         return Arrays.stream(rawType.getDeclaredConstructors())
                 .filter(c -> !c.isSynthetic())
-                .map(c -> new NativeConstructorReference(c, substitution))
+                .map(c -> new NativeConstructorReference(this, c, substitution))
                 .map(c -> (ConstructorReference) c)
                 .toList();
     }

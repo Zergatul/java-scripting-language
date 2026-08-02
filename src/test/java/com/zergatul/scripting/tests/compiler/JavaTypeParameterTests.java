@@ -32,9 +32,34 @@ public class JavaTypeParameterTests {
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
-        Assertions.assertIterableEquals(
-                List.of(9, 8),
-                ApiRoot.intStorage.list);
+        Assertions.assertIterableEquals(List.of(9, 8), ApiRoot.intStorage.list);
+    }
+
+    @Test
+    public void nestedExactTest1() {
+        String code = """
+                typealias List = Java<java.util.List>;
+                typealias ArrayList = Java<java.util.ArrayList>;
+                
+                List<int> of(int[] values) {
+                    let result = new ArrayList<int>();
+                    foreach (let value in values) {
+                        result.add(value);
+                    }
+                    return result;
+                }
+                
+                let list = new ArrayList<List<int>>();
+                list.add(of([1]));
+                list.add(of([2, 3]));
+                list.add(of([4, 5, 6]));
+                intStorage.add(list.get(0).get(0) + list.get(1).get(1) + list.get(2).get(2));
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(List.of(10), ApiRoot.intStorage.list);
     }
 
     public static class ApiRoot {

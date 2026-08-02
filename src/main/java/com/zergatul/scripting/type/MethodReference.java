@@ -46,6 +46,10 @@ public abstract class MethodReference extends MemberReference implements Invocab
         throw new InternalException();
     }
 
+    public void compileReturnBridge(MethodVisitor visitor) {}
+
+    public void compileArgumentBridge(MethodVisitor visitor, int index) {}
+
     public List<SType> getParameterTypes() {
         return getParameters().stream().map(MethodParameter::type).toList();
     }
