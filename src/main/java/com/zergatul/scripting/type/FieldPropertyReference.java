@@ -33,7 +33,7 @@ public final class FieldPropertyReference extends PropertyReference {
 
     @Override
     public SType getType() {
-        return SType.fromJavaType(field.getType());
+        return SType.fromJavaType(field.getGenericType());
     }
 
     @Override

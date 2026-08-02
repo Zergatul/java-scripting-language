@@ -186,6 +186,10 @@ public class NativeMethodReference extends MethodReference {
                 visitor.visitTypeInsn(CHECKCAST, Type.getInternalName(valueType.getBoxed().getJavaClass()));
             }
             valueType.compileUnboxing(visitor);
+        } else {
+            if (!actual.isAssignableFrom(expected)) {
+                visitor.visitTypeInsn(CHECKCAST, Type.getInternalName(actual.getJavaClass()));
+            }
         }
     }
 

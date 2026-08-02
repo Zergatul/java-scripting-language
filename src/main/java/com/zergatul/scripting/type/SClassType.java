@@ -74,7 +74,7 @@ public class SClassType extends SReferenceType {
         if (clazz.isInterface()) {
             return null;
         } else {
-            return SType.fromJavaType(clazz.getSuperclass());
+            return SType.fromJavaType(clazz.getGenericSuperclass());
         }
     }
 
@@ -110,7 +110,7 @@ public class SClassType extends SReferenceType {
 
     @Override
     public List<SType> getInterfaces() {
-        return Arrays.stream(clazz.getInterfaces())
+        return Arrays.stream(clazz.getGenericInterfaces())
                 .map(SType::fromJavaType)
                 .toList();
     }
