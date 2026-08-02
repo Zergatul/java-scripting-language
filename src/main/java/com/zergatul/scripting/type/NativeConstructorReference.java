@@ -1,5 +1,6 @@
 package com.zergatul.scripting.type;
 
+import org.jspecify.annotations.Nullable;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Type;
 
@@ -14,9 +15,16 @@ import static org.objectweb.asm.Opcodes.INVOKESPECIAL;
 public class NativeConstructorReference extends ConstructorReference {
 
     private final Constructor<?> constructor;
+    private final @Nullable GenericSubstitution substitution;
 
     public NativeConstructorReference(Constructor<?> constructor) {
         this.constructor = constructor;
+        this.substitution = null;
+    }
+
+    public NativeConstructorReference(Constructor<?> constructor, GenericSubstitution substitution) {
+        this.constructor = constructor;
+        this.substitution = substitution;
     }
 
     @Override

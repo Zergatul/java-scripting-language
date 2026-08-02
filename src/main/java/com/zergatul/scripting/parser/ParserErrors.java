@@ -54,4 +54,6 @@ public class ParserErrors {
     public static final ErrorCode UnexpectedToken = new ErrorCode("C049", "Unexpected token '%s'");
     public static final ErrorCode ConflictingVisibilityModifiers = new ErrorCode("C050", "Conflicting visibility modifiers");
     public static final ErrorCode ClassMemberModifiersNotAllowed = new ErrorCode("C051", "These modifiers are not allowed on constructors or operator overloads");
+    public static final ErrorCode TypeOrCloseBracketExpected = new ErrorCode("C052", "Type or > expected, found '%s'");
+    public static final ErrorCode CommaOrCloseBracketExpected = new ErrorCode("C008", ", or > expected, found %s");
 }

@@ -95,6 +95,8 @@ public class BinderErrors {
     public static final ErrorCode VisibilityModifierNotAllowed = new ErrorCode("B094", "Visibility modifiers are only allowed on class fields, constructors, and methods");
     public static final ErrorCode PrivateMethodCannotBeVirtual = new ErrorCode("B095", "Private methods cannot be abstract or virtual");
     public static final ErrorCode CannotReduceMethodVisibility = new ErrorCode("B096", "Cannot reduce visibility when overriding a method");
+    public static final ErrorCode TypeIsNotGeneric = new ErrorCode("B097", "Type '%s' cannot accept generic arguments");
+    public static final ErrorCode TypeCannotAcceptGenericAmountArguments = new ErrorCode("B098", "Type '%s' cannot have %s generic arguments");
 
     public static final ErrorCode InternalError = new ErrorCode("B999", "Internal error: %s");
 }

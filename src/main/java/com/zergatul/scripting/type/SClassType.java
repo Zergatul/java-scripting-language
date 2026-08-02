@@ -128,6 +128,24 @@ public class SClassType extends SReferenceType {
     }
 
     @Override
+    public boolean canBeGeneric() {
+        return clazz.getTypeParameters().length > 0;
+    }
+
+    @Override
+    public boolean canApplyGenericArgumentsCount(int count) {
+        return clazz.getTypeParameters().length == count;
+    }
+
+    @Override
+    public SType withGenericArguments(SType... arguments) {
+        List<SJavaTypeArgument> typeArguments = Arrays.stream(arguments)
+                .map(t -> (SJavaTypeArgument) new SJavaExactTypeArgument(t))
+                .toList();
+        return new SParameterizedJavaType(clazz, typeArguments);
+    }
+
+    @Override
     public boolean equals(Object obj) {
         if (obj instanceof SClassType other) {
             return other.clazz == clazz;

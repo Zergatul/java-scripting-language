@@ -90,4 +90,5 @@ public enum ParserNodeType {
     THROW_STATEMENT,
     THROW_EXPRESSION,
     EXPRESSION_UNIT,
+    GENERIC_TYPE,
 }

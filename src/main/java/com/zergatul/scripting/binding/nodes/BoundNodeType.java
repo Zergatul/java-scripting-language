@@ -120,4 +120,5 @@ public enum BoundNodeType {
     THROW_EXPRESSION,
     THROW_STATEMENT,
     EXPRESSION_UNIT,
+    GENERIC_TYPE,
 }

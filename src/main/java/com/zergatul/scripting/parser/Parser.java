@@ -1970,6 +1970,23 @@ public class Parser {
         };
 
         while (true) {
+            if (current.is(TokenType.LESS)) {
+                Token openBracket = advance(TokenType.LESS);
+                SeparatedList<TypeNode> arguments = parseSeparatedList(
+                        this::parseTypeNode,
+                        this::tryAdvanceType,
+                        () -> addDiagnostic(ParserErrors.TypeOrCloseBracketExpected, current, current.getRawValue(code)),
+                        () -> addDiagnostic(ParserErrors.TypeExpected, current, current.getRawValue(code)),
+                        () -> addDiagnostic(ParserErrors.CommaOrCloseBracketExpected, current, current.getRawValue(code)),
+                        TokenType.GREATER);
+                Token closeBracket = advance(TokenType.GREATER);
+                type = new GenericTypeNode(type, openBracket, arguments, closeBracket, TextRange.combine(type, closeBracket));
+            } else {
+                break;
+            }
+        }
+
+        while (true) {
             if (current.is(TokenType.LEFT_SQUARE_BRACKET) && peek(1).is(TokenType.RIGHT_SQUARE_BRACKET)) {
                 Token openBracket = advance(TokenType.LEFT_SQUARE_BRACKET);
                 Token closeBracket = advance(TokenType.RIGHT_SQUARE_BRACKET);

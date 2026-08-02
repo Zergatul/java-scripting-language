@@ -2710,6 +2710,32 @@ public class Binder {
                         functionType);
             }
 
+            case GENERIC_TYPE -> {
+                GenericTypeNode genericTypeNode = (GenericTypeNode) type;
+                BoundTypeNode rawType = bindType(genericTypeNode.rawType);
+
+                if (!rawType.type.canBeGeneric()) {
+                    addDiagnostic(BinderErrors.TypeIsNotGeneric, rawType, rawType.type);
+                }
+
+                BoundTypeNode[] arguments = new BoundTypeNode[genericTypeNode.arguments.size()];
+                for (int i = 0; i < arguments.length; i++) {
+                    arguments[i] = bindType(genericTypeNode.arguments.getNodeAt(i));
+                }
+
+                SType result = rawType.type;
+
+                if (rawType.type.canBeGeneric()) {
+                    if (rawType.type.canApplyGenericArgumentsCount(arguments.length)) {
+                        result = rawType.type.withGenericArguments(Arrays.stream(arguments).map(t -> t.type).toArray(SType[]::new));
+                    } else {
+                        addDiagnostic(BinderErrors.TypeCannotAcceptGenericAmountArguments, rawType, rawType.type, arguments.length);
+                    }
+                }
+
+                yield new BoundGenericTypeNode(genericTypeNode, rawType, arguments, result);
+            }
+
             case LET_TYPE -> {
                 addDiagnostic(BinderErrors.LetInvalidContext, type);
                 yield new BoundInvalidTypeNode((LetTypeNode) type);

@@ -172,6 +172,18 @@ public abstract class SType {
         throw new InternalException();
     }
 
+    public boolean canBeGeneric() {
+        return false;
+    }
+
+    public boolean canApplyGenericArgumentsCount(int count) {
+        return false;
+    }
+
+    public SType withGenericArguments(SType... arguments) {
+        throw new InternalException();
+    }
+
     public String asMethodPart() {
         StringBuilder builder = new StringBuilder();
         for (char ch : toString().toCharArray()) {
@@ -200,7 +212,8 @@ public abstract class SType {
                 return SClassType.create(clazz, SFunctionalInterface.from(parameterized));
             }
 
-            return SClassType.create(clazz);
+            return SParameterizedJavaType.from(parameterized);
+            //return SClassType.create(clazz);
         }
 
         if (type instanceof WildcardType wildcard) {
