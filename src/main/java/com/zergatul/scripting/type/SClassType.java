@@ -13,6 +13,7 @@ import java.util.*;
 public class SClassType extends SReferenceType {
 
     private final Class<?> clazz;
+    private final GenericSubstitution substitution;
     private final @Nullable SFunctionalInterface callableType;
 
     protected SClassType(Class<?> clazz) {
@@ -21,6 +22,7 @@ public class SClassType extends SReferenceType {
 
     private SClassType(Class<?> clazz, @Nullable SFunctionalInterface callableType) {
         this.clazz = clazz;
+        this.substitution = GenericSubstitution.forRawClass(clazz);
         this.callableType = callableType;
     }
 
@@ -74,7 +76,8 @@ public class SClassType extends SReferenceType {
         if (clazz.isInterface()) {
             return null;
         } else {
-            return SType.fromJavaType(clazz.getGenericSuperclass());
+            java.lang.reflect.Type base = clazz.getGenericSuperclass();
+            return base == null ? null : substitution.resolveType(base);
         }
     }
 
@@ -82,7 +85,7 @@ public class SClassType extends SReferenceType {
     public List<ConstructorReference> getConstructors() {
         return Arrays.stream(clazz.getDeclaredConstructors())
                 .filter(c -> !c.isSynthetic())
-                .map(c -> new NativeConstructorReference(this, c))
+                .map(c -> new NativeConstructorReference(this, c, substitution))
                 .map(c -> (ConstructorReference) c)
                 .toList();
     }
@@ -103,7 +106,7 @@ public class SClassType extends SReferenceType {
                 .filter(m -> !m.isBridge())
                 .filter(m -> !Modifier.isStatic(m.getModifiers()) ||
                         (!m.isAnnotationPresent(Getter.class) && !m.isAnnotationPresent(Setter.class)))
-                .map(m -> new NativeMethodReference(this, m))
+                .map(m -> new NativeMethodReference(this, m, substitution))
                 .map(r -> (MethodReference) r)
                 .toList();
     }
@@ -111,7 +114,7 @@ public class SClassType extends SReferenceType {
     @Override
     public List<SType> getInterfaces() {
         return Arrays.stream(clazz.getGenericInterfaces())
-                .map(SType::fromJavaType)
+                .map(substitution::resolveType)
                 .toList();
     }
 

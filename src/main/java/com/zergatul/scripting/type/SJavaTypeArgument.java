@@ -1,15 +1,22 @@
 package com.zergatul.scripting.type;
 
 import com.zergatul.scripting.InternalException;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.lang.reflect.TypeVariable;
 import java.lang.reflect.WildcardType;
 import java.util.Arrays;
+import java.util.List;
 
 public interface SJavaTypeArgument {
 
     static SJavaTypeArgument from(Type type) {
+        return from(type, GenericSubstitution.EMPTY);
+    }
+
+    static SJavaTypeArgument from(Type type, GenericSubstitution substitution) {
         if (type instanceof Class<?> clazz) {
             return new SJavaExactTypeArgument(SType.fromJavaType(clazz));
         }
@@ -19,13 +26,25 @@ public interface SJavaTypeArgument {
         if (type instanceof WildcardType wildcard) {
             Type[] lower = wildcard.getLowerBounds();
             Type[] upper = wildcard.getUpperBounds();
-            if (upper.length == 1 && upper[0] == Object.class && lower.length == 0) {
+
+            List<SType> upperTypes =
+                    Arrays.stream(upper)
+                            .map(substitution::resolveType)
+                            .toList();
+
+            List<SType> lowerTypes =
+                    Arrays.stream(lower)
+                            .map(substitution::resolveType)
+                            .toList();
+
+            if (upperTypes.size() == 1 && upperTypes.getFirst().equals(SJavaObject.instance) && lowerTypes.isEmpty()) {
                 return new SJavaUnboundedTypeArgument();
             }
 
-            return new SJavaWildcardTypeArgument(
-                    Arrays.stream(upper).map(SType::fromJavaType).toList(),
-                    Arrays.stream(lower).map(SType::fromJavaType).toList());
+            return new SJavaWildcardTypeArgument(upperTypes, lowerTypes);
+        }
+        if (type instanceof TypeVariable<?> variable) {
+            return substitution.resolveArgument(variable);
         }
         throw new InternalException();
     }

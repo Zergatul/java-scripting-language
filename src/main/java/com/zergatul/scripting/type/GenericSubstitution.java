@@ -7,10 +7,23 @@ import java.util.*;
 
 public class GenericSubstitution {
 
-    private final Map<GenericDeclaration, SJavaTypeArgument> mappings;
+    public static final GenericSubstitution EMPTY = new GenericSubstitution(Map.of());
 
-    private GenericSubstitution(Map<GenericDeclaration, SJavaTypeArgument> mappings) {
+    private final Map<TypeVariable<?>, SJavaTypeArgument> mappings;
+
+    private GenericSubstitution(Map<TypeVariable<?>, SJavaTypeArgument> mappings) {
         this.mappings = mappings;
+    }
+
+    public static GenericSubstitution forRawClass(Class<?> clazz) {
+        TypeVariable<?>[] parameters = clazz.getTypeParameters();
+
+        Map<TypeVariable<?>, SJavaTypeArgument> mappings = new LinkedHashMap<>();
+        for (TypeVariable<?> parameter : parameters) {
+            mappings.put(parameter, new SJavaExactTypeArgument(SType.fromJavaType(parameter)));
+        }
+
+        return new GenericSubstitution(mappings);
     }
 
     public static GenericSubstitution forClass(Class<?> clazz, List<SJavaTypeArgument> arguments) {
@@ -20,9 +33,9 @@ public class GenericSubstitution {
             throw new InternalException("Generic arity mismatch.");
         }
 
-        Map<GenericDeclaration, SJavaTypeArgument> mappings = new LinkedHashMap<>();
+        Map<TypeVariable<?>, SJavaTypeArgument> mappings = new LinkedHashMap<>();
         for (int i = 0; i < parameters.length; i++) {
-            mappings.put(parameters[i].getGenericDeclaration(), arguments.get(i));
+            mappings.put(parameters[i], arguments.get(i));
         }
 
         return new GenericSubstitution(mappings);
@@ -45,9 +58,15 @@ public class GenericSubstitution {
 
     public SJavaTypeArgument resolveArgument(java.lang.reflect.Type type) {
         if (type instanceof TypeVariable<?> variable) {
-            return mappings.get(variable.getGenericDeclaration());
+            SJavaTypeArgument argument = mappings.get(variable);
+            if (argument != null) {
+                return argument;
+            }
+
+            // method-owned or otherwise unresolved variable: use its erasure for now
+            return new SJavaExactTypeArgument(SType.fromJavaType(variable));
         } else {
-            return SJavaTypeArgument.from(type);
+            return SJavaTypeArgument.from(type, this);
         }
     }
 
@@ -67,13 +86,15 @@ public class GenericSubstitution {
     }
 
     private SType resolveVariable(TypeVariable<?> variable) {
-        GenericDeclaration declaration = variable.getGenericDeclaration();
-        SJavaTypeArgument type = mappings.get(declaration);
-        if (type instanceof SJavaExactTypeArgument exact) {
+        SJavaTypeArgument argument = mappings.get(variable);
+        if (argument instanceof SJavaExactTypeArgument exact) {
             return exact.type();
-        } else {
-            throw new InternalException();
         }
+        if (argument == null) {
+            return SType.fromJavaType(variable);
+        }
+
+        throw new InternalException();
     }
 
     private SJavaTypeVariable resolveVariable2(TypeVariable<?> variable) {

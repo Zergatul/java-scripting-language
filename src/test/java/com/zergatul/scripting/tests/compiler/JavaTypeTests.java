@@ -340,7 +340,7 @@ public class JavaTypeTests extends ComparatorTest {
                 Candidates:
                 constructor Java<java.util.ArrayList>()
                 constructor Java<java.util.ArrayList>(int arg0)
-                constructor Java<java.util.ArrayList>(Java<java.util.Collection> arg0)""";
+                constructor Java<java.util.ArrayList>(Java<java.util.Collection><?> arg0)""";
 
         comparator.assertDiagnostics(
                 ApiRoot.class, code, "⟦⟧",

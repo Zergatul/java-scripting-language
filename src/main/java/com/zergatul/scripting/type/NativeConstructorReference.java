@@ -60,7 +60,13 @@ public class NativeConstructorReference extends ConstructorReference {
         java.lang.reflect.Type[] types = constructor.getGenericParameterTypes();
         List<MethodParameter> list = new ArrayList<>(parameters.length);
         for (int i = 0; i < parameters.length; i++) {
-            list.add(new MethodParameter(parameters[i].getName(), SType.fromJavaType(types[i])));
+            SType type;
+            if (substitution == null) {
+                type = SType.fromJavaType(types[i]);
+            } else {
+                type = substitution.resolveType(types[i]);
+            }
+            list.add(new MethodParameter(parameters[i].getName(), type));
         }
         return list;
     }
