@@ -465,7 +465,7 @@ public class CompilerContext {
                         prev = current;
                     }
 
-                    return functions.getFirst().localSymbols.get(name);
+                    return functions.get(0).localSymbols.get(name);
                 }
             }
             if (context.isFunctionRoot) {

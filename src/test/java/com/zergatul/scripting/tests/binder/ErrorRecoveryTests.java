@@ -38,7 +38,7 @@ public class ErrorRecoveryTests extends BinderTestBase {
 
         comparator.assertEquals(List.of(
                 new DiagnosticMessage(BinderErrors.NotFunction, new SingleLineTextRange(1, 11, 10, 8), BoundNodeType.STRING_LITERAL)),
-                result.diagnostics().reversed().stream().limit(1).toList());
+                result.diagnostics().stream().skip(result.diagnostics().size() - 1L).limit(1).toList());
     }
 
     @Test

@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 import static com.zergatul.scripting.tests.compiler.helpers.CompilerHelper.compileAsync;
+import static com.zergatul.scripting.tests.compiler.helpers.CompilerHelper.getExceptionNow;
 
 public class TryStatementAsyncTryFinallyTests {
 
@@ -70,7 +71,7 @@ public class TryStatementAsyncTryFinallyTests {
         ApiRoot.futures.get(0).complete(null);
         Assertions.assertIterableEquals(List.of(1, 2, 4), ApiRoot.intStorage.list);
         Assertions.assertTrue(future.isDone());
-        Assertions.assertTrue(future.exceptionNow() instanceof IndexOutOfBoundsException);
+        Assertions.assertTrue(getExceptionNow(future) instanceof IndexOutOfBoundsException);
     }
 
     @Test
@@ -228,7 +229,7 @@ public class TryStatementAsyncTryFinallyTests {
         ApiRoot.futures.get(1).complete(null);
         Assertions.assertIterableEquals(List.of(1, 2, 3, 5), ApiRoot.intStorage.list);
         Assertions.assertTrue(future.isDone());
-        Assertions.assertTrue(future.exceptionNow() instanceof IndexOutOfBoundsException);
+        Assertions.assertTrue(getExceptionNow(future) instanceof IndexOutOfBoundsException);
     }
 
     @Test
@@ -290,7 +291,7 @@ public class TryStatementAsyncTryFinallyTests {
         ApiRoot.futures.get(1).complete(null);
         Assertions.assertIterableEquals(List.of(1, 2, 3), ApiRoot.intStorage.list);
         Assertions.assertTrue(future.isDone());
-        Assertions.assertTrue(future.exceptionNow() instanceof IndexOutOfBoundsException);
+        Assertions.assertTrue(getExceptionNow(future) instanceof IndexOutOfBoundsException);
     }
 
     @Test
@@ -318,7 +319,7 @@ public class TryStatementAsyncTryFinallyTests {
         ApiRoot.futures.get(0).complete(null);
         Assertions.assertIterableEquals(List.of(1, 2), ApiRoot.intStorage.list);
         Assertions.assertTrue(future.isDone());
-        Assertions.assertTrue(future.exceptionNow() instanceof IndexOutOfBoundsException);
+        Assertions.assertTrue(getExceptionNow(future) instanceof IndexOutOfBoundsException);
     }
 
     @Test
@@ -458,7 +459,7 @@ public class TryStatementAsyncTryFinallyTests {
         ApiRoot.futures.get(0).complete(null);
         Assertions.assertIterableEquals(List.of(1, 2, 3), ApiRoot.intStorage.list);
         Assertions.assertTrue(future.isDone());
-        Assertions.assertTrue(future.exceptionNow() instanceof IndexOutOfBoundsException);
+        Assertions.assertTrue(getExceptionNow(future) instanceof IndexOutOfBoundsException);
     }
 
     @Test
@@ -554,7 +555,7 @@ public class TryStatementAsyncTryFinallyTests {
         ApiRoot.futures.get(0).completeExceptionally(new RuntimeException());
         Assertions.assertIterableEquals(List.of(1, 2, 4), ApiRoot.intStorage.list);
         Assertions.assertTrue(future.isDone());
-        Assertions.assertTrue(future.exceptionNow() instanceof RuntimeException);
+        Assertions.assertTrue(getExceptionNow(future) instanceof RuntimeException);
     }
 
     @Test
@@ -585,7 +586,7 @@ public class TryStatementAsyncTryFinallyTests {
         ApiRoot.futures.get(0).completeExceptionally(new RuntimeException());
         Assertions.assertIterableEquals(List.of(1, 2, 4), ApiRoot.intStorage.list);
         Assertions.assertTrue(future.isDone());
-        Assertions.assertTrue(future.exceptionNow() instanceof RuntimeException);
+        Assertions.assertTrue(getExceptionNow(future) instanceof RuntimeException);
     }
 
     @Test
@@ -618,7 +619,7 @@ public class TryStatementAsyncTryFinallyTests {
         ApiRoot.futures.get(0).completeExceptionally(new RuntimeException());
         Assertions.assertIterableEquals(List.of(0, 10, 20), ApiRoot.intStorage.list);
         Assertions.assertTrue(future.isDone());
-        Assertions.assertTrue(future.exceptionNow() instanceof RuntimeException);
+        Assertions.assertTrue(getExceptionNow(future) instanceof RuntimeException);
     }
 
     @Test

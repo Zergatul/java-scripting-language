@@ -25,14 +25,22 @@ public class TypeDisplayFormatter {
     }
 
     private String format(SType type, Set<Class<?>> expanding) {
-        return switch (type) {
-            case SArrayType array -> format(array.getElementsType(), expanding) + "[]";
-            case SClassType classType -> formatClassType(classType, expanding);
-            case SFunction function -> formatFunction(function, expanding);
-            case SFuture future -> "Future<" + format(future.getUnderlying(), expanding) + ">";
-            case SSyntheticInterface syntheticInterface -> formatSyntheticInterface(syntheticInterface, expanding);
-            default -> type.toString();
-        };
+        if (type instanceof SArrayType array) {
+            return format(array.getElementsType(), expanding) + "[]";
+        }
+        if (type instanceof SClassType classType) {
+            return formatClassType(classType, expanding);
+        }
+        if (type instanceof SFunction function) {
+            return formatFunction(function, expanding);
+        }
+        if (type instanceof SFuture future) {
+            return "Future<" + format(future.getUnderlying(), expanding) + ">";
+        }
+        if (type instanceof SSyntheticInterface syntheticInterface) {
+            return formatSyntheticInterface(syntheticInterface, expanding);
+        }
+        return type.toString();
     }
 
     private String formatClassType(SClassType classType, Set<Class<?>> expanding) {

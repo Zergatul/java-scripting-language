@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 import static com.zergatul.scripting.tests.compiler.helpers.CompilerHelper.compileAsync;
+import static com.zergatul.scripting.tests.compiler.helpers.CompilerHelper.getExceptionNow;
 
 public class TryStatementAsyncTryCatchTests {
 
@@ -224,7 +225,7 @@ public class TryStatementAsyncTryCatchTests {
         Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(1, 2, 4));
         Assertions.assertTrue(future.isDone());
 
-        Assertions.assertTrue(future.exceptionNow() instanceof IndexOutOfBoundsException);
+        Assertions.assertTrue(getExceptionNow(future) instanceof IndexOutOfBoundsException);
     }
 
     @Test
@@ -491,7 +492,7 @@ public class TryStatementAsyncTryCatchTests {
 
         // Should have added 2, then thrown. Future should fail.
         Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(1, 2));
-        Assertions.assertTrue(future.exceptionNow() instanceof RuntimeException);
+        Assertions.assertTrue(getExceptionNow(future) instanceof RuntimeException);
     }
 
     public static class ApiRoot {

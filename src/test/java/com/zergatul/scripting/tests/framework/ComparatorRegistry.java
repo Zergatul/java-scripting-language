@@ -353,7 +353,7 @@ public class ComparatorRegistry {
         // Add in top-down order: Object -> ... -> concrete
         List<Class<?>> lineage = new ArrayList<>();
         Class<?> c = concrete;
-        while (c != null) { lineage.addFirst(c); c = c.getSuperclass(); }
+        while (c != null) { lineage.add(0, c); c = c.getSuperclass(); }
         for (Class<?> k : lineage) {
             List<LabeledExtractor<?, ?>> xs = map.get(k);
             if (xs != null) {

@@ -27,7 +27,7 @@ public class InterfaceHelper {
         if (methods.size() != 1) {
             throw new InternalException();
         }
-        return methods.getFirst();
+        return methods.get(0);
     }
 
     private static boolean isNormalInterfaceMethod(Method method) {

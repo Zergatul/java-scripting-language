@@ -22,7 +22,7 @@ public class OverloadUnaryOperation extends UnaryOperation {
     private final Supplier<String> methodDescriptor;
 
     public OverloadUnaryOperation(DeclaredUnaryOperationReference operationRef) {
-        super(operationRef.getOperator(), operationRef.getReturn(), operationRef.getParameters().getFirst().type());
+        super(operationRef.getOperator(), operationRef.getReturn(), operationRef.getParameters().get(0).type());
         this.owner = operationRef.getOwner();
         this.methodName = operationRef.getName();
         this.methodDescriptor = operationRef::getDescriptor;

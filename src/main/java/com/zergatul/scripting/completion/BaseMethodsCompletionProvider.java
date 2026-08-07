@@ -42,11 +42,11 @@ public class BaseMethodsCompletionProvider<T> extends AbstractCompletionProvider
             BoundInvalidExpressionNode invalidExpressionNode = (BoundInvalidExpressionNode) context.entry.node;
             boolean isBaseMethodInvocation =
                     invalidExpressionNode.unboundNodes.size() == 1 &&
-                    invalidExpressionNode.unboundNodes.getFirst() instanceof InvocationExpressionNode invocationNode &&
+                    invalidExpressionNode.unboundNodes.get(0) instanceof InvocationExpressionNode invocationNode &&
                     invocationNode.callee instanceof MemberAccessExpressionNode memberAccessNode &&
                     memberAccessNode.callee.is(ParserNodeType.BASE_EXPRESSION);
             if (isBaseMethodInvocation) {
-                InvocationExpressionNode invocationNode = (InvocationExpressionNode) invalidExpressionNode.unboundNodes.getFirst();
+                InvocationExpressionNode invocationNode = (InvocationExpressionNode) invalidExpressionNode.unboundNodes.get(0);
                 MemberAccessExpressionNode memberAccessNode = (MemberAccessExpressionNode) invocationNode.callee;
                 if (TextRange.isBetween(context.line, context.column, memberAccessNode.operator, invocationNode.arguments)) {
                     return getBaseClassMethodSuggestions(parameters, context);

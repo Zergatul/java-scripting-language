@@ -53,11 +53,11 @@ public class ClassBinaryOperationDeclaration {
     }
 
     public SType getLeftType() {
-        return parameters.parameters.getFirst().getType();
+        return parameters.parameters.get(0).getType();
     }
 
     public SType getRightType() {
-        return parameters.parameters.getLast().getType();
+        return parameters.parameters.get(parameters.parameters.size() - 1).getType();
     }
 
     public BoundParameterListNode getParameters() {

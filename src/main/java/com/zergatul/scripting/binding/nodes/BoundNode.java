@@ -4,6 +4,7 @@ import com.zergatul.scripting.*;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public abstract class BoundNode implements Locatable {
@@ -43,7 +44,8 @@ public abstract class BoundNode implements Locatable {
     public List<BoundNode> find(int line, int column) {
         List<BoundNode> chain = new ArrayList<>();
         findInternal(chain, line, column);
-        return chain.reversed();
+        Collections.reverse(chain);
+        return chain;
     }
 
     private void findInternal(List<BoundNode> chain, int line, int column) {

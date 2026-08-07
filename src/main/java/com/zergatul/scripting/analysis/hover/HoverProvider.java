@@ -32,7 +32,7 @@ public class HoverProvider<T> {
             return null;
         }
 
-        BoundNode node = chain.getFirst();
+        BoundNode node = chain.get(0);
         TextRange range = node.getRange();
         return switch (node.getNodeType()) {
             case BOOLEAN_LITERAL -> response(factory.getTypeHover(SBoolean.instance), range);

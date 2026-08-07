@@ -142,7 +142,7 @@ public class ClassTests extends ComparatorTest {
         program.run();
 
         Assertions.assertIterableEquals(List.of(14), ApiRoot.intStorage.list);
-        Class<?> clazz = ApiRoot.objectStorage.list.getFirst().getClass();
+        Class<?> clazz = ApiRoot.objectStorage.list.get(0).getClass();
 
         assertVisibility(clazz.getDeclaredField("defaultField"), Modifier.PUBLIC);
         assertVisibility(clazz.getDeclaredField("publicField"), Modifier.PUBLIC);
@@ -459,7 +459,7 @@ public class ClassTests extends ComparatorTest {
         program.run();
 
         Assertions.assertEquals(ApiRoot.objectStorage.list.size(), 1);
-        Assertions.assertEquals(ApiRoot.objectStorage.list.getFirst().getClass().getSimpleName(), "Class");
+        Assertions.assertEquals(ApiRoot.objectStorage.list.get(0).getClass().getSimpleName(), "Class");
     }
 
     @Test

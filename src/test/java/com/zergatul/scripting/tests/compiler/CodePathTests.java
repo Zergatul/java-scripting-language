@@ -117,7 +117,7 @@ public class CodePathTests {
     private void assertNotAllCodePaths(String code) {
         List<DiagnosticMessage> messages = getDiagnostics(ApiRoot.class, code);
         Assertions.assertEquals(1, messages.size());
-        Assertions.assertEquals(messages.getFirst().code, BinderErrors.NotAllPathReturnValue.code());
+        Assertions.assertEquals(messages.get(0).code, BinderErrors.NotAllPathReturnValue.code());
     }
 
     public static final class ApiRoot {}

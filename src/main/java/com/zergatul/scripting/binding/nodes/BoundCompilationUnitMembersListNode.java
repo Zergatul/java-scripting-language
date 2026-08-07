@@ -35,7 +35,7 @@ public class BoundCompilationUnitMembersListNode extends BoundNode {
 
     @Override
     public boolean isOpen() {
-        return !members.isEmpty() && members.getLast().isOpen();
+        return !members.isEmpty() && members.get(members.size() - 1).isOpen();
     }
 
     @Override

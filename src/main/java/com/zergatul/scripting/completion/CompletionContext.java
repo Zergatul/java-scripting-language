@@ -78,7 +78,7 @@ public class CompletionContext {
                     return getAtLastContext(unit, line, column);
                 } else {
                     if (unit.members.isOpen() && unit.statements.statements.isEmpty()) {
-                        TextRange last = unit.members.members.getLast().getRange();
+                        TextRange last = unit.members.members.get(unit.members.members.size() - 1).getRange();
                         line = last.getLine2();
                         column = last.getColumn2();
                         entry = find(null, unit, line, column);
@@ -87,7 +87,7 @@ public class CompletionContext {
                         }
                         return new CompletionContext(entry, line, column);
                     } else if (unit.statements.isOpen()) {
-                        TextRange last = unit.statements.statements.getLast().getRange();
+                        TextRange last = unit.statements.statements.get(unit.statements.statements.size() - 1).getRange();
                         line = last.getLine2();
                         column = last.getColumn2();
                         entry = find(null, unit, line, column);
@@ -261,7 +261,7 @@ public class CompletionContext {
 
                     BoundStatementsListNode statements = (BoundStatementsListNode) grandParent.node;
                     BoundExpressionStatementNode statement = (BoundExpressionStatementNode) parent.node;
-                    if (statements.statements.getFirst() != statement) {
+                    if (statements.statements.get(0) != statement) {
                         return false;
                     }
 
@@ -282,7 +282,7 @@ public class CompletionContext {
 
                     BoundStatementsListNode statements = (BoundStatementsListNode) grandParent.node;
                     BoundVariableDeclarationNode declaration = (BoundVariableDeclarationNode) parent.node;
-                    return statements.statements.getFirst() == declaration;
+                    return statements.statements.get(0) == declaration;
                 }
                 default -> {
                     return false;
@@ -589,7 +589,7 @@ public class CompletionContext {
                         yield true;
                     }
 
-                    if (TextRange.isBetween(line, column, parameters.syntaxNode.openParen, parameters.parameters.getFirst())) {
+                    if (TextRange.isBetween(line, column, parameters.syntaxNode.openParen, parameters.parameters.get(0))) {
                         yield true;
                     }
 
@@ -599,7 +599,7 @@ public class CompletionContext {
                         }
                     }
 
-                    if (TextRange.isBetween(line, column, parameters.parameters.getFirst(), parameters.syntaxNode.closeParen)) {
+                    if (TextRange.isBetween(line, column, parameters.parameters.get(0), parameters.syntaxNode.closeParen)) {
                         yield true;
                     }
                 }
@@ -621,10 +621,10 @@ public class CompletionContext {
             case INVALID_EXPRESSION -> {
                 BoundInvalidExpressionNode invalidExpression = (BoundInvalidExpressionNode) entry.node;
                 if (invalidExpression.syntaxNode != null) {
-                    if (invalidExpression.syntaxNode.nodes.size() == 1 && invalidExpression.syntaxNode.nodes.getFirst() instanceof Token token) {
+                    if (invalidExpression.syntaxNode.nodes.size() == 1 && invalidExpression.syntaxNode.nodes.get(0) instanceof Token token) {
                         yield token.is(TokenType.NEW) && token.getRange().isBefore(line, column);
                     }
-                    if (invalidExpression.syntaxNode.nodes.size() == 2 && invalidExpression.syntaxNode.nodes.getLast() instanceof CustomTypeNode custom) {
+                    if (invalidExpression.syntaxNode.nodes.size() == 2 && invalidExpression.syntaxNode.nodes.get(invalidExpression.syntaxNode.nodes.size() - 1) instanceof CustomTypeNode custom) {
                         yield custom.getRange().containsOrEnds(line, column);
                     }
                 }

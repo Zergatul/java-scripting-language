@@ -39,7 +39,7 @@ import static org.objectweb.asm.Opcodes.*;
 
 public class Compiler {
 
-    private static final int CLASS_FILE_VERSION = V21;
+    private static final int CLASS_FILE_VERSION = V17;
 
     private final CompilationParameters parameters;
 
@@ -698,7 +698,7 @@ public class Compiler {
         if (methods.size() != 1) {
             throw new InternalException();
         }
-        Method method = methods.getFirst();
+        Method method = methods.get(0);
 
         MethodVisitor visitor = writer.visitMethod(ACC_PUBLIC, method.getName(), Type.getMethodDescriptor(method), null, null);
         visitor.visitCode();
@@ -1741,7 +1741,7 @@ public class Compiler {
                 .build());
 
         if (parameterVisitor.hasThisLocalVariable()) {
-            nextMethodContext.setAsyncThisFieldName(parameterVisitor.getParameters().getFirst().getFieldName());
+            nextMethodContext.setAsyncThisFieldName(parameterVisitor.getParameters().get(0).getFieldName());
         }
         LocalVariable parameter = nextMethodContext.addLocalParameter("@result", SJavaObject.instance, null);
         nextMethodContext.setStackIndex(parameter);
@@ -1802,7 +1802,7 @@ public class Compiler {
             for (BoundStatementNode statement : boundary.statements) {
                 compileStatement(nextMethodVisitor, nextMethodContext, statement);
             }
-            if (boundary.statements.isEmpty() || boundary.statements.getLast().getNodeType() != BoundNodeType.RETURN_STATEMENT) {
+            if (boundary.statements.isEmpty() || boundary.statements.get(boundary.statements.size() - 1).getNodeType() != BoundNodeType.RETURN_STATEMENT) {
                 nextMethodVisitor.visitJumpInsn(GOTO, loop);
             }
 

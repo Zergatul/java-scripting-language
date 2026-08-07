@@ -1337,7 +1337,7 @@ public class Binder {
             if (parameters.size() != 1) {
                 continue;
             }
-            SType parameter = parameters.getFirst();
+            SType parameter = parameters.get(0);
             if (parameter.equals(left.type)) {
                 return new BoundInExpressionNode(binary, left, right, method);
             }
@@ -1462,7 +1462,7 @@ public class Binder {
                 if (functionGroup.candidates.size() == 1) {
                     // if there is only 1 candidate, bind it, and output more user-friendly error
                     result = new BindInvocableArgsResult<>(
-                            functionGroup.candidates.getFirst(),
+                            functionGroup.candidates.get(0),
                             result.argumentsListNode(),
                             false, false, false);
                     addDiagnostic(
@@ -1888,7 +1888,7 @@ public class Binder {
             arguments.add(bindExpression(node));
         }
 
-        T matchedInvocable = unknown == null ? candidates.getFirst() : unknown;
+        T matchedInvocable = unknown == null ? candidates.get(0) : unknown;
         boolean noInvocables = candidates.isEmpty();
         boolean noOverloads = false;
         boolean noArgumentConversions = false;
@@ -1931,7 +1931,7 @@ public class Binder {
             if (possibleArgumentsWithCasting.isEmpty()) {
                 noArgumentConversions = true;
             } else {
-                ArgumentsCast<T> overload = possibleArgumentsWithCasting.getFirst();
+                ArgumentsCast<T> overload = possibleArgumentsWithCasting.get(0);
                 for (int i = 0; i < argumentsSize; i++) {
                     BoundExpressionNode argument = arguments.get(i);
                     ConversionInfo conversion = overload.conversions.get(i);
@@ -2051,7 +2051,7 @@ public class Binder {
         }
 
         List<BoundExpressionNode> items = collection.list.getNodes().stream().map(this::bindExpression).toList();
-        SType type = items.getFirst().type;
+        SType type = items.get(0).type;
         for (int i = 1; i < items.size(); i++) {
             if (!items.get(i).type.equals(type)) {
                 addDiagnostic(BinderErrors.CannotInferCollectionExpressionTypes, collection.list.getNodeAt(i), type, i, items.get(i).type);
@@ -2508,7 +2508,8 @@ public class Binder {
 
         if (expression.getNodeType() == BoundNodeType.UNCONVERTED_LAMBDA) {
             SUnconvertedLambda lambdaType = (SUnconvertedLambda) expression.type;
-            if (type instanceof SClassType && getFunctionalInterface(type) instanceof SFunctionalInterface funcInterface) {
+            SFunctionalInterface funcInterface = getFunctionalInterface(type);
+            if (type instanceof SClassType && funcInterface != null) {
                 ConversionInfo info = getConversionInfo(expression, funcInterface);
                 if (info != null) {
                     return new ConversionInfo(ConversionType.LAMBDA_BINDING_TO_CLASS);
@@ -3209,9 +3210,9 @@ public class Binder {
         if (parameters.parameters.size() != 1) {
             hasError = true;
             addDiagnostic(BinderErrors.UnaryOperationOverloadOneParameters, parameters);
-        } else if (!parameters.parameters.getFirst().getType().equals(classDeclaration.getDeclaredType())) {
+        } else if (!parameters.parameters.get(0).getType().equals(classDeclaration.getDeclaredType())) {
             hasError = true;
-            addDiagnostic(BinderErrors.UnaryOperationOverloadShouldHaveSameParameter, parameters.parameters.getFirst());
+            addDiagnostic(BinderErrors.UnaryOperationOverloadShouldHaveSameParameter, parameters.parameters.get(0));
         } else if (classDeclaration.hasUnaryOperation(operator)) {
             hasError = true;
             addDiagnostic(BinderErrors.UnaryOperationAlreadyDeclared, parameters);
@@ -3233,10 +3234,10 @@ public class Binder {
         if (parameters.parameters.size() != 2) {
             hasError = true;
             addDiagnostic(BinderErrors.BinaryOperationOverloadTwoParameters, parameters);
-        } else if (!parameters.parameters.getFirst().getType().equals(classDeclaration.getDeclaredType()) && !parameters.parameters.getLast().getType().equals(classDeclaration.getDeclaredType())) {
+        } else if (!parameters.parameters.get(0).getType().equals(classDeclaration.getDeclaredType()) && !parameters.parameters.get(parameters.parameters.size() - 1).getType().equals(classDeclaration.getDeclaredType())) {
             hasError = true;
             addDiagnostic(BinderErrors.BinaryOperationOverloadShouldHaveOneParameterType, parameters);
-        } else if (classDeclaration.hasBinaryOperation(operator, parameters.parameters.getFirst().getType(), parameters.parameters.getLast().getType())) {
+        } else if (classDeclaration.hasBinaryOperation(operator, parameters.parameters.get(0).getType(), parameters.parameters.get(parameters.parameters.size() - 1).getType())) {
             hasError = true;
             addDiagnostic(BinderErrors.BinaryOperationAlreadyDeclared, parameters);
         } else {
@@ -3318,9 +3319,9 @@ public class Binder {
         if (parameters.parameters.size() != 1) {
             hasError = true;
             addDiagnostic(BinderErrors.UnaryOperationOverloadOneParameters, parameters);
-        } else if (!parameters.parameters.getFirst().getType().equals(extensionDeclaration.getBaseType())) {
+        } else if (!parameters.parameters.get(0).getType().equals(extensionDeclaration.getBaseType())) {
             hasError = true;
-            addDiagnostic(BinderErrors.UnaryOperationOverloadShouldHaveSameParameter, parameters.parameters.getFirst());
+            addDiagnostic(BinderErrors.UnaryOperationOverloadShouldHaveSameParameter, parameters.parameters.get(0));
         } else if (declarationTable.hasExtensionUnaryOperationOverload(extensionDeclaration.getBaseType(), operator)) {
             hasError = true;
             addDiagnostic(BinderErrors.UnaryOperationAlreadyDeclared, parameters);
@@ -3345,15 +3346,15 @@ public class Binder {
         if (parameters.parameters.size() != 2) {
             hasError = true;
             addDiagnostic(BinderErrors.BinaryOperationOverloadTwoParameters, parameters);
-        } else if (!parameters.parameters.getFirst().getType().equals(extensionDeclaration.getBaseType()) && !parameters.parameters.getLast().getType().equals(extensionDeclaration.getBaseType())) {
+        } else if (!parameters.parameters.get(0).getType().equals(extensionDeclaration.getBaseType()) && !parameters.parameters.get(parameters.parameters.size() - 1).getType().equals(extensionDeclaration.getBaseType())) {
             hasError = true;
             addDiagnostic(BinderErrors.BinaryOperationOverloadShouldHaveOneParameterType, parameters);
-        } else if (declarationTable.hasExtensionBinaryOperationOverload(operator, parameters.parameters.getFirst().getType(), parameters.parameters.getLast().getType())) {
+        } else if (declarationTable.hasExtensionBinaryOperationOverload(operator, parameters.parameters.get(0).getType(), parameters.parameters.get(parameters.parameters.size() - 1).getType())) {
             hasError = true;
             addDiagnostic(BinderErrors.BinaryOperationAlreadyDeclared, parameters);
         } else {
             String internalMethodName = declarationTable.generateExtensionOperationOverloadInternalName(extensionDeclaration.getBaseType(), operator.name().toLowerCase());
-            ExtensionBinaryOperation extOperation = new ExtensionBinaryOperation(operator, returnTypeNode.type, parameters.parameters.getFirst().getType(), parameters.parameters.getLast().getType(), internalMethodName);
+            ExtensionBinaryOperation extOperation = new ExtensionBinaryOperation(operator, returnTypeNode.type, parameters.parameters.get(0).getType(), parameters.parameters.get(parameters.parameters.size() - 1).getType(), internalMethodName);
             operation = extOperation;
             declarationTable.addExtensionBinaryOperation(extOperation);
         }

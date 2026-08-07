@@ -92,7 +92,7 @@ public class Comparator {
             return;
         }
 
-        Difference first = differences.getFirst();
+        Difference first = differences.get(0);
         Assertions.fail(String.format("%s: %s", first.path(), first.message()));
     }
 

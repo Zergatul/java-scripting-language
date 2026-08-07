@@ -4,6 +4,7 @@ import com.zergatul.scripting.DiagnosticMessage;
 import com.zergatul.scripting.SingleLineTextRange;
 import com.zergatul.scripting.binding.BinderErrors;
 import com.zergatul.scripting.compiler.*;
+import com.zergatul.scripting.compiler.Compiler;
 import com.zergatul.scripting.tests.compiler.helpers.BoolStorage;
 import com.zergatul.scripting.tests.compiler.helpers.IntStorage;
 import com.zergatul.scripting.tests.framework.ComparatorTest;

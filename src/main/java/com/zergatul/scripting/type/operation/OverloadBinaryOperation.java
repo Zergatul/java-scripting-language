@@ -23,7 +23,7 @@ public class OverloadBinaryOperation extends BinaryOperation {
     private final Supplier<String> methodDescriptor;
 
     public OverloadBinaryOperation(DeclaredBinaryOperationReference operationRef) {
-        super(operationRef.getOperator(), operationRef.getReturn(), operationRef.getParameters().getFirst().type(), operationRef.getParameters().getLast().type());
+        super(operationRef.getOperator(), operationRef.getReturn(), operationRef.getParameters().get(0).type(), operationRef.getParameters().get(operationRef.getParameters().size() - 1).type());
         this.owner = operationRef.getOwner();
         this.methodName = operationRef.getName();
         this.methodDescriptor = operationRef::getDescriptor;

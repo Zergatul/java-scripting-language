@@ -171,9 +171,9 @@ public abstract class TextRange {
             throw new InternalException();
         }
         if (list.size() == 1) {
-            return list.getFirst().getRange();
+            return list.get(0).getRange();
         }
-        return combine(list.getFirst(), list.getLast());
+        return combine(list.get(0), list.get(list.size() - 1));
     }
 
     public static TextRange combine(TextRange range1, TextRange range2) {

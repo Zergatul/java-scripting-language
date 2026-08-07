@@ -7,7 +7,6 @@ import com.zergatul.scripting.type.operation.BinaryOperation;
 import com.zergatul.scripting.type.operation.OverloadBinaryOperation;
 import com.zergatul.scripting.type.operation.OverloadUnaryOperation;
 import com.zergatul.scripting.type.operation.UnaryOperation;
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Type;
@@ -21,8 +20,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
-import static org.objectweb.asm.Opcodes.*;
 
 public class SDeclaredType extends SReferenceType {
 
@@ -98,7 +95,7 @@ public class SDeclaredType extends SReferenceType {
                         .noneMatch(other -> candidate.getKey().isAssignableFrom(other)))
                 .toList();
         return maximallySpecific.size() == 1 &&
-                maximallySpecific.getFirst().getValue() == Implementation.CONCRETE;
+                maximallySpecific.get(0).getValue() == Implementation.CONCRETE;
     }
 
     public DeclaredUnaryOperationReference addUnaryOperation(UnaryOperator operator, SMethodFunction functionType) {
@@ -113,7 +110,7 @@ public class SDeclaredType extends SReferenceType {
         return operation;
     }
 
-    public @NonNull SType getBaseType() {
+    public SType getBaseType() {
         return baseType != null ? baseType : SJavaObject.instance;
     }
 

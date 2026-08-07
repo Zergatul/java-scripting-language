@@ -176,7 +176,7 @@ public class JavaTypeTests extends ComparatorTest {
                     list.add(i.toString());
                 }
                 
-                list.addFirst("Q"); // default method
+                list.replaceAll(s => s + "!"); // default method
                 
                 for (let i = 0; i < list.size(); i++) {
                     stringStorage.add(list.get(i) as string);
@@ -186,7 +186,7 @@ public class JavaTypeTests extends ComparatorTest {
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
-        Assertions.assertIterableEquals(List.of("Q", "10", "11", "12", "13", "14", "15"), ApiRoot.stringStorage.list);
+        Assertions.assertIterableEquals(List.of("10!", "11!", "12!", "13!", "14!", "15!"), ApiRoot.stringStorage.list);
     }
 
     @Test

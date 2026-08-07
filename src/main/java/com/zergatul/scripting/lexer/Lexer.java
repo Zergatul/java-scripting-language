@@ -721,14 +721,14 @@ public class Lexer {
             return;
         }
 
-        Token last = list.getLast();
+        Token last = list.get(list.size() - 1);
         List<Trivia> trailing = last.getTrailingTrivia();
         if (trailing.isEmpty()) {
             list.set(list.size() - 1, last.withTrailingTrivia(trivia));
             return;
         }
 
-        Trivia lastTrivia = trailing.getLast();
+        Trivia lastTrivia = trailing.get(trailing.size() - 1);
         if (lastTrivia.is(TokenType.LINE_BREAK)) {
             triviaBuffer.add(trivia);
         } else {
@@ -759,7 +759,7 @@ public class Lexer {
         if (lines.isEmpty()) {
             lines.add(new Line(0, position - lineBreakLen, position));
         } else {
-            int lastEndPos = lines.getLast().endPosition();
+            int lastEndPos = lines.get(lines.size() - 1).endPosition();
             lines.add(new Line(lastEndPos, position - lastEndPos - lineBreakLen, position));
         }
     }

@@ -27,7 +27,7 @@ public class ClassTests extends ParserTestBase {
                 """);
 
         comparator.assertEquals(List.of(), result.diagnostics());
-        ClassNode classNode = (ClassNode) result.unit().members.members.getFirst();
+        ClassNode classNode = (ClassNode) result.unit().members.members.get(0);
         Assertions.assertEquals(Visibility.PUBLIC, ((ClassFieldNode) classNode.members.get(0)).modifiers.getVisibility());
         Assertions.assertEquals(Visibility.PUBLIC, ((ClassFieldNode) classNode.members.get(1)).modifiers.getVisibility());
         Assertions.assertEquals(Visibility.PROTECTED, ((ClassMethodNode) classNode.members.get(2)).modifiers.getVisibility());
@@ -41,7 +41,7 @@ public class ClassTests extends ParserTestBase {
                 """);
 
         comparator.assertEquals(List.of(), result.diagnostics());
-        ClassNode node = (ClassNode) result.unit().members.members.getFirst();
+        ClassNode node = (ClassNode) result.unit().members.members.get(0);
         Assertions.assertEquals(3, node.baseTypeNodes.size());
         Assertions.assertEquals(2, node.baseTypeNodes.getCommas().size());
     }
@@ -56,7 +56,7 @@ public class ClassTests extends ParserTestBase {
                 List.of(
                         new DiagnosticMessage(ParserErrors.TypeExpected, new SingleLineTextRange(1, 16, 15, 1), "{")),
                 result.diagnostics());
-        ClassNode node = (ClassNode) result.unit().members.members.getFirst();
+        ClassNode node = (ClassNode) result.unit().members.members.get(0);
         Assertions.assertEquals(0, node.baseTypeNodes.size());
     }
 

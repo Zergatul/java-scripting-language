@@ -45,7 +45,7 @@ public class BoundStatementsListNode extends BoundStatementNode {
 
     @Override
     public boolean isOpen() {
-        return !statements.isEmpty() && statements.getLast().isOpen();
+        return !statements.isEmpty() && statements.get(statements.size() - 1).isOpen();
     }
 
     @Override

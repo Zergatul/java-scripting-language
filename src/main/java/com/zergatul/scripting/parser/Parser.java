@@ -67,7 +67,7 @@ public class Parser {
                 members,
                 members.isEmpty() ?
                         new SingleLineTextRange(1, 1, 0, 0) :
-                        TextRange.combine(members.getFirst(), members.getLast()));
+                        TextRange.combine(members.get(0), members.get(members.size() - 1)));
 
         StatementsListNode statementsList = new StatementsListNode(
                 statements,
@@ -77,7 +77,7 @@ public class Parser {
                                 membersList.getRange().getColumn2(),
                                 membersList.getRange().getPosition() + membersList.getRange().getLength(),
                                 0) :
-                        TextRange.combine(statements.getFirst(), statements.getLast()));
+                        TextRange.combine(statements.get(0), statements.get(statements.size() - 1)));
 
         return new CompilationUnitNode(membersList, statementsList, end);
     }

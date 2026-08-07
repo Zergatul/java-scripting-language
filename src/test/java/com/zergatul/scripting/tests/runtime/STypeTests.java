@@ -22,7 +22,7 @@ public class STypeTests {
     public void methodTest1() throws Exception {
         Method method = TestClass3.class.getMethod("getPlayers", Predicate.class);
         MethodReference methodReference = new NativeMethodReference(method);
-        SType parameterType = methodReference.getParameterTypes().getFirst();
+        SType parameterType = methodReference.getParameterTypes().get(0);
         Assertions.assertEquals("Java<java.util.function.Predicate>", parameterType.toString());
         Assertions.assertEquals(
                 "fn<Java<com.zergatul.scripting.tests.runtime.STypeTests$ServerPlayer> => boolean>",

@@ -19,12 +19,12 @@ public class LocalParameterVisitor extends BinderTreeVisitor {
     }
 
     public boolean hasThisLocalVariable() {
-        return !parameters.isEmpty() && parameters.getFirst().getUnderlying() instanceof ThisLocalVariable;
+        return !parameters.isEmpty() && parameters.get(0).getUnderlying() instanceof ThisLocalVariable;
     }
 
     public void ensureThisLocalVariable(SType type) {
         if (!hasThisLocalVariable()) {
-            parameters.addFirst(new LiftedVariable(new ThisLocalVariable(type)));
+            parameters.add(0, new LiftedVariable(new ThisLocalVariable(type)));
         }
     }
 

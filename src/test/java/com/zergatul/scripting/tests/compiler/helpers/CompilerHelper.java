@@ -9,6 +9,8 @@ import com.zergatul.scripting.type.SVoidType;
 import org.junit.jupiter.api.Assertions;
 
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 
 public class CompilerHelper {
 
@@ -51,6 +53,18 @@ public class CompilerHelper {
         CompilationResult result = compiler.compile(code);
         Assertions.assertNull(result.getDiagnostics());
         return result.getProgram();
+    }
+
+    public static Throwable getExceptionNow(CompletableFuture<?> future) {
+        if (!future.isDone() || !future.isCompletedExceptionally()) {
+            throw new IllegalStateException("Future has not completed exceptionally.");
+        }
+        Throwable exception = future.handle((result, ex) -> ex).join();
+        if (exception instanceof CompletionException completionException) {
+            return completionException.getCause();
+        } else {
+            return exception;
+        }
     }
 
     public static Runnable compileWithCustomType(Class<?> api, Class<?> custom, String code) {

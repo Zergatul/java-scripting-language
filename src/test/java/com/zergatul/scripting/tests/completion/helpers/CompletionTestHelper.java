@@ -79,7 +79,7 @@ public class CompletionTestHelper {
         while (!expected.isEmpty()) {
             int index = -1;
             for (int i = 0; i < actual.size(); i++) {
-                if (expected.getFirst().equals(actual.get(i))) {
+                if (expected.get(0).equals(actual.get(i))) {
                     index = i;
                     break;
                 }
@@ -87,7 +87,7 @@ public class CompletionTestHelper {
             if (index == -1) {
                 Assertions.fail(String.format("Missing suggestion %s", expected.get(0)));
             }
-            expected.removeFirst();
+            expected.remove(0);
             actual.remove(index);
         }
 
@@ -96,7 +96,7 @@ public class CompletionTestHelper {
         while (!actual.isEmpty()) {
             int index = -1;
             for (int i = 0; i < expected.size(); i++) {
-                if (actual.getFirst().equals(expected.get(i))) {
+                if (actual.get(0).equals(expected.get(i))) {
                     index = i;
                     break;
                 }
@@ -104,7 +104,7 @@ public class CompletionTestHelper {
             if (index == -1) {
                 Assertions.fail(String.format("Redundant suggestion %s", actual.get(0)));
             }
-            actual.removeFirst();
+            actual.remove(0);
             expected.remove(index);
         }
     }

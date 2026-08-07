@@ -64,7 +64,7 @@ public class BinderTreeGenerator {
         List<BoundStatementNode> statements = currentBoundary.statements;
         boolean append =
                 statements.isEmpty() ||
-                statements.getLast().getNodeType() != BoundNodeType.GENERATOR_RETURN;
+                statements.get(statements.size() - 1).getNodeType() != BoundNodeType.GENERATOR_RETURN;
         if (append) {
             statements.add(new BoundGeneratorReturnNode(null, frame.getCurrentFinallyState()));
         }

@@ -293,7 +293,7 @@ public class ClassInheritanceTests extends ComparatorTest {
 
         Assertions.assertEquals(1, ApiRoot.objectStorage.list.size());
 
-        Method method = ApiRoot.objectStorage.list.getFirst().getClass().getMethod("method");
+        Method method = ApiRoot.objectStorage.list.get(0).getClass().getMethod("method");
         Assertions.assertTrue(Modifier.isFinal(method.getModifiers()));
     }
 
@@ -358,7 +358,7 @@ public class ClassInheritanceTests extends ComparatorTest {
         program.run();
 
         Assertions.assertIterableEquals(List.of(11), ApiRoot.intStorage.list);
-        Method method = ApiRoot.objectStorage.list.getFirst().getClass().getDeclaredMethod("transform", int.class);
+        Method method = ApiRoot.objectStorage.list.get(0).getClass().getDeclaredMethod("transform", int.class);
         Assertions.assertTrue(Modifier.isProtected(method.getModifiers()));
     }
 
@@ -385,7 +385,7 @@ public class ClassInheritanceTests extends ComparatorTest {
         program.run();
 
         Assertions.assertIterableEquals(List.of(17), ApiRoot.intStorage.list);
-        Class<?> baseClass = ApiRoot.objectStorage.list.getFirst().getClass().getSuperclass();
+        Class<?> baseClass = ApiRoot.objectStorage.list.get(0).getClass().getSuperclass();
         Assertions.assertTrue(Modifier.isProtected(baseClass.getDeclaredConstructor(int.class).getModifiers()));
     }
 
@@ -479,7 +479,7 @@ public class ClassInheritanceTests extends ComparatorTest {
         program.run();
 
         Assertions.assertIterableEquals(List.of(48), ApiRoot.intStorage.list);
-        Method method = ApiRoot.objectStorage.list.getFirst().getClass().getDeclaredMethod("getValue");
+        Method method = ApiRoot.objectStorage.list.get(0).getClass().getDeclaredMethod("getValue");
         Assertions.assertTrue(Modifier.isPublic(method.getModifiers()));
     }
 
@@ -975,7 +975,7 @@ public class ClassInheritanceTests extends ComparatorTest {
         program.run();
 
         Assertions.assertIterableEquals(List.of(123), ApiRoot.intStorage.list);
-        Assertions.assertTrue(ApiRoot.objectStorage.list.getFirst() instanceof Runnable);
+        Assertions.assertTrue(ApiRoot.objectStorage.list.get(0) instanceof Runnable);
     }
 
     @Test
@@ -997,7 +997,7 @@ public class ClassInheritanceTests extends ComparatorTest {
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
-        Object object = ApiRoot.objectStorage.list.getFirst();
+        Object object = ApiRoot.objectStorage.list.get(0);
         Assertions.assertTrue(object instanceof SyntheticMethodContract);
         Assertions.assertEquals(123, ((SyntheticMethodContract) object).value());
     }
@@ -1024,7 +1024,7 @@ public class ClassInheritanceTests extends ComparatorTest {
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
-        Object object = ApiRoot.objectStorage.list.getFirst();
+        Object object = ApiRoot.objectStorage.list.get(0);
         Assertions.assertTrue(object instanceof GenericValue);
         Assertions.assertEquals("bridge", ((GenericValue<?>) object).value());
     }
@@ -1040,7 +1040,7 @@ public class ClassInheritanceTests extends ComparatorTest {
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
-        Object object = ApiRoot.objectStorage.list.getFirst();
+        Object object = ApiRoot.objectStorage.list.get(0);
         Assertions.assertTrue(object instanceof DefaultMethodInterface);
         Assertions.assertEquals(123, ((DefaultMethodInterface) object).value());
     }
@@ -1058,7 +1058,7 @@ public class ClassInheritanceTests extends ComparatorTest {
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
-        Object object = ApiRoot.objectStorage.list.getFirst();
+        Object object = ApiRoot.objectStorage.list.get(0);
         Assertions.assertTrue(object instanceof AbstractMethodInterface);
         Assertions.assertEquals(123, ((AbstractMethodInterface) object).value());
     }
@@ -1152,7 +1152,7 @@ public class ClassInheritanceTests extends ComparatorTest {
         program.run();
 
         Assertions.assertIterableEquals(List.of(1, 2), ApiRoot.intStorage.list);
-        Object object = ApiRoot.objectStorage.list.getFirst();
+        Object object = ApiRoot.objectStorage.list.get(0);
         Assertions.assertTrue(object instanceof Runnable);
         Assertions.assertTrue(object instanceof AutoCloseable);
     }
@@ -1177,7 +1177,7 @@ public class ClassInheritanceTests extends ComparatorTest {
         program.run();
 
         Assertions.assertIterableEquals(List.of(2), ApiRoot.intStorage.list);
-        Object object = ApiRoot.objectStorage.list.getFirst();
+        Object object = ApiRoot.objectStorage.list.get(0);
         Assertions.assertTrue(object instanceof java.util.ArrayList);
         Assertions.assertTrue(object instanceof Runnable);
         Assertions.assertIterableEquals(List.of(10, 20), (List<?>) object);
@@ -1606,7 +1606,7 @@ public class ClassInheritanceTests extends ComparatorTest {
 
         ClassWriter writer = new ClassWriter(0);
         writer.visit(
-                V21,
+                V17,
                 ACC_PUBLIC | ACC_SUPER,
                 internalName,
                 null,

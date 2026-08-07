@@ -18,7 +18,7 @@ public class DefinitionProvider {
             return null;
         }
 
-        BoundNode node = chain.getFirst();
+        BoundNode node = chain.get(0);
         return switch (node.getNodeType()) {
             case NAME_EXPRESSION -> {
                 BoundNameExpressionNode name = (BoundNameExpressionNode) node;
