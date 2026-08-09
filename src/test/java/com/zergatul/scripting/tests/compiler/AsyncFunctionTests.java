@@ -66,6 +66,29 @@ public class AsyncFunctionTests extends ComparatorTest {
     }
 
     @Test
+    public void cancellationCascadesIntoNestedAsyncFunctionTest() {
+        String code = """
+                async void func() {
+                    intStorage.add(1);
+                    await futures.create();
+                    intStorage.add(2);
+                }
+
+                await func();
+                intStorage.add(3);
+                """;
+
+        AsyncRunnable program = compileAsync(ApiRoot.class, code);
+        CompletableFuture<?> future = program.run();
+
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(1));
+        Assertions.assertTrue(future.cancel(false));
+        Assertions.assertTrue(ApiRoot.futures.get(0).isCancelled());
+        Assertions.assertFalse(ApiRoot.futures.get(0).complete(null));
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(1));
+    }
+
+    @Test
     public void intTest() {
         String code = """
                 async int func() {

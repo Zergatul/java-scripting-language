@@ -1618,6 +1618,14 @@ public class Compiler {
         // exception field
         writer.visitField(ACC_SYNTHETIC, "exception", Type.getDescriptor(Throwable.class), null, null);
 
+        // cancellation token field
+        writer.visitField(
+                ACC_PRIVATE | ACC_FINAL | ACC_SYNTHETIC,
+                CANCELLATION_TOKEN_FIELD_NAME,
+                Type.getDescriptor(AsyncCancellationToken.class),
+                null,
+                null);
+
         if (generator.hasFinallyBlocks()) {
             writer.visitField(ACC_SYNTHETIC, HAS_PENDING_RETURN_FIELD_NAME, Type.getDescriptor(boolean.class), null, null);
             writer.visitField(ACC_SYNTHETIC, "result", Type.getDescriptor(Object.class), null, null);
@@ -1682,6 +1690,20 @@ public class Compiler {
         constructorVisitor.visitCode();
         constructorVisitor.visitVarInsn(ALOAD, 0);
         constructorVisitor.visitMethodInsn(INVOKESPECIAL, Type.getInternalName(Object.class), "<init>", Type.getMethodDescriptor(Type.VOID_TYPE), false);
+        constructorVisitor.visitVarInsn(ALOAD, 0);
+        constructorVisitor.visitTypeInsn(NEW, Type.getInternalName(AsyncCancellationToken.class));
+        constructorVisitor.visitInsn(DUP);
+        constructorVisitor.visitMethodInsn(
+                INVOKESPECIAL,
+                Type.getInternalName(AsyncCancellationToken.class),
+                "<init>",
+                Type.getMethodDescriptor(Type.VOID_TYPE),
+                false);
+        constructorVisitor.visitFieldInsn(
+                PUTFIELD,
+                name,
+                CANCELLATION_TOKEN_FIELD_NAME,
+                Type.getDescriptor(AsyncCancellationToken.class));
         //
         for (int i = 0; i < indexes.length; i++) {
             constructorVisitor.visitVarInsn(ALOAD, 0); // this
@@ -1703,6 +1725,42 @@ public class Compiler {
                 null,
                 null);
         nextMethodVisitor.visitCode();
+
+        Label notCancelled = new Label();
+        nextMethodVisitor.visitVarInsn(ALOAD, 0);
+        nextMethodVisitor.visitFieldInsn(
+                GETFIELD,
+                name,
+                CANCELLATION_TOKEN_FIELD_NAME,
+                Type.getDescriptor(AsyncCancellationToken.class));
+        nextMethodVisitor.visitMethodInsn(
+                INVOKEVIRTUAL,
+                Type.getInternalName(AsyncCancellationToken.class),
+                "isCancelled",
+                Type.getMethodDescriptor(Type.BOOLEAN_TYPE),
+                false);
+        nextMethodVisitor.visitJumpInsn(IFEQ, notCancelled);
+        nextMethodVisitor.visitVarInsn(ALOAD, 0);
+        nextMethodVisitor.visitFieldInsn(
+                GETFIELD,
+                name,
+                CANCELLATION_TOKEN_FIELD_NAME,
+                Type.getDescriptor(AsyncCancellationToken.class));
+        nextMethodVisitor.visitMethodInsn(
+                INVOKEVIRTUAL,
+                Type.getInternalName(AsyncCancellationToken.class),
+                "cancelledFuture",
+                Type.getMethodDescriptor(Type.getType(CompletableFuture.class)),
+                false);
+        nextMethodVisitor.visitInsn(ARETURN);
+
+        nextMethodVisitor.visitLabel(notCancelled);
+        nextMethodVisitor.visitVarInsn(ALOAD, 0);
+        nextMethodVisitor.visitFieldInsn(
+                GETFIELD,
+                name,
+                CANCELLATION_TOKEN_FIELD_NAME,
+                Type.getDescriptor(AsyncCancellationToken.class));
         nextMethodVisitor.visitVarInsn(ALOAD, 0);
         nextMethodVisitor.visitVarInsn(ALOAD, 1);
         nextMethodVisitor.visitMethodInsn(
@@ -1710,6 +1768,12 @@ public class Compiler {
                 ownerClassName,
                 nextMethodName,
                 nextImplementationDescriptor,
+                false);
+        nextMethodVisitor.visitMethodInsn(
+                INVOKEVIRTUAL,
+                Type.getInternalName(AsyncCancellationToken.class),
+                "wrap",
+                Type.getMethodDescriptor(Type.getType(CompletableFuture.class), Type.getType(CompletableFuture.class)),
                 false);
         nextMethodVisitor.visitInsn(ARETURN);
         nextMethodVisitor.visitMaxs(0, 0);
@@ -1936,6 +2000,20 @@ public class Compiler {
         if (parameters.shouldEmitVariableNames()) {
             mv.visitLabel(methodStart = new Label());
         }
+
+        mv.visitVarInsn(ALOAD, 0);
+        mv.visitFieldInsn(
+                GETFIELD,
+                classInternalName,
+                CANCELLATION_TOKEN_FIELD_NAME,
+                Type.getDescriptor(AsyncCancellationToken.class));
+        mv.visitVarInsn(ALOAD, 1);
+        mv.visitMethodInsn(
+                INVOKEVIRTUAL,
+                Type.getInternalName(AsyncCancellationToken.class),
+                "setAwaited",
+                Type.getMethodDescriptor(Type.VOID_TYPE, Type.getType(CompletableFuture.class)),
+                false);
 
         mv.visitVarInsn(ALOAD, 1); // f
 
