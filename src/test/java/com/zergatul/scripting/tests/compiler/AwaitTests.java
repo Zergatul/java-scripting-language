@@ -1203,6 +1203,69 @@ public class AwaitTests extends ComparatorTest {
         Assertions.assertTrue(future.isDone());
     }
 
+    @Test
+    public void cancellationStopsContinuationTest() {
+        String code = """
+                intStorage.add(1);
+                await futures.create();
+                intStorage.add(2);
+                """;
+
+        AsyncRunnable program = compileAsync(ApiRoot.class, code);
+        CompletableFuture<?> future = program.run();
+
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(1));
+        Assertions.assertTrue(future.cancel(false));
+        Assertions.assertTrue(future.isCancelled());
+        Assertions.assertTrue(ApiRoot.futures.get(0).isCancelled());
+        Assertions.assertFalse(ApiRoot.futures.get(0).complete(null));
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(1));
+    }
+
+    @Test
+    public void cancellationStopsLaterContinuationTest() {
+        String code = """
+                intStorage.add(1);
+                await futures.create();
+                intStorage.add(2);
+                await futures.create();
+                intStorage.add(3);
+                """;
+
+        AsyncRunnable program = compileAsync(ApiRoot.class, code);
+        CompletableFuture<?> future = program.run();
+
+        ApiRoot.futures.get(0).complete(null);
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(1, 2));
+        Assertions.assertEquals(2, ApiRoot.futures.getVoidCount());
+
+        Assertions.assertTrue(future.cancel(false));
+        Assertions.assertTrue(ApiRoot.futures.get(1).isCancelled());
+        Assertions.assertFalse(ApiRoot.futures.get(1).complete(null));
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(1, 2));
+    }
+
+    @Test
+    public void cancellationSkipsFinallyTest() {
+        String code = """
+                try {
+                    intStorage.add(1);
+                    await futures.create();
+                    intStorage.add(2);
+                } finally {
+                    intStorage.add(3);
+                }
+                """;
+
+        AsyncRunnable program = compileAsync(ApiRoot.class, code);
+        CompletableFuture<?> future = program.run();
+
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(1));
+        Assertions.assertTrue(future.cancel(false));
+        Assertions.assertTrue(ApiRoot.futures.get(0).isCancelled());
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(1));
+    }
+
     public static class ApiRoot {
         public static FutureHelper futures;
         public static BoolStorage boolStorage;

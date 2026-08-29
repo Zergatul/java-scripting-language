@@ -2,6 +2,7 @@ package com.zergatul.scripting.compiler;
 
 public class GeneratorMembers {
     public static final String AWAIT_TRANSITION_METHOD_NAME = "await";
+    public static final String CANCELLATION_TOKEN_FIELD_NAME = "cancellationToken";
     public static final String HAS_PENDING_RETURN_FIELD_NAME = "hasPendingReturn";
     public static final String FRAMES_COUNT_FIELD_NAME = "framesCount";
     public static final String FRAME_TYPE_FIELD_NAME = "frameType";
