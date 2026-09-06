@@ -7,6 +7,7 @@ import com.zergatul.scripting.parser.nodes.MemberAccessExpressionNode;
 import com.zergatul.scripting.parser.nodes.ParserNodeType;
 import com.zergatul.scripting.type.MethodReference;
 import com.zergatul.scripting.type.SMethodGroup;
+import com.zergatul.scripting.utility.Lists;
 
 import java.util.List;
 
@@ -61,6 +62,6 @@ public class BoundMethodGroupExpressionNode extends BoundExpressionNode {
 
     @Override
     public List<BoundNode> getChildren() {
-        return List.of(callee, method);
+        return Lists.of(callee, method);
     }
 }

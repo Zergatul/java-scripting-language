@@ -39,7 +39,8 @@ public class LocalVariableSuggestion extends Suggestion {
 
     @Override
     public boolean equals(Object obj) {
-        if (obj instanceof LocalVariableSuggestion other) {
+        if (obj instanceof LocalVariableSuggestion) {
+            LocalVariableSuggestion other = (LocalVariableSuggestion) obj;
             return other.variable == variable;
         } else {
             return false;
@@ -63,7 +64,8 @@ public class LocalVariableSuggestion extends Suggestion {
         @Override
         public void visit(BoundVariableDeclarationNode node) {
             if (result == null && node.name.value.equals(name)) {
-                if (node.name.getSymbol() instanceof LiftedVariable lifted) {
+                if (node.name.getSymbol() instanceof LiftedVariable) {
+                    LiftedVariable lifted = (LiftedVariable) node.name.getSymbol();
                     result = lifted.getUnderlying();
                 } else {
                     result = (LocalVariable) node.name.getSymbol();

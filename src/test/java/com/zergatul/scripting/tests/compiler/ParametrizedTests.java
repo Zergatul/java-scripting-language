@@ -1,5 +1,7 @@
 package com.zergatul.scripting.tests.compiler;
 
+import com.zergatul.scripting.utility.Lists;
+
 import com.zergatul.scripting.tests.compiler.helpers.StringStorage;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -19,29 +21,27 @@ public class ParametrizedTests {
 
     @Test
     public void returnTest() {
-        String code = """
-                stringStorage.add(api.getParametrized().getInstance().getString());
-                """;
+        String code =
+                "stringStorage.add(api.getParametrized().getInstance().getString());\n";
 
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
-        Assertions.assertIterableEquals(ApiRoot.stringStorage.list, List.of("InheritedClass"));
+        Assertions.assertIterableEquals(ApiRoot.stringStorage.list, Lists.of("InheritedClass"));
     }
 
     @Test
     public void parametersTest() {
-        String code = """
-                let obj = new Java<com.zergatul.scripting.tests.compiler.ParametrizedTests$ParametrizedClass2>();
-                let instance1 = new Java<com.zergatul.scripting.tests.compiler.ParametrizedTests$InheritedClass>();
-                let instance2 = new Java<com.zergatul.scripting.tests.compiler.ParametrizedTests$SomeClass>();
-                stringStorage.add(obj.doSomething(instance1, instance2));
-                """;
+        String code =
+                "let obj = new Java<com.zergatul.scripting.tests.compiler.ParametrizedTests$ParametrizedClass2>();\n" +
+                "let instance1 = new Java<com.zergatul.scripting.tests.compiler.ParametrizedTests$InheritedClass>();\n" +
+                "let instance2 = new Java<com.zergatul.scripting.tests.compiler.ParametrizedTests$SomeClass>();\n" +
+                "stringStorage.add(obj.doSomething(instance1, instance2));\n";
 
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
-        Assertions.assertIterableEquals(ApiRoot.stringStorage.list, List.of("InheritedClass654"));
+        Assertions.assertIterableEquals(ApiRoot.stringStorage.list, Lists.of("InheritedClass654"));
     }
 
     public static class ApiRoot {

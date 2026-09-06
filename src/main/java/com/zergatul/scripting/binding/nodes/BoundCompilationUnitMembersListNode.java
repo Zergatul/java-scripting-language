@@ -3,6 +3,7 @@ package com.zergatul.scripting.binding.nodes;
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
 import com.zergatul.scripting.parser.nodes.CompilationUnitMembersListNode;
+import com.zergatul.scripting.utility.Lists;
 
 import java.util.List;
 
@@ -40,6 +41,6 @@ public class BoundCompilationUnitMembersListNode extends BoundNode {
 
     @Override
     public List<BoundNode> getChildren() {
-        return List.copyOf(members);
+        return Lists.copyOf(members);
     }
 }

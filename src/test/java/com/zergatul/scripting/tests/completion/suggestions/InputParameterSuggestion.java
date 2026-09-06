@@ -14,7 +14,8 @@ public class InputParameterSuggestion extends Suggestion {
 
     @Override
     public boolean equals(Object obj) {
-        if (obj instanceof InputParameterSuggestion other) {
+        if (obj instanceof InputParameterSuggestion) {
+            InputParameterSuggestion other = (InputParameterSuggestion) obj;
             return other.name.equals(name) && other.type.equals(type);
         } else {
             return false;

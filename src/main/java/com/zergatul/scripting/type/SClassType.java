@@ -4,6 +4,7 @@ import com.zergatul.scripting.Getter;
 import com.zergatul.scripting.InterfaceHelper;
 import com.zergatul.scripting.InternalException;
 import com.zergatul.scripting.Setter;
+import com.zergatul.scripting.utility.Lists;
 import org.jspecify.annotations.Nullable;
 import org.objectweb.asm.MethodVisitor;
 
@@ -80,39 +81,37 @@ public class SClassType extends SReferenceType {
 
     @Override
     public List<ConstructorReference> getConstructors() {
-        return Arrays.stream(clazz.getDeclaredConstructors())
-                .filter(c -> !c.isSynthetic())
-                .map(NativeConstructorReference::new)
-                .map(c -> (ConstructorReference) c)
-                .toList();
+        return Lists.from(
+                Arrays.stream(clazz.getDeclaredConstructors())
+                        .filter(c -> !c.isSynthetic())
+                        .map(NativeConstructorReference::new)
+                        .map(c -> (ConstructorReference) c));
     }
 
     @Override
     public List<PropertyReference> getDeclaredProperties() {
-        return Arrays.stream(clazz.getDeclaredFields())
-                .filter(f -> !f.isSynthetic())
-                .map(FieldPropertyReference::new)
-                .map(f -> (PropertyReference) f)
-                .toList();
+        return Lists.from(
+                Arrays.stream(clazz.getDeclaredFields())
+                        .filter(f -> !f.isSynthetic())
+                        .map(FieldPropertyReference::new));
     }
 
     @Override
     public List<MethodReference> getDeclaredMethods() {
-        return Arrays.stream(this.clazz.getDeclaredMethods())
-                .filter(m -> !m.isSynthetic())
-                .filter(m -> !m.isBridge())
-                .filter(m -> !Modifier.isStatic(m.getModifiers()) ||
-                        (!m.isAnnotationPresent(Getter.class) && !m.isAnnotationPresent(Setter.class)))
-                .map(NativeMethodReference::new)
-                .map(r -> (MethodReference) r)
-                .toList();
+        return Lists.from(
+                Arrays.stream(this.clazz.getDeclaredMethods())
+                        .filter(m -> !m.isSynthetic())
+                        .filter(m -> !m.isBridge())
+                        .filter(m -> !Modifier.isStatic(m.getModifiers()) ||
+                                (!m.isAnnotationPresent(Getter.class) && !m.isAnnotationPresent(Setter.class)))
+                        .map(NativeMethodReference::new));
     }
 
     @Override
     public List<SType> getInterfaces() {
-        return Arrays.stream(clazz.getInterfaces())
-                .map(SType::fromJavaType)
-                .toList();
+        return Lists.from(
+                Arrays.stream(clazz.getInterfaces())
+                        .map(SType::fromJavaType));
     }
 
     @Override
@@ -129,7 +128,8 @@ public class SClassType extends SReferenceType {
 
     @Override
     public boolean equals(Object obj) {
-        if (obj instanceof SClassType other) {
+        if (obj instanceof SClassType) {
+            SClassType other = (SClassType) obj;
             return other.clazz == clazz;
         } else {
             return false;

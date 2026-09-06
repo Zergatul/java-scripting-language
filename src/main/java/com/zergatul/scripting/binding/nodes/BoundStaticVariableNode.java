@@ -3,6 +3,7 @@ package com.zergatul.scripting.binding.nodes;
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
 import com.zergatul.scripting.parser.nodes.StaticVariableNode;
+import com.zergatul.scripting.utility.Lists;
 import org.jspecify.annotations.Nullable;
 
 import java.util.List;
@@ -59,9 +60,9 @@ public class BoundStaticVariableNode extends BoundCompilationUnitMemberNode {
     @Override
     public List<BoundNode> getChildren() {
         if (expression != null) {
-            return List.of(type, name, expression);
+            return Lists.of(type, name, expression);
         } else {
-            return List.of(type, name);
+            return Lists.of(type, name);
         }
     }
 }

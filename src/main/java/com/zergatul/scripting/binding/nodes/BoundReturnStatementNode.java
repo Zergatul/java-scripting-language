@@ -4,6 +4,7 @@ import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
 import com.zergatul.scripting.parser.SyntaxFactory;
 import com.zergatul.scripting.parser.nodes.ReturnStatementNode;
+import com.zergatul.scripting.utility.Lists;
 import org.jspecify.annotations.Nullable;
 
 import java.util.List;
@@ -48,6 +49,6 @@ public class BoundReturnStatementNode extends BoundStatementNode {
 
     @Override
     public List<BoundNode> getChildren() {
-        return expression == null ? List.of() : List.of(expression);
+        return expression == null ? Lists.of() : Lists.of(expression);
     }
 }

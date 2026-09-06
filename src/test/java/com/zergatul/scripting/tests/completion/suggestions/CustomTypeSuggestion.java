@@ -10,7 +10,8 @@ public class CustomTypeSuggestion extends Suggestion {
 
     @Override
     public boolean equals(Object obj) {
-        if (obj instanceof CustomTypeSuggestion other) {
+        if (obj instanceof CustomTypeSuggestion) {
+            CustomTypeSuggestion other = (CustomTypeSuggestion) obj;
             return other.clazz == clazz;
         } else {
             return false;

@@ -3,6 +3,7 @@ package com.zergatul.scripting.binding.nodes;
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
 import com.zergatul.scripting.type.SType;
+import com.zergatul.scripting.utility.Lists;
 import org.jspecify.annotations.Nullable;
 
 import java.util.List;
@@ -59,6 +60,6 @@ public class BoundParameterNode extends BoundNode {
 
     @Override
     public List<BoundNode> getChildren() {
-        return typeNode == null ? List.of(name) : List.of(name, typeNode);
+        return typeNode == null ? Lists.of(name) : Lists.of(name, typeNode);
     }
 }

@@ -3,6 +3,7 @@ package com.zergatul.scripting.parser.nodes;
 import com.zergatul.scripting.Locatable;
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.parser.ParserTreeVisitor;
+import com.zergatul.scripting.utility.Lists;
 
 import java.util.List;
 
@@ -15,7 +16,7 @@ public class InvalidExpressionNode extends ExpressionNode {
     }
 
     public InvalidExpressionNode(TextRange range) {
-        this(List.of(), range);
+        this(Lists.of(), range);
     }
 
     public InvalidExpressionNode(List<Locatable> nodes, TextRange range) {
@@ -33,6 +34,6 @@ public class InvalidExpressionNode extends ExpressionNode {
 
     @Override
     public List<Locatable> getChildNodes() {
-        return List.copyOf(nodes);
+        return Lists.copyOf(nodes);
     }
 }

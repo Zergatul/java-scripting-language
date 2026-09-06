@@ -9,10 +9,9 @@ public class FieldTests {
 
     @Test
     public void setFieldTest() {
-        String code = """
-                let instance = api.getTestClass();
-                instance.field = "qwe";
-                """;
+        String code =
+                "let instance = api.getTestClass();\n" +
+                "instance.field = \"qwe\";\n";
 
         Runnable program = compile(ApiRoot.class, code);
         program.run();

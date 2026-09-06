@@ -5,6 +5,7 @@ import com.zergatul.scripting.binding.BinderTreeVisitor;
 import com.zergatul.scripting.parser.nodes.CustomTypeNode;
 import com.zergatul.scripting.symbols.ClassSymbol;
 import com.zergatul.scripting.symbols.SymbolRef;
+import com.zergatul.scripting.utility.Lists;
 
 import java.util.List;
 
@@ -33,7 +34,7 @@ public class BoundDeclaredClassTypeNode extends BoundTypeNode {
 
     @Override
     public List<BoundNode> getChildren() {
-        return List.of();
+        return Lists.of();
     }
 
     public ClassSymbol getSymbol() {

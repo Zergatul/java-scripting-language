@@ -2,11 +2,13 @@ package com.zergatul.scripting.type;
 
 import com.zergatul.scripting.InternalException;
 import com.zergatul.scripting.compiler.CompilerContext;
+import com.zergatul.scripting.utility.Lists;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Type;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Consumer;
 
 public abstract class MethodReference extends MemberReference implements Invocable {
 
@@ -36,18 +38,18 @@ public abstract class MethodReference extends MemberReference implements Invocab
         return false;
     }
 
-    public abstract void compileInvoke(MethodVisitor visitor, CompilerContext context, Runnable compileArguments);
+    public abstract void compileInvoke(MethodVisitor visitor, CompilerContext context, Consumer<CompilerContext> compileArguments);
 
-    public void compileBaseInvoke(MethodVisitor visitor, CompilerContext context, Runnable compileArguments) {
+    public void compileBaseInvoke(MethodVisitor visitor, CompilerContext context, Consumer<CompilerContext> compileArguments) {
         throw new InternalException();
     }
 
-    public void compileMethodHandleInvoke(MethodVisitor visitor, CompilerContext context, Runnable compileArguments) {
+    public void compileReflectionInvoke(MethodVisitor visitor, CompilerContext context, Consumer<CompilerContext> compileArguments) {
         throw new InternalException();
     }
 
     public List<SType> getParameterTypes() {
-        return getParameters().stream().map(MethodParameter::type).toList();
+        return Lists.from(getParameters().stream().map(MethodParameter::type));
     }
 
     public String getDescriptor() {

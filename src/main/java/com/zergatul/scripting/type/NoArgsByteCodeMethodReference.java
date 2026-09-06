@@ -1,5 +1,7 @@
 package com.zergatul.scripting.type;
 
+import com.zergatul.scripting.utility.Lists;
+
 import java.util.List;
 
 public abstract class NoArgsByteCodeMethodReference extends MethodReference {
@@ -26,7 +28,7 @@ public abstract class NoArgsByteCodeMethodReference extends MethodReference {
 
     @Override
     public List<MethodParameter> getParameters() {
-        return List.of();
+        return Lists.of();
     }
 
     @Override

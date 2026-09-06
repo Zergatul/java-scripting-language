@@ -1,5 +1,7 @@
 package com.zergatul.scripting.tests.compiler;
 
+import com.zergatul.scripting.utility.Lists;
+
 import com.zergatul.scripting.tests.compiler.helpers.BoolStorage;
 import com.zergatul.scripting.tests.compiler.helpers.IntStorage;
 import com.zergatul.scripting.tests.compiler.helpers.StringStorage;
@@ -22,194 +24,185 @@ public class CharTests {
 
     @Test
     public void basicTest() {
-        String code = """
-                intStorage.add('a');
-                intStorage.add('b');
-                intStorage.add('c');
-                intStorage.add('\\'');
-                intStorage.add('\\n');
-                intStorage.add('\\r');
-                intStorage.add('\\t');
-                intStorage.add('\\b');
-                
-                char ch = '!';
-                intStorage.add(ch);
-                """;
+        String code =
+                "intStorage.add('a');\n" +
+                "intStorage.add('b');\n" +
+                "intStorage.add('c');\n" +
+                "intStorage.add('\\'');\n" +
+                "intStorage.add('\\n');\n" +
+                "intStorage.add('\\r');\n" +
+                "intStorage.add('\\t');\n" +
+                "intStorage.add('\\b');\n" +
+                "\n" +
+                "char ch = '!';\n" +
+                "intStorage.add(ch);\n";
 
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
         Assertions.assertIterableEquals(
                 ApiRoot.intStorage.list,
-                List.of(97, 98, 99, 39, 10, 13, 9, 8, 33));
+                Lists.of(97, 98, 99, 39, 10, 13, 9, 8, 33));
     }
 
     @Test
     public void lessThanTest() {
-        String code = """
-                boolStorage.add('a' < 'b');
-                boolStorage.add('c' < 'c');
-                boolStorage.add('f' < 'e');
-                
-                boolStorage.add('a' < 98);
-                boolStorage.add(97  < 'b');
-                boolStorage.add('c' < 99);
-                boolStorage.add(99  < 'c');
-                boolStorage.add('f' < 101);
-                boolStorage.add(102 < 'e');
-                """;
+        String code =
+                "boolStorage.add('a' < 'b');\n" +
+                "boolStorage.add('c' < 'c');\n" +
+                "boolStorage.add('f' < 'e');\n" +
+                "\n" +
+                "boolStorage.add('a' < 98);\n" +
+                "boolStorage.add(97  < 'b');\n" +
+                "boolStorage.add('c' < 99);\n" +
+                "boolStorage.add(99  < 'c');\n" +
+                "boolStorage.add('f' < 101);\n" +
+                "boolStorage.add(102 < 'e');\n";
 
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
         Assertions.assertIterableEquals(
                 ApiRoot.boolStorage.list,
-                List.of(true, false, false, true, true, false, false, false, false));
+                Lists.of(true, false, false, true, true, false, false, false, false));
     }
 
     @Test
     public void greaterThanTest() {
-        String code = """
-                boolStorage.add('a' > 'b');
-                boolStorage.add('c' > 'c');
-                boolStorage.add('f' > 'e');
-                
-                boolStorage.add('a' > 98);
-                boolStorage.add(97  > 'b');
-                boolStorage.add('c' > 99);
-                boolStorage.add(99  > 'c');
-                boolStorage.add('f' > 101);
-                boolStorage.add(102 > 'e');
-                """;
+        String code =
+                "boolStorage.add('a' > 'b');\n" +
+                "boolStorage.add('c' > 'c');\n" +
+                "boolStorage.add('f' > 'e');\n" +
+                "\n" +
+                "boolStorage.add('a' > 98);\n" +
+                "boolStorage.add(97  > 'b');\n" +
+                "boolStorage.add('c' > 99);\n" +
+                "boolStorage.add(99  > 'c');\n" +
+                "boolStorage.add('f' > 101);\n" +
+                "boolStorage.add(102 > 'e');\n";
 
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
         Assertions.assertIterableEquals(
                 ApiRoot.boolStorage.list,
-                List.of(false, false, true, false, false, false, false, true, true));
+                Lists.of(false, false, true, false, false, false, false, true, true));
     }
 
     @Test
     public void lessEqualsTest() {
-        String code = """
-                boolStorage.add('a' <= 'b');
-                boolStorage.add('c' <= 'c');
-                boolStorage.add('f' <= 'e');
-                
-                boolStorage.add('a' <= 98);
-                boolStorage.add(97  <= 'b');
-                boolStorage.add('c' <= 99);
-                boolStorage.add(99  <= 'c');
-                boolStorage.add('f' <= 101);
-                boolStorage.add(102 <= 'e');
-                """;
+        String code =
+                "boolStorage.add('a' <= 'b');\n" +
+                "boolStorage.add('c' <= 'c');\n" +
+                "boolStorage.add('f' <= 'e');\n" +
+                "\n" +
+                "boolStorage.add('a' <= 98);\n" +
+                "boolStorage.add(97  <= 'b');\n" +
+                "boolStorage.add('c' <= 99);\n" +
+                "boolStorage.add(99  <= 'c');\n" +
+                "boolStorage.add('f' <= 101);\n" +
+                "boolStorage.add(102 <= 'e');\n";
 
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
         Assertions.assertIterableEquals(
                 ApiRoot.boolStorage.list,
-                List.of(true, true, false, true, true, true, true, false, false));
+                Lists.of(true, true, false, true, true, true, true, false, false));
     }
 
     @Test
     public void greaterEqualsTest() {
-        String code = """
-                boolStorage.add('a' >= 'b');
-                boolStorage.add('c' >= 'c');
-                boolStorage.add('f' >= 'e');
-                
-                boolStorage.add('a' >= 98);
-                boolStorage.add(97  >= 'b');
-                boolStorage.add('c' >= 99);
-                boolStorage.add(99  >= 'c');
-                boolStorage.add('f' >= 101);
-                boolStorage.add(102 >= 'e');
-                """;
+        String code =
+                "boolStorage.add('a' >= 'b');\n" +
+                "boolStorage.add('c' >= 'c');\n" +
+                "boolStorage.add('f' >= 'e');\n" +
+                "\n" +
+                "boolStorage.add('a' >= 98);\n" +
+                "boolStorage.add(97  >= 'b');\n" +
+                "boolStorage.add('c' >= 99);\n" +
+                "boolStorage.add(99  >= 'c');\n" +
+                "boolStorage.add('f' >= 101);\n" +
+                "boolStorage.add(102 >= 'e');\n";
 
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
         Assertions.assertIterableEquals(
                 ApiRoot.boolStorage.list,
-                List.of(false, true, true, false, false, true, true, true, true));
+                Lists.of(false, true, true, false, false, true, true, true, true));
     }
 
     @Test
     public void equalsTest() {
-        String code = """
-                boolStorage.add('a' == 'b');
-                boolStorage.add('c' == 'c');
-                boolStorage.add('f' == 'e');
-                
-                boolStorage.add('a' == 98);
-                boolStorage.add(97  == 'b');
-                boolStorage.add('c' == 99);
-                boolStorage.add(99  == 'c');
-                boolStorage.add('f' == 101);
-                boolStorage.add(102 == 'e');
-                """;
+        String code =
+                "boolStorage.add('a' == 'b');\n" +
+                "boolStorage.add('c' == 'c');\n" +
+                "boolStorage.add('f' == 'e');\n" +
+                "\n" +
+                "boolStorage.add('a' == 98);\n" +
+                "boolStorage.add(97  == 'b');\n" +
+                "boolStorage.add('c' == 99);\n" +
+                "boolStorage.add(99  == 'c');\n" +
+                "boolStorage.add('f' == 101);\n" +
+                "boolStorage.add(102 == 'e');\n";
 
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
         Assertions.assertIterableEquals(
                 ApiRoot.boolStorage.list,
-                List.of(false, true, false, false, false, true, true, false, false));
+                Lists.of(false, true, false, false, false, true, true, false, false));
     }
 
     @Test
     public void notEqualsTest() {
-        String code = """
-                boolStorage.add('a' != 'b');
-                boolStorage.add('c' != 'c');
-                boolStorage.add('f' != 'e');
-                
-                boolStorage.add('a' != 98);
-                boolStorage.add(97  != 'b');
-                boolStorage.add('c' != 99);
-                boolStorage.add(99  != 'c');
-                boolStorage.add('f' != 101);
-                boolStorage.add(102 != 'e');
-                """;
+        String code =
+                "boolStorage.add('a' != 'b');\n" +
+                "boolStorage.add('c' != 'c');\n" +
+                "boolStorage.add('f' != 'e');\n" +
+                "\n" +
+                "boolStorage.add('a' != 98);\n" +
+                "boolStorage.add(97  != 'b');\n" +
+                "boolStorage.add('c' != 99);\n" +
+                "boolStorage.add(99  != 'c');\n" +
+                "boolStorage.add('f' != 101);\n" +
+                "boolStorage.add(102 != 'e');\n";
 
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
         Assertions.assertIterableEquals(
                 ApiRoot.boolStorage.list,
-                List.of(true, false, true, true, true, false, false, true, true));
+                Lists.of(true, false, true, true, true, false, false, true, true));
     }
 
     @Test
     public void toStringTest() {
-        String code = """
-                stringStorage.add('a'.toString());
-                stringStorage.add('1'.toString());
-                """;
+        String code =
+                "stringStorage.add('a'.toString());\n" +
+                "stringStorage.add('1'.toString());\n";
 
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
         Assertions.assertIterableEquals(
                 ApiRoot.stringStorage.list,
-                List.of("a", "1"));
+                Lists.of("a", "1"));
     }
 
     @Test
     public void fromCodeTest() {
-        String code = """
-                stringStorage.add(char.fromCode(64).toString());
-                stringStorage.add(char.fromCode(1031).toString());
-                """;
+        String code =
+                "stringStorage.add(char.fromCode(64).toString());\n" +
+                "stringStorage.add(char.fromCode(1031).toString());\n";
 
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
         Assertions.assertIterableEquals(
                 ApiRoot.stringStorage.list,
-                List.of("@", "Ї"));
+                Lists.of("@", "Ї"));
     }
 
     public static class ApiRoot {

@@ -5,6 +5,7 @@ import com.zergatul.scripting.binding.BinderTreeVisitor;
 import com.zergatul.scripting.parser.nodes.InvalidExpressionNode;
 import com.zergatul.scripting.parser.nodes.ParserNode;
 import com.zergatul.scripting.type.SUnknown;
+import com.zergatul.scripting.utility.Lists;
 import org.jspecify.annotations.Nullable;
 
 import java.util.List;
@@ -18,7 +19,7 @@ public class BoundInvalidExpressionNode extends BoundExpressionNode {
     // List<Symbol> candidateSymbols;
 
     public BoundInvalidExpressionNode(List<BoundExpressionNode> children, TextRange range) {
-        this(null, children, List.of(), range);
+        this(null, children, Lists.of(), range);
     }
 
     public BoundInvalidExpressionNode(List<BoundExpressionNode> children, List<ParserNode> unboundNodes, TextRange range) {
@@ -52,6 +53,6 @@ public class BoundInvalidExpressionNode extends BoundExpressionNode {
 
     @Override
     public List<BoundNode> getChildren() {
-        return List.of(children.toArray(BoundNode[]::new));
+        return Lists.copyOf(children);
     }
 }

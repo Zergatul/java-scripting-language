@@ -64,11 +64,21 @@ public abstract class Dumper {
         sb.append(", \"");
         for (char ch : token.value.toCharArray()) {
             switch (ch) {
-                case '\r' -> sb.append("\\r");
-                case '\n' -> sb.append("\\n");
-                case '"' -> sb.append("\"");
-                case '\\' -> sb.append("\\\\");
-                default -> sb.append(ch);
+                case '\r':
+                    sb.append("\\r");
+                    break;
+                case '\n':
+                    sb.append("\\n");
+                    break;
+                case '"':
+                    sb.append("\"");
+                    break;
+                case '\\':
+                    sb.append("\\\\");
+                    break;
+                default:
+                    sb.append(ch);
+                    break;
             }
         }
         sb.append("\", ");
@@ -118,7 +128,8 @@ public abstract class Dumper {
     protected void dump(TextRange range) {
         beginNewLineIfRequired();
 
-        if (range instanceof SingleLineTextRange single) {
+        if (range instanceof SingleLineTextRange) {
+            SingleLineTextRange single = (SingleLineTextRange) range;
             sb.append("new SingleLineTextRange(");
             sb.append(single.getLine1());
             sb.append(", ");
@@ -128,7 +139,8 @@ public abstract class Dumper {
             sb.append(", ");
             sb.append(single.getLength());
             sb.append(")");
-        } else if (range instanceof MultiLineTextRange multi) {
+        } else if (range instanceof MultiLineTextRange) {
+            MultiLineTextRange multi = (MultiLineTextRange) range;
             sb.append("new MultiLineTextRange(");
             sb.append(multi.getLine1());
             sb.append(", ");
@@ -152,7 +164,7 @@ public abstract class Dumper {
     }
 
     protected void beginLine(String value) {
-        sb.append(" ".repeat(indent));
+        sb.append(String.join("", java.util.Collections.nCopies(indent, " ")));
         sb.append(value);
     }
 
@@ -162,7 +174,7 @@ public abstract class Dumper {
     }
 
     protected void fullLine(String value) {
-        sb.append(" ".repeat(indent));
+        sb.append(String.join("", java.util.Collections.nCopies(indent, " ")));
         sb.append(value);
         sb.append('\n');
     }

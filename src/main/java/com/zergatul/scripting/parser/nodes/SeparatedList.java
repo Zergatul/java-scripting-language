@@ -31,13 +31,15 @@ public final class SeparatedList<T extends ParserNode> {
         for (int i = 0; i < params.length; i++) {
             Locatable item = params[i];
             if (i % 2 == 0) {
-                if (clazz.isInstance(item) && item instanceof ParserNode node) {
+                if (clazz.isInstance(item) && item instanceof ParserNode) {
+                    ParserNode node = (ParserNode) item;
                     list.add((T) node);
                 } else {
                     throw new InternalException();
                 }
             } else {
-                if (item instanceof Token token) {
+                if (item instanceof Token) {
+                    Token token = (Token) item;
                     list.add(token);
                 } else {
                     throw new InternalException();

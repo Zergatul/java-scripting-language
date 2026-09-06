@@ -3,10 +3,10 @@ package com.zergatul.scripting.tests.completion;
 import com.zergatul.scripting.lexer.TokenType;
 import com.zergatul.scripting.tests.compiler.helpers.IntStorage;
 import com.zergatul.scripting.tests.completion.helpers.CompletionTestHelper;
-import com.zergatul.scripting.tests.completion.helpers.Lists;
 import com.zergatul.scripting.tests.completion.helpers.TestCompletionContext;
 import com.zergatul.scripting.tests.completion.suggestions.*;
 import com.zergatul.scripting.type.SInt;
+import com.zergatul.scripting.utility.Lists;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -18,20 +18,22 @@ public class ExtensionTests {
 
     @Test
     public void typeTest() {
-        assertSuggestions("""
-                extension(<cursor>)
-                """,
+        String code =
+                "extension(<cursor>)\n";
+        assertSuggestions(
+                code,
                 context -> types);
     }
 
     @Test
     public void methodBeginTest() {
-        assertSuggestions("""
-                extension(int) {
-                    <cursor>
-                }
-                """,
-                context -> Lists.of(
+        String code =
+                "extension(int) {\n" +
+                "    <cursor>\n" +
+                "}\n";
+        assertSuggestions(
+                code,
+                context -> Lists.from(
                         types,
                         new KeywordSuggestion(TokenType.VOID),
                         new KeywordSuggestion(TokenType.ASYNC)));
@@ -39,12 +41,13 @@ public class ExtensionTests {
 
     @Test
     public void arrowMethodBodyTest() {
-        assertSuggestions("""
-                extension(int) {
-                    void print(string str) => <cursor>
-                }
-                """,
-                context -> Lists.of(
+        String code =
+                "extension(int) {\n" +
+                "    void print(string str) => <cursor>\n" +
+                "}\n";
+        assertSuggestions(
+                code,
+                context -> Lists.from(
                         expressions,
                         new StaticConstantSuggestion(context, "intStorage"),
                         new ThisSuggestion(SInt.instance),
@@ -53,14 +56,15 @@ public class ExtensionTests {
 
     @Test
     public void normalMethodBodyTest() {
-        assertSuggestions("""
-                extension(int) {
-                    void print(string str) {
-                        <cursor>
-                    }
-                }
-                """,
-                context -> Lists.of(
+        String code =
+                "extension(int) {\n" +
+                "    void print(string str) {\n" +
+                "        <cursor>\n" +
+                "    }\n" +
+                "}\n";
+        assertSuggestions(
+                code,
+                context -> Lists.from(
                         statements,
                         new StaticConstantSuggestion(context, "intStorage"),
                         new ThisSuggestion(SInt.instance),
@@ -69,15 +73,16 @@ public class ExtensionTests {
 
     @Test
     public void suggestExtensionMethodTest1() {
-        assertSuggestions("""
-                extension(int) {
-                    int next() => this + 1;
-                    void print() {
-                        this.<cursor>
-                    }
-                }
-                """,
-                context -> List.of(
+        String code =
+                "extension(int) {\n" +
+                "    int next() => this + 1;\n" +
+                "    void print() {\n" +
+                "        this.<cursor>\n" +
+                "    }\n" +
+                "}\n";
+        assertSuggestions(
+                code,
+                context -> Lists.of(
                         MethodSuggestion.getInstance(SInt.instance, "toInt8"),
                         MethodSuggestion.getInstance(SInt.instance, "toInt16"),
                         MethodSuggestion.getInstance(SInt.instance, "toString"),
@@ -88,14 +93,15 @@ public class ExtensionTests {
 
     @Test
     public void suggestExtensionMethodTest2() {
-        assertSuggestions("""
-                extension(int) {
-                    int next() => this + 1;
-                    void print() {}
-                }
-                let x = (10).<cursor>
-                """,
-                context -> List.of(
+        String code =
+                "extension(int) {\n" +
+                "    int next() => this + 1;\n" +
+                "    void print() {}\n" +
+                "}\n" +
+                "let x = (10).<cursor>\n";
+        assertSuggestions(
+                code,
+                context -> Lists.of(
                         MethodSuggestion.getInstance(SInt.instance, "toInt8"),
                         MethodSuggestion.getInstance(SInt.instance, "toInt16"),
                         MethodSuggestion.getInstance(SInt.instance, "toString"),
@@ -106,15 +112,16 @@ public class ExtensionTests {
 
     @Test
     public void arrowNameExpressionTest() {
-        assertSuggestions("""
-                class ClassA {
-                    void method() {}
-                }
-                extension(ClassA) {
-                    void aaa() => t<cursor>
-                }
-                """,
-                context -> Lists.of(
+        String code =
+                "class ClassA {\n" +
+                "    void method() {}\n" +
+                "}\n" +
+                "extension(ClassA) {\n" +
+                "    void aaa() => t<cursor>\n" +
+                "}\n";
+        assertSuggestions(
+                code,
+                context -> Lists.from(
                         expressions,
                         new ThisSuggestion(context, "ClassA"),
                         new ClassSuggestion(context, "ClassA"),
@@ -123,12 +130,13 @@ public class ExtensionTests {
 
     @Test
     public void unaryOperatorOverloadTest() {
-        assertSuggestions("""
-                extension(string) {
-                    operator [+] int(string str) => <cursor>
-                }
-                """,
-                context -> Lists.of(
+        String code =
+                "extension(string) {\n" +
+                "    operator [+] int(string str) => <cursor>\n" +
+                "}\n";
+        assertSuggestions(
+                code,
+                context -> Lists.from(
                         expressions,
                         LocalVariableSuggestion.getParameter(context, "str"),
                         new StaticConstantSuggestion(context, "intStorage")));
@@ -136,12 +144,13 @@ public class ExtensionTests {
 
     @Test
     public void binaryOperatorOverloadTest() {
-        assertSuggestions("""
-                extension(string) {
-                    operator [/] string[](string str, char separator) => <cursor>
-                }
-                """,
-                context -> Lists.of(
+        String code =
+                "extension(string) {\n" +
+                "    operator [/] string[](string str, char separator) => <cursor>\n" +
+                "}\n";
+        assertSuggestions(
+                code,
+                context -> Lists.from(
                         expressions,
                         LocalVariableSuggestion.getParameter(context, "str"),
                         LocalVariableSuggestion.getParameter(context, "separator"),

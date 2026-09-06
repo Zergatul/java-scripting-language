@@ -8,6 +8,7 @@ import com.zergatul.scripting.parser.ParserErrors;
 import com.zergatul.scripting.parser.ParserOutput;
 import com.zergatul.scripting.parser.nodes.*;
 import com.zergatul.scripting.type.Visibility;
+import com.zergatul.scripting.utility.Lists;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -17,16 +18,16 @@ public class ClassTests extends ParserTestBase {
 
     @Test
     public void visibilityModifiersTest() {
-        ParserOutput result = parse("""
-                class Class {
-                    int defaultField;
-                    public int publicField;
-                    protected void protectedMethod() {}
-                    private constructor() {}
-                }
-                """);
+        String code =
+                "class Class {\n" +
+                "    int defaultField;\n" +
+                "    public int publicField;\n" +
+                "    protected void protectedMethod() {}\n" +
+                "    private constructor() {}\n" +
+                "}\n";
+        ParserOutput result = parse(code);
 
-        comparator.assertEquals(List.of(), result.diagnostics());
+        comparator.assertEquals(Lists.of(), result.diagnostics());
         ClassNode classNode = (ClassNode) result.unit().members.members.get(0);
         Assertions.assertEquals(Visibility.PUBLIC, ((ClassFieldNode) classNode.members.get(0)).modifiers.getVisibility());
         Assertions.assertEquals(Visibility.PUBLIC, ((ClassFieldNode) classNode.members.get(1)).modifiers.getVisibility());
@@ -36,11 +37,11 @@ public class ClassTests extends ParserTestBase {
 
     @Test
     public void multipleBaseTypesTest() {
-        ParserOutput result = parse("""
-                class Region : Base, Java<java.lang.Runnable>, Java<java.io.Closeable> {}
-                """);
+        String code =
+                "class Region : Base, Java<java.lang.Runnable>, Java<java.io.Closeable> {}\n";
+        ParserOutput result = parse(code);
 
-        comparator.assertEquals(List.of(), result.diagnostics());
+        comparator.assertEquals(Lists.of(), result.diagnostics());
         ClassNode node = (ClassNode) result.unit().members.members.get(0);
         Assertions.assertEquals(3, node.baseTypeNodes.size());
         Assertions.assertEquals(2, node.baseTypeNodes.getCommas().size());
@@ -48,12 +49,12 @@ public class ClassTests extends ParserTestBase {
 
     @Test
     public void emptyBaseTypesAfterColonTest() {
-        ParserOutput result = parse("""
-                class Region : {}
-                """);
+        String code =
+                "class Region : {}\n";
+        ParserOutput result = parse(code);
 
         comparator.assertEquals(
-                List.of(
+                Lists.of(
                         new DiagnosticMessage(ParserErrors.TypeExpected, new SingleLineTextRange(1, 16, 15, 1), "{")),
                 result.diagnostics());
         ClassNode node = (ClassNode) result.unit().members.members.get(0);
@@ -62,21 +63,21 @@ public class ClassTests extends ParserTestBase {
 
     @Test
     public void unfinishedMemberTest() {
-        ParserOutput result = parse("""
-                class Region {
-                    void
-                }
-                """);
+        String code =
+                "class Region {\n" +
+                "    void\n" +
+                "}\n";
+        ParserOutput result = parse(code);
 
         comparator.assertEquals(
-                List.of(
+                Lists.of(
                         new DiagnosticMessage(ParserErrors.IdentifierExpected, new SingleLineTextRange(3, 1, 24, 1), "}"),
                         new DiagnosticMessage(ParserErrors.LeftParenthesisExpected, new SingleLineTextRange(3, 1, 24, 1), "}")),
                 result.diagnostics());
 
         comparator.assertEquals(
                 new CompilationUnitNode(
-                        new CompilationUnitMembersListNode(List.of(
+                        new CompilationUnitMembersListNode(Lists.of(
                                 new ClassNode(
                                         new Token(TokenType.CLASS, new SingleLineTextRange(1, 1, 0, 5))
                                                 .withTrailingTrivia(new Trivia(TokenType.WHITESPACE, new SingleLineTextRange(1, 6, 5, 1))),
@@ -86,9 +87,9 @@ public class ClassTests extends ParserTestBase {
                                          SeparatedList.of(),
                                          new Token(TokenType.LEFT_CURLY_BRACKET, new SingleLineTextRange(1, 14, 13, 1))
                                                 .withTrailingTrivia(new Trivia(TokenType.LINE_BREAK, new MultiLineTextRange(1, 15, 2, 1, 14, 1))),
-                                        List.of(
+                                        Lists.of(
                                                 new ClassMethodNode(
-                                                        new ModifiersNode(List.of(), new SingleLineTextRange(2, 5, 19, 0)),
+                                                        new ModifiersNode(Lists.of(), new SingleLineTextRange(2, 5, 19, 0)),
                                                         new VoidTypeNode(
                                                                 new Token(TokenType.VOID, new SingleLineTextRange(2, 5, 19, 4))
                                                                         .withLeadingTrivia(new Trivia(TokenType.WHITESPACE, new SingleLineTextRange(2, 1, 15, 4)))
@@ -102,33 +103,33 @@ public class ClassTests extends ParserTestBase {
                                                         null,
                                                         new BlockStatementNode(
                                                                 new Token(TokenType.LEFT_CURLY_BRACKET, new SingleLineTextRange(2, 9, 23, 0)),
-                                                                List.of(),
+                                                                Lists.of(),
                                                                 new Token(TokenType.RIGHT_CURLY_BRACKET, new SingleLineTextRange(2, 9, 23, 0))))),
                                         new Token(TokenType.RIGHT_CURLY_BRACKET, new SingleLineTextRange(3, 1, 24, 1))
                                                 .withTrailingTrivia(new Trivia(TokenType.LINE_BREAK, new MultiLineTextRange(3, 2, 4, 1, 25, 1))))),
                                 new MultiLineTextRange(1, 1, 3, 2, 0, 25)),
-                        new StatementsListNode(List.of(), new SingleLineTextRange(3, 2, 25, 0)),
+                        new StatementsListNode(Lists.of(), new SingleLineTextRange(3, 2, 25, 0)),
                         new EndOfFileToken(new SingleLineTextRange(4, 1, 26, 0))),
                 result.unit());
     }
 
     @Test
     public void wrongTokenTest() {
-        ParserOutput result = parse("""
-                class Region {
-                    void Check())
-                }
-                """);
+        String code =
+                "class Region {\n" +
+                "    void Check())\n" +
+                "}\n";
+        ParserOutput result = parse(code);
 
         comparator.assertEquals(
-                List.of(
+                Lists.of(
                         new DiagnosticMessage(ParserErrors.CurlyBracketOrArrowExpected, new SingleLineTextRange(2, 17, 31, 1), ")"),
                         new DiagnosticMessage(ParserErrors.ClassMemberExpected, new SingleLineTextRange(2, 17, 31, 1), ")")),
                 result.diagnostics());
 
         comparator.assertEquals(
                 new CompilationUnitNode(
-                        new CompilationUnitMembersListNode(List.of(
+                        new CompilationUnitMembersListNode(Lists.of(
                                 new ClassNode(
                                         new Token(TokenType.CLASS, new SingleLineTextRange(1, 1, 0, 5))
                                                 .withTrailingTrivia(new Trivia(TokenType.WHITESPACE, new SingleLineTextRange(1, 6, 5, 1))),
@@ -138,9 +139,9 @@ public class ClassTests extends ParserTestBase {
                                          SeparatedList.of(),
                                          new Token(TokenType.LEFT_CURLY_BRACKET, new SingleLineTextRange(1, 14, 13, 1))
                                                 .withTrailingTrivia(new Trivia(TokenType.LINE_BREAK, new MultiLineTextRange(1, 15, 2, 1, 14, 1))),
-                                        List.of(
+                                        Lists.of(
                                                 new ClassMethodNode(
-                                                        new ModifiersNode(List.of(), new SingleLineTextRange(2, 5, 19, 0)),
+                                                        new ModifiersNode(Lists.of(), new SingleLineTextRange(2, 5, 19, 0)),
                                                         new VoidTypeNode(
                                                                 new Token(TokenType.VOID, new SingleLineTextRange(2, 5, 19, 4))
                                                                         .withLeadingTrivia(new Trivia(TokenType.WHITESPACE, new SingleLineTextRange(2, 1, 15, 4)))
@@ -154,26 +155,26 @@ public class ClassTests extends ParserTestBase {
                                                         null,
                                                         new BlockStatementNode(
                                                                 new Token(TokenType.LEFT_CURLY_BRACKET, new SingleLineTextRange(2, 17, 31, 0)),
-                                                                List.of(),
+                                                                Lists.of(),
                                                                 new Token(TokenType.RIGHT_CURLY_BRACKET, new SingleLineTextRange(2, 17, 31, 0))))),
                                         new Token(TokenType.RIGHT_CURLY_BRACKET, new SingleLineTextRange(3, 1, 33, 1))
                                                 .withTrailingTrivia(new Trivia(TokenType.LINE_BREAK, new MultiLineTextRange(3, 2, 4, 1, 34, 1))))),
                                 new MultiLineTextRange(1, 1, 3, 2, 0, 34)),
-                        new StatementsListNode(List.of(), new SingleLineTextRange(3, 2, 34, 0)),
+                        new StatementsListNode(Lists.of(), new SingleLineTextRange(3, 2, 34, 0)),
                         new EndOfFileToken(new SingleLineTextRange(4, 1, 35, 0))),
                 result.unit());
     }
 
     @Test
     public void duplicateModifierTest() {
-        ParserOutput result = parse("""
-                class Class {
-                    async async void method() {}
-                }
-                """);
+        String code =
+                "class Class {\n" +
+                "    async async void method() {}\n" +
+                "}\n";
+        ParserOutput result = parse(code);
 
         comparator.assertEquals(
-                List.of(
+                Lists.of(
                         new DiagnosticMessage(ParserErrors.DuplicateModifier, new SingleLineTextRange(2, 11, 24, 5), "async")),
                 result.diagnostics());
     }

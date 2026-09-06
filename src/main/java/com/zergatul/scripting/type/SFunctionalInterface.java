@@ -126,7 +126,8 @@ public class SFunctionalInterface extends SFunction {
         return Type.getMethodDescriptor(
                 Type.getType(actualReturnType.getJavaClass()),
                 Arrays.stream(getActualParameters()).map(t -> {
-                    if (t instanceof SValueType valueType) {
+                    if (t instanceof SValueType) {
+                        SValueType valueType = (SValueType) t;
                         return valueType.getBoxed().getDescriptor();
                     } else {
                         return t.getDescriptor();
@@ -140,7 +141,8 @@ public class SFunctionalInterface extends SFunction {
 
     @Override
     public boolean equals(Object obj) {
-        if (obj instanceof SFunctionalInterface other) {
+        if (obj instanceof SFunctionalInterface) {
+            SFunctionalInterface other = (SFunctionalInterface) obj;
             return  other.clazz == clazz &&
                     other.method.equals(method) &&
                     other.actualReturnType.equals(actualReturnType) &&
@@ -155,7 +157,8 @@ public class SFunctionalInterface extends SFunction {
             TypeVariable<? extends Class<?>>[] classTypeParams,
             java.lang.reflect.Type[] actualArgs
     ) {
-        if (type instanceof TypeVariable<?> typeVariable) {
+        if (type instanceof TypeVariable<?>) {
+            TypeVariable<?> typeVariable = (TypeVariable<?>) type;
             int index = findTypeParamIndex(classTypeParams, typeVariable.getName());
             if (index != -1) {
                 return normalizeWildcard(actualArgs[index]);
@@ -179,7 +182,8 @@ public class SFunctionalInterface extends SFunction {
     }
 
     private static java.lang.reflect.Type normalizeWildcard(java.lang.reflect.Type type) {
-        if (type instanceof WildcardType wildcard) {
+        if (type instanceof WildcardType) {
+            WildcardType wildcard = (WildcardType) type;
             java.lang.reflect.Type[] lowerBounds = wildcard.getLowerBounds();
             if (lowerBounds.length > 0) {
                 return normalizeWildcard(lowerBounds[0]);
@@ -188,7 +192,8 @@ public class SFunctionalInterface extends SFunction {
             return normalizeWildcard(wildcard.getUpperBounds()[0]);
         }
 
-        if (type instanceof TypeVariable<?> typeVariable) {
+        if (type instanceof TypeVariable<?>) {
+            TypeVariable<?> typeVariable = (TypeVariable<?>) type;
             return SType.eraseTypeVariableBound(typeVariable);
         }
 

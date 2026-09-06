@@ -39,28 +39,48 @@ public enum BinaryOperator {
     }
 
     public static @Nullable BinaryOperator fromToken(TokenType type) {
-        return switch (type) {
-            case PLUS -> BinaryOperator.PLUS;
-            case MINUS -> BinaryOperator.MINUS;
-            case ASTERISK -> BinaryOperator.MULTIPLY;
-            case SLASH -> BinaryOperator.DIVIDE;
-            case PERCENT -> BinaryOperator.MODULO;
-            case EQUAL_EQUAL -> BinaryOperator.EQUALS;
-            case EXCLAMATION_EQUAL -> BinaryOperator.NOT_EQUALS;
-            case AMPERSAND -> BinaryOperator.BITWISE_AND;
-            case AMPERSAND_AMPERSAND -> BinaryOperator.BOOLEAN_AND;
-            case PIPE -> BinaryOperator.BITWISE_OR;
-            case PIPE_PIPE -> BinaryOperator.BOOLEAN_OR;
-            case LESS -> BinaryOperator.LESS;
-            case GREATER -> BinaryOperator.GREATER;
-            case LESS_EQUAL -> BinaryOperator.LESS_EQUALS;
-            case GREATER_EQUAL -> BinaryOperator.GREATER_EQUALS;
-            case QUESTION_QUESTION -> BinaryOperator.NULL_COALESCING;
-            case IS -> BinaryOperator.IS;
-            case AS -> BinaryOperator.AS;
-            case IN -> BinaryOperator.IN;
-            default -> null;
-        };
+        switch (type) {
+            case PLUS:
+                return BinaryOperator.PLUS;
+            case MINUS:
+                return BinaryOperator.MINUS;
+            case ASTERISK:
+                return BinaryOperator.MULTIPLY;
+            case SLASH:
+                return BinaryOperator.DIVIDE;
+            case PERCENT:
+                return BinaryOperator.MODULO;
+            case EQUAL_EQUAL:
+                return BinaryOperator.EQUALS;
+            case EXCLAMATION_EQUAL:
+                return BinaryOperator.NOT_EQUALS;
+            case AMPERSAND:
+                return BinaryOperator.BITWISE_AND;
+            case AMPERSAND_AMPERSAND:
+                return BinaryOperator.BOOLEAN_AND;
+            case PIPE:
+                return BinaryOperator.BITWISE_OR;
+            case PIPE_PIPE:
+                return BinaryOperator.BOOLEAN_OR;
+            case LESS:
+                return BinaryOperator.LESS;
+            case GREATER:
+                return BinaryOperator.GREATER;
+            case LESS_EQUAL:
+                return BinaryOperator.LESS_EQUALS;
+            case GREATER_EQUAL:
+                return BinaryOperator.GREATER_EQUALS;
+            case QUESTION_QUESTION:
+                return BinaryOperator.NULL_COALESCING;
+            case IS:
+                return BinaryOperator.IS;
+            case AS:
+                return BinaryOperator.AS;
+            case IN:
+                return BinaryOperator.IN;
+            default:
+                return null;
+        }
     }
 
     public boolean canBeOverloaded() {

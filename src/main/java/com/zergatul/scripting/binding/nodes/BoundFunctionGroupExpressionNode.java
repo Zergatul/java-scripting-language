@@ -4,6 +4,7 @@ import com.zergatul.scripting.binding.BinderTreeVisitor;
 import com.zergatul.scripting.parser.nodes.NameExpressionNode;
 import com.zergatul.scripting.symbols.Function;
 import com.zergatul.scripting.type.SMethodGroup;
+import com.zergatul.scripting.utility.Lists;
 
 import java.util.List;
 
@@ -26,6 +27,6 @@ public class BoundFunctionGroupExpressionNode extends BoundExpressionNode {
 
     @Override
     public List<BoundNode> getChildren() {
-        return List.of();
+        return Lists.of();
     }
 }

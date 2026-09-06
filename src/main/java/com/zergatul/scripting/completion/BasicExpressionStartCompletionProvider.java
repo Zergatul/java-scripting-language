@@ -3,6 +3,7 @@ package com.zergatul.scripting.completion;
 import com.zergatul.scripting.binding.BinderOutput;
 import com.zergatul.scripting.compiler.CompilationParameters;
 import com.zergatul.scripting.lexer.TokenType;
+import com.zergatul.scripting.utility.Lists;
 
 import java.util.List;
 
@@ -15,13 +16,13 @@ public class BasicExpressionStartCompletionProvider<T> extends AbstractCompletio
     @Override
     public List<T> provide(CompilationParameters parameters, BinderOutput output, CompletionContext context) {
         if (context.canExpression()) {
-            return List.of(
+            return Lists.of(
                     factory.getKeywordSuggestion(TokenType.NULL),
                     factory.getKeywordSuggestion(TokenType.FALSE),
                     factory.getKeywordSuggestion(TokenType.TRUE),
                     factory.getKeywordSuggestion(TokenType.NEW));
         } else {
-            return List.of();
+            return Lists.of();
         }
     }
 }

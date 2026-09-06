@@ -4,6 +4,7 @@ import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
 import com.zergatul.scripting.parser.nodes.CollectionExpressionNode;
 import com.zergatul.scripting.type.SType;
+import com.zergatul.scripting.utility.Lists;
 
 import java.util.List;
 
@@ -13,7 +14,7 @@ public class BoundCollectionExpressionNode extends BoundExpressionNode {
     public final List<BoundExpressionNode> list;
 
     public BoundCollectionExpressionNode(BoundEmptyCollectionExpressionNode node, SType type) {
-        this(node.syntaxNode, type, List.of(), node.getRange());
+        this(node.syntaxNode, type, Lists.of(), node.getRange());
     }
 
     public BoundCollectionExpressionNode(CollectionExpressionNode node, SType type, List<BoundExpressionNode> list) {
@@ -40,6 +41,6 @@ public class BoundCollectionExpressionNode extends BoundExpressionNode {
 
     @Override
     public List<BoundNode> getChildren() {
-        return List.copyOf(list);
+        return Lists.copyOf(list);
     }
 }

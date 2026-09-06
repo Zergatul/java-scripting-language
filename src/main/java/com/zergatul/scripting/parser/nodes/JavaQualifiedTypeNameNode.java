@@ -4,6 +4,7 @@ import com.zergatul.scripting.Locatable;
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.lexer.Token;
 import com.zergatul.scripting.parser.ParserTreeVisitor;
+import com.zergatul.scripting.utility.Lists;
 
 import java.util.List;
 
@@ -28,6 +29,6 @@ public class JavaQualifiedTypeNameNode extends ParserNode {
 
     @Override
     public List<Locatable> getChildNodes() {
-        return List.copyOf(tokens);
+        return Lists.copyOf(tokens);
     }
 }

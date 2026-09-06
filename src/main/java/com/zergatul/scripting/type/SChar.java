@@ -6,11 +6,15 @@ import com.zergatul.scripting.compiler.CompilerContext;
 import com.zergatul.scripting.parser.BinaryOperator;
 import com.zergatul.scripting.type.operation.BinaryOperation;
 import com.zergatul.scripting.type.operation.CastOperation;
+import com.zergatul.scripting.utility.Lists;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 
+import java.lang.reflect.Field;
 import java.util.List;
+import java.util.function.Consumer;
 
 import static org.objectweb.asm.Opcodes.*;
 
@@ -92,13 +96,33 @@ public class SChar extends SValueType {
     }
 
     @Override
+    public void compileReflectionGetField(MethodVisitor visitor) {
+        visitor.visitMethodInsn(
+                Opcodes.INVOKEVIRTUAL,
+                Type.getInternalName(Field.class),
+                "getChar",
+                Type.getMethodDescriptor(getAsmType(), SJavaObject.instance.getAsmType()),
+                false);
+    }
+
+    @Override
+    public void compileReflectionSetField(MethodVisitor visitor) {
+        visitor.visitMethodInsn(
+                Opcodes.INVOKEVIRTUAL,
+                Type.getInternalName(Field.class),
+                "setChar",
+                Type.getMethodDescriptor(Type.VOID_TYPE, SJavaObject.instance.getAsmType(), getAsmType()),
+                false);
+    }
+
+    @Override
     public void loadClassObject(MethodVisitor visitor) {
         visitor.visitFieldInsn(GETSTATIC, "java/lang/Character", "TYPE", "Ljava/lang/Class;");
     }
 
     @Override
     public List<MethodReference> getDeclaredMethods() {
-        return List.of(METHOD_TO_STRING.value(), METHOD_FROM_CODE.value());
+        return Lists.of(METHOD_TO_STRING.value(), METHOD_FROM_CODE.value());
     }
 
     @Override
@@ -107,7 +131,7 @@ public class SChar extends SValueType {
     }
 
     private List<BinaryOperation> getBinaryOperationsInternal() {
-        return List.of(
+        return Lists.of(
                 LESS_THAN.value(),
                 GREATER_THAN.value(),
                 LESS_THAN_EQUALS.value(),
@@ -163,9 +187,7 @@ public class SChar extends SValueType {
             new CharComparisonOperation(BinaryOperator.NOT_EQUALS, IF_ICMPNE));
 
     private static final Lazy<MethodReference> METHOD_TO_STRING = new Lazy<>(() -> new StaticAsInstanceMethodReference(
-            """
-                    Returns a string containing single character
-                    """,
+            "Returns a string containing single character",
             String.class,
             SChar.instance,
             "valueOf",
@@ -191,7 +213,7 @@ public class SChar extends SValueType {
 
         @Override
         public List<MethodParameter> getParameters() {
-            return List.of(new MethodParameter("code", SInt.instance));
+            return Lists.of(new MethodParameter("code", SInt.instance));
         }
 
         @Override
@@ -200,8 +222,8 @@ public class SChar extends SValueType {
         }
 
         @Override
-        public void compileInvoke(MethodVisitor visitor, CompilerContext context, Runnable compileArguments) {
-            compileArguments.run();
+        public void compileInvoke(MethodVisitor visitor, CompilerContext context, Consumer<CompilerContext> compileArguments) {
+            compileArguments.accept(context);
         }
     });
 

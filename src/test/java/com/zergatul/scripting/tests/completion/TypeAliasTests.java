@@ -3,12 +3,12 @@ package com.zergatul.scripting.tests.completion;
 import com.zergatul.scripting.lexer.TokenType;
 import com.zergatul.scripting.tests.compiler.helpers.IntStorage;
 import com.zergatul.scripting.tests.completion.helpers.CompletionTestHelper;
-import com.zergatul.scripting.tests.completion.helpers.Lists;
 import com.zergatul.scripting.tests.completion.helpers.TestCompletionContext;
 import com.zergatul.scripting.tests.completion.suggestions.*;
 import com.zergatul.scripting.type.SAliasType;
 import com.zergatul.scripting.type.SString;
 import com.zergatul.scripting.type.SUnknown;
+import com.zergatul.scripting.utility.Lists;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -20,10 +20,11 @@ public class TypeAliasTests {
 
     @Test
     public void suggestTypeAliasKeywordTest1() {
-        assertSuggestions("""
-                type<cursor>
-                """,
-                context -> Lists.of(
+        String code =
+                "type<cursor>\n";
+        assertSuggestions(
+                code,
+                context -> Lists.from(
                         unitMembers,
                         statements,
                         new KeywordSuggestion(TokenType.ASYNC),
@@ -32,12 +33,13 @@ public class TypeAliasTests {
 
     @Test
     public void suggestTypeAliasKeywordTest2() {
-        assertSuggestions("""
-                typealias Str = string;
-                type<cursor>
-                int x = 1;
-                """,
-                context -> Lists.of(
+        String code =
+                "typealias Str = string;\n" +
+                "type<cursor>\n" +
+                "int x = 1;\n";
+        assertSuggestions(
+                code,
+                context -> Lists.from(
                         unitMembers,
                         statements,
                         new KeywordSuggestion(TokenType.ASYNC),
@@ -47,13 +49,14 @@ public class TypeAliasTests {
 
     @Test
     public void suggestTypeAliasKeywordTest3() {
-        assertSuggestions("""
-                static int a = 1;
-                typealias Str = string;
-                type<cursor>
-                a = 2;
-                """,
-                context -> Lists.of(
+        String code =
+                "static int a = 1;\n" +
+                "typealias Str = string;\n" +
+                "type<cursor>\n" +
+                "a = 2;\n";
+        assertSuggestions(
+                code,
+                context -> Lists.from(
                         unitMembers,
                         statements,
                         new KeywordSuggestion(TokenType.ASYNC),
@@ -64,13 +67,14 @@ public class TypeAliasTests {
 
     @Test
     public void singleWordStatementStartAliasedTypeTest() {
-        assertSuggestions("""
-                typealias Str = string;
-                int x = 1;
-                Str<cursor>
-                x = 2;
-                """,
-                context -> Lists.of(
+        String code =
+                "typealias Str = string;\n" +
+                "int x = 1;\n" +
+                "Str<cursor>\n" +
+                "x = 2;\n";
+        assertSuggestions(
+                code,
+                context -> Lists.from(
                         statements,
                         new TypeAliasSuggestion(new SAliasType("Str", SString.instance)),
                         new StaticConstantSuggestion(context, "intStorage"),
@@ -79,13 +83,14 @@ public class TypeAliasTests {
 
     @Test
     public void singleWordStatementStartDeclaredClassTypeTest() {
-        assertSuggestions("""
-                class Class {}
-                int x = 1;
-                Class<cursor>
-                x = 2;
-                """,
-                context -> Lists.of(
+        String code =
+                "class Class {}\n" +
+                "int x = 1;\n" +
+                "Class<cursor>\n" +
+                "x = 2;\n";
+        assertSuggestions(
+                code,
+                context -> Lists.from(
                         statements,
                         new ClassSuggestion(context, "Class"),
                         new StaticConstantSuggestion(context, "intStorage"),
@@ -94,11 +99,12 @@ public class TypeAliasTests {
 
     @Test
     public void suggestAliasTypeTest() {
-        assertSuggestions("""
-                typealias Str = string;
-                <cursor>
-                """,
-                context -> Lists.of(
+        String code =
+                "typealias Str = string;\n" +
+                "<cursor>\n";
+        assertSuggestions(
+                code,
+                context -> Lists.from(
                         unitMembers,
                         statements,
                         new KeywordSuggestion(TokenType.ASYNC),
@@ -108,10 +114,11 @@ public class TypeAliasTests {
 
     @Test
     public void suggestTypesAfterEquals() {
-        assertSuggestions("""
-                typealias MyType = <cursor>
-                """,
-                context -> Lists.of(
+        String code =
+                "typealias MyType = <cursor>\n";
+        assertSuggestions(
+                code,
+                context -> Lists.from(
                         types,
                         new TypeAliasSuggestion(new SAliasType("MyType", SUnknown.instance))));
     }

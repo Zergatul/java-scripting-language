@@ -148,7 +148,8 @@ public abstract class TextRange {
 
     @Override
     public boolean equals(Object obj) {
-        if (obj instanceof TextRange other) {
+        if (obj instanceof TextRange) {
+            TextRange other = (TextRange) obj;
             return  other.getLine1() == getLine1() &&
                     other.getColumn1() == getColumn1() &&
                     other.getLine2() == getLine2() &&

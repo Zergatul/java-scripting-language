@@ -5,6 +5,7 @@ import com.zergatul.scripting.binding.BinderTreeVisitor;
 import com.zergatul.scripting.parser.SyntaxFactory;
 import com.zergatul.scripting.parser.nodes.UnaryOperatorNode;
 import com.zergatul.scripting.type.operation.UnaryOperation;
+import com.zergatul.scripting.utility.Lists;
 
 import java.util.List;
 
@@ -37,6 +38,6 @@ public class BoundUnaryOperatorNode extends BoundNode {
 
     @Override
     public List<BoundNode> getChildren() {
-        return List.of();
+        return Lists.of();
     }
 }

@@ -6,6 +6,7 @@ import com.zergatul.scripting.compiler.CompilationParameters;
 import com.zergatul.scripting.symbols.LiftedVariable;
 import com.zergatul.scripting.symbols.LocalVariable;
 import com.zergatul.scripting.symbols.SymbolRef;
+import com.zergatul.scripting.utility.Lists;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -19,31 +20,35 @@ public class LocalVariablesCompletionProvider<T> extends AbstractCompletionProvi
     @Override
     public List<T> provide(CompilationParameters parameters, BinderOutput output, CompletionContext context) {
         if (!context.canExpression()) {
-            return List.of();
+            return Lists.of();
         }
 
         context = context.closestStatement(output);
         if (context == null) {
-            return List.of();
+            return Lists.of();
         }
 
         List<T> suggestions = new ArrayList<>();
         for (BoundStatementNode statement : getStatementsPriorTo(context)) {
-            if (statement instanceof BoundVariableDeclarationNode declaration) {
-                if (declaration.name.getSymbol() instanceof LocalVariable local) {
+            if (statement instanceof BoundVariableDeclarationNode) {
+                BoundVariableDeclarationNode declaration = (BoundVariableDeclarationNode) statement;
+                if (declaration.name.getSymbol() instanceof LocalVariable) {
+                    LocalVariable local = (LocalVariable) declaration.name.getSymbol();
                     if (local.getName() == null || local.getName().isEmpty()) {
                         continue;
                     }
                     suggestions.add(factory.getLocalVariableSuggestion(local));
                 }
-                if (declaration.name.getSymbol() instanceof LiftedVariable lifted) {
+                if (declaration.name.getSymbol() instanceof LiftedVariable) {
+                    LiftedVariable lifted = (LiftedVariable) declaration.name.getSymbol();
                     if (lifted.getName() == null || lifted.getName().isEmpty()) {
                         continue;
                     }
                     suggestions.add(factory.getLocalVariableSuggestion(lifted.getUnderlying()));
                 }
             }
-            if (statement instanceof BoundIfStatementNode ifStatement) {
+            if (statement instanceof BoundIfStatementNode) {
+                BoundIfStatementNode ifStatement = (BoundIfStatementNode) statement;
                 // if cursor is after IfStatement, add fallthrough locals
                 if (ifStatement.getRange().isBefore(context.line, context.column)) {
                     for (SymbolRef ref : ifStatement.flow.fallthroughLocals()) {
@@ -57,14 +62,21 @@ public class LocalVariablesCompletionProvider<T> extends AbstractCompletionProvi
 
     private List<BoundStatementNode> getStatementsPriorTo(CompletionContext context) {
         if (context.entry == null) {
-            return List.of();
+            return Lists.of();
         }
 
-        List<BoundStatementNode> children = switch (context.entry.node.getNodeType()) {
-            case STATEMENTS_LIST -> ((BoundStatementsListNode) context.entry.node).statements;
-            case BLOCK_STATEMENT -> ((BoundBlockStatementNode) context.entry.node).statements;
-            default -> null;
-        };
+        List<BoundStatementNode> children;
+        switch (context.entry.node.getNodeType()) {
+            case STATEMENTS_LIST:
+                children = ((BoundStatementsListNode) context.entry.node).statements;
+                break;
+            case BLOCK_STATEMENT:
+                children = ((BoundBlockStatementNode) context.entry.node).statements;
+                break;
+            default:
+                children = null;
+                break;
+        }
 
         if (children != null) {
             List<BoundStatementNode> statements = new ArrayList<>();
@@ -86,7 +98,7 @@ public class LocalVariablesCompletionProvider<T> extends AbstractCompletionProvi
 
         CompletionContext parent = context.closestStatement(null);
         if (parent == null || parent.entry == null) {
-            return List.of();
+            return Lists.of();
         }
 
         if (parent.entry.node instanceof BoundStatementNode) {
@@ -95,7 +107,8 @@ public class LocalVariablesCompletionProvider<T> extends AbstractCompletionProvi
                 if (child == context.entry.node) {
                     break;
                 }
-                if (child instanceof BoundStatementNode statement) {
+                if (child instanceof BoundStatementNode) {
+                    BoundStatementNode statement = (BoundStatementNode) child;
                     statements.add(statement);
                 }
             }
@@ -103,13 +116,13 @@ public class LocalVariablesCompletionProvider<T> extends AbstractCompletionProvi
             return statements;
         }
 
-        return List.of();
+        return Lists.of();
     }
 
     private List<BoundStatementNode> getFromParentScopes(CompletionContext context) {
         CompletionContext parent = context.up();
         if (parent == null) {
-            return List.of();
+            return Lists.of();
         }
 
         return getStatementsPriorTo(parent);

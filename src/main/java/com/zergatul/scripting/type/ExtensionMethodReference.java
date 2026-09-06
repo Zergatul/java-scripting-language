@@ -5,6 +5,7 @@ import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Type;
 
 import java.util.List;
+import java.util.function.Consumer;
 
 import static org.objectweb.asm.Opcodes.INVOKESTATIC;
 
@@ -59,8 +60,8 @@ public class ExtensionMethodReference extends MethodReference {
     }
 
     @Override
-    public void compileInvoke(MethodVisitor visitor, CompilerContext context, Runnable compileArguments) {
-        compileArguments.run();
+    public void compileInvoke(MethodVisitor visitor, CompilerContext context, Consumer<CompilerContext> compileArguments) {
+        compileArguments.accept(context);
         visitor.visitMethodInsn(
                 INVOKESTATIC,
                 context.getClassName(),

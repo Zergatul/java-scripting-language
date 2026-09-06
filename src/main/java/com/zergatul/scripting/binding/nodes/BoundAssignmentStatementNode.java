@@ -4,6 +4,7 @@ import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
 import com.zergatul.scripting.parser.SyntaxFactory;
 import com.zergatul.scripting.parser.nodes.AssignmentStatementNode;
+import com.zergatul.scripting.utility.Lists;
 
 import java.util.List;
 
@@ -49,6 +50,6 @@ public class BoundAssignmentStatementNode extends BoundStatementNode {
 
     @Override
     public List<BoundNode> getChildren() {
-        return List.of(left, operator, right);
+        return Lists.of(left, operator, right);
     }
 }

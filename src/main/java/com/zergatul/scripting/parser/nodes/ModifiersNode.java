@@ -1,5 +1,6 @@
 package com.zergatul.scripting.parser.nodes;
 
+import com.zergatul.scripting.InternalException;
 import com.zergatul.scripting.Locatable;
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.lexer.Token;
@@ -7,6 +8,7 @@ import com.zergatul.scripting.lexer.TokenType;
 import com.zergatul.scripting.parser.ParserTreeVisitor;
 import com.zergatul.scripting.type.MemberModifiers;
 import com.zergatul.scripting.type.Visibility;
+import com.zergatul.scripting.utility.Lists;
 
 import java.util.List;
 
@@ -68,7 +70,11 @@ public class ModifiersNode extends ParserNode {
     public boolean hasMethodModifiers() {
         for (Token token : tokens) {
             switch (token.getTokenType()) {
-                case ASYNC, ABSTRACT, OVERRIDE, VIRTUAL: return true;
+                case ASYNC:
+                case ABSTRACT:
+                case OVERRIDE:
+                case VIRTUAL:
+                    return true;
             }
         }
         return false;
@@ -84,7 +90,7 @@ public class ModifiersNode extends ParserNode {
 
     @Override
     public List<Locatable> getChildNodes() {
-        return List.copyOf(tokens);
+        return Lists.copyOf(tokens);
     }
 
     public MemberModifiers toMemberModifiers() {

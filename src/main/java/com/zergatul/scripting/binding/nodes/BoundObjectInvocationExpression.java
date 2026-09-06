@@ -3,6 +3,7 @@ package com.zergatul.scripting.binding.nodes;
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
 import com.zergatul.scripting.type.SFunction;
+import com.zergatul.scripting.utility.Lists;
 
 import java.util.List;
 
@@ -37,6 +38,6 @@ public class BoundObjectInvocationExpression extends BoundExpressionNode {
 
     @Override
     public List<BoundNode> getChildren() {
-        return List.of(callee, arguments);
+        return Lists.of(callee, arguments);
     }
 }

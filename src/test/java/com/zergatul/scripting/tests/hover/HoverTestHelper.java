@@ -8,6 +8,7 @@ import com.zergatul.scripting.binding.BinderOutput;
 import com.zergatul.scripting.compiler.CompilationParameters;
 import com.zergatul.scripting.compiler.CompilationParametersBuilder;
 import com.zergatul.scripting.tests.utility.CursorHelper;
+import com.zergatul.scripting.utility.Lists;
 import org.junit.jupiter.api.Assertions;
 
 import java.util.List;
@@ -32,8 +33,8 @@ public class HoverTestHelper {
 
         HoverInfo hover = actual.content();
         List<String> content = hover.documentation() == null ?
-                List.of(hover.signature()) :
-                List.of(hover.signature(), hover.documentation());
+                Lists.of(hover.signature()) :
+                Lists.of(hover.signature(), hover.documentation());
         Assertions.assertIterableEquals(expected, content);
         Assertions.assertEquals(result.range().extend(length), actual.range());
     }

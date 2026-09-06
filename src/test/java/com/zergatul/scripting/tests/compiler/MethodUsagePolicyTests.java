@@ -1,5 +1,7 @@
 package com.zergatul.scripting.tests.compiler;
 
+import com.zergatul.scripting.utility.Lists;
+
 import com.zergatul.scripting.DiagnosticMessage;
 import com.zergatul.scripting.SingleLineTextRange;
 import com.zergatul.scripting.binding.BinderErrors;
@@ -20,13 +22,12 @@ public class MethodUsagePolicyTests extends ComparatorTest {
 
     @Test
     public void basicTest() {
-        String code = """
-                boolStorage.add(true);
-                intStorage.add(1);
-                """;
+        String code =
+                "boolStorage.add(true);\n" +
+                "intStorage.add(1);\n";
 
         comparator.assertEquals(
-                List.of(
+                Lists.of(
                         new DiagnosticMessage(
                                 BinderErrors.MethodUsageNotAllowed,
                                 new SingleLineTextRange(2, 12, 34, 3),

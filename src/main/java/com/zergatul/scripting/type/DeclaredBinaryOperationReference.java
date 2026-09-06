@@ -6,6 +6,7 @@ import com.zergatul.scripting.parser.BinaryOperator;
 import org.objectweb.asm.MethodVisitor;
 
 import java.util.List;
+import java.util.function.Consumer;
 
 public class DeclaredBinaryOperationReference extends MethodReference {
 
@@ -40,7 +41,7 @@ public class DeclaredBinaryOperationReference extends MethodReference {
     }
 
     @Override
-    public void compileInvoke(MethodVisitor visitor, CompilerContext context, Runnable compileArguments) {
+    public void compileInvoke(MethodVisitor visitor, CompilerContext context, Consumer<CompilerContext> compileArguments) {
         throw new InternalException();
     }
 

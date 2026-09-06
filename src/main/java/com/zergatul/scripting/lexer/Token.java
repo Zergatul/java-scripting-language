@@ -3,6 +3,7 @@ package com.zergatul.scripting.lexer;
 import com.zergatul.scripting.InternalException;
 import com.zergatul.scripting.Locatable;
 import com.zergatul.scripting.TextRange;
+import com.zergatul.scripting.utility.Lists;
 
 import java.util.Arrays;
 import java.util.List;
@@ -19,7 +20,7 @@ public class Token implements Locatable {
     protected final TextRange range;
 
     public Token(TokenType tokenType, TextRange range) {
-        this(tokenType, List.of(), List.of(), range);
+        this(tokenType, Lists.of(), Lists.of(), range);
     }
 
     public Token(TokenType tokenType, List<Trivia> leadingTrivia, List<Trivia> trailingTrivia, TextRange range) {
@@ -66,7 +67,7 @@ public class Token implements Locatable {
     }
 
     public Token withLeadingTrivia(Trivia trivia) {
-        return withLeadingTrivia(List.of(trivia));
+        return withLeadingTrivia(Lists.of(trivia));
     }
 
     public Token withLeadingTrivia(List<Trivia> trivia) {
@@ -87,11 +88,11 @@ public class Token implements Locatable {
 
     public String asFullSource(String code) {
         StringBuilder builder = new StringBuilder();
-        for (var trivia : leadingTrivia) {
+        for (Trivia trivia : leadingTrivia) {
             builder.append(trivia.asSource(code));
         }
         builder.append(asSource(code));
-        for (var trivia : trailingTrivia) {
+        for (Trivia trivia : trailingTrivia) {
             builder.append(trivia.asSource(code));
         }
         return builder.toString();
@@ -118,6 +119,11 @@ public class Token implements Locatable {
     }
 
     protected static Trivia[] toArray(List<Trivia> list) {
-        return list.isEmpty() ? EMPTY_TRIVIA : list.toArray(Trivia[]::new);
+        if (list.isEmpty()) {
+            return Token.EMPTY_TRIVIA;
+        } else {
+            Trivia[] result = new Trivia[list.size()];
+            return list.toArray(result);
+        }
     }
 }

@@ -4,6 +4,7 @@ import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
 import com.zergatul.scripting.parser.SyntaxFactory;
 import com.zergatul.scripting.parser.nodes.BlockStatementNode;
+import com.zergatul.scripting.utility.Lists;
 
 import java.util.List;
 
@@ -13,7 +14,7 @@ public class BoundBlockStatementNode extends BoundStatementNode {
     public final List<BoundStatementNode> statements;
 
     public BoundBlockStatementNode(BoundStatementNode statement1, BoundStatementNode statement2) {
-        this(SyntaxFactory.missingBlockStatement(), List.of(statement1, statement2), TextRange.MISSING);
+        this(SyntaxFactory.missingBlockStatement(), Lists.of(statement1, statement2), TextRange.MISSING);
     }
 
     public BoundBlockStatementNode(List<BoundStatementNode> statements) {
@@ -43,6 +44,6 @@ public class BoundBlockStatementNode extends BoundStatementNode {
     }
     @Override
     public List<BoundNode> getChildren() {
-        return List.copyOf(statements);
+        return Lists.copyOf(statements);
     }
 }

@@ -12,8 +12,7 @@ public class JavaTypeNameSuggestion extends Suggestion {
 
     @Override
     public boolean equals(Object obj) {
-        return obj instanceof JavaTypeNameSuggestion other &&
-                other.suggestion.equals(suggestion);
+        return obj instanceof JavaTypeNameSuggestion && ((JavaTypeNameSuggestion) obj).suggestion.equals(suggestion);
     }
 
     @Override

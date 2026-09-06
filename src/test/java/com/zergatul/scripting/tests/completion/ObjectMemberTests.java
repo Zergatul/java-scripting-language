@@ -1,12 +1,12 @@
 package com.zergatul.scripting.tests.completion;
 
 import com.zergatul.scripting.tests.completion.helpers.CompletionTestHelper;
-import com.zergatul.scripting.tests.completion.helpers.Lists;
 import com.zergatul.scripting.tests.completion.helpers.TestCompletionContext;
 import com.zergatul.scripting.tests.completion.suggestions.*;
 import com.zergatul.scripting.type.SFloat;
 import com.zergatul.scripting.type.SInt;
 import com.zergatul.scripting.type.SType;
+import com.zergatul.scripting.utility.Lists;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -18,12 +18,13 @@ public class ObjectMemberTests {
 
     @Test
     public void beforeDotTest() {
-        assertSuggestions("""
-                int x = 123;
-                x<cursor>.
-                x.toString();
-                """,
-                context -> Lists.of(
+        String code =
+                "int x = 123;\n" +
+                "x<cursor>.\n" +
+                "x.toString();\n";
+        assertSuggestions(
+                code,
+                context -> Lists.from(
                         expressions,
                         new StaticConstantSuggestion(context, "api"),
                         new LocalVariableSuggestion(context, "x")));
@@ -31,12 +32,13 @@ public class ObjectMemberTests {
 
     @Test
     public void intVariableNoSymbolsTest() {
-        assertSuggestions("""
-                int x = 123;
-                x.<cursor>
-                x.toString();
-                """,
-                context -> List.of(
+        String code =
+                "int x = 123;\n" +
+                "x.<cursor>\n" +
+                "x.toString();\n";
+        assertSuggestions(
+                code,
+                context -> Lists.of(
                         MethodSuggestion.getInstance(SInt.instance, "toInt8"),
                         MethodSuggestion.getInstance(SInt.instance, "toInt16"),
                         MethodSuggestion.getInstance(SInt.instance, "toString"),
@@ -45,12 +47,13 @@ public class ObjectMemberTests {
 
     @Test
     public void intVariableWithSymbolsTest() {
-        assertSuggestions("""
-                int x = 123;
-                x.<cursor>a
-                x.toString();
-                """,
-                context -> List.of(
+        String code =
+                "int x = 123;\n" +
+                "x.<cursor>a\n" +
+                "x.toString();\n";
+        assertSuggestions(
+                code,
+                context -> Lists.of(
                         MethodSuggestion.getInstance(SInt.instance, "toInt8"),
                         MethodSuggestion.getInstance(SInt.instance, "toInt16"),
                         MethodSuggestion.getInstance(SInt.instance, "toString"),
@@ -59,11 +62,12 @@ public class ObjectMemberTests {
 
     @Test
     public void intVariableValidMethodTest() {
-        assertSuggestions("""
-                int x = 123;
-                x.toString<cursor>();
-                """,
-                context -> List.of(
+        String code =
+                "int x = 123;\n" +
+                "x.toString<cursor>();\n";
+        assertSuggestions(
+                code,
+                context -> Lists.of(
                         MethodSuggestion.getInstance(SInt.instance, "toInt8"),
                         MethodSuggestion.getInstance(SInt.instance, "toInt16"),
                         MethodSuggestion.getInstance(SInt.instance, "toString"),
@@ -72,12 +76,13 @@ public class ObjectMemberTests {
 
     @Test
     public void staticReferenceNoSymbolsTest() {
-        assertSuggestions("""
-                int x = 123;
-                int.<cursor>
-                x.toString();
-                """,
-                context -> List.of(
+        String code =
+                "int x = 123;\n" +
+                "int.<cursor>\n" +
+                "x.toString();\n";
+        assertSuggestions(
+                code,
+                context -> Lists.of(
                         MethodSuggestion.getStatic(SInt.instance, "tryParse"),
                         PropertySuggestion.getStatic(SInt.instance, "MIN_VALUE"),
                         PropertySuggestion.getStatic(SInt.instance, "MAX_VALUE")));
@@ -85,13 +90,14 @@ public class ObjectMemberTests {
 
     @Test
     public void staticReferenceWithSymbolsTest() {
-        assertSuggestions("""
-                int x = 123;
-                int y = 456;
-                int.abc<cursor>
-                x.toString();
-                """,
-                context -> List.of(
+        String code =
+                "int x = 123;\n" +
+                "int y = 456;\n" +
+                "int.abc<cursor>\n" +
+                "x.toString();\n";
+        assertSuggestions(
+                code,
+                context -> Lists.of(
                         MethodSuggestion.getStatic(SInt.instance, "tryParse"),
                         PropertySuggestion.getStatic(SInt.instance, "MIN_VALUE"),
                         PropertySuggestion.getStatic(SInt.instance, "MAX_VALUE")));
@@ -99,90 +105,99 @@ public class ObjectMemberTests {
 
     @Test
     public void staticConstantSimpleTest1() {
-        assertSuggestions("""
-                api.<cursor>
-                """,
-                context -> List.of(
+        String code =
+                "api.<cursor>\n";
+        assertSuggestions(
+                code,
+                context -> Lists.of(
                         MethodSuggestion.getInstance(SType.fromJavaType(SomeApi.class), "doSomething")));
     }
 
     @Test
     public void staticConstantSimpleTest2() {
-        assertSuggestions("""
-                api.abc<cursor>
-                """,
-                context -> List.of(
+        String code =
+                "api.abc<cursor>\n";
+        assertSuggestions(
+                code,
+                context -> Lists.of(
                         MethodSuggestion.getInstance(SType.fromJavaType(SomeApi.class), "doSomething")));
     }
 
     @Test
     public void staticConstantSimpleTest3() {
-        assertSuggestions("""
-                api.<cursor>();
-                """,
-                context -> List.of(
+        String code =
+                "api.<cursor>();\n";
+        assertSuggestions(
+                code,
+                context -> Lists.of(
                         MethodSuggestion.getInstance(SType.fromJavaType(SomeApi.class), "doSomething")));
     }
 
     @Test
     public void staticConstantSimpleTest4() {
-        assertSuggestions("""
-                api.abc<cursor>();
-                """,
-                context -> List.of(
+        String code =
+                "api.abc<cursor>();\n";
+        assertSuggestions(
+                code,
+                context -> Lists.of(
                         MethodSuggestion.getInstance(SType.fromJavaType(SomeApi.class), "doSomething")));
     }
 
     @Test
     public void staticConstantSimpleTest5() {
-        assertSuggestions("""
-                let x = 1;
-                api.<cursor>
-                x.toString();
-                """,
-                context -> List.of(
+        String code =
+                "let x = 1;\n" +
+                "api.<cursor>\n" +
+                "x.toString();\n";
+        assertSuggestions(
+                code,
+                context -> Lists.of(
                         MethodSuggestion.getInstance(SType.fromJavaType(SomeApi.class), "doSomething")));
     }
 
     @Test
     public void staticConstantSimpleTest6() {
-        assertSuggestions("""
-                let x = 1;
-                api.abc<cursor>
-                x.toString();
-                """,
-                context -> List.of(
+        String code =
+                "let x = 1;\n" +
+                "api.abc<cursor>\n" +
+                "x.toString();\n";
+        assertSuggestions(
+                code,
+                context -> Lists.of(
                         MethodSuggestion.getInstance(SType.fromJavaType(SomeApi.class), "doSomething")));
     }
 
     @Test
     public void staticConstantSimpleTest7() {
-        assertSuggestions("""
-                let x = 1;
-                api.<cursor>()
-                x.toString();
-                """,
-                context -> List.of(
+        String code =
+                "let x = 1;\n" +
+                "api.<cursor>()\n" +
+                "x.toString();\n";
+        assertSuggestions(
+                code,
+                context -> Lists.of(
                         MethodSuggestion.getInstance(SType.fromJavaType(SomeApi.class), "doSomething")));
     }
 
     @Test
     public void staticConstantSimpleTest8() {
-        assertSuggestions("""
-                let x = 1;
-                api.abc<cursor>()
-                x.toString();
-                """,
-                context -> List.of(
+        String code =
+                "let x = 1;\n" +
+                "api.abc<cursor>()\n" +
+                "x.toString();\n";
+        assertSuggestions(
+                code,
+                context -> Lists.of(
                         MethodSuggestion.getInstance(SType.fromJavaType(SomeApi.class), "doSomething")));
     }
 
     @Test
     public void integerLiteralTest() {
-        assertSuggestions("""
-                let a = 1.<cursor>
-                """,
-                context -> List.of(
+        String code =
+                "let a = 1.<cursor>\n";
+        assertSuggestions(
+                code,
+                context -> Lists.of(
                         MethodSuggestion.getInstance(SInt.instance, "toInt8"),
                         MethodSuggestion.getInstance(SInt.instance, "toInt16"),
                         MethodSuggestion.getInstance(SInt.instance, "toString"),
@@ -191,10 +206,12 @@ public class ObjectMemberTests {
 
     @Test
     public void floatLiteralTest() {
-        assertSuggestions("""
-                let a = 0.1.<cursor>
-                """,
-                context -> List.of(
+        String code =
+                "let a = 0.1.<cursor>\n";
+        assertSuggestions(
+                code,
+                context -> Lists.of(
+                        MethodSuggestion.getInstance(SFloat.instance, "toFloat32"),
                         MethodSuggestion.getInstance(SFloat.instance, "toString"),
                         MethodSuggestion.getInstance(SFloat.instance, "toStandardString")));
     }
@@ -207,6 +224,7 @@ public class ObjectMemberTests {
         public static SomeApi api;
     }
 
+    @SuppressWarnings("unused")
     public static class SomeApi {
         public void doSomething() {}
     }

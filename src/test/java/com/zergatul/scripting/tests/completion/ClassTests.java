@@ -3,12 +3,12 @@ package com.zergatul.scripting.tests.completion;
 import com.zergatul.scripting.lexer.TokenType;
 import com.zergatul.scripting.tests.compiler.helpers.IntStorage;
 import com.zergatul.scripting.tests.completion.helpers.CompletionTestHelper;
-import com.zergatul.scripting.tests.completion.helpers.Lists;
 import com.zergatul.scripting.tests.completion.helpers.TestCompletionContext;
 import com.zergatul.scripting.tests.completion.suggestions.*;
 import com.zergatul.scripting.type.SAliasType;
 import com.zergatul.scripting.type.SJavaObject;
 import com.zergatul.scripting.type.SType;
+import com.zergatul.scripting.utility.Lists;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -20,11 +20,12 @@ public class ClassTests {
 
     @Test
     public void suggestClassAsTypeTest() {
-        assertSuggestions("""
-                class Class {}
-                <cursor>
-                """,
-                context -> Lists.of(
+        String code =
+                "class Class {}\n" +
+                "<cursor>\n";
+        assertSuggestions(
+                code,
+                context -> Lists.from(
                         unitMembers,
                         statements,
                         new KeywordSuggestion(TokenType.ASYNC),
@@ -34,12 +35,13 @@ public class ClassTests {
 
     @Test
     public void memberSuggestionsTest1() {
-        assertSuggestions("""
-                class Class {
-                    <cursor>
-                }
-                """,
-                context -> Lists.of(
+        String code =
+                "class Class {\n" +
+                "    <cursor>\n" +
+                "}\n";
+        assertSuggestions(
+                code,
+                context -> Lists.from(
                         types,
                         new KeywordSuggestion(TokenType.VOID),
                         new KeywordSuggestion(TokenType.ASYNC),
@@ -54,13 +56,14 @@ public class ClassTests {
 
     @Test
     public void memberSuggestionsTest2() {
-        assertSuggestions("""
-                class Class {
-                    int x;
-                    <cursor>
-                }
-                """,
-                context -> Lists.of(
+        String code =
+                "class Class {\n" +
+                "    int x;\n" +
+                "    <cursor>\n" +
+                "}\n";
+        assertSuggestions(
+                code,
+                context -> Lists.from(
                         types,
                         new KeywordSuggestion(TokenType.VOID),
                         new KeywordSuggestion(TokenType.ASYNC),
@@ -75,14 +78,15 @@ public class ClassTests {
 
     @Test
     public void memberSuggestionsTest3() {
-        assertSuggestions("""
-                class Class {
-                    int x;
-                    <cursor>
-                    constructor(){}
-                }
-                """,
-                context -> Lists.of(
+        String code =
+                "class Class {\n" +
+                "    int x;\n" +
+                "    <cursor>\n" +
+                "    constructor(){}\n" +
+                "}\n";
+        assertSuggestions(
+                code,
+                context -> Lists.from(
                         types,
                         new KeywordSuggestion(TokenType.VOID),
                         new KeywordSuggestion(TokenType.ASYNC),
@@ -97,12 +101,13 @@ public class ClassTests {
 
     @Test
     public void constructorTest() {
-        assertSuggestions("""
-                class Class {
-                    constructor(int a, string b) {<cursor>}
-                }
-                """,
-                context -> Lists.of(
+        String code =
+                "class Class {\n" +
+                "    constructor(int a, string b) {<cursor>}\n" +
+                "}\n";
+        assertSuggestions(
+                code,
+                context -> Lists.from(
                         statements,
                         new ClassSuggestion(context, "Class"),
                         new ThisSuggestion(context, "Class"),
@@ -114,12 +119,13 @@ public class ClassTests {
 
     @Test
     public void methodTest() {
-        assertSuggestions("""
-                class Class {
-                    void method(int x, int y) {<cursor>}
-                }
-                """,
-                context -> Lists.of(
+        String code =
+                "class Class {\n" +
+                "    void method(int x, int y) {<cursor>}\n" +
+                "}\n";
+        assertSuggestions(
+                code,
+                context -> Lists.from(
                         statements,
                         new ClassSuggestion(context, "Class"),
                         new ThisSuggestion(context, "Class"),
@@ -132,18 +138,19 @@ public class ClassTests {
 
     @Test
     public void thisTest() {
-        assertSuggestions("""
-                class Class {
-                    int a;
-                    float b;
-                    void method1(int x, int y) {}
-                    void method2(string s) {}
-                    void method3() {
-                        this.<cursor>
-                    }
-                }
-                """,
-                context -> List.of(
+        String code =
+                "class Class {\n" +
+                "    int a;\n" +
+                "    float b;\n" +
+                "    void method1(int x, int y) {}\n" +
+                "    void method2(string s) {}\n" +
+                "    void method3() {\n" +
+                "        this.<cursor>\n" +
+                "    }\n" +
+                "}\n";
+        assertSuggestions(
+                code,
+                context -> Lists.of(
                         PropertySuggestion.getInstance(context, "Class", "a"),
                         PropertySuggestion.getInstance(context, "Class", "b"),
                         MethodSuggestion.getInstance(context, "Class", "method1"),
@@ -153,18 +160,19 @@ public class ClassTests {
 
     @Test
     public void fieldSuggestionTest() {
-        assertSuggestions("""
-                class Class {
-                    int a;
-                    float b;
-                    void method1(int x, int y) {}
-                    void method2(string s) {}
-                    void method3() {
-                        <cursor>
-                    }
-                }
-                """,
-                context -> Lists.of(
+        String code =
+                "class Class {\n" +
+                "    int a;\n" +
+                "    float b;\n" +
+                "    void method1(int x, int y) {}\n" +
+                "    void method2(string s) {}\n" +
+                "    void method3() {\n" +
+                "        <cursor>\n" +
+                "    }\n" +
+                "}\n";
+        assertSuggestions(
+                code,
+                context -> Lists.from(
                         statements,
                         new StaticConstantSuggestion(context, "intStorage"),
                         new ClassSuggestion(context, "Class"),
@@ -179,13 +187,14 @@ public class ClassTests {
 
     @Test
     public void arrowMethodTest() {
-        assertSuggestions("""
-                class Class {
-                    int a;
-                    void method(int x) => <cursor>
-                }
-                """,
-                context -> Lists.of(
+        String code =
+                "class Class {\n" +
+                "    int a;\n" +
+                "    void method(int x) => <cursor>\n" +
+                "}\n";
+        assertSuggestions(
+                code,
+                context -> Lists.from(
                         expressions,
                         new StaticConstantSuggestion(context, "intStorage"),
                         new ClassSuggestion(context, "Class"),
@@ -200,72 +209,78 @@ public class ClassTests {
 
     @Test
     public void suggestTypesForBaseClassTest1() {
-        assertSuggestions("""
-                class ClassA {}
-                class ClassB : <cursor>
-                """,
-                context -> List.of(
+        String code =
+                "class ClassA {}\n" +
+                "class ClassB : <cursor>\n";
+        assertSuggestions(
+                code,
+                context -> Lists.of(
                         new ClassSuggestion(context, "ClassA")));
     }
 
     @Test
     public void suggestTypesForBaseClassTest2() {
-        assertSuggestions("""
-                class ClassA {}
-                class ClassB : <cursor>
-                let x = 123;
-                """,
-                context -> List.of(
+        String code =
+                "class ClassA {}\n" +
+                "class ClassB : <cursor>\n" +
+                "let x = 123;\n";
+        assertSuggestions(
+                code,
+                context -> Lists.of(
                         new ClassSuggestion(context, "ClassA")));
     }
 
     @Test
     public void suggestTypesForBaseClassTest3() {
-        assertSuggestions("""
-                class ClassA {}
-                class ClassB : C<cursor> {}
-                """,
-                context -> List.of(
+        String code =
+                "class ClassA {}\n" +
+                "class ClassB : C<cursor> {}\n";
+        assertSuggestions(
+                code,
+                context -> Lists.of(
                         new ClassSuggestion(context, "ClassA")));
     }
 
     @Test
     public void interfaceInheritanceTest() {
-        assertSuggestions("""
-                typealias Runnable = Java<java.lang.Runnable>;
-                class ClassA {}
-                class ClassB : <cursor>
-                """,
-                context -> List.of(
+        String code =
+                "typealias Runnable = Java<java.lang.Runnable>;\n" +
+                "class ClassA {}\n" +
+                "class ClassB : <cursor>\n";
+        assertSuggestions(
+                code,
+                context -> Lists.of(
                         new ClassSuggestion(context, "ClassA"),
                         new TypeAliasSuggestion(new SAliasType("Runnable", SType.fromJavaType(Runnable.class)))));
     }
 
     @Test
     public void multipleInheritanceTest() {
-        assertSuggestions("""
-                typealias Runnable = Java<java.lang.Runnable>;
-                class ClassA {}
-                class ClassB : ClassA, <cursor>
-                """,
-                context -> List.of(
+        String code =
+                "typealias Runnable = Java<java.lang.Runnable>;\n" +
+                "class ClassA {}\n" +
+                "class ClassB : ClassA, <cursor>\n";
+        assertSuggestions(
+                code,
+                context -> Lists.of(
                         new ClassSuggestion(context, "ClassA"),
                         new TypeAliasSuggestion(new SAliasType("Runnable", SType.fromJavaType(Runnable.class)))));
     }
 
     @Test
     public void suggestBaseMethodsTest1() {
-        assertSuggestions("""
-                class ClassA {
-                    void method1() {}
-                }
-                class ClassB : ClassA {
-                    void method2() {
-                        <cursor>
-                    }
-                }
-                """,
-                context -> Lists.of(
+        String code =
+                "class ClassA {\n" +
+                "    void method1() {}\n" +
+                "}\n" +
+                "class ClassB : ClassA {\n" +
+                "    void method2() {\n" +
+                "        <cursor>\n" +
+                "    }\n" +
+                "}\n";
+        assertSuggestions(
+                code,
+                context -> Lists.from(
                         statements,
                         new ClassSuggestion(context, "ClassA"),
                         new ClassSuggestion(context, "ClassB"),
@@ -278,94 +293,100 @@ public class ClassTests {
 
     @Test
     public void suggestBaseMethodsTest2() {
-        assertSuggestions("""
-                class ClassA {
-                    void method1() {}
-                }
-                class ClassB : ClassA {
-                    void method2() {
-                        this.<cursor>
-                    }
-                }
-                """,
-                context -> List.of(
+        String code =
+                "class ClassA {\n" +
+                "    void method1() {}\n" +
+                "}\n" +
+                "class ClassB : ClassA {\n" +
+                "    void method2() {\n" +
+                "        this.<cursor>\n" +
+                "    }\n" +
+                "}\n";
+        assertSuggestions(
+                code,
+                context -> Lists.of(
                         MethodSuggestion.getInstance(context, "ClassA", "method1"),
                         MethodSuggestion.getInstance(context, "ClassB", "method2")));
     }
 
     @Test
     public void suggestBaseMethodsTest3() {
-        assertSuggestions("""
-                class ClassA {
-                    void method1() {}
-                }
-                class ClassB : ClassA {
-                    void method2() {
-                        base.<cursor>
-                    }
-                }
-                """,
-                context -> List.of(
+        String code =
+                "class ClassA {\n" +
+                "    void method1() {}\n" +
+                "}\n" +
+                "class ClassB : ClassA {\n" +
+                "    void method2() {\n" +
+                "        base.<cursor>\n" +
+                "    }\n" +
+                "}\n";
+        assertSuggestions(
+                code,
+                context -> Lists.of(
                         MethodSuggestion.getInstance(context, "ClassA", "method1")));
     }
 
     @Test
     public void suggestBaseMethodsTest4() {
-        assertSuggestions("""
-                class ClassA {
-                    void method1() {}
-                }
-                class ClassB : ClassA {
-                    void method2() {
-                        base.<cursor>a();
-                    }
-                }
-                """,
-                context -> List.of(
+        String code =
+                "class ClassA {\n" +
+                "    void method1() {}\n" +
+                "}\n" +
+                "class ClassB : ClassA {\n" +
+                "    void method2() {\n" +
+                "        base.<cursor>a();\n" +
+                "    }\n" +
+                "}\n";
+        assertSuggestions(
+                code,
+                context -> Lists.of(
                         MethodSuggestion.getInstance(context, "ClassA", "method1")));
     }
 
     @Test
     public void suggestBaseMethodsTest5() {
-        assertSuggestions("""
-                class ClassA {
-                    void method1() {}
-                }
-                class ClassB : ClassA {
-                    void method2() {
-                        base.a<cursor>();
-                    }
-                }
-                """,
-                context -> List.of(
+        String code =
+                "class ClassA {\n" +
+                "    void method1() {}\n" +
+                "}\n" +
+                "class ClassB : ClassA {\n" +
+                "    void method2() {\n" +
+                "        base.a<cursor>();\n" +
+                "    }\n" +
+                "}\n";
+        assertSuggestions(
+                code,
+                context -> Lists.of(
                         MethodSuggestion.getInstance(context, "ClassA", "method1")));
     }
 
     @Test
     public void suggestBaseMethodsTest6() {
-        assertSuggestions("""
-                class ClassA {
-                    void method1() {}
-                }
-                class ClassB : ClassA {
-                    void method2() {
-                        base.method1<cursor>();
-                    }
-                }
-                """,
-                context -> List.of(
+        String code =
+                "class ClassA {\n" +
+                "    void method1() {}\n" +
+                "}\n" +
+                "class ClassB : ClassA {\n" +
+                "    void method2() {\n" +
+                "        base.method1<cursor>();\n" +
+                "    }\n" +
+                "}\n";
+        assertSuggestions(
+                code,
+                context -> Lists.of(
                         MethodSuggestion.getInstance(context, "ClassA", "method1")));
     }
 
     @Test
     public void constructorInitializerTest() {
-        assertSuggestions("""
-                class ClassA {
-                    constructor(int v) {}
-                    constructor(int x, int y) : this(<cursor>)
-                }
-                """,
-                context -> Lists.of(
+        String code =
+                "class ClassA {\n" +
+                "    constructor(int v) {}\n" +
+                "    constructor(int x, int y) : this(<cursor>)\n" +
+                "}\n";
+        assertSuggestions(
+                code,
+                context -> Lists.from(
                         expressions,
                         new StaticConstantSuggestion(context, "intStorage"),
                         new ClassSuggestion(context, "ClassA"),
@@ -377,12 +398,13 @@ public class ClassTests {
 
     @Test
     public void constructorArrowNameExpressionTest() {
-        assertSuggestions("""
-                class ClassA {
-                    constructor() => t<cursor>
-                }
-                """,
-                context -> Lists.of(
+        String code =
+                "class ClassA {\n" +
+                "    constructor() => t<cursor>\n" +
+                "}\n";
+        assertSuggestions(
+                code,
+                context -> Lists.from(
                         expressions,
                         new BaseSuggestion(SJavaObject.instance),
                         new ThisSuggestion(context, "ClassA"),
@@ -392,12 +414,13 @@ public class ClassTests {
 
     @Test
     public void methodArrowNameExpressionTest() {
-        assertSuggestions("""
-                class ClassA {
-                    void method() => t<cursor>
-                }
-                """,
-                context -> Lists.of(
+        String code =
+                "class ClassA {\n" +
+                "    void method() => t<cursor>\n" +
+                "}\n";
+        assertSuggestions(
+                code,
+                context -> Lists.from(
                         expressions,
                         new BaseSuggestion(SJavaObject.instance),
                         new ThisSuggestion(context, "ClassA"),
@@ -408,12 +431,13 @@ public class ClassTests {
 
     @Test
     public void unaryOperatorOverloadTest1() {
-        assertSuggestions("""
-                class ClassA {
-                    operator [+] int(ClassA instance) => <cursor>
-                }
-                """,
-                context -> Lists.of(
+        String code =
+                "class ClassA {\n" +
+                "    operator [+] int(ClassA instance) => <cursor>\n" +
+                "}\n";
+        assertSuggestions(
+                code,
+                context -> Lists.from(
                         expressions,
                         new ClassSuggestion(context, "ClassA"),
                         LocalVariableSuggestion.getParameter(context, "instance"),
@@ -422,14 +446,15 @@ public class ClassTests {
 
     @Test
     public void unaryOperatorOverloadTest2() {
-        assertSuggestions("""
-                class ClassA {
-                    operator [+] int(ClassA instance) {
-                        return 10 + <cursor>
-                    }
-                }
-                """,
-                context -> Lists.of(
+        String code =
+                "class ClassA {\n" +
+                "    operator [+] int(ClassA instance) {\n" +
+                "        return 10 + <cursor>\n" +
+                "    }\n" +
+                "}\n";
+        assertSuggestions(
+                code,
+                context -> Lists.from(
                         expressions,
                         new ClassSuggestion(context, "ClassA"),
                         LocalVariableSuggestion.getParameter(context, "instance"),
@@ -438,12 +463,13 @@ public class ClassTests {
 
     @Test
     public void binaryOperatorOverloadTest1() {
-        assertSuggestions("""
-                class ClassA {
-                    operator [+] int(ClassA instance1, ClassA instance2) => <cursor>
-                }
-                """,
-                context -> Lists.of(
+        String code =
+                "class ClassA {\n" +
+                "    operator [+] int(ClassA instance1, ClassA instance2) => <cursor>\n" +
+                "}\n";
+        assertSuggestions(
+                code,
+                context -> Lists.from(
                         expressions,
                         new ClassSuggestion(context, "ClassA"),
                         LocalVariableSuggestion.getParameter(context, "instance1"),
@@ -453,14 +479,15 @@ public class ClassTests {
 
     @Test
     public void binaryOperatorOverloadTest2() {
-        assertSuggestions("""
-                class ClassA {
-                    operator [+] int(ClassA instance1, ClassA instance2) {
-                        return 10 + <cursor>
-                    }
-                }
-                """,
-                context -> Lists.of(
+        String code =
+                "class ClassA {\n" +
+                "    operator [+] int(ClassA instance1, ClassA instance2) {\n" +
+                "        return 10 + <cursor>\n" +
+                "    }\n" +
+                "}\n";
+        assertSuggestions(
+                code,
+                context -> Lists.from(
                         expressions,
                         new ClassSuggestion(context, "ClassA"),
                         LocalVariableSuggestion.getParameter(context, "instance1"),
@@ -470,20 +497,21 @@ public class ClassTests {
 
     @Test
     public void visibilityMembersOnThisTest() {
-        assertSuggestions("""
-                class Class {
-                    public int publicField;
-                    protected int protectedField;
-                    private int privateField;
-                    public void publicMethod() {}
-                    protected void protectedMethod() {}
-                    private void privateMethod() {}
-                    void test() {
-                        this.<cursor>
-                    }
-                }
-                """,
-                context -> List.of(
+        String code =
+                "class Class {\n" +
+                "    public int publicField;\n" +
+                "    protected int protectedField;\n" +
+                "    private int privateField;\n" +
+                "    public void publicMethod() {}\n" +
+                "    protected void protectedMethod() {}\n" +
+                "    private void privateMethod() {}\n" +
+                "    void test() {\n" +
+                "        this.<cursor>\n" +
+                "    }\n" +
+                "}\n";
+        assertSuggestions(
+                code,
+                context -> Lists.of(
                         PropertySuggestion.getInstance(context, "Class", "publicField"),
                         PropertySuggestion.getInstance(context, "Class", "protectedField"),
                         PropertySuggestion.getInstance(context, "Class", "privateField"),
@@ -495,40 +523,42 @@ public class ClassTests {
 
     @Test
     public void visibilityMembersOutsideClassTest() {
-        assertSuggestions("""
-                class Class {
-                    public int publicField;
-                    protected int protectedField;
-                    private int privateField;
-                    public void publicMethod() {}
-                    protected void protectedMethod() {}
-                    private void privateMethod() {}
-                }
-                new Class().<cursor>
-                """,
-                context -> List.of(
+        String code =
+                "class Class {\n" +
+                "    public int publicField;\n" +
+                "    protected int protectedField;\n" +
+                "    private int privateField;\n" +
+                "    public void publicMethod() {}\n" +
+                "    protected void protectedMethod() {}\n" +
+                "    private void privateMethod() {}\n" +
+                "}\n" +
+                "new Class().<cursor>\n";
+        assertSuggestions(
+                code,
+                context -> Lists.of(
                         PropertySuggestion.getInstance(context, "Class", "publicField"),
                         MethodSuggestion.getInstance(context, "Class", "publicMethod")));
     }
 
     @Test
     public void inheritedVisibilityMembersTest() {
-        assertSuggestions("""
-                class Base {
-                    public int publicField;
-                    protected int protectedField;
-                    private int privateField;
-                    public void publicMethod() {}
-                    protected void protectedMethod() {}
-                    private void privateMethod() {}
-                }
-                class Child : Base {
-                    void test() {
-                        this.<cursor>
-                    }
-                }
-                """,
-                context -> List.of(
+        String code =
+                "class Base {\n" +
+                "    public int publicField;\n" +
+                "    protected int protectedField;\n" +
+                "    private int privateField;\n" +
+                "    public void publicMethod() {}\n" +
+                "    protected void protectedMethod() {}\n" +
+                "    private void privateMethod() {}\n" +
+                "}\n" +
+                "class Child : Base {\n" +
+                "    void test() {\n" +
+                "        this.<cursor>\n" +
+                "    }\n" +
+                "}\n";
+        assertSuggestions(
+                code,
+                context -> Lists.of(
                         PropertySuggestion.getInstance(context, "Child", "publicField"),
                         PropertySuggestion.getInstance(context, "Child", "protectedField"),
                         MethodSuggestion.getInstance(context, "Child", "test"),
@@ -538,14 +568,15 @@ public class ClassTests {
 
     @Test
     public void protectedMembersTest1() {
-        assertSuggestions("""
-                class Class : Java<com.zergatul.scripting.tests.completion.ClassTests$TestClass> {
-                    constructor() {
-                        <cursor>
-                    }
-                }
-                """,
-                context -> Lists.of(
+        String code =
+                "class Class : Java<com.zergatul.scripting.tests.completion.ClassTests$TestClass> {\n" +
+                "    constructor() {\n" +
+                "        <cursor>\n" +
+                "    }\n" +
+                "}\n";
+        assertSuggestions(
+                code,
+                context -> Lists.from(
                         statements,
                         new ThisSuggestion(context, "Class"),
                         new BaseSuggestion(SType.fromJavaType(TestClass.class)),
@@ -557,45 +588,48 @@ public class ClassTests {
 
     @Test
     public void protectedMembersTest2() {
-        assertSuggestions("""
-                class Class : Java<com.zergatul.scripting.tests.completion.ClassTests$TestClass> {
-                    constructor() {
-                        base.<cursor>
-                    }
-                }
-                """,
-                context -> List.of(
+        String code =
+                "class Class : Java<com.zergatul.scripting.tests.completion.ClassTests$TestClass> {\n" +
+                "    constructor() {\n" +
+                "        base.<cursor>\n" +
+                "    }\n" +
+                "}\n";
+        assertSuggestions(
+                code,
+                context -> Lists.of(
                         MethodSuggestion.getInstance(context, "Class", "method")));
     }
 
     @Test
     public void protectedMembersTest3() {
-        assertSuggestions("""
-                class Class : Java<com.zergatul.scripting.tests.completion.ClassTests$TestClass> {
-                    constructor() {
-                        this.<cursor>
-                    }
-                }
-                """,
-                context -> List.of(
+        String code =
+                "class Class : Java<com.zergatul.scripting.tests.completion.ClassTests$TestClass> {\n" +
+                "    constructor() {\n" +
+                "        this.<cursor>\n" +
+                "    }\n" +
+                "}\n";
+        assertSuggestions(
+                code,
+                context -> Lists.of(
                         PropertySuggestion.getInstance(context, "Class", "field"),
                         MethodSuggestion.getInstance(context, "Class", "method")));
     }
 
     @Test
     public void protectedMembersOnCapturedThisInLambdaTest() {
-        assertSuggestions("""
-                typealias Run = Java<com.zergatul.scripting.tests.compiler.helpers.Run>;
-
-                class Class : Java<com.zergatul.scripting.tests.completion.ClassTests$TestClass> {
-                    void execute() {
-                        let run = new Run();
-                        let self = this;
-                        run.once(() => self.<cursor>);
-                    }
-                }
-                """,
-                context -> List.of(
+        String code =
+                "typealias Run = Java<com.zergatul.scripting.tests.compiler.helpers.Run>;\n" +
+                "\n" +
+                "class Class : Java<com.zergatul.scripting.tests.completion.ClassTests$TestClass> {\n" +
+                "    void execute() {\n" +
+                "        let run = new Run();\n" +
+                "        let self = this;\n" +
+                "        run.once(() => self.<cursor>);\n" +
+                "    }\n" +
+                "}\n";
+        assertSuggestions(
+                code,
+                context -> Lists.of(
                         PropertySuggestion.getInstance(context, "Class", "field"),
                         MethodSuggestion.getInstance(context, "Class", "method"),
                         MethodSuggestion.getInstance(context, "Class", "execute")));
@@ -603,21 +637,22 @@ public class ClassTests {
 
     @Test
     public void privateMembersOnCapturedThisInLambdaTest() {
-        assertSuggestions("""
-                typealias Run = Java<com.zergatul.scripting.tests.compiler.helpers.Run>;
-
-                class Class {
-                    private int field;
-                    private void method() {}
-
-                    void execute() {
-                        let run = new Run();
-                        let self = this;
-                        run.once(() => self.<cursor>);
-                    }
-                }
-                """,
-                context -> List.of(
+        String code =
+                "typealias Run = Java<com.zergatul.scripting.tests.compiler.helpers.Run>;\n" +
+                "\n" +
+                "class Class {\n" +
+                "    private int field;\n" +
+                "    private void method() {}\n" +
+                "\n" +
+                "    void execute() {\n" +
+                "        let run = new Run();\n" +
+                "        let self = this;\n" +
+                "        run.once(() => self.<cursor>);\n" +
+                "    }\n" +
+                "}\n";
+        assertSuggestions(
+                code,
+                context -> Lists.of(
                         PropertySuggestion.getInstance(context, "Class", "field"),
                         MethodSuggestion.getInstance(context, "Class", "method"),
                         MethodSuggestion.getInstance(context, "Class", "execute")));

@@ -1,5 +1,7 @@
 package com.zergatul.scripting.tests.compiler;
 
+import com.zergatul.scripting.utility.Lists;
+
 import com.zergatul.scripting.compiler.CompilationParametersBuilder;
 import com.zergatul.scripting.compiler.CompilationResult;
 import com.zergatul.scripting.compiler.Compiler;
@@ -26,9 +28,8 @@ public class CompileConsumerTests {
 
     @Test
     public void intConsumerBasicTest() {
-        String code = """
-                intStorage.add(value);
-                """;
+        String code =
+                "intStorage.add(value);\n";
 
         IntConsumer program = compile(code, IntConsumer.class);
         program.accept(123);
@@ -36,14 +37,13 @@ public class CompileConsumerTests {
 
         Assertions.assertIterableEquals(
                 ApiRoot.intStorage.list,
-                List.of(123, 321));
+                Lists.of(123, 321));
     }
 
     @Test
     public void intConsumerCapture1Test() {
-        String code = """
-                run.once(() => intStorage.add(value + 100));
-                """;
+        String code =
+                "run.once(() => intStorage.add(value + 100));\n";
 
         IntConsumer program = compile(code, IntConsumer.class);
         program.accept(12);
@@ -52,109 +52,104 @@ public class CompileConsumerTests {
 
         Assertions.assertIterableEquals(
                 ApiRoot.intStorage.list,
-                List.of(112, 113, 114));
+                Lists.of(112, 113, 114));
     }
 
     @Test
     public void intConsumerCapture2Test() {
-        String code = """
-                run.multiple(2, () => {
-                    run.multiple(3, () => {
-                        intStorage.add(value * value);
-                    });
-                });
-                """;
+        String code =
+                "run.multiple(2, () => {\n" +
+                "    run.multiple(3, () => {\n" +
+                "        intStorage.add(value * value);\n" +
+                "    });\n" +
+                "});\n";
 
         IntConsumer program = compile(code, IntConsumer.class);
         program.accept(3);
 
         Assertions.assertIterableEquals(
                 ApiRoot.intStorage.list,
-                List.of(9, 9, 9, 9, 9, 9));
+                Lists.of(9, 9, 9, 9, 9, 9));
     }
 
     @Test
     public void await1Test() {
-        String code = """
-                intStorage.add(value);
-                await futures.create();
-                """;
+        String code =
+                "intStorage.add(value);\n" +
+                "await futures.create();\n";
 
         AsyncIntConsumer program = compileAsync(code, AsyncIntConsumer.class, SVoidType.instance);
         program.accept(2);
 
-        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(2));
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, Lists.of(2));
     }
 
     @Test
     public void await2Test() {
-        String code = """
-                intStorage.add(value);
-                await futures.create();
-                intStorage.add(value * value);
-                await futures.create();
-                intStorage.add(value * value * value);
-                await futures.create();
-                intStorage.add(value * value * value * value);
-                """;
+        String code =
+                "intStorage.add(value);\n" +
+                "await futures.create();\n" +
+                "intStorage.add(value * value);\n" +
+                "await futures.create();\n" +
+                "intStorage.add(value * value * value);\n" +
+                "await futures.create();\n" +
+                "intStorage.add(value * value * value * value);\n";
 
         AsyncIntConsumer program = compileAsync(code, AsyncIntConsumer.class, SVoidType.instance);
         program.accept(2);
 
-        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(2));
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, Lists.of(2));
         ApiRoot.futures.get(0).complete(null);
-        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(2, 4));
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, Lists.of(2, 4));
         ApiRoot.futures.get(1).complete(null);
-        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(2, 4, 8));
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, Lists.of(2, 4, 8));
         ApiRoot.futures.get(2).complete(null);
-        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(2, 4, 8, 16));
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, Lists.of(2, 4, 8, 16));
     }
 
     @Test
     public void blockPosConsumer1Test() {
-        String code = """
-                run.once(() => {
-                    run.once(() => {
-                        intStorage.add(x);
-                        intStorage.add(y);
-                        intStorage.add(z);
-                    });
-                });
-                """;
+        String code =
+                "run.once(() => {\n" +
+                "    run.once(() => {\n" +
+                "        intStorage.add(x);\n" +
+                "        intStorage.add(y);\n" +
+                "        intStorage.add(z);\n" +
+                "    });\n" +
+                "});\n";
 
         BlockPosConsumer program = compile(code, BlockPosConsumer.class);
         program.accept(23, 24, 25);
 
         Assertions.assertIterableEquals(
                 ApiRoot.intStorage.list,
-                List.of(23, 24, 25));
+                Lists.of(23, 24, 25));
     }
 
     @Test
     public void blockPosConsumer2Test() {
-        String code = """
-                void func1(int x, int y, int z) {
-                    intStorage.add(x);
-                    intStorage.add(y);
-                    intStorage.add(z);
-                }
-                
-                void func2(int a, int b, int c) {
-                    intStorage.add(a);
-                    intStorage.add(b);
-                    intStorage.add(c);
-                }
-                
-                func1(x, y, z);
-                func2(x, y, z);
-                """;
+        String code =
+                "void func1(int x, int y, int z) {\n" +
+                "    intStorage.add(x);\n" +
+                "    intStorage.add(y);\n" +
+                "    intStorage.add(z);\n" +
+                "}\n" +
+                "\n" +
+                "void func2(int a, int b, int c) {\n" +
+                "    intStorage.add(a);\n" +
+                "    intStorage.add(b);\n" +
+                "    intStorage.add(c);\n" +
+                "}\n" +
+                "\n" +
+                "func1(x, y, z);\n" +
+                "func2(x, y, z);\n";
 
         BlockPosConsumer program = compile(code, BlockPosConsumer.class);
         program.accept(23, 24, 25);
 
         Assertions.assertIterableEquals(
                 ApiRoot.intStorage.list,
-                List.of(23, 24, 25, 23, 24, 25));
+                Lists.of(23, 24, 25, 23, 24, 25));
     }
 
     private static <T> T compile(String code, Class<T> clazz) {

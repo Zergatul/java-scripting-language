@@ -4,6 +4,7 @@ import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
 import com.zergatul.scripting.parser.nodes.VoidTypeNode;
 import com.zergatul.scripting.type.SVoidType;
+import com.zergatul.scripting.utility.Lists;
 
 import java.util.List;
 
@@ -30,6 +31,6 @@ public class BoundVoidTypeNode extends BoundTypeNode {
 
     @Override
     public List<BoundNode> getChildren() {
-        return List.of();
+        return Lists.of();
     }
 }

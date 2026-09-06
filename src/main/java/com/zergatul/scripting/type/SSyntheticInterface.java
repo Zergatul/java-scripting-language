@@ -2,6 +2,8 @@ package com.zergatul.scripting.type;
 
 import com.zergatul.scripting.InternalException;
 
+import java.util.NoSuchElementException;
+
 public class SSyntheticInterface extends SSyntheticType {
 
     private final MethodDefinition definition;
@@ -26,7 +28,7 @@ public class SSyntheticInterface extends SSyntheticType {
                 .filter(m -> !m.isStatic())
                 .filter(definition::matches)
                 .findFirst()
-                .orElseThrow();
+                .orElseThrow(NoSuchElementException::new);
     }
 
     @Override

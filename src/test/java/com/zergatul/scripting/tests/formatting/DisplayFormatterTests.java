@@ -6,6 +6,8 @@ import com.zergatul.scripting.type.*;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import java.util.NoSuchElementException;
+
 public class DisplayFormatterTests {
 
     private final TypeDisplayFormatter typeFormatter = new TypeDisplayFormatter(Class::getSimpleName);
@@ -30,7 +32,7 @@ public class DisplayFormatterTests {
                 .filter(candidate -> !candidate.isStatic())
                 .filter(candidate -> candidate.getName().equals("convert"))
                 .findFirst()
-                .orElseThrow();
+                .orElseThrow(NoSuchElementException::new);
         MethodSignatureFormatter formatter = new MethodSignatureFormatter(typeFormatter);
 
         Assertions.assertEquals(

@@ -8,10 +8,13 @@ import com.zergatul.scripting.parser.UnaryOperator;
 import com.zergatul.scripting.runtime.Int16Reference;
 import com.zergatul.scripting.runtime.Int16Utils;
 import com.zergatul.scripting.type.operation.*;
+import com.zergatul.scripting.utility.Lists;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 
+import java.lang.reflect.Field;
 import java.util.List;
 
 import static org.objectweb.asm.Opcodes.*;
@@ -65,7 +68,7 @@ public class SInt16 extends SValueType {
 
     @Override
     public List<UnaryOperation> getUnaryOperations() {
-        return List.of(PLUS.value(), MINUS.value());
+        return Lists.of(PLUS.value(), MINUS.value());
     }
 
     @Override
@@ -74,7 +77,7 @@ public class SInt16 extends SValueType {
     }
 
     private List<BinaryOperation> getBinaryOperationsInternal() {
-        return List.of(
+        return Lists.of(
                 ADD.value(),
                 SUB.value(),
                 MUL.value(),
@@ -135,18 +138,38 @@ public class SInt16 extends SValueType {
     }
 
     @Override
+    public void compileReflectionGetField(MethodVisitor visitor) {
+        visitor.visitMethodInsn(
+                Opcodes.INVOKEVIRTUAL,
+                Type.getInternalName(Field.class),
+                "getShort",
+                Type.getMethodDescriptor(getAsmType(), SJavaObject.instance.getAsmType()),
+                false);
+    }
+
+    @Override
+    public void compileReflectionSetField(MethodVisitor visitor) {
+        visitor.visitMethodInsn(
+                Opcodes.INVOKEVIRTUAL,
+                Type.getInternalName(Field.class),
+                "setShort",
+                Type.getMethodDescriptor(Type.VOID_TYPE, SJavaObject.instance.getAsmType(), getAsmType()),
+                false);
+    }
+
+    @Override
     public void loadClassObject(MethodVisitor visitor) {
         visitor.visitFieldInsn(GETSTATIC, "java/lang/Short", "TYPE", "Ljava/lang/Class;");
     }
 
     @Override
     public List<MethodReference> getDeclaredMethods() {
-        return List.of(METHOD_TO_STRING.value(), METHOD_TO_STANDARD_STRING.value(), METHOD_TRY_PARSE.value());
+        return Lists.of(METHOD_TO_STRING.value(), METHOD_TO_STANDARD_STRING.value(), METHOD_TRY_PARSE.value());
     }
 
     @Override
     public List<PropertyReference> getDeclaredProperties() {
-        return List.of(PROPERTY_MIN_VALUE.value(), PROPERTY_MAX_VALUE.value());
+        return Lists.of(PROPERTY_MIN_VALUE.value(), PROPERTY_MAX_VALUE.value());
     }
 
     @Override
@@ -249,9 +272,7 @@ public class SInt16 extends SValueType {
     });
 
     private static final Lazy<MethodReference> METHOD_TO_STRING = new Lazy<>(() -> new StaticAsInstanceMethodReference(
-            """
-                    Returns a string representation of an integer
-                    """,
+            "Returns a string representation of an integer",
             Short.class,
             SInt16.instance,
             "toString",

@@ -5,10 +5,14 @@ import com.zergatul.scripting.compiler.BufferedMethodVisitor;
 import com.zergatul.scripting.compiler.CompilerContext;
 import com.zergatul.scripting.parser.BinaryOperator;
 import com.zergatul.scripting.type.operation.BinaryOperation;
+import com.zergatul.scripting.utility.Lists;
 import org.jspecify.annotations.Nullable;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.Opcodes;
+import org.objectweb.asm.Type;
 
+import java.lang.reflect.Field;
 import java.util.List;
 
 import static org.objectweb.asm.Opcodes.*;
@@ -53,10 +57,31 @@ public abstract class SReferenceType extends SType {
 
     @Override
     public List<BinaryOperation> getBinaryOperations() {
-        return List.of(
+        return Lists.of(
                 new ObjectComparisonOperation(SJavaObject.instance, BinaryOperator.EQUALS, SJavaObject.instance, IF_ACMPEQ),
                 new ObjectComparisonOperation(SJavaObject.instance, BinaryOperator.NOT_EQUALS, SJavaObject.instance, IF_ACMPNE),
                 new NullCoalescingOperation(this));
+    }
+
+    @Override
+    public void compileReflectionGetField(MethodVisitor visitor) {
+        visitor.visitMethodInsn(
+                Opcodes.INVOKEVIRTUAL,
+                Type.getInternalName(Field.class),
+                "get",
+                Type.getMethodDescriptor(SJavaObject.instance.getAsmType(), SJavaObject.instance.getAsmType()),
+                false);
+        visitor.visitTypeInsn(Opcodes.CHECKCAST, getAsmType().getInternalName());
+    }
+
+    @Override
+    public void compileReflectionSetField(MethodVisitor visitor) {
+        visitor.visitMethodInsn(
+                Opcodes.INVOKEVIRTUAL,
+                Type.getInternalName(Field.class),
+                "set",
+                Type.getMethodDescriptor(Type.VOID_TYPE, SJavaObject.instance.getAsmType(), SJavaObject.instance.getAsmType()),
+                false);
     }
 
     private static class ObjectComparisonOperation extends BinaryOperation {

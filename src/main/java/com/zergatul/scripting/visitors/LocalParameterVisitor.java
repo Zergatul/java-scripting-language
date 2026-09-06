@@ -35,12 +35,14 @@ public class LocalParameterVisitor extends BinderTreeVisitor {
 
     @Override
     public void visit(BoundNameExpressionNode node) {
-        if (node.getSymbol() instanceof Variable local) {
-            Variable variable = local;
-            while (variable instanceof CapturedVariable captured) {
+        if (node.getSymbol() instanceof Variable) {
+            Variable variable = (Variable) node.getSymbol();
+            while (variable instanceof CapturedVariable) {
+                CapturedVariable captured = (CapturedVariable) variable;
                 variable = captured.getUnderlying();
             }
-            if (variable instanceof LiftedVariable lifted) {
+            if (variable instanceof LiftedVariable) {
+                LiftedVariable lifted = (LiftedVariable) variable;
                 if (lifted.getUnderlying() instanceof LocalParameter) {
                     if (!parameters.contains(lifted)) {
                         parameters.add(lifted);

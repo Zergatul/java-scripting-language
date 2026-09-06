@@ -12,6 +12,7 @@ import com.zergatul.scripting.tests.compiler.helpers.IntStorage;
 import com.zergatul.scripting.tests.framework.ComparatorTest;
 import com.zergatul.scripting.tests.utility.MarkedCode;
 import com.zergatul.scripting.type.*;
+import com.zergatul.scripting.utility.Lists;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -66,7 +67,7 @@ public class ExpressionEvalTests extends ComparatorTest {
         Assertions.assertEquals(
                 ExpressionEvaluationResult.fromVoid(),
                 evaluate("intStorage.add(12)"));
-        Assertions.assertIterableEquals(List.of(12), ApiRoot.intStorage.list);
+        Assertions.assertIterableEquals(Lists.of(12), ApiRoot.intStorage.list);
     }
 
     @Test
@@ -79,7 +80,7 @@ public class ExpressionEvalTests extends ComparatorTest {
     @Test
     public void arrayTest() {
         noValueAssertEquals(
-                success(new SArrayType(SInt.instance), int.class.arrayType(), ""),
+                success(new SArrayType(SInt.instance), int[].class, ""),
                 evaluate("[1, 2, 3]"));
     }
 
@@ -191,11 +192,11 @@ public class ExpressionEvalTests extends ComparatorTest {
         return new ExpressionEvaluationResult(
                 true, true,
                 type.toString(), javaType.getCanonicalName(),
-                value.toString(), List.of());
+                value.toString(), Lists.of());
     }
 
     private static ExpressionEvaluationResult fail(DiagnosticMessage... messages) {
-        return ExpressionEvaluationResult.fromDiagnostics(List.of(messages));
+        return ExpressionEvaluationResult.fromDiagnostics(Lists.of(messages));
     }
 
     public static class ApiRoot {

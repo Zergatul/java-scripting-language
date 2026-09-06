@@ -11,10 +11,13 @@ import com.zergatul.scripting.type.operation.BinaryOperation;
 import com.zergatul.scripting.type.operation.CastOperation;
 import com.zergatul.scripting.type.operation.SingleInstructionBinaryOperation;
 import com.zergatul.scripting.type.operation.UnaryOperation;
+import com.zergatul.scripting.utility.Lists;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 
+import java.lang.reflect.Field;
 import java.util.List;
 
 import static org.objectweb.asm.Opcodes.*;
@@ -68,7 +71,7 @@ public class SFloat32 extends SValueType {
 
     @Override
     public List<UnaryOperation> getUnaryOperations() {
-        return List.of(PLUS.value(), MINUS.value());
+        return Lists.of(PLUS.value(), MINUS.value());
     }
 
     @Override
@@ -77,7 +80,7 @@ public class SFloat32 extends SValueType {
     }
 
     private List<BinaryOperation> getBinaryOperationsInternal() {
-        return List.of(
+        return Lists.of(
                 ADD.value(),
                 SUB.value(),
                 MUL.value(),
@@ -133,13 +136,33 @@ public class SFloat32 extends SValueType {
     }
 
     @Override
+    public void compileReflectionGetField(MethodVisitor visitor) {
+        visitor.visitMethodInsn(
+                Opcodes.INVOKEVIRTUAL,
+                Type.getInternalName(Field.class),
+                "getFloat",
+                Type.getMethodDescriptor(getAsmType(), SJavaObject.instance.getAsmType()),
+                false);
+    }
+
+    @Override
+    public void compileReflectionSetField(MethodVisitor visitor) {
+        visitor.visitMethodInsn(
+                Opcodes.INVOKEVIRTUAL,
+                Type.getInternalName(Field.class),
+                "setFloat",
+                Type.getMethodDescriptor(Type.VOID_TYPE, SJavaObject.instance.getAsmType(), getAsmType()),
+                false);
+    }
+
+    @Override
     public void loadClassObject(MethodVisitor visitor) {
         visitor.visitFieldInsn(GETSTATIC, "java/lang/Float", "TYPE", "Ljava/lang/Class;");
     }
 
     @Override
     public List<MethodReference> getDeclaredMethods() {
-        return List.of(METHOD_TO_STRING.value(), METHOD_TO_STANDARD_STRING.value(), METHOD_TRY_PARSE.value());
+        return Lists.of(METHOD_TO_STRING.value(), METHOD_TO_STANDARD_STRING.value(), METHOD_TRY_PARSE.value());
     }
 
     @Override

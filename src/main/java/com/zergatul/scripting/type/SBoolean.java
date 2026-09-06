@@ -10,10 +10,13 @@ import com.zergatul.scripting.type.operation.BinaryOperation;
 import com.zergatul.scripting.type.operation.CastOperation;
 import com.zergatul.scripting.type.operation.SingleInstructionBinaryOperation;
 import com.zergatul.scripting.type.operation.UnaryOperation;
+import com.zergatul.scripting.utility.Lists;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 
+import java.lang.reflect.Field;
 import java.util.List;
 
 import static org.objectweb.asm.Opcodes.*;
@@ -67,7 +70,7 @@ public class SBoolean extends SValueType {
 
     @Override
     public List<UnaryOperation> getUnaryOperations() {
-        return List.of(NOT.value());
+        return Lists.of(NOT.value());
     }
 
     @Override
@@ -76,7 +79,7 @@ public class SBoolean extends SValueType {
     }
 
     private List<BinaryOperation> getBinaryOperationsInternal() {
-        return List.of(
+        return Lists.of(
                 LESS_THAN.value(),
                 GREATER_THAN.value(),
                 LESS_THAN_EQUALS.value(),
@@ -130,13 +133,33 @@ public class SBoolean extends SValueType {
     }
 
     @Override
+    public void compileReflectionGetField(MethodVisitor visitor) {
+        visitor.visitMethodInsn(
+                Opcodes.INVOKEVIRTUAL,
+                Type.getInternalName(Field.class),
+                "getBoolean",
+                Type.getMethodDescriptor(getAsmType(), SJavaObject.instance.getAsmType()),
+                false);
+    }
+
+    @Override
+    public void compileReflectionSetField(MethodVisitor visitor) {
+        visitor.visitMethodInsn(
+                Opcodes.INVOKEVIRTUAL,
+                Type.getInternalName(Field.class),
+                "setBoolean",
+                Type.getMethodDescriptor(Type.VOID_TYPE, SJavaObject.instance.getAsmType(), getAsmType()),
+                false);
+    }
+
+    @Override
     public void loadClassObject(MethodVisitor visitor) {
         visitor.visitFieldInsn(GETSTATIC, "java/lang/Boolean", "TYPE", "Ljava/lang/Class;");
     }
 
     @Override
     public List<MethodReference> getDeclaredMethods() {
-        return List.of(METHOD_TO_STRING.value());
+        return Lists.of(METHOD_TO_STRING.value());
     }
 
     @Override
@@ -228,9 +251,7 @@ public class SBoolean extends SValueType {
     });
 
     private static final Lazy<MethodReference> METHOD_TO_STRING = new Lazy<>(() -> new StaticAsInstanceMethodReference(
-            """
-                    Returns a string representation of a boolean
-                    """,
+            "Returns a string representation of a boolean",
             Boolean.class,
             SBoolean.instance,
             "toString",

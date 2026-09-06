@@ -1,5 +1,7 @@
 package com.zergatul.scripting.tests.completion;
 
+import com.zergatul.scripting.utility.Lists;
+
 import com.zergatul.scripting.lexer.TokenType;
 import com.zergatul.scripting.tests.completion.helpers.CompletionTestHelper;
 import com.zergatul.scripting.tests.completion.helpers.TestCompletionContext;
@@ -16,10 +18,11 @@ public class MetaExpressionTests {
 
     @Test
     public void basicTest() {
-        assertSuggestions("""
-                let x = #<cursor>
-                """,
-                context -> List.of(
+        String code =
+                "let x = #<cursor>\n";
+        assertSuggestions(
+                code,
+                context -> Lists.of(
                         new KeywordSuggestion(TokenType.META_CAST),
                         new KeywordSuggestion(TokenType.META_TYPE),
                         new KeywordSuggestion(TokenType.META_TYPE_OF)));
@@ -27,49 +30,55 @@ public class MetaExpressionTests {
 
     @Test
     public void metaTypeExpressionTest() {
-        assertSuggestions("""
-                let x = #type(<cursor>)
-                """,
+        String code =
+                "let x = #type(<cursor>)\n";
+        assertSuggestions(
+                code,
                 context -> types);
     }
 
     @Test
     public void metaTypeOfExpressionTest() {
-        assertSuggestions("""
-                let x = #typeof(<cursor>)
-                """,
+        String code =
+                "let x = #typeof(<cursor>)\n";
+        assertSuggestions(
+                code,
                 context -> expressions);
     }
 
     @Test
     public void metaCastExpressionTest1() {
-        assertSuggestions("""
-                let x = #cast(<cursor>)
-                """,
+        String code =
+                "let x = #cast(<cursor>)\n";
+        assertSuggestions(
+                code,
                 context -> expressions);
     }
 
     @Test
     public void metaCastExpressionTest2() {
-        assertSuggestions("""
-                let x = #cast(1,<cursor>)
-                """,
+        String code =
+                "let x = #cast(1,<cursor>)\n";
+        assertSuggestions(
+                code,
                 context -> types);
     }
 
     @Test
     public void metaCastExpressionTest3() {
-        assertSuggestions("""
-                let x = #cast(<cursor>
-                """,
+        String code =
+                "let x = #cast(<cursor>\n";
+        assertSuggestions(
+                code,
                 context -> expressions);
     }
 
     @Test
     public void metaCastExpressionTest4() {
-        assertSuggestions("""
-                let x = #cast(1,<cursor>
-                """,
+        String code =
+                "let x = #cast(1,<cursor>\n";
+        assertSuggestions(
+                code,
                 context -> types);
     }
 

@@ -1,5 +1,7 @@
 package com.zergatul.scripting;
 
+import com.zergatul.scripting.utility.Lists;
+
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.Arrays;
@@ -11,9 +13,7 @@ public class InterfaceHelper {
         if (!clazz.isInterface()) {
             return false;
         }
-        List<Method> methods = Arrays.stream(clazz.getMethods())
-                .filter(InterfaceHelper::isNormalInterfaceMethod)
-                .toList();
+        List<Method> methods = Lists.from(Arrays.stream(clazz.getMethods()).filter(InterfaceHelper::isNormalInterfaceMethod));
         return methods.size() == 1;
     }
 
@@ -21,9 +21,7 @@ public class InterfaceHelper {
         if (!clazz.isInterface()) {
             throw new InternalException();
         }
-        List<Method> methods = Arrays.stream(clazz.getMethods())
-                .filter(InterfaceHelper::isNormalInterfaceMethod)
-                .toList();
+        List<Method> methods = Lists.from(Arrays.stream(clazz.getMethods()).filter(InterfaceHelper::isNormalInterfaceMethod));
         if (methods.size() != 1) {
             throw new InternalException();
         }

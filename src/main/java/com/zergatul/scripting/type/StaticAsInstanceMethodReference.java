@@ -2,6 +2,7 @@ package com.zergatul.scripting.type;
 
 import com.zergatul.scripting.MethodDescription;
 import com.zergatul.scripting.compiler.CompilerContext;
+import com.zergatul.scripting.utility.Lists;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Type;
 
@@ -10,6 +11,7 @@ import java.lang.reflect.Modifier;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Consumer;
 import java.util.stream.Stream;
 
 import static org.objectweb.asm.Opcodes.INVOKESTATIC;
@@ -71,7 +73,7 @@ public class StaticAsInstanceMethodReference extends MethodReference {
 
     @Override
     public List<MethodParameter> getParameters() {
-        return List.of(parameters);
+        return Lists.of(parameters);
     }
 
     @Override
@@ -99,19 +101,19 @@ public class StaticAsInstanceMethodReference extends MethodReference {
                     })
                     .findFirst();
 
-            if (opt.isEmpty()) {
-                return Optional.empty();
-            } else {
+            if (opt.isPresent()) {
                 Method method = opt.get();
                 MethodDescription description = method.getAnnotation(MethodDescription.class);
                 return description != null ? Optional.of(description.value()) : Optional.empty();
+            } else {
+                return Optional.empty();
             }
         }
     }
 
     @Override
-    public void compileInvoke(MethodVisitor visitor, CompilerContext context, Runnable compileArguments) {
-        compileArguments.run();
+    public void compileInvoke(MethodVisitor visitor, CompilerContext context, Consumer<CompilerContext> compileArguments) {
+        compileArguments.accept(context);
         visitor.visitMethodInsn(
                 INVOKESTATIC,
                 Type.getInternalName(ownerClass),

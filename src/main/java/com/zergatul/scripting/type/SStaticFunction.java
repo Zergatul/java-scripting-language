@@ -50,7 +50,8 @@ public class SStaticFunction extends SFunction {
 
     @Override
     public boolean equals(Object obj) {
-        if (obj instanceof SStaticFunction other) {
+        if (obj instanceof SStaticFunction) {
+            SStaticFunction other = (SStaticFunction) obj;
             return other.signatureMatchesWithBoxing(this);
         } else {
             return false;

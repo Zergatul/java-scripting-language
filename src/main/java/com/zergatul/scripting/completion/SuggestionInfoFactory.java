@@ -1,11 +1,13 @@
 package com.zergatul.scripting.completion;
 
+import com.zergatul.scripting.InternalException;
 import com.zergatul.scripting.documentation.DocumentationProvider;
 import com.zergatul.scripting.formatting.MethodSignatureFormatter;
 import com.zergatul.scripting.formatting.TypeDisplayFormatter;
 import com.zergatul.scripting.lexer.TokenType;
 import com.zergatul.scripting.symbols.*;
 import com.zergatul.scripting.type.*;
+import com.zergatul.scripting.utility.Lists;
 import org.jspecify.annotations.Nullable;
 
 import java.util.List;
@@ -33,36 +35,45 @@ public class SuggestionInfoFactory implements SuggestionFactory<SuggestionInfo> 
 
     @Override
     public SuggestionInfo getKeywordSuggestion(TokenType type) {
-        String text = switch (type) {
-            case META_CAST -> "#cast";
-            case META_TYPE -> "#type";
-            case META_TYPE_OF -> "#typeof";
-            default -> type.toString().toLowerCase(Locale.ROOT);
-        };
+        String text;
+        switch (type) {
+            case META_CAST:
+                text = "#cast";
+                break;
+            case META_TYPE:
+                text = "#type";
+                break;
+            case META_TYPE_OF:
+                text = "#typeof";
+                break;
+            default:
+                text = type.toString().toLowerCase(Locale.ROOT);
+                break;
+        }
         return suggestion(text, SuggestionKind.KEYWORD);
     }
 
     @Override
     public List<SuggestionInfo> getTypeSuggestion(SType type) {
         if (type == SInt.instance) {
-            return List.of(
+            return Lists.of(
                     typeSuggestion("int", type),
                     typeSuggestion("int32", type));
         }
         if (type == SInt64.instance) {
-            return List.of(
+            return Lists.of(
                     typeSuggestion("long", type),
                     typeSuggestion("int64", type));
         }
         if (type == SFloat.instance) {
-            return List.of(
+            return Lists.of(
                     typeSuggestion("float", type),
                     typeSuggestion("float64", type));
         }
         if (type.isPredefined()) {
-            return List.of(typeSuggestion(type.toString(), type));
+            return Lists.of(typeSuggestion(type.toString(), type));
         }
-        return List.of();
+        return Lists.of();
     }
 
     @Override
@@ -78,10 +89,17 @@ public class SuggestionInfoFactory implements SuggestionFactory<SuggestionInfo> 
 
     @Override
     public SuggestionInfo getJavaTypeSuggestion(ClassSuggestion suggestion) {
-        SuggestionKind kind = switch (suggestion.type()) {
-            case PACKAGE -> SuggestionKind.PACKAGE;
-            case CLASS -> SuggestionKind.TYPE;
-        };
+        SuggestionKind kind;
+        switch (suggestion.type()) {
+            case PACKAGE:
+                kind = SuggestionKind.PACKAGE;
+                break;
+            case CLASS:
+                kind = SuggestionKind.TYPE;
+                break;
+            default:
+                throw new InternalException();
+        }
         return suggestion(suggestion.value(), kind);
     }
 

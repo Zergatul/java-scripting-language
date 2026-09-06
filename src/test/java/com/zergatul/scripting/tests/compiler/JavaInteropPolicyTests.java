@@ -1,5 +1,7 @@
 package com.zergatul.scripting.tests.compiler;
 
+import com.zergatul.scripting.utility.Lists;
+
 import com.zergatul.scripting.DiagnosticMessage;
 import com.zergatul.scripting.SingleLineTextRange;
 import com.zergatul.scripting.binding.BinderErrors;
@@ -20,11 +22,10 @@ public class JavaInteropPolicyTests extends ComparatorTest {
 
     @Test
     public void shouldNotAllowToUseHiddenMethodTest() {
-        String code = """
-                intStorage.add(0);
-                """;
+        String code =
+                "intStorage.add(0);\n";
 
-        comparator.assertEquals(List.of(
+        comparator.assertEquals(Lists.of(
                 new DiagnosticMessage(
                         BinderErrors.MemberDoesNotExist,
                         new SingleLineTextRange(1, 12, 11, 3),
@@ -55,11 +56,10 @@ public class JavaInteropPolicyTests extends ComparatorTest {
 
     @Test
     public void javaTypeUsageNotAllowedTest() {
-        String code = """
-                Java<java.lang.Object> obj = new Java<java.lang.Object>();
-                """;
+        String code =
+                "Java<java.lang.Object> obj = new Java<java.lang.Object>();\n";
 
-        comparator.assertEquals(List.of(
+        comparator.assertEquals(Lists.of(
                 new DiagnosticMessage(
                         BinderErrors.JavaTypeNotAllowed,
                         new SingleLineTextRange(1, 1, 0, 22),

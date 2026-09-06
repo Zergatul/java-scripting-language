@@ -6,6 +6,7 @@ import com.zergatul.scripting.parser.UnaryOperator;
 import org.objectweb.asm.MethodVisitor;
 
 import java.util.List;
+import java.util.function.Consumer;
 
 public class DeclaredUnaryOperationReference extends MethodReference {
 
@@ -40,7 +41,7 @@ public class DeclaredUnaryOperationReference extends MethodReference {
     }
 
     @Override
-    public void compileInvoke(MethodVisitor visitor, CompilerContext context, Runnable compileArguments) {
+    public void compileInvoke(MethodVisitor visitor, CompilerContext context, Consumer<CompilerContext> compileArguments) {
         throw new InternalException();
     }
 

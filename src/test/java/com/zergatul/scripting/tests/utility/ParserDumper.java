@@ -1,6 +1,9 @@
 package com.zergatul.scripting.tests.utility;
 
+import com.zergatul.scripting.utility.Lists;
+
 import com.zergatul.scripting.InternalException;
+import com.zergatul.scripting.Locatable;
 import com.zergatul.scripting.lexer.Token;
 import com.zergatul.scripting.parser.ParserOutput;
 import com.zergatul.scripting.parser.nodes.*;
@@ -23,51 +26,140 @@ public class ParserDumper extends Dumper {
         }
 
         switch (node.getNodeType()) {
-            case CLASS_DECLARATION -> dump((ClassNode) node);
-            case CLASS_METHOD -> dump((ClassMethodNode) node);
-            case COMPILATION_UNIT -> dump((CompilationUnitNode) node);
-            case FUNCTION -> dump((FunctionNode) node);
-            case MODIFIERS -> dump((ModifiersNode) node);
-            case PARAMETER_LIST -> dump((ParameterListNode) node);
-            case VARIABLE_DECLARATION -> dump((VariableDeclarationNode) node);
-            case BLOCK_STATEMENT -> dump((BlockStatementNode) node);
-            case FOR_LOOP_STATEMENT -> dump((ForLoopStatementNode) node);
-            case FOREACH_LOOP_STATEMENT -> dump((ForEachLoopStatementNode) node);
-            case WHILE_LOOP_STATEMENT -> dump((WhileLoopStatementNode) node);
-            case IF_STATEMENT -> dump((IfStatementNode) node);
-            case RETURN_STATEMENT -> dump((ReturnStatementNode) node);
-            case EXPRESSION_STATEMENT -> dump((ExpressionStatementNode) node);
-            case INVALID_STATEMENT -> dump((InvalidStatementNode) node);
-            case INVOCATION_EXPRESSION -> dump((InvocationExpressionNode) node);
-            case ARGUMENTS_LIST -> dump((ArgumentsListNode) node);
-            case BINARY_EXPRESSION -> dump((BinaryExpressionNode) node);
-            case MEMBER_ACCESS_EXPRESSION -> dump((MemberAccessExpressionNode) node);
-            case ARRAY_CREATION_EXPRESSION -> dump((ArrayCreationExpressionNode) node);
-            case ARRAY_INITIALIZER_EXPRESSION -> dump((ArrayInitializerExpressionNode) node);
-            case OBJECT_CREATION_EXPRESSION -> dump((ObjectCreationExpressionNode) node);
-            case INTEGER_LITERAL -> dump((IntegerLiteralExpressionNode) node);
-            case BOOLEAN_LITERAL -> dump((BooleanLiteralExpressionNode) node);
-            case NAME_EXPRESSION -> dump((NameExpressionNode) node);
-            case INVALID_EXPRESSION -> dump((InvalidExpressionNode) node);
-            case LET_TYPE -> dump((LetTypeNode) node);
-            case ARRAY_TYPE -> dump((ArrayTypeNode) node);
-            case CUSTOM_TYPE -> dump((CustomTypeNode) node);
-            case PREDEFINED_TYPE -> dump((PredefinedTypeNode) node);
-            case VOID_TYPE -> dump((VoidTypeNode) node);
-            case INVALID_TYPE -> dump((InvalidTypeNode) node);
-            case BINARY_OPERATOR -> dump((BinaryOperatorNode) node);
-            case PARAMETER -> dump((ParameterNode) node);
-            case ASSIGNMENT_OPERATOR -> dump((AssignmentOperatorNode) node);
-            case ASSIGNMENT_STATEMENT -> dump((AssignmentStatementNode) node);
-            case UNARY_EXPRESSION -> dump((UnaryExpressionNode) node);
-            case META_TYPE_EXPRESSION -> dump((MetaTypeExpressionNode) node);
-            case META_TYPE_OF_EXPRESSION -> dump((MetaTypeOfExpressionNode) node);
-            case JAVA_TYPE -> dump((JavaTypeNode) node);
-            case LAMBDA_EXPRESSION -> dump((LambdaExpressionNode) node);
-            case IS_EXPRESSION -> dump((IsExpressionNode) node);
-            case STATIC_REFERENCE -> dump((StaticReferenceNode) node);
-            case FUNCTION_TYPE -> dump((FunctionTypeNode) node);
-            default -> throw new InternalException(node.getClass().getName());
+            case CLASS_DECLARATION:
+                dump((ClassNode) node);
+                break;
+            case CLASS_METHOD:
+                dump((ClassMethodNode) node);
+                break;
+            case COMPILATION_UNIT:
+                dump((CompilationUnitNode) node);
+                break;
+            case FUNCTION:
+                dump((FunctionNode) node);
+                break;
+            case MODIFIERS:
+                dump((ModifiersNode) node);
+                break;
+            case PARAMETER_LIST:
+                dump((ParameterListNode) node);
+                break;
+            case VARIABLE_DECLARATION:
+                dump((VariableDeclarationNode) node);
+                break;
+            case BLOCK_STATEMENT:
+                dump((BlockStatementNode) node);
+                break;
+            case FOR_LOOP_STATEMENT:
+                dump((ForLoopStatementNode) node);
+                break;
+            case FOREACH_LOOP_STATEMENT:
+                dump((ForEachLoopStatementNode) node);
+                break;
+            case WHILE_LOOP_STATEMENT:
+                dump((WhileLoopStatementNode) node);
+                break;
+            case IF_STATEMENT:
+                dump((IfStatementNode) node);
+                break;
+            case RETURN_STATEMENT:
+                dump((ReturnStatementNode) node);
+                break;
+            case EXPRESSION_STATEMENT:
+                dump((ExpressionStatementNode) node);
+                break;
+            case INVALID_STATEMENT:
+                dump((InvalidStatementNode) node);
+                break;
+            case INVOCATION_EXPRESSION:
+                dump((InvocationExpressionNode) node);
+                break;
+            case ARGUMENTS_LIST:
+                dump((ArgumentsListNode) node);
+                break;
+            case BINARY_EXPRESSION:
+                dump((BinaryExpressionNode) node);
+                break;
+            case MEMBER_ACCESS_EXPRESSION:
+                dump((MemberAccessExpressionNode) node);
+                break;
+            case ARRAY_CREATION_EXPRESSION:
+                dump((ArrayCreationExpressionNode) node);
+                break;
+            case ARRAY_INITIALIZER_EXPRESSION:
+                dump((ArrayInitializerExpressionNode) node);
+                break;
+            case OBJECT_CREATION_EXPRESSION:
+                dump((ObjectCreationExpressionNode) node);
+                break;
+            case INTEGER_LITERAL:
+                dump((IntegerLiteralExpressionNode) node);
+                break;
+            case BOOLEAN_LITERAL:
+                dump((BooleanLiteralExpressionNode) node);
+                break;
+            case NAME_EXPRESSION:
+                dump((NameExpressionNode) node);
+                break;
+            case INVALID_EXPRESSION:
+                dump((InvalidExpressionNode) node);
+                break;
+            case LET_TYPE:
+                dump((LetTypeNode) node);
+                break;
+            case ARRAY_TYPE:
+                dump((ArrayTypeNode) node);
+                break;
+            case CUSTOM_TYPE:
+                dump((CustomTypeNode) node);
+                break;
+            case PREDEFINED_TYPE:
+                dump((PredefinedTypeNode) node);
+                break;
+            case VOID_TYPE:
+                dump((VoidTypeNode) node);
+                break;
+            case INVALID_TYPE:
+                dump((InvalidTypeNode) node);
+                break;
+            case BINARY_OPERATOR:
+                dump((BinaryOperatorNode) node);
+                break;
+            case PARAMETER:
+                dump((ParameterNode) node);
+                break;
+            case ASSIGNMENT_OPERATOR:
+                dump((AssignmentOperatorNode) node);
+                break;
+            case ASSIGNMENT_STATEMENT:
+                dump((AssignmentStatementNode) node);
+                break;
+            case UNARY_EXPRESSION:
+                dump((UnaryExpressionNode) node);
+                break;
+            case META_TYPE_EXPRESSION:
+                dump((MetaTypeExpressionNode) node);
+                break;
+            case META_TYPE_OF_EXPRESSION:
+                dump((MetaTypeOfExpressionNode) node);
+                break;
+            case JAVA_TYPE:
+                dump((JavaTypeNode) node);
+                break;
+            case LAMBDA_EXPRESSION:
+                dump((LambdaExpressionNode) node);
+                break;
+            case IS_EXPRESSION:
+                dump((IsExpressionNode) node);
+                break;
+            case STATIC_REFERENCE:
+                dump((StaticReferenceNode) node);
+                break;
+            case FUNCTION_TYPE:
+                dump((FunctionTypeNode) node);
+                break;
+            default:
+                throw new InternalException(node.getClass().getName());
         }
     }
 
@@ -217,7 +309,7 @@ public class ParserDumper extends Dumper {
 
     private void dump(CompilationUnitMembersListNode node) {
         if (node.members.isEmpty()) {
-            beginLine("new CompilationUnitMembersListNode(List.of(), ");
+            beginLine("new CompilationUnitMembersListNode(Lists.of(), ");
             dump(node.getRange());
             sb.append(")");
         } else {
@@ -251,7 +343,7 @@ public class ParserDumper extends Dumper {
 
     private void dump(ModifiersNode node) {
         if (node.tokens.isEmpty()) {
-            beginLine("new ModifiersNode(List.of(), ");
+            beginLine("new ModifiersNode(Lists.of(), ");
             dump(node.getRange());
             sb.append(")");
         } else {
@@ -289,7 +381,7 @@ public class ParserDumper extends Dumper {
 
     private void dump(StatementsListNode node) {
         if (node.statements.isEmpty()) {
-            beginLine("new StatementsListNode(List.of(), ");
+            beginLine("new StatementsListNode(Lists.of(), ");
             dump(node.getRange());
             sb.append(")");
         } else {
@@ -703,7 +795,7 @@ public class ParserDumper extends Dumper {
     private void dumpTokens(List<Token> tokens) {
         boolean newLine = beginNewLineIfRequired();
 
-        endLine("List.of(");
+        endLine("Lists.of(");
         if (newLine) incIndent();
         for (int i = 0; i < tokens.size(); i++) {
             dump(tokens.get(i));
@@ -718,11 +810,11 @@ public class ParserDumper extends Dumper {
     private <T extends ParserNode> void dumpList(List<T> nodes) {
         boolean newLine = beginNewLineIfRequired();
         if (nodes.isEmpty()) {
-            sb.append("List.of()");
+            sb.append("Lists.of()");
             return;
         }
 
-        endLine("List.of(");
+        endLine("Lists.of(");
         if (newLine) incIndent();
         for (int i = 0; i < nodes.size(); i++) {
             dump(nodes.get(i));
@@ -741,13 +833,15 @@ public class ParserDumper extends Dumper {
             fullLine("SeparatedList.of(");
             incIndent();
             beginLine(clazz.getSimpleName() + ".class");
-            for (var item : nodes.getChildNodes()) {
+            for (Locatable item : nodes.getChildNodes()) {
                 commaBreak();
-                if (item instanceof ParserNode node) {
+                if (item instanceof ParserNode) {
+                    ParserNode node = (ParserNode) item;
                     dump(node);
                     continue;
                 }
-                if (item instanceof Token token) {
+                if (item instanceof Token) {
+                    Token token = (Token) item;
                     dump(token);
                     continue;
                 }

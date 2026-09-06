@@ -3,6 +3,7 @@ package com.zergatul.scripting.completion;
 import com.zergatul.scripting.binding.BinderOutput;
 import com.zergatul.scripting.binding.nodes.*;
 import com.zergatul.scripting.compiler.CompilationParameters;
+import com.zergatul.scripting.utility.Lists;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -16,7 +17,7 @@ public class ParametersCompletionProvider<T> extends AbstractCompletionProvider<
     @Override
     public List<T> provide(CompilationParameters parameters, BinderOutput output, CompletionContext context) {
         if (!context.canExpression()) {
-            return List.of();
+            return Lists.of();
         }
 
         List<T> suggestions = new ArrayList<>();
@@ -25,49 +26,63 @@ public class ParametersCompletionProvider<T> extends AbstractCompletionProvider<
                 break;
             }
 
-            List<BoundParameterNode> parameterNodes = switch (current.entry.node.getNodeType()) {
-                case LAMBDA_EXPRESSION -> {
+            List<BoundParameterNode> parameterNodes;
+            switch (current.entry.node.getNodeType()) {
+                case LAMBDA_EXPRESSION: {
                     BoundLambdaExpressionNode lambda = (BoundLambdaExpressionNode) current.entry.node;
-                    yield lambda.parameters;
+                    parameterNodes = lambda.parameters;
+                    break;
                 }
-                case UNCONVERTED_LAMBDA -> {
+                case UNCONVERTED_LAMBDA: {
                     BoundUnconvertedLambdaExpressionNode lambda = (BoundUnconvertedLambdaExpressionNode) current.entry.node;
-                    yield lambda.parameters;
+                    parameterNodes = lambda.parameters;
+                    break;
                 }
-                case CLASS_CONSTRUCTOR -> {
+                case CLASS_CONSTRUCTOR: {
                     BoundClassConstructorNode constructor = (BoundClassConstructorNode) current.entry.node;
-                    yield constructor.parameters.parameters;
+                    parameterNodes = constructor.parameters.parameters;
+                    break;
                 }
-                case CLASS_METHOD -> {
+                case CLASS_METHOD: {
                     BoundClassMethodNode method = (BoundClassMethodNode) current.entry.node;
-                    yield method.parameters.parameters;
+                    parameterNodes = method.parameters.parameters;
+                    break;
                 }
-                case CLASS_UNARY_OPERATION -> {
+                case CLASS_UNARY_OPERATION: {
                     BoundClassUnaryOperationNode operationNode = (BoundClassUnaryOperationNode) current.entry.node;
-                    yield operationNode.parameters.parameters;
+                    parameterNodes = operationNode.parameters.parameters;
+                    break;
                 }
-                case CLASS_BINARY_OPERATION -> {
+                case CLASS_BINARY_OPERATION: {
                     BoundClassBinaryOperationNode operationNode = (BoundClassBinaryOperationNode) current.entry.node;
-                    yield operationNode.parameters.parameters;
+                    parameterNodes = operationNode.parameters.parameters;
+                    break;
                 }
-                case EXTENSION_METHOD -> {
+                case EXTENSION_METHOD: {
                     BoundExtensionMethodNode method = (BoundExtensionMethodNode) current.entry.node;
-                    yield method.parameters.parameters;
+                    parameterNodes = method.parameters.parameters;
+                    break;
                 }
-                case EXTENSION_UNARY_OPERATION -> {
+                case EXTENSION_UNARY_OPERATION: {
                     BoundExtensionUnaryOperationNode operationNode = (BoundExtensionUnaryOperationNode) current.entry.node;
-                    yield operationNode.parameters.parameters;
+                    parameterNodes = operationNode.parameters.parameters;
+                    break;
                 }
-                case EXTENSION_BINARY_OPERATION -> {
+                case EXTENSION_BINARY_OPERATION: {
                     BoundExtensionBinaryOperationNode operationNode = (BoundExtensionBinaryOperationNode) current.entry.node;
-                    yield operationNode.parameters.parameters;
+                    parameterNodes = operationNode.parameters.parameters;
+                    break;
                 }
-                case FUNCTION_DECLARATION -> {
+                case FUNCTION_DECLARATION: {
                     BoundFunctionDeclarationNode function = (BoundFunctionDeclarationNode) current.entry.node;
-                    yield function.parameters.parameters;
+                    parameterNodes = function.parameters.parameters;
+                    break;
                 }
-                default -> null;
-            };
+                default: {
+                    parameterNodes = null;
+                    break;
+                }
+            }
 
             if (parameterNodes != null) {
                 for (BoundParameterNode parameter : parameterNodes) {

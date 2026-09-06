@@ -4,6 +4,7 @@ import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
 import com.zergatul.scripting.parser.nodes.ArrayCreationExpressionNode;
 import com.zergatul.scripting.type.SArrayType;
+import com.zergatul.scripting.utility.Lists;
 
 import java.util.List;
 
@@ -42,6 +43,6 @@ public class BoundArrayCreationExpressionNode extends BoundExpressionNode {
 
     @Override
     public List<BoundNode> getChildren() {
-        return List.of(typeNode, lengthExpression);
+        return Lists.of(typeNode, lengthExpression);
     }
 }

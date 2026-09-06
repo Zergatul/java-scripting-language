@@ -7,6 +7,7 @@ import com.zergatul.scripting.parser.nodes.LambdaExpressionNode;
 import com.zergatul.scripting.symbols.CapturedVariable;
 import com.zergatul.scripting.symbols.LiftedVariable;
 import com.zergatul.scripting.type.SType;
+import com.zergatul.scripting.utility.Lists;
 
 import java.util.List;
 import java.util.stream.Stream;
@@ -24,7 +25,7 @@ public class BoundLambdaExpressionNode extends BoundExpressionNode {
             BoundStatementNode body,
             SType type
     ) {
-        this(SyntaxFactory.missingLambdaExpression(), parameters, body, type, List.of(), List.of(), TextRange.MISSING);
+        this(SyntaxFactory.missingLambdaExpression(), parameters, body, type, Lists.of(), Lists.of(), TextRange.MISSING);
     }
 
     public BoundLambdaExpressionNode(
@@ -75,6 +76,6 @@ public class BoundLambdaExpressionNode extends BoundExpressionNode {
 
     @Override
     public List<BoundNode> getChildren() {
-        return Stream.concat(parameters.stream(), Stream.of(body)).toList();
+        return Lists.from(Stream.concat(parameters.stream(), Stream.of(body)));
     }
 }

@@ -1,5 +1,7 @@
 package com.zergatul.scripting.tests.compiler;
 
+import com.zergatul.scripting.utility.Lists;
+
 import com.zergatul.scripting.DiagnosticMessage;
 import com.zergatul.scripting.SingleLineTextRange;
 import com.zergatul.scripting.binding.BinderErrors;
@@ -23,49 +25,48 @@ public class ClassUnaryOperationTests extends ComparatorTest {
 
     @Test
     public void basicTest() {
-        String code = """
-                class Vec2 {
-                    float x;
-                    float y;
-                
-                    constructor(float x, float y) {
-                        this.x = x;
-                        this.y = y;
-                    }
-                
-                    override string toString() {
-                        return "(" + x + "; " + y + ")";
-                    }
-                
-                    operator [+] Vec2(Vec2 vec) => vec;
-                
-                    operator [+] Vec2(Vec2 left, Vec2 right) {
-                        return new Vec2(left.x + right.x, left.y + right.y);
-                    }
-                
-                    operator [-] Vec2(Vec2 vec) => new Vec2(-vec.x, -vec.y);
-                
-                    operator [-] Vec2(Vec2 left, Vec2 right) {
-                        return new Vec2(left.x - right.x, left.y - right.y);
-                    }
-                
-                    operator [!] Vec2(Vec2 vec) => new Vec2(vec.y, vec.x);
-                }
-                
-                void log(Vec2 v) => stringStorage.add(v.toString());
-                
-                let v = new Vec2(1, 2);
-                log(+v);
-                log(-v);
-                log(!v);
-                """;
+        String code =
+                "class Vec2 {\n" +
+                "    float x;\n" +
+                "    float y;\n" +
+                "\n" +
+                "    constructor(float x, float y) {\n" +
+                "        this.x = x;\n" +
+                "        this.y = y;\n" +
+                "    }\n" +
+                "\n" +
+                "    override string toString() {\n" +
+                "        return \"(\" + x + \"; \" + y + \")\";\n" +
+                "    }\n" +
+                "\n" +
+                "    operator [+] Vec2(Vec2 vec) => vec;\n" +
+                "\n" +
+                "    operator [+] Vec2(Vec2 left, Vec2 right) {\n" +
+                "        return new Vec2(left.x + right.x, left.y + right.y);\n" +
+                "    }\n" +
+                "\n" +
+                "    operator [-] Vec2(Vec2 vec) => new Vec2(-vec.x, -vec.y);\n" +
+                "\n" +
+                "    operator [-] Vec2(Vec2 left, Vec2 right) {\n" +
+                "        return new Vec2(left.x - right.x, left.y - right.y);\n" +
+                "    }\n" +
+                "\n" +
+                "    operator [!] Vec2(Vec2 vec) => new Vec2(vec.y, vec.x);\n" +
+                "}\n" +
+                "\n" +
+                "void log(Vec2 v) => stringStorage.add(v.toString());\n" +
+                "\n" +
+                "let v = new Vec2(1, 2);\n" +
+                "log(+v);\n" +
+                "log(-v);\n" +
+                "log(!v);\n";
 
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
         Assertions.assertIterableEquals(
                 ApiRoot.stringStorage.list,
-                List.of(
+                Lists.of(
                         "(1.0; 2.0)",
                         "(-1.0; -2.0)",
                         "(2.0; 1.0)"));
@@ -73,15 +74,14 @@ public class ClassUnaryOperationTests extends ComparatorTest {
 
     @Test
     public void doubleOverloadTest() {
-        String code = """
-                class MyClass {
-                    operator [!] boolean(MyClass instance) => true;
-                    operator [!] int(MyClass instance) => 1;
-                }
-                """;
+        String code =
+                "class MyClass {\n" +
+                "    operator [!] boolean(MyClass instance) => true;\n" +
+                "    operator [!] int(MyClass instance) => 1;\n" +
+                "}\n";
 
         comparator.assertEquals(
-                List.of(
+                Lists.of(
                         new DiagnosticMessage(BinderErrors.UnaryOperationAlreadyDeclared, new SingleLineTextRange(3, 21, 88, 18))),
                 getDiagnostics(ApiRoot.class, code));
     }

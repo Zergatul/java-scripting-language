@@ -2,6 +2,7 @@ package com.zergatul.scripting.parser.nodes;
 
 import com.zergatul.scripting.Locatable;
 import com.zergatul.scripting.parser.ParserTreeVisitor;
+import com.zergatul.scripting.utility.Lists;
 
 import java.util.List;
 
@@ -26,6 +27,6 @@ public class ExpressionUnitNode extends ParserNode {
 
     @Override
     public List<Locatable> getChildNodes() {
-        return List.of(expression);
+        return Lists.of(expression);
     }
 }

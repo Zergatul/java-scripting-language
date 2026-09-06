@@ -30,7 +30,8 @@ public class StaticConstantSuggestion extends Suggestion {
 
     @Override
     public boolean equals(Object obj) {
-        if (obj instanceof StaticConstantSuggestion other) {
+        if (obj instanceof StaticConstantSuggestion) {
+            StaticConstantSuggestion other = (StaticConstantSuggestion) obj;
             return other.variable == variable;
         } else {
             return false;

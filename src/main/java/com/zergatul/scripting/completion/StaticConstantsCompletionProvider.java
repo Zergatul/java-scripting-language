@@ -4,6 +4,7 @@ import com.zergatul.scripting.binding.BinderOutput;
 import com.zergatul.scripting.compiler.CompilationParameters;
 import com.zergatul.scripting.symbols.StaticFieldConstantStaticVariable;
 import com.zergatul.scripting.symbols.SymbolRef;
+import com.zergatul.scripting.utility.Lists;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -19,13 +20,14 @@ public class StaticConstantsCompletionProvider<T> extends AbstractCompletionProv
         if (context.canExpression()) {
             List<T> suggestions = new ArrayList<>();
             for (SymbolRef ref : output.context().getStaticSymbols()) {
-                if (ref.get() instanceof StaticFieldConstantStaticVariable constant) {
+                if (ref.get() instanceof StaticFieldConstantStaticVariable) {
+                    StaticFieldConstantStaticVariable constant = (StaticFieldConstantStaticVariable) ref.get();
                     suggestions.add(factory.getStaticConstantSuggestion(constant));
                 }
             }
             return suggestions;
         } else {
-            return List.of();
+            return Lists.of();
         }
     }
 }

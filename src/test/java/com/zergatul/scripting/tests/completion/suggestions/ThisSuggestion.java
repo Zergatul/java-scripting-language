@@ -18,7 +18,8 @@ public class ThisSuggestion extends Suggestion {
 
     @Override
     public boolean equals(Object obj) {
-        if (obj instanceof ThisSuggestion other) {
+        if (obj instanceof ThisSuggestion) {
+            ThisSuggestion other = (ThisSuggestion) obj;
             return other.type == type;
         } else {
             return false;

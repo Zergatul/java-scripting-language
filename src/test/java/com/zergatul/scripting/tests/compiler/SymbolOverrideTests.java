@@ -14,6 +14,8 @@ import com.zergatul.scripting.tests.compiler.helpers.Run;
 import com.zergatul.scripting.tests.framework.ComparatorTest;
 import com.zergatul.scripting.tests.utility.MarkedCode;
 import com.zergatul.scripting.type.CustomType;
+import com.zergatul.scripting.utility.Lists;
+import org.jspecify.annotations.Nullable;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DynamicTest;
@@ -22,6 +24,7 @@ import org.junit.jupiter.api.TestFactory;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Stream;
 
 /**
@@ -50,18 +53,17 @@ public class SymbolOverrideTests extends ComparatorTest {
 
     @Test
     public void compilationUnitSymbolsOverrideConfiguredTypes() {
-        String code = """
-                class ConfiguredClass {}
-                typealias ConfiguredAlias = int;
-                int ConfiguredFunction() => 30;
-                static int ConfiguredStatic = 40;
-
-                ConfiguredClass object = new ConfiguredClass();
-                ConfiguredAlias value = 20;
-                intStorage.add(value);
-                intStorage.add(ConfiguredFunction());
-                intStorage.add(ConfiguredStatic);
-                """;
+        String code =
+                "class ConfiguredClass {}\n" +
+                "typealias ConfiguredAlias = int;\n" +
+                "int ConfiguredFunction() => 30;\n" +
+                "static int ConfiguredStatic = 40;\n" +
+                "\n" +
+                "ConfiguredClass object = new ConfiguredClass();\n" +
+                "ConfiguredAlias value = 20;\n" +
+                "intStorage.add(value);\n" +
+                "intStorage.add(ConfiguredFunction());\n" +
+                "intStorage.add(ConfiguredStatic);\n";
 
         Runnable program = compile(
                 code,
@@ -71,20 +73,19 @@ public class SymbolOverrideTests extends ComparatorTest {
                 ConfiguredStatic.class);
         program.run();
 
-        Assertions.assertIterableEquals(List.of(20, 30, 40), ApiRoot.intStorage.list);
+        Assertions.assertIterableEquals(Lists.of(20, 30, 40), ApiRoot.intStorage.list);
     }
 
     @Test
     public void localSymbolOverridesConfiguredType() {
-        String code = """
-                int ConfiguredLocal = 123;
-                intStorage.add(ConfiguredLocal);
-                """;
+        String code =
+                "int ConfiguredLocal = 123;\n" +
+                "intStorage.add(ConfiguredLocal);\n";
 
         Runnable program = compile(code, ConfiguredLocal.class);
         program.run();
 
-        Assertions.assertIterableEquals(List.of(123), ApiRoot.intStorage.list);
+        Assertions.assertIterableEquals(Lists.of(123), ApiRoot.intStorage.list);
     }
 
     @Test
@@ -93,7 +94,7 @@ public class SymbolOverrideTests extends ComparatorTest {
                 InternalException.class,
                 () -> new CompilationParametersBuilder()
                         .setRoot(ApiRoot.class)
-                        .addCustomTypes(List.of(DuplicateConfiguredType1.class, DuplicateConfiguredType2.class))
+                        .addCustomTypes(Lists.of(DuplicateConfiguredType1.class, DuplicateConfiguredType2.class))
                         .build());
     }
 
@@ -112,58 +113,44 @@ public class SymbolOverrideTests extends ComparatorTest {
         return Stream.of(
                         new DiagnosticCase(
                                 "duplicate classes",
-                                """
-                                        class Item {}
-                                        class ⟪Item⟫ {}
-                                        """,
+                                "class Item {}\n" +
+                                "class ⟪Item⟫ {}\n",
                                 BinderErrors.SymbolAlreadyDeclared,
                                 "Item"),
                         new DiagnosticCase(
                                 "class and type alias",
-                                """
-                                        class Item {}
-                                        typealias ⟪Item⟫ = int;
-                                        """,
+                                "class Item {}\n" +
+                                "typealias ⟪Item⟫ = int;\n",
                                 BinderErrors.SymbolAlreadyDeclared,
                                 "Item"),
                         new DiagnosticCase(
                                 "duplicate type aliases",
-                                """
-                                        typealias Item = int;
-                                        typealias ⟪Item⟫ = string;
-                                        """,
+                                "typealias Item = int;\n" +
+                                "typealias ⟪Item⟫ = string;\n",
                                 BinderErrors.SymbolAlreadyDeclared,
                                 "Item"),
                         new DiagnosticCase(
                                 "class and function",
-                                """
-                                        class Item {}
-                                        void ⟪Item⟫() {}
-                                        """,
+                                "class Item {}\n" +
+                                "void ⟪Item⟫() {}\n",
                                 BinderErrors.SymbolAlreadyDeclared,
                                 "Item"),
                         new DiagnosticCase(
                                 "type alias and function",
-                                """
-                                        typealias Item = int;
-                                        void ⟪Item⟫() {}
-                                        """,
+                                "typealias Item = int;\n" +
+                                "void ⟪Item⟫() {}\n",
                                 BinderErrors.SymbolAlreadyDeclared,
                                 "Item"),
                         new DiagnosticCase(
                                 "class and static variable",
-                                """
-                                        class Item {}
-                                        static int ⟪Item⟫;
-                                        """,
+                                "class Item {}\n" +
+                                "static int ⟪Item⟫;\n",
                                 BinderErrors.SymbolAlreadyDeclared,
                                 "Item"),
                         new DiagnosticCase(
                                 "function and static variable",
-                                """
-                                        void Item() {}
-                                        static int ⟪Item⟫;
-                                        """,
+                                "void Item() {}\n" +
+                                "static int ⟪Item⟫;\n",
                                 BinderErrors.SymbolAlreadyDeclared,
                                 "Item"))
                 .map(test -> DynamicTest.dynamicTest(
@@ -173,83 +160,77 @@ public class SymbolOverrideTests extends ComparatorTest {
 
     @Test
     public void compilationUnitSymbolsOverrideApiSymbols() {
-        String code = """
-                class ApiClass {}
-                typealias ApiAlias = int;
-                int ApiFunction() => 10;
-                static int ApiStatic = 20;
-
-                ApiClass object = new ApiClass();
-                ApiAlias value = 30;
-                intStorage.add(ApiFunction());
-                intStorage.add(ApiStatic);
-                intStorage.add(value);
-                """;
+        String code =
+                "class ApiClass {}\n" +
+                "typealias ApiAlias = int;\n" +
+                "int ApiFunction() => 10;\n" +
+                "static int ApiStatic = 20;\n" +
+                "\n" +
+                "ApiClass object = new ApiClass();\n" +
+                "ApiAlias value = 30;\n" +
+                "intStorage.add(ApiFunction());\n" +
+                "intStorage.add(ApiStatic);\n" +
+                "intStorage.add(value);\n";
 
         Runnable program = compile(code);
         program.run();
 
-        Assertions.assertIterableEquals(List.of(10, 20, 30), ApiRoot.intStorage.list);
+        Assertions.assertIterableEquals(Lists.of(10, 20, 30), ApiRoot.intStorage.list);
     }
 
     @Test
     public void functionOverloadsRemainValid() {
-        String code = """
-                int value(int x) => x;
-                int value(int x, int y) => x + y;
-
-                intStorage.add(value(10));
-                intStorage.add(value(20, 30));
-                """;
+        String code =
+                "int value(int x) => x;\n" +
+                "int value(int x, int y) => x + y;\n" +
+                "\n" +
+                "intStorage.add(value(10));\n" +
+                "intStorage.add(value(20, 30));\n";
 
         Runnable program = compile(code);
         program.run();
 
-        Assertions.assertIterableEquals(List.of(10, 50), ApiRoot.intStorage.list);
+        Assertions.assertIterableEquals(Lists.of(10, 50), ApiRoot.intStorage.list);
     }
 
     @Test
     public void duplicateFunctionSignatureRemainsInvalid() {
         assertDiagnostic(
-                """
-                        int value(int x) => x;
-                        int ⟪value⟫(int y) => y;
-                        """,
+                "int value(int x) => x;\n" +
+                "int ⟪value⟫(int y) => y;\n",
                 BinderErrors.FunctionAlreadyDeclared);
     }
 
     @Test
     public void localsCanShadowCompilationUnitSymbols() {
-        String code = """
-                int functionValue() => 1;
-                static int staticValue = 2;
-
-                int functionValue = 10;
-                int staticValue = 20;
-                int apiValue = 30;
-
-                intStorage.add(functionValue);
-                intStorage.add(staticValue);
-                intStorage.add(apiValue);
-                """;
+        String code =
+                "int functionValue() => 1;\n" +
+                "static int staticValue = 2;\n" +
+                "\n" +
+                "int functionValue = 10;\n" +
+                "int staticValue = 20;\n" +
+                "int apiValue = 30;\n" +
+                "\n" +
+                "intStorage.add(functionValue);\n" +
+                "intStorage.add(staticValue);\n" +
+                "intStorage.add(apiValue);\n";
 
         Runnable program = compile(code);
         program.run();
 
-        Assertions.assertIterableEquals(List.of(10, 20, 30), ApiRoot.intStorage.list);
+        Assertions.assertIterableEquals(Lists.of(10, 20, 30), ApiRoot.intStorage.list);
     }
 
     @Test
     public void functionParameterCanShadowCompilationUnitSymbol() {
-        String code = """
-                int get(int apiValue) => apiValue;
-                intStorage.add(get(123));
-                """;
+        String code =
+                "int get(int apiValue) => apiValue;\n" +
+                "intStorage.add(get(123));\n";
 
         Runnable program = compile(code);
         program.run();
 
-        Assertions.assertIterableEquals(List.of(123), ApiRoot.intStorage.list);
+        Assertions.assertIterableEquals(Lists.of(123), ApiRoot.intStorage.list);
     }
 
     @Test
@@ -265,57 +246,54 @@ public class SymbolOverrideTests extends ComparatorTest {
         InputAction program = result.getProgram();
         program.invoke(321);
 
-        Assertions.assertIterableEquals(List.of(321), ApiRoot.intStorage.list);
+        Assertions.assertIterableEquals(Lists.of(321), ApiRoot.intStorage.list);
     }
 
     @Test
     public void foreachVariableCanShadowCompilationUnitSymbol() {
-        String code = """
-                foreach (int loopValue in [1, 2]) {
-                    intStorage.add(loopValue);
-                }
-                intStorage.add(loopValue);
-                """;
+        String code =
+                "foreach (int loopValue in [1, 2]) {\n" +
+                "    intStorage.add(loopValue);\n" +
+                "}\n" +
+                "intStorage.add(loopValue);\n";
 
         Runnable program = compile(code);
         program.run();
 
-        Assertions.assertIterableEquals(List.of(1, 2, 200), ApiRoot.intStorage.list);
+        Assertions.assertIterableEquals(Lists.of(1, 2, 200), ApiRoot.intStorage.list);
     }
 
     @Test
     public void declarationPatternCanShadowCompilationUnitSymbol() {
-        String code = """
-                typealias Object = Java<java.lang.Object>;
-                Object object = "abc";
-                if (object is string patternValue) {
-                    intStorage.add(patternValue.length);
-                }
-                intStorage.add(patternValue);
-                """;
+        String code =
+                "typealias Object = Java<java.lang.Object>;\n" +
+                "Object object = \"abc\";\n" +
+                "if (object is string patternValue) {\n" +
+                "    intStorage.add(patternValue.length);\n" +
+                "}\n" +
+                "intStorage.add(patternValue);\n";
 
         Runnable program = compile(code);
         program.run();
 
-        Assertions.assertIterableEquals(List.of(3, 300), ApiRoot.intStorage.list);
+        Assertions.assertIterableEquals(Lists.of(3, 300), ApiRoot.intStorage.list);
     }
 
     @Test
     public void catchVariableCanShadowCompilationUnitSymbol() {
-        String code = """
-                typealias RuntimeException = Java<java.lang.RuntimeException>;
-                try {
-                    throw new RuntimeException();
-                } catch (catchValue) {
-                    intStorage.add(1);
-                }
-                intStorage.add(catchValue);
-                """;
+        String code =
+                "typealias RuntimeException = Java<java.lang.RuntimeException>;\n" +
+                "try {\n" +
+                "    throw new RuntimeException();\n" +
+                "} catch (catchValue) {\n" +
+                "    intStorage.add(1);\n" +
+                "}\n" +
+                "intStorage.add(catchValue);\n";
 
         Runnable program = compile(code);
         program.run();
 
-        Assertions.assertIterableEquals(List.of(1, 400), ApiRoot.intStorage.list);
+        Assertions.assertIterableEquals(Lists.of(1, 400), ApiRoot.intStorage.list);
     }
 
     @TestFactory
@@ -323,46 +301,36 @@ public class SymbolOverrideTests extends ComparatorTest {
         return Stream.of(
                         new DiagnosticCase(
                                 "local in the same scope",
-                                """
-                                        int value;
-                                        int ⟪value⟫;
-                                        """,
+                                "int value;\n" +
+                                "int ⟪value⟫;\n",
                                 BinderErrors.SymbolAlreadyDeclared,
                                 "value"),
                         new DiagnosticCase(
                                 "local in a nested scope",
-                                """
-                                        int value;
-                                        {
-                                            int ⟪value⟫;
-                                        }
-                                        """,
+                                "int value;\n" +
+                                "{\n" +
+                                "    int ⟪value⟫;\n" +
+                                "}\n",
                                 BinderErrors.SymbolAlreadyDeclared,
                                 "value"),
                         new DiagnosticCase(
                                 "foreach variable",
-                                """
-                                        int value;
-                                        foreach (int ⟪value⟫ in [1]) {}
-                                        """,
+                                "int value;\n" +
+                                "foreach (int ⟪value⟫ in [1]) {}\n",
                                 BinderErrors.SymbolAlreadyDeclared,
                                 "value"),
                         new DiagnosticCase(
                                 "declaration-pattern variable",
-                                """
-                                        typealias Object = Java<java.lang.Object>;
-                                        int value;
-                                        Object object = "abc";
-                                        if (object is string ⟪value⟫) {}
-                                        """,
+                                "typealias Object = Java<java.lang.Object>;\n" +
+                                "int value;\n" +
+                                "Object object = \"abc\";\n" +
+                                "if (object is string ⟪value⟫) {}\n",
                                 BinderErrors.SymbolAlreadyDeclared,
                                 "value"),
                         new DiagnosticCase(
                                 "catch variable",
-                                """
-                                        int value;
-                                        try {} catch (⟪value⟫) {}
-                                        """,
+                                "int value;\n" +
+                                "try {} catch (⟪value⟫) {}\n",
                                 BinderErrors.SymbolAlreadyDeclared,
                                 "value"))
                 .map(test -> DynamicTest.dynamicTest(
@@ -372,168 +340,154 @@ public class SymbolOverrideTests extends ComparatorTest {
 
     @Test
     public void siblingScopesCanReuseLocalName() {
-        String code = """
-                {
-                    int value = 10;
-                    intStorage.add(value);
-                }
-                {
-                    int value = 20;
-                    intStorage.add(value);
-                }
-                int value = 30;
-                intStorage.add(value);
-                """;
+        String code =
+                "{\n" +
+                "    int value = 10;\n" +
+                "    intStorage.add(value);\n" +
+                "}\n" +
+                "{\n" +
+                "    int value = 20;\n" +
+                "    intStorage.add(value);\n" +
+                "}\n" +
+                "int value = 30;\n" +
+                "intStorage.add(value);\n";
 
         Runnable program = compile(code);
         program.run();
 
-        Assertions.assertIterableEquals(List.of(10, 20, 30), ApiRoot.intStorage.list);
+        Assertions.assertIterableEquals(Lists.of(10, 20, 30), ApiRoot.intStorage.list);
     }
 
     @Test
     public void lambdaParameterCanShadowEnclosingFunctionLocal() {
-        String code = """
-                int value = 10;
-                run.onInteger(value => intStorage.add(value));
-                run.triggerInteger(20);
-                intStorage.add(value);
-                """;
+        String code =
+                "int value = 10;\n" +
+                "run.onInteger(value => intStorage.add(value));\n" +
+                "run.triggerInteger(20);\n" +
+                "intStorage.add(value);\n";
 
         Runnable program = compile(code);
         program.run();
 
-        Assertions.assertIterableEquals(List.of(20, 10), ApiRoot.intStorage.list);
+        Assertions.assertIterableEquals(Lists.of(20, 10), ApiRoot.intStorage.list);
     }
 
     @Test
     public void duplicateLambdaParametersAreInvalid() {
         assertDiagnostic(
-                """
-                        run.onIntString((value, ⟪value⟫) => {});
-                        """,
+                "run.onIntString((value, ⟪value⟫) => {});",
                 BinderErrors.SymbolAlreadyDeclared,
                 "value");
     }
 
     @Test
     public void classMethodOverloadsRemainValid() {
-        String code = """
-                class Calculator {
-                    int get(int value) => value;
-                    int get(int x, int y) => x + y;
-                }
-
-                Calculator calculator = new Calculator();
-                intStorage.add(calculator.get(10));
-                intStorage.add(calculator.get(20, 30));
-                """;
+        String code =
+                "class Calculator {\n" +
+                "    int get(int value) => value;\n" +
+                "    int get(int x, int y) => x + y;\n" +
+                "}\n" +
+                "\n" +
+                "Calculator calculator = new Calculator();\n" +
+                "intStorage.add(calculator.get(10));\n" +
+                "intStorage.add(calculator.get(20, 30));\n";
 
         Runnable program = compile(code);
         program.run();
 
-        Assertions.assertIterableEquals(List.of(10, 50), ApiRoot.intStorage.list);
+        Assertions.assertIterableEquals(Lists.of(10, 50), ApiRoot.intStorage.list);
     }
 
     @Test
     public void virtualMethodOverrideRemainsValid() {
-        String code = """
-                class Base {
-                    virtual int get() => 10;
-                }
-                class Child : Base {
-                    override int get() => base.get() + 20;
-                }
-
-                Base value = new Child();
-                intStorage.add(value.get());
-                """;
+        String code =
+                "class Base {\n" +
+                "    virtual int get() => 10;\n" +
+                "}\n" +
+                "class Child : Base {\n" +
+                "    override int get() => base.get() + 20;\n" +
+                "}\n" +
+                "\n" +
+                "Base value = new Child();\n" +
+                "intStorage.add(value.get());\n";
 
         Runnable program = compile(code);
         program.run();
 
-        Assertions.assertIterableEquals(List.of(30), ApiRoot.intStorage.list);
+        Assertions.assertIterableEquals(Lists.of(30), ApiRoot.intStorage.list);
     }
 
     @Test
     public void overridingMethodStillRequiresOverrideModifier() {
-        assertDiagnostic(
-                """
-                        class Base {
-                            virtual int get() => 10;
-                        }
-                        class Child : Base {
-                            int ⟪get⟫() => 20;
-                        }
-                        """,
-                BinderErrors.OverrideMissing);
+        String code =
+                "class Base {\n" +
+                "    virtual int get() => 10;\n" +
+                "}\n" +
+                "class Child : Base {\n" +
+                "    int ⟪get⟫() => 20;\n" +
+                "}\n";
+        assertDiagnostic(code, BinderErrors.OverrideMissing);
     }
 
     @Test
     public void inheritedFieldShadowingRemainsInvalid() {
-        assertDiagnostic(
-                """
-                        class Base {
-                            int value;
-                        }
-                        class Child : Base {
-                            int ⟪value⟫;
-                        }
-                        """,
-                BinderErrors.BaseClassAlreadyHasMember);
+        String code =
+                "class Base {\n" +
+                "    int value;\n" +
+                "}\n" +
+                "class Child : Base {\n" +
+                "    int ⟪value⟫;\n" +
+                "}\n";
+        assertDiagnostic(code, BinderErrors.BaseClassAlreadyHasMember);
     }
 
     @Test
     public void extensionMethodCannotReplaceInstanceMethod() {
-        assertDiagnostic(
-                """
-                        class Item {
-                            int get(int value) => value;
-                        }
-                        extension(Item) {
-                            int ⟪get⟫(int value) => value + 1;
-                        }
-                        """,
-                BinderErrors.MethodAlreadyDeclared);
+        String code =
+                "class Item {\n" +
+                "    int get(int value) => value;\n" +
+                "}\n" +
+                "extension(Item) {\n" +
+                "    int ⟪get⟫(int value) => value + 1;\n" +
+                "}\n";
+        assertDiagnostic(code, BinderErrors.MethodAlreadyDeclared);
     }
 
     @Test
     public void extensionMethodCanOverloadInstanceMethod() {
-        String code = """
-                class Item {
-                    int get(int value) => value;
-                }
-                extension(Item) {
-                    int get(string value) => value.length;
-                }
-
-                Item item = new Item();
-                intStorage.add(item.get(10));
-                intStorage.add(item.get("abc"));
-                """;
+        String code =
+                "class Item {\n" +
+                "    int get(int value) => value;\n" +
+                "}\n" +
+                "extension(Item) {\n" +
+                "    int get(string value) => value.length;\n" +
+                "}\n" +
+                "\n" +
+                "Item item = new Item();\n" +
+                "intStorage.add(item.get(10));\n" +
+                "intStorage.add(item.get(\"abc\"));\n";
 
         Runnable program = compile(code);
         program.run();
 
-        Assertions.assertIterableEquals(List.of(10, 3), ApiRoot.intStorage.list);
+        Assertions.assertIterableEquals(Lists.of(10, 3), ApiRoot.intStorage.list);
     }
 
     @Test
     public void functionNameSameAsFunctionInterfaceMethodTest() {
-        String code = """
-                void run() {
-                    [0][1] = 2;
-                }
-                run();
-                """;
+        String code =
+                "void run() {\n" +
+                "    [0][1] = 2;\n" +
+                "}\n" +
+                "run();\n";
 
         Runnable program = compile(code);
         try {
             program.run();
         } catch (IndexOutOfBoundsException e) {
-            Assertions.assertEquals("Index 1 out of bounds for length 1", e.getMessage());
+            Assertions.assertEquals("1", e.getMessage());
             CompilerHelper.assertTopStackTrace(
-                    List.of(
+                    Lists.of(
                             new StackTraceElement("com.zergatul.scripting.dynamic.Script", "$function$run", null, -1),
                             new StackTraceElement("com.zergatul.scripting.dynamic.Script", "run", null, -1)),
                     Arrays.asList(e.getStackTrace()));
@@ -547,7 +501,7 @@ public class SymbolOverrideTests extends ComparatorTest {
         CompilationParametersBuilder builder = new CompilationParametersBuilder()
                 .setRoot(ApiRoot.class)
                 .emitVariableNames(true);
-        builder.addCustomTypes(List.of(customTypes));
+        builder.addCustomTypes(Lists.of(customTypes));
         CompilationResult result = new Compiler(builder.build()).compile(code);
 
         Assertions.assertNull(result.getDiagnostics());
@@ -565,11 +519,65 @@ public class SymbolOverrideTests extends ComparatorTest {
 
         Assertions.assertNull(result.getProgram());
         comparator.assertEquals(
-                List.of(new DiagnosticMessage(error, marked.getRange(MARK), parameters)),
+                Lists.of(new DiagnosticMessage(error, marked.getRange(MARK), parameters)),
                 result.getDiagnostics());
     }
 
-    private record DiagnosticCase(String name, String code, ErrorCode error, Object... parameters) {}
+    private static final class DiagnosticCase {
+
+        private final String name;
+        private final String code;
+        private final ErrorCode error;
+        private final Object[] parameters;
+
+        private DiagnosticCase(String name, String code, ErrorCode error, Object... parameters) {
+            this.name = name;
+            this.code = code;
+            this.error = error;
+            this.parameters = parameters;
+        }
+
+        public String name() {
+            return name;
+        }
+
+        public String code() {
+            return code;
+        }
+
+        public ErrorCode error() {
+            return error;
+        }
+
+        public Object[] parameters() {
+            return parameters;
+        }
+
+        @Override
+        public boolean equals(@Nullable Object obj) {
+            if (obj == this) return true;
+            if (obj == null || obj.getClass() != this.getClass()) return false;
+            DiagnosticCase that = (DiagnosticCase) obj;
+            return  Objects.equals(this.name, that.name) &&
+                    Objects.equals(this.code, that.code) &&
+                    Objects.equals(this.error, that.error) &&
+                    Arrays.equals(this.parameters, that.parameters);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(name, code, error, Arrays.hashCode(parameters));
+        }
+
+        @Override
+        public String toString() {
+            return  "DiagnosticCase[" +
+                    "name=" + name + ", " +
+                    "code=" + code + ", " +
+                    "error=" + error + ", " +
+                    "parameters=" + Arrays.toString(parameters) + ']';
+        }
+    }
 
     @FunctionalInterface
     public interface InputAction {

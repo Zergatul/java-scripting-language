@@ -5,6 +5,7 @@ import com.zergatul.scripting.binding.BinderTreeVisitor;
 import com.zergatul.scripting.parser.nodes.RefArgumentExpressionNode;
 import com.zergatul.scripting.symbols.LocalVariable;
 import com.zergatul.scripting.type.SType;
+import com.zergatul.scripting.utility.Lists;
 
 import java.util.List;
 
@@ -37,6 +38,6 @@ public class BoundRefArgumentExpressionNode extends BoundExpressionNode {
 
     @Override
     public List<BoundNode> getChildren() {
-        return List.of(name);
+        return Lists.of(name);
     }
 }

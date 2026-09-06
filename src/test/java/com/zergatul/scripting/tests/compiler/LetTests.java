@@ -1,5 +1,7 @@
 package com.zergatul.scripting.tests.compiler;
 
+import com.zergatul.scripting.utility.Lists;
+
 import com.zergatul.scripting.DiagnosticMessage;
 import com.zergatul.scripting.SingleLineTextRange;
 import com.zergatul.scripting.parser.ParserErrors;
@@ -29,83 +31,77 @@ public class LetTests extends ComparatorTest {
 
     @Test
     public void letWithoutInitialization() {
-        String code = """
-                let x;
-                """;
+        String code =
+                "let x;\n";
 
-        comparator.assertEquals(List.of(
+        comparator.assertEquals(Lists.of(
                 new DiagnosticMessage(ParserErrors.CannotUseLet, new SingleLineTextRange(1, 1, 0, 3))),
                 getDiagnostics(ApiRoot.class, code));
     }
 
     @Test
     public void intTest() {
-        String code = """
-                let a = 1;
-                let b = 2;
-                intStorage.add(a + b);
-                """;
+        String code =
+                "let a = 1;\n" +
+                "let b = 2;\n" +
+                "intStorage.add(a + b);\n";
 
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
-        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(3));
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, Lists.of(3));
     }
 
     @Test
     public void floatTest() {
-        String code = """
-                let a = 1;
-                let b = 2.5;
-                floatStorage.add(a + b);
-                """;
+        String code =
+                "let a = 1;\n" +
+                "let b = 2.5;\n" +
+                "floatStorage.add(a + b);\n";
 
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
-        Assertions.assertIterableEquals(ApiRoot.floatStorage.list, List.of(3.5));
+        Assertions.assertIterableEquals(ApiRoot.floatStorage.list, Lists.of(3.5));
     }
 
     @Test
     public void stringTest() {
-        String code = """
-                let a = "qwe";
-                stringStorage.add(a);
-                """;
+        String code =
+                "let a = \"qwe\";\n" +
+                "stringStorage.add(a);\n";
 
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
-        Assertions.assertIterableEquals(ApiRoot.stringStorage.list, List.of("qwe"));
+        Assertions.assertIterableEquals(ApiRoot.stringStorage.list, Lists.of("qwe"));
     }
 
     @Test
     public void forLoopTest() {
-        String code = """
-                let sum = 0;
-                for (let i = 0; i < 10; i++) sum += i;
-                intStorage.add(sum);
-                """;
+        String code =
+                "let sum = 0;\n" +
+                "for (let i = 0; i < 10; i++) sum += i;\n" +
+                "intStorage.add(sum);\n";
 
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
-        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(45));
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, Lists.of(45));
     }
 
     @Test
     public void forEachLoopTest() {
-        String code = """
-                let array = new int[] { 1, 2, 3, 4, 5, 6, 7, 8, 9 };
-                let sum = 0;
-                foreach (let i in array) sum += i;
-                intStorage.add(sum);
-                """;
+        String code =
+                "let array = new int[] { 1, 2, 3, 4, 5, 6, 7, 8, 9 };\n" +
+                "let sum = 0;\n" +
+                "foreach (let i in array) sum += i;\n" +
+                "intStorage.add(sum);\n";
 
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
-        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(45));
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, Lists.of(45));
     }
 
     public static class ApiRoot {

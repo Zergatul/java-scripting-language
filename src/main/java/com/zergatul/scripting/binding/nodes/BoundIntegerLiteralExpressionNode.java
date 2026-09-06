@@ -5,6 +5,7 @@ import com.zergatul.scripting.binding.BinderTreeVisitor;
 import com.zergatul.scripting.parser.SyntaxFactory;
 import com.zergatul.scripting.parser.nodes.IntegerLiteralExpressionNode;
 import com.zergatul.scripting.type.SInt;
+import com.zergatul.scripting.utility.Lists;
 
 import java.util.List;
 
@@ -37,6 +38,6 @@ public class BoundIntegerLiteralExpressionNode extends BoundExpressionNode {
 
     @Override
     public List<BoundNode> getChildren() {
-        return List.of();
+        return Lists.of();
     }
 }

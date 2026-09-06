@@ -5,6 +5,7 @@ import com.zergatul.scripting.parser.nodes.ClassOperatorOverloadNode;
 import com.zergatul.scripting.symbols.LiftedVariable;
 import com.zergatul.scripting.type.MethodReference;
 import com.zergatul.scripting.type.SMethodFunction;
+import com.zergatul.scripting.utility.Lists;
 
 import java.util.List;
 
@@ -47,6 +48,6 @@ public abstract class BoundClassOperatorOverloadNode extends BoundClassMemberNod
 
     @Override
     public List<BoundNode> getChildren() {
-        return List.of(returnTypeNode, parameters, body);
+        return Lists.of(returnTypeNode, parameters, body);
     }
 }

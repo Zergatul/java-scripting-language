@@ -12,7 +12,8 @@ public class KeywordSuggestion extends Suggestion {
 
     @Override
     public boolean equals(Object obj) {
-        if (obj instanceof KeywordSuggestion other) {
+        if (obj instanceof KeywordSuggestion) {
+            KeywordSuggestion other = (KeywordSuggestion) obj;
             return other.type == type;
         } else {
             return false;

@@ -5,6 +5,7 @@ import com.zergatul.scripting.compiler.CompilerContext;
 import org.objectweb.asm.MethodVisitor;
 
 import java.util.List;
+import java.util.function.Consumer;
 
 public class UnknownMethodReference extends MethodReference {
 
@@ -33,7 +34,7 @@ public class UnknownMethodReference extends MethodReference {
     }
 
     @Override
-    public void compileInvoke(MethodVisitor visitor, CompilerContext context, Runnable compileArguments) {
+    public void compileInvoke(MethodVisitor visitor, CompilerContext context, Consumer<CompilerContext> compileArguments) {
         throw new InternalException();
     }
 }

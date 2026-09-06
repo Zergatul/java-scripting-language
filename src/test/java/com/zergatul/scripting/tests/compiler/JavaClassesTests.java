@@ -1,5 +1,7 @@
 package com.zergatul.scripting.tests.compiler;
 
+import com.zergatul.scripting.utility.Lists;
+
 import com.zergatul.scripting.DiagnosticMessage;
 import com.zergatul.scripting.SingleLineTextRange;
 import com.zergatul.scripting.binding.BinderErrors;
@@ -25,30 +27,28 @@ public class JavaClassesTests extends ComparatorTest {
 
     @Test
     public void inheritedMethodTest() {
-        String code = """
-                class3.do1(5);
-                class3.do2(5);
-                class3.do3(5);
-                """;
+        String code =
+                "class3.do1(5);\n" +
+                "class3.do2(5);\n" +
+                "class3.do3(5);\n";
 
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
         Assertions.assertIterableEquals(
                 ApiRoot.intStorage.list,
-                List.of(5, 15, 105));
+                Lists.of(5, 15, 105));
     }
 
     @Test
     public void cannotUseObjectMethodsTest() {
-        String code = """
-                class3.notify();
-                class3.getClass();
-                class3.toString();
-                class3.hashCode();
-                """;
+        String code =
+                "class3.notify();\n" +
+                "class3.getClass();\n" +
+                "class3.toString();\n" +
+                "class3.hashCode();\n";
 
-        comparator.assertEquals(List.of(
+        comparator.assertEquals(Lists.of(
                 new DiagnosticMessage(
                         BinderErrors.MemberDoesNotExist,
                         new SingleLineTextRange(1, 8, 7, 6),

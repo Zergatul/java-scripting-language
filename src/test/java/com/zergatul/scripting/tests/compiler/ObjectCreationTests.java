@@ -1,5 +1,7 @@
 package com.zergatul.scripting.tests.compiler;
 
+import com.zergatul.scripting.utility.Lists;
+
 import com.zergatul.scripting.tests.compiler.helpers.BoolStorage;
 import com.zergatul.scripting.tests.compiler.helpers.FloatStorage;
 import com.zergatul.scripting.tests.compiler.helpers.IntStorage;
@@ -26,36 +28,34 @@ public class ObjectCreationTests {
 
     @Test
     public void basicTest1() {
-        String code = """
-                let a = new TypeA();
-                let b = new TypeB();
-                let c = new TypeC();
-                stringStorage.add(#typeof(a).name);
-                stringStorage.add(#typeof(b).name);
-                stringStorage.add(#typeof(c).name);
-                """;
+        String code =
+                "let a = new TypeA();\n" +
+                "let b = new TypeB();\n" +
+                "let c = new TypeC();\n" +
+                "stringStorage.add(#typeof(a).name);\n" +
+                "stringStorage.add(#typeof(b).name);\n" +
+                "stringStorage.add(#typeof(c).name);\n";
 
         Runnable program = compileWithCustomTypes(ApiRoot.class, code, TypeA.class, TypeB.class, TypeC.class);
         program.run();
 
-        Assertions.assertIterableEquals(ApiRoot.stringStorage.list, List.of("TypeA", "TypeB", "TypeC"));
+        Assertions.assertIterableEquals(ApiRoot.stringStorage.list, Lists.of("TypeA", "TypeB", "TypeC"));
     }
 
     @Test
     public void basicTest2() {
-        String code = """
-                let a = new Java<com.zergatul.scripting.tests.compiler.ObjectCreationTests$TypeD>();
-                let b = new Java<com.zergatul.scripting.tests.compiler.ObjectCreationTests$TypeE>();
-                let c = new Java<com.zergatul.scripting.tests.compiler.ObjectCreationTests$TypeF>();
-                stringStorage.add(#typeof(a).name);
-                stringStorage.add(#typeof(b).name);
-                stringStorage.add(#typeof(c).name);
-                """;
+        String code =
+                "let a = new Java<com.zergatul.scripting.tests.compiler.ObjectCreationTests$TypeD>();\n" +
+                "let b = new Java<com.zergatul.scripting.tests.compiler.ObjectCreationTests$TypeE>();\n" +
+                "let c = new Java<com.zergatul.scripting.tests.compiler.ObjectCreationTests$TypeF>();\n" +
+                "stringStorage.add(#typeof(a).name);\n" +
+                "stringStorage.add(#typeof(b).name);\n" +
+                "stringStorage.add(#typeof(c).name);\n";
 
         Runnable program = compileWithCustomTypes(ApiRoot.class, code);
         program.run();
 
-        Assertions.assertIterableEquals(ApiRoot.stringStorage.list, List.of(
+        Assertions.assertIterableEquals(ApiRoot.stringStorage.list, Lists.of(
                 "Java<com.zergatul.scripting.tests.compiler.ObjectCreationTests$TypeD>",
                 "Java<com.zergatul.scripting.tests.compiler.ObjectCreationTests$TypeE>",
                 "Java<com.zergatul.scripting.tests.compiler.ObjectCreationTests$TypeF>"));
@@ -63,16 +63,15 @@ public class ObjectCreationTests {
 
     @Test
     public void basicTest3() {
-        String code = """
-                let instance = new Java<com.zergatul.scripting.tests.compiler.ObjectCreationTests$TypeH>(
-                    new Java<com.zergatul.scripting.tests.compiler.ObjectCreationTests$TypeG>(123));
-                intStorage.add(instance.g.value);
-                """;
+        String code =
+                "let instance = new Java<com.zergatul.scripting.tests.compiler.ObjectCreationTests$TypeH>(\n" +
+                "    new Java<com.zergatul.scripting.tests.compiler.ObjectCreationTests$TypeG>(123));\n" +
+                "intStorage.add(instance.g.value);\n";
 
         Runnable program = compileWithCustomTypes(ApiRoot.class, code);
         program.run();
 
-        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(123));
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, Lists.of(123));
     }
 
     public static class ApiRoot {

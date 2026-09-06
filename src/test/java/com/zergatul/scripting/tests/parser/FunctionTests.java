@@ -7,6 +7,7 @@ import com.zergatul.scripting.parser.ParserErrors;
 import com.zergatul.scripting.parser.ParserOutput;
 import com.zergatul.scripting.parser.PredefinedType;
 import com.zergatul.scripting.parser.nodes.*;
+import com.zergatul.scripting.utility.Lists;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -16,12 +17,12 @@ public class FunctionTests extends ParserTestBase {
     @Test
     public void functionTest1() {
         ParserOutput result = parse("void a(){}");
-        comparator.assertEquals(List.of(), result.diagnostics());
+        comparator.assertEquals(Lists.of(), result.diagnostics());
         comparator.assertEquals(
                 new CompilationUnitNode(
-                        new CompilationUnitMembersListNode(List.of(
+                        new CompilationUnitMembersListNode(Lists.of(
                                 new FunctionNode(
-                                        new ModifiersNode(List.of(), new SingleLineTextRange(1, 1, 0, 0)),
+                                        new ModifiersNode(Lists.of(), new SingleLineTextRange(1, 1, 0, 0)),
                                         new VoidTypeNode(
                                                 new Token(TokenType.VOID, new SingleLineTextRange(1, 1, 0, 4))
                                                         .withTrailingTrivia(new Trivia(TokenType.WHITESPACE, new SingleLineTextRange(1, 5, 4, 1)))),
@@ -34,10 +35,10 @@ public class FunctionTests extends ParserTestBase {
                                         null,
                                         new BlockStatementNode(
                                                 new Token(TokenType.LEFT_CURLY_BRACKET, new SingleLineTextRange(1, 9, 8, 1)),
-                                                List.of(),
+                                                Lists.of(),
                                                 new Token(TokenType.RIGHT_CURLY_BRACKET, new SingleLineTextRange(1, 10, 9, 1))))),
                                 new SingleLineTextRange(1, 1, 0, 10)),
-                        new StatementsListNode(List.of(), new SingleLineTextRange(1, 11, 10, 0)),
+                        new StatementsListNode(Lists.of(), new SingleLineTextRange(1, 11, 10, 0)),
                         new EndOfFileToken(new SingleLineTextRange(1, 11, 10, 0))),
                 result.unit());
     }
@@ -45,12 +46,12 @@ public class FunctionTests extends ParserTestBase {
     @Test
     public void functionTest2() {
         ParserOutput result = parse("int[][][] a(int[][][] b, string s) {}");
-        comparator.assertEquals(List.of(), result.diagnostics());
+        comparator.assertEquals(Lists.of(), result.diagnostics());
         comparator.assertEquals(
                 new CompilationUnitNode(
-                        new CompilationUnitMembersListNode(List.of(
+                        new CompilationUnitMembersListNode(Lists.of(
                                 new FunctionNode(
-                                        new ModifiersNode(List.of(), new SingleLineTextRange(1, 1, 0, 0)),
+                                        new ModifiersNode(Lists.of(), new SingleLineTextRange(1, 1, 0, 0)),
                                         new ArrayTypeNode(
                                                 new ArrayTypeNode(
                                                         new ArrayTypeNode(
@@ -106,25 +107,25 @@ public class FunctionTests extends ParserTestBase {
                                         null,
                                         new BlockStatementNode(
                                                 new Token(TokenType.LEFT_CURLY_BRACKET, new SingleLineTextRange(1, 36, 35, 1)),
-                                                List.of(),
+                                                Lists.of(),
                                                 new Token(TokenType.RIGHT_CURLY_BRACKET, new SingleLineTextRange(1, 37, 36, 1))))),
                                 new SingleLineTextRange(1, 1, 0, 37)),
-                        new StatementsListNode(List.of(), new SingleLineTextRange(1, 38, 37, 0)),
+                        new StatementsListNode(Lists.of(), new SingleLineTextRange(1, 38, 37, 0)),
                         new EndOfFileToken(new SingleLineTextRange(1, 38, 37, 0))),
                 result.unit());
     }
 
     @Test
     public void functionAfterVariableTest() {
-        ParserOutput result = parse("""
-                int x = 0;
-                int func()
-                """);
-        comparator.assertEquals(List.of(
+        String code =
+                "int x = 0;\n" +
+                "int func()\n";
+        ParserOutput result = parse(code);
+        comparator.assertEquals(Lists.of(
                 new DiagnosticMessage(
                         ParserErrors.SemicolonOrEqualExpected,
                         new SingleLineTextRange(2, 9, 19, 1),
                         "(")),
-                result.diagnostics().stream().limit(1).toList());
+                Lists.from(result.diagnostics().stream().limit(1)));
     }
 }

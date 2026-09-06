@@ -1,5 +1,8 @@
 package com.zergatul.scripting.type;
 
+import com.zergatul.scripting.utility.Lists;
+import org.jspecify.annotations.Nullable;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -69,15 +72,25 @@ public final class MemberLookup {
         }
     }
 
-    private record MethodKey(String name, List<SType> parameters, boolean isStatic) {
+    private static final class MethodKey {
+
+        private final String name;
+        private final List<SType> parameters;
+        private final boolean isStatic;
+
+        private MethodKey(String name, List<SType> parameters, boolean isStatic) {
+            this.name = name;
+            this.parameters = parameters;
+            this.isStatic = isStatic;
+        }
 
         private MethodKey(MethodReference method) {
             this(
                     method.getName(),
-                    method instanceof NativeMethodReference nativeMethod
-                            ? Arrays.stream(nativeMethod.getUnderlying().getParameterTypes())
-                                    .map(SType::fromJavaType)
-                                    .toList()
+                    method instanceof NativeMethodReference
+                            ? Lists.from(
+                                    Arrays.stream(((NativeMethodReference) method).getUnderlying().getParameterTypes())
+                                    .map(SType::fromJavaType))
                             : method.getParameterTypes(),
                     method.isStatic());
         }
@@ -88,12 +101,79 @@ public final class MemberLookup {
             // Keep the hash coarse and let List.equals compare the parameter types.
             return Objects.hash(name, parameters.size(), isStatic);
         }
+
+        public String name() {
+            return name;
+        }
+
+        public List<SType> parameters() {
+            return parameters;
+        }
+
+        public boolean isStatic() {
+            return isStatic;
+        }
+
+        @Override
+        public boolean equals(@Nullable Object obj) {
+            if (obj == this) return true;
+            if (obj == null || obj.getClass() != this.getClass()) return false;
+            MethodKey that = (MethodKey) obj;
+            return  Objects.equals(this.name, that.name) &&
+                    Objects.equals(this.parameters, that.parameters) &&
+                    this.isStatic == that.isStatic;
+        }
+
+        @Override
+        public String toString() {
+            return  "MethodKey[" +
+                    "name=" + name + ", " +
+                    "parameters=" + parameters + ", " +
+                    "isStatic=" + isStatic + ']';
+        }
     }
 
-    private record PropertyKey(String name, boolean isStatic) {
+    private static final class PropertyKey {
+
+        private final String name;
+        private final boolean isStatic;
+
+        private PropertyKey(String name, boolean isStatic) {
+            this.name = name;
+            this.isStatic = isStatic;
+        }
 
         private PropertyKey(PropertyReference property) {
             this(property.getName(), property.isStatic());
+        }
+
+        public String name() {
+            return name;
+        }
+
+        public boolean isStatic() {
+            return isStatic;
+        }
+
+        @Override
+        public boolean equals(@Nullable Object obj) {
+            if (obj == this) return true;
+            if (obj == null || obj.getClass() != this.getClass()) return false;
+            PropertyKey that = (PropertyKey) obj;
+            return  Objects.equals(this.name, that.name) &&
+                    this.isStatic == that.isStatic;
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(name, isStatic);
+        }
+
+        @Override
+        public String toString() {
+            return  "PropertyKey[" +
+                    "name=" + name + ", " +
+                    "isStatic=" + isStatic + ']';
         }
     }
 }

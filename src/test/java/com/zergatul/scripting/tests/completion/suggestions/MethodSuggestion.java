@@ -11,6 +11,7 @@ import org.junit.jupiter.api.Assertions;
 
 import java.lang.reflect.Method;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Optional;
 
 public class MethodSuggestion extends Suggestion {
@@ -34,7 +35,7 @@ public class MethodSuggestion extends Suggestion {
                 .filter(r -> !r.isStatic())
                 .filter(r -> r.getName().equals(name))
                 .findFirst();
-        if (optional.isEmpty()) {
+        if (!optional.isPresent()) {
             Assertions.fail();
             throw new AssertionError();
         } else {
@@ -49,7 +50,7 @@ public class MethodSuggestion extends Suggestion {
                 .filter(ref -> ref.getParameters().size() == method.getParameters().length)
                 .filter(ref -> ref.getReturn().equals(SType.fromJavaType(method.getReturnType())))
                 .findFirst()
-                .orElseThrow());
+                .orElseThrow(NoSuchElementException::new));
     }
 
     public static MethodSuggestion getStatic(Class<?> clazz, String name) {
@@ -61,11 +62,11 @@ public class MethodSuggestion extends Suggestion {
                 .filter(MethodReference::isStatic)
                 .filter(r -> r.getName().equals(name))
                 .findFirst();
-        if (optional.isEmpty()) {
+        if (optional.isPresent()) {
+            return new MethodSuggestion(optional.get());
+        } else {
             Assertions.fail();
             throw new AssertionError();
-        } else {
-            return new MethodSuggestion(optional.get());
         }
     }
 
@@ -81,7 +82,8 @@ public class MethodSuggestion extends Suggestion {
             }
 
             for (BoundExtensionMemberNode extMemberNode : extensionNode.members) {
-                if (extMemberNode instanceof BoundExtensionMethodNode methodNode) {
+                if (extMemberNode instanceof BoundExtensionMethodNode) {
+                    BoundExtensionMethodNode methodNode = (BoundExtensionMethodNode) extMemberNode;
                     if (methodNode.method.getName().equals(name)) {
                         return new MethodSuggestion(methodNode.method);
                     }
@@ -95,7 +97,8 @@ public class MethodSuggestion extends Suggestion {
 
     @Override
     public boolean equals(Object obj) {
-        if (obj instanceof MethodSuggestion other) {
+        if (obj instanceof MethodSuggestion) {
+            MethodSuggestion other = (MethodSuggestion) obj;
             return other.method.equals(method);
         } else {
             return false;

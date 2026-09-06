@@ -10,6 +10,7 @@ import com.zergatul.scripting.symbols.MutableSymbolRef;
 import com.zergatul.scripting.symbols.Symbol;
 import com.zergatul.scripting.symbols.SymbolRef;
 import com.zergatul.scripting.type.SType;
+import com.zergatul.scripting.utility.Lists;
 import org.jspecify.annotations.Nullable;
 
 import java.util.List;
@@ -81,6 +82,6 @@ public class BoundNameExpressionNode extends BoundExpressionNode {
 
     @Override
     public List<BoundNode> getChildren() {
-        return List.of();
+        return Lists.of();
     }
 }

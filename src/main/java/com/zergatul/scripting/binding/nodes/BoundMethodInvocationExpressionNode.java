@@ -7,6 +7,7 @@ import com.zergatul.scripting.lexer.Token;
 import com.zergatul.scripting.parser.SyntaxFactory;
 import com.zergatul.scripting.parser.nodes.InvocationExpressionNode;
 import com.zergatul.scripting.parser.nodes.MemberAccessExpressionNode;
+import com.zergatul.scripting.utility.Lists;
 
 import java.util.List;
 
@@ -76,6 +77,6 @@ public class BoundMethodInvocationExpressionNode extends BoundExpressionNode {
 
     @Override
     public List<BoundNode> getChildren() {
-        return List.of(objectReference, method, arguments);
+        return Lists.of(objectReference, method, arguments);
     }
 }

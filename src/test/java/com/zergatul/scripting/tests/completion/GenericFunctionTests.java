@@ -2,11 +2,11 @@ package com.zergatul.scripting.tests.completion;
 
 import com.zergatul.scripting.tests.compiler.helpers.IntStorage;
 import com.zergatul.scripting.tests.completion.helpers.CompletionTestHelper;
-import com.zergatul.scripting.tests.completion.helpers.Lists;
 import com.zergatul.scripting.tests.completion.helpers.TestCompletionContext;
 import com.zergatul.scripting.tests.completion.suggestions.LocalVariableSuggestion;
 import com.zergatul.scripting.tests.completion.suggestions.StaticConstantSuggestion;
 import com.zergatul.scripting.tests.completion.suggestions.Suggestion;
+import com.zergatul.scripting.utility.Lists;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -18,10 +18,11 @@ public class GenericFunctionTests {
 
     @Test
     public void parameterClosureTest() {
-        assertSuggestions("""
-                fn<(int) => fn<(int) => int>> func = (x) => y => x + y<cursor>;
-                """,
-                context -> Lists.of(
+        String code =
+                "fn<(int) => fn<(int) => int>> func = (x) => y => x + y<cursor>;\n";
+        assertSuggestions(
+                code,
+                context -> Lists.from(
                         expressions,
                         LocalVariableSuggestion.getParameter(context, "x"),
                         LocalVariableSuggestion.getParameter(context, "y"),

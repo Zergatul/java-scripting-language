@@ -15,12 +15,16 @@ public enum UnaryOperator {
     }
 
     public static @Nullable UnaryOperator fromToken(TokenType type) {
-        return switch (type) {
-            case PLUS -> UnaryOperator.PLUS;
-            case MINUS -> UnaryOperator.MINUS;
-            case EXCLAMATION -> UnaryOperator.NOT;
-            default -> null;
-        };
+        switch (type) {
+            case PLUS:
+                return UnaryOperator.PLUS;
+            case MINUS:
+                return UnaryOperator.MINUS;
+            case EXCLAMATION:
+                return UnaryOperator.NOT;
+            default:
+                return null;
+        }
     }
 
     @Override

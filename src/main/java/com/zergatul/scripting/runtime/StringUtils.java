@@ -12,24 +12,22 @@ import java.util.regex.PatternSyntaxException;
 @SuppressWarnings("unused")
 public class StringUtils {
 
-    @MethodDescription("""
-            Returns true if string instance matches specified regex.
-            For more documentation check https://docs.oracle.com/javase/8/docs/api/java/util/regex/Pattern.html
-            """)
+    @MethodDescription(
+            "Returns true if string instance matches specified regex.\n" +
+            "For more documentation check https://docs.oracle.com/javase/8/docs/api/java/util/regex/Pattern.html")
     public static boolean matches(String input, String regex) {
         return matches(input, regex, 0);
     }
 
-    @MethodDescription("""
-            Returns true if string instance matches specified regex.
-            Flags is bit mask of:
-            - CASE_INSENSITIVE = 0x02
-            - MULTILINE = 0x08
-            - DOTALL = 0x20
-            - UNICODE_CASE = 0x40
-            - UNICODE_CHARACTER_CLASS = 0x100
-            For more documentation check https://docs.oracle.com/javase/8/docs/api/java/util/regex/Pattern.html
-            """)
+    @MethodDescription(
+            "Returns true if string instance matches specified regex.\n" +
+            "Flags is bit mask of:\n" +
+            "- CASE_INSENSITIVE = 0x02\n" +
+            "- MULTILINE = 0x08\n" +
+            "- DOTALL = 0x20\n" +
+            "- UNICODE_CASE = 0x40\n" +
+            "- UNICODE_CHARACTER_CLASS = 0x100\n" +
+            "For more documentation check https://docs.oracle.com/javase/8/docs/api/java/util/regex/Pattern.html")
     public static boolean matches(String input, String regex, int flags) {
         try {
             return Pattern.compile(regex, flags).matcher(input).find();
@@ -42,19 +40,18 @@ public class StringUtils {
         return getMatches(input, regex, 0);
     }
 
-    @MethodDescription("""
-            If string instance matches specified regex returns array with matches.
-            Element at position zero corresponds to entire matched substring.
-            Other elements are group matches.
-            If string doesn't match regex - returns empty array.
-            Flags is bit mask of:
-            - CASE_INSENSITIVE = 0x02
-            - MULTILINE = 0x08
-            - DOTALL = 0x20
-            - UNICODE_CASE = 0x40
-            - UNICODE_CHARACTER_CLASS = 0x100
-            For more documentation check https://docs.oracle.com/javase/8/docs/api/java/util/regex/Pattern.html
-            """)
+    @MethodDescription(
+            "If string instance matches specified regex returns array with matches.\n" +
+            "Element at position zero corresponds to entire matched substring.\n" +
+            "Other elements are group matches.\n" +
+            "If string doesn't match regex - returns empty array.\n" +
+            "Flags is bit mask of:\n" +
+            "- CASE_INSENSITIVE = 0x02\n" +
+            "- MULTILINE = 0x08\n" +
+            "- DOTALL = 0x20\n" +
+            "- UNICODE_CASE = 0x40\n" +
+            "- UNICODE_CHARACTER_CLASS = 0x100\n" +
+            "For more documentation check https://docs.oracle.com/javase/8/docs/api/java/util/regex/Pattern.html")
     public static String[] getMatches(String input, String regex, int flags) {
         Pattern pattern;
         try {
@@ -103,7 +100,8 @@ public class StringUtils {
             start = index + sepLen;
         }
 
-        return parts.toArray(String[]::new);
+        String[] result = new String[parts.size()];
+        return parts.toArray(result);
     }
 
     public static String[] regexSplit(String input, String regex) {

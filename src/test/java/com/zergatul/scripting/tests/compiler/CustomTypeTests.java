@@ -1,5 +1,7 @@
 package com.zergatul.scripting.tests.compiler;
 
+import com.zergatul.scripting.utility.Lists;
+
 import com.zergatul.scripting.*;
 import com.zergatul.scripting.binding.BinderErrors;
 import com.zergatul.scripting.tests.compiler.helpers.*;
@@ -28,33 +30,32 @@ public class CustomTypeTests extends ComparatorTest {
 
     @Test
     public void simpleTest() {
-        String code = """
-                vector3f vector = api.getVector(1, 2, 2);
-                floatStorage.add(vector.x);
-                floatStorage.add(vector.y);
-                floatStorage.add(vector.z);
-                floatStorage.add(vector.length);
-                vector.y = 4;
-                vector.z = 8;
-                floatStorage.add(vector.x);
-                floatStorage.add(vector.y);
-                floatStorage.add(vector.z);
-                floatStorage.add(vector.length);
-                vector.x += 1;
-                vector.y += 2;
-                vector.z += 1;
-                floatStorage.add(vector.x);
-                floatStorage.add(vector.y);
-                floatStorage.add(vector.z);
-                floatStorage.add(vector.length);
-                """;
+        String code =
+                "vector3f vector = api.getVector(1, 2, 2);\n" +
+                "floatStorage.add(vector.x);\n" +
+                "floatStorage.add(vector.y);\n" +
+                "floatStorage.add(vector.z);\n" +
+                "floatStorage.add(vector.length);\n" +
+                "vector.y = 4;\n" +
+                "vector.z = 8;\n" +
+                "floatStorage.add(vector.x);\n" +
+                "floatStorage.add(vector.y);\n" +
+                "floatStorage.add(vector.z);\n" +
+                "floatStorage.add(vector.length);\n" +
+                "vector.x += 1;\n" +
+                "vector.y += 2;\n" +
+                "vector.z += 1;\n" +
+                "floatStorage.add(vector.x);\n" +
+                "floatStorage.add(vector.y);\n" +
+                "floatStorage.add(vector.z);\n" +
+                "floatStorage.add(vector.length);\n";
 
         Runnable program = compileWithCustomType(ApiRoot.class, Vector3f.class, code);
         program.run();
 
         Assertions.assertIterableEquals(
                 ApiRoot.floatStorage.list,
-                List.of(
+                Lists.of(
                         1.0, 2.0, 2.0, 3.0,
                         1.0, 4.0, 8.0, 9.0,
                         2.0, 6.0, 9.0, 11.0));
@@ -62,49 +63,46 @@ public class CustomTypeTests extends ComparatorTest {
 
     @Test
     public void indexGetterTest() {
-        String code = """
-                let tester = api.getIndexTester();
-                intStorage.add(tester["a"]);
-                intStorage.add(tester["ab"]);
-                intStorage.add(tester["abcd"]);
-                stringStorage.add(tester[123]);
-                stringStorage.add(tester[10.0]);
-                stringStorage.add(tester[[1, 2, 3, 4, 5, 6]]);
-                """;
+        String code =
+                "let tester = api.getIndexTester();\n" +
+                "intStorage.add(tester[\"a\"]);\n" +
+                "intStorage.add(tester[\"ab\"]);\n" +
+                "intStorage.add(tester[\"abcd\"]);\n" +
+                "stringStorage.add(tester[123]);\n" +
+                "stringStorage.add(tester[10.0]);\n" +
+                "stringStorage.add(tester[[1, 2, 3, 4, 5, 6]]);\n";
 
         Runnable program = compileWithCustomType(ApiRoot.class, IndexTester.class, code);
         program.run();
 
-        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(1, 2, 4));
-        Assertions.assertIterableEquals(ApiRoot.stringStorage.list, List.of("15129", "99.75", "21"));
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, Lists.of(1, 2, 4));
+        Assertions.assertIterableEquals(ApiRoot.stringStorage.list, Lists.of("15129", "99.75", "21"));
     }
 
     @Test
     public void indexSetterTest() {
-        String code = """
-                let collection = new NameValueCollection();
-                collection["a"] = "apple";
-                collection["b"] = "banana";
-                collection["c"] = "coconut";
-                stringStorage.add(collection["b"]);
-                stringStorage.add(collection["a"]);
-                stringStorage.add(collection["c"]);
-                """;
+        String code =
+                "let collection = new NameValueCollection();\n" +
+                "collection[\"a\"] = \"apple\";\n" +
+                "collection[\"b\"] = \"banana\";\n" +
+                "collection[\"c\"] = \"coconut\";\n" +
+                "stringStorage.add(collection[\"b\"]);\n" +
+                "stringStorage.add(collection[\"a\"]);\n" +
+                "stringStorage.add(collection[\"c\"]);\n";
 
         Runnable program = compileWithCustomType(ApiRoot.class, NameValueCollection.class, code);
         program.run();
 
-        Assertions.assertIterableEquals(ApiRoot.stringStorage.list, List.of("banana", "apple", "coconut"));
+        Assertions.assertIterableEquals(ApiRoot.stringStorage.list, Lists.of("banana", "apple", "coconut"));
     }
 
     @Test
     public void cannotInstantiateAbstractClassTest() {
-        String code = """
-                let instance = new AbstractClass();
-                """;
+        String code =
+                "let instance = new AbstractClass();\n";
 
         comparator.assertEquals(
-                List.of(
+                Lists.of(
                         new DiagnosticMessage(
                                 BinderErrors.CannotInstantiateAbstractClass,
                                 new SingleLineTextRange(1, 16, 15, 19))),
@@ -113,26 +111,24 @@ public class CustomTypeTests extends ComparatorTest {
 
     @Test
     public void staticMembersTest() {
-        String code = """
-                intStorage.add(ChildClass.FIELD2);
-                intStorage.add(ChildClass.method2());
-                """;
+        String code =
+                "intStorage.add(ChildClass.FIELD2);\n" +
+                "intStorage.add(ChildClass.method2());\n";
 
         Runnable program = compileWithCustomTypes(ApiRoot.class, code, BaseClass.class, ChildClass.class);
         program.run();
 
-        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(456, 567));
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, Lists.of(456, 567));
     }
 
     @Test
     public void cannotUseBaseStaticMembersTest() {
-        String code = """
-                intStorage.add(ChildClass.FIELD1);
-                intStorage.add(ChildClass.method1());
-                """;
+        String code =
+                "intStorage.add(ChildClass.FIELD1);\n" +
+                "intStorage.add(ChildClass.method1());\n";
 
         comparator.assertEquals(
-                List.of(
+                Lists.of(
                         new DiagnosticMessage(
                                 BinderErrors.MemberDoesNotExist,
                                 new SingleLineTextRange(1, 27, 26, 6),

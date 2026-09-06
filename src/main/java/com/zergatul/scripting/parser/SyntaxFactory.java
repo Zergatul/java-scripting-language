@@ -5,6 +5,7 @@ import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.lexer.Token;
 import com.zergatul.scripting.lexer.ValueToken;
 import com.zergatul.scripting.parser.nodes.*;
+import com.zergatul.scripting.utility.Lists;
 
 import java.util.List;
 
@@ -147,13 +148,13 @@ public final class SyntaxFactory {
             argumentsList = new ArgumentsListNode(Token.MISSING, SeparatedList.of(), Token.MISSING);
             assignmentOperator = new AssignmentOperatorNode(Token.MISSING, AssignmentOperator.ASSIGNMENT, TextRange.MISSING);
             binaryOperator = new BinaryOperatorNode(Token.MISSING, BinaryOperator.PLUS);
-            blockStatement = new BlockStatementNode(Token.MISSING, List.of(), Token.MISSING);
+            blockStatement = new BlockStatementNode(Token.MISSING, Lists.of(), Token.MISSING);
             expression = new NameExpressionNode(ValueToken.MISSING);
             integerLiteralExpression = new IntegerLiteralExpressionNode(null, ValueToken.MISSING);
             letType = new LetTypeNode(Token.MISSING);
             nameExpression = new NameExpressionNode(ValueToken.MISSING);
             returnStatement = new ReturnStatementNode(Token.MISSING, null, Token.MISSING);
-            statementsList = new StatementsListNode(List.of(), TextRange.MISSING);
+            statementsList = new StatementsListNode(Lists.of(), TextRange.MISSING);
             type = new InvalidTypeNode(Token.MISSING);
             unaryOperator = new UnaryOperatorNode(Token.MISSING, UnaryOperator.PLUS);
             variableDeclaration = new VariableDeclarationNode(letType, nameExpression, null, null, Token.MISSING);

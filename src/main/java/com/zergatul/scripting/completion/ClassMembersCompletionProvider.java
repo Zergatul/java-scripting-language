@@ -9,6 +9,7 @@ import com.zergatul.scripting.compiler.JavaInteropPolicy;
 import com.zergatul.scripting.symbols.ClassSymbol;
 import com.zergatul.scripting.type.NativeMethodReference;
 import com.zergatul.scripting.type.MemberLookup;
+import com.zergatul.scripting.utility.Lists;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -23,7 +24,7 @@ public class ClassMembersCompletionProvider<T> extends AbstractCompletionProvide
     public List<T> provide(CompilationParameters parameters, BinderOutput output, CompletionContext context) {
         if (context.canExpression()) {
             if (context.entry == null) {
-                return List.of();
+                return Lists.of();
             }
 
             for (CompletionContext current = context; current != null && current.entry != null; current = current.up()) {
@@ -48,7 +49,8 @@ public class ClassMembersCompletionProvider<T> extends AbstractCompletionProvide
                     MemberLookup.getMethods(symbol.getDeclaredType()).stream()
                             .filter(m -> !m.isStatic())
                             .filter(m -> {
-                                if (m instanceof NativeMethodReference nativeRef) {
+                                if (m instanceof NativeMethodReference) {
+                                    NativeMethodReference nativeRef = (NativeMethodReference) m;
                                     JavaInteropPolicy checker = parameters.getInteropPolicy();
                                     if (checker != null) {
                                         return checker.isMethodVisible(nativeRef.getUnderlying());
@@ -65,6 +67,6 @@ public class ClassMembersCompletionProvider<T> extends AbstractCompletionProvide
             }
         }
 
-        return List.of();
+        return Lists.of();
     }
 }

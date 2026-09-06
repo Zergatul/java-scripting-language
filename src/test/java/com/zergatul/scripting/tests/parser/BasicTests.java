@@ -6,20 +6,19 @@ import com.zergatul.scripting.SingleLineTextRange;
 import com.zergatul.scripting.lexer.*;
 import com.zergatul.scripting.parser.*;
 import com.zergatul.scripting.parser.nodes.*;
+import com.zergatul.scripting.utility.Lists;
 import org.junit.jupiter.api.Test;
-
-import java.util.List;
 
 public class BasicTests extends ParserTestBase {
 
     @Test
     public void emptyCodeTest() {
         ParserOutput result = parse("");
-        comparator.assertEquals(List.of(), result.diagnostics());
+        comparator.assertEquals(Lists.of(), result.diagnostics());
         comparator.assertEquals(
                 new CompilationUnitNode(
-                        new CompilationUnitMembersListNode(List.of(), new SingleLineTextRange(1, 1, 0, 0)),
-                        new StatementsListNode(List.of(), new SingleLineTextRange(1, 1, 0, 0)),
+                        new CompilationUnitMembersListNode(Lists.of(), new SingleLineTextRange(1, 1, 0, 0)),
+                        new StatementsListNode(Lists.of(), new SingleLineTextRange(1, 1, 0, 0)),
                         new EndOfFileToken(new SingleLineTextRange(1, 1, 0, 0))),
                 result.unit());
     }
@@ -27,14 +26,14 @@ public class BasicTests extends ParserTestBase {
     @Test
     public void emptyBlockStatementTest() {
         ParserOutput result = parse("{}");
-        comparator.assertEquals(List.of(), result.diagnostics());
+        comparator.assertEquals(Lists.of(), result.diagnostics());
         comparator.assertEquals(
                 new CompilationUnitNode(
-                        new CompilationUnitMembersListNode(List.of(), new SingleLineTextRange(1, 1, 0, 0)),
-                        new StatementsListNode(List.of(
+                        new CompilationUnitMembersListNode(Lists.of(), new SingleLineTextRange(1, 1, 0, 0)),
+                        new StatementsListNode(Lists.of(
                                 new BlockStatementNode(
                                         new Token(TokenType.LEFT_CURLY_BRACKET, new SingleLineTextRange(1, 1, 0, 1)),
-                                        List.of(),
+                                        Lists.of(),
                                         new Token(TokenType.RIGHT_CURLY_BRACKET, new SingleLineTextRange(1, 2, 1, 1)))),
                                 new SingleLineTextRange(1, 1, 0, 2)),
                         new EndOfFileToken(new SingleLineTextRange(1, 3, 2, 0))),
@@ -44,11 +43,11 @@ public class BasicTests extends ParserTestBase {
     @Test
     public void simpleVariableDeclarationTest() {
         ParserOutput result = parse("int x;");
-        comparator.assertEquals(List.of(), result.diagnostics());
+        comparator.assertEquals(Lists.of(), result.diagnostics());
         comparator.assertEquals(
                 new CompilationUnitNode(
-                        new CompilationUnitMembersListNode(List.of(), new SingleLineTextRange(1, 1, 0, 0)),
-                        new StatementsListNode(List.of(
+                        new CompilationUnitMembersListNode(Lists.of(), new SingleLineTextRange(1, 1, 0, 0)),
+                        new StatementsListNode(Lists.of(
                                 new VariableDeclarationNode(
                                         new PredefinedTypeNode(
                                                 new Token(TokenType.INT, new SingleLineTextRange(1, 1, 0, 3))
@@ -67,11 +66,11 @@ public class BasicTests extends ParserTestBase {
     @Test
     public void simpleVariableDeclarationWithInitializerTest() {
         ParserOutput result = parse("int x = 10;");
-        comparator.assertEquals(List.of(), result.diagnostics());
+        comparator.assertEquals(Lists.of(), result.diagnostics());
         comparator.assertEquals(
                 new CompilationUnitNode(
-                        new CompilationUnitMembersListNode(List.of(), new SingleLineTextRange(1, 1, 0, 0)),
-                        new StatementsListNode(List.of(
+                        new CompilationUnitMembersListNode(Lists.of(), new SingleLineTextRange(1, 1, 0, 0)),
+                        new StatementsListNode(Lists.of(
                                 new VariableDeclarationNode(
                                         new PredefinedTypeNode(
                                                 new Token(TokenType.INT, new SingleLineTextRange(1, 1, 0, 3))
@@ -94,11 +93,11 @@ public class BasicTests extends ParserTestBase {
     @Test
     public void arrayVariableDeclarationTest() {
         ParserOutput result = parse("int[][] x;");
-        comparator.assertEquals(List.of(), result.diagnostics());
+        comparator.assertEquals(Lists.of(), result.diagnostics());
         comparator.assertEquals(
                 new CompilationUnitNode(
-                        new CompilationUnitMembersListNode(List.of(), new SingleLineTextRange(1, 1, 0, 0)),
-                        new StatementsListNode(List.of(
+                        new CompilationUnitMembersListNode(Lists.of(), new SingleLineTextRange(1, 1, 0, 0)),
+                        new StatementsListNode(Lists.of(
                                 new VariableDeclarationNode(
                                         new ArrayTypeNode(
                                                 new ArrayTypeNode(
@@ -125,11 +124,11 @@ public class BasicTests extends ParserTestBase {
     @Test
     public void simpleAssignmentTest() {
         ParserOutput result = parse("a = b + c;");
-        comparator.assertEquals(List.of(), result.diagnostics());
+        comparator.assertEquals(Lists.of(), result.diagnostics());
         comparator.assertEquals(
                 new CompilationUnitNode(
-                        new CompilationUnitMembersListNode(List.of(), new SingleLineTextRange(1, 1, 0, 0)),
-                        new StatementsListNode(List.of(
+                        new CompilationUnitMembersListNode(Lists.of(), new SingleLineTextRange(1, 1, 0, 0)),
+                        new StatementsListNode(Lists.of(
                                 new AssignmentStatementNode(
                                         new NameExpressionNode(
                                                 new ValueToken(TokenType.IDENTIFIER, "a", new SingleLineTextRange(1, 1, 0, 1))
@@ -160,11 +159,11 @@ public class BasicTests extends ParserTestBase {
     @Test
     public void assignmentOperatorsTest() {
         ParserOutput result = parse("a += 10; b -= 15; c *= 2; d /= 2;");
-        comparator.assertEquals(List.of(), result.diagnostics());
+        comparator.assertEquals(Lists.of(), result.diagnostics());
         comparator.assertEquals(
                 new CompilationUnitNode(
-                        new CompilationUnitMembersListNode(List.of(), new SingleLineTextRange(1, 1, 0, 0)),
-                        new StatementsListNode(List.of(
+                        new CompilationUnitMembersListNode(Lists.of(), new SingleLineTextRange(1, 1, 0, 0)),
+                        new StatementsListNode(Lists.of(
                                 new AssignmentStatementNode(
                                         new NameExpressionNode(
                                                 new ValueToken(TokenType.IDENTIFIER, "a", new SingleLineTextRange(1, 1, 0, 1))
@@ -232,11 +231,11 @@ public class BasicTests extends ParserTestBase {
     @Test
     public void invokeExpressionTest() {
         ParserOutput result = parse("abc.qwe.x();");
-        comparator.assertEquals(List.of(), result.diagnostics());
+        comparator.assertEquals(Lists.of(), result.diagnostics());
         comparator.assertEquals(
                 new CompilationUnitNode(
-                        new CompilationUnitMembersListNode(List.of(), new SingleLineTextRange(1, 1, 0, 0)),
-                        new StatementsListNode(List.of(
+                        new CompilationUnitMembersListNode(Lists.of(), new SingleLineTextRange(1, 1, 0, 0)),
+                        new StatementsListNode(Lists.of(
                                 new ExpressionStatementNode(
                                         new InvocationExpressionNode(
                                                 new MemberAccessExpressionNode(
@@ -263,11 +262,11 @@ public class BasicTests extends ParserTestBase {
     @Test
     public void unaryOperatorTest() {
         ParserOutput result = parse("a = -b;");
-        comparator.assertEquals(List.of(), result.diagnostics());
+        comparator.assertEquals(Lists.of(), result.diagnostics());
         comparator.assertEquals(
                 new CompilationUnitNode(
-                        new CompilationUnitMembersListNode(List.of(), new SingleLineTextRange(1, 1, 0, 0)),
-                        new StatementsListNode(List.of(
+                        new CompilationUnitMembersListNode(Lists.of(), new SingleLineTextRange(1, 1, 0, 0)),
+                        new StatementsListNode(Lists.of(
                                 new AssignmentStatementNode(
                                         new NameExpressionNode(
                                                 new ValueToken(TokenType.IDENTIFIER, "a", new SingleLineTextRange(1, 1, 0, 1))
@@ -293,11 +292,11 @@ public class BasicTests extends ParserTestBase {
     @Test
     public void negativeIntegerTest() {
         ParserOutput result = parse("x = -100;");
-        comparator.assertEquals(List.of(), result.diagnostics());
+        comparator.assertEquals(Lists.of(), result.diagnostics());
         comparator.assertEquals(
                 new CompilationUnitNode(
-                        new CompilationUnitMembersListNode(List.of(), new SingleLineTextRange(1, 1, 0, 0)),
-                        new StatementsListNode(List.of(
+                        new CompilationUnitMembersListNode(Lists.of(), new SingleLineTextRange(1, 1, 0, 0)),
+                        new StatementsListNode(Lists.of(
                                 new AssignmentStatementNode(
                                         new NameExpressionNode(
                                                 new ValueToken(TokenType.IDENTIFIER, "x", new SingleLineTextRange(1, 1, 0, 1))
@@ -324,11 +323,11 @@ public class BasicTests extends ParserTestBase {
     @Test
     public void unaryMinusTest() {
         ParserOutput result = parse("x = -1 + 1;");
-        comparator.assertEquals(List.of(), result.diagnostics());
+        comparator.assertEquals(Lists.of(), result.diagnostics());
         comparator.assertEquals(
                 new CompilationUnitNode(
-                        new CompilationUnitMembersListNode(List.of(), new SingleLineTextRange(1, 1, 0, 0)),
-                        new StatementsListNode(List.of(
+                        new CompilationUnitMembersListNode(Lists.of(), new SingleLineTextRange(1, 1, 0, 0)),
+                        new StatementsListNode(Lists.of(
                                 new AssignmentStatementNode(
                                         new NameExpressionNode(
                                                 new ValueToken(TokenType.IDENTIFIER, "x", new SingleLineTextRange(1, 1, 0, 1))
@@ -365,13 +364,13 @@ public class BasicTests extends ParserTestBase {
     @Test
     public void endOfFileDiagnosticsTest() {
         ParserOutput result = parse("a()");
-        comparator.assertEquals(List.of(
+        comparator.assertEquals(Lists.of(
                 new DiagnosticMessage(ParserErrors.SemicolonExpected, new SingleLineTextRange(1, 3, 2, 1))),
                 result.diagnostics());
         comparator.assertEquals(
                 new CompilationUnitNode(
-                        new CompilationUnitMembersListNode(List.of(), new SingleLineTextRange(1, 1, 0, 0)),
-                        new StatementsListNode(List.of(
+                        new CompilationUnitMembersListNode(Lists.of(), new SingleLineTextRange(1, 1, 0, 0)),
+                        new StatementsListNode(Lists.of(
                                 new ExpressionStatementNode(
                                         new InvocationExpressionNode(
                                                 new NameExpressionNode(
@@ -389,14 +388,14 @@ public class BasicTests extends ParserTestBase {
 
     @Test
     public void leftAssociativityTest() {
-        ParserOutput result = parse("""
-                int x = 1 + 2 + 3;
-                """);
-        comparator.assertEquals(List.of(), result.diagnostics());
+        String code =
+                "int x = 1 + 2 + 3;\n";
+        ParserOutput result = parse(code);
+        comparator.assertEquals(Lists.of(), result.diagnostics());
         comparator.assertEquals(
                 new CompilationUnitNode(
-                        new CompilationUnitMembersListNode(List.of(), new SingleLineTextRange(1, 1, 0, 0)),
-                        new StatementsListNode(List.of(
+                        new CompilationUnitMembersListNode(Lists.of(), new SingleLineTextRange(1, 1, 0, 0)),
+                        new StatementsListNode(Lists.of(
                                 new VariableDeclarationNode(
                                         new PredefinedTypeNode(
                                                 new Token(TokenType.INT, new SingleLineTextRange(1, 1, 0, 3))
@@ -439,14 +438,14 @@ public class BasicTests extends ParserTestBase {
 
     @Test
     public void letTest() {
-        ParserOutput result = parse("""
-                let x = 123;
-                """);
-        comparator.assertEquals(List.of(), result.diagnostics());
+        String code =
+                "let x = 123;\n";
+        ParserOutput result = parse(code);
+        comparator.assertEquals(Lists.of(), result.diagnostics());
         comparator.assertEquals(
                 new CompilationUnitNode(
-                        new CompilationUnitMembersListNode(List.of(), new SingleLineTextRange(1, 1, 0, 0)),
-                        new StatementsListNode(List.of(
+                        new CompilationUnitMembersListNode(Lists.of(), new SingleLineTextRange(1, 1, 0, 0)),
+                        new StatementsListNode(Lists.of(
                                 new VariableDeclarationNode(
                                         new LetTypeNode(
                                                 new Token(TokenType.LET, new SingleLineTextRange(1, 1, 0, 3))
@@ -468,14 +467,14 @@ public class BasicTests extends ParserTestBase {
 
     @Test
     public void metaTest() {
-        ParserOutput result = parse("""
-                let x = #typeof(1) == #type(int);
-                """);
-        comparator.assertEquals(List.of(), result.diagnostics());
+        String code =
+                "let x = #typeof(1) == #type(int);\n";
+        ParserOutput result = parse(code);
+        comparator.assertEquals(Lists.of(), result.diagnostics());
         comparator.assertEquals(
                 new CompilationUnitNode(
-                        new CompilationUnitMembersListNode(List.of(), new SingleLineTextRange(1, 1, 0, 0)),
-                        new StatementsListNode(List.of(
+                        new CompilationUnitMembersListNode(Lists.of(), new SingleLineTextRange(1, 1, 0, 0)),
+                        new StatementsListNode(Lists.of(
                                 new VariableDeclarationNode(
                                         new LetTypeNode(
                                                 new Token(TokenType.LET, new SingleLineTextRange(1, 1, 0, 3))
@@ -515,19 +514,19 @@ public class BasicTests extends ParserTestBase {
 
     @Test
     public void javaRawTypeTest() {
-        ParserOutput result = parse("""
-                Java<com.example.ClassA> a;
-                """);
-        comparator.assertEquals(List.of(), result.diagnostics());
+        String code =
+                "Java<com.example.ClassA> a;\n";
+        ParserOutput result = parse(code);
+        comparator.assertEquals(Lists.of(), result.diagnostics());
         comparator.assertEquals(
                 new CompilationUnitNode(
-                        new CompilationUnitMembersListNode(List.of(), new SingleLineTextRange(1, 1, 0, 0)),
-                        new StatementsListNode(List.of(
+                        new CompilationUnitMembersListNode(Lists.of(), new SingleLineTextRange(1, 1, 0, 0)),
+                        new StatementsListNode(Lists.of(
                                 new VariableDeclarationNode(
                                         new JavaTypeNode(
                                                 new ValueToken(TokenType.IDENTIFIER, "Java", new SingleLineTextRange(1, 1, 0, 4)),
                                                 new Token(TokenType.LESS, new SingleLineTextRange(1, 5, 4, 1)),
-                                                new JavaQualifiedTypeNameNode(List.of(
+                                                new JavaQualifiedTypeNameNode(Lists.of(
                                                         new ValueToken(TokenType.IDENTIFIER, "com", new SingleLineTextRange(1, 6, 5, 3)),
                                                         new Token(TokenType.DOT, new SingleLineTextRange(1, 9, 8, 1)),
                                                         new ValueToken(TokenType.IDENTIFIER, "example", new SingleLineTextRange(1, 10, 9, 7)),
@@ -549,14 +548,14 @@ public class BasicTests extends ParserTestBase {
 
     @Test
     public void customTypeTest() {
-        ParserOutput result = parse("""
-                CustomType a;
-                """);
-        comparator.assertEquals(List.of(), result.diagnostics());
+        String code =
+                "CustomType a;\n";
+        ParserOutput result = parse(code);
+        comparator.assertEquals(Lists.of(), result.diagnostics());
         comparator.assertEquals(
                 new CompilationUnitNode(
-                        new CompilationUnitMembersListNode(List.of(), new SingleLineTextRange(1, 1, 0, 0)),
-                        new StatementsListNode(List.of(
+                        new CompilationUnitMembersListNode(Lists.of(), new SingleLineTextRange(1, 1, 0, 0)),
+                        new StatementsListNode(Lists.of(
                                 new VariableDeclarationNode(
                                         new CustomTypeNode(
                                                 new ValueToken(TokenType.IDENTIFIER, "CustomType", new SingleLineTextRange(1, 1, 0, 10))
@@ -574,40 +573,40 @@ public class BasicTests extends ParserTestBase {
 
     @Test
     public void notAStatementTest1() {
-        ParserOutput result = parse("""
-                a.b;
-                """);
-        comparator.assertEquals(List.of(
+        String code =
+                "a.b;\n";
+        ParserOutput result = parse(code);
+        comparator.assertEquals(Lists.of(
                 new DiagnosticMessage(ParserErrors.NotAStatement, new SingleLineTextRange(1, 1, 0, 3))),
                 result.diagnostics());
     }
 
     @Test
     public void notAStatementTest2() {
-        ParserOutput result = parse("""
-                a + b;
-                """);
-        comparator.assertEquals(List.of(
+        String code =
+                "a + b;\n";
+        ParserOutput result = parse(code);
+        comparator.assertEquals(Lists.of(
                 new DiagnosticMessage(ParserErrors.NotAStatement, new SingleLineTextRange(1, 1, 0, 5))),
                 result.diagnostics());
     }
 
     @Test
     public void notAStatementTest3() {
-        ParserOutput result = parse("""
-                "ab";
-                """);
-        comparator.assertEquals(List.of(
+        String code =
+                "\"ab\";\n";
+        ParserOutput result = parse(code);
+        comparator.assertEquals(Lists.of(
                 new DiagnosticMessage(ParserErrors.NotAStatement, new SingleLineTextRange(1, 1, 0, 4))),
                 result.diagnostics());
     }
 
     @Test
     public void notAStatementTest4() {
-        ParserOutput result = parse("""
-                (a == b);
-                """);
-        comparator.assertEquals(List.of(
+        String code =
+                "(a == b);\n";
+        ParserOutput result = parse(code);
+        comparator.assertEquals(Lists.of(
                 new DiagnosticMessage(ParserErrors.NotAStatement, new SingleLineTextRange(1, 1, 0, 8))),
                 result.diagnostics());
     }

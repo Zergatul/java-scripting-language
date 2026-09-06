@@ -21,7 +21,8 @@ public class SAliasType extends SSyntheticType {
 
     @Override
     public boolean equals(Object obj) {
-        if (obj instanceof SAliasType other) {
+        if (obj instanceof SAliasType) {
+            SAliasType other = (SAliasType) obj;
             return other.name.equals(name) && Objects.equals(other.underlying, underlying);
         } else {
             return false;
@@ -39,8 +40,8 @@ public class SAliasType extends SSyntheticType {
             if (current == this) {
                 return true;
             }
-            if (current.underlying instanceof SAliasType nested) {
-                current = nested;
+            if (current.underlying instanceof SAliasType) {
+                current = (SAliasType) current.underlying;
             } else {
                 return false;
             }
@@ -53,8 +54,8 @@ public class SAliasType extends SSyntheticType {
             if (current.underlying == null) {
                 return false;
             }
-            if (current.underlying instanceof SAliasType nested) {
-                current = nested;
+            if (current.underlying instanceof SAliasType) {
+                current = (SAliasType) current.underlying;
             } else {
                 return true;
             }
@@ -71,8 +72,8 @@ public class SAliasType extends SSyntheticType {
             if (current.underlying == null) {
                 throw new InternalException();
             }
-            if (current.underlying instanceof SAliasType nested) {
-                current = nested;
+            if (current.underlying instanceof SAliasType) {
+                current = (SAliasType) current.underlying;
             } else {
                 return current.underlying;
             }

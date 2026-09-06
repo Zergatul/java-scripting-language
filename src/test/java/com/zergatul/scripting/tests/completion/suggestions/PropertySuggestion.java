@@ -8,6 +8,7 @@ import com.zergatul.scripting.type.SType;
 import com.zergatul.scripting.type.Visibility;
 import org.junit.jupiter.api.Assertions;
 
+import java.util.NoSuchElementException;
 import java.util.Optional;
 
 public class PropertySuggestion extends Suggestion {
@@ -23,7 +24,7 @@ public class PropertySuggestion extends Suggestion {
                 .filter(p -> !p.isStatic())
                 .filter(p -> p.getName().equals(name))
                 .findFirst()
-                .orElseThrow();
+                .orElseThrow(NoSuchElementException::new);
         return new PropertySuggestion(property);
     }
 
@@ -32,7 +33,7 @@ public class PropertySuggestion extends Suggestion {
                 .filter(PropertyReference::isStatic)
                 .filter(p -> p.getName().equals(name))
                 .findFirst()
-                .orElseThrow();
+                .orElseThrow(NoSuchElementException::new);
         return new PropertySuggestion(property);
     }
 
@@ -41,7 +42,7 @@ public class PropertySuggestion extends Suggestion {
                 .filter(p -> !p.isStatic())
                 .filter(p -> p.getName().equals(propertyName))
                 .findFirst()
-                .orElseThrow();
+                .orElseThrow(NoSuchElementException::new);
         return new PropertySuggestion(property);
     }
 
@@ -50,17 +51,18 @@ public class PropertySuggestion extends Suggestion {
                 .filter(PropertyReference::isStatic)
                 .filter(r -> r.getName().equals(name))
                 .findFirst();
-        if (optional.isEmpty()) {
+        if (optional.isPresent()) {
+            return new PropertySuggestion(optional.get());
+        } else {
             Assertions.fail();
             throw new AssertionError();
-        } else {
-            return new PropertySuggestion(optional.get());
         }
     }
 
     @Override
     public boolean equals(Object obj) {
-        if (obj instanceof PropertySuggestion other) {
+        if (obj instanceof PropertySuggestion) {
+            PropertySuggestion other = (PropertySuggestion) obj;
             return other.property.equals(property);
         } else {
             return false;

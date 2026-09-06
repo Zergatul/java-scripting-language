@@ -4,6 +4,7 @@ import com.zergatul.scripting.Locatable;
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.lexer.Token;
 import com.zergatul.scripting.parser.ParserTreeVisitor;
+import com.zergatul.scripting.utility.Lists;
 import org.jspecify.annotations.Nullable;
 
 import java.util.List;
@@ -40,9 +41,9 @@ public class ExpressionStatementNode extends StatementNode {
     @Override
     public List<Locatable> getChildNodes() {
         if (semicolon != null) {
-            return List.of(expression, semicolon);
+            return Lists.of(expression, semicolon);
         } else {
-            return List.of(expression);
+            return Lists.of(expression);
         }
     }
 

@@ -8,11 +8,15 @@ import com.zergatul.scripting.parser.UnaryOperator;
 import com.zergatul.scripting.runtime.FloatReference;
 import com.zergatul.scripting.runtime.FloatUtils;
 import com.zergatul.scripting.type.operation.*;
+import com.zergatul.scripting.utility.Lists;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 
+import java.lang.reflect.Field;
 import java.util.List;
+import java.util.function.Consumer;
 
 import static org.objectweb.asm.Opcodes.*;
 
@@ -70,7 +74,7 @@ public class SFloat extends SValueType {
 
     @Override
     public List<UnaryOperation> getUnaryOperations() {
-        return List.of(PLUS.value(), MINUS.value());
+        return Lists.of(PLUS.value(), MINUS.value());
     }
 
     @Override
@@ -79,7 +83,7 @@ public class SFloat extends SValueType {
     }
 
     private List<BinaryOperation> getBinaryOperationsInternal() {
-        return List.of(
+        return Lists.of(
                 ADD.value(),
                 SUB.value(),
                 MUL.value(),
@@ -134,13 +138,37 @@ public class SFloat extends SValueType {
     }
 
     @Override
+    public void compileReflectionGetField(MethodVisitor visitor) {
+        visitor.visitMethodInsn(
+                Opcodes.INVOKEVIRTUAL,
+                Type.getInternalName(Field.class),
+                "getDouble",
+                Type.getMethodDescriptor(getAsmType(), SJavaObject.instance.getAsmType()),
+                false);
+    }
+
+    @Override
+    public void compileReflectionSetField(MethodVisitor visitor) {
+        visitor.visitMethodInsn(
+                Opcodes.INVOKEVIRTUAL,
+                Type.getInternalName(Field.class),
+                "setDouble",
+                Type.getMethodDescriptor(Type.VOID_TYPE, SJavaObject.instance.getAsmType(), getAsmType()),
+                false);
+    }
+
+    @Override
     public void loadClassObject(MethodVisitor visitor) {
         visitor.visitFieldInsn(GETSTATIC, "java/lang/Double", "TYPE", "Ljava/lang/Class;");
     }
 
     @Override
     public List<MethodReference> getDeclaredMethods() {
-        return List.of(METHOD_TO_STRING.value(), METHOD_TO_STANDARD_STRING.value(), METHOD_TRY_PARSE.value());
+        return Lists.of(
+                METHOD_TO_FLOAT32.value(),
+                METHOD_TO_STRING.value(),
+                METHOD_TO_STANDARD_STRING.value(),
+                METHOD_TRY_PARSE.value());
     }
 
     @Override
@@ -207,6 +235,14 @@ public class SFloat extends SValueType {
         @Override
         public void apply(MethodVisitor visitor, CompilerContext context) {
             visitor.visitInsn(DNEG);
+        }
+    });
+
+    private static final Lazy<MethodReference> METHOD_TO_FLOAT32 = new Lazy<>(() -> new NoArgsByteCodeMethodReference(instance, SFloat32.instance, "toFloat32") {
+        @Override
+        public void compileInvoke(MethodVisitor visitor, CompilerContext context, Consumer<CompilerContext> compileArguments) {
+            compileArguments.accept(context);
+            visitor.visitInsn(D2F);
         }
     });
 

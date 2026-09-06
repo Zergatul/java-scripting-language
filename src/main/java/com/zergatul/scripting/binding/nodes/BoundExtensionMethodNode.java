@@ -6,6 +6,7 @@ import com.zergatul.scripting.parser.nodes.ClassMethodNode;
 import com.zergatul.scripting.symbols.LiftedVariable;
 import com.zergatul.scripting.type.MethodReference;
 import com.zergatul.scripting.type.SMethodFunction;
+import com.zergatul.scripting.utility.Lists;
 
 import java.util.List;
 
@@ -74,6 +75,6 @@ public class BoundExtensionMethodNode extends BoundExtensionMemberNode {
 
     @Override
     public List<BoundNode> getChildren() {
-        return List.of(typeNode, name, parameters, body);
+        return Lists.of(typeNode, name, parameters, body);
     }
 }

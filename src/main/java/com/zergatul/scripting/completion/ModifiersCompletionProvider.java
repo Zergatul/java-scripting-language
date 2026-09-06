@@ -3,6 +3,7 @@ package com.zergatul.scripting.completion;
 import com.zergatul.scripting.binding.BinderOutput;
 import com.zergatul.scripting.compiler.CompilationParameters;
 import com.zergatul.scripting.lexer.TokenType;
+import com.zergatul.scripting.utility.Lists;
 
 import java.util.List;
 
@@ -15,7 +16,7 @@ public class ModifiersCompletionProvider<T> extends AbstractCompletionProvider<T
     @Override
     public List<T> provide(CompilationParameters parameters, BinderOutput output, CompletionContext context) {
         if (context.canClassMember()) {
-            return List.of(
+            return Lists.of(
                     factory.getKeywordSuggestion(TokenType.ASYNC),
                     factory.getKeywordSuggestion(TokenType.VIRTUAL),
                     factory.getKeywordSuggestion(TokenType.OVERRIDE),
@@ -23,7 +24,7 @@ public class ModifiersCompletionProvider<T> extends AbstractCompletionProvider<T
                     factory.getKeywordSuggestion(TokenType.PROTECTED),
                     factory.getKeywordSuggestion(TokenType.PRIVATE));
         } else {
-            return List.of();
+            return Lists.of();
         }
     }
 }

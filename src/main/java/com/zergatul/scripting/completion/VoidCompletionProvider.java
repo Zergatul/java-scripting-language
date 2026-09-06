@@ -3,6 +3,7 @@ package com.zergatul.scripting.completion;
 import com.zergatul.scripting.binding.BinderOutput;
 import com.zergatul.scripting.compiler.CompilationParameters;
 import com.zergatul.scripting.lexer.TokenType;
+import com.zergatul.scripting.utility.Lists;
 
 import java.util.List;
 
@@ -15,9 +16,9 @@ public class VoidCompletionProvider<T> extends AbstractCompletionProvider<T> {
     @Override
     public List<T> provide(CompilationParameters parameters, BinderOutput output, CompletionContext context) {
         if (context.canVoid()) {
-            return List.of(factory.getKeywordSuggestion(TokenType.VOID));
+            return Lists.of(factory.getKeywordSuggestion(TokenType.VOID));
         } else {
-            return List.of();
+            return Lists.of();
         }
     }
 }

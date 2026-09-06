@@ -25,19 +25,24 @@ public class TypeDisplayFormatter {
     }
 
     private String format(SType type, Set<Class<?>> expanding) {
-        if (type instanceof SArrayType array) {
+        if (type instanceof SArrayType) {
+            SArrayType array = (SArrayType) type;
             return format(array.getElementsType(), expanding) + "[]";
         }
-        if (type instanceof SClassType classType) {
+        if (type instanceof SClassType) {
+            SClassType classType = (SClassType) type;
             return formatClassType(classType, expanding);
         }
-        if (type instanceof SFunction function) {
+        if (type instanceof SFunction) {
+            SFunction function = (SFunction) type;
             return formatFunction(function, expanding);
         }
-        if (type instanceof SFuture future) {
+        if (type instanceof SFuture) {
+            SFuture future = (SFuture) type;
             return "Future<" + format(future.getUnderlying(), expanding) + ">";
         }
-        if (type instanceof SSyntheticInterface syntheticInterface) {
+        if (type instanceof SSyntheticInterface) {
+            SSyntheticInterface syntheticInterface = (SSyntheticInterface) type;
             return formatSyntheticInterface(syntheticInterface, expanding);
         }
         return type.toString();

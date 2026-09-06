@@ -6,6 +6,7 @@ import com.zergatul.scripting.compiler.RefHolder;
 import com.zergatul.scripting.parser.nodes.BaseExpressionNode;
 import com.zergatul.scripting.parser.nodes.InvocationExpressionNode;
 import com.zergatul.scripting.parser.nodes.MemberAccessExpressionNode;
+import com.zergatul.scripting.utility.Lists;
 
 import java.util.List;
 
@@ -56,7 +57,7 @@ public class BoundBaseMethodInvocationExpressionNode extends BoundExpressionNode
 
     @Override
     public List<BoundNode> getChildren() {
-        return List.of(method, arguments);
+        return Lists.of(method, arguments);
     }
 
     public BaseExpressionNode getBaseExpressionSyntaxNode() {

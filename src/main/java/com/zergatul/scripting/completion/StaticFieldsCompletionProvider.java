@@ -5,6 +5,7 @@ import com.zergatul.scripting.binding.nodes.BoundCompilationUnitMemberNode;
 import com.zergatul.scripting.binding.nodes.BoundStaticVariableNode;
 import com.zergatul.scripting.compiler.CompilationParameters;
 import com.zergatul.scripting.symbols.DeclaredStaticVariable;
+import com.zergatul.scripting.utility.Lists;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -20,7 +21,8 @@ public class StaticFieldsCompletionProvider<T> extends AbstractCompletionProvide
         if (context.canExpression()) {
             List<T> suggestions = new ArrayList<>();
             for (BoundCompilationUnitMemberNode member : output.unit().members.members) {
-                if (member instanceof BoundStaticVariableNode staticVariableNode) {
+                if (member instanceof BoundStaticVariableNode) {
+                    BoundStaticVariableNode staticVariableNode = (BoundStaticVariableNode) member;
                     String name = staticVariableNode.name.value;
                     if (name == null || name.isEmpty()) {
                         continue;
@@ -32,7 +34,7 @@ public class StaticFieldsCompletionProvider<T> extends AbstractCompletionProvide
             }
             return suggestions;
         } else {
-            return List.of();
+            return Lists.of();
         }
     }
 }

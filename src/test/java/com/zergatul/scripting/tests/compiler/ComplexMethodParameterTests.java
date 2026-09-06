@@ -4,6 +4,7 @@ import com.zergatul.scripting.binding.BinderErrors;
 import com.zergatul.scripting.tests.compiler.helpers.IntStorage;
 import com.zergatul.scripting.tests.compiler.helpers.StringStorage;
 import com.zergatul.scripting.tests.framework.ComparatorTest;
+import com.zergatul.scripting.utility.Lists;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -25,13 +26,12 @@ public class ComplexMethodParameterTests extends ComparatorTest {
 
     @Test
     public void unaryOperatorMethodFailedTest() {
-        String code = """
-                test.getAttachmentTarget().modifyAttached⟦(1, 2)⟧;
-                """;
+        String code =
+                "test.getAttachmentTarget().modifyAttached⟦(1, 2)⟧;\n";
 
-        String candidates = """
-                Candidates:
-                Java<java.lang.Object> modifyAttached(Java<com.zergatul.scripting.tests.compiler.ComplexMethodParameterTests$AttachmentType> type, Java<java.util.function.UnaryOperator> modifier)""";
+        String candidates =
+                "Candidates:\n" +
+                "Java<java.lang.Object> modifyAttached(Java<com.zergatul.scripting.tests.compiler.ComplexMethodParameterTests$AttachmentType> type, Java<java.util.function.UnaryOperator> modifier)";
 
         comparator.assertDiagnostics(
                 ApiRoot.class, code, "⟦⟧",
@@ -41,35 +41,33 @@ public class ComplexMethodParameterTests extends ComparatorTest {
 
     @Test
     public void unaryOperatorMethodSuccessTest() {
-        String code = """
-                typealias Supplier = Java<java.util.function.Supplier>;
-                typealias UnaryOperator = Java<java.util.function.UnaryOperator>;
-                
-                class AttachmentImpl : Java<com.zergatul.scripting.tests.compiler.ComplexMethodParameterTests$AttachmentType> {
-                    override Supplier initializer() => () => "bo";
-                }
-                
-                let obj = test.getAttachmentTarget().modifyAttached(
-                    new AttachmentImpl(),
-                    input => #cast(input, string) + #cast(input, string));
-                stringStorage.add(#cast(obj, string));
-                """;
+        String code =
+                "typealias Supplier = Java<java.util.function.Supplier>;\n" +
+                "typealias UnaryOperator = Java<java.util.function.UnaryOperator>;\n" +
+                "\n" +
+                "class AttachmentImpl : Java<com.zergatul.scripting.tests.compiler.ComplexMethodParameterTests$AttachmentType> {\n" +
+                "    override Supplier initializer() => () => \"bo\";\n" +
+                "}\n" +
+                "\n" +
+                "let obj = test.getAttachmentTarget().modifyAttached(\n" +
+                "    new AttachmentImpl(),\n" +
+                "    input => #cast(input, string) + #cast(input, string));\n" +
+                "stringStorage.add(#cast(obj, string));\n";
 
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
-        Assertions.assertIterableEquals(List.of("bobo"), ApiRoot.stringStorage.list);
+        Assertions.assertIterableEquals(Lists.of("bobo"), ApiRoot.stringStorage.list);
     }
 
     @Test
     public void recursiveComparableTypeParameterFailedTest() {
-        String code = """
-                test.getValueTarget().getValueOrElse⟦(1, 2)⟧;
-                """;
+        String code =
+                "test.getValueTarget().getValueOrElse⟦(1, 2)⟧;\n";
 
-        String candidates = """
-                Candidates:
-                Java<java.lang.Comparable> getValueOrElse(Java<com.zergatul.scripting.tests.compiler.ComplexMethodParameterTests$Property> property, Java<java.lang.Comparable> defaultValue)""";
+        String candidates =
+                "Candidates:\n" +
+                "Java<java.lang.Comparable> getValueOrElse(Java<com.zergatul.scripting.tests.compiler.ComplexMethodParameterTests$Property> property, Java<java.lang.Comparable> defaultValue)";
 
         comparator.assertDiagnostics(
                 ApiRoot.class, code, "⟦⟧",
@@ -79,25 +77,24 @@ public class ComplexMethodParameterTests extends ComparatorTest {
 
     @Test
     public void recursiveComparableTypeParameterSuccessTest() {
-        String code = """
-                typealias Comparable = Java<java.lang.Comparable>;
-                
-                class PropertyImpl : Java<com.zergatul.scripting.tests.compiler.ComplexMethodParameterTests$Property> {
-                    Comparable value;
-                    constructor(Comparable value) => this.value = value;
-                    override Comparable get() => value;
-                }
-                
-                let value1 = test.getValueTarget().getValueOrElse(new PropertyImpl("go"), "x");
-                let value2 = test.getValueTarget().getValueOrElse(new PropertyImpl(null), "y");
-                stringStorage.add(#cast(value1, string));
-                stringStorage.add(#cast(value2, string));
-                """;
+        String code =
+                "typealias Comparable = Java<java.lang.Comparable>;\n" +
+                "\n" +
+                "class PropertyImpl : Java<com.zergatul.scripting.tests.compiler.ComplexMethodParameterTests$Property> {\n" +
+                "    Comparable value;\n" +
+                "    constructor(Comparable value) => this.value = value;\n" +
+                "    override Comparable get() => value;\n" +
+                "}\n" +
+                "\n" +
+                "let value1 = test.getValueTarget().getValueOrElse(new PropertyImpl(\"go\"), \"x\");\n" +
+                "let value2 = test.getValueTarget().getValueOrElse(new PropertyImpl(null), \"y\");\n" +
+                "stringStorage.add(#cast(value1, string));\n" +
+                "stringStorage.add(#cast(value2, string));\n";
 
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
-        Assertions.assertIterableEquals(List.of("go", "y"), ApiRoot.stringStorage.list);
+        Assertions.assertIterableEquals(Lists.of("go", "y"), ApiRoot.stringStorage.list);
     }
 
     public static class ApiRoot {

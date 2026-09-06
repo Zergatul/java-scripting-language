@@ -7,6 +7,7 @@ import com.zergatul.scripting.parser.nodes.InvalidTypeNode;
 import com.zergatul.scripting.parser.nodes.LetTypeNode;
 import com.zergatul.scripting.parser.nodes.ParserNode;
 import com.zergatul.scripting.type.SUnknown;
+import com.zergatul.scripting.utility.Lists;
 
 import java.util.List;
 
@@ -43,6 +44,6 @@ public class BoundInvalidTypeNode extends BoundTypeNode {
 
     @Override
     public List<BoundNode> getChildren() {
-        return List.of();
+        return Lists.of();
     }
 }

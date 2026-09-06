@@ -3,9 +3,9 @@ package com.zergatul.scripting.tests.completion;
 import com.zergatul.scripting.lexer.TokenType;
 import com.zergatul.scripting.tests.compiler.helpers.IntStorage;
 import com.zergatul.scripting.tests.completion.helpers.CompletionTestHelper;
-import com.zergatul.scripting.tests.completion.helpers.Lists;
 import com.zergatul.scripting.tests.completion.helpers.TestCompletionContext;
 import com.zergatul.scripting.tests.completion.suggestions.*;
+import com.zergatul.scripting.utility.Lists;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -17,60 +17,67 @@ public class FunctionTests {
 
     @Test
     public void parameterTest1() {
-        assertSuggestions("""
-                void f(<cursor>) {}
-                """,
+        String code =
+                "void f(<cursor>) {}\n";
+        assertSuggestions(
+                code,
                 context -> types);
     }
 
     @Test
     public void parameterTest2() {
-        assertSuggestions("""
-                void f(i<cursor>) {}
-                """,
+        String code =
+                "void f(i<cursor>) {}\n";
+        assertSuggestions(
+                code,
                 context -> types);
     }
 
     @Test
     public void parameterTest3() {
-        assertSuggestions("""
-                void f(int<cursor> ) {}
-                """,
+        String code =
+                "void f(int<cursor> ) {}\n";
+        assertSuggestions(
+                code,
                 context -> types);
     }
 
     @Test
     public void parameterTest4() {
-        assertSuggestions("""
-                void f(int <cursor>) {}
-                """,
-                context -> List.of());
+        String code =
+                "void f(int <cursor>) {}\n";
+        assertSuggestions(
+                code,
+                context -> Lists.of());
     }
 
     @Test
     public void parameterTest5() {
-        assertSuggestions("""
-                void f(int x<cursor>) {}
-                """,
-                context -> List.of());
+        String code =
+                "void f(int x<cursor>) {}\n";
+        assertSuggestions(
+                code,
+                context -> Lists.of());
     }
 
     @Test
     public void parameterTest6() {
-        assertSuggestions("""
-                void f(int x,<cursor>) {}
-                """,
+        String code =
+                "void f(int x,<cursor>) {}\n";
+        assertSuggestions(
+                code,
                 context -> types);
     }
 
     @Test
     public void simpleTest() {
-        assertSuggestions("""
-                void func() {}
-                int x = 3;
-                <cursor>
-                """,
-                context -> Lists.of(
+        String code =
+                "void func() {}\n" +
+                "int x = 3;\n" +
+                "<cursor>\n";
+        assertSuggestions(
+                code,
+                context -> Lists.from(
                         statements,
                         new StaticConstantSuggestion(context, "intStorage"),
                         new FunctionSuggestion(context, "func"),
@@ -79,34 +86,37 @@ public class FunctionTests {
 
     @Test
     public void asyncFunctionTest1() {
-        assertSuggestions("""
-                async <cursor>
-                """,
-                context -> Lists.of(
+        String code =
+                "async <cursor>\n";
+        assertSuggestions(
+                code,
+                context -> Lists.from(
                         types,
                         new KeywordSuggestion(TokenType.VOID)));
     }
 
     @Test
     public void asyncFunctionTest2() {
-        assertSuggestions("""
-                async void <cursor>
-                """,
-                context -> List.of());
+        String code =
+                "async void <cursor>\n";
+        assertSuggestions(
+                code,
+                context -> Lists.of());
     }
 
     @Test
     public void functionOverloadTest() {
-        assertSuggestions("""
-                int max(int i1) => 0;
-                int max(int i1, int i2) => 0;
-                int max(int i1, int i2, int i3) => 0;
-                int max(int i1, int i2, int i3, int i4) => 0;
-                
-                intStorage.add(1);
-                <cursor>
-                """,
-                context -> Lists.of(
+        String code =
+                "int max(int i1) => 0;\n" +
+                "int max(int i1, int i2) => 0;\n" +
+                "int max(int i1, int i2, int i3) => 0;\n" +
+                "int max(int i1, int i2, int i3, int i4) => 0;\n" +
+                "                \n" +
+                "intStorage.add(1);\n" +
+                "<cursor>\n";
+        assertSuggestions(
+                code,
+                context -> Lists.from(
                         statements,
                         new StaticConstantSuggestion(context, "intStorage"),
                         new FunctionSuggestion(context, "max", 1),

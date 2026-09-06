@@ -21,7 +21,8 @@ public class BoxingWrapCastOperation extends CastOperation {
     }
 
     private static SType getBoxed(CastOperation cast) {
-        if (cast.getDstType() instanceof SValueType valueType) {
+        if (cast.getDstType() instanceof SValueType) {
+            SValueType valueType = (SValueType) cast.getDstType();
             return valueType.getBoxed();
         }
         throw new InternalException();

@@ -1,5 +1,7 @@
 package com.zergatul.scripting.tests.compiler;
 
+import com.zergatul.scripting.utility.Lists;
+
 import com.zergatul.scripting.DiagnosticMessage;
 import com.zergatul.scripting.SingleLineTextRange;
 import com.zergatul.scripting.binding.BinderErrors;
@@ -30,65 +32,64 @@ public class ClassBinaryOperationTests extends ComparatorTest {
 
     @Test
     public void basicTest() {
-        String code = """
-                class Vec2 {
-                    float x;
-                    float y;
-                
-                    constructor(float x, float y) {
-                        this.x = x;
-                        this.y = y;
-                    }
-                
-                    override string toString() {
-                        return "(" + x + "; " + y + ")";
-                    }
-                
-                    operator [+] Vec2(Vec2 left, Vec2 right) {
-                        return new Vec2(left.x + right.x, left.y + right.y);
-                    }
-                
-                    operator [-] Vec2(Vec2 left, Vec2 right) {
-                        return new Vec2(left.x - right.x, left.y - right.y);
-                    }
-                
-                    operator [*] Vec2(float factor, Vec2 vec) {
-                        return new Vec2(factor * vec.x, factor * vec.y);
-                    }
-                
-                    operator [/] Vec2(Vec2 vec, float divisor) {
-                        return new Vec2(vec.x / divisor, vec.y / divisor);
-                    }
-                
-                    operator [%] Vec2(Vec2 vec, float divisor) {
-                        return new Vec2(vec.x % divisor, vec.y % divisor);
-                    }
-                
-                    operator [==] boolean(Vec2 left, Vec2 right) => left.x == right.x && left.y == right.y;
-                    operator [!=] boolean(Vec2 left, Vec2 right) => left.x != right.x || left.y != right.y;
-                }
-                
-                void log(Vec2 v) => stringStorage.add(v.toString());
-                
-                let v1 = new Vec2(1, 2);
-                let v2 = new Vec2(3, 4);
-                log(v1 + v2);
-                log(v1 - v2);
-                log(2 * v1);
-                log(v2 / 2);
-                log(v1 % 2);
-                boolStorage.add(v1 == v2);
-                boolStorage.add(v1 != v2);
-                boolStorage.add(v1 == new Vec2(1, 2));
-                boolStorage.add(v1 != new Vec2(1, 2));
-                """;
+        String code =
+                "class Vec2 {\n" +
+                "    float x;\n" +
+                "    float y;\n" +
+                "\n" +
+                "    constructor(float x, float y) {\n" +
+                "        this.x = x;\n" +
+                "        this.y = y;\n" +
+                "    }\n" +
+                "\n" +
+                "    override string toString() {\n" +
+                "        return \"(\" + x + \"; \" + y + \")\";\n" +
+                "    }\n" +
+                "\n" +
+                "    operator [+] Vec2(Vec2 left, Vec2 right) {\n" +
+                "        return new Vec2(left.x + right.x, left.y + right.y);\n" +
+                "    }\n" +
+                "\n" +
+                "    operator [-] Vec2(Vec2 left, Vec2 right) {\n" +
+                "        return new Vec2(left.x - right.x, left.y - right.y);\n" +
+                "    }\n" +
+                "\n" +
+                "    operator [*] Vec2(float factor, Vec2 vec) {\n" +
+                "        return new Vec2(factor * vec.x, factor * vec.y);\n" +
+                "    }\n" +
+                "\n" +
+                "    operator [/] Vec2(Vec2 vec, float divisor) {\n" +
+                "        return new Vec2(vec.x / divisor, vec.y / divisor);\n" +
+                "    }\n" +
+                "\n" +
+                "    operator [%] Vec2(Vec2 vec, float divisor) {\n" +
+                "        return new Vec2(vec.x % divisor, vec.y % divisor);\n" +
+                "    }\n" +
+                "\n" +
+                "    operator [==] boolean(Vec2 left, Vec2 right) => left.x == right.x && left.y == right.y;\n" +
+                "    operator [!=] boolean(Vec2 left, Vec2 right) => left.x != right.x || left.y != right.y;\n" +
+                "}\n" +
+                "\n" +
+                "void log(Vec2 v) => stringStorage.add(v.toString());\n" +
+                "\n" +
+                "let v1 = new Vec2(1, 2);\n" +
+                "let v2 = new Vec2(3, 4);\n" +
+                "log(v1 + v2);\n" +
+                "log(v1 - v2);\n" +
+                "log(2 * v1);\n" +
+                "log(v2 / 2);\n" +
+                "log(v1 % 2);\n" +
+                "boolStorage.add(v1 == v2);\n" +
+                "boolStorage.add(v1 != v2);\n" +
+                "boolStorage.add(v1 == new Vec2(1, 2));\n" +
+                "boolStorage.add(v1 != new Vec2(1, 2));\n";
 
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
         Assertions.assertIterableEquals(
                 ApiRoot.stringStorage.list,
-                List.of(
+                Lists.of(
                         "(4.0; 6.0)",
                         "(-2.0; -2.0)",
                         "(2.0; 4.0)",
@@ -96,25 +97,24 @@ public class ClassBinaryOperationTests extends ComparatorTest {
                         "(1.0; 0.0)"));
         Assertions.assertIterableEquals(
                 ApiRoot.boolStorage.list,
-                List.of(
+                Lists.of(
                         false, true,
                         true, false));
     }
 
     @Test
     public void canBeOverloadedTest() {
-        String code = """
-                class MyClass {
-                    operator [&&] boolean(MyClass left, MyClass right) => true;
-                    operator [||] boolean(MyClass left, MyClass right) => true;
-                    operator [is] boolean(MyClass left, MyClass right) => true;
-                    operator [as] boolean(MyClass left, MyClass right) => true;
-                    operator [in] boolean(MyClass left, MyClass right) => true;
-                }
-                """;
+        String code =
+                "class MyClass {\n" +
+                "    operator [&&] boolean(MyClass left, MyClass right) => true;\n" +
+                "    operator [||] boolean(MyClass left, MyClass right) => true;\n" +
+                "    operator [is] boolean(MyClass left, MyClass right) => true;\n" +
+                "    operator [as] boolean(MyClass left, MyClass right) => true;\n" +
+                "    operator [in] boolean(MyClass left, MyClass right) => true;\n" +
+                "}\n";
 
         comparator.assertEquals(
-                List.of(
+                Lists.of(
                         new DiagnosticMessage(BinderErrors.BinaryOperatorCannotBeOverloaded, new SingleLineTextRange(2, 15, 30, 2), BinaryOperator.BOOLEAN_AND),
                         new DiagnosticMessage(BinderErrors.BinaryOperatorCannotBeOverloaded, new SingleLineTextRange(3, 15, 94, 2), BinaryOperator.BOOLEAN_OR),
                         new DiagnosticMessage(BinderErrors.BinaryOperatorCannotBeOverloaded, new SingleLineTextRange(4, 15, 158, 2), BinaryOperator.IS),
@@ -125,34 +125,32 @@ public class ClassBinaryOperationTests extends ComparatorTest {
 
     @Test
     public void doubleOverloadTest() {
-        String code = """
-                class MyClass {
-                    operator [*] boolean(MyClass left, int right) => true;
-                    operator [*] boolean(MyClass left, int right) => false;
-                }
-                """;
+        String code =
+                "class MyClass {\n" +
+                "    operator [*] boolean(MyClass left, int right) => true;\n" +
+                "    operator [*] boolean(MyClass left, int right) => false;\n" +
+                "}\n";
 
         comparator.assertEquals(
-                List.of(
+                Lists.of(
                         new DiagnosticMessage(BinderErrors.BinaryOperationAlreadyDeclared, new SingleLineTextRange(3, 25, 99, 25))),
                 getDiagnostics(ApiRoot.class, code));
     }
 
     @Test
     public void booleanOnlyOverloadTest() {
-        String code = """
-                class MyClass {
-                    operator [==] MyClass(MyClass left, int right) => null;
-                    operator [!=] MyClass(MyClass left, int right) => null;
-                    operator [>] MyClass(MyClass left, int right) => null;
-                    operator [<] MyClass(MyClass left, int right) => null;
-                    operator [>=] MyClass(MyClass left, int right) => null;
-                    operator [<=] MyClass(MyClass left, int right) => null;
-                }
-                """;
+        String code =
+                "class MyClass {\n" +
+                "    operator [==] MyClass(MyClass left, int right) => null;\n" +
+                "    operator [!=] MyClass(MyClass left, int right) => null;\n" +
+                "    operator [>] MyClass(MyClass left, int right) => null;\n" +
+                "    operator [<] MyClass(MyClass left, int right) => null;\n" +
+                "    operator [>=] MyClass(MyClass left, int right) => null;\n" +
+                "    operator [<=] MyClass(MyClass left, int right) => null;\n" +
+                "}\n";
 
         comparator.assertEquals(
-                List.of(
+                Lists.of(
                         new DiagnosticMessage(BinderErrors.BinaryOperatorCanReturnBooleanOnly, new SingleLineTextRange(2, 19, 34, 7), BinaryOperator.EQUALS),
                         new DiagnosticMessage(BinderErrors.BinaryOperatorCanReturnBooleanOnly, new SingleLineTextRange(3, 19, 94, 7), BinaryOperator.NOT_EQUALS),
                         new DiagnosticMessage(BinderErrors.BinaryOperatorCanReturnBooleanOnly, new SingleLineTextRange(4, 18, 153, 7), BinaryOperator.GREATER),

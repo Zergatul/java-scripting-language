@@ -3,6 +3,7 @@ package com.zergatul.scripting.completion;
 import com.zergatul.scripting.binding.BinderOutput;
 import com.zergatul.scripting.compiler.CompilationParameters;
 import com.zergatul.scripting.lexer.TokenType;
+import com.zergatul.scripting.utility.Lists;
 
 import java.util.List;
 
@@ -15,13 +16,13 @@ public class UnitMemberCompletionProvider<T> extends AbstractCompletionProvider<
     @Override
     public List<T> provide(CompilationParameters parameters, BinderOutput output, CompletionContext context) {
         if (context.canUnitMember()) {
-            return List.of(
+            return Lists.of(
                     factory.getKeywordSuggestion(TokenType.STATIC),
                     factory.getKeywordSuggestion(TokenType.CLASS),
                     factory.getKeywordSuggestion(TokenType.EXTENSION),
                     factory.getKeywordSuggestion(TokenType.TYPEALIAS));
         } else {
-            return List.of();
+            return Lists.of();
         }
     }
 }

@@ -6,6 +6,7 @@ import com.zergatul.scripting.compiler.CompilationParametersBuilder;
 import com.zergatul.scripting.compiler.CompilationResult;
 import com.zergatul.scripting.compiler.Compiler;
 import com.zergatul.scripting.type.SVoidType;
+import com.zergatul.scripting.utility.Lists;
 import org.junit.jupiter.api.Assertions;
 
 import java.util.List;
@@ -35,7 +36,7 @@ public class CompilerHelper {
     public static List<DiagnosticMessage> getDiagnostics(Class<?> api, String code, Class<?>... customTypes) {
         Compiler compiler = new Compiler(new CompilationParametersBuilder()
                 .setRoot(api)
-                .addCustomTypes(List.of(customTypes))
+                .addCustomTypes(Lists.of(customTypes))
                 .build());
         CompilationResult result = compiler.compile(code);
         Assertions.assertNull(result.getProgram());
@@ -60,7 +61,8 @@ public class CompilerHelper {
             throw new IllegalStateException("Future has not completed exceptionally.");
         }
         Throwable exception = future.handle((result, ex) -> ex).join();
-        if (exception instanceof CompletionException completionException) {
+        if (exception instanceof CompletionException) {
+            CompletionException completionException = (CompletionException) exception;
             return completionException.getCause();
         } else {
             return exception;
@@ -82,7 +84,7 @@ public class CompilerHelper {
     public static Runnable compileWithCustomTypes(Class<?> api, String code, Class<?>... customTypes) {
         Compiler compiler = new Compiler(new CompilationParametersBuilder()
                 .setRoot(api)
-                .addCustomTypes(List.of(customTypes))
+                .addCustomTypes(Lists.of(customTypes))
                 .emitVariableNames(true)
                 //.setDebug()
                 .build());
@@ -94,7 +96,7 @@ public class CompilerHelper {
     public static AsyncRunnable compileAsyncWithCustomTypes(Class<?> api, String code, Class<?>... customTypes) {
         Compiler compiler = new Compiler(new CompilationParametersBuilder()
                 .setRoot(api)
-                .addCustomTypes(List.of(customTypes))
+                .addCustomTypes(Lists.of(customTypes))
                 .setInterface(AsyncRunnable.class)
                 .setAsyncReturnType(SVoidType.instance)
                 .emitVariableNames(true)

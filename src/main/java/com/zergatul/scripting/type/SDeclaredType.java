@@ -7,6 +7,7 @@ import com.zergatul.scripting.type.operation.BinaryOperation;
 import com.zergatul.scripting.type.operation.OverloadBinaryOperation;
 import com.zergatul.scripting.type.operation.OverloadUnaryOperation;
 import com.zergatul.scripting.type.operation.UnaryOperation;
+import com.zergatul.scripting.utility.Lists;
 import org.jspecify.annotations.Nullable;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Type;
@@ -89,11 +90,11 @@ public class SDeclaredType extends SReferenceType {
                 new HashSet<>(),
                 new HashSet<>());
 
-        List<Map.Entry<Class<?>, Implementation>> maximallySpecific = interfaceImplementations.entrySet().stream()
-                .filter(candidate -> interfaceImplementations.keySet().stream()
-                        .filter(other -> other != candidate.getKey())
-                        .noneMatch(other -> candidate.getKey().isAssignableFrom(other)))
-                .toList();
+        List<Map.Entry<Class<?>, Implementation>> maximallySpecific = Lists.from(
+                interfaceImplementations.entrySet().stream()
+                        .filter(candidate -> interfaceImplementations.keySet().stream()
+                                .filter(other -> other != candidate.getKey())
+                                .noneMatch(other -> candidate.getKey().isAssignableFrom(other))));
         return maximallySpecific.size() == 1 &&
                 maximallySpecific.get(0).getValue() == Implementation.CONCRETE;
     }
@@ -132,7 +133,8 @@ public class SDeclaredType extends SReferenceType {
 
     // returns how many SDeclaredType's are in inheritance chain
     public int getInheritanceDepth() {
-        if (baseType instanceof SDeclaredType base) {
+        if (baseType instanceof SDeclaredType) {
+            SDeclaredType base = (SDeclaredType) baseType;
             return 1 + base.getInheritanceDepth();
         } else {
             return 0;
@@ -175,10 +177,12 @@ public class SDeclaredType extends SReferenceType {
         if (other == this) {
             return true;
         }
-        if (other instanceof SDeclaredType declaredType && declaredType.baseType != null) {
+        if (other instanceof SDeclaredType && ((SDeclaredType) other).baseType != null) {
+            SDeclaredType declaredType = (SDeclaredType) other;
             return isAssignableFrom(declaredType.baseType);
         }
-        if (other instanceof SDeclaredType declaredType) {
+        if (other instanceof SDeclaredType) {
+            SDeclaredType declaredType = (SDeclaredType) other;
             return declaredType.interfaces.stream().anyMatch(this::isAssignableFrom);
         }
         return false;
@@ -210,13 +214,14 @@ public class SDeclaredType extends SReferenceType {
 
     @Override
     public List<UnaryOperation> getUnaryOperations() {
-        return new ArrayList<>(unaryOperations.stream().map(OverloadUnaryOperation::new).toList());
+        return Lists.from(unaryOperations.stream().map(OverloadUnaryOperation::new));
+        //return new ArrayList<>(unaryOperations.stream().map(OverloadUnaryOperation::new).toList());
     }
 
     @Override
     public List<BinaryOperation> getBinaryOperations() {
         List<BinaryOperation> operations = new ArrayList<>();
-        operations.addAll(binaryOperations.stream().map(OverloadBinaryOperation::new).toList());
+        binaryOperations.stream().map(OverloadBinaryOperation::new).forEach(operations::add);
         operations.addAll(super.getBinaryOperations());
         return operations;
     }
@@ -257,7 +262,8 @@ public class SDeclaredType extends SReferenceType {
             Set<SDeclaredType> visitedDeclaredTypes,
             Set<Class<?>> visitedJavaTypes
     ) {
-        if (type instanceof SDeclaredType declaredType) {
+        if (type instanceof SDeclaredType) {
+            SDeclaredType declaredType = (SDeclaredType) type;
             return declaredType.findClassImplementation(contract, visitedDeclaredTypes, visitedJavaTypes);
         }
         if (type instanceof SClassType || type instanceof SCustomType) {
@@ -327,7 +333,8 @@ public class SDeclaredType extends SReferenceType {
             Set<Class<?>> visitedJavaClasses,
             Set<Class<?>> visitedJavaInterfaces
     ) {
-        if (type instanceof SDeclaredType declaredType) {
+        if (type instanceof SDeclaredType) {
+            SDeclaredType declaredType = (SDeclaredType) type;
             declaredType.collectInterfaceImplementations(
                     contract,
                     implementations,
@@ -382,7 +389,8 @@ public class SDeclaredType extends SReferenceType {
             Set<Class<?>> visitedJavaClasses,
             Set<Class<?>> visitedJavaInterfaces
     ) {
-        if (type instanceof SDeclaredType declaredType) {
+        if (type instanceof SDeclaredType) {
+            SDeclaredType declaredType = (SDeclaredType) type;
             declaredType.collectInterfaceImplementations(
                     contract,
                     implementations,
@@ -468,16 +476,17 @@ public class SDeclaredType extends SReferenceType {
             return false;
         }
 
-        if (contract instanceof NativeMethodReference nativeContract) {
+        if (contract instanceof NativeMethodReference) {
+            NativeMethodReference nativeContract = (NativeMethodReference) contract;
             Method contractMethod = nativeContract.getUnderlying();
             return method.getReturnType() == contractMethod.getReturnType() &&
                     Arrays.equals(method.getParameterTypes(), contractMethod.getParameterTypes());
         }
 
         return SType.fromJavaType(method.getReturnType()).equals(contract.getReturn()) &&
-                Arrays.stream(method.getParameterTypes())
-                        .map(SType::fromJavaType)
-                        .toList()
+                Lists.from(
+                        Arrays.stream(method.getParameterTypes())
+                                .map(SType::fromJavaType))
                         .equals(contract.getParameterTypes());
     }
 
@@ -488,11 +497,16 @@ public class SDeclaredType extends SReferenceType {
     }
 
     private static boolean reducesVisibility(Visibility visibility, Visibility contractVisibility) {
-        return switch (contractVisibility) {
-            case PUBLIC -> visibility != Visibility.PUBLIC;
-            case PROTECTED -> visibility == Visibility.PRIVATE;
-            case PRIVATE -> false;
-        };
+        switch (contractVisibility) {
+            case PUBLIC:
+                return visibility != Visibility.PUBLIC;
+            case PROTECTED:
+                return visibility == Visibility.PRIVATE;
+            case PRIVATE:
+                return false;
+            default:
+                throw new IllegalArgumentException();
+        }
     }
 
     @Override

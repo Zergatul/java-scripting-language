@@ -14,7 +14,7 @@ public class LexerDumper extends Dumper {
             commaBreak();
         }
 
-        if (!sb.isEmpty()) {
+        if (sb.length() != 0) {
             sb.delete(sb.length() - 2, sb.length());
         }
 

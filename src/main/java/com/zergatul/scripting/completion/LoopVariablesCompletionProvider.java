@@ -5,6 +5,7 @@ import com.zergatul.scripting.binding.nodes.BoundForEachLoopStatementNode;
 import com.zergatul.scripting.compiler.CompilationParameters;
 import com.zergatul.scripting.binding.nodes.BoundNodeType;
 import com.zergatul.scripting.symbols.LocalVariable;
+import com.zergatul.scripting.utility.Lists;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -18,14 +19,15 @@ public class LoopVariablesCompletionProvider<T> extends AbstractCompletionProvid
     @Override
     public List<T> provide(CompilationParameters parameters, BinderOutput output, CompletionContext context) {
         if (!context.canExpression()) {
-            return List.of();
+            return Lists.of();
         }
 
         List<T> suggestions = new ArrayList<>();
         while (context != null && context.entry != null) {
             if (context.entry.node.getNodeType() == BoundNodeType.FOREACH_LOOP_STATEMENT) {
                 BoundForEachLoopStatementNode loop = (BoundForEachLoopStatementNode) context.entry.node;
-                if (loop.name.getSymbol() instanceof LocalVariable local) {
+                if (loop.name.getSymbol() instanceof LocalVariable) {
+                    LocalVariable local = (LocalVariable) loop.name.getSymbol();
                     if (local.getName() != null && !local.getName().isEmpty()) {
                         suggestions.add(factory.getLocalVariableSuggestion(local));
                     }

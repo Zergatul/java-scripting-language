@@ -1,5 +1,7 @@
 package com.zergatul.scripting.tests.compiler;
 
+import com.zergatul.scripting.utility.Lists;
+
 import com.zergatul.scripting.AsyncRunnable;
 import com.zergatul.scripting.DiagnosticMessage;
 import com.zergatul.scripting.SingleLineTextRange;
@@ -28,164 +30,156 @@ public class AsyncFunctionTests extends ComparatorTest {
 
     @Test
     public void noAwaitTest() {
-        String code = """
-                async void func() {
-                    intStorage.add(123);
-                }
-                
-                await func();
-                """;
+        String code =
+                "async void func() {\n" +
+                "    intStorage.add(123);\n" +
+                "}\n" +
+                "\n" +
+                "await func();\n";
 
         AsyncRunnable program = compileAsync(ApiRoot.class, code);
         CompletableFuture<?> future = program.run();
 
-        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(123));
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, Lists.of(123));
         Assertions.assertTrue(future.isDone());
     }
 
     @Test
     public void voidTest() {
-        String code = """
-                async void func() {
-                    await futures.create();
-                    intStorage.add(123);
-                }
-                
-                await func();
-                """;
+        String code =
+                "async void func() {\n" +
+                "    await futures.create();\n" +
+                "    intStorage.add(123);\n" +
+                "}\n" +
+                "\n" +
+                "await func();\n";
 
         AsyncRunnable program = compileAsync(ApiRoot.class, code);
         CompletableFuture<?> future = program.run();
 
-        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of());
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, Lists.of());
         Assertions.assertFalse(future.isDone());
 
         ApiRoot.futures.get(0).complete(null);
-        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(123));
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, Lists.of(123));
         Assertions.assertTrue(future.isDone());
     }
 
     @Test
     public void cancellationCascadesIntoNestedAsyncFunctionTest() {
-        String code = """
-                async void func() {
-                    intStorage.add(1);
-                    await futures.create();
-                    intStorage.add(2);
-                }
-
-                await func();
-                intStorage.add(3);
-                """;
+        String code =
+                "async void func() {\n" +
+                "    intStorage.add(1);\n" +
+                "    await futures.create();\n" +
+                "    intStorage.add(2);\n" +
+                "}\n" +
+                "\n" +
+                "await func();\n" +
+                "intStorage.add(3);\n";
 
         AsyncRunnable program = compileAsync(ApiRoot.class, code);
         CompletableFuture<?> future = program.run();
 
-        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(1));
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, Lists.of(1));
         Assertions.assertTrue(future.cancel(false));
         Assertions.assertTrue(ApiRoot.futures.get(0).isCancelled());
         Assertions.assertFalse(ApiRoot.futures.get(0).complete(null));
-        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(1));
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, Lists.of(1));
     }
 
     @Test
     public void intTest() {
-        String code = """
-                async int func() {
-                    await futures.create();
-                    return 20;
-                }
-                
-                intStorage.add(await func());
-                """;
+        String code =
+                "async int func() {\n" +
+                "    await futures.create();\n" +
+                "    return 20;\n" +
+                "}\n" +
+                "\n" +
+                "intStorage.add(await func());\n";
 
         AsyncRunnable program = compileAsync(ApiRoot.class, code);
         CompletableFuture<?> future = program.run();
 
-        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of());
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, Lists.of());
         Assertions.assertFalse(future.isDone());
 
         ApiRoot.futures.get(0).complete(null);
-        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(20));
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, Lists.of(20));
         Assertions.assertTrue(future.isDone());
     }
 
     @Test
     public void floatTest() {
-        String code = """
-                async float func() {
-                    await futures.create();
-                    return 20;
-                }
-                
-                floatStorage.add(await func());
-                """;
+        String code =
+                "async float func() {\n" +
+                "    await futures.create();\n" +
+                "    return 20;\n" +
+                "}\n" +
+                "\n" +
+                "floatStorage.add(await func());\n";
 
         AsyncRunnable program = compileAsync(ApiRoot.class, code);
         CompletableFuture<?> future = program.run();
 
-        Assertions.assertIterableEquals(ApiRoot.floatStorage.list, List.of());
+        Assertions.assertIterableEquals(ApiRoot.floatStorage.list, Lists.of());
         Assertions.assertFalse(future.isDone());
 
         ApiRoot.futures.get(0).complete(null);
-        Assertions.assertIterableEquals(ApiRoot.floatStorage.list, List.of(20.0));
+        Assertions.assertIterableEquals(ApiRoot.floatStorage.list, Lists.of(20.0));
         Assertions.assertTrue(future.isDone());
     }
 
     @Test
     public void stringTest() {
-        String code = """
-                async string func() {
-                    await futures.create();
-                    return "test";
-                }
-                
-                stringStorage.add(await func());
-                """;
+        String code =
+                "async string func() {\n" +
+                "    await futures.create();\n" +
+                "    return \"test\";\n" +
+                "}\n" +
+                "\n" +
+                "stringStorage.add(await func());\n";
 
         AsyncRunnable program = compileAsync(ApiRoot.class, code);
         CompletableFuture<?> future = program.run();
 
-        Assertions.assertIterableEquals(ApiRoot.stringStorage.list, List.of());
+        Assertions.assertIterableEquals(ApiRoot.stringStorage.list, Lists.of());
         Assertions.assertFalse(future.isDone());
 
         ApiRoot.futures.get(0).complete(null);
-        Assertions.assertIterableEquals(ApiRoot.stringStorage.list, List.of("test"));
+        Assertions.assertIterableEquals(ApiRoot.stringStorage.list, Lists.of("test"));
         Assertions.assertTrue(future.isDone());
     }
 
     @Test
     public void forLoopSyncReturn() {
-        String code = """
-                async int func() {
-                    for (int i = 0; i < 100; i++) {
-                        if (i == 2) return i;
-                    }
-                    return 0;
-                }
-                
-                intStorage.add(await func());
-                """;
+        String code =
+                "async int func() {\n" +
+                "    for (int i = 0; i < 100; i++) {\n" +
+                "        if (i == 2) return i;\n" +
+                "    }\n" +
+                "    return 0;\n" +
+                "}\n" +
+                "\n" +
+                "intStorage.add(await func());\n";
 
         AsyncRunnable program = compileAsync(ApiRoot.class, code);
         CompletableFuture<?> future = program.run();
 
         Assertions.assertTrue(future.isDone());
-        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(2));
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, Lists.of(2));
     }
 
     @Test
     public void forLoopAsyncReturn() {
-        String code = """
-                async void func() {
-                    for (int i = 0; i < 100; i++) {
-                        await futures.create();
-                        if (i == 2) return;
-                    }
-                }
-                
-                await func();
-                """;
+        String code =
+                "async void func() {\n" +
+                "    for (int i = 0; i < 100; i++) {\n" +
+                "        await futures.create();\n" +
+                "        if (i == 2) return;\n" +
+                "    }\n" +
+                "}\n" +
+                "\n" +
+                "await func();\n";
 
         AsyncRunnable program = compileAsync(ApiRoot.class, code);
         CompletableFuture<?> future = program.run();
@@ -204,37 +198,35 @@ public class AsyncFunctionTests extends ComparatorTest {
 
     @Test
     public void forEachLoopSyncReturn() {
-        String code = """
-                async int func() {
-                    foreach (int i in new int[] { 0, 1, 2, 3, 4, 5 }) {
-                        if (i == 2) return i;
-                    }
-                    return 0;
-                }
-                
-                intStorage.add(await func());
-                """;
+        String code =
+                "async int func() {\n" +
+                "    foreach (int i in new int[] { 0, 1, 2, 3, 4, 5 }) {\n" +
+                "        if (i == 2) return i;\n" +
+                "    }\n" +
+                "    return 0;\n" +
+                "}\n" +
+                "\n" +
+                "intStorage.add(await func());\n";
 
         AsyncRunnable program = compileAsync(ApiRoot.class, code);
         CompletableFuture<?> future = program.run();
 
         Assertions.assertTrue(future.isDone());
-        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(2));
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, Lists.of(2));
     }
 
     @Test
     public void forEachLoopAsyncReturn() {
-        String code = """
-                async int func() {
-                    foreach (int i in new int[] { 0, 1, 2, 3, 4, 5 }) {
-                        await futures.create();
-                        if (i == 2) return i;
-                    }
-                    return 0;
-                }
-                
-                intStorage.add(await func());
-                """;
+        String code =
+                "async int func() {\n" +
+                "    foreach (int i in new int[] { 0, 1, 2, 3, 4, 5 }) {\n" +
+                "        await futures.create();\n" +
+                "        if (i == 2) return i;\n" +
+                "    }\n" +
+                "    return 0;\n" +
+                "}\n" +
+                "\n" +
+                "intStorage.add(await func());\n";
 
         AsyncRunnable program = compileAsync(ApiRoot.class, code);
         CompletableFuture<?> future = program.run();
@@ -253,41 +245,39 @@ public class AsyncFunctionTests extends ComparatorTest {
 
     @Test
     public void whileLoopSyncReturn() {
-        String code = """
-                async int func() {
-                    int i = 0;
-                    while (i < 100) {
-                        if (i == 2) return i;
-                        i++;
-                    }
-                    return 0;
-                }
-                
-                intStorage.add(await func());
-                """;
+        String code =
+                "async int func() {\n" +
+                "    int i = 0;\n" +
+                "    while (i < 100) {\n" +
+                "        if (i == 2) return i;\n" +
+                "        i++;\n" +
+                "    }\n" +
+                "    return 0;\n" +
+                "}\n" +
+                "\n" +
+                "intStorage.add(await func());\n";
 
         AsyncRunnable program = compileAsync(ApiRoot.class, code);
         CompletableFuture<?> future = program.run();
 
         Assertions.assertTrue(future.isDone());
-        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(2));
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, Lists.of(2));
     }
 
     @Test
     public void whileLoopAsyncReturn() {
-        String code = """
-                async int func() {
-                    int i = 0;
-                    while (i < 100) {
-                        await futures.create();
-                        if (i == 2) return i;
-                        i++;
-                    }
-                    return 0;
-                }
-                
-                intStorage.add(await func());
-                """;
+        String code =
+                "async int func() {\n" +
+                "    int i = 0;\n" +
+                "    while (i < 100) {\n" +
+                "        await futures.create();\n" +
+                "        if (i == 2) return i;\n" +
+                "        i++;\n" +
+                "    }\n" +
+                "    return 0;\n" +
+                "}\n" +
+                "\n" +
+                "intStorage.add(await func());\n";
 
         AsyncRunnable program = compileAsync(ApiRoot.class, code);
         CompletableFuture<?> future = program.run();
@@ -306,13 +296,12 @@ public class AsyncFunctionTests extends ComparatorTest {
 
     @Test
     public void parametersTest1() {
-        String code = """
-                async int func(int x) {
-                    return await futures.createInt() + x;
-                }
-                
-                intStorage.add(await func(100));
-                """;
+        String code =
+                "async int func(int x) {\n" +
+                "    return await futures.createInt() + x;\n" +
+                "}\n" +
+                "\n" +
+                "intStorage.add(await func(100));\n";
 
         AsyncRunnable program = compileAsync(ApiRoot.class, code);
         CompletableFuture<?> future = program.run();
@@ -320,19 +309,18 @@ public class AsyncFunctionTests extends ComparatorTest {
         Assertions.assertFalse(future.isDone());
 
         ApiRoot.futures.getInt(0).complete(23);
-        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(123));
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, Lists.of(123));
         Assertions.assertTrue(future.isDone());
     }
 
     @Test
     public void parametersTest2() {
-        String code = """
-                async float func(float a, float b) {
-                    return await futures.createFloat() + a * a + b * b * b;
-                }
-                
-                floatStorage.add(await func(1.5, 2));
-                """;
+        String code =
+                "async float func(float a, float b) {\n" +
+                "    return await futures.createFloat() + a * a + b * b * b;\n" +
+                "}\n" +
+                "\n" +
+                "floatStorage.add(await func(1.5, 2));\n";
 
         AsyncRunnable program = compileAsync(ApiRoot.class, code);
         CompletableFuture<?> future = program.run();
@@ -340,19 +328,18 @@ public class AsyncFunctionTests extends ComparatorTest {
         Assertions.assertFalse(future.isDone());
 
         ApiRoot.futures.getFloat(0).complete(0.0125);
-        Assertions.assertIterableEquals(ApiRoot.floatStorage.list, List.of(10.2625));
+        Assertions.assertIterableEquals(ApiRoot.floatStorage.list, Lists.of(10.2625));
         Assertions.assertTrue(future.isDone());
     }
 
     @Test
     public void parametersTest3() {
-        String code = """
-                async long func(int x1, long x2, int x3) {
-                    return await futures.createInt() + x1 + x2 + x3;
-                }
-                
-                int64Storage.add(await func(100, 200, 300));
-                """;
+        String code =
+                "async long func(int x1, long x2, int x3) {\n" +
+                "    return await futures.createInt() + x1 + x2 + x3;\n" +
+                "}\n" +
+                "\n" +
+                "int64Storage.add(await func(100, 200, 300));\n";
 
         AsyncRunnable program = compileAsync(ApiRoot.class, code);
         CompletableFuture<?> future = program.run();
@@ -360,23 +347,22 @@ public class AsyncFunctionTests extends ComparatorTest {
         Assertions.assertFalse(future.isDone());
 
         ApiRoot.futures.getInt(0).complete(23);
-        Assertions.assertIterableEquals(ApiRoot.int64Storage.list, List.of(623L));
+        Assertions.assertIterableEquals(ApiRoot.int64Storage.list, Lists.of(623L));
         Assertions.assertTrue(future.isDone());
     }
 
     @Test
     public void nonAsyncMainContextTest() {
-        String code = """
-                async int func1(int x) {
-                    return await futures.createInt() + x;
-                }
-                
-                async void func2() {
-                    intStorage.add(await func1(10) + await func1(100));
-                }
-                
-                func2();
-                """;
+        String code =
+                "async int func1(int x) {\n" +
+                "    return await futures.createInt() + x;\n" +
+                "}\n" +
+                "\n" +
+                "async void func2() {\n" +
+                "    intStorage.add(await func1(10) + await func1(100));\n" +
+                "}\n" +
+                "\n" +
+                "func2();\n";
 
         Runnable program = compile(ApiRoot.class, code);
         program.run();
@@ -385,164 +371,156 @@ public class AsyncFunctionTests extends ComparatorTest {
 
         ApiRoot.futures.getInt(0).complete(1);
         ApiRoot.futures.getInt(1).complete(2);
-        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(113));
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, Lists.of(113));
     }
 
     @Test
     public void privateFieldFromAsyncClassMethodTest() {
-        String code = """
-                class Class {
-                    private int value;
-
-                    constructor(int value) {
-                        this.value = value;
-                    }
-
-                    async int getValue() => value;
-                }
-
-                intStorage.add(await new Class(17).getValue());
-                """;
+        String code =
+                "class Class {\n" +
+                "    private int value;\n" +
+                "\n" +
+                "    constructor(int value) {\n" +
+                "        this.value = value;\n" +
+                "    }\n" +
+                "\n" +
+                "    async int getValue() => value;\n" +
+                "}\n" +
+                "\n" +
+                "intStorage.add(await new Class(17).getValue());\n";
 
         AsyncRunnable program = compileAsync(ApiRoot.class, code);
         CompletableFuture<?> future = program.run();
 
         Assertions.assertDoesNotThrow(future::join);
-        Assertions.assertIterableEquals(List.of(17), ApiRoot.intStorage.list);
+        Assertions.assertIterableEquals(Lists.of(17), ApiRoot.intStorage.list);
     }
 
     @Test
     public void protectedFieldFromAsyncClassMethodTest() {
-        String code = """
-                class Class {
-                    protected int value;
-
-                    constructor(int value) {
-                        this.value = value;
-                    }
-
-                    async int getValue() => value;
-                }
-
-                intStorage.add(await new Class(23).getValue());
-                """;
+        String code =
+                "class Class {\n" +
+                "    protected int value;\n" +
+                "\n" +
+                "    constructor(int value) {\n" +
+                "        this.value = value;\n" +
+                "    }\n" +
+                "\n" +
+                "    async int getValue() => value;\n" +
+                "}\n" +
+                "\n" +
+                "intStorage.add(await new Class(23).getValue());\n";
 
         AsyncRunnable program = compileAsync(ApiRoot.class, code);
         CompletableFuture<?> future = program.run();
 
         Assertions.assertDoesNotThrow(future::join);
-        Assertions.assertIterableEquals(List.of(23), ApiRoot.intStorage.list);
+        Assertions.assertIterableEquals(Lists.of(23), ApiRoot.intStorage.list);
     }
 
     @Test
     public void privateMethodFromAsyncClassMethodTest() {
-        String code = """
-                class Class {
-                    private int getValue() => 31;
-
-                    async int execute() => getValue();
-                }
-
-                intStorage.add(await new Class().execute());
-                """;
+        String code =
+                "class Class {\n" +
+                "    private int getValue() => 31;\n" +
+                "\n" +
+                "    async int execute() => getValue();\n" +
+                "}\n" +
+                "\n" +
+                "intStorage.add(await new Class().execute());\n";
 
         AsyncRunnable program = compileAsync(ApiRoot.class, code);
         CompletableFuture<?> future = program.run();
 
         Assertions.assertDoesNotThrow(future::join);
-        Assertions.assertIterableEquals(List.of(31), ApiRoot.intStorage.list);
+        Assertions.assertIterableEquals(Lists.of(31), ApiRoot.intStorage.list);
     }
 
     @Test
     public void protectedMethodFromAsyncClassMethodTest() {
-        String code = """
-                class Class {
-                    protected int getValue() => 37;
-
-                    async int execute() => getValue();
-                }
-
-                intStorage.add(await new Class().execute());
-                """;
+        String code =
+                "class Class {\n" +
+                "    protected int getValue() => 37;\n" +
+                "\n" +
+                "    async int execute() => getValue();\n" +
+                "}\n" +
+                "\n" +
+                "intStorage.add(await new Class().execute());\n";
 
         AsyncRunnable program = compileAsync(ApiRoot.class, code);
         CompletableFuture<?> future = program.run();
 
         Assertions.assertDoesNotThrow(future::join);
-        Assertions.assertIterableEquals(List.of(37), ApiRoot.intStorage.list);
+        Assertions.assertIterableEquals(Lists.of(37), ApiRoot.intStorage.list);
     }
 
     @Test
     public void protectedJavaFieldFromAsyncClassMethodTest() {
-        String code = """
-                class Class : Java<com.zergatul.scripting.tests.compiler.AsyncFunctionTests$ProtectedBase> {
-                    async int getValue() => value;
-                }
-
-                intStorage.add(await new Class().getValue());
-                """;
+        String code =
+                "class Class : Java<com.zergatul.scripting.tests.compiler.AsyncFunctionTests$ProtectedBase> {\n" +
+                "    async int getValue() => value;\n" +
+                "}\n" +
+                "\n" +
+                "intStorage.add(await new Class().getValue());\n";
 
         AsyncRunnable program = compileAsync(ApiRoot.class, code);
         CompletableFuture<?> future = program.run();
 
         Assertions.assertDoesNotThrow(future::join);
-        Assertions.assertIterableEquals(List.of(43), ApiRoot.intStorage.list);
+        Assertions.assertIterableEquals(Lists.of(43), ApiRoot.intStorage.list);
     }
 
     @Test
     public void protectedJavaMethodFromAsyncClassMethodTest() {
-        String code = """
-                class Class : Java<com.zergatul.scripting.tests.compiler.AsyncFunctionTests$ProtectedBase> {
-                    async int execute() => getProtectedValue();
-                }
-
-                intStorage.add(await new Class().execute());
-                """;
+        String code =
+                "class Class : Java<com.zergatul.scripting.tests.compiler.AsyncFunctionTests$ProtectedBase> {\n" +
+                "    async int execute() => getProtectedValue();\n" +
+                "}\n" +
+                "\n" +
+                "intStorage.add(await new Class().execute());\n";
 
         AsyncRunnable program = compileAsync(ApiRoot.class, code);
         CompletableFuture<?> future = program.run();
 
         Assertions.assertDoesNotThrow(future::join);
-        Assertions.assertIterableEquals(List.of(47), ApiRoot.intStorage.list);
+        Assertions.assertIterableEquals(Lists.of(47), ApiRoot.intStorage.list);
     }
 
     @Test
     public void protectedJavaBaseMethodFromAsyncClassMethodTest() {
-        String code = """
-                class Class : Java<com.zergatul.scripting.tests.compiler.AsyncFunctionTests$ProtectedBase> {
-                    async int execute() => base.getProtectedValue();
-                }
-
-                intStorage.add(await new Class().execute());
-                """;
+        String code =
+                "class Class : Java<com.zergatul.scripting.tests.compiler.AsyncFunctionTests$ProtectedBase> {\n" +
+                "    async int execute() => base.getProtectedValue();\n" +
+                "}\n" +
+                "\n" +
+                "intStorage.add(await new Class().execute());\n";
 
         AsyncRunnable program = compileAsync(ApiRoot.class, code);
         CompletableFuture<?> future = program.run();
 
         Assertions.assertDoesNotThrow(future::join);
-        Assertions.assertIterableEquals(List.of(47), ApiRoot.intStorage.list);
+        Assertions.assertIterableEquals(Lists.of(47), ApiRoot.intStorage.list);
     }
 
     @Test
     public void nonPublicMembersAfterAwaitFromAsyncClassMethodTest() {
-        String code = """
-                class Class : Java<com.zergatul.scripting.tests.compiler.AsyncFunctionTests$ProtectedBase> {
-                    private int ownValue;
-
-                    constructor(int value) {
-                        ownValue = value;
-                    }
-
-                    private int getOwnValue() => ownValue + 2;
-
-                    async int execute() {
-                        await futures.create();
-                        return ownValue + getOwnValue() + value + base.getProtectedValue();
-                    }
-                }
-
-                intStorage.add(await new Class(5).execute());
-                """;
+        String code =
+                "class Class : Java<com.zergatul.scripting.tests.compiler.AsyncFunctionTests$ProtectedBase> {\n" +
+                "    private int ownValue;\n" +
+                "\n" +
+                "    constructor(int value) {\n" +
+                "        ownValue = value;\n" +
+                "    }\n" +
+                "\n" +
+                "    private int getOwnValue() => ownValue + 2;\n" +
+                "\n" +
+                "    async int execute() {\n" +
+                "        await futures.create();\n" +
+                "        return ownValue + getOwnValue() + value + base.getProtectedValue();\n" +
+                "    }\n" +
+                "}\n" +
+                "\n" +
+                "intStorage.add(await new Class(5).execute());\n";
 
         AsyncRunnable program = compileAsync(ApiRoot.class, code);
         CompletableFuture<?> future = program.run();
@@ -550,59 +528,57 @@ public class AsyncFunctionTests extends ComparatorTest {
         Assertions.assertFalse(future.isDone());
         ApiRoot.futures.get(0).complete(null);
         Assertions.assertDoesNotThrow(future::join);
-        Assertions.assertIterableEquals(List.of(102), ApiRoot.intStorage.list);
+        Assertions.assertIterableEquals(Lists.of(102), ApiRoot.intStorage.list);
     }
 
     @Test
     public void privateConstructorFromAsyncClassMethodTest() {
-        String code = """
-                class Class {
-                    private int value;
-
-                    public constructor() : this(0) {}
-
-                    private constructor(int value) {
-                        this.value = value;
-                    }
-
-                    private int getValue() => value;
-
-                    async int createAndGetValue() => new Class(41).getValue();
-                }
-
-                intStorage.add(await new Class().createAndGetValue());
-                """;
+        String code =
+                "class Class {\n" +
+                "    private int value;\n" +
+                "\n" +
+                "    public constructor() : this(0) {}\n" +
+                "\n" +
+                "    private constructor(int value) {\n" +
+                "        this.value = value;\n" +
+                "    }\n" +
+                "\n" +
+                "    private int getValue() => value;\n" +
+                "\n" +
+                "    async int createAndGetValue() => new Class(41).getValue();\n" +
+                "}\n" +
+                "\n" +
+                "intStorage.add(await new Class().createAndGetValue());\n";
 
         AsyncRunnable program = compileAsync(ApiRoot.class, code);
         CompletableFuture<?> future = program.run();
 
         Assertions.assertDoesNotThrow(future::join);
-        Assertions.assertIterableEquals(List.of(41), ApiRoot.intStorage.list);
+        Assertions.assertIterableEquals(Lists.of(41), ApiRoot.intStorage.list);
     }
 
     @Test
     public void privateAndProtectedMembersFromNestedLambdaAfterAwaitTest() {
-        String code = """
-                typealias Run = Java<com.zergatul.scripting.tests.compiler.helpers.Run>;
-
-                class Class : Java<com.zergatul.scripting.tests.compiler.AsyncFunctionTests$ProtectedBase> {
-                    private int ownValue;
-
-                    async int execute() {
-                        await futures.create();
-                        let self = this;
-                        new Run().once(() => {
-                            new Run().once(() => {
-                                self.ownValue += self.value;
-                                self.ownValue += self.getProtectedValue();
-                            });
-                        });
-                        return ownValue;
-                    }
-                }
-
-                intStorage.add(await new Class().execute());
-                """;
+        String code =
+                "typealias Run = Java<com.zergatul.scripting.tests.compiler.helpers.Run>;\n" +
+                "\n" +
+                "class Class : Java<com.zergatul.scripting.tests.compiler.AsyncFunctionTests$ProtectedBase> {\n" +
+                "    private int ownValue;\n" +
+                "\n" +
+                "    async int execute() {\n" +
+                "        await futures.create();\n" +
+                "        let self = this;\n" +
+                "        new Run().once(() => {\n" +
+                "            new Run().once(() => {\n" +
+                "                self.ownValue += self.value;\n" +
+                "                self.ownValue += self.getProtectedValue();\n" +
+                "            });\n" +
+                "        });\n" +
+                "        return ownValue;\n" +
+                "    }\n" +
+                "}\n" +
+                "\n" +
+                "intStorage.add(await new Class().execute());\n";
 
         AsyncRunnable program = compileAsync(ApiRoot.class, code);
         CompletableFuture<?> future = program.run();
@@ -610,32 +586,31 @@ public class AsyncFunctionTests extends ComparatorTest {
         Assertions.assertFalse(future.isDone());
         ApiRoot.futures.get(0).complete(null);
         Assertions.assertDoesNotThrow(future::join);
-        Assertions.assertIterableEquals(List.of(90), ApiRoot.intStorage.list);
+        Assertions.assertIterableEquals(Lists.of(90), ApiRoot.intStorage.list);
     }
 
     @Test
     public void privateMembersFromLambdaSurvivingAwaitTest() {
-        String code = """
-                typealias Runnable = Java<java.lang.Runnable>;
-
-                class Class {
-                    private int value;
-
-                    private void setValue(int value) {
-                        this.value = value;
-                    }
-
-                    async int execute() {
-                        let self = this;
-                        Runnable action = () => self.setValue(73);
-                        await futures.create();
-                        action.run();
-                        return value;
-                    }
-                }
-
-                intStorage.add(await new Class().execute());
-                """;
+        String code =
+                "typealias Runnable = Java<java.lang.Runnable>;\n" +
+                "\n" +
+                "class Class {\n" +
+                "    private int value;\n" +
+                "\n" +
+                "    private void setValue(int value) {\n" +
+                "        this.value = value;\n" +
+                "    }\n" +
+                "\n" +
+                "    async int execute() {\n" +
+                "        let self = this;\n" +
+                "        Runnable action = () => self.setValue(73);\n" +
+                "        await futures.create();\n" +
+                "        action.run();\n" +
+                "        return value;\n" +
+                "    }\n" +
+                "}\n" +
+                "\n" +
+                "intStorage.add(await new Class().execute());\n";
 
         AsyncRunnable program = compileAsync(ApiRoot.class, code);
         CompletableFuture<?> future = program.run();
@@ -643,17 +618,16 @@ public class AsyncFunctionTests extends ComparatorTest {
         Assertions.assertFalse(future.isDone());
         ApiRoot.futures.get(0).complete(null);
         Assertions.assertDoesNotThrow(future::join);
-        Assertions.assertIterableEquals(List.of(73), ApiRoot.intStorage.list);
+        Assertions.assertIterableEquals(Lists.of(73), ApiRoot.intStorage.list);
     }
 
     @Test
     public void missingAwaitTest() {
-        String code = """
-                async int count() => 1;
-                int x = count();
-                """;
+        String code =
+                "async int count() => 1;\n" +
+                "int x = count();\n";
 
-        comparator.assertEquals(List.of(
+        comparator.assertEquals(Lists.of(
                 new DiagnosticMessage(BinderErrors.CannotImplicitlyConvert, new SingleLineTextRange(2, 9, 32, 7), "Future<int>", "int")),
                 getDiagnostics(ApiRoot.class, code));
     }

@@ -4,6 +4,7 @@ import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
 import com.zergatul.scripting.parser.nodes.NameExpressionNode;
 import com.zergatul.scripting.type.MethodReference;
+import com.zergatul.scripting.utility.Lists;
 
 import java.util.List;
 
@@ -32,6 +33,6 @@ public class BoundMethodNode extends BoundNode {
 
     @Override
     public List<BoundNode> getChildren() {
-        return List.of();
+        return Lists.of();
     }
 }

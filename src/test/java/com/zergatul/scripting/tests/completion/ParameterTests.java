@@ -2,11 +2,11 @@ package com.zergatul.scripting.tests.completion;
 
 import com.zergatul.scripting.tests.compiler.helpers.IntStorage;
 import com.zergatul.scripting.tests.completion.helpers.CompletionTestHelper;
-import com.zergatul.scripting.tests.completion.helpers.Lists;
 import com.zergatul.scripting.tests.completion.helpers.TestCompletionContext;
 import com.zergatul.scripting.tests.completion.suggestions.FunctionSuggestion;
 import com.zergatul.scripting.tests.completion.suggestions.StaticConstantSuggestion;
 import com.zergatul.scripting.tests.completion.suggestions.Suggestion;
+import com.zergatul.scripting.utility.Lists;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -18,12 +18,13 @@ public class ParameterTests {
 
     @Test
     public void functionParameterTest1() {
-        assertSuggestions("""
-                void f(int a) {}
-                
-                f(<cursor>)
-                """,
-                context -> Lists.of(
+        String code =
+                "void f(int a) {}\n" +
+                "                \n" +
+                "f(<cursor>)\n";
+        assertSuggestions(
+                code,
+                context -> Lists.from(
                         expressions,
                         new StaticConstantSuggestion(context, "intStorage"),
                         new FunctionSuggestion(context, "f")));
@@ -31,12 +32,13 @@ public class ParameterTests {
 
     @Test
     public void functionParameterTest2() {
-        assertSuggestions("""
-                void f(int a) {}
-                
-                f(100, <cursor>)
-                """,
-                context -> Lists.of(
+        String code =
+                "void f(int a) {}\n" +
+                "                \n" +
+                "f(100, <cursor>)\n";
+        assertSuggestions(
+                code,
+                context -> Lists.from(
                         expressions,
                         new StaticConstantSuggestion(context, "intStorage"),
                         new FunctionSuggestion(context, "f")));
@@ -44,20 +46,22 @@ public class ParameterTests {
 
     @Test
     public void methodParameterTest1() {
-        assertSuggestions("""
-                intStorage.add(<cursor>)
-                """,
-                context -> Lists.of(
+        String code =
+                "intStorage.add(<cursor>)\n";
+        assertSuggestions(
+                code,
+                context -> Lists.from(
                         expressions,
                         new StaticConstantSuggestion(context, "intStorage")));
     }
 
     @Test
     public void methodParameterTest2() {
-        assertSuggestions("""
-                intStorage.add("a", <cursor>)
-                """,
-                context -> Lists.of(
+        String code =
+                "intStorage.add(\"a\", <cursor>)\n";
+        assertSuggestions(
+                code,
+                context -> Lists.from(
                         expressions,
                         new StaticConstantSuggestion(context, "intStorage")));
     }

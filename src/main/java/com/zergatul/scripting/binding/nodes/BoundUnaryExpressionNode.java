@@ -4,6 +4,7 @@ import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
 import com.zergatul.scripting.parser.SyntaxFactory;
 import com.zergatul.scripting.parser.nodes.UnaryExpressionNode;
+import com.zergatul.scripting.utility.Lists;
 
 import java.util.List;
 
@@ -41,6 +42,6 @@ public class BoundUnaryExpressionNode extends BoundExpressionNode {
 
     @Override
     public List<BoundNode> getChildren() {
-        return List.of(operator, operand);
+        return Lists.of(operator, operand);
     }
 }

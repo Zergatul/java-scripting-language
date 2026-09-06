@@ -2,6 +2,7 @@ package com.zergatul.scripting.binding.nodes;
 
 import com.zergatul.scripting.binding.BinderTreeVisitor;
 import com.zergatul.scripting.parser.nodes.ThrowStatementNode;
+import com.zergatul.scripting.utility.Lists;
 import org.jspecify.annotations.Nullable;
 
 import java.util.List;
@@ -31,6 +32,6 @@ public class BoundThrowStatementNode extends BoundStatementNode {
 
     @Override
     public List<BoundNode> getChildren() {
-        return expression != null ?  List.of(expression) : List.of();
+        return expression != null ?  Lists.of(expression) : Lists.of();
     }
 }

@@ -3,6 +3,7 @@ package com.zergatul.scripting.binding.nodes;
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
 import com.zergatul.scripting.type.operation.CastOperation;
+import com.zergatul.scripting.utility.Lists;
 
 import java.util.List;
 
@@ -33,6 +34,6 @@ public class BoundImplicitCastExpressionNode extends BoundExpressionNode {
 
     @Override
     public List<BoundNode> getChildren() {
-        return List.of(operand);
+        return Lists.of(operand);
     }
 }

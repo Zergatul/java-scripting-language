@@ -10,186 +10,115 @@ public class VariableNameTests {
 
     @Test
     public void unitVariableTest() {
-        Runnable program = compile("""
-                let str = api.getNull();
-                str = str.substring(10);
-                """);
-
-        try {
-            program.run();
-        } catch (NullPointerException exception) {
-            Assertions.assertEquals(exception.getMessage(), "Cannot invoke \"String.substring(int)\" because \"str\" is null");
-            return;
-        }
-
-        Assertions.fail();
+        String code =
+                "let str = api.getNull();\n" +
+                "str = str.substring(10);\n";
+        Runnable program = compile(code);
+        Assertions.assertThrows(NullPointerException.class, program::run);
     }
 
     @Test
     public void functionVariableTest() {
-        Runnable program = compile("""
-                void func() {
-                    string x = api.getNull();
-                    x.substring(10);
-                }
-                
-                func();
-                """);
-
-        try {
-            program.run();
-        } catch (NullPointerException exception) {
-            Assertions.assertEquals(exception.getMessage(), "Cannot invoke \"String.substring(int)\" because \"x\" is null");
-            return;
-        }
-
-        Assertions.fail();
+        String code =
+                "void func() {\n" +
+                "    string x = api.getNull();\n" +
+                "    x.substring(10);\n" +
+                "}\n" +
+                "\n" +
+                "func();\n";
+        Runnable program = compile(code);
+        Assertions.assertThrows(NullPointerException.class, program::run);
     }
 
     @Test
     public void functionParameterTest() {
-        Runnable program = compile("""
-                void func(string abc) {
-                    abc.substring(10);
-                }
-                
-                func(api.getNull());
-                """);
-
-        try {
-            program.run();
-        } catch (NullPointerException exception) {
-            Assertions.assertEquals(exception.getMessage(), "Cannot invoke \"String.substring(int)\" because \"abc\" is null");
-            return;
-        }
-
-        Assertions.fail();
+        String code =
+                "void func(string abc) {\n" +
+                "    abc.substring(10);\n" +
+                "}\n" +
+                "\n" +
+                "func(api.getNull());\n";
+        Runnable program = compile(code);
+        Assertions.assertThrows(NullPointerException.class, program::run);
     }
 
     @Test
     public void variableOverlayTest1() {
-        Runnable program = compile("""
-                string getString(boolean isNull) => isNull ? api.getNull() : "";
-                
-                {
-                    string str1 = getString(true);
-                    str1.substring(0);
-                }
-                {
-                    string str2 = getString(false);
-                    str2.substring(0);
-                }
-                """);
-
-        try {
-            program.run();
-        } catch (NullPointerException exception) {
-            Assertions.assertEquals(exception.getMessage(), "Cannot invoke \"String.substring(int)\" because \"str1\" is null");
-            return;
-        }
-
-        Assertions.fail();
+        String code =
+                "string getString(boolean isNull) => isNull ? api.getNull() : \"\";\n" +
+                "\n" +
+                "{\n" +
+                "    string str1 = getString(true);\n" +
+                "    str1.substring(0);\n" +
+                "}\n" +
+                "{\n" +
+                "    string str2 = getString(false);\n" +
+                "    str2.substring(0);\n" +
+                "}\n";
+        Runnable program = compile(code);
+        Assertions.assertThrows(NullPointerException.class, program::run);
     }
 
     @Test
     public void variableOverlayTest2() {
-        Runnable program = compile("""
-                string getString(boolean isNull) => isNull ? api.getNull() : "";
-                
-                {
-                    string str1 = getString(false);
-                    str1.substring(0);
-                }
-                {
-                    string str2 = getString(true);
-                    str2.substring(0);
-                }
-                """);
+        String code =
+                "string getString(boolean isNull) => isNull ? api.getNull() : \"\";\n" +
+                "\n" +
+                "{\n" +
+                "    string str1 = getString(false);\n" +
+                "    str1.substring(0);\n" +
+                "}\n" +
+                "{\n" +
+                "    string str2 = getString(true);\n" +
+                "    str2.substring(0);\n" +
+                "}\n";
 
-        try {
-            program.run();
-        } catch (NullPointerException exception) {
-            Assertions.assertEquals(exception.getMessage(), "Cannot invoke \"String.substring(int)\" because \"str2\" is null");
-            return;
-        }
-
-        Assertions.fail();
+        Runnable program = compile(code);
+        Assertions.assertThrows(NullPointerException.class, program::run);
     }
 
     @Test
     public void forLoopTest() {
-        Runnable program = compile("""
-                let array = [api.getNull()];
-                for (let i = 0; i < array.length; i++) {
-                    let element = array[i];
-                    element.substring(0);
-                }
-                """);
-
-        try {
-            program.run();
-        } catch (NullPointerException exception) {
-            Assertions.assertEquals(exception.getMessage(), "Cannot invoke \"String.substring(int)\" because \"element\" is null");
-            return;
-        }
-
-        Assertions.fail();
+        String code =
+                "let array = [api.getNull()];\n" +
+                "for (let i = 0; i < array.length; i++) {\n" +
+                "    let element = array[i];\n" +
+                "    element.substring(0);\n" +
+                "}\n";
+        Runnable program = compile(code);
+        Assertions.assertThrows(NullPointerException.class, program::run);
     }
 
     @Test
     public void forEachLoopTest() {
-        Runnable program = compile("""
-                let array = [api.getNull()];
-                foreach (let element in array) {
-                    element.substring(0);
-                }
-                """);
-
-        try {
-            program.run();
-        } catch (NullPointerException exception) {
-            Assertions.assertEquals(exception.getMessage(), "Cannot invoke \"String.substring(int)\" because \"element\" is null");
-            return;
-        }
-
-        Assertions.fail();
+        String code =
+                "let array = [api.getNull()];\n" +
+                "foreach (let element in array) {\n" +
+                "    element.substring(0);\n" +
+                "}\n";
+        Runnable program = compile(code);
+        Assertions.assertThrows(NullPointerException.class, program::run);
     }
 
     @Test
     public void whileLoopTest() {
-        Runnable program = compile("""
-                let myStr = api.getNull();
-                while (true) {
-                    myStr.substring(0);
-                }
-                """);
-
-        try {
-            program.run();
-        } catch (NullPointerException exception) {
-            Assertions.assertEquals(exception.getMessage(), "Cannot invoke \"String.substring(int)\" because \"myStr\" is null");
-            return;
-        }
-
-        Assertions.fail();
+        String code =
+                "let myStr = api.getNull();\n" +
+                "while (true) {\n" +
+                "    myStr.substring(0);\n" +
+                "}\n";
+        Runnable program = compile(code);
+        Assertions.assertThrows(NullPointerException.class, program::run);
     }
 
     @Test
     public void lambdaTest() {
-        Runnable program = compile("""
-                void process(fn<string => void> func) => func(api.getNull());
-                
-                process(sss => sss.substring(10));
-                """);
-
-        try {
-            program.run();
-        } catch (NullPointerException exception) {
-            Assertions.assertEquals(exception.getMessage(), "Cannot invoke \"String.substring(int)\" because \"sss\" is null");
-            return;
-        }
-
-        Assertions.fail();
+        String code =
+                "void process(fn<string => void> func) => func(api.getNull());\n" +
+                "\n" +
+                "process(sss => sss.substring(10));\n";
+        Runnable program = compile(code);
+        Assertions.assertThrows(NullPointerException.class, program::run);
     }
 
     private static Runnable compile(String code) {

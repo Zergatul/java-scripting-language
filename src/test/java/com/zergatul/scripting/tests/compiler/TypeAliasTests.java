@@ -1,5 +1,7 @@
 package com.zergatul.scripting.tests.compiler;
 
+import com.zergatul.scripting.utility.Lists;
+
 import com.zergatul.scripting.DiagnosticMessage;
 import com.zergatul.scripting.SingleLineTextRange;
 import com.zergatul.scripting.binding.BinderErrors;
@@ -25,101 +27,94 @@ public class TypeAliasTests extends ComparatorTest {
 
     @Test
     public void variableTest() {
-        String code = """
-                typealias Int = int;
-                
-                Int i = 123;
-                intStorage.add(i);
-                """;
+        String code =
+                "typealias Int = int;\n" +
+                "\n" +
+                "Int i = 123;\n" +
+                "intStorage.add(i);\n";
 
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
-        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(123));
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, Lists.of(123));
     }
 
     @Test
     public void parameterTest() {
-        String code = """
-                typealias str = string;
-                str double(str s) => s + s;
-                
-                stringStorage.add(double("x"));
-                """;
+        String code =
+                "typealias str = string;\n" +
+                "str double(str s) => s + s;\n" +
+                "\n" +
+                "stringStorage.add(double(\"x\"));\n";
 
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
-        Assertions.assertIterableEquals(ApiRoot.stringStorage.list, List.of("xx"));
+        Assertions.assertIterableEquals(ApiRoot.stringStorage.list, Lists.of("xx"));
     }
 
     @Test
     public void javaTypeTest() {
-        String code = """
-                typealias Class1 = Java<com.zergatul.scripting.tests.compiler.TypeAliasTests$Class1>;
-                typealias Class2 = Java<com.zergatul.scripting.tests.compiler.TypeAliasTests$Class2>;
-                
-                let c1 = new Class1();
-                let c2 = new Class2();
-                stringStorage.add(c1.getValue() + c2.getValue());
-                """;
+        String code =
+                "typealias Class1 = Java<com.zergatul.scripting.tests.compiler.TypeAliasTests$Class1>;\n" +
+                "typealias Class2 = Java<com.zergatul.scripting.tests.compiler.TypeAliasTests$Class2>;\n" +
+                "\n" +
+                "let c1 = new Class1();\n" +
+                "let c2 = new Class2();\n" +
+                "stringStorage.add(c1.getValue() + c2.getValue());\n";
 
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
-        Assertions.assertIterableEquals(ApiRoot.stringStorage.list, List.of("Value1Value2"));
+        Assertions.assertIterableEquals(ApiRoot.stringStorage.list, Lists.of("Value1Value2"));
     }
 
     @Test
     public void javaTypeStaticMemberTest() {
-        String code = """
-                typealias Class1 = Java<com.zergatul.scripting.tests.compiler.TypeAliasTests$Class1>;
-                typealias Class2 = Java<com.zergatul.scripting.tests.compiler.TypeAliasTests$Class2>;
-                
-                stringStorage.add(Class1.FIELD_S);
-                stringStorage.add(Class1.staticMethod());
-                """;
+        String code =
+                "typealias Class1 = Java<com.zergatul.scripting.tests.compiler.TypeAliasTests$Class1>;\n" +
+                "typealias Class2 = Java<com.zergatul.scripting.tests.compiler.TypeAliasTests$Class2>;\n" +
+                "\n" +
+                "stringStorage.add(Class1.FIELD_S);\n" +
+                "stringStorage.add(Class1.staticMethod());\n";
 
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
-        Assertions.assertIterableEquals(ApiRoot.stringStorage.list, List.of("Str", "Static"));
+        Assertions.assertIterableEquals(ApiRoot.stringStorage.list, Lists.of("Str", "Static"));
     }
 
     @Test
     public void selfReferenceTest() {
-        String code = """
-                typealias MyType = MyType;
-                """;
+        String code =
+                "typealias MyType = MyType;\n";
 
         comparator.assertEquals(
-                List.of(
+                Lists.of(
                         new DiagnosticMessage(BinderErrors.TypeAliasLoop, new SingleLineTextRange(1, 1, 0, 26))),
                 getDiagnostics(ApiRoot.class, code));
     }
 
     @Test
     public void circularReferenceTest() {
-        String code = """
-                typealias MyType1 = MyType2;
-                typealias MyType2 = MyType1;
-                """;
+        String code =
+                "typealias MyType1 = MyType2;\n" +
+                "typealias MyType2 = MyType1;\n";
 
         comparator.assertEquals(
-                List.of(
+                Lists.of(
                         new DiagnosticMessage(BinderErrors.TypeAliasLoop, new SingleLineTextRange(2, 1, 29, 28))),
                 getDiagnostics(ApiRoot.class, code));
     }
 
     @Test
     public void redeclarationTest() {
-        String code = """
-                typealias MyType = int;
-                typealias MyType = string;
-                """;
+        String code =
+                "typealias MyType = int;\n" +
+                "typealias MyType = string;\n";
 
         comparator.assertEquals(
-                List.of(
+                Lists.of(
                         new DiagnosticMessage(BinderErrors.SymbolAlreadyDeclared, new SingleLineTextRange(2, 11, 34, 6), "MyType")),
                 getDiagnostics(ApiRoot.class, code));
     }

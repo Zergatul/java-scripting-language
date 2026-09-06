@@ -8,6 +8,7 @@ import com.zergatul.scripting.compiler.CompilationParameters;
 import com.zergatul.scripting.binding.nodes.BoundNodeType;
 import com.zergatul.scripting.symbols.ClassSymbol;
 import com.zergatul.scripting.type.*;
+import com.zergatul.scripting.utility.Lists;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -35,7 +36,7 @@ public class TypesCompletionProvider<T> extends AbstractCompletionProvider<T> {
         if (context.canExpression() || context.canType()) {
             return getTypes(parameters, output);
         } else {
-            return List.of();
+            return Lists.of();
         }
     }
 

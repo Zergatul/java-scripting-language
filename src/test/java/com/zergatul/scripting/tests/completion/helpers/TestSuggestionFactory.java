@@ -1,5 +1,7 @@
 package com.zergatul.scripting.tests.completion.helpers;
 
+import com.zergatul.scripting.utility.Lists;
+
 import com.zergatul.scripting.completion.SuggestionFactory;
 import com.zergatul.scripting.lexer.TokenType;
 import com.zergatul.scripting.symbols.*;
@@ -20,7 +22,7 @@ public class TestSuggestionFactory implements SuggestionFactory<Suggestion> {
 
     @Override
     public List<Suggestion> getTypeSuggestion(SType type) {
-        return List.of(new TypeSuggestion(type));
+        return Lists.of(new TypeSuggestion(type));
     }
 
     @Override

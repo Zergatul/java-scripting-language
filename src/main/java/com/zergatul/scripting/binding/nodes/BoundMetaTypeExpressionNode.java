@@ -5,6 +5,7 @@ import com.zergatul.scripting.binding.BinderTreeVisitor;
 import com.zergatul.scripting.parser.nodes.MetaTypeExpressionNode;
 import com.zergatul.scripting.runtime.RuntimeType;
 import com.zergatul.scripting.type.SType;
+import com.zergatul.scripting.utility.Lists;
 
 import java.util.List;
 
@@ -35,6 +36,6 @@ public class BoundMetaTypeExpressionNode extends BoundExpressionNode {
 
     @Override
     public List<BoundNode> getChildren() {
-        return List.of(type);
+        return Lists.of(type);
     }
 }

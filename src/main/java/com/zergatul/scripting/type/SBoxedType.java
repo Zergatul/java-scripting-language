@@ -7,12 +7,14 @@ import com.zergatul.scripting.compiler.CompilerContext;
 import com.zergatul.scripting.type.operation.BinaryOperation;
 import com.zergatul.scripting.type.operation.CastOperation;
 import com.zergatul.scripting.type.operation.UnaryOperation;
+import com.zergatul.scripting.utility.Lists;
 import org.objectweb.asm.MethodVisitor;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Consumer;
 
 public class SBoxedType extends SReferenceType {
 
@@ -26,10 +28,12 @@ public class SBoxedType extends SReferenceType {
     }
 
     public static boolean match(SType type1, SType type2) {
-        if (type1 instanceof SBoxedType boxed) {
+        if (type1 instanceof SBoxedType) {
+            SBoxedType boxed = (SBoxedType) type1;
             type1 = boxed.underlying;
         }
-        if (type2 instanceof SBoxedType boxed) {
+        if (type2 instanceof SBoxedType) {
+            SBoxedType boxed = (SBoxedType) type2;
             type2 = boxed.underlying;
         }
         return type1.equals(type2);
@@ -42,11 +46,11 @@ public class SBoxedType extends SReferenceType {
 
     @Override
     public List<MethodReference> getDeclaredMethods() {
-        return underlying.getDeclaredMethods().stream()
-                .filter(method -> !method.isStatic())
-                .map(method -> new WrappedMethodReference(this, method))
-                .map(wrapped -> (MethodReference) wrapped)
-                .toList();
+        return Lists.from(
+                underlying.getDeclaredMethods().stream()
+                        .filter(method -> !method.isStatic())
+                        .map(method -> new WrappedMethodReference(this, method))
+                        .map(wrapped -> (MethodReference) wrapped));
     }
 
     @Override
@@ -62,7 +66,9 @@ public class SBoxedType extends SReferenceType {
     public List<BinaryOperation> getBinaryOperations() {
         List<BinaryOperation> operations = new ArrayList<>();
         for (BinaryOperation operation : underlying.getBinaryOperations()) {
-            if (operation.getLeft() instanceof SValueType leftValueType && operation.getRight() instanceof SValueType rightValueType) {
+            if (operation.getLeft() instanceof SValueType && operation.getRight() instanceof SValueType) {
+                SValueType leftValueType = (SValueType) operation.getLeft();
+                SValueType rightValueType = (SValueType) operation.getRight();
                 // convert <value1> <op> <value2> to <boxed1> <op> <boxed2>
                 // because binary operation resolver doesn't do implicit casts on both arguments
                 operations.add(new BinaryOperation(operation.getOperator(), operation.getResultType(), leftValueType.getBoxed(), rightValueType.getBoxed()) {
@@ -168,10 +174,10 @@ public class SBoxedType extends SReferenceType {
         }
 
         @Override
-        public void compileInvoke(MethodVisitor visitor, CompilerContext context, Runnable compileArguments) {
-            compileArguments.run();
+        public void compileInvoke(MethodVisitor visitor, CompilerContext context, Consumer<CompilerContext> compileArguments) {
+            compileArguments.accept(context);
             boxed.underlying.compileUnboxing(visitor);
-            underlying.compileInvoke(visitor, context, () -> {});
+            underlying.compileInvoke(visitor, context, innerContext -> {});
         }
 
         @Override

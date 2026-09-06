@@ -1,9 +1,9 @@
 package com.zergatul.scripting.tests.completion;
 
 import com.zergatul.scripting.tests.completion.helpers.CompletionTestHelper;
-import com.zergatul.scripting.tests.completion.helpers.Lists;
 import com.zergatul.scripting.tests.completion.helpers.TestCompletionContext;
 import com.zergatul.scripting.tests.completion.suggestions.*;
+import com.zergatul.scripting.utility.Lists;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -15,108 +15,118 @@ public class LoopTests {
 
     @Test
     public void forLoopTest1() {
-        assertSuggestions("""
-                for (let i = 0; i < 3; i++) {
-                    <cursor>
-                }
-                """,
-                context -> Lists.of(
+        String code =
+                "for (let i = 0; i < 3; i++) {\n" +
+                "    <cursor>\n" +
+                "}\n";
+        assertSuggestions(
+                code,
+                context -> Lists.from(
                         loopStatements,
                         new LocalVariableSuggestion(context, "i")));
     }
 
     @Test
     public void forLoopTest2() {
-        assertSuggestions("""
-                for (let i = 0; i < 3; i++) <cursor>
-                (12).toString();
-                """,
-                context -> Lists.of(
+        String code =
+                "for (let i = 0; i < 3; i++) <cursor>\n" +
+                "(12).toString();\n";
+        assertSuggestions(
+                code,
+                context -> Lists.from(
                         loopStatements,
                         new LocalVariableSuggestion(context, "i")));
     }
 
     @Test
     public void forLoopTest3() {
-        assertSuggestions("""
-                for (let i = 0; i < 3; i++)<cursor> (12).toString();
-                """,
-                context -> Lists.of(
+        String code =
+                "for (let i = 0; i < 3; i++)<cursor> (12).toString();\n";
+        assertSuggestions(
+                code,
+                context -> Lists.from(
                         loopStatements,
                         new LocalVariableSuggestion(context, "i")));
     }
 
     @Test
     public void forLoopTest4() {
-        assertSuggestions("""
-                for (let i = 0; i < 3; i++) <cursor>(12).toString();
-                """,
-                context -> Lists.of(
+        String code =
+                "for (let i = 0; i < 3; i++) <cursor>(12).toString();\n";
+        assertSuggestions(
+                code,
+                context -> Lists.from(
                         loopStatements,
                         new LocalVariableSuggestion(context, "i")));
     }
 
     @Test
     public void forEachLoopTest1() {
-        assertSuggestions("""
-                foreach (let i in [1, 2, 3]) {
-                    <cursor>
-                }
-                """,
-                context -> Lists.of(
+        String code =
+                "foreach (let i in [1, 2, 3]) {\n" +
+                "    <cursor>\n" +
+                "}\n";
+        assertSuggestions(
+                code,
+                context -> Lists.from(
                         loopStatements,
                         new LocalVariableSuggestion(context, "i")));
     }
 
     @Test
     public void forEachLoopTest2() {
-        assertSuggestions("""
-                foreach (let i in [1, 2, 3])<cursor>
-                (12).toString();
-                """,
-                context -> Lists.of(
+        String code =
+                "foreach (let i in [1, 2, 3])<cursor>\n" +
+                "(12).toString();\n";
+        assertSuggestions(
+                code,
+                context -> Lists.from(
                         loopStatements,
                         new LocalVariableSuggestion(context, "i")));
     }
 
     @Test
     public void forEachLoopTest3() {
-        assertSuggestions("""
-                foreach (let i in [1, 2, 3]) <cursor>
-                (12).toString();
-                """,
-                context -> Lists.of(
+        String code =
+                "foreach (let i in [1, 2, 3]) <cursor>\n" +
+                "(12).toString();\n";
+        assertSuggestions(
+                code,
+                context -> Lists.from(
                         loopStatements,
                         new LocalVariableSuggestion(context, "i")));
     }
 
     @Test
     public void forEachLoopTest4() {
-        assertSuggestions("""
-                foreach (let i in [1, 2, 3]) <cursor>(12).toString();
-                """,
-                context -> Lists.of(
+        String code =
+                "foreach (let i in [1, 2, 3]) <cursor>(12).toString();\n";
+        assertSuggestions(
+                code,
+                context -> Lists.from(
                         loopStatements,
                         new LocalVariableSuggestion(context, "i")));
     }
 
     @Test
     public void forEachLoopTest5() {
-        assertSuggestions("""
-                foreach (let i in [1, 2, 3]) (12).toString();
-                <cursor>
-                (34).toString();
-                """,
+        String code =
+                "foreach (let i in [1, 2, 3]) (12).toString();\n" +
+                "<cursor>\n" +
+                "(34).toString();\n";
+        assertSuggestions(
+                code,
                 context -> statements);
     }
 
     @Test
     public void whileLoopTest() {
-        assertSuggestions("""
-                while (true) {
-                    <cursor>
-                }
-                """,
+        String code =
+                "while (true) {\n" +
+                "    <cursor>\n" +
+                "}\n";
+        assertSuggestions(
+                code,
                 context -> loopStatements);
     }
 

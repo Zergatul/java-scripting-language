@@ -6,6 +6,7 @@ import com.zergatul.scripting.documentation.DocumentationProvider;
 import com.zergatul.scripting.tests.compiler.helpers.IntStorage;
 import com.zergatul.scripting.tests.framework.ComparatorTest;
 import com.zergatul.scripting.type.*;
+import com.zergatul.scripting.utility.Lists;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -14,297 +15,323 @@ public class HoverTests extends ComparatorTest {
 
     @Test
     public void booleanLiteralTest() {
-        assertHover("""
-                let x = <cursor>true;
-                """,
+        String code =
+                "let x = <cursor>true;\n";
+        assertHover(
+                code,
                 4,
-                List.of(
+                Lists.of(
                         "boolean",
                         new DocumentationProvider().getTypeDocs(SBoolean.instance)));
     }
 
     @Test
     public void charLiteralTest() {
-        assertHover("""
-                let x = <cursor>'a';
-                """,
+        String code =
+                "let x = <cursor>'a';\n";
+        assertHover(
+                code,
                 3,
-                List.of(
+                Lists.of(
                         "char",
                         new DocumentationProvider().getTypeDocs(SChar.instance)));
     }
 
     @Test
     public void int32LiteralTest() {
-        assertHover("""
-                let x = <cursor>1234;
-                """,
+        String code =
+                "let x = <cursor>1234;\n";
+        assertHover(
+                code,
                 4,
-                List.of(
+                Lists.of(
                         "int",
                         new DocumentationProvider().getTypeDocs(SInt.instance)));
     }
 
     @Test
     public void int64LiteralTest() {
-        assertHover("""
-                let x = <cursor>123L;
-                """,
+        String code =
+                "let x = <cursor>123L;\n";
+        assertHover(
+                code,
                 4,
-                List.of(
+                Lists.of(
                         "long",
                         new DocumentationProvider().getTypeDocs(SInt64.instance)));
     }
 
     @Test
     public void floatLiteralTest() {
-        assertHover("""
-                let x = <cursor>0.03;
-                """,
+        String code =
+                "let x = <cursor>0.03;\n";
+        assertHover(
+                code,
                 4,
-                List.of(
+                Lists.of(
                         "float",
                         new DocumentationProvider().getTypeDocs(SFloat.instance)));
     }
 
     @Test
     public void stringLiteralTest() {
-        assertHover("""
-                let x = <cursor>"aa";
-                """,
+        String code =
+                "let x = <cursor>\"aa\";\n";
+        assertHover(
+                code,
                 4,
-                List.of(
+                Lists.of(
                         "string",
                         new DocumentationProvider().getTypeDocs(SString.instance)));
     }
 
     @Test
     public void localVariableTest() {
-        assertHover("""
-                let <cursor>x = "aa";
-                """,
+        String code =
+                "let <cursor>x = \"aa\";\n";
+        assertHover(
+                code,
                 1,
-                List.of("(local variable) string x"));
+                Lists.of("(local variable) string x"));
     }
 
     @Test
     public void parameterTest() {
-        assertHover("""
-                void func(int a) {
-                    <cursor>a
-                }
-                """,
+        String code =
+                "void func(int a) {\n" +
+                "    <cursor>a\n" +
+                "}\n";
+        assertHover(
+                code,
                 1,
-                List.of("(parameter) int a"));
+                Lists.of("(parameter) int a"));
     }
 
     @Test
     public void externalStaticConstantTest() {
-        assertHover("""
-                <cursor>intStorage
-                """,
+        String code =
+                "<cursor>intStorage\n";
+        assertHover(
+                code,
                 10,
-                List.of("(external static constant) com.zergatul.scripting.tests.compiler.helpers.IntStorage intStorage"));
+                Lists.of("(external static constant) com.zergatul.scripting.tests.compiler.helpers.IntStorage intStorage"));
     }
 
     @Test
     public void binaryOperationTest1() {
-        assertHover("""
-                let x = 1 <cursor>+ 2;
-                """,
+        String code =
+                "let x = 1 <cursor>+ 2;\n";
+        assertHover(
+                code,
                 1,
-                List.of("int +(int left, int right)"));
+                Lists.of("int +(int left, int right)"));
     }
 
     @Test
     public void binaryOperationTest2() {
-        assertHover("""
-                let x = [1, 2, 3] <cursor>+ 4;
-                """,
+        String code =
+                "let x = [1, 2, 3] <cursor>+ 4;\n";
+        assertHover(
+                code,
                 1,
-                List.of("int[] +(int[] left, int right)"));
+                Lists.of("int[] +(int[] left, int right)"));
     }
 
     @Test
     public void classTest() {
-        assertHover("""
-                class MyType {}
-                MyType <cursor>x;
-                """,
+        String code =
+                "class MyType {}\n" +
+                "MyType <cursor>x;\n";
+        assertHover(
+                code,
                 1,
-                List.of("(local variable) MyType x"));
+                Lists.of("(local variable) MyType x"));
     }
 
     @Test
     public void functionTest() {
-        assertHover("""
-                void func(int abc){}
-                <cursor>func();
-                """,
+        String code =
+                "void func(int abc){}\n" +
+                "<cursor>func();\n";
+        assertHover(
+                code,
                 4,
-                List.of("(function) void func(int abc)"));
+                Lists.of("(function) void func(int abc)"));
     }
 
     @Test
     public void methodTest() {
-        assertHover("""
-                "".<cursor>contains("");
-                """,
+        String code =
+                "\"\".<cursor>contains(\"\");\n";
+        assertHover(
+                code,
                 8,
-                List.of("boolean string.contains(string str)"));
+                Lists.of("boolean string.contains(string str)"));
     }
 
     @Test
     public void methodDocumentationTest() {
-        assertHover("""
-                "".<cursor>matches("");
-                """,
+        String code =
+                "\"\".<cursor>matches(\"\");\n";
+        assertHover(
+                code,
                 7,
-                List.of(
+                Lists.of(
                         "boolean string.matches(string regex)",
                         "Returns true if string instance matches specified regex.\n" +
-                        "For more documentation check https://docs.oracle.com/javase/8/docs/api/java/util/regex/Pattern.html\n"));
+                        "For more documentation check https://docs.oracle.com/javase/8/docs/api/java/util/regex/Pattern.html"));
     }
 
     @Test
     public void fieldPropertyDocumentationTest() {
-        assertHover("""
-                TestType value;
-                value.<cursor>field;
-                """,
+        String code =
+                "TestType value;\n" +
+                "value.<cursor>field;\n";
+        assertHover(
+                code,
                 TestType.class,
                 5,
-                List.of(
+                Lists.of(
                         "(property) int TestType.field",
                         "Field description."));
     }
 
     @Test
     public void getterPropertyDocumentationTest() {
-        assertHover("""
-                TestType value;
-                value.<cursor>property;
-                """,
+        String code =
+                "TestType value;\n" +
+                "value.<cursor>property;\n";
+        assertHover(
+                code,
                 TestType.class,
                 8,
-                List.of(
+                Lists.of(
                         "(property) int TestType.property",
                         "Getter description."));
     }
 
     @Test
     public void extensionTest1() {
-        assertHover("""
-                extension(int) {
-                    int next() => <cursor>this + 1;
-                }
-                """,
+        String code =
+                "extension(int) {\n" +
+                "    int next() => <cursor>this + 1;\n" +
+                "}\n";
+        assertHover(
+                code,
                 4,
-                List.of("int this"));
+                Lists.of("int this"));
     }
 
     @Test
     public void extensionTest2() {
-        assertHover("""
-                extension(int) {
-                    int next() => this + 1;
-                }
-                
-                (0).<cursor>next();
-                """,
+        String code =
+                "extension(int) {\n" +
+                "    int next() => this + 1;\n" +
+                "}\n" +
+                "                \n" +
+                "(0).<cursor>next();\n";
+        assertHover(
+                code,
                 4,
-                List.of("(extension) int int.next()"));
+                Lists.of("(extension) int int.next()"));
     }
 
     @Test
     public void baseKeywordInvalidExpressionTest() {
-        assertHover("""
-                class ClassA {
-                    void method() {}
-                }
-                class ClassB : ClassA {
-                    void method2() {
-                        <cursor>base.
-                    }
-                }
-                """,
+        String code =
+                "class ClassA {\n" +
+                "    void method() {}\n" +
+                "}\n" +
+                "class ClassB : ClassA {\n" +
+                "    void method2() {\n" +
+                "        <cursor>base.\n" +
+                "    }\n" +
+                "}\n";
+        assertHover(
+                code,
                 4,
-                List.of("ClassA base"));
+                Lists.of("ClassA base"));
     }
 
     @Test
     public void baseKeywordValidExpressionTest() {
-        assertHover("""
-                class ClassA {
-                    void method() {}
-                }
-                class ClassB : ClassA {
-                    void method2() {
-                        <cursor>base.method();
-                    }
-                }
-                """,
+        String code =
+                "class ClassA {\n" +
+                "    void method() {}\n" +
+                "}\n" +
+                "class ClassB : ClassA {\n" +
+                "    void method2() {\n" +
+                "        <cursor>base.method();\n" +
+                "    }\n" +
+                "}\n";
+        assertHover(
+                code,
                 4,
-                List.of("ClassA base"));
+                Lists.of("ClassA base"));
     }
 
     @Test
     public void classInitializerTest1() {
-        assertHover("""
-                class ClassA {
-                    constructor(int x) {}
-                }
-                class ClassB : ClassA {
-                    constructor(int a, int b) : <cursor>base(a + b) {}
-                }
-                """,
+        String code =
+                "class ClassA {\n" +
+                "    constructor(int x) {}\n" +
+                "}\n" +
+                "class ClassB : ClassA {\n" +
+                "    constructor(int a, int b) : <cursor>base(a + b) {}\n" +
+                "}\n";
+        assertHover(
+                code,
                 4,
-                List.of("constructor ClassA(int x)"));
+                Lists.of("constructor ClassA(int x)"));
     }
 
     @Test
     public void classInitializerTest2() {
-        assertHover("""
-                class ClassA {
-                    constructor(int x) {}
-                    constructor(int x, int y) : <cursor>this(x + y) {}
-                }
-                """,
+        String code =
+                "class ClassA {\n" +
+                "    constructor(int x) {}\n" +
+                "    constructor(int x, int y) : <cursor>this(x + y) {}\n" +
+                "}\n";
+        assertHover(
+                code,
                 4,
-                List.of("constructor ClassA(int x)"));
+                Lists.of("constructor ClassA(int x)"));
     }
 
     @Test
     public void typeAliasTest1() {
-        assertHover("""
-                typealias Int = int;
-                <cursor>Int i = 123;
-                """,
+        String code =
+                "typealias Int = int;\n" +
+                "<cursor>Int i = 123;\n";
+        assertHover(
+                code,
                 3,
-                List.of("typealias Int = int"));
+                Lists.of("typealias Int = int"));
     }
 
     @Test
     public void typeAliasTest2() {
-        assertHover("""
-                typealias Int1 = Int2;
-                typealias Int2 = Int3;
-                typealias Int3 = Int4;
-                typealias Int4 = int;
-                <cursor>Int1 i = 123;
-                """,
+        String code =
+                "typealias Int1 = Int2;\n" +
+                "typealias Int2 = Int3;\n" +
+                "typealias Int3 = Int4;\n" +
+                "typealias Int4 = int;\n" +
+                "<cursor>Int1 i = 123;\n";
+        assertHover(
+                code,
                 4,
-                List.of("typealias Int1 = int"));
+                Lists.of("typealias Int1 = int"));
     }
 
     @Test
     public void patternVariableTest() {
-        assertHover("""
-                typealias ArrayList = Java<java.util.ArrayList>;
-                if (new ArrayList().get(0) is string <cursor>str) {}
-                """,
+        String code =
+                "typealias ArrayList = Java<java.util.ArrayList>;\n" +
+                "if (new ArrayList().get(0) is string <cursor>str) {}\n";
+        assertHover(
+                code,
                 3,
-                List.of("(local variable) string str"));
+                Lists.of("(local variable) string str"));
     }
 
     private static void assertHover(String code, int length, List<String> expected) {

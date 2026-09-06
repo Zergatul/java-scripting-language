@@ -3,6 +3,8 @@ package com.zergatul.scripting.tests.utility;
 import com.zergatul.scripting.MultiLineTextRange;
 import com.zergatul.scripting.SingleLineTextRange;
 import com.zergatul.scripting.TextRange;
+import com.zergatul.scripting.utility.Lists;
+import org.jspecify.annotations.Nullable;
 
 import java.util.HashMap;
 import java.util.List;
@@ -50,7 +52,7 @@ public class MarkedCode {
             this.code = new StringBuilder();
             this.ranges = new HashMap<>();
             this.pendingRanges = new HashMap<>();
-            this.bracketPairs = List.of(
+            this.bracketPairs = Lists.of(
                     new BracketPair('⟪', '⟫'),
                     new BracketPair('⟦', '⟧'),
                     new BracketPair('❬', '❭'),
@@ -153,11 +155,95 @@ public class MarkedCode {
         }
     }
 
-    private record Position(int line, int column, int position) {}
+    private static final class Position {
 
-    private record BracketPair(char open, char close) {
+        private final int line;
+        private final int column;
+        private final int position;
+
+        private Position(int line, int column, int position) {
+            this.line = line;
+            this.column = column;
+            this.position = position;
+        }
+
+        public int line() {
+            return line;
+        }
+
+        public int column() {
+            return column;
+        }
+
+        public int position() {
+            return position;
+        }
+
+        @Override
+        public boolean equals(@Nullable Object obj) {
+            if (obj == this) return true;
+            if (obj == null || obj.getClass() != this.getClass()) return false;
+            Position that = (Position) obj;
+            return  this.line == that.line &&
+                    this.column == that.column &&
+                    this.position == that.position;
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(line, column, position);
+        }
+
+        @Override
+        public String toString() {
+            return  "Position[" +
+                    "line=" + line + ", " +
+                    "column=" + column + ", " +
+                    "position=" + position + ']';
+        }
+    }
+
+    private static final class BracketPair {
+
+        private final char open;
+        private final char close;
+
+        private BracketPair(char open, char close) {
+            this.open = open;
+            this.close = close;
+        }
+
         private String key() {
             return String.valueOf(open) + close;
+        }
+
+        public char open() {
+            return open;
+        }
+
+        public char close() {
+            return close;
+        }
+
+        @Override
+        public boolean equals(@Nullable Object obj) {
+            if (obj == this) return true;
+            if (obj == null || obj.getClass() != this.getClass()) return false;
+            BracketPair that = (BracketPair) obj;
+            return  this.open == that.open &&
+                    this.close == that.close;
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(open, close);
+        }
+
+        @Override
+        public String toString() {
+            return  "BracketPair[" +
+                    "open=" + open + ", " +
+                    "close=" + close + ']';
         }
     }
 }

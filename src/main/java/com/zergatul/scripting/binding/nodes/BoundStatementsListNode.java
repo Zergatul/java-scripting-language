@@ -5,6 +5,7 @@ import com.zergatul.scripting.binding.BinderTreeVisitor;
 import com.zergatul.scripting.parser.SyntaxFactory;
 import com.zergatul.scripting.parser.nodes.StatementsListNode;
 import com.zergatul.scripting.symbols.LiftedVariable;
+import com.zergatul.scripting.utility.Lists;
 
 import java.util.List;
 
@@ -16,11 +17,11 @@ public class BoundStatementsListNode extends BoundStatementNode {
     public final List<LiftedVariable> lifted;
 
     public BoundStatementsListNode(List<BoundStatementNode> statements) {
-        this(SyntaxFactory.missingStatementsList(), List.of(), statements, List.of(), TextRange.MISSING);
+        this(SyntaxFactory.missingStatementsList(), Lists.of(), statements, Lists.of(), TextRange.MISSING);
     }
 
     public BoundStatementsListNode(StatementsListNode node, List<BoundStatementNode> statements, List<LiftedVariable> lifted) {
-        this(node, List.of(), statements, lifted, node.getRange());
+        this(node, Lists.of(), statements, lifted, node.getRange());
     }
 
     public BoundStatementsListNode(StatementsListNode node, List<BoundVariableDeclarationNode> prepend, List<BoundStatementNode> statements, List<LiftedVariable> lifted, TextRange range) {
@@ -50,7 +51,7 @@ public class BoundStatementsListNode extends BoundStatementNode {
 
     @Override
     public List<BoundNode> getChildren() {
-        return List.copyOf(statements);
+        return Lists.copyOf(statements);
     }
 
     public BoundStatementsListNode withPrepend(List<BoundVariableDeclarationNode> prepend) {

@@ -6,6 +6,7 @@ import com.zergatul.scripting.binding.nodes.BoundFunctionDeclarationNode;
 import com.zergatul.scripting.compiler.CompilationParameters;
 import com.zergatul.scripting.lexer.TokenType;
 import com.zergatul.scripting.binding.nodes.BoundNodeType;
+import com.zergatul.scripting.utility.Lists;
 
 import java.util.List;
 
@@ -18,7 +19,7 @@ public class AwaitCompletionProvider<T> extends AbstractCompletionProvider<T> {
     @Override
     public List<T> provide(CompilationParameters parameters, BinderOutput output, CompletionContext context) {
         if (!context.canExpression()) {
-            return List.of();
+            return Lists.of();
         }
 
         for (CompletionContext current = context; current != null; current = current.up()) {
@@ -27,39 +28,39 @@ public class AwaitCompletionProvider<T> extends AbstractCompletionProvider<T> {
             }
 
             if (current.entry.node.getNodeType() == BoundNodeType.CLASS_CONSTRUCTOR) {
-                return List.of();
+                return Lists.of();
             }
             if (current.entry.node.getNodeType() == BoundNodeType.CLASS_METHOD) {
                 BoundClassMethodNode methodNode = (BoundClassMethodNode) current.entry.node;
                 if (methodNode.isAsync()) {
-                    return List.of(factory.getKeywordSuggestion(TokenType.AWAIT));
+                    return Lists.of(factory.getKeywordSuggestion(TokenType.AWAIT));
                 } else {
-                    return List.of();
+                    return Lists.of();
                 }
             }
             if (current.entry.node.getNodeType() == BoundNodeType.FUNCTION_DECLARATION) {
                 BoundFunctionDeclarationNode functionNode = (BoundFunctionDeclarationNode) current.entry.node;
                 if (functionNode.isAsync()) {
-                    return List.of(factory.getKeywordSuggestion(TokenType.AWAIT));
+                    return Lists.of(factory.getKeywordSuggestion(TokenType.AWAIT));
                 } else {
-                    return List.of();
+                    return Lists.of();
                 }
             }
             if (current.entry.node.getNodeType() == BoundNodeType.LAMBDA_EXPRESSION) {
-                return List.of();
+                return Lists.of();
             }
             if (current.entry.node.getNodeType() == BoundNodeType.STATIC_VARIABLE) {
-                return List.of();
+                return Lists.of();
             }
             if (current.entry.node.getNodeType() == BoundNodeType.STATEMENTS_LIST) {
                 if (parameters.isAsync()) {
-                    return List.of(factory.getKeywordSuggestion(TokenType.AWAIT));
+                    return Lists.of(factory.getKeywordSuggestion(TokenType.AWAIT));
                 } else {
-                    return List.of();
+                    return Lists.of();
                 }
             }
         }
 
-        return List.of();
+        return Lists.of();
     }
 }

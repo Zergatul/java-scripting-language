@@ -4,6 +4,7 @@ import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
 import com.zergatul.scripting.parser.SyntaxFactory;
 import com.zergatul.scripting.parser.nodes.WhileLoopStatementNode;
+import com.zergatul.scripting.utility.Lists;
 
 import java.util.List;
 
@@ -41,6 +42,6 @@ public class BoundWhileLoopStatementNode extends BoundStatementNode {
 
     @Override
     public List<BoundNode> getChildren() {
-        return List.of(condition, body);
+        return Lists.of(condition, body);
     }
 }

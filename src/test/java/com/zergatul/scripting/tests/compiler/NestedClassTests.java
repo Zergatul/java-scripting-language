@@ -1,5 +1,7 @@
 package com.zergatul.scripting.tests.compiler;
 
+import com.zergatul.scripting.utility.Lists;
+
 import com.zergatul.scripting.tests.compiler.helpers.BoolStorage;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -18,20 +20,19 @@ public class NestedClassTests {
 
     @Test
     public void nestedMethodTest() {
-        String code = """
-                boolStorage.add(deep.getValue() == 987);
-                boolStorage.add(deep.deep.getValue() == 101);
-                boolStorage.add(deep.deep.deep.getValue() == 654);
-                boolStorage.add(deep.deep.deep.deep.getValue() == 321);
-                boolStorage.add(deep.deep.deep.deep.deep.getValue() == 100);
-                """;
+        String code =
+                "boolStorage.add(deep.getValue() == 987);\n" +
+                "boolStorage.add(deep.deep.getValue() == 101);\n" +
+                "boolStorage.add(deep.deep.deep.getValue() == 654);\n" +
+                "boolStorage.add(deep.deep.deep.deep.getValue() == 321);\n" +
+                "boolStorage.add(deep.deep.deep.deep.deep.getValue() == 100);\n";
 
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
         Assertions.assertIterableEquals(
                 ApiRoot.boolStorage.list,
-                List.of(true, true, true, true, true));
+                Lists.of(true, true, true, true, true));
     }
 
     public static class ApiRoot {

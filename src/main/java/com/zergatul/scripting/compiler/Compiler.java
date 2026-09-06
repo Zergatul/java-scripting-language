@@ -19,6 +19,8 @@ import com.zergatul.scripting.runtime.*;
 import com.zergatul.scripting.symbols.*;
 import com.zergatul.scripting.type.*;
 import com.zergatul.scripting.type.operation.StringConcatOperation;
+import com.zergatul.scripting.utility.Lists;
+import com.zergatul.scripting.utility.Paths;
 import com.zergatul.scripting.visitors.ExternalParameterVisitor;
 import com.zergatul.scripting.visitors.LiftedVariablesVisitor;
 import com.zergatul.scripting.visitors.LocalParameterVisitor;
@@ -30,16 +32,16 @@ import java.io.IOException;
 import java.lang.invoke.*;
 import java.lang.reflect.*;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Consumer;
 
 import static com.zergatul.scripting.compiler.GeneratorMembers.*;
 import static org.objectweb.asm.Opcodes.*;
 
 public class Compiler {
 
-    private static final int CLASS_FILE_VERSION = V17;
+    private static final int CLASS_FILE_VERSION = V1_8;
 
     private final CompilationParameters parameters;
 
@@ -95,7 +97,8 @@ public class Compiler {
 
         writer.visitEnd();
 
-        compileMethodHandleCache(context);
+        compilePrivateMembersCache(context);
+        compileStringUtils(context);
 
         byte[] bytecode = writer.toByteArray();
         saveClassFile(name, bytecode);
@@ -128,7 +131,8 @@ public class Compiler {
 
         writer.visitEnd();
 
-        compileMethodHandleCache(context);
+        compilePrivateMembersCache(context);
+        compileStringUtils(context);
 
         byte[] bytecode = writer.toByteArray();
         saveClassFile(name, bytecode);
@@ -163,12 +167,22 @@ public class Compiler {
         List<BoundExtensionNode> extensions = new ArrayList<>();
         for (BoundCompilationUnitMemberNode member : unit.members.members) {
             switch (member.getNodeType()) {
-                case STATIC_VARIABLE -> fields.add((BoundStaticVariableNode) member);
-                case FUNCTION_DECLARATION -> functions.add((BoundFunctionDeclarationNode) member);
-                case CLASS_DECLARATION -> classes.add((BoundClassNode) member);
-                case EXTENSION_DECLARATION -> extensions.add((BoundExtensionNode) member);
-                case TYPE_ALIAS -> {}
-                default -> throw new InternalException();
+                case STATIC_VARIABLE:
+                    fields.add((BoundStaticVariableNode) member);
+                    break;
+                case FUNCTION_DECLARATION:
+                    functions.add((BoundFunctionDeclarationNode) member);
+                    break;
+                case CLASS_DECLARATION:
+                    classes.add((BoundClassNode) member);
+                    break;
+                case EXTENSION_DECLARATION:
+                    extensions.add((BoundExtensionNode) member);
+                    break;
+                case TYPE_ALIAS:
+                    break;
+                default:
+                    throw new InternalException();
             }
         }
 
@@ -266,12 +280,23 @@ public class Compiler {
 
     private void compileClassMember(ClassWriter writer, BoundClassMemberNode member, CompilerContext context) {
         switch (member.getNodeType()) {
-            case CLASS_FIELD -> compileClassField(writer, (BoundClassFieldNode) member);
-            case CLASS_CONSTRUCTOR -> compileClassConstructor(writer, (BoundClassConstructorNode) member, context);
-            case CLASS_METHOD -> compileClassMethod(writer, (BoundClassMethodNode) member, context);
-            case CLASS_UNARY_OPERATION -> compileClassUnaryOperation(writer, (BoundClassUnaryOperationNode) member, context);
-            case CLASS_BINARY_OPERATION -> compileClassBinaryOperation(writer, (BoundClassBinaryOperationNode) member, context);
-            default -> throw new InternalException();
+            case CLASS_FIELD:
+                compileClassField(writer, (BoundClassFieldNode) member);
+                break;
+            case CLASS_CONSTRUCTOR:
+                compileClassConstructor(writer, (BoundClassConstructorNode) member, context);
+                break;
+            case CLASS_METHOD:
+                compileClassMethod(writer, (BoundClassMethodNode) member, context);
+                break;
+            case CLASS_UNARY_OPERATION:
+                compileClassUnaryOperation(writer, (BoundClassUnaryOperationNode) member, context);
+                break;
+            case CLASS_BINARY_OPERATION:
+                compileClassBinaryOperation(writer, (BoundClassBinaryOperationNode) member, context);
+                break;
+            default:
+                throw new InternalException();
         }
     }
 
@@ -338,7 +363,7 @@ public class Compiler {
                     writer,
                     methodNode.method.getOwner().getInternalName(),
                     context,
-                    new BoundStatementsListNode(List.of(methodNode.body)));
+                    new BoundStatementsListNode(Lists.of(methodNode.body)));
         } else {
             if (!methodNode.lifted.isEmpty()) {
                 compileClosureClass(methodVisitor, context, methodNode.lifted);
@@ -355,11 +380,16 @@ public class Compiler {
     }
 
     private int getVisibilityModifier(Visibility visibility) {
-        return switch (visibility) {
-            case PUBLIC -> ACC_PUBLIC;
-            case PROTECTED -> ACC_PROTECTED;
-            case PRIVATE -> ACC_PRIVATE;
-        };
+        switch (visibility) {
+            case PUBLIC:
+                return ACC_PUBLIC;
+            case PROTECTED:
+                return ACC_PROTECTED;
+            case PRIVATE:
+                return ACC_PRIVATE;
+            default:
+                throw new InternalException();
+        }
     }
 
     private void compileClassUnaryOperation(ClassWriter writer, BoundClassUnaryOperationNode unaryOperationNode, CompilerContext context) {
@@ -419,10 +449,17 @@ public class Compiler {
             CompilerContext extensionContext = context.createExtension(extension.typeNode.type);
             for (BoundExtensionMemberNode memberNode : extension.members) {
                 switch (memberNode.getNodeType()) {
-                    case EXTENSION_METHOD -> compileExtensionMethod((BoundExtensionMethodNode) memberNode, writer, extensionContext);
-                    case EXTENSION_UNARY_OPERATION -> compileExtensionUnaryOperation((BoundExtensionUnaryOperationNode) memberNode, writer, extensionContext);
-                    case EXTENSION_BINARY_OPERATION -> compileExtensionBinaryOperation((BoundExtensionBinaryOperationNode) memberNode, writer, extensionContext);
-                    default -> throw new InternalException();
+                    case EXTENSION_METHOD:
+                        compileExtensionMethod((BoundExtensionMethodNode) memberNode, writer, extensionContext);
+                        break;
+                    case EXTENSION_UNARY_OPERATION:
+                        compileExtensionUnaryOperation((BoundExtensionUnaryOperationNode) memberNode, writer, extensionContext);
+                        break;
+                    case EXTENSION_BINARY_OPERATION:
+                        compileExtensionBinaryOperation((BoundExtensionBinaryOperationNode) memberNode, writer, extensionContext);
+                        break;
+                    default:
+                        throw new InternalException();
                 }
             }
         }
@@ -459,7 +496,7 @@ public class Compiler {
                     writer,
                     context.getClassName(),
                     methodContext,
-                    new BoundStatementsListNode(List.of(methodNode.body)));
+                    new BoundStatementsListNode(Lists.of(methodNode.body)));
         } else {
             if (!methodNode.lifted.isEmpty()) {
                 compileClosureClass(visitor, methodContext, methodNode.lifted);
@@ -471,7 +508,11 @@ public class Compiler {
             }
         }
 
-        processContextEnd(visitor, methodContext, methodNode.parameters.parameters.stream().map(p -> p.getName().symbolRef.asLocalVariable()).toList());
+        processContextEnd(
+                visitor,
+                methodContext,
+                Lists.from(methodNode.parameters.parameters.stream().map(p -> p.getName().symbolRef.asLocalVariable())));
+
         visitor.visitMaxs(0, 0);
         visitor.visitEnd();
     }
@@ -630,7 +671,7 @@ public class Compiler {
                         writer,
                         context.getClassName(),
                         functionContext,
-                        new BoundStatementsListNode(List.of(function.body)));
+                        new BoundStatementsListNode(Lists.of(function.body)));
             } else {
                 if (!function.lifted.isEmpty()) {
                     compileClosureClass(visitor, functionContext, function.lifted);
@@ -642,7 +683,11 @@ public class Compiler {
                 }
             }
 
-            processContextEnd(visitor, functionContext, function.parameters.parameters.stream().map(p -> p.getName().symbolRef.asLocalVariable()).toList());
+            processContextEnd(
+                    visitor,
+                    functionContext,
+                    Lists.from(function.parameters.parameters.stream().map(p -> p.getName().symbolRef.asLocalVariable())));
+
             visitor.visitMaxs(0, 0);
             visitor.visitEnd();
         }
@@ -694,7 +739,7 @@ public class Compiler {
             throw new InternalException();
         }
 
-        List<Method> methods = Arrays.stream(functionalInterface.getMethods()).filter(m -> !m.isDefault()).toList();
+        List<Method> methods = Lists.from(Arrays.stream(functionalInterface.getMethods()).filter(m -> !m.isDefault()));
         if (methods.size() != 1) {
             throw new InternalException();
         }
@@ -716,9 +761,11 @@ public class Compiler {
         List<BoundVariableDeclarationNode> prepend = new ArrayList<>();
         for (Variable variable : treeVisitor.getParameters()) {
             int parameterStackIndex;
-            if (variable instanceof LiftedVariable lifted) {
+            if (variable instanceof LiftedVariable) {
+                LiftedVariable lifted = (LiftedVariable) variable;
                 parameterStackIndex = 1 + ((ExternalParameter) lifted.getUnderlying()).getIndex();
-            } else if (variable instanceof ExternalParameter external) {
+            } else if (variable instanceof ExternalParameter) {
+                ExternalParameter external = (ExternalParameter) variable;
                 parameterStackIndex = 1 + external.getIndex();
                 external.setStackIndex(parameterStackIndex);
             } else {
@@ -904,35 +951,93 @@ public class Compiler {
     private void compileStatement(MethodVisitor visitor, CompilerContext context, BoundStatementNode statement) {
         emitLineNumber(visitor, context, statement);
         switch (statement.getNodeType()) {
-            case VARIABLE_DECLARATION -> compileVariableDeclaration(visitor, context, (BoundVariableDeclarationNode) statement);
-            case ASSIGNMENT_STATEMENT -> compileAssignmentStatement(visitor, context, (BoundAssignmentStatementNode) statement);
-            case AUGMENTED_ASSIGNMENT_STATEMENT -> compileAugmentedAssignmentStatement(visitor, context, (BoundAugmentedAssignmentStatementNode) statement);
-            case EXPRESSION_STATEMENT -> compileExpressionStatement(visitor, context, (BoundExpressionStatementNode) statement);
-            case IF_STATEMENT -> compileIfStatement(visitor, context, (BoundIfStatementNode) statement);
-            case BLOCK_STATEMENT -> compileBlockStatement(visitor, context, (BoundBlockStatementNode) statement);
-            case RETURN_STATEMENT -> compileReturnStatement(visitor, context, (BoundReturnStatementNode) statement);
-            case FOR_LOOP_STATEMENT -> compileForLoopStatement(visitor, context, (BoundForLoopStatementNode) statement);
-            case FOREACH_LOOP_STATEMENT -> compileForEachLoopStatement(visitor, context, (BoundForEachLoopStatementNode) statement);
-            case WHILE_LOOP_STATEMENT -> compileWhileLoopStatement(visitor, context, (BoundWhileLoopStatementNode) statement);
-            case BREAK_STATEMENT -> compileBreakStatement(visitor, context);
-            case CONTINUE_STATEMENT -> compileContinueStatement(visitor, context);
-            case EMPTY_STATEMENT -> compileEmptyStatement();
-            case INCREMENT_STATEMENT, DECREMENT_STATEMENT -> compilePostfixStatement(visitor, context, (BoundPostfixStatementNode) statement);
-            case TRY_STATEMENT -> compileTryStatement(visitor, context, (BoundTryStatementNode) statement);
-            case THROW_STATEMENT -> compileThrowStatement(visitor, context, (BoundThrowStatementNode) statement);
-            case SET_GENERATOR_STATE -> compileGoToGeneratorState(visitor, context, (BoundSetGeneratorStateNode) statement);
-            case GENERATOR_AWAIT_TRANSITION -> compileGeneratorAwaitTransition(visitor, context, (BoundGeneratorAwaitTransitionNode) statement);
-            case GENERATOR_RETURN -> compileGeneratorReturn(visitor, context, (BoundGeneratorReturnNode) statement);
-            case GENERATOR_CONTINUE -> compileGeneratorContinue(visitor, context);
-            case GENERATOR_JUMP -> compileGeneratorJump(visitor, context, (BoundGeneratorJumpNode) statement);
-            case GENERATOR_RETHROW -> compileGeneratorRethrow(visitor, context);
-            case GENERATOR_FORGET_EXCEPTION -> compileGeneratorForgetException(visitor, context);
-            case GENERATOR_FINALLY_EXIT -> compileGeneratorFinallyExit(visitor, context, (BoundGeneratorFinallyExitNode) statement);
-            case GENERATOR_PUSH_STATE -> compileGeneratorPushState(visitor, context, (BoundGeneratorPushStateNode) statement);
-            case GENERATOR_POP_PENDING_FINALLY_STATE -> compileGeneratorPopPendingFinally(visitor, context, (BoundGeneratorPopPendingFinallyStateNode) statement);
-            case GENERATOR_FINALLY_EPILOGUE -> compileGeneratorFinallyEpilogue(visitor, context, (BoundGeneratorFinallyEpilogueNode) statement);
-            case GENERATOR_FINALLY_DISPATCH -> compileGeneratorFinallyDispatch(visitor, context);
-            default -> throw new InternalException();
+            case VARIABLE_DECLARATION:
+                compileVariableDeclaration(visitor, context, (BoundVariableDeclarationNode) statement);
+                break;
+            case ASSIGNMENT_STATEMENT:
+                compileAssignmentStatement(visitor, context, (BoundAssignmentStatementNode) statement);
+                break;
+            case AUGMENTED_ASSIGNMENT_STATEMENT:
+                compileAugmentedAssignmentStatement(visitor, context, (BoundAugmentedAssignmentStatementNode) statement);
+                break;
+            case EXPRESSION_STATEMENT:
+                compileExpressionStatement(visitor, context, (BoundExpressionStatementNode) statement);
+                break;
+            case IF_STATEMENT:
+                compileIfStatement(visitor, context, (BoundIfStatementNode) statement);
+                break;
+            case BLOCK_STATEMENT:
+                compileBlockStatement(visitor, context, (BoundBlockStatementNode) statement);
+                break;
+            case RETURN_STATEMENT:
+                compileReturnStatement(visitor, context, (BoundReturnStatementNode) statement);
+                break;
+            case FOR_LOOP_STATEMENT:
+                compileForLoopStatement(visitor, context, (BoundForLoopStatementNode) statement);
+                break;
+            case FOREACH_LOOP_STATEMENT:
+                compileForEachLoopStatement(visitor, context, (BoundForEachLoopStatementNode) statement);
+                break;
+            case WHILE_LOOP_STATEMENT:
+                compileWhileLoopStatement(visitor, context, (BoundWhileLoopStatementNode) statement);
+                break;
+            case BREAK_STATEMENT:
+                compileBreakStatement(visitor, context);
+                break;
+            case CONTINUE_STATEMENT:
+                compileContinueStatement(visitor, context);
+                break;
+            case EMPTY_STATEMENT:
+                compileEmptyStatement();
+                break;
+            case INCREMENT_STATEMENT:
+            case DECREMENT_STATEMENT:
+                compilePostfixStatement(visitor, context, (BoundPostfixStatementNode) statement);
+                break;
+            case TRY_STATEMENT:
+                compileTryStatement(visitor, context, (BoundTryStatementNode) statement);
+                break;
+            case THROW_STATEMENT:
+                compileThrowStatement(visitor, context, (BoundThrowStatementNode) statement);
+                break;
+            case SET_GENERATOR_STATE:
+                compileGoToGeneratorState(visitor, context, (BoundSetGeneratorStateNode) statement);
+                break;
+            case GENERATOR_AWAIT_TRANSITION:
+                compileGeneratorAwaitTransition(visitor, context, (BoundGeneratorAwaitTransitionNode) statement);
+                break;
+            case GENERATOR_RETURN:
+                compileGeneratorReturn(visitor, context, (BoundGeneratorReturnNode) statement);
+                break;
+            case GENERATOR_CONTINUE:
+                compileGeneratorContinue(visitor, context);
+                break;
+            case GENERATOR_JUMP:
+                compileGeneratorJump(visitor, context, (BoundGeneratorJumpNode) statement);
+                break;
+            case GENERATOR_RETHROW:
+                compileGeneratorRethrow(visitor, context);
+                break;
+            case GENERATOR_FORGET_EXCEPTION:
+                compileGeneratorForgetException(visitor, context);
+                break;
+            case GENERATOR_FINALLY_EXIT:
+                compileGeneratorFinallyExit(visitor, context, (BoundGeneratorFinallyExitNode) statement);
+                break;
+            case GENERATOR_PUSH_STATE:
+                compileGeneratorPushState(visitor, context, (BoundGeneratorPushStateNode) statement);
+                break;
+            case GENERATOR_POP_PENDING_FINALLY_STATE:
+                compileGeneratorPopPendingFinally(visitor, context, (BoundGeneratorPopPendingFinallyStateNode) statement);
+                break;
+            case GENERATOR_FINALLY_EPILOGUE:
+                compileGeneratorFinallyEpilogue(visitor, context, (BoundGeneratorFinallyEpilogueNode) statement);
+                break;
+            case GENERATOR_FINALLY_DISPATCH:
+                compileGeneratorFinallyDispatch(visitor, context);
+                break;
+            default:
+                throw new InternalException();
         }
     }
 
@@ -951,7 +1056,8 @@ public class Compiler {
         Variable variable = declaration.name.symbolRef.asVariable();
         context.addLocalVariable(declaration.name.symbolRef);
 
-        if (variable instanceof LocalVariable local) {
+        if (variable instanceof LocalVariable) {
+            LocalVariable local = (LocalVariable) variable;
             context.setStackIndex(local);
         }
 
@@ -961,28 +1067,29 @@ public class Compiler {
     private void compileAssignmentStatement(MethodVisitor visitor, CompilerContext context, BoundAssignmentStatementNode assignment) {
         if (assignment.operator.operator == AssignmentOperator.ASSIGNMENT) {
             switch (assignment.left.getNodeType()) {
-                case NAME_EXPRESSION -> {
+                case NAME_EXPRESSION:
                     compileExpression(visitor, context, assignment.right);
                     BoundNameExpressionNode name = (BoundNameExpressionNode) assignment.left;
                     Variable variable = name.symbolRef.asVariable();
                     variable.compileStore(context, visitor);
-                }
-                case INDEX_EXPRESSION -> {
+                    break;
+                case INDEX_EXPRESSION:
                     BoundIndexExpressionNode indexExpression = (BoundIndexExpressionNode) assignment.left;
                     compileExpression(visitor, context, indexExpression.callee);
                     compileExpression(visitor, context, indexExpression.index);
                     compileExpression(visitor, context, assignment.right);
                     indexExpression.operation.compileSet(visitor);
-                }
-                case PROPERTY_ACCESS_EXPRESSION -> {
+                    break;
+                case PROPERTY_ACCESS_EXPRESSION:
                     BoundPropertyAccessExpressionNode access = (BoundPropertyAccessExpressionNode) assignment.left;
                     compilePropertyStore(
                             visitor, context,
                             access.target,
                             () -> compileExpression(visitor, context, access.callee),
                             () -> compileExpression(visitor, context, assignment.right));
-                }
-                default -> throw new InternalException("Not implemented.");
+                    break;
+                default:
+                    throw new InternalException("Not implemented.");
             }
         } else {
             throw new InternalException("Should not happen.");
@@ -991,42 +1098,43 @@ public class Compiler {
 
     private void compileAugmentedAssignmentStatement(MethodVisitor visitor, CompilerContext context, BoundAugmentedAssignmentStatementNode assignment) {
         switch (assignment.left.getNodeType()) {
-            case NAME_EXPRESSION -> {
-                BufferedMethodVisitor buffer = new BufferedMethodVisitor();
+            case NAME_EXPRESSION:
+                BufferedMethodVisitor buffer1 = new BufferedMethodVisitor();
                 compileExpression(visitor, context, assignment.left);
-                compileExpression(buffer, context, assignment.right);
-                assignment.operation.apply(visitor, buffer, context, assignment.left.type, assignment.right.type);
+                compileExpression(buffer1, context, assignment.right);
+                assignment.operation.apply(visitor, buffer1, context, assignment.left.type, assignment.right.type);
 
                 BoundNameExpressionNode name = (BoundNameExpressionNode) assignment.left;
                 Variable variable = name.symbolRef.asVariable();
                 variable.compileStore(context, visitor);
-            }
-            case INDEX_EXPRESSION -> {
+                break;
+            case INDEX_EXPRESSION:
                 BoundIndexExpressionNode indexExpression = (BoundIndexExpressionNode) assignment.left;
                 compileExpression(visitor, context, indexExpression.callee);
                 compileExpression(visitor, context, indexExpression.index);
                 StackHelper.duplicate2(visitor, indexExpression.callee.type, indexExpression.index.type);
 
-                BufferedMethodVisitor buffer = new BufferedMethodVisitor();
+                BufferedMethodVisitor buffer2 = new BufferedMethodVisitor();
                 indexExpression.operation.compileGet(visitor);
-                compileExpression(buffer, context, assignment.right);
-                assignment.operation.apply(visitor, buffer, context, assignment.left.type, assignment.right.type);
+                compileExpression(buffer2, context, assignment.right);
+                assignment.operation.apply(visitor, buffer2, context, assignment.left.type, assignment.right.type);
 
                 indexExpression.operation.compileSet(visitor);
-            }
-            case PROPERTY_ACCESS_EXPRESSION -> {
+                break;
+            case PROPERTY_ACCESS_EXPRESSION:
                 BoundPropertyAccessExpressionNode propertyAccess = (BoundPropertyAccessExpressionNode) assignment.left;
                 compilePropertyLoadModifyStore(
                         visitor, context,
                         propertyAccess.target,
                         () -> compileExpression(visitor, context, propertyAccess.callee),
                         () -> {
-                            BufferedMethodVisitor buffer = new BufferedMethodVisitor();
-                            compileExpression(buffer, context, assignment.right);
-                            assignment.operation.apply(visitor, buffer, context, assignment.left.type, assignment.right.type);
+                            BufferedMethodVisitor buffer3 = new BufferedMethodVisitor();
+                            compileExpression(buffer3, context, assignment.right);
+                            assignment.operation.apply(visitor, buffer3, context, assignment.left.type, assignment.right.type);
                         });
-            }
-            default -> throw new InternalException("Not implemented.");
+                break;
+            default:
+                throw new InternalException("Not implemented.");
         }
     }
 
@@ -1098,7 +1206,8 @@ public class Compiler {
         }
 
         if (statement.expression != null) {
-            if (context.isGenericFunction() && context.getReturnType() instanceof SValueType valueType) {
+            if (context.isGenericFunction() && context.getReturnType() instanceof SValueType) {
+                SValueType valueType = (SValueType) context.getReturnType();
                 valueType.compileBoxing(visitor);
                 visitor.visitInsn(ARETURN);
                 return;
@@ -1250,14 +1359,14 @@ public class Compiler {
 
     private void compilePostfixStatement(MethodVisitor visitor, CompilerContext context, BoundPostfixStatementNode statement) {
         switch (statement.expression.getNodeType()) {
-            case NAME_EXPRESSION -> {
+            case NAME_EXPRESSION:
                 BoundNameExpressionNode name = (BoundNameExpressionNode) statement.expression;
                 compileExpression(visitor, context, statement.expression);
                 statement.operation.apply(visitor);
                 Variable variable = name.symbolRef.asVariable();
                 variable.compileStore(context, visitor);
-            }
-            case INDEX_EXPRESSION -> {
+                break;
+            case INDEX_EXPRESSION:
                 BoundIndexExpressionNode indexExpression = (BoundIndexExpressionNode) statement.expression;
                 compileExpression(visitor, context, indexExpression.callee);
                 compileExpression(visitor, context, indexExpression.index);
@@ -1265,16 +1374,17 @@ public class Compiler {
                 indexExpression.operation.compileGet(visitor);
                 statement.operation.apply(visitor);
                 indexExpression.operation.compileSet(visitor);
-            }
-            case PROPERTY_ACCESS_EXPRESSION -> {
+                break;
+            case PROPERTY_ACCESS_EXPRESSION:
                 BoundPropertyAccessExpressionNode propertyExpression = (BoundPropertyAccessExpressionNode) statement.expression;
                 compilePropertyLoadModifyStore(
                         visitor, context,
                         propertyExpression.target,
                         () -> compileExpression(visitor, context, propertyExpression.callee),
                         () -> statement.operation.apply(visitor));
-            }
-            default -> throw new InternalException();
+                break;
+            default:
+                throw new InternalException();
         }
     }
 
@@ -1524,7 +1634,8 @@ public class Compiler {
         for (LiftedVariable lifted : variables) {
             lifted.setClosure(closureRef.asLocalVariable());
 
-            if (lifted.getUnderlying() instanceof LocalParameter parameter) {
+            if (lifted.getUnderlying() instanceof LocalParameter) {
+                LocalParameter parameter = (LocalParameter) lifted.getUnderlying();
                 parameter.compileLoad(parentContext, parentVisitor);
                 lifted.compileStore(parentContext, parentVisitor);
             }
@@ -1579,7 +1690,8 @@ public class Compiler {
             BoundStatementsListNode node
     ) {
         for (BoundVariableDeclarationNode declaration : node.prepend) {
-            if (declaration.name.getSymbol() instanceof ExternalParameter parameter) {
+            if (declaration.name.getSymbol() instanceof ExternalParameter) {
+                ExternalParameter parameter = (ExternalParameter) declaration.name.getSymbol();
                 LiftedVariable lifted = new LiftedVariable(parameter);
                 declaration.name.symbolRef.set(lifted);
             }
@@ -1838,7 +1950,7 @@ public class Compiler {
             if (boundary.isMainCatch) {
                 // this.state = -2;
                 compileGeneratorInvalidState(nextMethodVisitor, nextMethodContext);
-                // return CompletableFuture.failedFuture(this.exception);
+                // return FutureUtils.failedFuture(this.exception);
                 nextMethodVisitor.visitVarInsn(ALOAD, 0);
                 nextMethodVisitor.visitFieldInsn(
                         GETFIELD,
@@ -1847,7 +1959,7 @@ public class Compiler {
                         Type.getDescriptor(Throwable.class));
                 nextMethodVisitor.visitMethodInsn(
                         INVOKESTATIC,
-                        Type.getInternalName(CompletableFuture.class),
+                        Type.getInternalName(FutureUtils.class),
                         "failedFuture",
                         Type.getMethodDescriptor(Type.getType(CompletableFuture.class), Type.getType(Throwable.class)),
                         false);
@@ -1960,8 +2072,10 @@ public class Compiler {
                 false);
 
         for (BoundVariableDeclarationNode declaration : node.prepend) {
-            if (declaration.expression instanceof BoundStackLoadNode load) {
-                if (declaration.name.getSymbol() instanceof LiftedVariable lifted) {
+            if (declaration.expression instanceof BoundStackLoadNode) {
+                BoundStackLoadNode load = (BoundStackLoadNode) declaration.expression;
+                if (declaration.name.getSymbol() instanceof LiftedVariable) {
+                    LiftedVariable lifted = (LiftedVariable) declaration.name.getSymbol();
                     int index = variables.indexOf(lifted);
                     if (index < 0) {
                         throw new InternalException();
@@ -2630,7 +2744,8 @@ public class Compiler {
                 visitor.visitInsn(ACONST_NULL);
             } else {
                 compileExpression(visitor, context, node.expression);
-                if (node.expression.type instanceof SValueType valueType) {
+                if (node.expression.type instanceof SValueType) {
+                    SValueType valueType = (SValueType) node.expression.type;
                     valueType.compileBoxing(visitor);
                 }
             }
@@ -2662,7 +2777,8 @@ public class Compiler {
                 visitor.visitInsn(ACONST_NULL);
             } else {
                 compileExpression(visitor, context, node.expression);
-                if (node.expression.type instanceof SValueType valueType) {
+                if (node.expression.type instanceof SValueType) {
+                    SValueType valueType = (SValueType) node.expression.type;
                     valueType.compileBoxing(visitor);
                 }
             }
@@ -3043,45 +3159,122 @@ public class Compiler {
     private void compileExpression(MethodVisitor visitor, CompilerContext context, BoundExpressionNode expression) {
         emitLineNumber(visitor, context, expression);
         switch (expression.getNodeType()) {
-            case NULL_EXPRESSION -> compileNull(visitor);
-            case BOOLEAN_LITERAL -> compileBooleanLiteral(visitor, (BoundBooleanLiteralExpressionNode) expression);
-            case INTEGER_LITERAL -> compileIntegerLiteral(visitor, (BoundIntegerLiteralExpressionNode) expression);
-            case INTEGER64_LITERAL -> compileInteger64Literal(visitor, (BoundInteger64LiteralExpressionNode) expression);
-            case FLOAT_LITERAL -> compileFloatLiteral(visitor, (BoundFloatLiteralExpressionNode) expression);
-            case STRING_LITERAL -> compileStringLiteral(visitor, (BoundStringLiteralExpressionNode) expression);
-            case CHAR_LITERAL -> compileCharLiteral(visitor, (BoundCharLiteralExpressionNode) expression);
-            case PARENTHESIZED_EXPRESSION -> compileExpression(visitor, context, ((BoundParenthesizedExpressionNode) expression).inner);
-            case UNARY_EXPRESSION -> compileUnaryExpression(visitor, context, (BoundUnaryExpressionNode) expression);
-            case BINARY_EXPRESSION -> compileBinaryExpression(visitor, context, (BoundBinaryExpressionNode) expression);
-            case IN_EXPRESSION -> compileInExpression(visitor, context, (BoundInExpressionNode) expression);
-            case IS_EXPRESSION -> compileIsExpression(visitor, context, (BoundIsExpressionNode) expression);
-            case TYPE_CAST_EXPRESSION -> compileTypeCastExpression(visitor, context, (BoundTypeCastExpressionNode) expression);
-            case CONDITIONAL_EXPRESSION -> compileConditionalExpression(visitor, context, (BoundConditionalExpressionNode) expression);
-            case IMPLICIT_CAST -> compileImplicitCastExpression(visitor, context, (BoundImplicitCastExpressionNode) expression);
-            case CONVERSION -> compileConversionExpression(visitor, context, (BoundConversionNode) expression);
-            case NAME_EXPRESSION -> compileNameExpression(visitor, context, (BoundNameExpressionNode) expression);
-            case THIS_EXPRESSION -> compileThisExpression(visitor, context, (BoundThisExpressionNode) expression);
-            case STATIC_REFERENCE -> compileStaticReferenceExpression();
-            case REF_ARGUMENT_EXPRESSION -> compileRefArgumentExpression(visitor, context, (BoundRefArgumentExpressionNode) expression);
-            case METHOD_INVOCATION_EXPRESSION -> compileMethodInvocationExpression(visitor, context, (BoundMethodInvocationExpressionNode) expression);
-            case BASE_METHOD_INVOCATION_EXPRESSION -> compileBaseMethodInvocationExpression(visitor, context, (BoundBaseMethodInvocationExpressionNode) expression);
-            case PROPERTY_ACCESS_EXPRESSION -> compilePropertyAccessExpression(visitor, context, (BoundPropertyAccessExpressionNode) expression);
-            case ARRAY_CREATION_EXPRESSION -> compileArrayCreationExpression(visitor, context, (BoundArrayCreationExpressionNode) expression);
-            case ARRAY_INITIALIZER_EXPRESSION -> compileArrayInitializerExpression(visitor, context, (BoundArrayInitializerExpressionNode) expression);
-            case OBJECT_CREATION_EXPRESSION -> compileObjectCreationExpression(visitor, context, (BoundObjectCreationExpressionNode) expression);
-            case COLLECTION_EXPRESSION -> compileCollectionExpression(visitor, context, (BoundCollectionExpressionNode) expression);
-            case INDEX_EXPRESSION -> compileIndexExpression(visitor, context, (BoundIndexExpressionNode) expression);
-            case LAMBDA_EXPRESSION -> compileLambdaExpression(visitor, context, (BoundLambdaExpressionNode) expression);
-            case FUNCTION_INVOCATION -> compileFunctionInvocationExpression(visitor, context, (BoundFunctionInvocationExpression) expression);
-            case OBJECT_INVOCATION -> compileVariableInvocation(visitor, context, (BoundObjectInvocationExpression) expression);
-            case GENERATOR_GET_VALUE -> compileGeneratorGetValue(visitor, context, (BoundGeneratorGetValueNode) expression);
-            case STACK_LOAD -> compileStackLoad(visitor, (BoundStackLoadNode) expression);
-            case FUNCTION_AS_LAMBDA -> compileFunctionAsLambda(visitor, context, (BoundFunctionAsLambdaExpressionNode) expression);
-            case META_CAST_EXPRESSION -> compileMetaCastExpression(visitor, context, (BoundMetaCastExpressionNode) expression);
-            case META_TYPE_EXPRESSION -> compileMetaTypeExpression(visitor, (BoundMetaTypeExpressionNode) expression);
-            case META_TYPE_OF_EXPRESSION -> compileMetaTypeOfExpression(visitor, context, (BoundMetaTypeOfExpressionNode) expression);
-            case THROW_EXPRESSION -> compileThrowExpression(visitor, context, (BoundThrowExpressionNode) expression);
-            default -> throw new InternalException();
+            case NULL_EXPRESSION:
+                compileNull(visitor);
+                break;
+            case BOOLEAN_LITERAL:
+                compileBooleanLiteral(visitor, (BoundBooleanLiteralExpressionNode) expression);
+                break;
+            case INTEGER_LITERAL:
+                compileIntegerLiteral(visitor, (BoundIntegerLiteralExpressionNode) expression);
+                break;
+            case INTEGER64_LITERAL:
+                compileInteger64Literal(visitor, (BoundInteger64LiteralExpressionNode) expression);
+                break;
+            case FLOAT_LITERAL:
+                compileFloatLiteral(visitor, (BoundFloatLiteralExpressionNode) expression);
+                break;
+            case STRING_LITERAL:
+                compileStringLiteral(visitor, (BoundStringLiteralExpressionNode) expression);
+                break;
+            case CHAR_LITERAL:
+                compileCharLiteral(visitor, (BoundCharLiteralExpressionNode) expression);
+                break;
+            case PARENTHESIZED_EXPRESSION:
+                compileExpression(visitor, context, ((BoundParenthesizedExpressionNode) expression).inner);
+                break;
+            case UNARY_EXPRESSION:
+                compileUnaryExpression(visitor, context, (BoundUnaryExpressionNode) expression);
+                break;
+            case BINARY_EXPRESSION:
+                compileBinaryExpression(visitor, context, (BoundBinaryExpressionNode) expression);
+                break;
+            case IN_EXPRESSION:
+                compileInExpression(visitor, context, (BoundInExpressionNode) expression);
+                break;
+            case IS_EXPRESSION:
+                compileIsExpression(visitor, context, (BoundIsExpressionNode) expression);
+                break;
+            case TYPE_CAST_EXPRESSION:
+                compileTypeCastExpression(visitor, context, (BoundTypeCastExpressionNode) expression);
+                break;
+            case CONDITIONAL_EXPRESSION:
+                compileConditionalExpression(visitor, context, (BoundConditionalExpressionNode) expression);
+                break;
+            case IMPLICIT_CAST:
+                compileImplicitCastExpression(visitor, context, (BoundImplicitCastExpressionNode) expression);
+                break;
+            case CONVERSION:
+                compileConversionExpression(visitor, context, (BoundConversionNode) expression);
+                break;
+            case NAME_EXPRESSION:
+                compileNameExpression(visitor, context, (BoundNameExpressionNode) expression);
+                break;
+            case THIS_EXPRESSION:
+                compileThisExpression(visitor, context, (BoundThisExpressionNode) expression);
+                break;
+            case STATIC_REFERENCE:
+                compileStaticReferenceExpression();
+                break;
+            case REF_ARGUMENT_EXPRESSION:
+                compileRefArgumentExpression(visitor, context, (BoundRefArgumentExpressionNode) expression);
+                break;
+            case METHOD_INVOCATION_EXPRESSION:
+                compileMethodInvocationExpression(visitor, context, (BoundMethodInvocationExpressionNode) expression);
+                break;
+            case BASE_METHOD_INVOCATION_EXPRESSION:
+                compileBaseMethodInvocationExpression(visitor, context, (BoundBaseMethodInvocationExpressionNode) expression);
+                break;
+            case PROPERTY_ACCESS_EXPRESSION:
+                compilePropertyAccessExpression(visitor, context, (BoundPropertyAccessExpressionNode) expression);
+                break;
+            case ARRAY_CREATION_EXPRESSION:
+                compileArrayCreationExpression(visitor, context, (BoundArrayCreationExpressionNode) expression);
+                break;
+            case ARRAY_INITIALIZER_EXPRESSION:
+                compileArrayInitializerExpression(visitor, context, (BoundArrayInitializerExpressionNode) expression);
+                break;
+            case OBJECT_CREATION_EXPRESSION:
+                compileObjectCreationExpression(visitor, context, (BoundObjectCreationExpressionNode) expression);
+                break;
+            case COLLECTION_EXPRESSION:
+                compileCollectionExpression(visitor, context, (BoundCollectionExpressionNode) expression);
+                break;
+            case INDEX_EXPRESSION:
+                compileIndexExpression(visitor, context, (BoundIndexExpressionNode) expression);
+                break;
+            case LAMBDA_EXPRESSION:
+                compileLambdaExpression(visitor, context, (BoundLambdaExpressionNode) expression);
+                break;
+            case FUNCTION_INVOCATION:
+                compileFunctionInvocationExpression(visitor, context, (BoundFunctionInvocationExpression) expression);
+                break;
+            case OBJECT_INVOCATION:
+                compileVariableInvocation(visitor, context, (BoundObjectInvocationExpression) expression);
+                break;
+            case GENERATOR_GET_VALUE:
+                compileGeneratorGetValue(visitor, context, (BoundGeneratorGetValueNode) expression);
+                break;
+            case STACK_LOAD:
+                compileStackLoad(visitor, (BoundStackLoadNode) expression);
+                break;
+            case FUNCTION_AS_LAMBDA:
+                compileFunctionAsLambda(visitor, context, (BoundFunctionAsLambdaExpressionNode) expression);
+                break;
+            case META_CAST_EXPRESSION:
+                compileMetaCastExpression(visitor, context, (BoundMetaCastExpressionNode) expression);
+                break;
+            case META_TYPE_EXPRESSION:
+                compileMetaTypeExpression(visitor, (BoundMetaTypeExpressionNode) expression);
+                break;
+            case META_TYPE_OF_EXPRESSION:
+                compileMetaTypeOfExpression(visitor, context, (BoundMetaTypeOfExpressionNode) expression);
+                break;
+            case THROW_EXPRESSION:
+                compileThrowExpression(visitor, context, (BoundThrowExpressionNode) expression);
+                break;
+            default:
+                throw new InternalException();
         }
     }
 
@@ -3150,19 +3343,21 @@ public class Compiler {
                 types.add(part.compileConversion(visitor, context));
             }
 
-            StringConcatOperation.compileInvokeDynamic(visitor, types);
+            StringConcatOperation.compileInvokeDynamic(context, visitor, types);
             hasPreviousResult = true;
         }
     }
 
     private void collectStringConcatParts(BoundExpressionNode expression, List<StringConcatPart> parts) {
         BoundExpressionNode unwrapped = expression;
-        while (unwrapped instanceof BoundParenthesizedExpressionNode parenthesized) {
+        while (unwrapped instanceof BoundParenthesizedExpressionNode) {
+            BoundParenthesizedExpressionNode parenthesized = (BoundParenthesizedExpressionNode) unwrapped;
             unwrapped = parenthesized.inner;
         }
 
-        if (unwrapped instanceof BoundBinaryExpressionNode binary &&
-                binary.operator.operation instanceof StringConcatOperation operation) {
+        if (unwrapped instanceof BoundBinaryExpressionNode && ((BoundBinaryExpressionNode) unwrapped).operator.operation instanceof StringConcatOperation) {
+            StringConcatOperation operation = (StringConcatOperation) ((BoundBinaryExpressionNode) unwrapped).operator.operation;
+            BoundBinaryExpressionNode binary = (BoundBinaryExpressionNode) unwrapped;
             collectStringConcatParts(binary.left, operation, true, parts);
             collectStringConcatParts(binary.right, operation, false, parts);
         } else {
@@ -3177,19 +3372,42 @@ public class Compiler {
             List<StringConcatPart> parts
     ) {
         BoundExpressionNode unwrapped = expression;
-        while (unwrapped instanceof BoundParenthesizedExpressionNode parenthesized) {
+        while (unwrapped instanceof BoundParenthesizedExpressionNode) {
+            BoundParenthesizedExpressionNode parenthesized = (BoundParenthesizedExpressionNode) unwrapped;
             unwrapped = parenthesized.inner;
         }
 
-        if (unwrapped instanceof BoundBinaryExpressionNode binary &&
-                binary.operator.operation instanceof StringConcatOperation) {
+        if (unwrapped instanceof BoundBinaryExpressionNode && ((BoundBinaryExpressionNode) unwrapped).operator.operation instanceof StringConcatOperation) {
+            BoundBinaryExpressionNode binary = (BoundBinaryExpressionNode) unwrapped;
             collectStringConcatParts(binary, parts);
         } else {
             parts.add(new StringConcatPart(expression, operation, left));
         }
     }
 
-    private record StringConcatPart(BoundExpressionNode expression, StringConcatOperation operation, boolean left) {
+    private static final class StringConcatPart {
+
+        private final BoundExpressionNode expression;
+        private final StringConcatOperation operation;
+        private final boolean left;
+
+        private StringConcatPart(BoundExpressionNode expression, StringConcatOperation operation, boolean left) {
+            this.expression = expression;
+            this.operation = operation;
+            this.left = left;
+        }
+
+        public BoundExpressionNode expression() {
+            return expression;
+        }
+
+        public StringConcatOperation operation() {
+            return operation;
+        }
+
+        public boolean left() {
+            return left;
+        }
 
         public SType compileConversion(MethodVisitor visitor, CompilerContext context) {
             if (left) {
@@ -3198,12 +3416,35 @@ public class Compiler {
                 return operation.compileRightConversion(visitor, context, expression.type);
             }
         }
+
+        @Override
+        public boolean equals(@Nullable Object obj) {
+            if (obj == this) return true;
+            if (obj == null || obj.getClass() != this.getClass()) return false;
+            StringConcatPart that = (StringConcatPart) obj;
+            return  Objects.equals(this.expression, that.expression) &&
+                    Objects.equals(this.operation, that.operation) &&
+                    this.left == that.left;
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(expression, operation, left);
+        }
+
+        @Override
+        public String toString() {
+            return  "StringConcatPart[" +
+                    "expression=" + expression + ", " +
+                    "operation=" + operation + ", " +
+                    "left=" + left + ']';
+        }
     }
 
     private void compileInExpression(MethodVisitor visitor, CompilerContext context, BoundInExpressionNode expression) {
-        expression.method.compileInvoke(visitor, context, () -> {
-            compileExpression(visitor, context, expression.right);
-            compileExpression(visitor, context, expression.left);
+        expression.method.compileInvoke(visitor, context, innerContext -> {
+            compileExpression(visitor, innerContext, expression.right);
+            compileExpression(visitor, innerContext, expression.left);
         });
     }
 
@@ -3213,24 +3454,33 @@ public class Compiler {
         // lower "not" pattern
         boolean not = false;
         BoundPatternNode current = is.pattern;
-        while (current instanceof BoundNotPattern notPattern) {
+        while (current instanceof BoundNotPattern) {
+            BoundNotPattern notPattern = (BoundNotPattern) current;
             not = !not;
             current = notPattern.inner;
         }
 
         // at this stage 'current' cannot be BoundNotPattern
         switch (current.getNodeType()) {
-            case CONSTANT_PATTERN -> compileConstantPatternCheck(visitor, is, not, (BoundConstantPatternNode) current);
-            case TYPE_PATTERN -> compileTypePatternCheck(visitor, is, not, (BoundTypePatternNode) current);
-            case DECLARATION_PATTERN -> compileDeclarationPatternCheck(visitor, context, is, not, (BoundDeclarationPatternNode) current);
-            default -> throw new InternalException();
+            case CONSTANT_PATTERN:
+                compileConstantPatternCheck(visitor, is, not, (BoundConstantPatternNode) current);
+                break;
+            case TYPE_PATTERN:
+                compileTypePatternCheck(visitor, is, not, (BoundTypePatternNode) current);
+                break;
+            case DECLARATION_PATTERN:
+                compileDeclarationPatternCheck(visitor, context, is, not, (BoundDeclarationPatternNode) current);
+                break;
+            default:
+                throw new InternalException();
         }
     }
 
     private void compileConstantPatternCheck(MethodVisitor visitor, BoundIsExpressionNode is, boolean not, BoundConstantPatternNode pattern) {
         switch (pattern.expression.getNodeType()) {
-            case NULL_EXPRESSION -> {
-                if (is.expression.type instanceof SValueType valueType) {
+            case NULL_EXPRESSION: {
+                if (is.expression.type instanceof SValueType) {
+                    SValueType valueType = (SValueType) is.expression.type;
                     valueType.compileBoxing(visitor);
                 }
                 Label elseLabel = new Label();
@@ -3241,13 +3491,15 @@ public class Compiler {
                 visitor.visitLabel(elseLabel);
                 visitor.visitInsn(ICONST_1);
                 visitor.visitLabel(endLabel);
+                break;
             }
-            case BOOLEAN_LITERAL -> {
+            case BOOLEAN_LITERAL: {
                 BoundBooleanLiteralExpressionNode literal = (BoundBooleanLiteralExpressionNode) pattern.expression;
                 if (is.expression.type == SBoolean.instance) {
                     loadBoolConstantAndCompare(visitor, not != literal.value);
                 } else {
-                    if (is.expression.type instanceof SValueType valueType) {
+                    if (is.expression.type instanceof SValueType) {
+                        SValueType valueType = (SValueType) is.expression.type;
                         valueType.compileBoxing(visitor);
                     }
                     Label canCastLabel = new Label();
@@ -3274,13 +3526,15 @@ public class Compiler {
 
                     visitor.visitLabel(endLabel);
                 }
+                break;
             }
-            case INTEGER_LITERAL -> {
+            case INTEGER_LITERAL: {
                 BoundIntegerLiteralExpressionNode literal = (BoundIntegerLiteralExpressionNode) pattern.expression;
                 if (is.expression.type == SInt.instance) {
                     loadInt32ConstantAndCompare(visitor, not, literal.value);
                 } else {
-                    if (is.expression.type instanceof SValueType valueType) {
+                    if (is.expression.type instanceof SValueType) {
+                        SValueType valueType = (SValueType) is.expression.type;
                         valueType.compileBoxing(visitor);
                     }
                     Label canCastLabel = new Label();
@@ -3307,13 +3561,15 @@ public class Compiler {
 
                     visitor.visitLabel(endLabel);
                 }
+                break;
             }
-            case INTEGER64_LITERAL -> {
+            case INTEGER64_LITERAL: {
                 BoundInteger64LiteralExpressionNode literal = (BoundInteger64LiteralExpressionNode) pattern.expression;
                 if (is.expression.type == SInt.instance) {
                     loadInt64ConstantAndCompare(visitor, not, literal.value);
                 } else {
-                    if (is.expression.type instanceof SValueType valueType) {
+                    if (is.expression.type instanceof SValueType) {
+                        SValueType valueType = (SValueType) is.expression.type;
                         valueType.compileBoxing(visitor);
                     }
                     Label canCastLabel = new Label();
@@ -3340,13 +3596,15 @@ public class Compiler {
 
                     visitor.visitLabel(endLabel);
                 }
+                break;
             }
-            case FLOAT_LITERAL -> {
+            case FLOAT_LITERAL: {
                 BoundFloatLiteralExpressionNode literal = (BoundFloatLiteralExpressionNode) pattern.expression;
                 if (is.expression.type == SInt.instance) {
                     loadFloat64ConstantAndCompare(visitor, not, literal.value);
                 } else {
-                    if (is.expression.type instanceof SValueType valueType) {
+                    if (is.expression.type instanceof SValueType) {
+                        SValueType valueType = (SValueType) is.expression.type;
                         valueType.compileBoxing(visitor);
                     }
                     Label canCastLabel = new Label();
@@ -3373,8 +3631,10 @@ public class Compiler {
 
                     visitor.visitLabel(endLabel);
                 }
+                break;
             }
-            default -> throw new InternalException();
+            default:
+                throw new InternalException();
         }
     }
 
@@ -3428,11 +3688,13 @@ public class Compiler {
     }
 
     private void compileTypePatternCheck(MethodVisitor visitor, BoundIsExpressionNode is, boolean not, BoundTypePatternNode pattern) {
-        if (is.expression.type instanceof SValueType valueType) {
+        if (is.expression.type instanceof SValueType) {
+            SValueType valueType = (SValueType) is.expression.type;
             valueType.compileBoxing(visitor);
         }
 
-        if (pattern.typeNode.type instanceof SValueType valueType) {
+        if (pattern.typeNode.type instanceof SValueType) {
+            SValueType valueType = (SValueType) pattern.typeNode.type;
             visitor.visitTypeInsn(INSTANCEOF, valueType.getBoxed().getInternalName());
         } else {
             visitor.visitTypeInsn(INSTANCEOF, pattern.typeNode.type.getInternalName());
@@ -3445,7 +3707,8 @@ public class Compiler {
     }
 
     private void compileDeclarationPatternCheck(MethodVisitor visitor, CompilerContext context, BoundIsExpressionNode is, boolean not, BoundDeclarationPatternNode pattern) {
-        if (is.expression.type instanceof SValueType valueType) {
+        if (is.expression.type instanceof SValueType) {
+            SValueType valueType = (SValueType) is.expression.type;
             valueType.compileBoxing(visitor);
         }
 
@@ -3454,7 +3717,8 @@ public class Compiler {
         // ..., <expr>, <expr>
 
         String castToType;
-        if (pattern.typeNode.type instanceof SValueType valueType) {
+        if (pattern.typeNode.type instanceof SValueType) {
+            SValueType valueType = (SValueType) pattern.typeNode.type;
             castToType = valueType.getBoxed().getInternalName();
         } else {
             castToType = pattern.typeNode.type.getInternalName();
@@ -3473,7 +3737,8 @@ public class Compiler {
         // ..., <instanceof>, <expr>
         visitor.visitTypeInsn(CHECKCAST, castToType);
         // ..., <instanceof>, <casted>
-        if (pattern.typeNode.type instanceof SValueType valueType) {
+        if (pattern.typeNode.type instanceof SValueType) {
+            SValueType valueType = (SValueType) pattern.typeNode.type;
             valueType.compileUnboxing(visitor);
         }
         pattern.symbolNode.symbolRef.asVariable().compileStore(context, visitor);
@@ -3496,12 +3761,14 @@ public class Compiler {
 
     private void compileTypeCastExpression(MethodVisitor visitor, CompilerContext context, BoundTypeCastExpressionNode test) {
         compileExpression(visitor, context, test.expression);
-        if (test.expression.type instanceof SValueType valueType) {
+        if (test.expression.type instanceof SValueType) {
+            SValueType valueType = (SValueType) test.expression.type;
             valueType.compileBoxing(visitor);
         }
 
         String referenceTypeInternalName;
-        if (test.type.type instanceof SValueType valueType) {
+        if (test.type.type instanceof SValueType) {
+            SValueType valueType = (SValueType) test.type.type;
             referenceTypeInternalName = valueType.getBoxed().getInternalName();
         } else {
             referenceTypeInternalName = test.type.type.getInternalName();
@@ -3531,7 +3798,8 @@ public class Compiler {
         // ..., expr
         visitor.visitTypeInsn(CHECKCAST, referenceTypeInternalName);
         // ..., casted_expr
-        if (test.type.type instanceof SValueType valueType) {
+        if (test.type.type instanceof SValueType) {
+            SValueType valueType = (SValueType) test.type.type;
             valueType.compileUnboxing(visitor);
         }
 
@@ -3558,37 +3826,44 @@ public class Compiler {
 
     private void compileConversionExpression(MethodVisitor visitor, CompilerContext context, BoundConversionNode expression) {
         switch (expression.conversionInfo.type()) {
-            case IDENTITY -> compileExpression(visitor, context, expression.expression);
-
-            case IMPLICIT_CAST -> compileImplicitCastConversion(visitor, context, expression);
-
-            case FUNCTION_TO_INTERFACE -> compileFunctionToInterfaceConversion(
-                    visitor,
-                    context,
-                    Objects.requireNonNull(expression.conversionInfo.function()),
-                    getFunctionalInterface(expression.type));
-
-            case FUNCTION_TO_GENERIC -> compileFunctionToGeneric(
-                    visitor,
-                    context,
-                    Objects.requireNonNull(expression.conversionInfo.function()),
-                    (SGenericFunction) expression.type);
-
-            case METHOD_GROUP_TO_INTERFACE -> compileInstanceMethodToInterface(
-                    visitor,
-                    context,
-                    (BoundMethodGroupExpressionNode) expression.expression,
-                    Objects.requireNonNull(expression.conversionInfo.method()),
-                    getFunctionalInterface(expression.type));
-
-            case METHOD_GROUP_TO_GENERIC -> compileInstanceMethodToGeneric(
-                    visitor,
-                    context,
-                    (BoundMethodGroupExpressionNode) expression.expression,
-                    Objects.requireNonNull(expression.conversionInfo.method()),
-                    (SGenericFunction) expression.type);
-
-            default -> throw new InternalException();
+            case IDENTITY:
+                compileExpression(visitor, context, expression.expression);
+                break;
+            case IMPLICIT_CAST:
+                compileImplicitCastConversion(visitor, context, expression);
+                break;
+            case FUNCTION_TO_INTERFACE:
+                compileFunctionToInterfaceConversion(
+                        visitor,
+                        context,
+                        Objects.requireNonNull(expression.conversionInfo.function()),
+                        getFunctionalInterface(expression.type));
+                break;
+            case FUNCTION_TO_GENERIC:
+                compileFunctionToGeneric(
+                        visitor,
+                        context,
+                        Objects.requireNonNull(expression.conversionInfo.function()),
+                        (SGenericFunction) expression.type);
+                break;
+            case METHOD_GROUP_TO_INTERFACE:
+                compileInstanceMethodToInterface(
+                        visitor,
+                        context,
+                        (BoundMethodGroupExpressionNode) expression.expression,
+                        Objects.requireNonNull(expression.conversionInfo.method()),
+                        getFunctionalInterface(expression.type));
+                break;
+            case METHOD_GROUP_TO_GENERIC:
+                compileInstanceMethodToGeneric(
+                        visitor,
+                        context,
+                        (BoundMethodGroupExpressionNode) expression.expression,
+                        Objects.requireNonNull(expression.conversionInfo.method()),
+                        (SGenericFunction) expression.type);
+                break;
+            default:
+                throw new InternalException();
         }
     }
 
@@ -3598,13 +3873,13 @@ public class Compiler {
     }
 
     private SFunctionalInterface getFunctionalInterface(SType type) {
-        if (type instanceof SFunctionalInterface functionalInterface) {
-            return functionalInterface;
+        if (type instanceof SFunctionalInterface) {
+            return (SFunctionalInterface) type;
         }
 
         SFunction callableType = type.getCallableType();
-        if (callableType instanceof SFunctionalInterface functionalInterface) {
-            return functionalInterface;
+        if (callableType instanceof SFunctionalInterface) {
+            return (SFunctionalInterface) callableType;
         }
 
         throw new InternalException();
@@ -3741,7 +4016,8 @@ public class Compiler {
     }
 
     private void compileNameExpression(MethodVisitor visitor, CompilerContext context, BoundNameExpressionNode expression) {
-        if (expression.getSymbol() instanceof Variable variable) {
+        if (expression.getSymbol() instanceof Variable) {
+            Variable variable = (Variable) expression.getSymbol();
             variable.compileLoad(context, visitor);
         } else {
             throw new InternalException("Not implemented.");
@@ -3796,10 +4072,10 @@ public class Compiler {
                 visitor,
                 context,
                 invocation.target,
-                () -> {
-                    compileExpression(visitor, context, invocation.objectReference);
+                innerContext -> {
+                    compileExpression(visitor, innerContext, invocation.objectReference);
                     for (BoundExpressionNode expression : invocation.arguments.arguments) {
-                        compileExpression(visitor, context, expression);
+                        compileExpression(visitor, innerContext, expression);
                     }
                 });
 
@@ -3807,10 +4083,10 @@ public class Compiler {
     }
 
     private void compileBaseMethodInvocationExpression(MethodVisitor visitor, CompilerContext context, BoundBaseMethodInvocationExpressionNode invocation) {
-        compileMethodCallTarget(visitor, context, invocation.target, () -> {
-            compileThisReference(visitor, context, context.getClassType());
+        compileMethodCallTarget(visitor, context, invocation.target, innerContext -> {
+            compileThisReference(visitor, innerContext, innerContext.getClassType());
             for (BoundExpressionNode expression : invocation.arguments.arguments) {
-                compileExpression(visitor, context, expression);
+                compileExpression(visitor, innerContext, expression);
             }
         });
 
@@ -3821,12 +4097,12 @@ public class Compiler {
             MethodVisitor visitor,
             CompilerContext context,
             BoundCallTarget target,
-            Runnable compileArguments
+            Consumer<CompilerContext> compileArguments
     ) {
         if (target.dispatch() == BoundCallTarget.DispatchKind.BASE) {
             target.method().compileBaseInvoke(visitor, context, compileArguments);
         } else if (target.access() == BoundCallTarget.AccessStrategy.METHOD_HANDLE) {
-            target.method().compileMethodHandleInvoke(visitor, context, compileArguments);
+            target.method().compileReflectionInvoke(visitor, context, compileArguments);
         } else {
             target.method().compileInvoke(visitor, context, compileArguments);
         }
@@ -3889,7 +4165,8 @@ public class Compiler {
 
         SArrayType arrayType = (SArrayType) expression.type;
         SType elementsType = arrayType.getElementsType();
-        if (elementsType instanceof SValueType valueType) {
+        if (elementsType instanceof SValueType) {
+            SValueType valueType = (SValueType) elementsType;
             visitor.visitIntInsn(NEWARRAY, valueType.getArrayTypeInst());
         } else {
             visitor.visitTypeInsn(ANEWARRAY, elementsType.getInternalName());
@@ -3901,7 +4178,8 @@ public class Compiler {
 
         SArrayType arrayType = (SArrayType) expression.type;
         SType elementsType = arrayType.getElementsType();
-        if (elementsType instanceof SValueType valueType) {
+        if (elementsType instanceof SValueType) {
+            SValueType valueType = (SValueType) elementsType;
             visitor.visitIntInsn(NEWARRAY, valueType.getArrayTypeInst());
         } else {
             visitor.visitTypeInsn(ANEWARRAY, Type.getInternalName(elementsType.getJavaClass()));
@@ -3929,7 +4207,8 @@ public class Compiler {
 
         SArrayType arrayType = (SArrayType) expression.type;
         SType elementsType = arrayType.getElementsType();
-        if (elementsType instanceof SValueType valueType) {
+        if (elementsType instanceof SValueType) {
+            SValueType valueType = (SValueType) elementsType;
             visitor.visitIntInsn(NEWARRAY, valueType.getArrayTypeInst());
         } else {
             visitor.visitTypeInsn(ANEWARRAY, elementsType.getInternalName());
@@ -3950,11 +4229,14 @@ public class Compiler {
     }
 
     private static String getSyntheticMethodPrefix(String sourceMethodName) {
-        return switch (sourceMethodName) {
-            case "<init>" -> "constructor";
-            case "<clinit>" -> "staticInitializer";
-            default -> sourceMethodName;
-        };
+        switch (sourceMethodName) {
+            case "<init>":
+                return "constructor";
+            case "<clinit>":
+                return "staticInitializer";
+            default:
+                return sourceMethodName;
+        }
     }
 
     private void compileLambdaExpression(MethodVisitor visitor, CompilerContext context, BoundLambdaExpressionNode expression) {
@@ -3966,7 +4248,8 @@ public class Compiler {
         String rawMethodDescriptor;
 
         SFunction functionType = (SFunction) expression.type;
-        if (functionType instanceof SFunctionalInterface functionalInterface) {
+        if (functionType instanceof SFunctionalInterface) {
+            SFunctionalInterface functionalInterface = (SFunctionalInterface) functionType;
             methodName = functionalInterface.getMethodName();
             rawReturnType = functionalInterface.getRawReturnType();
             actualReturnType = functionalInterface.getActualReturnType();
@@ -3974,7 +4257,8 @@ public class Compiler {
             actualParameters = functionalInterface.getActualParameters();
             rawMethodDescriptor = functionalInterface.getRawMethodDescriptor();
 
-        } else if (functionType instanceof SGenericFunction genericFunction) {
+        } else if (functionType instanceof SGenericFunction) {
+            SGenericFunction genericFunction = (SGenericFunction) functionType;
             methodName = genericFunction.getMethodName();
             rawReturnType = actualReturnType = genericFunction.getReturnType();
             rawParameters = actualParameters = genericFunction.getParameterTypes().toArray(new SType[0]);
@@ -3999,7 +4283,8 @@ public class Compiler {
 
         List<Variable> closures = new ArrayList<>();
         for (CapturedVariable captured : expression.captured) {
-            if (captured.getUnderlying() instanceof CapturedVariable inner) {
+            if (captured.getUnderlying() instanceof CapturedVariable) {
+                CapturedVariable inner = (CapturedVariable) captured.getUnderlying();
                 // captured from another context
                 context.addLocalVariable(inner.getClosure());
             }
@@ -4076,9 +4361,11 @@ public class Compiler {
             BoundParameterNode parameter = expression.parameters.get(i);
             Variable variable = parameter.getName().symbolRef.asVariable();
             LocalVariable actualArgument;
-            if (variable instanceof LocalVariable local) {
+            if (variable instanceof LocalVariable) {
+                LocalVariable local = (LocalVariable) variable;
                 actualArgument = local;
-            } else if (variable instanceof LiftedVariable lifted) {
+            } else if (variable instanceof LiftedVariable) {
+                LiftedVariable lifted = (LiftedVariable) variable;
                 actualArgument = lifted.getUnderlying();
             } else {
                 throw new InternalException();
@@ -4090,7 +4377,8 @@ public class Compiler {
             } else {
                 lambdaContext.setStackIndex(actualArgument);
                 rawArguments[i].compileLoad(lambdaContext, bodyVisitor);
-                if (parameter.getType() instanceof SValueType valueType) {
+                if (parameter.getType() instanceof SValueType) {
+                    SValueType valueType = (SValueType) parameter.getType();
                     bodyVisitor.visitTypeInsn(CHECKCAST, valueType.getBoxed().getInternalName());
                     valueType.compileUnboxing(bodyVisitor);
                 } else {
@@ -4186,14 +4474,16 @@ public class Compiler {
             compileExpression(visitor, context, argument);
         }
 
-        if (expression.callableType instanceof SGenericFunction genericFunction) {
+        if (expression.callableType instanceof SGenericFunction) {
+            SGenericFunction genericFunction = (SGenericFunction) expression.callableType;
             visitor.visitMethodInsn(
                     INVOKEINTERFACE,
                     genericFunction.getInternalName(),
                     genericFunction.getMethodName(),
                     genericFunction.getMethodDescriptor(),
                     true);
-        } else if (expression.callableType instanceof SFunctionalInterface functionalInterface) {
+        } else if (expression.callableType instanceof SFunctionalInterface) {
+            SFunctionalInterface functionalInterface = (SFunctionalInterface) expression.callableType;
             visitor.visitMethodInsn(
                     INVOKEINTERFACE,
                     functionalInterface.getInternalName(),
@@ -4213,7 +4503,8 @@ public class Compiler {
         SymbolRef parameter = context.getSymbol("@result");
         parameter.get().compileLoad(context, visitor);
 
-        if (node.type instanceof SValueType valueType) {
+        if (node.type instanceof SValueType) {
+            SValueType valueType = (SValueType) node.type;
             visitor.visitTypeInsn(CHECKCAST, valueType.getBoxed().getInternalName());
             valueType.compileUnboxing(visitor);
         } else {
@@ -4260,18 +4551,21 @@ public class Compiler {
     private void compileMetaCastExpression(MethodVisitor visitor, CompilerContext context, BoundMetaCastExpressionNode node) {
         compileExpression(visitor, context, node.expression);
 
-        if (node.expression.type instanceof SValueType valueType) {
+        if (node.expression.type instanceof SValueType) {
+            SValueType valueType = (SValueType) node.expression.type;
             valueType.compileBoxing(visitor);
         }
 
-        if (node.type.type instanceof SValueType valueType) {
+        if (node.type.type instanceof SValueType) {
+            SValueType valueType = (SValueType) node.type.type;
             visitor.visitTypeInsn(CHECKCAST, valueType.getBoxed().getInternalName());
         } else {
             visitor.visitTypeInsn(CHECKCAST, node.type.type.getInternalName());
 
         }
 
-        if (node.type.type instanceof SValueType valueType) {
+        if (node.type.type instanceof SValueType) {
+            SValueType valueType = (SValueType) node.type.type;
             valueType.compileUnboxing(visitor);
         }
     }
@@ -4353,7 +4647,7 @@ public class Compiler {
         if (parameters.isDebug()) {
             String[] parts = name.split("/");
             try {
-                Files.write(Path.of(parts[parts.length - 1] + ".class"), bytecode);
+                Files.write(Paths.of(parts[parts.length - 1] + ".class"), bytecode);
             } catch (IOException e) {
                 throw new RuntimeException("Cannot write class file.", e);
             }
@@ -4381,7 +4675,7 @@ public class Compiler {
     }
 
     private void processContextEnd(MethodVisitor visitor, CompilerContext context) {
-        processContextEnd(visitor, context, List.of());
+        processContextEnd(visitor, context, Lists.of());
     }
 
     private void processContextEnd(MethodVisitor visitor, CompilerContext context, List<LocalVariable> variables) {
@@ -4414,30 +4708,30 @@ public class Compiler {
         }
     }
 
-    private void compileMethodHandleCache(CompilerContext context) {
-        if (context.getMethodHandleCache() == null) {
+    private void compilePrivateMembersCache(CompilerContext context) {
+        if (context.getPrivateMembersCache() == null) {
             return;
         }
 
-        MethodHandleCache cache = context.getMethodHandleCache();
+        PrivateMembersCache cache = context.getPrivateMembersCache();
 
         ClassWriter writer = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
         emitSourceFile(writer);
         writer.visit(
                 CLASS_FILE_VERSION,
                 ACC_PUBLIC,
-                MethodHandleCache.INTERNAL_NAME,
+                PrivateMembersCache.INTERNAL_NAME,
                 null,
                 Type.getInternalName(Object.class),
                 null);
 
-        // fields
+        // field
         for (Map.Entry<Field, String> entry : cache.getFieldsMap().entrySet()) {
             String name = entry.getValue();
             FieldVisitor fieldVisitor = writer.visitField(
                     ACC_PUBLIC | ACC_STATIC | ACC_FINAL,
                     name,
-                    Type.getDescriptor(VarHandle.class),
+                    Type.getDescriptor(Field.class),
                     null, null);
             fieldVisitor.visitEnd();
         }
@@ -4448,7 +4742,7 @@ public class Compiler {
             FieldVisitor fieldVisitor = writer.visitField(
                     ACC_PUBLIC | ACC_STATIC | ACC_FINAL,
                     name,
-                    Type.getDescriptor(MethodHandle.class),
+                    Type.getDescriptor(Method.class),
                     null, null);
             fieldVisitor.visitEnd();
         }
@@ -4457,63 +4751,34 @@ public class Compiler {
         MethodVisitor visitor = writer.visitMethod(ACC_STATIC, "<clinit>", Type.getMethodDescriptor(Type.VOID_TYPE), null, null);
         visitor.visitCode();
 
-        // var caller = MethodHandles.lookup(); // stack index = 0
-        visitor.visitMethodInsn(
-                INVOKESTATIC,
-                Type.getInternalName(MethodHandles.class),
-                "lookup",
-                Type.getMethodDescriptor(Type.getType(MethodHandles.Lookup.class)),
-                false);
-        visitor.visitVarInsn(ASTORE, 0);
-
-        int stackTop = 1;
-        Map<Class<?>, Integer> privateLookupStackIndexMap = new HashMap<>();
-
         for (Map.Entry<Field, String> entry : cache.getFieldsMap().entrySet()) {
             Field field = entry.getKey();
             String name = entry.getValue();
             Class<?> fieldDeclaringClass = field.getDeclaringClass();
 
-            Integer existing = privateLookupStackIndexMap.get(fieldDeclaringClass);
-            if (existing == null) {
-                // var privateLookup = MethodHandles.privateLookupIn(fieldDeclaringClass, caller); // save to map
-                visitor.visitLdcInsn(Type.getType(fieldDeclaringClass));
-                visitor.visitVarInsn(ALOAD, 0);
-                visitor.visitMethodInsn(
-                        INVOKESTATIC,
-                        Type.getInternalName(MethodHandles.class),
-                        "privateLookupIn",
-                        Type.getMethodDescriptor(Type.getType(MethodHandles.Lookup.class), Type.getType(Class.class), Type.getType(MethodHandles.Lookup.class)),
-                        false);
-
-                int stackIndex = stackTop++;
-                visitor.visitVarInsn(ASTORE, stackIndex);
-                privateLookupStackIndexMap.put(fieldDeclaringClass, stackIndex);
-            }
-
-            // load privateLookup for corresponding class
-            visitor.visitVarInsn(ALOAD, privateLookupStackIndexMap.get(fieldDeclaringClass));
-
-            // staticFieldVarHandle = privateLookup.findVarHandle/findStaticVarHandle(fieldDeclaringClass, fieldName, fieldType);
-            visitor.visitLdcInsn(Type.getType(fieldDeclaringClass));
+            SType.fromJavaType(fieldDeclaringClass).loadClassObject(visitor);
             visitor.visitLdcInsn(field.getName());
-            SType.fromJavaType(field.getType()).loadClassObject(visitor);
             visitor.visitMethodInsn(
                     INVOKEVIRTUAL,
-                    Type.getInternalName(MethodHandles.Lookup.class),
-                    Modifier.isStatic(field.getModifiers()) ? "findStaticVarHandle" : "findVarHandle",
-                    Type.getMethodDescriptor(
-                            Type.getType(VarHandle.class),
-                            Type.getType(Class.class),
-                            Type.getType(String.class),
-                            Type.getType(Class.class)),
+                    Type.getInternalName(Class.class),
+                    "getDeclaredField",
+                    Type.getMethodDescriptor(Type.getType(Field.class), Type.getType(String.class)),
+                    false);
+
+            visitor.visitInsn(DUP);
+            visitor.visitInsn(ICONST_1);
+            visitor.visitMethodInsn(
+                    INVOKEVIRTUAL,
+                    Type.getInternalName(Field.class),
+                    "setAccessible",
+                    Type.getMethodDescriptor(Type.VOID_TYPE, Type.BOOLEAN_TYPE),
                     false);
 
             visitor.visitFieldInsn(
                     PUTSTATIC,
-                    MethodHandleCache.INTERNAL_NAME,
+                    PrivateMembersCache.INTERNAL_NAME,
                     name,
-                    Type.getDescriptor(VarHandle.class));
+                    Type.getDescriptor(Field.class));
         }
 
         for (Map.Entry<Method, String> entry : cache.getMethodsMap().entrySet()) {
@@ -4521,67 +4786,38 @@ public class Compiler {
             String name = entry.getValue();
             Class<?> methodDeclaringClass = method.getDeclaringClass();
 
-            Integer existing = privateLookupStackIndexMap.get(methodDeclaringClass);
-            if (existing == null) {
-                // var privateLookup = MethodHandles.privateLookupIn(methodDeclaringClass, caller); // save to map
-                visitor.visitLdcInsn(Type.getType(methodDeclaringClass));
-                visitor.visitVarInsn(ALOAD, 0);
-                visitor.visitMethodInsn(
-                        INVOKESTATIC,
-                        Type.getInternalName(MethodHandles.class),
-                        "privateLookupIn",
-                        Type.getMethodDescriptor(Type.getType(MethodHandles.Lookup.class), Type.getType(Class.class), Type.getType(MethodHandles.Lookup.class)),
-                        false);
-
-                int stackIndex = stackTop++;
-                visitor.visitVarInsn(ASTORE, stackIndex);
-                privateLookupStackIndexMap.put(methodDeclaringClass, stackIndex);
-            }
-
-            // load privateLookup for corresponding class
-            visitor.visitVarInsn(ALOAD, privateLookupStackIndexMap.get(methodDeclaringClass));
-
-            // staticFieldVarHandle = privateLookup.findStatic(methodDeclaringClass, methodName, methodType);
-            visitor.visitLdcInsn(Type.getType(methodDeclaringClass));
+            SType.fromJavaType(methodDeclaringClass).loadClassObject(visitor);
             visitor.visitLdcInsn(method.getName());
-
-            // MethodType.methodType(type1, new Class[] { type2, type3 })
-            SType.fromJavaType(method.getReturnType()).loadClassObject(visitor);
-            visitor.visitLdcInsn(method.getParameterCount());
+            Class<?>[] parameters = method.getParameterTypes();
+            visitor.visitLdcInsn(parameters.length);
             visitor.visitTypeInsn(ANEWARRAY, Type.getInternalName(Class.class));
-            for (int i = 0; i < method.getParameterCount(); i++) {
+            for (int i = 0; i < parameters.length; i++) {
                 visitor.visitInsn(DUP);
                 visitor.visitLdcInsn(i);
-                SType.fromJavaType(method.getParameterTypes()[i]).loadClassObject(visitor);
+                SType.fromJavaType(parameters[i]).loadClassObject(visitor);
                 visitor.visitInsn(AASTORE);
             }
-
-            visitor.visitMethodInsn(
-                    INVOKESTATIC,
-                    Type.getInternalName(MethodType.class),
-                    "methodType",
-                    Type.getMethodDescriptor(
-                            Type.getType(MethodType.class),
-                            Type.getType(Class.class),
-                            Type.getType(Class.class.arrayType())),
-                    false);
-
             visitor.visitMethodInsn(
                     INVOKEVIRTUAL,
-                    Type.getInternalName(MethodHandles.Lookup.class),
-                    Modifier.isStatic(method.getModifiers()) ? "findStatic" : "findVirtual",
-                    Type.getMethodDescriptor(
-                            Type.getType(MethodHandle.class),
-                            Type.getType(Class.class),
-                            Type.getType(String.class),
-                            Type.getType(MethodType.class)),
+                    Type.getInternalName(Class.class),
+                    "getDeclaredMethod",
+                    Type.getMethodDescriptor(Type.getType(Method.class), Type.getType(String.class), Type.getType(Class[].class)),
+                    false);
+
+            visitor.visitInsn(DUP);
+            visitor.visitInsn(ICONST_1);
+            visitor.visitMethodInsn(
+                    INVOKEVIRTUAL,
+                    Type.getInternalName(Method.class),
+                    "setAccessible",
+                    Type.getMethodDescriptor(Type.VOID_TYPE, Type.BOOLEAN_TYPE),
                     false);
 
             visitor.visitFieldInsn(
                     PUTSTATIC,
-                    MethodHandleCache.INTERNAL_NAME,
+                    PrivateMembersCache.INTERNAL_NAME,
                     name,
-                    Type.getDescriptor(MethodHandle.class));
+                    Type.getDescriptor(Method.class));
         }
 
         visitor.visitInsn(RETURN);
@@ -4589,8 +4825,80 @@ public class Compiler {
         visitor.visitEnd();
 
         byte[] bytecode = writer.toByteArray();
-        saveClassFile(MethodHandleCache.CLASS_NAME, bytecode);
+        saveClassFile(PrivateMembersCache.CLASS_NAME, bytecode);
 
-        context.defineClass(MethodHandleCache.INTERNAL_NAME.replace('/', '.'), bytecode);
+        context.defineClass(PrivateMembersCache.INTERNAL_NAME.replace('/', '.'), bytecode);
+    }
+
+    private void compileStringUtils(CompilerContext context) {
+        List<List<SType>> requested = context.getRequestedStringConcatenations();
+        if (requested.isEmpty()) {
+            return;
+        }
+
+        ClassWriter writer = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
+        writer.visit(
+                CLASS_FILE_VERSION,
+                ACC_PUBLIC,
+                StringConcatOperation.STRING_UTILS_CLASS_NAME,
+                null,
+                Type.getInternalName(Object.class),
+                null);
+
+        for (List<SType> types : requested) {
+            MethodVisitor visitor = writer.visitMethod(
+                    ACC_PUBLIC | ACC_STATIC,
+                    StringConcatOperation.CONCANT_METHOD_NAME,
+                    Type.getMethodDescriptor(
+                            SString.instance.getAsmType(),
+                            types.stream().map(SType::getAsmType).toArray(Type[]::new)),
+                    null,
+                    null);
+            visitor.visitCode();
+
+            visitor.visitTypeInsn(NEW, Type.getInternalName(StringBuilder.class));
+            visitor.visitInsn(DUP);
+            visitor.visitMethodInsn(
+                    INVOKESPECIAL,
+                    Type.getInternalName(StringBuilder.class),
+                    "<init>",
+                    Type.getMethodDescriptor(Type.VOID_TYPE),
+                    false);
+
+            for (int i = 0, stackIndex = 0; i < types.size(); i++) {
+                SType current = types.get(i);
+                visitor.visitVarInsn(current.getLoadInst(), stackIndex);
+                if (current != SString.instance) {
+                    SStringConvertible.instance.extractMethod(current).compileInvoke(visitor, context, innerContext -> {});
+                }
+
+                stackIndex += current.isJvmCategoryOneComputationalType() ? 1 : 2;
+
+                visitor.visitMethodInsn(
+                        INVOKEVIRTUAL,
+                        Type.getInternalName(StringBuilder.class),
+                        "append",
+                        Type.getMethodDescriptor(Type.getType(StringBuilder.class), Type.getType(String.class)),
+                        false);
+            }
+
+            visitor.visitMethodInsn(
+                    INVOKEVIRTUAL,
+                    Type.getInternalName(StringBuilder.class),
+                    "toString",
+                    Type.getMethodDescriptor(Type.getType(String.class)),
+                    false);
+
+            visitor.visitInsn(ARETURN);
+            visitor.visitMaxs(0, 0);
+            visitor.visitEnd();
+        }
+
+        writer.visitEnd();
+
+        byte[] bytecode = writer.toByteArray();
+        saveClassFile(StringConcatOperation.STRING_UTILS_CLASS_NAME, bytecode);
+
+        context.defineClass(StringConcatOperation.STRING_UTILS_CLASS_NAME.replace('/', '.'), bytecode);
     }
 }

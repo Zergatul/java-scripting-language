@@ -7,22 +7,21 @@ import com.zergatul.scripting.parser.BinaryOperator;
 import com.zergatul.scripting.parser.ParserOutput;
 import com.zergatul.scripting.parser.PredefinedType;
 import com.zergatul.scripting.parser.nodes.*;
+import com.zergatul.scripting.utility.Lists;
 import org.junit.jupiter.api.Test;
-
-import java.util.List;
 
 public class TypeTestExpressionTests extends ParserTestBase {
 
     @Test
     public void typeTestExpressionTest1() {
-        ParserOutput result = parse("""
-                let x = a is string || b;
-                """);
-        comparator.assertEquals(List.of(), result.diagnostics());
+        String code =
+                "let x = a is string || b;\n";
+        ParserOutput result = parse(code);
+        comparator.assertEquals(Lists.of(), result.diagnostics());
         comparator.assertEquals(
                 new CompilationUnitNode(
-                        new CompilationUnitMembersListNode(List.of(), new SingleLineTextRange(1, 1, 0, 0)),
-                        new StatementsListNode(List.of(
+                        new CompilationUnitMembersListNode(Lists.of(), new SingleLineTextRange(1, 1, 0, 0)),
+                        new StatementsListNode(Lists.of(
                                 new VariableDeclarationNode(
                                         new LetTypeNode(
                                                 new Token(TokenType.LET, new SingleLineTextRange(1, 1, 0, 3))
@@ -60,14 +59,14 @@ public class TypeTestExpressionTests extends ParserTestBase {
 
     @Test
     public void typeTestExpressionTest2() {
-        ParserOutput result = parse("""
-                let x = a == b is string;
-                """);
-        comparator.assertEquals(List.of(), result.diagnostics());
+        String code =
+                "let x = a == b is string;\n";
+        ParserOutput result = parse(code);
+        comparator.assertEquals(Lists.of(), result.diagnostics());
         comparator.assertEquals(
                 new CompilationUnitNode(
-                        new CompilationUnitMembersListNode(List.of(), new SingleLineTextRange(1, 1, 0, 0)),
-                        new StatementsListNode(List.of(
+                        new CompilationUnitMembersListNode(Lists.of(), new SingleLineTextRange(1, 1, 0, 0)),
+                        new StatementsListNode(Lists.of(
                                 new VariableDeclarationNode(
                                         new LetTypeNode(
                                                 new Token(TokenType.LET, new SingleLineTextRange(1, 1, 0, 3))

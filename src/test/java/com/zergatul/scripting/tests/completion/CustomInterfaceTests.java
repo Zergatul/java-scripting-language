@@ -3,10 +3,10 @@ package com.zergatul.scripting.tests.completion;
 import com.zergatul.scripting.lexer.TokenType;
 import com.zergatul.scripting.tests.compiler.helpers.IntStorage;
 import com.zergatul.scripting.tests.completion.helpers.CompletionTestHelper;
-import com.zergatul.scripting.tests.completion.helpers.Lists;
 import com.zergatul.scripting.tests.completion.helpers.TestCompletionContext;
 import com.zergatul.scripting.tests.completion.suggestions.*;
 import com.zergatul.scripting.type.*;
+import com.zergatul.scripting.utility.Lists;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -18,11 +18,12 @@ public class CustomInterfaceTests {
 
     @Test
     public void externalParametersTest1() {
-        assertSuggestions("""
-                <cursor>
-                """,
+        String code =
+                "<cursor>\n";
+        assertSuggestions(
+                code,
                 Interface1.class,
-                context -> Lists.of(
+                context -> Lists.from(
                         unitMembers,
                         statements,
                         new KeywordSuggestion(TokenType.ASYNC),
@@ -33,12 +34,13 @@ public class CustomInterfaceTests {
 
     @Test
     public void externalParametersTest2() {
-        assertSuggestions("""
-                int a = 3;
-                <cursor>
-                """,
+        String code =
+                "int a = 3;\n" +
+                "<cursor>\n";
+        assertSuggestions(
+                code,
                 Interface1.class,
-                context -> Lists.of(
+                context -> Lists.from(
                         statements,
                         new StaticConstantSuggestion(context, "intStorage"),
                         new LocalVariableSuggestion(context, "a"),
@@ -48,13 +50,14 @@ public class CustomInterfaceTests {
 
     @Test
     public void externalParametersTest3() {
-        assertSuggestions("""
-                int a = 3;
-                <cursor>
-                int c = 5;
-                """,
+        String code =
+                "int a = 3;\n" +
+                "<cursor>\n" +
+                "int c = 5;\n";
+        assertSuggestions(
+                code,
                 Interface1.class,
-                context -> Lists.of(
+                context -> Lists.from(
                         statements,
                         new StaticConstantSuggestion(context, "intStorage"),
                         new LocalVariableSuggestion(context, "a"),
@@ -64,13 +67,14 @@ public class CustomInterfaceTests {
 
     @Test
     public void externalParametersTest4() {
-        assertSuggestions("""
-                if (message.length > 0) {
-                    intStorage.add(<cursor>
-                }
-                """,
+        String code =
+                "if (message.length > 0) {\n" +
+                "    intStorage.add(<cursor>\n" +
+                "}\n";
+        assertSuggestions(
+                code,
                 Interface2.class,
-                context -> Lists.of(
+                context -> Lists.from(
                         expressions,
                         new StaticConstantSuggestion(context, "intStorage"),
                         new InputParameterSuggestion("message", SString.instance)));
@@ -78,17 +82,18 @@ public class CustomInterfaceTests {
 
     @Test
     public void externalParametersTest5() {
-        assertSuggestions("""
-                void func() {
-                    <cursor>
-                }
-                
-                if (message.length > 0) {
-                    func();
-                }
-                """,
+        String code =
+                "void func() {\n" +
+                "    <cursor>\n" +
+                "}\n" +
+                "                \n" +
+                "if (message.length > 0) {\n" +
+                "    func();\n" +
+                "}\n";
+        assertSuggestions(
+                code,
                 Interface2.class,
-                context -> Lists.of(
+                context -> Lists.from(
                         statements,
                         new StaticConstantSuggestion(context, "intStorage"),
                         new FunctionSuggestion(context, "func")));
@@ -96,11 +101,12 @@ public class CustomInterfaceTests {
 
     @Test
     public void externalParametersTest7() {
-        assertSuggestions("""
-                int x = a<cursor>
-                """,
+        String code =
+                "int x = a<cursor>\n";
+        assertSuggestions(
+                code,
                 Interface2.class,
-                context -> Lists.of(
+                context -> Lists.from(
                         expressions,
                         new StaticConstantSuggestion(context, "intStorage"),
                         new InputParameterSuggestion("message", SString.instance)));
@@ -108,15 +114,16 @@ public class CustomInterfaceTests {
 
     @Test
     public void externalParametersTest6() {
-        assertSuggestions("""
-                static int x = a<cursor>
-                
-                if (message.length > 0) {
-                    func();
-                }
-                """,
+        String code =
+                "static int x = a<cursor>\n" +
+                "                \n" +
+                "if (message.length > 0) {\n" +
+                "    func();\n" +
+                "}\n";
+        assertSuggestions(
+                code,
                 Interface2.class,
-                context -> Lists.of(
+                context -> Lists.from(
                         expressions,
                         new StaticConstantSuggestion(context, "intStorage"),
                         new StaticFieldSuggestion(context, "x")));
@@ -124,11 +131,12 @@ public class CustomInterfaceTests {
 
     @Test
     public void externalParameterTest7() {
-        assertSuggestions("""
-                return a<cursor>
-                """,
+        String code =
+                "return a<cursor>\n";
+        assertSuggestions(
+                code,
                 Interface3.class,
-                context -> Lists.of(
+                context -> Lists.from(
                         expressions,
                         new StaticConstantSuggestion(context, "intStorage"),
                         new InputParameterSuggestion("input", SInt.instance)));

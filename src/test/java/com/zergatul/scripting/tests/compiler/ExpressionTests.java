@@ -1,5 +1,7 @@
 package com.zergatul.scripting.tests.compiler;
 
+import com.zergatul.scripting.utility.Lists;
+
 import com.zergatul.scripting.DiagnosticMessage;
 import com.zergatul.scripting.SingleLineTextRange;
 import com.zergatul.scripting.binding.BinderErrors;
@@ -23,36 +25,34 @@ public class ExpressionTests extends ComparatorTest {
 
     @Test
     public void popExpressionReturnFromStackTest() {
-        String code = """
-                int get() {
-                    return 123;
-                }
-                
-                int count = 0;
-                for (int i = 0; i < 1000000; i++) {
-                    get();
-                    count++;
-                }
-                
-                intStorage.add(count);
-                """;
+        String code =
+                "int get() {\n" +
+                "    return 123;\n" +
+                "}\n" +
+                "\n" +
+                "int count = 0;\n" +
+                "for (int i = 0; i < 1000000; i++) {\n" +
+                "    get();\n" +
+                "    count++;\n" +
+                "}\n" +
+                "\n" +
+                "intStorage.add(count);\n";
 
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
         Assertions.assertIterableEquals(
                 ApiRoot.intStorage.list,
-                List.of(1000000));
+                Lists.of(1000000));
     }
 
     @Test
     public void staticReferenceAsExpressionTest1() {
-        String code = """
-                int x = int;
-                """;
+        String code =
+                "int x = int;\n";
 
         comparator.assertEquals(
-                List.of(
+                Lists.of(
                         new DiagnosticMessage(
                                 BinderErrors.TypeReferenceNotAllowed,
                                 new SingleLineTextRange(1, 9, 8, 3),
@@ -62,13 +62,12 @@ public class ExpressionTests extends ComparatorTest {
 
     @Test
     public void staticReferenceAsExpressionTest2() {
-        String code = """
-                void func(int x, int y) {}
-                func(int, Java<java.lang.Object>);
-                """;
+        String code =
+                "void func(int x, int y) {}\n" +
+                "func(int, Java<java.lang.Object>);\n";
 
         comparator.assertEquals(
-                List.of(
+                Lists.of(
                         new DiagnosticMessage(
                                 BinderErrors.TypeReferenceNotAllowed,
                                 new SingleLineTextRange(2, 6, 32, 3),
@@ -82,12 +81,11 @@ public class ExpressionTests extends ComparatorTest {
 
     @Test
     public void staticReferenceAsExpressionTest3() {
-        String code = """
-                let a = #typeof(string);
-                """;
+        String code =
+                "let a = #typeof(string);\n";
 
         comparator.assertEquals(
-                List.of(
+                Lists.of(
                         new DiagnosticMessage(
                                 BinderErrors.TypeReferenceNotAllowed,
                                 new SingleLineTextRange(1, 17, 16, 6),

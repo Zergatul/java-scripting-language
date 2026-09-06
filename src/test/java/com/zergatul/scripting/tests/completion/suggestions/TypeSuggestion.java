@@ -12,7 +12,8 @@ public class TypeSuggestion extends Suggestion {
 
     @Override
     public boolean equals(Object obj) {
-        if (obj instanceof TypeSuggestion other) {
+        if (obj instanceof TypeSuggestion) {
+            TypeSuggestion other = (TypeSuggestion) obj;
             return other.type.equals(type);
         } else {
             return false;

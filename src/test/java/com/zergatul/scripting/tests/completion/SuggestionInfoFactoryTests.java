@@ -1,5 +1,7 @@
 package com.zergatul.scripting.tests.completion;
 
+import com.zergatul.scripting.utility.Lists;
+
 import com.zergatul.scripting.MethodDescription;
 import com.zergatul.scripting.PropertyDescription;
 import com.zergatul.scripting.TextRange;
@@ -13,6 +15,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
+import java.util.NoSuchElementException;
 
 public class SuggestionInfoFactoryTests {
 
@@ -31,18 +34,18 @@ public class SuggestionInfoFactoryTests {
 
     @Test
     public void predefinedTypesTest() {
-        Assertions.assertEquals(
-                List.of(
+        Assertions.assertIterableEquals(
+                Lists.of(
                         new SuggestionInfo("int", null, documentationProvider.getTypeDocs(SInt.instance), "int", SuggestionKind.TYPE),
                         new SuggestionInfo("int32", null, documentationProvider.getTypeDocs(SInt.instance), "int32", SuggestionKind.TYPE)),
                 factory.getTypeSuggestion(SInt.instance));
-        Assertions.assertEquals(
-                List.of(
+        Assertions.assertIterableEquals(
+                Lists.of(
                         new SuggestionInfo("long", null, documentationProvider.getTypeDocs(SInt64.instance), "long", SuggestionKind.TYPE),
                         new SuggestionInfo("int64", null, documentationProvider.getTypeDocs(SInt64.instance), "int64", SuggestionKind.TYPE)),
                 factory.getTypeSuggestion(SInt64.instance));
-        Assertions.assertEquals(
-                List.of(
+        Assertions.assertIterableEquals(
+                Lists.of(
                         new SuggestionInfo("float", null, documentationProvider.getTypeDocs(SFloat.instance), "float", SuggestionKind.TYPE),
                         new SuggestionInfo("float64", null, documentationProvider.getTypeDocs(SFloat.instance), "float64", SuggestionKind.TYPE)),
                 factory.getTypeSuggestion(SFloat.instance));
@@ -65,12 +68,12 @@ public class SuggestionInfoFactoryTests {
                 .filter(candidate -> !candidate.isStatic())
                 .filter(candidate -> candidate.getName().equals("value"))
                 .findFirst()
-                .orElseThrow();
+                .orElseThrow(NoSuchElementException::new);
         MethodReference method = MemberLookup.getMethods(type).stream()
                 .filter(candidate -> !candidate.isStatic())
                 .filter(candidate -> candidate.getName().equals("parse"))
                 .findFirst()
-                .orElseThrow();
+                .orElseThrow(NoSuchElementException::new);
 
         Assertions.assertEquals(
                 new SuggestionInfo("value", "int", "Value documentation.", "value", SuggestionKind.PROPERTY),
@@ -91,8 +94,8 @@ public class SuggestionInfoFactoryTests {
                 suggestion -> suggestion.kind() + ":" + suggestion.label());
 
         Assertions.assertEquals("KEYWORD:return", mapped.getKeywordSuggestion(TokenType.RETURN));
-        Assertions.assertEquals(
-                List.of("TYPE:int", "TYPE:int32"),
+        Assertions.assertIterableEquals(
+                Lists.of("TYPE:int", "TYPE:int32"),
                 mapped.getTypeSuggestion(SInt.instance));
         Assertions.assertEquals(
                 "PACKAGE:lang",
@@ -105,7 +108,7 @@ public class SuggestionInfoFactoryTests {
                 .filter(candidate -> !candidate.isStatic())
                 .filter(candidate -> candidate.getName().equals("convert"))
                 .findFirst()
-                .orElseThrow();
+                .orElseThrow(NoSuchElementException::new);
         SuggestionInfoFactory factory = new SuggestionInfoFactory(new TypeDisplayFormatter(Class::getSimpleName));
 
         Assertions.assertEquals(

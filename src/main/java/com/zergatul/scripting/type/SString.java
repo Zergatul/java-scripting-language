@@ -7,6 +7,7 @@ import com.zergatul.scripting.runtime.StringUtils;
 import com.zergatul.scripting.type.operation.BinaryOperation;
 import com.zergatul.scripting.type.operation.IndexOperation;
 import com.zergatul.scripting.type.operation.StringConcatOperation;
+import com.zergatul.scripting.utility.Lists;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Type;
 
@@ -14,6 +15,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
+import java.util.function.Consumer;
 
 import static org.objectweb.asm.Opcodes.*;
 
@@ -58,17 +60,17 @@ public class SString extends SReferenceType {
 
     @Override
     public List<PropertyReference> getDeclaredProperties() {
-        return List.of(PROP_LENGTH);
+        return Lists.of(PROP_LENGTH);
     }
 
     @Override
     public List<IndexOperation> getIndexOperations() {
-        return List.of(INDEX_INT);
+        return Lists.of(INDEX_INT);
     }
 
     @Override
     public List<MethodReference> getDeclaredMethods() {
-        return List.of(
+        return Lists.of(
                 METHOD_CONTAINS,
                 METHOD_INDEX_OF,
                 METHOD_SUBSTRING_INT,
@@ -178,12 +180,12 @@ public class SString extends SReferenceType {
 
         @Override
         public List<MethodParameter> getParameters() {
-            return List.of(new MethodParameter("str", SString.instance));
+            return Lists.of(new MethodParameter("str", SString.instance));
         }
 
         @Override
-        public void compileInvoke(MethodVisitor visitor, CompilerContext context, Runnable compileArguments) {
-            compileArguments.run();
+        public void compileInvoke(MethodVisitor visitor, CompilerContext context, Consumer<CompilerContext> compileArguments) {
+            compileArguments.accept(context);
             visitor.visitMethodInsn(
                     INVOKEVIRTUAL,
                     Type.getInternalName(String.class),
@@ -233,12 +235,12 @@ public class SString extends SReferenceType {
 
         @Override
         public List<MethodParameter> getParameters() {
-            return List.of();
+            return Lists.of();
         }
 
         @Override
-        public void compileInvoke(MethodVisitor visitor, CompilerContext context, Runnable compileArguments) {
-            compileArguments.run();
+        public void compileInvoke(MethodVisitor visitor, CompilerContext context, Consumer<CompilerContext> compileArguments) {
+            compileArguments.accept(context);
             visitor.visitFieldInsn(
                     GETSTATIC,
                     Type.getInternalName(Locale.class),
@@ -272,12 +274,12 @@ public class SString extends SReferenceType {
 
         @Override
         public List<MethodParameter> getParameters() {
-            return List.of();
+            return Lists.of();
         }
 
         @Override
-        public void compileInvoke(MethodVisitor visitor, CompilerContext context, Runnable compileArguments) {
-            compileArguments.run();
+        public void compileInvoke(MethodVisitor visitor, CompilerContext context, Consumer<CompilerContext> compileArguments) {
+            compileArguments.accept(context);
             visitor.visitFieldInsn(
                     GETSTATIC,
                     Type.getInternalName(Locale.class),
@@ -341,14 +343,14 @@ public class SString extends SReferenceType {
 
         @Override
         public List<MethodParameter> getParameters() {
-            return List.of(
+            return Lists.of(
                     new MethodParameter("target", SString.instance),
                     new MethodParameter("replacement", SString.instance));
         }
 
         @Override
-        public void compileInvoke(MethodVisitor visitor, CompilerContext context, Runnable compileArguments) {
-            compileArguments.run();
+        public void compileInvoke(MethodVisitor visitor, CompilerContext context, Consumer<CompilerContext> compileArguments) {
+            compileArguments.accept(context);
             visitor.visitMethodInsn(
                     INVOKEVIRTUAL,
                     Type.getInternalName(String.class),

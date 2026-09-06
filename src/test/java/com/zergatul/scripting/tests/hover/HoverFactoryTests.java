@@ -11,6 +11,8 @@ import com.zergatul.scripting.type.*;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import java.util.NoSuchElementException;
+
 public class HoverFactoryTests {
 
     @Test
@@ -32,7 +34,7 @@ public class HoverFactoryTests {
                 .filter(candidate -> !candidate.isStatic())
                 .filter(candidate -> candidate.getName().equals("convert"))
                 .findFirst()
-                .orElseThrow();
+                .orElseThrow(NoSuchElementException::new);
         HoverInfoFactory factory = new HoverInfoFactory(new TypeDisplayFormatter(Class::getSimpleName));
 
         Assertions.assertEquals(

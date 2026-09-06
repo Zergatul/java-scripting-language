@@ -12,6 +12,7 @@ import com.zergatul.scripting.type.NativeMethodReference;
 import com.zergatul.scripting.type.MemberLookup;
 import com.zergatul.scripting.type.SType;
 import com.zergatul.scripting.type.Visibility;
+import com.zergatul.scripting.utility.Lists;
 import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
@@ -26,7 +27,7 @@ public class BaseMethodsCompletionProvider<T> extends AbstractCompletionProvider
     @Override
     public List<T> provide(CompilationParameters parameters, BinderOutput output, CompletionContext context) {
         if (context.entry == null) {
-            return List.of();
+            return Lists.of();
         }
 
         if (context.entry.node.is(BoundNodeType.PROPERTY_ACCESS_EXPRESSION)) {
@@ -42,9 +43,9 @@ public class BaseMethodsCompletionProvider<T> extends AbstractCompletionProvider
             BoundInvalidExpressionNode invalidExpressionNode = (BoundInvalidExpressionNode) context.entry.node;
             boolean isBaseMethodInvocation =
                     invalidExpressionNode.unboundNodes.size() == 1 &&
-                    invalidExpressionNode.unboundNodes.get(0) instanceof InvocationExpressionNode invocationNode &&
-                    invocationNode.callee instanceof MemberAccessExpressionNode memberAccessNode &&
-                    memberAccessNode.callee.is(ParserNodeType.BASE_EXPRESSION);
+                    invalidExpressionNode.unboundNodes.get(0) instanceof InvocationExpressionNode &&
+                    ((InvocationExpressionNode) invalidExpressionNode.unboundNodes.get(0)).callee instanceof MemberAccessExpressionNode &&
+                    ((MemberAccessExpressionNode) ((InvocationExpressionNode) invalidExpressionNode.unboundNodes.get(0)).callee).callee.is(ParserNodeType.BASE_EXPRESSION);
             if (isBaseMethodInvocation) {
                 InvocationExpressionNode invocationNode = (InvocationExpressionNode) invalidExpressionNode.unboundNodes.get(0);
                 MemberAccessExpressionNode memberAccessNode = (MemberAccessExpressionNode) invocationNode.callee;
@@ -60,7 +61,7 @@ public class BaseMethodsCompletionProvider<T> extends AbstractCompletionProvider
             }
         }
 
-        return List.of();
+        return Lists.of();
     }
 
     private List<T> getBaseClassMethodSuggestions(CompilationParameters parameters, CompletionContext context) {
@@ -72,7 +73,8 @@ public class BaseMethodsCompletionProvider<T> extends AbstractCompletionProvider
                     .filter(m -> !m.isStatic())
                     .filter(m -> m.getVisibility() != Visibility.PRIVATE)
                     .filter(m -> {
-                        if (m instanceof NativeMethodReference nativeRef) {
+                        if (m instanceof NativeMethodReference) {
+                            NativeMethodReference nativeRef = (NativeMethodReference) m;
                             JavaInteropPolicy checker = parameters.getInteropPolicy();
                             if (checker != null) {
                                 return checker.isMethodVisible(nativeRef.getUnderlying());
@@ -86,7 +88,7 @@ public class BaseMethodsCompletionProvider<T> extends AbstractCompletionProvider
                     .forEach(m -> suggestions.add(factory.getMethodSuggestion(m)));
             return suggestions;
         } else {
-            return List.of();
+            return Lists.of();
         }
     }
 

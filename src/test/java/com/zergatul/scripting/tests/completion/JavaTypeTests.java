@@ -13,6 +13,7 @@ import com.zergatul.scripting.tests.completion.suggestions.Suggestion;
 import com.zergatul.scripting.type.FieldPropertyReference;
 import com.zergatul.scripting.type.NativeMethodReference;
 import com.zergatul.scripting.type.SType;
+import com.zergatul.scripting.utility.Lists;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -64,21 +65,22 @@ public class JavaTypeTests {
 
     @Test
     public void noProviderTest() {
-        assertSuggestions("Java<<cursor>", context -> List.of());
+        assertSuggestions("Java<<cursor>", context -> Lists.of());
     }
 
     @Test
     public void publicInstanceMembersTest() {
-        List<Suggestion> suggestions = Arrays.stream(Hashtable.class.getMethods())
-                .filter(m -> m.getDeclaringClass() != Object.class)
-                .filter(m -> Modifier.isPublic(m.getModifiers()))
-                .filter(m -> !Modifier.isStatic(m.getModifiers()))
-                .map(m -> (Suggestion) MethodSuggestion.getInstance(SType.fromJavaType(Hashtable.class), m))
-                .toList();
-        assertSuggestions("""
-                let table = new Java<java.util.Hashtable>();
-                table.<cursor>
-                """,
+        List<Suggestion> suggestions = Lists.from(
+                Arrays.stream(Hashtable.class.getMethods())
+                        .filter(m -> m.getDeclaringClass() != Object.class)
+                        .filter(m -> Modifier.isPublic(m.getModifiers()))
+                        .filter(m -> !Modifier.isStatic(m.getModifiers()))
+                        .map(m -> (Suggestion) MethodSuggestion.getInstance(SType.fromJavaType(Hashtable.class), m)));
+        String code =
+                "let table = new Java<java.util.Hashtable>();\n" +
+                "table.<cursor>\n";
+        assertSuggestions(
+                code,
                 context -> suggestions);
     }
 
@@ -100,9 +102,10 @@ public class JavaTypeTests {
             }
             suggestions.add(new MethodSuggestion(new NativeMethodReference(method)));
         }
-        assertSuggestions("""
-                Java<java.lang.System>.<cursor>
-                """,
+        String code =
+                "Java<java.lang.System>.<cursor>\n";
+        assertSuggestions(
+                code,
                 context -> suggestions);
     }
 
@@ -112,10 +115,11 @@ public class JavaTypeTests {
         suggestions.add(PropertySuggestion.getInstance(MyClass.class, "field"));
         suggestions.add(MethodSuggestion.getInstance(MyClass.class, "getField"));
         suggestions.add(MethodSuggestion.getInstance(MyClass.class, "setField"));
-        assertSuggestions("""
-                let instance = new Java<com.zergatul.scripting.tests.completion.JavaTypeTests$MyClass>();
-                instance.#<cursor>
-                """,
+        String code =
+                "let instance = new Java<com.zergatul.scripting.tests.completion.JavaTypeTests$MyClass>();\n" +
+                "instance.#<cursor>\n";
+        assertSuggestions(
+                code,
                 context -> suggestions);
     }
 
@@ -124,9 +128,10 @@ public class JavaTypeTests {
         List<Suggestion> suggestions = new ArrayList<>();
         suggestions.add(PropertySuggestion.getStatic(MyClass.class, "staticField"));
         suggestions.add(MethodSuggestion.getStatic(MyClass.class, "staticMethod"));
-        assertSuggestions("""
-                Java<com.zergatul.scripting.tests.completion.JavaTypeTests$MyClass>.#<cursor>
-                """,
+        String code =
+                "Java<com.zergatul.scripting.tests.completion.JavaTypeTests$MyClass>.#<cursor>\n";
+        assertSuggestions(
+                code,
                 context -> suggestions);
     }
 
@@ -136,7 +141,7 @@ public class JavaTypeTests {
 
     private void assertJavaTypeSuggestions(String code, String expectedPrefix) {
         List<String> prefixes = new ArrayList<>();
-        List<ClassSuggestion> suggestions = List.of(
+        List<ClassSuggestion> suggestions = Lists.of(
                 new ClassSuggestion("reflect", ClassSuggestionType.PACKAGE),
                 new ClassSuggestion("String", ClassSuggestionType.CLASS));
         JavaInteropSuggestionProvider provider = prefix -> {
@@ -148,11 +153,11 @@ public class JavaTypeTests {
                 ApiRoot.class,
                 code,
                 provider,
-                context -> suggestions.stream()
-                        .map(JavaTypeNameSuggestion::new)
-                        .map(suggestion -> (Suggestion) suggestion)
-                        .toList());
-        Assertions.assertEquals(List.of(expectedPrefix), prefixes);
+                context -> Lists.from(
+                        suggestions.stream()
+                                .map(JavaTypeNameSuggestion::new)
+                                .map(suggestion -> (Suggestion) suggestion)));
+        Assertions.assertEquals(Lists.of(expectedPrefix), prefixes);
     }
 
     public static class ApiRoot {

@@ -7,6 +7,7 @@ import com.zergatul.scripting.tests.compiler.helpers.IntStorage;
 import com.zergatul.scripting.tests.compiler.helpers.Run;
 import com.zergatul.scripting.tests.compiler.helpers.StringStorage;
 import com.zergatul.scripting.tests.framework.ComparatorTest;
+import com.zergatul.scripting.utility.Lists;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -27,419 +28,399 @@ public class FunctionTests extends ComparatorTest {
 
     @Test
     public void voidFunctionTest() {
-        String code = """
-                static int x;
-                
-                void simple() {
-                    x++;
-                }
-                
-                x = 123;
-                for (int i = 0; i < 3; i++) {
-                    simple();
-                    intStorage.add(x);
-                }
-                """;
+        String code =
+                "static int x;\n" +
+                "\n" +
+                "void simple() {\n" +
+                "    x++;\n" +
+                "}\n" +
+                "\n" +
+                "x = 123;\n" +
+                "for (int i = 0; i < 3; i++) {\n" +
+                "    simple();\n" +
+                "    intStorage.add(x);\n" +
+                "}\n";
 
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
         Assertions.assertIterableEquals(
                 ApiRoot.intStorage.list,
-                List.of(124, 125, 126));
+                Lists.of(124, 125, 126));
     }
 
     @Test
     public void intFunctionTest() {
-        String code = """
-                static int x = 123;
-                static int y = 23;
-                
-                int func1() {
-                    if (x > y) {
-                        x = x - y;
-                        return x;
-                    } else {
-                        y = y - x;
-                        return y;
-                    }
-                    return 0;
-                }
-                
-                for (int i = 0; i < 8; i++) {
-                    intStorage.add(func1());
-                }
-                """;
+        String code =
+                "static int x = 123;\n" +
+                "static int y = 23;\n" +
+                "\n" +
+                "int func1() {\n" +
+                "    if (x > y) {\n" +
+                "        x = x - y;\n" +
+                "        return x;\n" +
+                "    } else {\n" +
+                "        y = y - x;\n" +
+                "        return y;\n" +
+                "    }\n" +
+                "    return 0;\n" +
+                "}\n" +
+                "\n" +
+                "for (int i = 0; i < 8; i++) {\n" +
+                "    intStorage.add(func1());\n" +
+                "}\n";
 
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
         Assertions.assertIterableEquals(
                 ApiRoot.intStorage.list,
-                List.of(100, 77, 54, 31, 8, 15, 7, 1));
+                Lists.of(100, 77, 54, 31, 8, 15, 7, 1));
     }
 
     @Test
     public void booleanFunctionTest() {
-        String code = """
-                boolean func1() {
-                    return true;
-                }
-                
-                intStorage.add(func1() ? 3 : 2);
-                """;
+        String code =
+                "boolean func1() {\n" +
+                "    return true;\n" +
+                "}\n" +
+                "\n" +
+                "intStorage.add(func1() ? 3 : 2);\n";
 
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
         Assertions.assertIterableEquals(
                 ApiRoot.intStorage.list,
-                List.of(3));
+                Lists.of(3));
     }
 
     @Test
     public void floatFunctionTest() {
-        String code = """
-                float func1() {
-                    return 123;
-                }
-                
-                intStorage.add(func1() == 123 ? 3 : 2);
-                """;
+        String code =
+                "float func1() {\n" +
+                "    return 123;\n" +
+                "}\n" +
+                "\n" +
+                "intStorage.add(func1() == 123 ? 3 : 2);\n";
 
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
         Assertions.assertIterableEquals(
                 ApiRoot.intStorage.list,
-                List.of(3));
+                Lists.of(3));
     }
 
     @Test
     public void stringFunctionTest() {
-        String code = """
-                string func1() {
-                    return "abc";
-                }
-                
-                intStorage.add(func1() == "abc" ? 3 : 2);
-                """;
+        String code =
+                "string func1() {\n" +
+                "    return \"abc\";\n" +
+                "}\n" +
+                "\n" +
+                "intStorage.add(func1() == \"abc\" ? 3 : 2);\n";
 
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
         Assertions.assertIterableEquals(
                 ApiRoot.intStorage.list,
-                List.of(3));
+                Lists.of(3));
     }
 
     @Test
     public void arrayFunctionTest() {
-        String code = """
-                string[] func1() {
-                    string[] result = new string[3];
-                    result[0] = "a";
-                    result[1] = "b";
-                    result[2] = "c";
-                    return result;
-                }
-                
-                string[] array = func1();
-                intStorage.add(array.length);
-                intStorage.add(array[0] == "a" ? 5 : 0);
-                intStorage.add(array[1] == "b" ? 4 : 0);
-                intStorage.add(array[2] == "c" ? 3 : 0);
-                """;
+        String code =
+                "string[] func1() {\n" +
+                "    string[] result = new string[3];\n" +
+                "    result[0] = \"a\";\n" +
+                "    result[1] = \"b\";\n" +
+                "    result[2] = \"c\";\n" +
+                "    return result;\n" +
+                "}\n" +
+                "\n" +
+                "string[] array = func1();\n" +
+                "intStorage.add(array.length);\n" +
+                "intStorage.add(array[0] == \"a\" ? 5 : 0);\n" +
+                "intStorage.add(array[1] == \"b\" ? 4 : 0);\n" +
+                "intStorage.add(array[2] == \"c\" ? 3 : 0);\n";
 
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
         Assertions.assertIterableEquals(
                 ApiRoot.intStorage.list,
-                List.of(3, 5, 4, 3));
+                Lists.of(3, 5, 4, 3));
     }
 
     @Test
     public void singleParamTest() {
-        String code = """
-                void func(int x) {
-                    intStorage.add(x + 1);
-                }
-                
-                for (int i = 0; i < 5; i++) {
-                    func(i);
-                }
-                """;
+        String code =
+                "void func(int x) {\n" +
+                "    intStorage.add(x + 1);\n" +
+                "}\n" +
+                "\n" +
+                "for (int i = 0; i < 5; i++) {\n" +
+                "    func(i);\n" +
+                "}\n";
 
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
         Assertions.assertIterableEquals(
                 ApiRoot.intStorage.list,
-                List.of(1, 2, 3, 4, 5));
+                Lists.of(1, 2, 3, 4, 5));
     }
 
     @Test
     public void doubleParamTest() {
-        String code = """
-                int sum(int x, int y) {
-                    return x + y;
-                }
-                
-                intStorage.add(sum(10, 10));
-                intStorage.add(sum(25, 15));
-                intStorage.add(sum(22, 12));
-                """;
+        String code =
+                "int sum(int x, int y) {\n" +
+                "    return x + y;\n" +
+                "}\n" +
+                "\n" +
+                "intStorage.add(sum(10, 10));\n" +
+                "intStorage.add(sum(25, 15));\n" +
+                "intStorage.add(sum(22, 12));\n";
 
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
         Assertions.assertIterableEquals(
                 ApiRoot.intStorage.list,
-                List.of(20, 40, 34));
+                Lists.of(20, 40, 34));
     }
 
     @Test
     public void implicitCastParamTest() {
-        String code = """
-                float sum(float x, float y) {
-                    return x + y;
-                }
-                
-                int a = 100;
-                floatStorage.add(sum(a, 10.5));
-                floatStorage.add(sum(25.5, a));
-                floatStorage.add(sum(22, 12));
-                """;
+        String code =
+                "float sum(float x, float y) {\n" +
+                "    return x + y;\n" +
+                "}\n" +
+                "\n" +
+                "int a = 100;\n" +
+                "floatStorage.add(sum(a, 10.5));\n" +
+                "floatStorage.add(sum(25.5, a));\n" +
+                "floatStorage.add(sum(22, 12));\n";
 
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
         Assertions.assertIterableEquals(
                 ApiRoot.floatStorage.list,
-                List.of(110.5, 125.5, 34.0));
+                Lists.of(110.5, 125.5, 34.0));
     }
 
     @Test
     public void recursiveTest() {
-        String code = """
-                int factorial(int x) {
-                    if (x <= 1) {
-                        return 1;
-                    }
-                    return x * factorial(x - 1);
-                }
-                
-                intStorage.add(factorial(0));
-                intStorage.add(factorial(1));
-                intStorage.add(factorial(2));
-                intStorage.add(factorial(5));
-                intStorage.add(factorial(10));
-                """;
+        String code =
+                "int factorial(int x) {\n" +
+                "    if (x <= 1) {\n" +
+                "        return 1;\n" +
+                "    }\n" +
+                "    return x * factorial(x - 1);\n" +
+                "}\n" +
+                "\n" +
+                "intStorage.add(factorial(0));\n" +
+                "intStorage.add(factorial(1));\n" +
+                "intStorage.add(factorial(2));\n" +
+                "intStorage.add(factorial(5));\n" +
+                "intStorage.add(factorial(10));\n";
 
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
         Assertions.assertIterableEquals(
                 ApiRoot.intStorage.list,
-                List.of(1, 1, 2, 120, 3628800));
+                Lists.of(1, 1, 2, 120, 3628800));
     }
 
     @Test
     public void crossRecursionTest() {
-        String code = """
-                int strange(int x) {
-                    if (x <= 1) {
-                        return 1;
-                    }
-                    return 2 * func1(x - 1) + 3 * func2(x - 1);
-                }
-                
-                int func1(int x) {
-                    return strange(x - 2) + 2;
-                }
-                
-                int func2(int x) {
-                    return strange(x - 1) + 1;
-                }
-                
-                intStorage.add(strange(1));
-                intStorage.add(strange(2));
-                intStorage.add(strange(3));
-                intStorage.add(strange(4));
-                intStorage.add(strange(5));
-                intStorage.add(strange(6));
-                intStorage.add(strange(7));
-                intStorage.add(strange(8));
-                intStorage.add(strange(20));
-                """;
+        String code =
+                "int strange(int x) {\n" +
+                "    if (x <= 1) {\n" +
+                "        return 1;\n" +
+                "    }\n" +
+                "    return 2 * func1(x - 1) + 3 * func2(x - 1);\n" +
+                "}\n" +
+                "\n" +
+                "int func1(int x) {\n" +
+                "    return strange(x - 2) + 2;\n" +
+                "}\n" +
+                "\n" +
+                "int func2(int x) {\n" +
+                "    return strange(x - 1) + 1;\n" +
+                "}\n" +
+                "\n" +
+                "intStorage.add(strange(1));\n" +
+                "intStorage.add(strange(2));\n" +
+                "intStorage.add(strange(3));\n" +
+                "intStorage.add(strange(4));\n" +
+                "intStorage.add(strange(5));\n" +
+                "intStorage.add(strange(6));\n" +
+                "intStorage.add(strange(7));\n" +
+                "intStorage.add(strange(8));\n" +
+                "intStorage.add(strange(20));\n";
 
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
         Assertions.assertIterableEquals(
                 ApiRoot.intStorage.list,
-                List.of(1, 12, 12, 45, 67, 166, 298, 639, 2563221));
+                Lists.of(1, 12, 12, 45, 67, 166, 298, 639, 2563221));
     }
 
     @Test
     public void asLambdaTest1() {
-        String code = """
-                void func() {
-                    intStorage.add(25);
-                }
-                
-                run.once(func);
-                """;
+        String code =
+                "void func() {\n" +
+                "    intStorage.add(25);\n" +
+                "}\n" +
+                "\n" +
+                "run.once(func);\n";
 
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
-        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(25));
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, Lists.of(25));
     }
 
     @Test
     public void asLambdaTest2() {
-        String code = """
-                void func(string s) {
-                    stringStorage.add(s + "!");
-                }
-                
-                run.onString(func);
-                run.triggerString("a");
-                run.triggerString("b");
-                """;
+        String code =
+                "void func(string s) {\n" +
+                "    stringStorage.add(s + \"!\");\n" +
+                "}\n" +
+                "\n" +
+                "run.onString(func);\n" +
+                "run.triggerString(\"a\");\n" +
+                "run.triggerString(\"b\");\n";
 
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
-        Assertions.assertIterableEquals(ApiRoot.stringStorage.list, List.of("a!", "b!"));
+        Assertions.assertIterableEquals(ApiRoot.stringStorage.list, Lists.of("a!", "b!"));
     }
 
     @Test
     public void asLambdaTest3() {
-        String code = """
-                void func(int i, string s) {
-                    intStorage.add(i + 1);
-                    stringStorage.add(s + "!");
-                }
-                
-                run.onIntString(func);
-                run.triggerIntString(10, "a");
-                run.triggerIntString(20, "b");
-                """;
+        String code =
+                "void func(int i, string s) {\n" +
+                "    intStorage.add(i + 1);\n" +
+                "    stringStorage.add(s + \"!\");\n" +
+                "}\n" +
+                "\n" +
+                "run.onIntString(func);\n" +
+                "run.triggerIntString(10, \"a\");\n" +
+                "run.triggerIntString(20, \"b\");\n";
 
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
-        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(11, 21));
-        Assertions.assertIterableEquals(ApiRoot.stringStorage.list, List.of("a!", "b!"));
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, Lists.of(11, 21));
+        Assertions.assertIterableEquals(ApiRoot.stringStorage.list, Lists.of("a!", "b!"));
     }
 
     @Test
     public void asLambdaTest4() {
-        String code = """
-                int max(int i1, int i2) => i1 > i2 ? i1 : i2;
-                int max(int i1, int i2, int i3) => max(max(i1, i2), i3);
-                int max(int i1, int i2, int i3, int i4) => max(max(i1, i2), max(i3, i4));
-                void func1(int i1, int i2, fn<(int, int) => int> callback) => intStorage.add(callback(i1, i2));
-                void func2(int i1, int i2, int i3, fn<(int, int, int) => int> callback) => intStorage.add(callback(i1, i2, i3));
-                
-                func1(10, 9, max);
-                func2(5, 6, 4, max);
-                """;
+        String code =
+                "int max(int i1, int i2) => i1 > i2 ? i1 : i2;\n" +
+                "int max(int i1, int i2, int i3) => max(max(i1, i2), i3);\n" +
+                "int max(int i1, int i2, int i3, int i4) => max(max(i1, i2), max(i3, i4));\n" +
+                "void func1(int i1, int i2, fn<(int, int) => int> callback) => intStorage.add(callback(i1, i2));\n" +
+                "void func2(int i1, int i2, int i3, fn<(int, int, int) => int> callback) => intStorage.add(callback(i1, i2, i3));\n" +
+                "\n" +
+                "func1(10, 9, max);\n" +
+                "func2(5, 6, 4, max);\n";
 
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
-        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(10, 6));
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, Lists.of(10, 6));
     }
 
     @Test
     public void refParameterTest1() {
-        String code = """
-                void inc(ref int x) {
-                    x++;
-                }
-                
-                int a = 100;
-                inc(ref a);
-                intStorage.add(a);
-                inc(ref a);
-                intStorage.add(a);
-                """;
+        String code =
+                "void inc(ref int x) {\n" +
+                "    x++;\n" +
+                "}\n" +
+                "\n" +
+                "int a = 100;\n" +
+                "inc(ref a);\n" +
+                "intStorage.add(a);\n" +
+                "inc(ref a);\n" +
+                "intStorage.add(a);\n";
 
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
-        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(101, 102));
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, Lists.of(101, 102));
     }
 
     @Test
     public void refParameterTest2() {
-        String code = """
-                void ten(ref float x) {
-                    x *= 10;
-                }
-                
-                float x = 1.0625;
-                for (int i = 0; i < 4; i++) {
-                    ten(ref x);
-                    floatStorage.add(x);
-                }
-                """;
+        String code =
+                "void ten(ref float x) {\n" +
+                "    x *= 10;\n" +
+                "}\n" +
+                "\n" +
+                "float x = 1.0625;\n" +
+                "for (int i = 0; i < 4; i++) {\n" +
+                "    ten(ref x);\n" +
+                "    floatStorage.add(x);\n" +
+                "}\n";
 
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
-        Assertions.assertIterableEquals(ApiRoot.floatStorage.list, List.of(10.625, 106.25, 1062.5, 10625.0));
+        Assertions.assertIterableEquals(ApiRoot.floatStorage.list, Lists.of(10.625, 106.25, 1062.5, 10625.0));
     }
 
     @Test
     public void multiLayerRefTest() {
-        String code = """
-                void f1(ref int x) {
-                    x += 10;
-                }
-                void f2(ref int x) {
-                    x += 100;
-                    f1(ref x);
-                }
-                void f3(ref int x) {
-                    x += 1000;
-                    f2(ref x);
-                }
-                
-                int a = 1;
-                f3(ref a);
-                intStorage.add(a);
-                """;
+        String code =
+                "void f1(ref int x) {\n" +
+                "    x += 10;\n" +
+                "}\n" +
+                "void f2(ref int x) {\n" +
+                "    x += 100;\n" +
+                "    f1(ref x);\n" +
+                "}\n" +
+                "void f3(ref int x) {\n" +
+                "    x += 1000;\n" +
+                "    f2(ref x);\n" +
+                "}\n" +
+                "\n" +
+                "int a = 1;\n" +
+                "f3(ref a);\n" +
+                "intStorage.add(a);\n";
 
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
-        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(1111));
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, Lists.of(1111));
     }
 
     @Test
     public void parameterWithNameAsStaticConstantTest() {
-        String code = """
-                int f(int run) { return run * run; }
-                
-                intStorage.add(f(100));
-                """;
+        String code =
+                "int f(int run) { return run * run; }\n" +
+                "\n" +
+                "intStorage.add(f(100));\n";
 
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
-        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(10000));
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, Lists.of(10000));
     }
 
     @Test
     public void duplicateParameterTest() {
-        String code = """
-                void f(int x, string ⟦x⟧) {}
-                """;
+        String code =
+                "void f(int x, string ⟦x⟧) {}\n";
 
         comparator.assertDiagnostics(
                 ApiRoot.class, code, "⟦⟧",
@@ -449,9 +430,8 @@ public class FunctionTests extends ComparatorTest {
 
     @Test
     public void letParameterTest() {
-        String code = """
-                void f(⟦let⟧ x) {}
-                """;
+        String code =
+                "void f(⟦let⟧ x) {}\n";
 
         comparator.assertDiagnostics(
                 ApiRoot.class, code, "⟦⟧",
@@ -461,27 +441,25 @@ public class FunctionTests extends ComparatorTest {
 
     @Test
     public void arrowFunctionTest1() {
-        String code = """
-                int sum(int i1, int i2) => i1 + i2;
-                void f1() => sum(1, 2);
-                void f2() => intStorage.add(120);
-                
-                intStorage.add(sum(100, 10));
-                f1();
-                f2();
-                """;
+        String code =
+                "int sum(int i1, int i2) => i1 + i2;\n" +
+                "void f1() => sum(1, 2);\n" +
+                "void f2() => intStorage.add(120);\n" +
+                "\n" +
+                "intStorage.add(sum(100, 10));\n" +
+                "f1();\n" +
+                "f2();\n";
 
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
-        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(110, 120));
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, Lists.of(110, 120));
     }
 
     @Test
     public void arrowFunctionTest2() {
-        String code = """
-                int sum(int i1, int i2) => ⟦intStorage.add(i1 + i2)⟧;
-                """;
+        String code =
+                "int sum(int i1, int i2) => ⟦intStorage.add(i1 + i2)⟧;\n";
 
         comparator.assertDiagnostics(
                 ApiRoot.class, code, "⟦⟧",
@@ -491,10 +469,9 @@ public class FunctionTests extends ComparatorTest {
 
     @Test
     public void staticVariableConflictTest() {
-        String code = """
-                static int func;
-                void ⟦func⟧(){}
-                """;
+        String code =
+                "static int func;\n" +
+                "void ⟦func⟧(){}\n";
 
         comparator.assertDiagnostics(
                 ApiRoot.class, code, "⟦⟧",
@@ -504,25 +481,23 @@ public class FunctionTests extends ComparatorTest {
 
     @Test
     public void externalNameOverrideTest() {
-        String code = """
-                void run() {
-                    intStorage.add(123);
-                }
-                run();
-                """;
+        String code =
+                "void run() {\n" +
+                "    intStorage.add(123);\n" +
+                "}\n" +
+                "run();\n";
 
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
-        Assertions.assertIterableEquals(List.of(123), ApiRoot.intStorage.list);
+        Assertions.assertIterableEquals(Lists.of(123), ApiRoot.intStorage.list);
     }
 
     @Test
     public void typeAliasConflictTest() {
-        String code = """
-                typealias func = int;
-                void ⟦func⟧(){}
-                """;
+        String code =
+                "typealias func = int;\n" +
+                "void ⟦func⟧(){}\n";
 
         comparator.assertDiagnostics(
                 ApiRoot.class, code, "⟦⟧",
@@ -532,10 +507,9 @@ public class FunctionTests extends ComparatorTest {
 
     @Test
     public void classConflictTest() {
-        String code = """
-                class func {}
-                void ⟦func⟧(){}
-                """;
+        String code =
+                "class func {}\n" +
+                "void ⟦func⟧(){}\n";
 
         comparator.assertDiagnostics(
                 ApiRoot.class, code, "⟦⟧",
@@ -545,37 +519,35 @@ public class FunctionTests extends ComparatorTest {
 
     @Test
     public void functionOverloadTest1() {
-        String code = """
-                int max(int i1, int i2) => i1 > i2 ? i1 : i2;
-                int max(int i1, int i2, int i3) => max(max(i1, i2), i3);
-                int max(int i1, int i2, int i3, int i4) => max(max(i1, i2), max(i3, i4));
-                
-                intStorage.add(max(1, 2));
-                intStorage.add(max(1, 3, 2));
-                intStorage.add(max(1, 4, 3, 2));
-                """;
+        String code =
+                "int max(int i1, int i2) => i1 > i2 ? i1 : i2;\n" +
+                "int max(int i1, int i2, int i3) => max(max(i1, i2), i3);\n" +
+                "int max(int i1, int i2, int i3, int i4) => max(max(i1, i2), max(i3, i4));\n" +
+                "\n" +
+                "intStorage.add(max(1, 2));\n" +
+                "intStorage.add(max(1, 3, 2));\n" +
+                "intStorage.add(max(1, 4, 3, 2));\n";
 
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
-        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(2, 3, 4));
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, Lists.of(2, 3, 4));
     }
 
     @Test
     public void functionOverloadTest2() {
-        String code = """
-                int max(int i1, int i2) => i1 > i2 ? i1 : i2;
-                int max(int i1, int i2, int i3) => max(max(i1, i2), i3);
-                int max(int i1, int i2, int i3, int i4) => max(max(i1, i2), max(i3, i4));
-                
-                intStorage.add(⟦max⟧(1));
-                """;
+        String code =
+                "int max(int i1, int i2) => i1 > i2 ? i1 : i2;\n" +
+                "int max(int i1, int i2, int i3) => max(max(i1, i2), i3);\n" +
+                "int max(int i1, int i2, int i3, int i4) => max(max(i1, i2), max(i3, i4));\n" +
+                "\n" +
+                "intStorage.add(⟦max⟧(1));\n";
 
-        String candidates = """
-                Candidates:
-                int max(int i1, int i2)
-                int max(int i1, int i2, int i3)
-                int max(int i1, int i2, int i3, int i4)""";
+        String candidates =
+                "Candidates:\n" +
+                "int max(int i1, int i2)\n" +
+                "int max(int i1, int i2, int i3)\n" +
+                "int max(int i1, int i2, int i3, int i4)";
 
         comparator.assertDiagnostics(
                 ApiRoot.class, code, "⟦⟧",
@@ -585,15 +557,14 @@ public class FunctionTests extends ComparatorTest {
 
     @Test
     public void functionOverloadTest3() {
-        String code = """
-                int max(int i1, int i2) => i1 > i2 ? i1 : i2;
-                
-                intStorage.add(⟦max⟧(1));
-                """;
+        String code =
+                "int max(int i1, int i2) => i1 > i2 ? i1 : i2;\n" +
+                "\n" +
+                "intStorage.add(⟦max⟧(1));\n";
 
-        String candidates = """
-                Candidates:
-                int max(int i1, int i2)""";
+        String candidates =
+                "Candidates:\n" +
+                "int max(int i1, int i2)";
 
         comparator.assertDiagnostics(
                 ApiRoot.class, code, "⟦⟧",
@@ -603,10 +574,9 @@ public class FunctionTests extends ComparatorTest {
 
     @Test
     public void functionOverloadTest4() {
-        String code = """
-                void func(int i1, int i2) {}
-                int ⟦func⟧(int a1, int a2) => 0;
-                """;
+        String code =
+                "void func(int i1, int i2) {}\n" +
+                "int ⟦func⟧(int a1, int a2) => 0;\n";
 
         comparator.assertDiagnostics(
                 ApiRoot.class, code, "⟦⟧",

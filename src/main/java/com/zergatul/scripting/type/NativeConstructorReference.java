@@ -1,5 +1,6 @@
 package com.zergatul.scripting.type;
 
+import com.zergatul.scripting.utility.Lists;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Type;
 
@@ -55,6 +56,6 @@ public class NativeConstructorReference extends ConstructorReference {
     }
 
     public List<SType> getParameterTypes() {
-        return getParameters().stream().map(MethodParameter::type).toList();
+        return Lists.from(getParameters().stream().map(MethodParameter::type));
     }
 }

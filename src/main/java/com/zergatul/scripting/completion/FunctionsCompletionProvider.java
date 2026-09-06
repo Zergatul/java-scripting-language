@@ -5,6 +5,7 @@ import com.zergatul.scripting.binding.nodes.BoundCompilationUnitMemberNode;
 import com.zergatul.scripting.binding.nodes.BoundFunctionDeclarationNode;
 import com.zergatul.scripting.compiler.CompilationParameters;
 import com.zergatul.scripting.symbols.Function;
+import com.zergatul.scripting.utility.Lists;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -18,12 +19,13 @@ public class FunctionsCompletionProvider<T> extends AbstractCompletionProvider<T
     @Override
     public List<T> provide(CompilationParameters parameters, BinderOutput output, CompletionContext context) {
         if (!context.canExpression()) {
-            return List.of();
+            return Lists.of();
         }
 
         List<T> suggestions = new ArrayList<>();
         for (BoundCompilationUnitMemberNode member : output.unit().members.members) {
-            if (member instanceof BoundFunctionDeclarationNode functionNode) {
+            if (member instanceof BoundFunctionDeclarationNode) {
+                BoundFunctionDeclarationNode functionNode = (BoundFunctionDeclarationNode) member;
                 String name = functionNode.name.value;
                 if (name == null || name.isEmpty()) {
                     continue;

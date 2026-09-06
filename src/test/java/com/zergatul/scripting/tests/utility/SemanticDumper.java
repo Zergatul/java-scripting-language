@@ -1,6 +1,7 @@
 package com.zergatul.scripting.tests.utility;
 
 import com.zergatul.scripting.highlighting.SemanticToken;
+import com.zergatul.scripting.utility.Lists;
 
 import java.util.List;
 
@@ -15,8 +16,8 @@ public class SemanticDumper extends Dumper {
             sb.append(", ");
 
             if (!token.modifiers().isEmpty()) {
-                sb.append("List.of(");
-                sb.append(String.join(", ", token.modifiers().stream().map(mod -> "SemanticTokenModifier." + mod).toList()));
+                sb.append("Lists.of(");
+                sb.append(String.join(", ", Lists.from(token.modifiers().stream().map(mod -> "SemanticTokenModifier." + mod))));
                 sb.append("), ");
             }
 

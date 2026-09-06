@@ -2,6 +2,7 @@ package com.zergatul.scripting.type;
 
 import com.zergatul.scripting.*;
 import com.zergatul.scripting.type.operation.*;
+import com.zergatul.scripting.utility.Lists;
 import org.jspecify.annotations.Nullable;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Type;
@@ -42,7 +43,8 @@ public class SCustomType extends SReferenceType {
 
     @Override
     public boolean equals(Object obj) {
-        if (obj instanceof SCustomType other) {
+        if (obj instanceof SCustomType) {
+            SCustomType other = (SCustomType) obj;
             return other.clazz == clazz;
         } else {
             return false;
@@ -62,7 +64,7 @@ public class SCustomType extends SReferenceType {
 
     @Override
     public List<SType> getInterfaces() {
-        return Arrays.stream(clazz.getInterfaces()).map(SType::fromJavaType).toList();
+        return Lists.from(Arrays.stream(clazz.getInterfaces()).map(SType::fromJavaType));
     }
 
     @Override
@@ -121,11 +123,10 @@ public class SCustomType extends SReferenceType {
 
     @Override
     public List<ConstructorReference> getConstructors() {
-        return Arrays.stream(clazz.getDeclaredConstructors())
-                .filter(c -> !c.isSynthetic())
-                .map(NativeConstructorReference::new)
-                .map(c -> (ConstructorReference) c)
-                .toList();
+        return Lists.from(
+                Arrays.stream(clazz.getDeclaredConstructors())
+                        .filter(c -> !c.isSynthetic())
+                        .map(NativeConstructorReference::new));
     }
 
     @Override
@@ -208,17 +209,16 @@ public class SCustomType extends SReferenceType {
     }
 
     private List<MethodReference> loadInstanceMethods() {
-        return Arrays.stream(this.clazz.getDeclaredMethods())
-                .filter(m -> Modifier.isPublic(m.getModifiers()))
-                .filter(m -> !Modifier.isStatic(m.getModifiers()))
-                .filter(m -> m.getDeclaringClass() != Object.class)
-                .filter(m -> !m.isAnnotationPresent(Getter.class))
-                .filter(m -> !m.isAnnotationPresent(Setter.class))
-                .filter(m -> !m.isAnnotationPresent(IndexGetter.class))
-                .filter(m -> !m.isAnnotationPresent(IndexSetter.class))
-                .map(NativeMethodReference::new)
-                .map(r -> (MethodReference) r)
-                .toList();
+        return Lists.from(
+                Arrays.stream(this.clazz.getDeclaredMethods())
+                        .filter(m -> Modifier.isPublic(m.getModifiers()))
+                        .filter(m -> !Modifier.isStatic(m.getModifiers()))
+                        .filter(m -> m.getDeclaringClass() != Object.class)
+                        .filter(m -> !m.isAnnotationPresent(Getter.class))
+                        .filter(m -> !m.isAnnotationPresent(Setter.class))
+                        .filter(m -> !m.isAnnotationPresent(IndexGetter.class))
+                        .filter(m -> !m.isAnnotationPresent(IndexSetter.class))
+                        .map(NativeMethodReference::new));
     }
 
     private List<IndexOperation> loadIndexes() {
@@ -273,16 +273,15 @@ public class SCustomType extends SReferenceType {
     }
 
     private List<MethodReference> loadStaticMethods() {
-        return Arrays.stream(this.clazz.getDeclaredMethods())
-                .filter(m -> Modifier.isPublic(m.getModifiers()))
-                .filter(m -> Modifier.isStatic(m.getModifiers()))
-                .filter(m -> m.getDeclaringClass() != Object.class)
-                .filter(m -> !m.isAnnotationPresent(Getter.class))
-                .filter(m -> !m.isAnnotationPresent(Setter.class))
-                .filter(m -> !m.isAnnotationPresent(BinaryOperatorMethod.class))
-                .map(NativeMethodReference::new)
-                .map(r -> (MethodReference) r)
-                .toList();
+        return Lists.from(
+                Arrays.stream(this.clazz.getDeclaredMethods())
+                        .filter(m -> Modifier.isPublic(m.getModifiers()))
+                        .filter(m -> Modifier.isStatic(m.getModifiers()))
+                        .filter(m -> m.getDeclaringClass() != Object.class)
+                        .filter(m -> !m.isAnnotationPresent(Getter.class))
+                        .filter(m -> !m.isAnnotationPresent(Setter.class))
+                        .filter(m -> !m.isAnnotationPresent(BinaryOperatorMethod.class))
+                        .map(NativeMethodReference::new));
     }
 
     private List<PropertyReference> loadStaticProperties() {

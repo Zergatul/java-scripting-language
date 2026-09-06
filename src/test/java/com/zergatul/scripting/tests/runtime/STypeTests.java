@@ -1,5 +1,7 @@
 package com.zergatul.scripting.tests.runtime;
 
+import com.zergatul.scripting.utility.Lists;
+
 import com.zergatul.scripting.type.*;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -56,7 +58,7 @@ public class STypeTests {
 
     private static class TestClass3 {
         public List<ServerPlayer> getPlayers(Predicate<? super ServerPlayer> predicate) {
-            return List.of();
+            return Lists.of();
         }
     }
 

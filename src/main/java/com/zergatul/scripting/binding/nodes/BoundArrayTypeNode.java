@@ -4,6 +4,7 @@ import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
 import com.zergatul.scripting.parser.nodes.ArrayTypeNode;
 import com.zergatul.scripting.type.SArrayType;
+import com.zergatul.scripting.utility.Lists;
 
 import java.util.List;
 
@@ -34,6 +35,6 @@ public class BoundArrayTypeNode extends BoundTypeNode {
 
     @Override
     public List<BoundNode> getChildren() {
-        return List.of(underlying);
+        return Lists.of(underlying);
     }
 }

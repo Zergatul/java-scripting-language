@@ -40,10 +40,11 @@ public abstract class SymbolRef {
 
     public LocalVariable asLocalVariableExpanded() {
         Symbol symbol = get();
-        if (symbol instanceof LocalVariable local) {
-            return local;
+        if (symbol instanceof LocalVariable) {
+            return (LocalVariable) symbol;
         }
-        if (symbol instanceof LiftedVariable lifted) {
+        if (symbol instanceof LiftedVariable) {
+            LiftedVariable lifted = (LiftedVariable) symbol;
             return lifted.getUnderlying();
         }
         throw new InternalException();
@@ -51,7 +52,8 @@ public abstract class SymbolRef {
 
     @Override
     public boolean equals(Object obj) {
-        if (obj instanceof SymbolRef other) {
+        if (obj instanceof SymbolRef) {
+            SymbolRef other = (SymbolRef) obj;
             if (other.references.size() != references.size()) {
                 return false;
             }

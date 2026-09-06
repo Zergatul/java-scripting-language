@@ -1,5 +1,7 @@
 package com.zergatul.scripting.tests.compiler;
 
+import com.zergatul.scripting.utility.Lists;
+
 import com.zergatul.scripting.AsyncRunnable;
 import com.zergatul.scripting.DiagnosticMessage;
 import com.zergatul.scripting.SingleLineTextRange;
@@ -30,129 +32,122 @@ public class IsExpressionDeclarationPatternTests extends ComparatorTest {
 
     @Test
     public void ifStatementTest1() {
-        String code = """
-                typealias Object = Java<java.lang.Object>;
-                
-                Object x = "hello";
-                if (x is string str) {
-                    stringStorage.add(str);
-                }
-                """;
+        String code =
+                "typealias Object = Java<java.lang.Object>;\n" +
+                "\n" +
+                "Object x = \"hello\";\n" +
+                "if (x is string str) {\n" +
+                "    stringStorage.add(str);\n" +
+                "}\n";
 
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
-        Assertions.assertIterableEquals(ApiRoot.stringStorage.list, List.of("hello"));
+        Assertions.assertIterableEquals(ApiRoot.stringStorage.list, Lists.of("hello"));
     }
 
     @Test
     public void ifStatementTest2() {
-        String code = """
-                typealias Object = Java<java.lang.Object>;
-                
-                Object x = "hello";
-                if (x is not string str) {
-                } else {
-                    stringStorage.add(str);
-                }
-                """;
+        String code =
+                "typealias Object = Java<java.lang.Object>;\n" +
+                "\n" +
+                "Object x = \"hello\";\n" +
+                "if (x is not string str) {\n" +
+                "} else {\n" +
+                "    stringStorage.add(str);\n" +
+                "}\n";
 
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
-        Assertions.assertIterableEquals(ApiRoot.stringStorage.list, List.of("hello"));
+        Assertions.assertIterableEquals(ApiRoot.stringStorage.list, Lists.of("hello"));
     }
 
     @Test
     public void ifStatementTest3() {
-        String code = """
-                typealias Object = Java<java.lang.Object>;
-                
-                Object x = "hello";
-                if (!(x is string str)) {
-                } else {
-                    stringStorage.add(str);
-                }
-                """;
+        String code =
+                "typealias Object = Java<java.lang.Object>;\n" +
+                "\n" +
+                "Object x = \"hello\";\n" +
+                "if (!(x is string str)) {\n" +
+                "} else {\n" +
+                "    stringStorage.add(str);\n" +
+                "}\n";
 
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
-        Assertions.assertIterableEquals(ApiRoot.stringStorage.list, List.of("hello"));
+        Assertions.assertIterableEquals(ApiRoot.stringStorage.list, Lists.of("hello"));
     }
 
     @Test
     public void ifStatementTest4() {
-        String code = """
-                typealias Object = Java<java.lang.Object>;
-                
-                Object x = "hello";
-                if (!!(x is string str)) {
-                    stringStorage.add(str);
-                }
-                """;
+        String code =
+                "typealias Object = Java<java.lang.Object>;\n" +
+                "\n" +
+                "Object x = \"hello\";\n" +
+                "if (!!(x is string str)) {\n" +
+                "    stringStorage.add(str);\n" +
+                "}\n";
 
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
-        Assertions.assertIterableEquals(ApiRoot.stringStorage.list, List.of("hello"));
+        Assertions.assertIterableEquals(ApiRoot.stringStorage.list, Lists.of("hello"));
     }
 
     @Test
     public void ifStatementAndTest1() {
-        String code = """
-                typealias Object = Java<java.lang.Object>;
-                
-                Object o1 = "hello";
-                Object o2 = 123;
-                if (o1 is string str && o2 is int i) {
-                    stringStorage.add(str);
-                    intStorage.add(i);
-                }
-                """;
+        String code =
+                "typealias Object = Java<java.lang.Object>;\n" +
+                "\n" +
+                "Object o1 = \"hello\";\n" +
+                "Object o2 = 123;\n" +
+                "if (o1 is string str && o2 is int i) {\n" +
+                "    stringStorage.add(str);\n" +
+                "    intStorage.add(i);\n" +
+                "}\n";
 
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
-        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(123));
-        Assertions.assertIterableEquals(ApiRoot.stringStorage.list, List.of("hello"));
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, Lists.of(123));
+        Assertions.assertIterableEquals(ApiRoot.stringStorage.list, Lists.of("hello"));
     }
 
     @Test
     public void ifStatementOrTest1() {
-        String code = """
-                typealias Object = Java<java.lang.Object>;
-                
-                Object o1 = "hello";
-                Object o2 = 123;
-                if (o1 is not string str || o2 is not int i) {
-                } else {
-                    stringStorage.add(str);
-                    intStorage.add(i);
-                }
-                """;
+        String code =
+                "typealias Object = Java<java.lang.Object>;\n" +
+                "\n" +
+                "Object o1 = \"hello\";\n" +
+                "Object o2 = 123;\n" +
+                "if (o1 is not string str || o2 is not int i) {\n" +
+                "} else {\n" +
+                "    stringStorage.add(str);\n" +
+                "    intStorage.add(i);\n" +
+                "}\n";
 
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
-        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(123));
-        Assertions.assertIterableEquals(ApiRoot.stringStorage.list, List.of("hello"));
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, Lists.of(123));
+        Assertions.assertIterableEquals(ApiRoot.stringStorage.list, Lists.of("hello"));
     }
 
     @Test
     public void ifStatementScopeTest1() {
-        String code = """
-                typealias Object = Java<java.lang.Object>;
-                
-                Object x = "hello";
-                if (x is string str) {
-                } else {
-                    stringStorage.add(str);
-                }
-                """;
+        String code =
+                "typealias Object = Java<java.lang.Object>;\n" +
+                "\n" +
+                "Object x = \"hello\";\n" +
+                "if (x is string str) {\n" +
+                "} else {\n" +
+                "    stringStorage.add(str);\n" +
+                "}\n";
 
         comparator.assertEquals(
-                List.of(
+                Lists.of(
                         new DiagnosticMessage(
                                 BinderErrors.NameDoesNotExist,
                                 new SingleLineTextRange(6, 23, 118, 3),
@@ -162,18 +157,17 @@ public class IsExpressionDeclarationPatternTests extends ComparatorTest {
 
     @Test
     public void ifStatementScopeTest2() {
-        String code = """
-                typealias Object = Java<java.lang.Object>;
-                
-                Object x = "hello";
-                if (x is not string str) {
-                    stringStorage.add(str);
-                } else {
-                }
-                """;
+        String code =
+                "typealias Object = Java<java.lang.Object>;\n" +
+                "\n" +
+                "Object x = \"hello\";\n" +
+                "if (x is not string str) {\n" +
+                "    stringStorage.add(str);\n" +
+                "} else {\n" +
+                "}\n";
 
         comparator.assertEquals(
-                List.of(
+                Lists.of(
                         new DiagnosticMessage(
                                 BinderErrors.NameDoesNotExist,
                                 new SingleLineTextRange(5, 23, 113, 3),
@@ -183,19 +177,18 @@ public class IsExpressionDeclarationPatternTests extends ComparatorTest {
 
     @Test
     public void ifStatementAndScopeTest1() {
-        String code = """
-                typealias Object = Java<java.lang.Object>;
-                
-                Object o1 = "hello";
-                Object o2 = 123;
-                if (o1 is not string str && o2 is not int i) {
-                    stringStorage.add(str);
-                    intStorage.add(i);
-                }
-                """;
+        String code =
+                "typealias Object = Java<java.lang.Object>;\n" +
+                "\n" +
+                "Object o1 = \"hello\";\n" +
+                "Object o2 = 123;\n" +
+                "if (o1 is not string str && o2 is not int i) {\n" +
+                "    stringStorage.add(str);\n" +
+                "    intStorage.add(i);\n" +
+                "}\n";
 
         comparator.assertEquals(
-                List.of(
+                Lists.of(
                         new DiagnosticMessage(
                                 BinderErrors.NameDoesNotExist,
                                 new SingleLineTextRange(6, 23, 151, 3),
@@ -209,19 +202,18 @@ public class IsExpressionDeclarationPatternTests extends ComparatorTest {
 
     @Test
     public void ifStatementOrScopeTest1() {
-        String code = """
-                typealias Object = Java<java.lang.Object>;
-                
-                Object o1 = "hello";
-                Object o2 = 123;
-                if (o1 is string str || o2 is int i) {
-                    stringStorage.add(str);
-                    intStorage.add(i);
-                }
-                """;
+        String code =
+                "typealias Object = Java<java.lang.Object>;\n" +
+                "\n" +
+                "Object o1 = \"hello\";\n" +
+                "Object o2 = 123;\n" +
+                "if (o1 is string str || o2 is int i) {\n" +
+                "    stringStorage.add(str);\n" +
+                "    intStorage.add(i);\n" +
+                "}\n";
 
         comparator.assertEquals(
-                List.of(
+                Lists.of(
                         new DiagnosticMessage(
                                 BinderErrors.NameDoesNotExist,
                                 new SingleLineTextRange(6, 23, 143, 3),
@@ -235,56 +227,53 @@ public class IsExpressionDeclarationPatternTests extends ComparatorTest {
 
     @Test
     public void ifStatementVariableFallthroughTest1() {
-        String code = """
-                typealias Object = Java<java.lang.Object>;
-                
-                Object x = "hello";
-                if (x is not string str) {
-                    return;
-                }
-                stringStorage.add(str);
-                """;
+        String code =
+                "typealias Object = Java<java.lang.Object>;\n" +
+                "\n" +
+                "Object x = \"hello\";\n" +
+                "if (x is not string str) {\n" +
+                "    return;\n" +
+                "}\n" +
+                "stringStorage.add(str);\n";
 
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
-        Assertions.assertIterableEquals(ApiRoot.stringStorage.list, List.of("hello"));
+        Assertions.assertIterableEquals(ApiRoot.stringStorage.list, Lists.of("hello"));
     }
 
     @Test
     public void ifStatementVariableFallthroughTest2() {
-        String code = """
-                typealias Object = Java<java.lang.Object>;
-                
-                Object x = "hello";
-                if (x is string str) {
-                    stringStorage.add(str);
-                } else {
-                    return;
-                }
-                stringStorage.add(str);
-                """;
+        String code =
+                "typealias Object = Java<java.lang.Object>;\n" +
+                "\n" +
+                "Object x = \"hello\";\n" +
+                "if (x is string str) {\n" +
+                "    stringStorage.add(str);\n" +
+                "} else {\n" +
+                "    return;\n" +
+                "}\n" +
+                "stringStorage.add(str);\n";
 
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
-        Assertions.assertIterableEquals(ApiRoot.stringStorage.list, List.of("hello", "hello"));
+        Assertions.assertIterableEquals(ApiRoot.stringStorage.list, Lists.of("hello", "hello"));
     }
 
     @Test
     public void ifStatementVariableFallthroughScopeTest1() {
-        String code = """
-                typealias Object = Java<java.lang.Object>;
-                
-                Object x = "hello";
-                if (x is string str) {
-                    return;
-                }
-                stringStorage.add(str);
-                """;
+        String code =
+                "typealias Object = Java<java.lang.Object>;\n" +
+                "\n" +
+                "Object x = \"hello\";\n" +
+                "if (x is string str) {\n" +
+                "    return;\n" +
+                "}\n" +
+                "stringStorage.add(str);\n";
 
         comparator.assertEquals(
-                List.of(
+                Lists.of(
                         new DiagnosticMessage(
                                 BinderErrors.NameDoesNotExist,
                                 new SingleLineTextRange(7, 19, 119, 3),
@@ -294,19 +283,18 @@ public class IsExpressionDeclarationPatternTests extends ComparatorTest {
 
     @Test
     public void ifStatementVariableFallthroughScopeTest2() {
-        String code = """
-                typealias Object = Java<java.lang.Object>;
-                
-                Object x = "hello";
-                if (x is not string str) {
-                } else {
-                    return;
-                }
-                stringStorage.add(str);
-                """;
+        String code =
+                "typealias Object = Java<java.lang.Object>;\n" +
+                "\n" +
+                "Object x = \"hello\";\n" +
+                "if (x is not string str) {\n" +
+                "} else {\n" +
+                "    return;\n" +
+                "}\n" +
+                "stringStorage.add(str);\n";
 
         comparator.assertEquals(
-                List.of(
+                Lists.of(
                         new DiagnosticMessage(
                                 BinderErrors.NameDoesNotExist,
                                 new SingleLineTextRange(8, 19, 132, 3),
@@ -316,13 +304,12 @@ public class IsExpressionDeclarationPatternTests extends ComparatorTest {
 
     @Test
     public void asyncTest1() {
-        String code = """
-                await futures.create();
-                let x = "123";
-                if (x is string str) {
-                    stringStorage.add(str);
-                }
-                """;
+        String code =
+                "await futures.create();\n" +
+                "let x = \"123\";\n" +
+                "if (x is string str) {\n" +
+                "    stringStorage.add(str);\n" +
+                "}\n";
 
         AsyncRunnable program = compileAsync(ApiRoot.class, code);
         CompletableFuture<?> future = program.run();
@@ -331,20 +318,19 @@ public class IsExpressionDeclarationPatternTests extends ComparatorTest {
 
         ApiRoot.futures.get(0).complete(null);
 
-        Assertions.assertIterableEquals(ApiRoot.stringStorage.list, List.of("123"));
+        Assertions.assertIterableEquals(ApiRoot.stringStorage.list, Lists.of("123"));
         Assertions.assertTrue(future.isDone());
     }
 
     @Test
     public void asyncTest2() {
-        String code = """
-                await futures.create();
-                let x = "123";
-                if (x is string str) {
-                    await futures.create();
-                    stringStorage.add(str);
-                }
-                """;
+        String code =
+                "await futures.create();\n" +
+                "let x = \"123\";\n" +
+                "if (x is string str) {\n" +
+                "    await futures.create();\n" +
+                "    stringStorage.add(str);\n" +
+                "}\n";
 
         AsyncRunnable program = compileAsync(ApiRoot.class, code);
         CompletableFuture<?> future = program.run();
@@ -357,21 +343,20 @@ public class IsExpressionDeclarationPatternTests extends ComparatorTest {
 
         ApiRoot.futures.get(1).complete(null);
 
-        Assertions.assertIterableEquals(ApiRoot.stringStorage.list, List.of("123"));
+        Assertions.assertIterableEquals(ApiRoot.stringStorage.list, Lists.of("123"));
         Assertions.assertTrue(future.isDone());
     }
 
     @Test
     public void asyncTest3() {
-        String code = """
-                let x = "123";
-                if (x is not string str) {
-                    await futures.create();
-                    return;
-                }
-                await futures.create();
-                stringStorage.add(str);
-                """;
+        String code =
+                "let x = \"123\";\n" +
+                "if (x is not string str) {\n" +
+                "    await futures.create();\n" +
+                "    return;\n" +
+                "}\n" +
+                "await futures.create();\n" +
+                "stringStorage.add(str);\n";
 
         AsyncRunnable program = compileAsync(ApiRoot.class, code);
         CompletableFuture<?> future = program.run();
@@ -380,22 +365,21 @@ public class IsExpressionDeclarationPatternTests extends ComparatorTest {
 
         ApiRoot.futures.get(0).complete(null);
 
-        Assertions.assertIterableEquals(ApiRoot.stringStorage.list, List.of("123"));
+        Assertions.assertIterableEquals(ApiRoot.stringStorage.list, Lists.of("123"));
         Assertions.assertTrue(future.isDone());
     }
 
     @Test
     public void redeclarationTest1() {
-        String code = """
-                typealias Object = Java<java.lang.Object>;
-                
-                int str = 1;
-                Object x = "hello";
-                if (x is string str) {}
-                """;
+        String code =
+                "typealias Object = Java<java.lang.Object>;\n" +
+                "\n" +
+                "int str = 1;\n" +
+                "Object x = \"hello\";\n" +
+                "if (x is string str) {}\n";
 
         comparator.assertEquals(
-                List.of(
+                Lists.of(
                         new DiagnosticMessage(
                                 BinderErrors.SymbolAlreadyDeclared,
                                 new SingleLineTextRange(5, 17, 93, 3),
@@ -405,16 +389,15 @@ public class IsExpressionDeclarationPatternTests extends ComparatorTest {
 
     @Test
     public void redeclarationTest2() {
-        String code = """
-                typealias Object = Java<java.lang.Object>;
-                
-                Object o1 = "hello";
-                Object o2 = 1;
-                if (o1 is string str && o2 is int str) {}
-                """;
+        String code =
+                "typealias Object = Java<java.lang.Object>;\n" +
+                "\n" +
+                "Object o1 = \"hello\";\n" +
+                "Object o2 = 1;\n" +
+                "if (o1 is string str && o2 is int str) {}\n";
 
         comparator.assertEquals(
-                List.of(
+                Lists.of(
                         new DiagnosticMessage(
                                 BinderErrors.VariableRedeclarationInCondition,
                                 new SingleLineTextRange(5, 5, 84, 33),

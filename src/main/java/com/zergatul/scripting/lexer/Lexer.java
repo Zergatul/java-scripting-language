@@ -40,31 +40,37 @@ public class Lexer {
         loop:
         while (true) {
             switch (current) {
-                case '(' -> {
+                case '(': {
                     appendToken(TokenType.LEFT_PARENTHESES);
                     advance();
+                    break;
                 }
-                case ')' -> {
+                case ')': {
                     appendToken(TokenType.RIGHT_PARENTHESES);
                     advance();
+                    break;
                 }
-                case '[' -> {
+                case '[': {
                     appendToken(TokenType.LEFT_SQUARE_BRACKET);
                     advance();
+                    break;
                 }
-                case ']' -> {
+                case ']': {
                     appendToken(TokenType.RIGHT_SQUARE_BRACKET);
                     advance();
+                    break;
                 }
-                case '{' -> {
+                case '{': {
                     appendToken(TokenType.LEFT_CURLY_BRACKET);
                     advance();
+                    break;
                 }
-                case '}' -> {
+                case '}': {
                     appendToken(TokenType.RIGHT_CURLY_BRACKET);
                     advance();
+                    break;
                 }
-                case '?' -> {
+                case '?': {
                     if (next == '?') {
                         trackBeginToken();
                         advance();
@@ -79,8 +85,9 @@ public class Lexer {
                         appendToken(TokenType.QUESTION);
                         advance();
                     }
+                    break;
                 }
-                case '.' -> {
+                case '.': {
                     if (next == '#') {
                         trackBeginToken();
                         advance();
@@ -92,24 +99,29 @@ public class Lexer {
                         appendToken(TokenType.DOT);
                         advance();
                     }
+                    break;
                 }
-                case '$' -> {
+                case '$': {
                     appendToken(TokenType.DOLLAR);
                     advance();
+                    break;
                 }
-                case ',' -> {
+                case ',': {
                     appendToken(TokenType.COMMA);
                     advance();
+                    break;
                 }
-                case ':' -> {
+                case ':': {
                     appendToken(TokenType.COLON);
                     advance();
+                    break;
                 }
-                case ';' -> {
+                case ';': {
                     appendToken(TokenType.SEMICOLON);
                     advance();
+                    break;
                 }
-                case '+' -> {
+                case '+': {
                     if (next == '=') {
                         trackBeginToken();
                         advance();
@@ -124,8 +136,9 @@ public class Lexer {
                         appendToken(TokenType.PLUS);
                         advance();
                     }
+                    break;
                 }
-                case '-' -> {
+                case '-': {
                     if (next == '=') {
                         trackBeginToken();
                         advance();
@@ -140,8 +153,9 @@ public class Lexer {
                         appendToken(TokenType.MINUS);
                         advance();
                     }
+                    break;
                 }
-                case '*' -> {
+                case '*': {
                     if (next == '=') {
                         trackBeginToken();
                         advance();
@@ -151,10 +165,11 @@ public class Lexer {
                         appendToken(TokenType.ASTERISK);
                         advance();
                     }
+                    break;
                 }
-                case '/' -> {
+                case '/': {
                     switch (next) {
-                        case '/' -> {
+                        case '/':
                             trackBeginToken();
                             advance();
                             advance();
@@ -163,8 +178,8 @@ public class Lexer {
                             }
 
                             endComment(TokenType.SINGLE_LINE_COMMENT);
-                        }
-                        case '*' -> {
+                            break;
+                        case '*':
                             trackBeginToken();
                             advance();
                             advance();
@@ -193,20 +208,21 @@ public class Lexer {
                                     advance();
                                 }
                             }
-                        }
-                        case '=' -> {
+                            break;
+                        case '=':
                             trackBeginToken();
                             advance();
                             advance();
                             endToken(TokenType.SLASH_EQUAL);
-                        }
-                        default -> {
+                            break;
+                        default:
                             appendToken(TokenType.SLASH);
                             advance();
-                        }
+                            break;
                     }
+                    break;
                 }
-                case '%' -> {
+                case '%': {
                     if (next == '=') {
                         trackBeginToken();
                         advance();
@@ -216,8 +232,9 @@ public class Lexer {
                         appendToken(TokenType.PERCENT);
                         advance();
                     }
+                    break;
                 }
-                case '=' -> {
+                case '=': {
                     if (next == '=') {
                         trackBeginToken();
                         advance();
@@ -232,8 +249,9 @@ public class Lexer {
                         appendToken(TokenType.EQUAL);
                         advance();
                     }
+                    break;
                 }
-                case '!' -> {
+                case '!': {
                     if (next == '=') {
                         trackBeginToken();
                         advance();
@@ -243,8 +261,9 @@ public class Lexer {
                         appendToken(TokenType.EXCLAMATION);
                         advance();
                     }
+                    break;
                 }
-                case '&' -> {
+                case '&': {
                     if (next == '&') {
                         trackBeginToken();
                         advance();
@@ -259,8 +278,9 @@ public class Lexer {
                         appendToken(TokenType.AMPERSAND);
                         advance();
                     }
+                    break;
                 }
-                case '|' -> {
+                case '|': {
                     if (next == '|') {
                         trackBeginToken();
                         advance();
@@ -275,8 +295,9 @@ public class Lexer {
                         appendToken(TokenType.PIPE);
                         advance();
                     }
+                    break;
                 }
-                case '<' -> {
+                case '<': {
                     if (next == '=') {
                         trackBeginToken();
                         advance();
@@ -286,8 +307,9 @@ public class Lexer {
                         appendToken(TokenType.LESS);
                         advance();
                     }
+                    break;
                 }
-                case '>' -> {
+                case '>': {
                     if (next == '=') {
                         trackBeginToken();
                         advance();
@@ -297,8 +319,9 @@ public class Lexer {
                         appendToken(TokenType.GREATER);
                         advance();
                     }
+                    break;
                 }
-                case '"' -> {
+                case '"': {
                     trackBeginToken();
                     StringBuilder builder = new StringBuilder();
                     while (true) {
@@ -323,8 +346,9 @@ public class Lexer {
                             builder.append((char) current);
                         }
                     }
+                    break;
                 }
-                case '\'' -> {
+                case '\'': {
                     trackBeginToken();
                     char value = (char) 0;
                     boolean hasValue = false;
@@ -357,8 +381,9 @@ public class Lexer {
                             hasValue = true;
                         }
                     }
+                    break;
                 }
-                case '#' -> {
+                case '#': {
                     trackBeginToken();
                     advance();
                     while (isIdentifier(current)) {
@@ -366,23 +391,31 @@ public class Lexer {
                     }
                     String value = getCurrentTokenValue();
                     switch (value) {
-                        case "#cast" -> appendToken(new Token(TokenType.META_CAST, getCurrentTokenRange()));
-                        case "#type" -> appendToken(new Token(TokenType.META_TYPE, getCurrentTokenRange()));
-                        case "#typeof" -> appendToken(new Token(TokenType.META_TYPE_OF, getCurrentTokenRange()));
-                        default -> {
+                        case "#cast":
+                            appendToken(new Token(TokenType.META_CAST, getCurrentTokenRange()));
+                            break;
+                        case "#type":
+                            appendToken(new Token(TokenType.META_TYPE, getCurrentTokenRange()));
+                            break;
+                        case "#typeof":
+                            appendToken(new Token(TokenType.META_TYPE_OF, getCurrentTokenRange()));
+                            break;
+                        default:
                             Token token = new Token(TokenType.META_UNKNOWN, getCurrentTokenRange());
                             appendToken(token);
                             addDiagnostic(LexerErrors.UnknownMetaFunction, token, value.substring(1));
-                        }
+                            break;
                     }
+                    break;
                 }
-                case '\n' -> {
+                case '\n': {
                     trackBeginToken();
                     advance();
                     newLine(1);
                     endToken(TokenType.LINE_BREAK);
+                    break;
                 }
-                case '\r' -> {
+                case '\r': {
                     trackBeginToken();
                     if (next == '\n') {
                         advance();
@@ -393,11 +426,12 @@ public class Lexer {
                         newLine(1);
                     }
                     endToken(TokenType.LINE_BREAK);
+                    break;
                 }
-                case -1 -> {
+                case -1: {
                     break loop;
                 }
-                default -> {
+                default: {
                     if (isWhiteSpace(current)) {
                         trackBeginToken();
                         advance();
@@ -420,6 +454,7 @@ public class Lexer {
                         addDiagnostic(LexerErrors.UnexpectedSymbol, token, hex(current));
                         advance();
                     }
+                    break;
                 }
             }
         }
@@ -447,7 +482,7 @@ public class Lexer {
         loop:
         while (true) {
             switch (state) {
-                case MANTIS_INTEGER -> {
+                case MANTIS_INTEGER:
                     if (isNumber(current)) {
                         mantisIntegers++;
                         advance();
@@ -462,8 +497,8 @@ public class Lexer {
                     } else {
                         break loop;
                     }
-                }
-                case MANTIS_DECIMALS -> {
+                    break;
+                case MANTIS_DECIMALS:
                     if (isNumber(current)) {
                         mantisDecimals++;
                         advance();
@@ -474,8 +509,8 @@ public class Lexer {
                     } else {
                         break loop;
                     }
-                }
-                case EXPONENT_SIGN -> {
+                    break;
+                case EXPONENT_SIGN:
                     if (current == '-' || current == '+') {
                         state = NumberParseState.EXPONENT;
                         advance();
@@ -484,15 +519,15 @@ public class Lexer {
                     } else {
                         break loop;
                     }
-                }
-                case EXPONENT -> {
+                    break;
+                case EXPONENT:
                     if (isNumber(current)) {
                         exponentDigits++;
                         advance();
                     } else {
                         break loop;
                     }
-                }
+                    break;
             }
         }
 
@@ -566,58 +601,160 @@ public class Lexer {
 
     private void processIdentifierLike() {
         String value = getCurrentTokenValue();
-        TokenType reservedWord = switch (value) {
-            case "boolean" -> TokenType.BOOLEAN;
-            case "int8" -> TokenType.INT8;
-            case "int16" -> TokenType.INT16;
-            case "int" -> TokenType.INT;
-            case "int32" -> TokenType.INT32;
-            case "int64" -> TokenType.INT64;
-            case "long" -> TokenType.LONG;
-            case "float32" -> TokenType.FLOAT32;
-            case "float" -> TokenType.FLOAT;
-            case "float64" -> TokenType.FLOAT64;
-            case "string" -> TokenType.STRING;
-            case "char" -> TokenType.CHAR;
-            case "false" -> TokenType.FALSE;
-            case "true" -> TokenType.TRUE;
-            case "new" -> TokenType.NEW;
-            case "if" -> TokenType.IF;
-            case "else" -> TokenType.ELSE;
-            case "return" -> TokenType.RETURN;
-            case "for" -> TokenType.FOR;
-            case "foreach" -> TokenType.FOREACH;
-            case "while" -> TokenType.WHILE;
-            case "break" -> TokenType.BREAK;
-            case "continue" -> TokenType.CONTINUE;
-            case "in" -> TokenType.IN;
-            case "static" -> TokenType.STATIC;
-            case "void" -> TokenType.VOID;
-            case "ref" -> TokenType.REF;
-            case "async" -> TokenType.ASYNC;
-            case "await" -> TokenType.AWAIT;
-            case "let" -> TokenType.LET;
-            case "is" -> TokenType.IS;
-            case "as" -> TokenType.AS;
-            case "class" -> TokenType.CLASS;
-            case "constructor" -> TokenType.CONSTRUCTOR;
-            case "this" -> TokenType.THIS;
-            case "base" -> TokenType.BASE;
-            case "extension" -> TokenType.EXTENSION;
-            case "abstract" -> TokenType.ABSTRACT;
-            case "virtual" -> TokenType.VIRTUAL;
-            case "override" -> TokenType.OVERRIDE;
-            case "public" -> TokenType.PUBLIC;
-            case "protected" -> TokenType.PROTECTED;
-            case "private" -> TokenType.PRIVATE;
-            case "typealias" -> TokenType.TYPEALIAS;
-            case "null" -> TokenType.NULL;
-            case "try" -> TokenType.TRY;
-            case "catch" -> TokenType.CATCH;
-            case "finally" -> TokenType.FINALLY;
-            case "throw" -> TokenType.THROW;
-            default -> null;
-        };
+        TokenType reservedWord;
+        switch (value) {
+            case "boolean":
+                reservedWord = TokenType.BOOLEAN;
+                break;
+            case "int8":
+                reservedWord = TokenType.INT8;
+                break;
+            case "int16":
+                reservedWord = TokenType.INT16;
+                break;
+            case "int":
+                reservedWord = TokenType.INT;
+                break;
+            case "int32":
+                reservedWord = TokenType.INT32;
+                break;
+            case "int64":
+                reservedWord = TokenType.INT64;
+                break;
+            case "long":
+                reservedWord = TokenType.LONG;
+                break;
+            case "float32":
+                reservedWord = TokenType.FLOAT32;
+                break;
+            case "float":
+                reservedWord = TokenType.FLOAT;
+                break;
+            case "float64":
+                reservedWord = TokenType.FLOAT64;
+                break;
+            case "string":
+                reservedWord = TokenType.STRING;
+                break;
+            case "char":
+                reservedWord = TokenType.CHAR;
+                break;
+            case "false":
+                reservedWord = TokenType.FALSE;
+                break;
+            case "true":
+                reservedWord = TokenType.TRUE;
+                break;
+            case "new":
+                reservedWord = TokenType.NEW;
+                break;
+            case "if":
+                reservedWord = TokenType.IF;
+                break;
+            case "else":
+                reservedWord = TokenType.ELSE;
+                break;
+            case "return":
+                reservedWord = TokenType.RETURN;
+                break;
+            case "for":
+                reservedWord = TokenType.FOR;
+                break;
+            case "foreach":
+                reservedWord = TokenType.FOREACH;
+                break;
+            case "while":
+                reservedWord = TokenType.WHILE;
+                break;
+            case "break":
+                reservedWord = TokenType.BREAK;
+                break;
+            case "continue":
+                reservedWord = TokenType.CONTINUE;
+                break;
+            case "in":
+                reservedWord = TokenType.IN;
+                break;
+            case "static":
+                reservedWord = TokenType.STATIC;
+                break;
+            case "void":
+                reservedWord = TokenType.VOID;
+                break;
+            case "ref":
+                reservedWord = TokenType.REF;
+                break;
+            case "async":
+                reservedWord = TokenType.ASYNC;
+                break;
+            case "await":
+                reservedWord = TokenType.AWAIT;
+                break;
+            case "let":
+                reservedWord = TokenType.LET;
+                break;
+            case "is":
+                reservedWord = TokenType.IS;
+                break;
+            case "as":
+                reservedWord = TokenType.AS;
+                break;
+            case "class":
+                reservedWord = TokenType.CLASS;
+                break;
+            case "constructor":
+                reservedWord = TokenType.CONSTRUCTOR;
+                break;
+            case "this":
+                reservedWord = TokenType.THIS;
+                break;
+            case "base":
+                reservedWord = TokenType.BASE;
+                break;
+            case "extension":
+                reservedWord = TokenType.EXTENSION;
+                break;
+            case "abstract":
+                reservedWord = TokenType.ABSTRACT;
+                break;
+            case "virtual":
+                reservedWord = TokenType.VIRTUAL;
+                break;
+            case "override":
+                reservedWord = TokenType.OVERRIDE;
+                break;
+            case "public":
+                reservedWord = TokenType.PUBLIC;
+                break;
+            case "protected":
+                reservedWord = TokenType.PROTECTED;
+                break;
+            case "private":
+                reservedWord = TokenType.PRIVATE;
+                break;
+            case "typealias":
+                reservedWord = TokenType.TYPEALIAS;
+                break;
+            case "null":
+                reservedWord = TokenType.NULL;
+                break;
+            case "try":
+                reservedWord = TokenType.TRY;
+                break;
+            case "catch":
+                reservedWord = TokenType.CATCH;
+                break;
+            case "finally":
+                reservedWord = TokenType.FINALLY;
+                break;
+            case "throw":
+                reservedWord = TokenType.THROW;
+                break;
+            default:
+                reservedWord = null;
+                break;
+        }
+
         TextRange range = getCurrentTokenRange();
         if (reservedWord != null) {
             appendToken(new Token(reservedWord, range));
@@ -631,16 +768,25 @@ public class Lexer {
         int beginColumn = column;
         int beginPosition = position;
         advance();
-        return switch (current) {
-            case 'n' -> '\n';
-            case 't' -> '\t';
-            case 'b' -> '\b';
-            case 'r' -> '\r';
-            case 'f' -> '\f';
-            case '\'' -> '\'';
-            case '\"' -> '\"';
-            case '\\' -> '\\';
-            case 'u' -> {
+        switch (current) {
+            case 'n':
+                return '\n';
+            case 't':
+                return '\t';
+            case 'b':
+                return '\b';
+            case 'r':
+                return '\r';
+            case 'f':
+                return '\f';
+            case '\'':
+                return '\'';
+            case '\"':
+                return '\"';
+            case '\\':
+                return '\\';
+
+            case 'u':
                 StringBuilder builder = new StringBuilder(4);
                 while (builder.length() < 4) {
                     if (isHexNumber(next)) {
@@ -649,20 +795,21 @@ public class Lexer {
                     } else {
                         diagnostics.add(
                                 new DiagnosticMessage(LexerErrors.InvalidEscapeSequence,
-                                new SingleLineTextRange(beginLine, beginColumn, beginPosition, 2 + builder.length())));
-                        yield (char) 0;
+                                        new SingleLineTextRange(beginLine, beginColumn, beginPosition, 2 + builder.length())));
+                        return (char) 0;
                     }
                 }
-                yield (char) Integer.parseInt(builder.toString(), 16);
-            }
-            case -1 -> 0;
-            default -> {
+                return (char) Integer.parseInt(builder.toString(), 16);
+
+            case -1:
+                return 0;
+
+            default:
                 diagnostics.add(
                         new DiagnosticMessage(LexerErrors.InvalidEscapeSequence,
-                        new SingleLineTextRange(beginLine, beginColumn, beginPosition, 2)));
-                yield (char) current;
-            }
-        };
+                                new SingleLineTextRange(beginLine, beginColumn, beginPosition, 2)));
+                return (char)current;
+        }
     }
 
     private String getCurrentTokenValue() {

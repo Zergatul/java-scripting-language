@@ -5,6 +5,7 @@ import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.lexer.Token;
 import com.zergatul.scripting.lexer.ValueToken;
 import com.zergatul.scripting.parser.ParserTreeVisitor;
+import com.zergatul.scripting.utility.Lists;
 
 import java.util.List;
 
@@ -41,6 +42,6 @@ public class TypeAliasNode extends CompilationUnitMemberNode {
 
     @Override
     public List<Locatable> getChildNodes() {
-        return List.of(keyword, name, equal, typeNode, semicolon);
+        return Lists.of(keyword, name, equal, typeNode, semicolon);
     }
 }

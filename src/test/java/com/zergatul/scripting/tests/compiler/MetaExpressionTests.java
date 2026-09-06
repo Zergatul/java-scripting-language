@@ -1,5 +1,7 @@
 package com.zergatul.scripting.tests.compiler;
 
+import com.zergatul.scripting.utility.Lists;
+
 import com.zergatul.scripting.DiagnosticMessage;
 import com.zergatul.scripting.SingleLineTextRange;
 import com.zergatul.scripting.parser.ParserErrors;
@@ -30,30 +32,29 @@ public class MetaExpressionTests extends ComparatorTest {
 
     @Test
     public void basicTest() {
-        String code = """
-                boolStorage.add(#typeof(false) == #type(boolean));
-                boolStorage.add(#typeof(1) == #type(int));
-                boolStorage.add(#typeof('a') == #type(char));
-                boolStorage.add(#typeof(3000000000L) == #type(int64));
-                boolStorage.add(#typeof(0.0) == #type(float));
-                boolStorage.add(#typeof("") == #type(string));
-                
-                boolStorage.add(#typeof(1.1) == #type(int));
-                boolStorage.add(#typeof(1.1) != #type(int));
-                boolStorage.add(#typeof(boolStorage) == #typeof(boolStorage));
-                boolStorage.add(#typeof(boolStorage) == #typeof(intStorage));
-                
-                boolStorage.add(#typeof(api.getA()) == #type(TypeA));
-                boolStorage.add(#typeof(api.getB()) == #type(TypeB));
-                boolStorage.add(#typeof(api.getC()) == #type(TypeC));
-                boolStorage.add(#typeof(api.getB()) == #type(TypeA));
-                boolStorage.add(#typeof(api.getC()) == #type(TypeA));
-                """;
+        String code =
+                "boolStorage.add(#typeof(false) == #type(boolean));\n" +
+                "boolStorage.add(#typeof(1) == #type(int));\n" +
+                "boolStorage.add(#typeof('a') == #type(char));\n" +
+                "boolStorage.add(#typeof(3000000000L) == #type(int64));\n" +
+                "boolStorage.add(#typeof(0.0) == #type(float));\n" +
+                "boolStorage.add(#typeof(\"\") == #type(string));\n" +
+                "\n" +
+                "boolStorage.add(#typeof(1.1) == #type(int));\n" +
+                "boolStorage.add(#typeof(1.1) != #type(int));\n" +
+                "boolStorage.add(#typeof(boolStorage) == #typeof(boolStorage));\n" +
+                "boolStorage.add(#typeof(boolStorage) == #typeof(intStorage));\n" +
+                "\n" +
+                "boolStorage.add(#typeof(api.getA()) == #type(TypeA));\n" +
+                "boolStorage.add(#typeof(api.getB()) == #type(TypeB));\n" +
+                "boolStorage.add(#typeof(api.getC()) == #type(TypeC));\n" +
+                "boolStorage.add(#typeof(api.getB()) == #type(TypeA));\n" +
+                "boolStorage.add(#typeof(api.getC()) == #type(TypeA));\n";
 
         Runnable program = compileWithCustomTypes(ApiRoot.class, code, TypeA.class, TypeB.class, TypeC.class);
         program.run();
 
-        Assertions.assertIterableEquals(ApiRoot.boolStorage.list, List.of(
+        Assertions.assertIterableEquals(ApiRoot.boolStorage.list, Lists.of(
                 true, true, true, true, true, true,
                 false, true, true, false,
                 true, true, true, false, false));
@@ -61,21 +62,20 @@ public class MetaExpressionTests extends ComparatorTest {
 
     @Test
     public void typeNameTest() {
-        String code = """
-                stringStorage.add(#typeof(123).name);
-                stringStorage.add(#type(int).name);
-                stringStorage.add(#typeof("").name);
-                stringStorage.add(#type(string).name);
-                stringStorage.add(#typeof(api.getA()).name);
-                stringStorage.add(#typeof(api.getB()).name);
-                stringStorage.add(#typeof(api.getC()).name);
-                stringStorage.add(#typeof(api).name);
-                """;
+        String code =
+                "stringStorage.add(#typeof(123).name);\n" +
+                "stringStorage.add(#type(int).name);\n" +
+                "stringStorage.add(#typeof(\"\").name);\n" +
+                "stringStorage.add(#type(string).name);\n" +
+                "stringStorage.add(#typeof(api.getA()).name);\n" +
+                "stringStorage.add(#typeof(api.getB()).name);\n" +
+                "stringStorage.add(#typeof(api.getC()).name);\n" +
+                "stringStorage.add(#typeof(api).name);\n";
 
         Runnable program = compileWithCustomTypes(ApiRoot.class, code, TypeA.class, TypeB.class, TypeC.class);
         program.run();
 
-        Assertions.assertIterableEquals(ApiRoot.stringStorage.list, List.of(
+        Assertions.assertIterableEquals(ApiRoot.stringStorage.list, Lists.of(
                 "int", "int",
                 "string", "string",
                 "TypeA", "TypeB", "TypeC",
@@ -84,28 +84,26 @@ public class MetaExpressionTests extends ComparatorTest {
 
     @Test
     public void errorTest() {
-        String code = """
-                let x = #type(1);
-                """;
+        String code =
+                "let x = #type(1);\n";
 
-        comparator.assertEquals(List.of(
+        comparator.assertEquals(Lists.of(
                 new DiagnosticMessage(ParserErrors.TypeExpected, new SingleLineTextRange(1, 15, 14, 1), "1")),
                 getDiagnostics(ApiRoot.class, code));
     }
 
     @Test
     public void synonymsTest() {
-        String code = """
-                boolStorage.add(#type(int) == #type(int32));
-                boolStorage.add(#type(long) == #type(int64));
-                boolStorage.add(#type(float) == #type(float64));
-                boolStorage.add(#type(int) == #type(int16));
-                """;
+        String code =
+                "boolStorage.add(#type(int) == #type(int32));\n" +
+                "boolStorage.add(#type(long) == #type(int64));\n" +
+                "boolStorage.add(#type(float) == #type(float64));\n" +
+                "boolStorage.add(#type(int) == #type(int16));\n";
 
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
-        Assertions.assertIterableEquals(ApiRoot.boolStorage.list, List.of(true, true, true, false));
+        Assertions.assertIterableEquals(ApiRoot.boolStorage.list, Lists.of(true, true, true, false));
     }
 
     public static class ApiRoot {

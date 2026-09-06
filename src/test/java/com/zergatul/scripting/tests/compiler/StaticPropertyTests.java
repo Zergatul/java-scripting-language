@@ -1,5 +1,7 @@
 package com.zergatul.scripting.tests.compiler;
 
+import com.zergatul.scripting.utility.Lists;
+
 import com.zergatul.scripting.tests.compiler.helpers.Int64Storage;
 import com.zergatul.scripting.tests.compiler.helpers.IntStorage;
 import org.junit.jupiter.api.Assertions;
@@ -20,32 +22,30 @@ public class StaticPropertyTests {
 
     @Test
     public void intStaticPropertiesTest() {
-        String code = """
-                intStorage.add(int.MIN_VALUE);
-                intStorage.add(int.MAX_VALUE);
-                """;
+        String code =
+                "intStorage.add(int.MIN_VALUE);\n" +
+                "intStorage.add(int.MAX_VALUE);\n";
 
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
         Assertions.assertIterableEquals(
                 ApiRoot.intStorage.list,
-                List.of(Integer.MIN_VALUE, Integer.MAX_VALUE));
+                Lists.of(Integer.MIN_VALUE, Integer.MAX_VALUE));
     }
 
     @Test
     public void longStaticPropertiesTest() {
-        String code = """
-                longStorage.add(long.MIN_VALUE);
-                longStorage.add(long.MAX_VALUE);
-                """;
+        String code =
+                "longStorage.add(long.MIN_VALUE);\n" +
+                "longStorage.add(long.MAX_VALUE);\n";
 
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
         Assertions.assertIterableEquals(
                 ApiRoot.longStorage.list,
-                List.of(Long.MIN_VALUE, Long.MAX_VALUE));
+                Lists.of(Long.MIN_VALUE, Long.MAX_VALUE));
     }
 
     public static class ApiRoot {

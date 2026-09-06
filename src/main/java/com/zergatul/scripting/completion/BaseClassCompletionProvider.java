@@ -5,6 +5,7 @@ import com.zergatul.scripting.binding.BinderOutput;
 import com.zergatul.scripting.binding.nodes.*;
 import com.zergatul.scripting.compiler.CompilationParameters;
 import com.zergatul.scripting.symbols.ClassSymbol;
+import com.zergatul.scripting.utility.Lists;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -18,7 +19,7 @@ public class BaseClassCompletionProvider<T> extends AbstractCompletionProvider<T
     @Override
     public List<T> provide(CompilationParameters parameters, BinderOutput output, CompletionContext context) {
         if (context.entry == null) {
-            return List.of();
+            return Lists.of();
         }
 
         if (context.entry.node instanceof BoundTypeNode) {
@@ -50,6 +51,6 @@ public class BaseClassCompletionProvider<T> extends AbstractCompletionProvider<T
             }
         }
 
-        return List.of();
+        return Lists.of();
     }
 }

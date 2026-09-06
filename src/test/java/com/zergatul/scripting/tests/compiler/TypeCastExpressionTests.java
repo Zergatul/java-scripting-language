@@ -7,8 +7,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
+import java.util.Collections;
+import com.zergatul.scripting.utility.Lists;
 
 import static com.zergatul.scripting.tests.compiler.helpers.CompilerHelper.*;
 
@@ -26,92 +27,85 @@ public class TypeCastExpressionTests {
 
     @Test
     public void boolTest() {
-        String code = """
-                boolStorage.add(false as boolean);
-                boolStorage.add(true as boolean);
-                """;
+        String code =
+                "boolStorage.add(false as boolean);\n" +
+                "boolStorage.add(true as boolean);\n";
 
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
-        Assertions.assertIterableEquals(ApiRoot.boolStorage.list, List.of(false, true));
+        Assertions.assertIterableEquals(ApiRoot.boolStorage.list, Lists.of(false, true));
     }
 
     @Test
     public void intTest() {
-        String code = """
-                intStorage.add(0 as int);
-                intStorage.add(1 as int);
-                """;
+        String code =
+                "intStorage.add(0 as int);\n" +
+                "intStorage.add(1 as int);\n";
 
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
-        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(0, 1));
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, Lists.of(0, 1));
     }
 
     @Test
     public void arrayTest() {
-        String code = """
-                foreach (let val in [1, 2, 3] as int[]) {
-                    intStorage.add(val);
-                }
-                """;
+        String code =
+                "foreach (let val in [1, 2, 3] as int[]) {\n" +
+                "    intStorage.add(val);\n" +
+                "}\n";
 
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
-        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(1, 2, 3));
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, Lists.of(1, 2, 3));
     }
 
     @Test
     public void validCastValueTypeTest() {
-        String code = """
-                long a = 123;
-                long b = a as long;
-                int64Storage.add(b);
-                """;
+        String code =
+                "long a = 123;\n" +
+                "long b = a as long;\n" +
+                "int64Storage.add(b);\n";
 
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
-        Assertions.assertIterableEquals(ApiRoot.int64Storage.list, List.of(123L));
+        Assertions.assertIterableEquals(ApiRoot.int64Storage.list, Lists.of(123L));
     }
 
     @Test
     public void nonValidCastValueTypeTest() {
-        String code = """
-                let x = 1 as float;
-                floatStorage.add(x);
-                """;
+        String code =
+                "let x = 1 as float;\n" +
+                "floatStorage.add(x);\n";
 
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
-        Assertions.assertIterableEquals(ApiRoot.floatStorage.list, List.of(0.0));
+        Assertions.assertIterableEquals(ApiRoot.floatStorage.list, Lists.of(0.0));
     }
 
     @Test
     public void validCastReferenceTypeTest() {
-        String code = """
-                Java<java.lang.Object> func() => "123";
-                
-                stringStorage.add(func() as string);
-                """;
+        String code =
+                "Java<java.lang.Object> func() => \"123\";\n" +
+                "\n" +
+                "stringStorage.add(func() as string);\n";
 
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
-        Assertions.assertIterableEquals(ApiRoot.stringStorage.list, List.of("123"));
+        Assertions.assertIterableEquals(ApiRoot.stringStorage.list, Lists.of("123"));
     }
 
     @Test
     public void nonValidCastReferenceTypeTest() {
-        String code = """
-                Java<java.lang.Object> func() => new Java<java.lang.Object>();
-                
-                stringStorage.add(func() as string);
-                """;
+        String code =
+                "Java<java.lang.Object> func() => new Java<java.lang.Object>();\n" +
+                "\n" +
+                "stringStorage.add(func() as string);\n";
 
         Runnable program = compile(ApiRoot.class, code);
         program.run();
@@ -121,43 +115,41 @@ public class TypeCastExpressionTests {
 
     @Test
     public void customTypesTest1() {
-        String code = """
-                let o1 = api.getBaseType();
-                let o2 = api.getChildType();
-                if (o1 is ChildType) {
-                    intStorage.add((o1 as ChildType).getNumber());
-                } else {
-                    intStorage.add(100 - (o1 as BaseType).getNumber());
-                }
-                if (o2 is ChildType) {
-                    intStorage.add((o2 as ChildType).getNumber());
-                    intStorage.add((o2 as ChildType).getCount());
-                }
-                intStorage.add(o1.getNumber() + o2.getNumber());
-                """;
+        String code =
+                "let o1 = api.getBaseType();\n" +
+                "let o2 = api.getChildType();\n" +
+                "if (o1 is ChildType) {\n" +
+                "    intStorage.add((o1 as ChildType).getNumber());\n" +
+                "} else {\n" +
+                "    intStorage.add(100 - (o1 as BaseType).getNumber());\n" +
+                "}\n" +
+                "if (o2 is ChildType) {\n" +
+                "    intStorage.add((o2 as ChildType).getNumber());\n" +
+                "    intStorage.add((o2 as ChildType).getCount());\n" +
+                "}\n" +
+                "intStorage.add(o1.getNumber() + o2.getNumber());\n";
 
         Runnable program = compileWithCustomTypes(ApiRoot.class, code, BaseType.class, ChildType.class);
         program.run();
 
-        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(90, 20, 1, 30));
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, Lists.of(90, 20, 1, 30));
     }
 
     @Test
     public void boxedCastTest() {
-        String code = """
-                typealias Object = Java<java.lang.Object>;
-                typealias Integer = Java<java.lang.Integer>;
-                
-                Object getInt() => 10;
-                
-                intStorage.add(getInt() as int);
-                intStorage.add((20 as Integer).intValue());
-                """;
+        String code =
+                "typealias Object = Java<java.lang.Object>;\n" +
+                "typealias Integer = Java<java.lang.Integer>;\n" +
+                "\n" +
+                "Object getInt() => 10;\n" +
+                "\n" +
+                "intStorage.add(getInt() as int);\n" +
+                "intStorage.add((20 as Integer).intValue());\n";
 
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
-        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(10, 20));
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, Lists.of(10, 20));
     }
 
     public static class ApiRoot {

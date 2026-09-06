@@ -4,14 +4,12 @@ import com.zergatul.scripting.InterfaceHelper;
 import com.zergatul.scripting.InternalException;
 import com.zergatul.scripting.runtime.*;
 import com.zergatul.scripting.type.operation.*;
+import com.zergatul.scripting.utility.Lists;
 import org.jspecify.annotations.Nullable;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Type;
 
-import java.lang.reflect.GenericArrayType;
-import java.lang.reflect.ParameterizedType;
-import java.lang.reflect.TypeVariable;
-import java.lang.reflect.WildcardType;
+import java.lang.reflect.*;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -89,11 +87,11 @@ public abstract class SType {
     }
 
     public List<BinaryOperation> getBinaryOperations() {
-        return List.of();
+        return Lists.of();
     }
 
     public List<UnaryOperation> getUnaryOperations() {
-        return List.of();
+        return Lists.of();
     }
 
     public @Nullable PostfixOperation increment() {
@@ -105,7 +103,7 @@ public abstract class SType {
     }
 
     public List<CastOperation> getImplicitCasts() {
-        return List.of();
+        return Lists.of();
     }
 
     public static @Nullable CastOperation implicitCastTo(SType src, SType dst) {
@@ -137,27 +135,37 @@ public abstract class SType {
     }
 
     public List<IndexOperation> getIndexOperations() {
-        return List.of();
+        return Lists.of();
     }
 
     public List<ConstructorReference> getConstructors() {
-        return List.of();
+        return Lists.of();
     }
 
     public List<MethodReference> getDeclaredMethods() {
-        return List.of();
+        return Lists.of();
     }
 
     public List<PropertyReference> getDeclaredProperties() {
-        return List.of();
+        return Lists.of();
     }
 
     public List<SType> getInterfaces() {
-        return List.of();
+        return Lists.of();
     }
 
     public void loadClassObject(MethodVisitor visitor) {
         visitor.visitLdcInsn(Type.getType(getJavaClass()));
+    }
+
+    // assumes <Field>, <object> on stack
+    public void compileReflectionGetField(MethodVisitor visitor) {
+        throw new InternalException();
+    }
+
+    // assumes <Field>, <object>, <value> on stack
+    public void compileReflectionSetField(MethodVisitor visitor) {
+        throw new InternalException();
     }
 
     public @Nullable SByReference getReferenceType() {
@@ -185,11 +193,13 @@ public abstract class SType {
     }
 
     public static SType fromJavaType(java.lang.reflect.Type type) {
-        if (type instanceof TypeVariable<?> typeVariable) {
+        if (type instanceof TypeVariable<?>) {
+            TypeVariable<?> typeVariable = (TypeVariable<?>) type;
             return fromJavaType(eraseTypeVariableBound(typeVariable));
         }
 
-        if (type instanceof ParameterizedType parameterized) {
+        if (type instanceof ParameterizedType) {
+            ParameterizedType parameterized = (ParameterizedType) type;
             java.lang.reflect.Type[] arguments = parameterized.getActualTypeArguments();
             if (parameterized.getRawType() == CompletableFuture.class) {
                 return new SFuture(fromJavaType(arguments[0]));
@@ -203,15 +213,18 @@ public abstract class SType {
             return SClassType.create(clazz);
         }
 
-        if (type instanceof WildcardType wildcard) {
+        if (type instanceof WildcardType) {
+            WildcardType wildcard = (WildcardType) type;
             return fromJavaType(wildcard.getUpperBounds()[0]);
         }
 
-        if (type instanceof GenericArrayType genericArray) {
+        if (type instanceof GenericArrayType) {
+            GenericArrayType genericArray = (GenericArrayType) type;
             return new SArrayType(fromJavaType(genericArray.getGenericComponentType()));
         }
 
-        if (type instanceof Class<?> clazz) {
+        if (type instanceof Class<?>) {
+            Class<?> clazz = (Class<?>) type;
             if (clazz == void.class) {
                 return SVoidType.instance;
             }
@@ -309,15 +322,18 @@ public abstract class SType {
     }
 
     private static java.lang.reflect.Type eraseType(java.lang.reflect.Type type, Set<TypeVariable<?>> visited) {
-        if (type instanceof ParameterizedType parameterized) {
+        if (type instanceof ParameterizedType) {
+            ParameterizedType parameterized = (ParameterizedType) type;
             return parameterized.getRawType();
         }
 
-        if (type instanceof TypeVariable<?> typeVariable) {
+        if (type instanceof TypeVariable<?>) {
+            TypeVariable<?> typeVariable = (TypeVariable<?>) type;
             return eraseTypeVariableBound(typeVariable, visited);
         }
 
-        if (type instanceof WildcardType wildcard) {
+        if (type instanceof WildcardType) {
+            WildcardType wildcard = (WildcardType) type;
             return eraseType(wildcard.getUpperBounds()[0], visited);
         }
 

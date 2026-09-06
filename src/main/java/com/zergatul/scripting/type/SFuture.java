@@ -1,6 +1,7 @@
 package com.zergatul.scripting.type;
 
 import com.zergatul.scripting.InternalException;
+import com.zergatul.scripting.utility.Lists;
 import org.objectweb.asm.MethodVisitor;
 
 import java.lang.reflect.Method;
@@ -38,7 +39,7 @@ public class SFuture extends SReferenceType {
     public List<MethodReference> getDeclaredMethods() {
         try {
             Method method = CompletableFuture.class.getMethod("isDone");
-            return List.of(new NativeMethodReference(method));
+            return Lists.of(new NativeMethodReference(method));
         } catch (NoSuchMethodException | SecurityException e) {
             throw new InternalException();
         }

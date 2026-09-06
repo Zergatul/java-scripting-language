@@ -6,6 +6,7 @@ import com.zergatul.scripting.compiler.frames.Frame;
 import com.zergatul.scripting.compiler.frames.FunctionFrame;
 import com.zergatul.scripting.symbols.*;
 import com.zergatul.scripting.type.*;
+import com.zergatul.scripting.utility.Lists;
 import org.jspecify.annotations.Nullable;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Label;
@@ -45,8 +46,9 @@ public class CompilerContext {
     private @Nullable ClassWriter classWriter;
     private Label startLabel;
     private ClassLoaderContext classLoaderContext;
-    private @Nullable MethodHandleCache methodHandleCache;
+    private @Nullable PrivateMembersCache privateMembersCache;
     private @Nullable AsyncStateMachineContext asyncContext;
+    private final List<List<SType>> requestedStringConcatenations = new ArrayList<>();
 
     private CompilerContext(
             @Nullable CompilerContext parent,
@@ -192,7 +194,7 @@ public class CompilerContext {
     }
 
     public List<RefHolder> releaseRefVariables() {
-        List<RefHolder> variables = List.of(refVariables.toArray(RefHolder[]::new));
+        List<RefHolder> variables = Lists.copyOf(refVariables);
         refVariables.clear();
         return variables;
     }
@@ -441,7 +443,7 @@ public class CompilerContext {
     }
 
     public @Nullable SymbolRef getLocalSymbol(String name) {
-        List<CompilerContext> functions = List.of(); // function boundaries
+        List<CompilerContext> functions = Lists.of(); // function boundaries
         for (CompilerContext context = this; context != null; ) {
             SymbolRef localSymbolRef = context.localSymbols.get(name);
             if (localSymbolRef != null) {
@@ -608,7 +610,8 @@ public class CompilerContext {
         Label endLabel = new Label();
         visitor.visitLabel(endLabel);
         for (SymbolRef ref : localSymbols.values()) {
-            if (ref.get() instanceof LocalVariable local) {
+            if (ref.get() instanceof LocalVariable) {
+                LocalVariable local = (LocalVariable) ref.get();
                 if (local.getName() == null || local.getName().isEmpty()) {
                     continue;
                 }
@@ -683,30 +686,32 @@ public class CompilerContext {
         return root.classLoaderContext.getNextUniqueIndex();
     }
 
-    public String createCachedPrivateFieldHandle(PropertyReference property) {
-        if (property instanceof FieldPropertyReference fieldProperty) {
-            if (root.methodHandleCache == null) {
-                root.methodHandleCache = new MethodHandleCache();
+    public String createCachedPrivateFieldMember(PropertyReference property) {
+        if (property instanceof FieldPropertyReference) {
+            FieldPropertyReference fieldProperty = (FieldPropertyReference) property;
+            if (root.privateMembersCache == null) {
+                root.privateMembersCache = new PrivateMembersCache();
             }
-            return root.methodHandleCache.createFieldAccess(fieldProperty.getUnderlyingField());
+            return root.privateMembersCache.createFieldAccess(fieldProperty.getUnderlyingField());
         } else {
             throw new InternalException();
         }
     }
 
-    public String createCachedPrivateMethodHandle(MethodReference method) {
-        if (method instanceof NativeMethodReference methodReference) {
-            if (root.methodHandleCache == null) {
-                root.methodHandleCache = new MethodHandleCache();
+    public String createCachedPrivateMethodMember(MethodReference method) {
+        if (method instanceof NativeMethodReference) {
+            NativeMethodReference methodReference = (NativeMethodReference) method;
+            if (root.privateMembersCache == null) {
+                root.privateMembersCache = new PrivateMembersCache();
             }
-            return root.methodHandleCache.createMethodAccess(methodReference.getUnderlying());
+            return root.privateMembersCache.createMethodAccess(methodReference.getUnderlying());
         } else {
             throw new InternalException();
         }
     }
 
-    public @Nullable MethodHandleCache getMethodHandleCache() {
-        return methodHandleCache;
+    public @Nullable PrivateMembersCache getPrivateMembersCache() {
+        return privateMembersCache;
     }
 
     public AsyncStateMachineContext getAsyncContext() {
@@ -719,6 +724,18 @@ public class CompilerContext {
 
     public void setAsyncContext(AsyncStateMachineContext asyncContext) {
         this.asyncContext = asyncContext;
+    }
+
+    public void requestStringConcat(List<SType> types) {
+        if (root.requestedStringConcatenations.contains(types)) {
+            return;
+        }
+
+        root.requestedStringConcatenations.add(types);
+    }
+
+    public List<List<SType>> getRequestedStringConcatenations() {
+        return requestedStringConcatenations;
     }
 
     private void insertLocalVariable(SymbolRef variableRef) {

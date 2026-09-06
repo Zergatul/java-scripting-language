@@ -4,6 +4,7 @@ import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
 import com.zergatul.scripting.parser.nodes.ClassFieldNode;
 import com.zergatul.scripting.type.PropertyReference;
+import com.zergatul.scripting.utility.Lists;
 
 import java.util.List;
 
@@ -50,6 +51,6 @@ public class BoundClassFieldNode extends BoundClassMemberNode {
 
     @Override
     public List<BoundNode> getChildren() {
-        return List.of(typeNode, name);
+        return Lists.of(typeNode, name);
     }
 }

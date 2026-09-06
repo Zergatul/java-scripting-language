@@ -10,7 +10,7 @@ public interface LabeledExtractor<T, R> extends Function<T, R> {
     static <T, R> LabeledExtractor<T, R> of(String label, Function<T, R> fn) {
         Objects.requireNonNull(label, "label");
         Objects.requireNonNull(fn, "fn");
-        return new LabeledExtractor<>() {
+        return new LabeledExtractor<T, R>() {
             @Override
             public String label() {
                 return label;

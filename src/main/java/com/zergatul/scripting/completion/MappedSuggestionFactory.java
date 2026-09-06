@@ -3,6 +3,7 @@ package com.zergatul.scripting.completion;
 import com.zergatul.scripting.lexer.TokenType;
 import com.zergatul.scripting.symbols.*;
 import com.zergatul.scripting.type.*;
+import com.zergatul.scripting.utility.Lists;
 
 import java.util.List;
 
@@ -27,7 +28,7 @@ public class MappedSuggestionFactory<T> implements SuggestionFactory<T> {
 
     @Override
     public List<T> getTypeSuggestion(SType type) {
-        return factory.getTypeSuggestion(type).stream().map(mapper::map).toList();
+        return Lists.from(factory.getTypeSuggestion(type).stream().map(mapper::map));
     }
 
     @Override

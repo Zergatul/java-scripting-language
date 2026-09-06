@@ -1,5 +1,7 @@
 package com.zergatul.scripting.tests.compiler;
 
+import com.zergatul.scripting.utility.Lists;
+
 import com.zergatul.scripting.tests.compiler.helpers.BoolStorage;
 import com.zergatul.scripting.tests.compiler.helpers.FloatStorage;
 import com.zergatul.scripting.tests.compiler.helpers.IntStorage;
@@ -24,21 +26,19 @@ public class MetaCastExpressionTests {
 
     @Test
     public void valueTypeValidCastTest() {
-        String code = """
-                intStorage.add(#cast(123, int));
-                """;
+        String code =
+                "intStorage.add(#cast(123, int));\n";
 
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
-        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(123));
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, Lists.of(123));
     }
 
     @Test
     public void valueTypeInvalidCastTest() {
-        String code = """
-                intStorage.add(#cast(1.0, int));
-                """;
+        String code =
+                "intStorage.add(#cast(1.0, int));\n";
 
         Runnable program = compile(ApiRoot.class, code);
         Assertions.assertThrows(ClassCastException.class, program::run);
@@ -46,21 +46,19 @@ public class MetaCastExpressionTests {
 
     @Test
     public void referenceTypeValidCastTest() {
-        String code = """
-                stringStorage.add(#cast("x", string));
-                """;
+        String code =
+                "stringStorage.add(#cast(\"x\", string));\n";
 
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
-        Assertions.assertIterableEquals(ApiRoot.stringStorage.list, List.of("x"));
+        Assertions.assertIterableEquals(ApiRoot.stringStorage.list, Lists.of("x"));
     }
 
     @Test
     public void referenceTypeInvalidCastTest() {
-        String code = """
-                stringStorage.add(#cast(new Java<java.lang.Object>(), string));
-                """;
+        String code =
+                "stringStorage.add(#cast(new Java<java.lang.Object>(), string));\n";
 
         Runnable program = compile(ApiRoot.class, code);
         Assertions.assertThrows(ClassCastException.class, program::run);
@@ -68,32 +66,30 @@ public class MetaCastExpressionTests {
 
     @Test
     public void unboxingTest() {
-        String code = """
-                typealias Object = Java<java.lang.Object>;
-                
-                Object getInt() => 10;
-                
-                intStorage.add(#cast(getInt(), int));
-                """;
+        String code =
+                "typealias Object = Java<java.lang.Object>;\n" +
+                "\n" +
+                "Object getInt() => 10;\n" +
+                "\n" +
+                "intStorage.add(#cast(getInt(), int));\n";
 
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
-        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(10));
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, Lists.of(10));
     }
 
     @Test
     public void boxingTest() {
-        String code = """
-                typealias Integer = Java<java.lang.Integer>;
-                
-                intStorage.add(#cast(12, Integer).intValue());
-                """;
+        String code =
+                "typealias Integer = Java<java.lang.Integer>;\n" +
+                "\n" +
+                "intStorage.add(#cast(12, Integer).intValue());\n";
 
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
-        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(12));
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, Lists.of(12));
     }
 
     public static class ApiRoot {

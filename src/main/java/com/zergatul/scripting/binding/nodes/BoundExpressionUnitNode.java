@@ -1,6 +1,7 @@
 package com.zergatul.scripting.binding.nodes;
 
 import com.zergatul.scripting.binding.BinderTreeVisitor;
+import com.zergatul.scripting.utility.Lists;
 
 import java.util.List;
 
@@ -25,6 +26,6 @@ public class BoundExpressionUnitNode extends BoundNode {
 
     @Override
     public List<BoundNode> getChildren() {
-        return List.of(expression);
+        return Lists.of(expression);
     }
 }

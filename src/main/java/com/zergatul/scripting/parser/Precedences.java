@@ -1,5 +1,7 @@
 package com.zergatul.scripting.parser;
 
+import com.zergatul.scripting.InternalException;
+
 public class Precedences {
 
     public static int getAwait() {
@@ -11,23 +13,59 @@ public class Precedences {
     }
 
     public static int get(UnaryOperator operator) {
-        return switch (operator) {
-            case PLUS, MINUS, NOT -> 200;
-        };
+        switch (operator) {
+            case PLUS:
+            case MINUS:
+            case NOT:
+                return 200;
+
+            default:
+                throw new InternalException();
+        }
     }
 
     public static int get(BinaryOperator operator) {
-        return switch (operator) {
-            case MULTIPLY, DIVIDE, MODULO -> 180;
-            case PLUS, MINUS -> 170;
-            case LESS, GREATER, LESS_EQUALS, GREATER_EQUALS, IS, AS, IN -> 160;
-            case EQUALS, NOT_EQUALS -> 150;
-            case BITWISE_AND -> 140;
-            case BITWISE_OR -> 130;
-            case BOOLEAN_AND -> 120;
-            case BOOLEAN_OR -> 110;
-            case NULL_COALESCING -> 100;
-        };
+        switch (operator) {
+            case MULTIPLY:
+            case DIVIDE:
+            case MODULO:
+                return 180;
+
+            case PLUS:
+            case MINUS:
+                return 170;
+
+            case LESS:
+            case GREATER:
+            case LESS_EQUALS:
+            case GREATER_EQUALS:
+            case IS:
+            case AS:
+            case IN:
+                return 160;
+
+            case EQUALS:
+            case NOT_EQUALS:
+                return 150;
+
+            case BITWISE_AND:
+                return 140;
+
+            case BITWISE_OR:
+                return 130;
+
+            case BOOLEAN_AND:
+                return 120;
+
+            case BOOLEAN_OR:
+                return 110;
+
+            case NULL_COALESCING:
+                return 100;
+
+            default:
+                throw new InternalException();
+        }
     }
 
     public static int getConditionalExpression() {

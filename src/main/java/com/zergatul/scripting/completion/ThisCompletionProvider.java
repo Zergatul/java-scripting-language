@@ -3,11 +3,11 @@ package com.zergatul.scripting.completion;
 import com.zergatul.scripting.InternalException;
 import com.zergatul.scripting.binding.BinderOutput;
 import com.zergatul.scripting.binding.nodes.BoundClassNode;
-import com.zergatul.scripting.binding.nodes.BoundExpressionNode;
 import com.zergatul.scripting.binding.nodes.BoundExtensionNode;
 import com.zergatul.scripting.compiler.CompilationParameters;
 import com.zergatul.scripting.binding.nodes.BoundNodeType;
 import com.zergatul.scripting.symbols.ClassSymbol;
+import com.zergatul.scripting.utility.Lists;
 
 import java.util.List;
 
@@ -21,7 +21,7 @@ public class ThisCompletionProvider<T> extends AbstractCompletionProvider<T> {
     public List<T> provide(CompilationParameters parameters, BinderOutput output, CompletionContext context) {
         if (context.canExpression()) {
             if (context.entry == null) {
-                return List.of();
+                return Lists.of();
             }
 
             for (CompletionContext current = context; current != null; current = current.up()) {
@@ -33,7 +33,7 @@ public class ThisCompletionProvider<T> extends AbstractCompletionProvider<T> {
                     }
                     BoundClassNode classNode = (BoundClassNode) current.entry.node;
                     ClassSymbol symbol = classNode.name.symbolRef.asClass();
-                    return List.of(
+                    return Lists.of(
                             factory.getThisSuggestion(symbol.getDeclaredType()),
                             factory.getBaseSuggestion(symbol.getDeclaredType().getBaseType()));
                 }
@@ -43,11 +43,11 @@ public class ThisCompletionProvider<T> extends AbstractCompletionProvider<T> {
                         throw new InternalException();
                     }
                     BoundExtensionNode extensionNode = (BoundExtensionNode) current.entry.node;
-                    return List.of(factory.getThisSuggestion(extensionNode.typeNode.type));
+                    return Lists.of(factory.getThisSuggestion(extensionNode.typeNode.type));
                 }
             }
         }
 
-        return List.of();
+        return Lists.of();
     }
 }

@@ -4,6 +4,7 @@ import com.zergatul.scripting.Locatable;
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.lexer.Token;
 import com.zergatul.scripting.parser.ParserTreeVisitor;
+import com.zergatul.scripting.utility.Lists;
 
 import java.util.List;
 
@@ -37,6 +38,6 @@ public class WhileLoopStatementNode extends StatementNode {
 
     @Override
     public List<Locatable> getChildNodes() {
-        return List.of(keyword, openParen, condition, closeParen, body);
+        return Lists.of(keyword, openParen, condition, closeParen, body);
     }
 }

@@ -5,6 +5,7 @@ import com.zergatul.scripting.tests.compiler.helpers.BoolStorage;
 import com.zergatul.scripting.tests.compiler.helpers.IntStorage;
 import com.zergatul.scripting.tests.compiler.helpers.StringStorage;
 import com.zergatul.scripting.tests.framework.ComparatorTest;
+import com.zergatul.scripting.utility.Lists;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -25,259 +26,245 @@ public class JavaTypeTests extends ComparatorTest {
 
     @Test
     public void basicTest() {
-        String code = """
-                Java<java.lang.Object> o = api.getObject();
-                intStorage.add(o.hashCode());
-                stringStorage.add(o.toString());
-                """;
+        String code =
+                "Java<java.lang.Object> o = api.getObject();\n" +
+                "intStorage.add(o.hashCode());\n" +
+                "stringStorage.add(o.toString());\n";
 
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
-        Assertions.assertIterableEquals(List.of(ApiRoot.api.getObject().hashCode()), ApiRoot.intStorage.list);
-        Assertions.assertIterableEquals(List.of(ApiRoot.api.getObject().toString()), ApiRoot.stringStorage.list);
+        Assertions.assertIterableEquals(Lists.of(ApiRoot.api.getObject().hashCode()), ApiRoot.intStorage.list);
+        Assertions.assertIterableEquals(Lists.of(ApiRoot.api.getObject().toString()), ApiRoot.stringStorage.list);
     }
 
     @Test
     public void staticMembersTest() {
-        String code = """
-                intStorage.add(Java<com.zergatul.scripting.tests.compiler.JavaTypeTests$ClassA>.getInt());
-                intStorage.add(Java<com.zergatul.scripting.tests.compiler.JavaTypeTests$ClassA>.field);
-                boolStorage.add(Java<java.util.Objects>.equals("qqq", "qqq"));
-                boolStorage.add(Java<java.util.Objects>.equals("qqq", "www"));
-                
-                Java<com.zergatul.scripting.tests.compiler.JavaTypeTests$ClassA>.field = 100;
-                intStorage.add(Java<com.zergatul.scripting.tests.compiler.JavaTypeTests$ClassA>.field);
-                Java<com.zergatul.scripting.tests.compiler.JavaTypeTests$ClassA>.field += 10;
-                intStorage.add(Java<com.zergatul.scripting.tests.compiler.JavaTypeTests$ClassA>.field);
-                Java<com.zergatul.scripting.tests.compiler.JavaTypeTests$ClassA>.field++;
-                intStorage.add(Java<com.zergatul.scripting.tests.compiler.JavaTypeTests$ClassA>.field);
-                """;
+        String code =
+                "intStorage.add(Java<com.zergatul.scripting.tests.compiler.JavaTypeTests$ClassA>.getInt());\n" +
+                "intStorage.add(Java<com.zergatul.scripting.tests.compiler.JavaTypeTests$ClassA>.field);\n" +
+                "boolStorage.add(Java<java.util.Objects>.equals(\"qqq\", \"qqq\"));\n" +
+                "boolStorage.add(Java<java.util.Objects>.equals(\"qqq\", \"www\"));\n" +
+                "\n" +
+                "Java<com.zergatul.scripting.tests.compiler.JavaTypeTests$ClassA>.field = 100;\n" +
+                "intStorage.add(Java<com.zergatul.scripting.tests.compiler.JavaTypeTests$ClassA>.field);\n" +
+                "Java<com.zergatul.scripting.tests.compiler.JavaTypeTests$ClassA>.field += 10;\n" +
+                "intStorage.add(Java<com.zergatul.scripting.tests.compiler.JavaTypeTests$ClassA>.field);\n" +
+                "Java<com.zergatul.scripting.tests.compiler.JavaTypeTests$ClassA>.field++;\n" +
+                "intStorage.add(Java<com.zergatul.scripting.tests.compiler.JavaTypeTests$ClassA>.field);\n";
 
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
-        Assertions.assertIterableEquals(List.of(123456, 654321, 100, 110, 111), ApiRoot.intStorage.list);
-        Assertions.assertIterableEquals(List.of(true, false), ApiRoot.boolStorage.list);
+        Assertions.assertIterableEquals(Lists.of(123456, 654321, 100, 110, 111), ApiRoot.intStorage.list);
+        Assertions.assertIterableEquals(Lists.of(true, false), ApiRoot.boolStorage.list);
     }
 
     @Test
     public void enumTest() {
-        String code = """
-                int func(Java<com.zergatul.scripting.tests.compiler.JavaTypeTests$EnumA> e) {
-                    return e.getValue();
-                }
-                
-                intStorage.add(func(Java<com.zergatul.scripting.tests.compiler.JavaTypeTests$EnumA>.VAL_1));
-                intStorage.add(func(Java<com.zergatul.scripting.tests.compiler.JavaTypeTests$EnumA>.VAL_2));
-                """;
+        String code =
+                "int func(Java<com.zergatul.scripting.tests.compiler.JavaTypeTests$EnumA> e) {\n" +
+                "    return e.getValue();\n" +
+                "}\n" +
+                "\n" +
+                "intStorage.add(func(Java<com.zergatul.scripting.tests.compiler.JavaTypeTests$EnumA>.VAL_1));\n" +
+                "intStorage.add(func(Java<com.zergatul.scripting.tests.compiler.JavaTypeTests$EnumA>.VAL_2));\n";
 
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
-        Assertions.assertIterableEquals(List.of(100, 200), ApiRoot.intStorage.list);
+        Assertions.assertIterableEquals(Lists.of(100, 200), ApiRoot.intStorage.list);
     }
 
     @Test
     public void compareTest() {
-        String code = """
-                int func1(Java<com.zergatul.scripting.tests.compiler.JavaTypeTests$EnumA> e) {
-                    return e == Java<com.zergatul.scripting.tests.compiler.JavaTypeTests$EnumA>.VAL_1 ? 1 : 2;
-                }
-                
-                int func2(Java<com.zergatul.scripting.tests.compiler.JavaTypeTests$EnumA> e) {
-                    return e != Java<com.zergatul.scripting.tests.compiler.JavaTypeTests$EnumA>.VAL_1 ? 3 : 4;
-                }
-                
-                intStorage.add(func1(Java<com.zergatul.scripting.tests.compiler.JavaTypeTests$EnumA>.VAL_1));
-                intStorage.add(func1(Java<com.zergatul.scripting.tests.compiler.JavaTypeTests$EnumA>.VAL_2));
-                intStorage.add(func2(Java<com.zergatul.scripting.tests.compiler.JavaTypeTests$EnumA>.VAL_1));
-                intStorage.add(func2(Java<com.zergatul.scripting.tests.compiler.JavaTypeTests$EnumA>.VAL_2));
-                """;
+        String code =
+                "int func1(Java<com.zergatul.scripting.tests.compiler.JavaTypeTests$EnumA> e) {\n" +
+                "    return e == Java<com.zergatul.scripting.tests.compiler.JavaTypeTests$EnumA>.VAL_1 ? 1 : 2;\n" +
+                "}\n" +
+                "\n" +
+                "int func2(Java<com.zergatul.scripting.tests.compiler.JavaTypeTests$EnumA> e) {\n" +
+                "    return e != Java<com.zergatul.scripting.tests.compiler.JavaTypeTests$EnumA>.VAL_1 ? 3 : 4;\n" +
+                "}\n" +
+                "\n" +
+                "intStorage.add(func1(Java<com.zergatul.scripting.tests.compiler.JavaTypeTests$EnumA>.VAL_1));\n" +
+                "intStorage.add(func1(Java<com.zergatul.scripting.tests.compiler.JavaTypeTests$EnumA>.VAL_2));\n" +
+                "intStorage.add(func2(Java<com.zergatul.scripting.tests.compiler.JavaTypeTests$EnumA>.VAL_1));\n" +
+                "intStorage.add(func2(Java<com.zergatul.scripting.tests.compiler.JavaTypeTests$EnumA>.VAL_2));\n";
 
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
-        Assertions.assertIterableEquals(List.of(1, 2, 4, 3), ApiRoot.intStorage.list);
+        Assertions.assertIterableEquals(Lists.of(1, 2, 4, 3), ApiRoot.intStorage.list);
     }
 
     @Test
     public void vectorTest() {
-        String code = """
-                let vector = new Java<java.util.Vector>();
-                vector.add(false);
-                vector.add(1);
-                vector.add(4000000000L);
-                vector.add(api.fromFloat64(1.25));
-                vector.add(1.5);
-                vector.add('a');
-                vector.add("qq");
-                
-                for (let i = 0; i < vector.size(); i++) {
-                    stringStorage.add(vector.get(i).toString());
-                }
-                """;
+        String code =
+                "let vector = new Java<java.util.Vector>();\n" +
+                "vector.add(false);\n" +
+                "vector.add(1);\n" +
+                "vector.add(4000000000L);\n" +
+                "vector.add(api.fromFloat64(1.25));\n" +
+                "vector.add(1.5);\n" +
+                "vector.add('a');\n" +
+                "vector.add(\"qq\");\n" +
+                "\n" +
+                "for (let i = 0; i < vector.size(); i++) {\n" +
+                "    stringStorage.add(vector.get(i).toString());\n" +
+                "}\n";
 
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
-        Assertions.assertIterableEquals(List.of("false", "1", "4000000000", "1.25", "1.5", "a", "qq"), ApiRoot.stringStorage.list);
+        Assertions.assertIterableEquals(Lists.of("false", "1", "4000000000", "1.25", "1.5", "a", "qq"), ApiRoot.stringStorage.list);
     }
 
     @Test
     public void hashtableTest() {
-        String code = """
-                let table = new Java<java.util.Hashtable>();
-                table.put(false, 100);
-                table.put(200, true);
-                table.put("qq", "ww");
-                
-                stringStorage.add(table.get("qq").toString());
-                stringStorage.add(table.get(200).toString());
-                stringStorage.add(table.get(false).toString());
-                """;
+        String code =
+                "let table = new Java<java.util.Hashtable>();\n" +
+                "table.put(false, 100);\n" +
+                "table.put(200, true);\n" +
+                "table.put(\"qq\", \"ww\");\n" +
+                "\n" +
+                "stringStorage.add(table.get(\"qq\").toString());\n" +
+                "stringStorage.add(table.get(200).toString());\n" +
+                "stringStorage.add(table.get(false).toString());\n";
 
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
-        Assertions.assertIterableEquals(List.of("ww", "true", "100"), ApiRoot.stringStorage.list);
+        Assertions.assertIterableEquals(Lists.of("ww", "true", "100"), ApiRoot.stringStorage.list);
     }
 
     @Test
     public void boxingTest() {
-        String code = """
-                let vector = new Java<java.util.Vector>();
-                for (let i = 0; i < 10; i++) {
-                    vector.add(i);
-                }
-                
-                int sum = 0;
-                for (let i = 0; i < vector.size(); i++) {
-                    if (vector.get(i) is int) {
-                        sum += vector.get(i) as int;
-                    } else {
-                        intStorage.add(-1);
-                    }
-                }
-                intStorage.add(sum);
-                """;
+        String code =
+                "let vector = new Java<java.util.Vector>();\n" +
+                "for (let i = 0; i < 10; i++) {\n" +
+                "    vector.add(i);\n" +
+                "}\n" +
+                "\n" +
+                "int sum = 0;\n" +
+                "for (let i = 0; i < vector.size(); i++) {\n" +
+                "    if (vector.get(i) is int) {\n" +
+                "        sum += vector.get(i) as int;\n" +
+                "    } else {\n" +
+                "        intStorage.add(-1);\n" +
+                "    }\n" +
+                "}\n" +
+                "intStorage.add(sum);\n";
 
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
-        Assertions.assertIterableEquals(List.of(45), ApiRoot.intStorage.list);
+        Assertions.assertIterableEquals(Lists.of(45), ApiRoot.intStorage.list);
     }
 
     @Test
     public void interfaceMethodTest() {
-        String code = """
-                Java<java.util.List> list = new Java<java.util.Vector>();
-                for (let i = 10; i < 16; i++) {
-                    list.add(i.toString());
-                }
-                
-                list.replaceAll(s => s + "!"); // default method
-                
-                for (let i = 0; i < list.size(); i++) {
-                    stringStorage.add(list.get(i) as string);
-                }
-                """;
+        String code =
+                "Java<java.util.List> list = new Java<java.util.Vector>();\n" +
+                "for (let i = 10; i < 16; i++) {\n" +
+                "    list.add(i.toString());\n" +
+                "}\n" +
+                "\n" +
+                "list.replaceAll(s => s + \"!\"); // default method\n" +
+                "\n" +
+                "for (let i = 0; i < list.size(); i++) {\n" +
+                "    stringStorage.add(list.get(i) as string);\n" +
+                "}\n";
 
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
-        Assertions.assertIterableEquals(List.of("10!", "11!", "12!", "13!", "14!", "15!"), ApiRoot.stringStorage.list);
+        Assertions.assertIterableEquals(Lists.of("10!", "11!", "12!", "13!", "14!", "15!"), ApiRoot.stringStorage.list);
     }
 
     @Test
     public void functionReturnTypeTest() {
-        String code = """
-                Java<java.util.Vector>[] func() {
-                    let list = new Java<java.util.Vector>();
-                    for (let i = 1; i <= 5; i++) {
-                        list.add(i);
-                    }
-                    return [list];
-                }
-
-                let list = func()[0];
-                for (let i = 0; i < list.size(); i++) {
-                    intStorage.add(list.get(i) as int);
-                }
-                """;
+        String code =
+                "Java<java.util.Vector>[] func() {\n" +
+                "    let list = new Java<java.util.Vector>();\n" +
+                "    for (let i = 1; i <= 5; i++) {\n" +
+                "        list.add(i);\n" +
+                "    }\n" +
+                "    return [list];\n" +
+                "}\n" +
+                "\n" +
+                "let list = func()[0];\n" +
+                "for (let i = 0; i < list.size(); i++) {\n" +
+                "    intStorage.add(list.get(i) as int);\n" +
+                "}\n";
 
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
-        Assertions.assertIterableEquals(List.of(1, 2, 3, 4, 5), ApiRoot.intStorage.list);
+        Assertions.assertIterableEquals(Lists.of(1, 2, 3, 4, 5), ApiRoot.intStorage.list);
     }
 
     @Test
     public void baseClassFieldTest() {
-        String code = """
-                let instance = new Java<com.zergatul.scripting.tests.compiler.JavaTypeTests$InheritedClass1>();
-                instance.enabled = true;
-                boolStorage.add(instance.enabled);
-                """;
+        String code =
+                "let instance = new Java<com.zergatul.scripting.tests.compiler.JavaTypeTests$InheritedClass1>();\n" +
+                "instance.enabled = true;\n" +
+                "boolStorage.add(instance.enabled);\n";
 
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
-        Assertions.assertIterableEquals(List.of(true), ApiRoot.boolStorage.list);
+        Assertions.assertIterableEquals(Lists.of(true), ApiRoot.boolStorage.list);
     }
 
     @Test
     public void characterTest() {
-        String code = """
-                typealias Character = Java<java.lang.Character>;
-                typealias String = Java<java.lang.String>;
-                
-                string test = "";
-                for (int i = 0; i < 6; i++) {
-                    let ch = Character.toChars('A' + i);
-                    test += String.valueOf(ch[0]);
-                }
-                stringStorage.add(test);
-                """;
+        String code =
+                "typealias Character = Java<java.lang.Character>;\n" +
+                "typealias String = Java<java.lang.String>;\n" +
+                "\n" +
+                "string test = \"\";\n" +
+                "for (int i = 0; i < 6; i++) {\n" +
+                "    let ch = Character.toChars('A' + i);\n" +
+                "    test += String.valueOf(ch[0]);\n" +
+                "}\n" +
+                "stringStorage.add(test);\n";
 
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
-        Assertions.assertIterableEquals(List.of("ABCDEF"), ApiRoot.stringStorage.list);
+        Assertions.assertIterableEquals(Lists.of("ABCDEF"), ApiRoot.stringStorage.list);
     }
 
     @Test
     public void staticInterfaceMethodTest() {
-        String code = """
-                let instance = Java<com.zergatul.scripting.tests.compiler.JavaTypeTests$MyInterface>.getInstance();
-                stringStorage.add(instance.getName());
-                """;
+        String code =
+                "let instance = Java<com.zergatul.scripting.tests.compiler.JavaTypeTests$MyInterface>.getInstance();\n" +
+                "stringStorage.add(instance.getName());\n";
 
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
-        Assertions.assertIterableEquals(List.of("MyName"), ApiRoot.stringStorage.list);
+        Assertions.assertIterableEquals(Lists.of("MyName"), ApiRoot.stringStorage.list);
     }
 
     @Test
     public void functionalInterfaceDirectInvocationTest() {
-        String code = """
-                let instance = Java<com.zergatul.scripting.tests.compiler.JavaTypeTests$MyCallable>.getInstance();
-                stringStorage.add(instance());
-                """;
+        String code =
+                "let instance = Java<com.zergatul.scripting.tests.compiler.JavaTypeTests$MyCallable>.getInstance();\n" +
+                "stringStorage.add(instance());\n";
 
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
-        Assertions.assertIterableEquals(List.of("called"), ApiRoot.stringStorage.list);
+        Assertions.assertIterableEquals(Lists.of("called"), ApiRoot.stringStorage.list);
     }
 
     @Test
     public void functionalInterfaceInvalidArgumentsTest() {
-        String code = """
-                let instance = Java<com.zergatul.scripting.tests.compiler.JavaTypeTests$IntCallable>.getInstance();
-                stringStorage.add(instance⟦("text")⟧);
-                """;
+        String code =
+                "let instance = Java<com.zergatul.scripting.tests.compiler.JavaTypeTests$IntCallable>.getInstance();\n" +
+                "stringStorage.add(instance⟦(\"text\")⟧);\n";
 
         comparator.assertDiagnostics(
                 ApiRoot.class, code, "⟦⟧",
@@ -287,60 +274,56 @@ public class JavaTypeTests extends ComparatorTest {
 
     @Test
     public void functionalInterfaceLambdaConversionTest() {
-        String code = """
-                typealias MyCallable = Java<com.zergatul.scripting.tests.compiler.JavaTypeTests$MyCallable>;
-                MyCallable callable = () => "lambda";
-                stringStorage.add(callable());
-                """;
+        String code =
+                "typealias MyCallable = Java<com.zergatul.scripting.tests.compiler.JavaTypeTests$MyCallable>;\n" +
+                "MyCallable callable = () => \"lambda\";\n" +
+                "stringStorage.add(callable());\n";
 
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
-        Assertions.assertIterableEquals(List.of("lambda"), ApiRoot.stringStorage.list);
+        Assertions.assertIterableEquals(Lists.of("lambda"), ApiRoot.stringStorage.list);
     }
 
     @Test
     public void functionalInterfaceFunctionGroupConversionTest() {
-        String code = """
-                typealias MyCallable = Java<com.zergatul.scripting.tests.compiler.JavaTypeTests$MyCallable>;
-                string getValue() => "function";
-                
-                MyCallable callable = getValue;
-                stringStorage.add(callable());
-                """;
+        String code =
+                "typealias MyCallable = Java<com.zergatul.scripting.tests.compiler.JavaTypeTests$MyCallable>;\n" +
+                "string getValue() => \"function\";\n" +
+                "\n" +
+                "MyCallable callable = getValue;\n" +
+                "stringStorage.add(callable());\n";
 
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
-        Assertions.assertIterableEquals(List.of("function"), ApiRoot.stringStorage.list);
+        Assertions.assertIterableEquals(Lists.of("function"), ApiRoot.stringStorage.list);
     }
 
     @Test
     public void functionalInterfaceMethodGroupConversionTest() {
-        String code = """
-                typealias MyCallable = Java<com.zergatul.scripting.tests.compiler.JavaTypeTests$MyCallable>;
-                MyCallable callable = api.getString;
-                stringStorage.add(callable());
-                """;
+        String code =
+                "typealias MyCallable = Java<com.zergatul.scripting.tests.compiler.JavaTypeTests$MyCallable>;\n" +
+                "MyCallable callable = api.getString;\n" +
+                "stringStorage.add(callable());\n";
 
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
-        Assertions.assertIterableEquals(List.of("method"), ApiRoot.stringStorage.list);
+        Assertions.assertIterableEquals(Lists.of("method"), ApiRoot.stringStorage.list);
     }
 
     @Test
     public void constructorInvalidArguments() {
-        String code = """
-                typealias ArrayList = Java<java.util.ArrayList>;
-                ⟦new ArrayList("hello", "world")⟧;
-                """;
+        String code =
+                "typealias ArrayList = Java<java.util.ArrayList>;\n" +
+                "⟦new ArrayList(\"hello\", \"world\")⟧;\n";
 
-        String candidates = """
-                Candidates:
-                constructor Java<java.util.ArrayList>()
-                constructor Java<java.util.ArrayList>(int arg0)
-                constructor Java<java.util.ArrayList>(Java<java.util.Collection> arg0)""";
+        String candidates =
+                "Candidates:\n" +
+                "constructor Java<java.util.ArrayList>()\n" +
+                "constructor Java<java.util.ArrayList>(int arg0)\n" +
+                "constructor Java<java.util.ArrayList>(Java<java.util.Collection> arg0)";
 
         comparator.assertDiagnostics(
                 ApiRoot.class, code, "⟦⟧",

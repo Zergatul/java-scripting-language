@@ -1,6 +1,7 @@
 package com.zergatul.scripting.type;
 
 import com.zergatul.scripting.InternalException;
+import com.zergatul.scripting.utility.Lists;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Type;
 
@@ -18,11 +19,11 @@ public abstract class SFunction extends SReferenceType {
     }
 
     public List<MethodParameter> getParameters() {
-        return List.of(parameters);
+        return Lists.of(parameters);
     }
 
     public List<SType> getParameterTypes() {
-        return Arrays.stream(parameters).map(MethodParameter::type).toList();
+        return Lists.from(Arrays.stream(parameters).map(MethodParameter::type));
     }
 
     public SType getReturnType() {

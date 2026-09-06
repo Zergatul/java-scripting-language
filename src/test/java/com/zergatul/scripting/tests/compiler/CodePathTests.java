@@ -14,99 +14,91 @@ public class CodePathTests {
 
     @Test
     public void voidFunctionTest() {
-        String code = """
-                void func1() {}
-                """;
+        String code =
+                "void func1() {}\n";
         assertOk(code);
     }
 
     @Test
     public void noReturnZeroStatementsTest() {
-        String code = """
-                int func1() {}
-                """;
+        String code =
+                "int func1() {}\n";
         assertNotAllCodePaths(code);
     }
 
     @Test
     public void simpleReturnTest() {
-        String code = """
-                int func1() {
-                    return 1;
-                }
-                """;
+        String code =
+                "int func1() {\n" +
+                "    return 1;\n" +
+                "}\n";
         assertOk(code);
     }
 
     @Test
     public void ifStatement1Test() {
-        String code = """
-                int func1() {
-                    if (true) {
-                        return 1;
-                    } else {
-                        return 2;
-                    }
-                }
-                """;
+        String code =
+                "int func1() {\n" +
+                "    if (true) {\n" +
+                "        return 1;\n" +
+                "    } else {\n" +
+                "        return 2;\n" +
+                "    }\n" +
+                "}\n";
         assertOk(code);
     }
 
     @Test
     public void ifStatement2Test() {
-        String code = """
-                int func1() {
-                    if (true) {
-                        return 1;
-                    }
-                }
-                """;
+        String code =
+                "int func1() {\n" +
+                "    if (true) {\n" +
+                "        return 1;\n" +
+                "    }\n" +
+                "}\n";
         assertNotAllCodePaths(code);
     }
 
     @Test
     public void ifStatement3Test() {
-        String code = """
-                int func1() {
-                    if (true) {
-                        return 1;
-                    } else {
-                        func1();
-                    }
-                }
-                """;
+        String code =
+                "int func1() {\n" +
+                "    if (true) {\n" +
+                "        return 1;\n" +
+                "    } else {\n" +
+                "        func1();\n" +
+                "    }\n" +
+                "}\n";
         assertNotAllCodePaths(code);
     }
 
     @Test
     public void ifStatement4Test() {
-        String code = """
-                int func1() {
-                    if (true) {
-                        func1();
-                    } else {
-                        return 1;
-                    }
-                }
-                """;
+        String code =
+                "int func1() {\n" +
+                "    if (true) {\n" +
+                "        func1();\n" +
+                "    } else {\n" +
+                "        return 1;\n" +
+                "    }\n" +
+                "}\n";
         assertNotAllCodePaths(code);
     }
 
     @Test
     public void extensionMethodTest() {
-        String code = """
-                extension(int) {
-                    int func() {
-                        if (this % 2 == 0) {
-                            if ((this / 2).func() % 2 == 0) {
-                                return 2;
-                            }
-                        } else {
-                            return 1;
-                        }
-                    }
-                }
-                """;
+        String code =
+                "extension(int) {\n" +
+                "    int func() {\n" +
+                "        if (this % 2 == 0) {\n" +
+                "            if ((this / 2).func() % 2 == 0) {\n" +
+                "                return 2;\n" +
+                "            }\n" +
+                "        } else {\n" +
+                "            return 1;\n" +
+                "        }\n" +
+                "    }\n" +
+                "}\n";
         assertNotAllCodePaths(code);
     }
 

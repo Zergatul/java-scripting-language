@@ -10,6 +10,7 @@ import com.zergatul.scripting.parser.ParserOutput;
 import com.zergatul.scripting.parser.PredefinedType;
 import com.zergatul.scripting.parser.nodes.*;
 import com.zergatul.scripting.tests.utility.MarkedCode;
+import com.zergatul.scripting.utility.Lists;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -19,11 +20,11 @@ public class LambdaTests extends ParserTestBase {
     @Test
     public void lambdaTest1() {
         ParserOutput result = parse("func(() => 1);");
-        comparator.assertEquals(List.of(), result.diagnostics());
+        comparator.assertEquals(Lists.of(), result.diagnostics());
         comparator.assertEquals(
                 new CompilationUnitNode(
-                        new CompilationUnitMembersListNode(List.of(), new SingleLineTextRange(1, 1, 0, 0)),
-                        new StatementsListNode(List.of(
+                        new CompilationUnitMembersListNode(Lists.of(), new SingleLineTextRange(1, 1, 0, 0)),
+                        new StatementsListNode(Lists.of(
                                 new ExpressionStatementNode(
                                         new InvocationExpressionNode(
                                                 new NameExpressionNode(
@@ -55,11 +56,11 @@ public class LambdaTests extends ParserTestBase {
     @Test
     public void lambdaTest2() {
         ParserOutput result = parse("func(a => {});");
-        comparator.assertEquals(List.of(), result.diagnostics());
+        comparator.assertEquals(Lists.of(), result.diagnostics());
         comparator.assertEquals(
                 new CompilationUnitNode(
-                        new CompilationUnitMembersListNode(List.of(), new SingleLineTextRange(1, 1, 0, 0)),
-                        new StatementsListNode(List.of(
+                        new CompilationUnitMembersListNode(Lists.of(), new SingleLineTextRange(1, 1, 0, 0)),
+                        new StatementsListNode(Lists.of(
                                 new ExpressionStatementNode(
                                         new InvocationExpressionNode(
                                                 new NameExpressionNode(
@@ -80,7 +81,7 @@ public class LambdaTests extends ParserTestBase {
                                                                                 .withTrailingTrivia(new Trivia(TokenType.WHITESPACE, new SingleLineTextRange(1, 10, 9, 1))),
                                                                         new BlockStatementNode(
                                                                                 new Token(TokenType.LEFT_CURLY_BRACKET, new SingleLineTextRange(1, 11, 10, 1)),
-                                                                                List.of(),
+                                                                                Lists.of(),
                                                                                 new Token(TokenType.RIGHT_CURLY_BRACKET, new SingleLineTextRange(1, 12, 11, 1))))),
                                                         new Token(TokenType.RIGHT_PARENTHESES, new SingleLineTextRange(1, 13, 12, 1))),
                                                 new SingleLineTextRange(1, 1, 0, 13)),
@@ -93,11 +94,11 @@ public class LambdaTests extends ParserTestBase {
     @Test
     public void lambdaTest3() {
         ParserOutput result = parse("func((a, b, c) => {});");
-        comparator.assertEquals(List.of(), result.diagnostics());
+        comparator.assertEquals(Lists.of(), result.diagnostics());
         comparator.assertEquals(
                 new CompilationUnitNode(
-                        new CompilationUnitMembersListNode(List.of(), new SingleLineTextRange(1, 1, 0, 0)),
-                        new StatementsListNode(List.of(
+                        new CompilationUnitMembersListNode(Lists.of(), new SingleLineTextRange(1, 1, 0, 0)),
+                        new StatementsListNode(Lists.of(
                                 new ExpressionStatementNode(
                                         new InvocationExpressionNode(
                                                 new NameExpressionNode(
@@ -126,7 +127,7 @@ public class LambdaTests extends ParserTestBase {
                                                                                 .withTrailingTrivia(new Trivia(TokenType.WHITESPACE, new SingleLineTextRange(1, 18, 17, 1))),
                                                                         new BlockStatementNode(
                                                                                 new Token(TokenType.LEFT_CURLY_BRACKET, new SingleLineTextRange(1, 19, 18, 1)),
-                                                                                List.of(),
+                                                                                Lists.of(),
                                                                                 new Token(TokenType.RIGHT_CURLY_BRACKET, new SingleLineTextRange(1, 20, 19, 1))))),
                                                         new Token(TokenType.RIGHT_PARENTHESES, new SingleLineTextRange(1, 21, 20, 1))),
                                                 new SingleLineTextRange(1, 1, 0, 21)),
@@ -138,23 +139,23 @@ public class LambdaTests extends ParserTestBase {
 
     @Test
     public void lambdaRecoveryTest1() {
-        MarkedCode marked = MarkedCode.from("""
-                int x = 1;
-                fn<int => int> mapper = value => ⟦f⟧
-                x = 2;
-                """);
+        String code =
+                "int x = 1;\n" +
+                "fn<int => int> mapper = value => ⟦f⟧\n" +
+                "x = 2;\n";
+        MarkedCode marked = MarkedCode.from(code);
 
         ParserOutput result = parse(marked.getCode());
 
         comparator.assertEquals(
-                List.of(
+                Lists.of(
                         new DiagnosticMessage(ParserErrors.SemicolonExpected, marked.getRange("⟦⟧"))),
                 result.diagnostics());
 
         comparator.assertEquals(
                 new CompilationUnitNode(
-                        new CompilationUnitMembersListNode(List.of(), new SingleLineTextRange(1, 1, 0, 0)),
-                        new StatementsListNode(List.of(
+                        new CompilationUnitMembersListNode(Lists.of(), new SingleLineTextRange(1, 1, 0, 0)),
+                        new StatementsListNode(Lists.of(
                                 new VariableDeclarationNode(
                                         new PredefinedTypeNode(
                                                 new Token(TokenType.INT, new SingleLineTextRange(1, 1, 0, 3))
@@ -232,16 +233,16 @@ public class LambdaTests extends ParserTestBase {
 
     @Test
     public void lambdaRecoveryTest2() {
-        MarkedCode marked = MarkedCode.from("""
-                int x = 1;
-                fn<int => int> mapper = value ⟪=>⟫ ⟦for⟧
-                ❰x❱ = 2;
-                """);
+        String code =
+                "int x = 1;\n" +
+                "fn<int => int> mapper = value ⟪=>⟫ ⟦for⟧\n" +
+                "❰x❱ = 2;\n";
+        MarkedCode marked = MarkedCode.from(code);
 
         ParserOutput result = parse(marked.getCode());
 
         comparator.assertEquals(
-                List.of(
+                Lists.of(
                         new DiagnosticMessage(ParserErrors.SimpleStatementExpected, marked.getRange("⟦⟧"), "for"),
                         new DiagnosticMessage(ParserErrors.SemicolonExpected, marked.getRange("⟪⟫")),
                         new DiagnosticMessage(ParserErrors.LeftParenthesisExpected, marked.getRange("❰❱"), "x")),
@@ -249,8 +250,8 @@ public class LambdaTests extends ParserTestBase {
 
         comparator.assertEquals(
                 new CompilationUnitNode(
-                        new CompilationUnitMembersListNode(List.of(), new SingleLineTextRange(1, 1, 0, 0)),
-                        new StatementsListNode(List.of(
+                        new CompilationUnitMembersListNode(Lists.of(), new SingleLineTextRange(1, 1, 0, 0)),
+                        new StatementsListNode(Lists.of(
                                 new VariableDeclarationNode(
                                         new PredefinedTypeNode(
                                                 new Token(TokenType.INT, new SingleLineTextRange(1, 1, 0, 3))

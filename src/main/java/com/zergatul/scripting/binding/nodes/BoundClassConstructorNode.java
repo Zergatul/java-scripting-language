@@ -6,6 +6,7 @@ import com.zergatul.scripting.parser.nodes.ClassConstructorNode;
 import com.zergatul.scripting.symbols.LiftedVariable;
 import com.zergatul.scripting.type.ConstructorReference;
 import com.zergatul.scripting.type.SMethodFunction;
+import com.zergatul.scripting.utility.Lists;
 
 import java.util.List;
 
@@ -66,9 +67,9 @@ public class BoundClassConstructorNode extends BoundClassMemberNode {
     @Override
     public List<BoundNode> getChildren() {
         if (initializer.getRange() != TextRange.MISSING) {
-            return List.of(parameters, initializer, body);
+            return Lists.of(parameters, initializer, body);
         } else {
-            return List.of(parameters, body);
+            return Lists.of(parameters, body);
         }
     }
 }

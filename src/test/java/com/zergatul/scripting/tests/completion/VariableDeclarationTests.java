@@ -2,9 +2,9 @@ package com.zergatul.scripting.tests.completion;
 
 import com.zergatul.scripting.tests.compiler.helpers.IntStorage;
 import com.zergatul.scripting.tests.completion.helpers.CompletionTestHelper;
-import com.zergatul.scripting.tests.completion.helpers.Lists;
 import com.zergatul.scripting.tests.completion.helpers.TestCompletionContext;
 import com.zergatul.scripting.tests.completion.suggestions.*;
+import com.zergatul.scripting.utility.Lists;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -16,21 +16,23 @@ public class VariableDeclarationTests {
 
     @Test
     public void unfinishedInitExpressionTest1() {
-        assertSuggestions("""
-                int x = a<cursor>
-                """,
-                context -> Lists.of(
+        String code =
+                "int x = a<cursor>\n";
+        assertSuggestions(
+                code,
+                context -> Lists.from(
                         expressions,
                         new StaticConstantSuggestion(context, "intStorage")));
     }
 
     @Test
     public void unfinishedInitExpressionTest2() {
-        assertSuggestions("""
-                int a = 0;
-                int b = a<cursor>
-                """,
-                context -> Lists.of(
+        String code =
+                "int a = 0;\n" +
+                "int b = a<cursor>\n";
+        assertSuggestions(
+                code,
+                context -> Lists.from(
                         expressions,
                         new StaticConstantSuggestion(context, "intStorage"),
                         new LocalVariableSuggestion(context, "a")));
@@ -38,12 +40,13 @@ public class VariableDeclarationTests {
 
     @Test
     public void variablesTest() {
-        assertSuggestions("""
-                int a = 0;
-                int b = 1;
-                a<cursor>
-                """,
-                context -> Lists.of(
+        String code =
+                "int a = 0;\n" +
+                "int b = 1;\n" +
+                "a<cursor>\n";
+        assertSuggestions(
+                code,
+                context -> Lists.from(
                         statements,
                         new StaticConstantSuggestion(context, "intStorage"),
                         new LocalVariableSuggestion(context, "a"),
@@ -52,12 +55,13 @@ public class VariableDeclarationTests {
 
     @Test
     public void singleWordStatementStartInvalidTypeTest() {
-        assertSuggestions("""
-                int x = 1;
-                f<cursor>
-                x = 2;
-                """,
-                context -> Lists.of(
+        String code =
+                "int x = 1;\n" +
+                "f<cursor>\n" +
+                "x = 2;\n";
+        assertSuggestions(
+                code,
+                context -> Lists.from(
                         statements,
                         new StaticConstantSuggestion(context, "intStorage"),
                         new LocalVariableSuggestion(context, "x")));
@@ -65,20 +69,21 @@ public class VariableDeclarationTests {
 
     @Test
     public void nestedScopesTest() {
-        assertSuggestions("""
-                int a = 0;
-                while (true) {
-                    int b = 1;
-                    while (true) {
-                        int c = 1;
-                        while (true) {
-                            int d = 1;
-                            <cursor>
-                        }
-                    }
-                }
-                """,
-                context -> Lists.of(
+        String code =
+                "int a = 0;\n" +
+                "while (true) {\n" +
+                "    int b = 1;\n" +
+                "    while (true) {\n" +
+                "        int c = 1;\n" +
+                "        while (true) {\n" +
+                "            int d = 1;\n" +
+                "            <cursor>\n" +
+                "        }\n" +
+                "    }\n" +
+                "}\n";
+        assertSuggestions(
+                code,
+                context -> Lists.from(
                         loopStatements,
                         new StaticConstantSuggestion(context, "intStorage"),
                         new LocalVariableSuggestion(context, "a"),
@@ -89,11 +94,12 @@ public class VariableDeclarationTests {
 
     @Test
     public void nestedLambdaTest() {
-        assertSuggestions("""
-                int a = 123;
-                fn<int => int> b = c => <cursor>
-                """,
-                context -> Lists.of(
+        String code =
+                "int a = 123;\n" +
+                "fn<int => int> b = c => <cursor>\n";
+        assertSuggestions(
+                code,
+                context -> Lists.from(
                         expressions,
                         new StaticConstantSuggestion(context, "intStorage"),
                         new LocalVariableSuggestion(context, "a"),
@@ -102,41 +108,45 @@ public class VariableDeclarationTests {
 
     @Test
     public void variableNameTest1() {
-        assertSuggestions("""
-                let <cursor>
-                """,
-                context -> List.of());
+        String code =
+                "let <cursor>\n";
+        assertSuggestions(
+                code,
+                context -> Lists.of());
     }
 
     @Test
     public void variableNameTest2() {
-        assertSuggestions("""
-                while (true) {
-                    let <cursor>
-                }
-                """,
-                context -> List.of());
+        String code =
+                "while (true) {\n" +
+                "    let <cursor>\n" +
+                "}\n";
+        assertSuggestions(
+                code,
+                context -> Lists.of());
     }
 
     @Test
     public void variableNameTest3() {
-        assertSuggestions("""
-                while (true) {
-                    let i<cursor>
-                }
-                """,
-                context -> List.of());
+        String code =
+                "while (true) {\n" +
+                "    let i<cursor>\n" +
+                "}\n";
+        assertSuggestions(
+                code,
+                context -> Lists.of());
     }
 
     @Test
     public void variableNameTest4() {
-        assertSuggestions("""
-                while (true) {
-                    let a = 123;
-                    let x = a<cursor>
-                }
-                """,
-                context -> Lists.of(
+        String code =
+                "while (true) {\n" +
+                "    let a = 123;\n" +
+                "    let x = a<cursor>\n" +
+                "}\n";
+        assertSuggestions(
+                code,
+                context -> Lists.from(
                         expressions,
                         new LocalVariableSuggestion(context, "a"),
                         new StaticConstantSuggestion(context, "intStorage")));

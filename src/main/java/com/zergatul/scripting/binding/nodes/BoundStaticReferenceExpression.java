@@ -6,6 +6,7 @@ import com.zergatul.scripting.binding.BinderTreeVisitor;
 import com.zergatul.scripting.parser.nodes.ParserNode;
 import com.zergatul.scripting.parser.nodes.ParserNodeType;
 import com.zergatul.scripting.type.SType;
+import com.zergatul.scripting.utility.Lists;
 
 import java.util.List;
 
@@ -41,6 +42,6 @@ public class BoundStaticReferenceExpression extends BoundExpressionNode {
 
     @Override
     public List<BoundNode> getChildren() {
-        return List.of();
+        return Lists.of();
     }
 }

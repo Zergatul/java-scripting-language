@@ -9,28 +9,27 @@ import com.zergatul.scripting.parser.ParserErrors;
 import com.zergatul.scripting.parser.ParserOutput;
 import com.zergatul.scripting.parser.PredefinedType;
 import com.zergatul.scripting.parser.nodes.*;
+import com.zergatul.scripting.utility.Lists;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-
-import java.util.List;
 
 public class ErrorRecoveryTests extends ParserTestBase {
 
     @Test
     public void unfinishedMemberAccess1Test() {
-        ParserOutput result = parse("""
-                freeCam.t
-                freeCam.toggle();
-                """);
+        String code =
+                "freeCam.t\n" +
+                "freeCam.toggle();\n";
+        ParserOutput result = parse(code);
 
-        comparator.assertEquals(List.of(
+        comparator.assertEquals(Lists.of(
                 new DiagnosticMessage(ParserErrors.NotAStatement, new SingleLineTextRange(1, 1, 0, 9)),
                 new DiagnosticMessage(ParserErrors.SemicolonExpected, new SingleLineTextRange(1, 9, 8, 1))),
                 result.diagnostics());
         comparator.assertEquals(
                 new CompilationUnitNode(
-                        new CompilationUnitMembersListNode(List.of(), new SingleLineTextRange(1, 1, 0, 0)),
-                        new StatementsListNode(List.of(
+                        new CompilationUnitMembersListNode(Lists.of(), new SingleLineTextRange(1, 1, 0, 0)),
+                        new StatementsListNode(Lists.of(
                                 new ExpressionStatementNode(
                                         new MemberAccessExpressionNode(
                                                 new NameExpressionNode(
@@ -62,20 +61,20 @@ public class ErrorRecoveryTests extends ParserTestBase {
 
     @Test
     public void unfinishedMemberAccess2Test() {
-        ParserOutput result = parse("""
-                obj.
-                boolean bbb = true;
-                """);
+        String code =
+                "obj.\n" +
+                "boolean bbb = true;\n";
+        ParserOutput result = parse(code);
 
-        comparator.assertEquals(List.of(
+        comparator.assertEquals(Lists.of(
                 new DiagnosticMessage(ParserErrors.IdentifierExpected, new SingleLineTextRange(2, 1, 5, 7), "boolean"),
                 new DiagnosticMessage(ParserErrors.NotAStatement, new SingleLineTextRange(1, 1, 0, 4)),
                 new DiagnosticMessage(ParserErrors.SemicolonExpected, new SingleLineTextRange(1, 4, 3, 1))),
                 result.diagnostics());
         comparator.assertEquals(
                 new CompilationUnitNode(
-                        new CompilationUnitMembersListNode(List.of(), new SingleLineTextRange(1, 1, 0, 0)),
-                        new StatementsListNode(List.of(
+                        new CompilationUnitMembersListNode(Lists.of(), new SingleLineTextRange(1, 1, 0, 0)),
+                        new StatementsListNode(Lists.of(
                                 new ExpressionStatementNode(
                                         new MemberAccessExpressionNode(
                                                 new NameExpressionNode(
@@ -107,44 +106,44 @@ public class ErrorRecoveryTests extends ParserTestBase {
 
     @Test
     public void notClosedBlockTest() {
-        ParserOutput result = parse("""
-                { *
-                """);
+        String code =
+                "{ *\n";
+        ParserOutput result = parse(code);
         Assertions.assertFalse(result.diagnostics().isEmpty());
     }
 
     @Test
     public void missingArgumentTest() {
-        ParserOutput result = parse("""
-                main.chat("abc",);
-                """);
+        String code =
+                "main.chat(\"abc\",);\n";
+        ParserOutput result = parse(code);
         Assertions.assertFalse(result.diagnostics().isEmpty());
     }
 
     @Test
     public void missingColonTest() {
-        ParserOutput result = parse("""
-                2 > 1 ? 3
-                """);
-        comparator.assertEquals(List.of(
+        String code =
+                "2 > 1 ? 3\n";
+        ParserOutput result = parse(code);
+        comparator.assertEquals(Lists.of(
                 new DiagnosticMessage(ParserErrors.ColonExpected, new SingleLineTextRange(1, 9, 8, 1))),
-                result.diagnostics().stream().limit(1).toList());
+                Lists.from(result.diagnostics().stream().limit(1)));
     }
 
     @Test
     public void unfinishedIfStatementTest() {
-        ParserOutput result = parse("""
-                if (game.)
-                """);
+        String code =
+                "if (game.)\n";
+        ParserOutput result = parse(code);
 
-        comparator.assertEquals(List.of(
+        comparator.assertEquals(Lists.of(
                 new DiagnosticMessage(ParserErrors.IdentifierExpected, new SingleLineTextRange(1, 10, 9, 1), ")"),
                 new DiagnosticMessage(ParserErrors.StatementExpected, new SingleLineTextRange(2, 1, 11, 0), "<EOF>")),
                 result.diagnostics());
         comparator.assertEquals(
                 new CompilationUnitNode(
-                        new CompilationUnitMembersListNode(List.of(), new SingleLineTextRange(1, 1, 0, 0)),
-                        new StatementsListNode(List.of(
+                        new CompilationUnitMembersListNode(Lists.of(), new SingleLineTextRange(1, 1, 0, 0)),
+                        new StatementsListNode(Lists.of(
                                 new IfStatementNode(
                                         new Token(TokenType.IF, new SingleLineTextRange(1, 1, 0, 2))
                                                 .withTrailingTrivia(new Trivia(TokenType.WHITESPACE, new SingleLineTextRange(1, 3, 2, 1))),
@@ -168,17 +167,17 @@ public class ErrorRecoveryTests extends ParserTestBase {
 
     @Test
     public void unfinishedBinaryExpressionTest() {
-        ParserOutput result = parse("""
-                return a > b || ;
-                """);
+        String code =
+                "return a > b || ;\n";
+        ParserOutput result = parse(code);
 
-        comparator.assertEquals(List.of(
+        comparator.assertEquals(Lists.of(
                 new DiagnosticMessage(ParserErrors.ExpressionExpected, new SingleLineTextRange(1, 17, 16, 1), ";")),
                 result.diagnostics());
         comparator.assertEquals(
                 new CompilationUnitNode(
-                        new CompilationUnitMembersListNode(List.of(), new SingleLineTextRange(1, 1, 0, 0)),
-                        new StatementsListNode(List.of(
+                        new CompilationUnitMembersListNode(Lists.of(), new SingleLineTextRange(1, 1, 0, 0)),
+                        new StatementsListNode(Lists.of(
                                 new ReturnStatementNode(
                                         new Token(TokenType.RETURN, new SingleLineTextRange(1, 1, 0, 6))
                                                 .withTrailingTrivia(new Trivia(TokenType.WHITESPACE, new SingleLineTextRange(1, 7, 6, 1))),
@@ -210,19 +209,19 @@ public class ErrorRecoveryTests extends ParserTestBase {
 
     @Test
     public void unfinishedArrayDeclarationTest() {
-        ParserOutput result = parse("""
-                int[] x = new int[] { 1 ;
-                """);
+        String code =
+                "int[] x = new int[] { 1 ;\n";
+        ParserOutput result = parse(code);
 
-        comparator.assertEquals(List.of(
+        comparator.assertEquals(Lists.of(
                 new DiagnosticMessage(ParserErrors.CommaOrCloseCurlyBracketExpected, new SingleLineTextRange(1, 25, 24, 1)),
                 new DiagnosticMessage(ParserErrors.CloseCurlyBracketExpected, new SingleLineTextRange(1, 25, 24, 1), ";")),
                 result.diagnostics());
 
         comparator.assertEquals(
                 new CompilationUnitNode(
-                        new CompilationUnitMembersListNode(List.of(), new SingleLineTextRange(1, 1, 0, 0)),
-                        new StatementsListNode(List.of(
+                        new CompilationUnitMembersListNode(Lists.of(), new SingleLineTextRange(1, 1, 0, 0)),
+                        new StatementsListNode(Lists.of(
                                 new VariableDeclarationNode(
                                         new ArrayTypeNode(
                                                 new PredefinedTypeNode(
@@ -267,20 +266,20 @@ public class ErrorRecoveryTests extends ParserTestBase {
 
     @Test
     public void unfinishedStatement1Test() {
-        ParserOutput result = parse("""
-                f
-                freeCam.toggle();
-                """);
+        String code =
+                "f\n" +
+                "freeCam.toggle();\n";
+        ParserOutput result = parse(code);
 
-        comparator.assertEquals(List.of(
+        comparator.assertEquals(Lists.of(
                 new DiagnosticMessage(ParserErrors.NotAStatement, new SingleLineTextRange(1, 1, 0, 1)),
                 new DiagnosticMessage(ParserErrors.SemicolonExpected, new SingleLineTextRange(1, 1, 0, 1))),
                 result.diagnostics());
 
         comparator.assertEquals(
                 new CompilationUnitNode(
-                        new CompilationUnitMembersListNode(List.of(), new SingleLineTextRange(1, 1, 0, 0)),
-                        new StatementsListNode(List.of(
+                        new CompilationUnitMembersListNode(Lists.of(), new SingleLineTextRange(1, 1, 0, 0)),
+                        new StatementsListNode(Lists.of(
                                 new ExpressionStatementNode(
                                         new NameExpressionNode(
                                                 new ValueToken(TokenType.IDENTIFIER, "f", new SingleLineTextRange(1, 1, 0, 1))
@@ -308,21 +307,21 @@ public class ErrorRecoveryTests extends ParserTestBase {
 
     @Test
     public void unfinishedStatement2Test() {
-        ParserOutput result = parse("""
-                int
-                freeCam.toggle();
-                """);
+        String code =
+                "int\n" +
+                "freeCam.toggle();\n";
+        ParserOutput result = parse(code);
 
         comparator.assertEquals(
-                List.of(
+                Lists.of(
                         new DiagnosticMessage(ParserErrors.NotAStatement, new SingleLineTextRange(1, 1, 0, 3)),
                         new DiagnosticMessage(ParserErrors.SemicolonExpected, new SingleLineTextRange(1, 1, 0, 3))),
                 result.diagnostics());
 
         comparator.assertEquals(
                 new CompilationUnitNode(
-                        new CompilationUnitMembersListNode(List.of(), new SingleLineTextRange(1, 1, 0, 0)),
-                        new StatementsListNode(List.of(
+                        new CompilationUnitMembersListNode(Lists.of(), new SingleLineTextRange(1, 1, 0, 0)),
+                        new StatementsListNode(Lists.of(
                                 new ExpressionStatementNode(
                                         new StaticReferenceNode(
                                                 new PredefinedTypeNode(
@@ -353,18 +352,18 @@ public class ErrorRecoveryTests extends ParserTestBase {
 
     @Test
     public void unfinishedStatement3Test() {
-        ParserOutput result = parse("""
-                if
-                freeCam.toggle();
-                """);
+        String code =
+                "if\n" +
+                "freeCam.toggle();\n";
+        ParserOutput result = parse(code);
 
-        comparator.assertEquals(List.of(
+        comparator.assertEquals(Lists.of(
                 new DiagnosticMessage(ParserErrors.LeftParenthesisExpected, new SingleLineTextRange(2, 1, 3, 7), "freeCam")),
                 result.diagnostics());
         comparator.assertEquals(
                 new CompilationUnitNode(
-                        new CompilationUnitMembersListNode(List.of(), new SingleLineTextRange(1, 1, 0, 0)),
-                        new StatementsListNode(List.of(
+                        new CompilationUnitMembersListNode(Lists.of(), new SingleLineTextRange(1, 1, 0, 0)),
+                        new StatementsListNode(Lists.of(
                                 new IfStatementNode(
                                         new Token(TokenType.IF, new SingleLineTextRange(1, 1, 0, 2))
                                                 .withTrailingTrivia(new Trivia(TokenType.LINE_BREAK, new MultiLineTextRange(1, 3, 2, 1, 2, 1))),
@@ -397,19 +396,19 @@ public class ErrorRecoveryTests extends ParserTestBase {
 
     @Test
     public void unfinishedStatement4Test() {
-        ParserOutput result = parse("""
-                for
-                freeCam.toggle();
-                """);
+        String code =
+                "for\n" +
+                "freeCam.toggle();\n";
+        ParserOutput result = parse(code);
 
-        comparator.assertEquals(List.of(
+        comparator.assertEquals(Lists.of(
                 new DiagnosticMessage(ParserErrors.LeftParenthesisExpected, new SingleLineTextRange(2, 1, 4, 7), "freeCam")),
                 result.diagnostics());
 
         comparator.assertEquals(
                 new CompilationUnitNode(
-                        new CompilationUnitMembersListNode(List.of(), new SingleLineTextRange(1, 1, 0, 0)),
-                        new StatementsListNode(List.of(
+                        new CompilationUnitMembersListNode(Lists.of(), new SingleLineTextRange(1, 1, 0, 0)),
+                        new StatementsListNode(Lists.of(
                                 new ForLoopStatementNode(
                                         new Token(TokenType.FOR, new SingleLineTextRange(1, 1, 0, 3))
                                                 .withTrailingTrivia(new Trivia(TokenType.LINE_BREAK, new MultiLineTextRange(1, 4, 2, 1, 3, 1))),
@@ -443,19 +442,19 @@ public class ErrorRecoveryTests extends ParserTestBase {
 
     @Test
     public void unfinishedStatement5Test() {
-        ParserOutput result = parse("""
-                foreach
-                freeCam.toggle();
-                """);
+        String code =
+                "foreach\n" +
+                "freeCam.toggle();\n";
+        ParserOutput result = parse(code);
 
-        comparator.assertEquals(List.of(
+        comparator.assertEquals(Lists.of(
                 new DiagnosticMessage(ParserErrors.LeftParenthesisExpected, new SingleLineTextRange(2, 1, 8, 7), "freeCam")),
                 result.diagnostics());
 
         comparator.assertEquals(
                 new CompilationUnitNode(
-                        new CompilationUnitMembersListNode(List.of(), new SingleLineTextRange(1, 1, 0, 0)),
-                        new StatementsListNode(List.of(
+                        new CompilationUnitMembersListNode(Lists.of(), new SingleLineTextRange(1, 1, 0, 0)),
+                        new StatementsListNode(Lists.of(
                                 new ForEachLoopStatementNode(
                                         new Token(TokenType.FOREACH, new SingleLineTextRange(1, 1, 0, 7))
                                                 .withTrailingTrivia(new Trivia(TokenType.LINE_BREAK, new MultiLineTextRange(1, 8, 2, 1, 7, 1))),
@@ -490,19 +489,19 @@ public class ErrorRecoveryTests extends ParserTestBase {
 
     @Test
     public void unfinishedStatement6Test() {
-        ParserOutput result = parse("""
-                while
-                freeCam.toggle();
-                """);
+        String code =
+                "while\n" +
+                "freeCam.toggle();\n";
+        ParserOutput result = parse(code);
 
-        comparator.assertEquals(List.of(
+        comparator.assertEquals(Lists.of(
                 new DiagnosticMessage(ParserErrors.LeftParenthesisExpected, new SingleLineTextRange(2, 1, 6, 7), "freeCam")),
                 result.diagnostics());
 
         comparator.assertEquals(
                 new CompilationUnitNode(
-                        new CompilationUnitMembersListNode(List.of(), new SingleLineTextRange(1, 1, 0, 0)),
-                        new StatementsListNode(List.of(
+                        new CompilationUnitMembersListNode(Lists.of(), new SingleLineTextRange(1, 1, 0, 0)),
+                        new StatementsListNode(Lists.of(
                                 new WhileLoopStatementNode(
                                         new Token(TokenType.WHILE, new SingleLineTextRange(1, 1, 0, 5))
                                                 .withTrailingTrivia(new Trivia(TokenType.LINE_BREAK, new MultiLineTextRange(1, 6, 2, 1, 5, 1))),
@@ -532,20 +531,20 @@ public class ErrorRecoveryTests extends ParserTestBase {
 
     @Test
     public void unfinishedFunctionTest() {
-        ParserOutput result = parse("""
-                void abc
-                freeCam.toggle();
-                """);
+        String code =
+                "void abc\n" +
+                "freeCam.toggle();\n";
+        ParserOutput result = parse(code);
 
-        comparator.assertEquals(List.of(
+        comparator.assertEquals(Lists.of(
                 new DiagnosticMessage(ParserErrors.LeftParenthesisExpected, new SingleLineTextRange(2, 1, 9, 7), "freeCam")),
                 result.diagnostics());
 
         comparator.assertEquals(
                 new CompilationUnitNode(
-                        new CompilationUnitMembersListNode(List.of(
+                        new CompilationUnitMembersListNode(Lists.of(
                                 new FunctionNode(
-                                        new ModifiersNode(List.of(), new SingleLineTextRange(1, 1, 0, 0)),
+                                        new ModifiersNode(Lists.of(), new SingleLineTextRange(1, 1, 0, 0)),
                                         new VoidTypeNode(
                                                 new Token(TokenType.VOID, new SingleLineTextRange(1, 1, 0, 4))
                                                         .withTrailingTrivia(new Trivia(TokenType.WHITESPACE, new SingleLineTextRange(1, 5, 4, 1)))),
@@ -559,10 +558,10 @@ public class ErrorRecoveryTests extends ParserTestBase {
                                         null,
                                         new BlockStatementNode(
                                                 new Token(TokenType.LEFT_CURLY_BRACKET, new SingleLineTextRange(1, 9, 8, 0)),
-                                                List.of(),
+                                                Lists.of(),
                                                 new Token(TokenType.RIGHT_CURLY_BRACKET, new SingleLineTextRange(1, 9, 8, 0))))),
                                 new SingleLineTextRange(1, 1, 0, 8)),
-                        new StatementsListNode(List.of(
+                        new StatementsListNode(Lists.of(
                                 new ExpressionStatementNode(
                                         new InvocationExpressionNode(
                                                 new MemberAccessExpressionNode(
@@ -585,19 +584,19 @@ public class ErrorRecoveryTests extends ParserTestBase {
 
     @Test
     public void unfinishedParametersTest() {
-        ParserOutput result = parse("""
-                obj.method(100,)
-                """);
+        String code =
+                "obj.method(100,)\n";
+        ParserOutput result = parse(code);
 
-        comparator.assertEquals(List.of(
+        comparator.assertEquals(Lists.of(
                 new DiagnosticMessage(ParserErrors.ExpressionExpected, new SingleLineTextRange(1, 16, 15, 1), ")"),
                 new DiagnosticMessage(ParserErrors.SemicolonExpected, new SingleLineTextRange(1,16, 15, 1))),
                 result.diagnostics());
 
         comparator.assertEquals(
                 new CompilationUnitNode(
-                        new CompilationUnitMembersListNode(List.of(), new SingleLineTextRange(1, 1, 0, 0)),
-                        new StatementsListNode(List.of(
+                        new CompilationUnitMembersListNode(Lists.of(), new SingleLineTextRange(1, 1, 0, 0)),
+                        new StatementsListNode(Lists.of(
                                 new ExpressionStatementNode(
                                         new InvocationExpressionNode(
                                                 new MemberAccessExpressionNode(

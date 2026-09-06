@@ -6,6 +6,7 @@ import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.lexer.Token;
 import com.zergatul.scripting.parser.AssignmentOperator;
 import com.zergatul.scripting.parser.ParserTreeVisitor;
+import com.zergatul.scripting.utility.Lists;
 
 import java.util.List;
 
@@ -36,6 +37,6 @@ public class AssignmentOperatorNode extends ParserNode {
 
     @Override
     public List<Locatable> getChildNodes() {
-        return List.of(token);
+        return Lists.of(token);
     }
 }

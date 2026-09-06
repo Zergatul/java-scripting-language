@@ -3,9 +3,9 @@ package com.zergatul.scripting.tests.completion;
 import com.zergatul.scripting.lexer.TokenType;
 import com.zergatul.scripting.tests.compiler.helpers.IntStorage;
 import com.zergatul.scripting.tests.completion.helpers.CompletionTestHelper;
-import com.zergatul.scripting.tests.completion.helpers.Lists;
 import com.zergatul.scripting.tests.completion.helpers.TestCompletionContext;
 import com.zergatul.scripting.tests.completion.suggestions.*;
+import com.zergatul.scripting.utility.Lists;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -19,7 +19,7 @@ public class UnitStructureTests {
     public void emptyFileTest() {
         assertSuggestions(
                 "<cursor>",
-                context -> Lists.of(
+                context -> Lists.from(
                         unitMembers,
                         statements,
                         new KeywordSuggestion(TokenType.ASYNC),
@@ -28,11 +28,12 @@ public class UnitStructureTests {
 
     @Test
     public void beforeUnitMembersTest() {
-        assertSuggestions("""
-                <cursor>
-                static int x = 1;
-                """,
-                context -> Lists.of(
+        String code =
+                "<cursor>\n" +
+                "static int x = 1;\n";
+        assertSuggestions(
+                code,
+                context -> Lists.from(
                         unitMembers,
                         types,
                         new KeywordSuggestion(TokenType.ASYNC)));
@@ -40,11 +41,12 @@ public class UnitStructureTests {
 
     @Test
     public void afterUnitMembersTest1() {
-        assertSuggestions("""
-                static int x = 1;
-                <cursor>
-                """,
-                context -> Lists.of(
+        String code =
+                "static int x = 1;\n" +
+                "<cursor>\n";
+        assertSuggestions(
+                code,
+                context -> Lists.from(
                         unitMembers,
                         statements,
                         new KeywordSuggestion(TokenType.ASYNC),
@@ -54,12 +56,13 @@ public class UnitStructureTests {
 
     @Test
     public void afterUnitMembersTest2() {
-        assertSuggestions("""
-                static int x = 1;
-                <cursor>
-                int y = 3;
-                """,
-                context -> Lists.of(
+        String code =
+                "static int x = 1;\n" +
+                "<cursor>\n" +
+                "int y = 3;\n";
+        assertSuggestions(
+                code,
+                context -> Lists.from(
                         unitMembers,
                         statements,
                         new KeywordSuggestion(TokenType.ASYNC),
@@ -69,11 +72,12 @@ public class UnitStructureTests {
 
     @Test
     public void afterStatementsTest() {
-        assertSuggestions("""
-                int x = 3;
-                <cursor>
-                """,
-                context -> Lists.of(
+        String code =
+                "int x = 3;\n" +
+                "<cursor>\n";
+        assertSuggestions(
+                code,
+                context -> Lists.from(
                         statements,
                         new StaticConstantSuggestion(context, "intStorage"),
                         new LocalVariableSuggestion(context, "x")));
@@ -81,10 +85,11 @@ public class UnitStructureTests {
 
     @Test
     public void staticFieldTest() {
-        assertSuggestions("""
-                static <cursor>
-                """,
-                context -> Lists.of(
+        String code =
+                "static <cursor>\n";
+        assertSuggestions(
+                code,
+                context -> Lists.from(
                         types));
     }
 

@@ -1,5 +1,7 @@
 package com.zergatul.scripting.tests.completion.helpers;
 
+import com.zergatul.scripting.utility.Lists;
+
 import com.zergatul.scripting.lexer.TokenType;
 import com.zergatul.scripting.runtime.RuntimeType;
 import com.zergatul.scripting.tests.completion.suggestions.CustomTypeSuggestion;
@@ -12,14 +14,14 @@ import java.util.List;
 
 public class CommonSuggestions {
 
-    public static final List<Suggestion> unitMembers = List.of(
+    public static final List<Suggestion> unitMembers = Lists.of(
             new KeywordSuggestion(TokenType.STATIC),
             new KeywordSuggestion(TokenType.VOID),
             new KeywordSuggestion(TokenType.CLASS),
             new KeywordSuggestion(TokenType.EXTENSION),
             new KeywordSuggestion(TokenType.TYPEALIAS));
 
-    public static final List<Suggestion> types = List.of(
+    public static final List<Suggestion> types = Lists.of(
             new TypeSuggestion(SBoolean.instance),
             new TypeSuggestion(SInt8.instance),
             new TypeSuggestion(SInt16.instance),
@@ -31,7 +33,7 @@ public class CommonSuggestions {
             new TypeSuggestion(SString.instance),
             new CustomTypeSuggestion(RuntimeType.class));
 
-    public static final List<Suggestion> expressions = Lists.of(
+    public static final List<Suggestion> expressions = Lists.from(
             types,
             new KeywordSuggestion(TokenType.NULL),
             new KeywordSuggestion(TokenType.FALSE),
@@ -41,7 +43,7 @@ public class CommonSuggestions {
             new KeywordSuggestion(TokenType.META_TYPE),
             new KeywordSuggestion(TokenType.META_TYPE_OF));
 
-    public static final List<Suggestion> statements = Lists.of(
+    public static final List<Suggestion> statements = Lists.from(
             expressions,
             new KeywordSuggestion(TokenType.LET),
             new KeywordSuggestion(TokenType.FOR),
@@ -50,7 +52,7 @@ public class CommonSuggestions {
             new KeywordSuggestion(TokenType.WHILE),
             new KeywordSuggestion(TokenType.RETURN));
 
-    public static final List<Suggestion> loopStatements = Lists.of(
+    public static final List<Suggestion> loopStatements = Lists.from(
             expressions,
             new KeywordSuggestion(TokenType.LET),
             new KeywordSuggestion(TokenType.FOR),

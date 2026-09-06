@@ -1,5 +1,7 @@
 package com.zergatul.scripting.tests.lexer;
 
+import com.zergatul.scripting.utility.Lists;
+
 import com.zergatul.scripting.DiagnosticMessage;
 import com.zergatul.scripting.SingleLineTextRange;
 import com.zergatul.scripting.lexer.*;
@@ -12,8 +14,8 @@ public class FloatTests extends LexerTestBase {
     @Test
     public void dotTest1() {
         LexerOutput result = lex("1.");
-        comparator.assertEquals(List.of(), result.diagnostics());
-        comparator.assertEquals(List.of(
+        comparator.assertEquals(Lists.of(), result.diagnostics());
+        comparator.assertEquals(Lists.of(
                         new ValueToken(TokenType.INTEGER_LITERAL, "1", new SingleLineTextRange(1, 1, 0, 1)),
                         new Token(TokenType.DOT, new SingleLineTextRange(1, 2, 1, 1)),
                         new EndOfFileToken(new SingleLineTextRange(1, 3, 2, 0))),
@@ -23,8 +25,8 @@ public class FloatTests extends LexerTestBase {
     @Test
     public void dotTest2() {
         LexerOutput result = lex(".1.");
-        comparator.assertEquals(List.of(), result.diagnostics());
-        comparator.assertEquals(List.of(
+        comparator.assertEquals(Lists.of(), result.diagnostics());
+        comparator.assertEquals(Lists.of(
                         new ValueToken(TokenType.FLOAT_LITERAL, ".1", new SingleLineTextRange(1, 1, 0, 2)),
                         new Token(TokenType.DOT, new SingleLineTextRange(1, 3, 2, 1)),
                         new EndOfFileToken(new SingleLineTextRange(1, 4, 3, 0))),
@@ -34,8 +36,8 @@ public class FloatTests extends LexerTestBase {
     @Test
     public void floatTest1() {
         LexerOutput result = lex("aa,.1,0.0,.1e+1,1e-2,1e3");
-        comparator.assertEquals(List.of(), result.diagnostics());
-        comparator.assertEquals(List.of(
+        comparator.assertEquals(Lists.of(), result.diagnostics());
+        comparator.assertEquals(Lists.of(
                 new ValueToken(TokenType.IDENTIFIER, "aa", new SingleLineTextRange(1, 1, 0, 2)),
                 new Token(TokenType.COMMA, new SingleLineTextRange(1, 3, 2, 1)),
                 new ValueToken(TokenType.FLOAT_LITERAL, ".1", new SingleLineTextRange(1, 4, 3, 2)),
@@ -62,10 +64,10 @@ public class FloatTests extends LexerTestBase {
         for (String input : invalidNumbers) {
             LexerOutput result = lex(input);
             Token token = new InvalidNumberToken(input, new SingleLineTextRange(1, 1, 0, input.length()));
-            comparator.assertEquals(List.of(
+            comparator.assertEquals(Lists.of(
                     new DiagnosticMessage(LexerErrors.InvalidNumber, token, input)),
                     result.diagnostics());
-            comparator.assertEquals(List.of(
+            comparator.assertEquals(Lists.of(
                     token,
                     new EndOfFileToken(new SingleLineTextRange(1, 1 + input.length(), input.length(), 0))),
                     result.tokens());

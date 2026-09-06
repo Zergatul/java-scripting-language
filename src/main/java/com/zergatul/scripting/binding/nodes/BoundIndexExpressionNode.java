@@ -5,6 +5,7 @@ import com.zergatul.scripting.binding.BinderTreeVisitor;
 import com.zergatul.scripting.parser.SyntaxFactory;
 import com.zergatul.scripting.parser.nodes.IndexExpressionNode;
 import com.zergatul.scripting.type.operation.IndexOperation;
+import com.zergatul.scripting.utility.Lists;
 
 import java.util.List;
 
@@ -49,6 +50,6 @@ public class BoundIndexExpressionNode extends BoundExpressionNode {
 
     @Override
     public List<BoundNode> getChildren() {
-        return List.of(callee, index);
+        return Lists.of(callee, index);
     }
 }

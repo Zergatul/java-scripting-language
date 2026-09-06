@@ -1,5 +1,7 @@
 package com.zergatul.scripting.tests.compiler;
 
+import com.zergatul.scripting.utility.Lists;
+
 import com.zergatul.scripting.DiagnosticMessage;
 import com.zergatul.scripting.SingleLineTextRange;
 import com.zergatul.scripting.binding.BinderErrors;
@@ -27,28 +29,26 @@ public class InOperatorTests extends ComparatorTest {
 
     @Test
     public void stringTest() {
-        String code = """
-                let str = "qwerty";
-                boolStorage.add("q" in str);
-                boolStorage.add("qwe" in str);
-                boolStorage.add("qwerty" in str);
-                boolStorage.add("a" in str);
-                """;
+        String code =
+                "let str = \"qwerty\";\n" +
+                "boolStorage.add(\"q\" in str);\n" +
+                "boolStorage.add(\"qwe\" in str);\n" +
+                "boolStorage.add(\"qwerty\" in str);\n" +
+                "boolStorage.add(\"a\" in str);\n";
 
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
-        Assertions.assertIterableEquals(ApiRoot.boolStorage.list, List.of(true, true, true, false));
+        Assertions.assertIterableEquals(ApiRoot.boolStorage.list, Lists.of(true, true, true, false));
     }
 
     @Test
     public void containsNotDefinedTest() {
-        String code = """
-                boolStorage.add("" in 1);
-                """;
+        String code =
+                "boolStorage.add(\"\" in 1);\n";
 
         comparator.assertEquals(
-                List.of(
+                Lists.of(
                         new DiagnosticMessage(
                                 BinderErrors.CannotUseInOperator,
                                 new SingleLineTextRange(1, 17, 16, 7),
@@ -58,28 +58,27 @@ public class InOperatorTests extends ComparatorTest {
 
     @Test
     public void extensionMethodTest() {
-        String code = """
-                extension(int[]) {
-                    boolean contains(int value) {
-                        for (int i = 0; i < this.length; i++) {
-                            if (this[i] == value) {
-                                return true;
-                            }
-                        }
-                        return false;
-                    }
-                }
-                
-                boolStorage.add(1 in [1, 2, 3]);
-                boolStorage.add(2 in [1, 2, 3]);
-                boolStorage.add(3 in [1, 2, 3]);
-                boolStorage.add(4 in [1, 2, 3]);
-                """;
+        String code =
+                "extension(int[]) {\n" +
+                "    boolean contains(int value) {\n" +
+                "        for (int i = 0; i < this.length; i++) {\n" +
+                "            if (this[i] == value) {\n" +
+                "                return true;\n" +
+                "            }\n" +
+                "        }\n" +
+                "        return false;\n" +
+                "    }\n" +
+                "}\n" +
+                "\n" +
+                "boolStorage.add(1 in [1, 2, 3]);\n" +
+                "boolStorage.add(2 in [1, 2, 3]);\n" +
+                "boolStorage.add(3 in [1, 2, 3]);\n" +
+                "boolStorage.add(4 in [1, 2, 3]);\n";
 
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
-        Assertions.assertIterableEquals(ApiRoot.boolStorage.list, List.of(true, true, true, false));
+        Assertions.assertIterableEquals(ApiRoot.boolStorage.list, Lists.of(true, true, true, false));
     }
 
     public static class ApiRoot {

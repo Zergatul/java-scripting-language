@@ -3,6 +3,7 @@ package com.zergatul.scripting.parser.nodes;
 import com.zergatul.scripting.Locatable;
 import com.zergatul.scripting.lexer.ValueToken;
 import com.zergatul.scripting.parser.ParserTreeVisitor;
+import com.zergatul.scripting.utility.Lists;
 
 import java.util.List;
 
@@ -27,6 +28,6 @@ public class FloatLiteralExpressionNode extends ExpressionNode {
 
     @Override
     public List<Locatable> getChildNodes() {
-        return List.of(token);
+        return Lists.of(token);
     }
 }

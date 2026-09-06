@@ -17,9 +17,8 @@ public class CompileFunctionTests {
 
     @Test
     public void boolFunction1Test() {
-        String code = """
-                return intStorage.last() >= 100;
-                """;
+        String code =
+                "return intStorage.last() >= 100;\n";
 
         BoolFunction program = compile(code, BoolFunction.class);
 
@@ -38,9 +37,8 @@ public class CompileFunctionTests {
 
     @Test
     public void boolFunction2Test() {
-        String code = """
-                return value1 < value2;
-                """;
+        String code =
+                "return value1 < value2;\n";
 
         BoolFunction2 program = compile(code, BoolFunction2.class);
 

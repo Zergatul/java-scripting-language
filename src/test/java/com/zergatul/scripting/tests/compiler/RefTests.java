@@ -8,10 +8,9 @@ public class RefTests extends ComparatorTest {
 
     @Test
     public void invalidRefVariableTest() {
-        String code = """
-                long[] a = new long[45];
-                long.tryParse("123", ⟦ref a⟧);
-                """;
+        String code =
+                "long[] a = new long[45];\n" +
+                "long.tryParse(\"123\", ⟦ref a⟧);\n";
 
         comparator.assertDiagnostics(
                 ApiRoot.class, code, "⟦⟧",
@@ -21,14 +20,13 @@ public class RefTests extends ComparatorTest {
 
     @Test
     public void refTypeMismatchTest() {
-        String code = """
-                float32 f;
-                float.tryParse⟦("123", ref f)⟧;
-                """;
+        String code =
+                "float32 f;\n" +
+                "float.tryParse⟦(\"123\", ref f)⟧;\n";
 
-        String candidates = """
-                Candidates:
-                boolean tryParse(string str, ref float result)""";
+        String candidates =
+                "Candidates:\n" +
+                "boolean tryParse(string str, ref float result)";
 
         comparator.assertDiagnostics(
                 ApiRoot.class, code, "⟦⟧",

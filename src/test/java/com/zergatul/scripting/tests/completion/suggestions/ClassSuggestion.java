@@ -2,6 +2,7 @@ package com.zergatul.scripting.tests.completion.suggestions;
 
 import com.zergatul.scripting.binding.BinderOutput;
 import com.zergatul.scripting.binding.nodes.BoundClassNode;
+import com.zergatul.scripting.binding.nodes.BoundCompilationUnitMemberNode;
 import com.zergatul.scripting.binding.nodes.BoundNodeType;
 import com.zergatul.scripting.symbols.ClassSymbol;
 import com.zergatul.scripting.tests.completion.helpers.TestCompletionContext;
@@ -20,7 +21,7 @@ public class ClassSuggestion extends Suggestion {
     }
 
     private static ClassSymbol extract(BinderOutput output, String name) {
-        for (var memberNode : output.unit().members.members) {
+        for (BoundCompilationUnitMemberNode memberNode : output.unit().members.members) {
             if (memberNode.getNodeType() == BoundNodeType.CLASS_DECLARATION) {
                 BoundClassNode classNode = (BoundClassNode) memberNode;
                 if (classNode.name.value.equals(name)) {
@@ -34,7 +35,8 @@ public class ClassSuggestion extends Suggestion {
 
     @Override
     public boolean equals(Object obj) {
-        if (obj instanceof ClassSuggestion other) {
+        if (obj instanceof ClassSuggestion) {
+            ClassSuggestion other = (ClassSuggestion) obj;
             return other.clazz == clazz;
         } else {
             return false;

@@ -4,6 +4,7 @@ import com.zergatul.scripting.compiler.CompilerContext;
 import org.objectweb.asm.MethodVisitor;
 
 import java.util.List;
+import java.util.function.Consumer;
 
 import static org.objectweb.asm.Opcodes.INVOKESPECIAL;
 import static org.objectweb.asm.Opcodes.INVOKEVIRTUAL;
@@ -58,13 +59,13 @@ public class DeclaredMethodReference extends MethodReference {
     }
 
     @Override
-    public void compileInvoke(MethodVisitor visitor, CompilerContext context, Runnable compileArguments) {
-        compileInvoke(visitor, compileArguments, INVOKEVIRTUAL);
+    public void compileInvoke(MethodVisitor visitor, CompilerContext context, Consumer<CompilerContext> compileArguments) {
+        compileInvoke(visitor, context, compileArguments, INVOKEVIRTUAL);
     }
 
     @Override
-    public void compileBaseInvoke(MethodVisitor visitor, CompilerContext context, Runnable compileArguments) {
-        compileInvoke(visitor, compileArguments, INVOKESPECIAL);
+    public void compileBaseInvoke(MethodVisitor visitor, CompilerContext context, Consumer<CompilerContext> compileArguments) {
+        compileInvoke(visitor, context, compileArguments, INVOKESPECIAL);
     }
 
     @Override
@@ -72,8 +73,8 @@ public class DeclaredMethodReference extends MethodReference {
         return name;
     }
 
-    private void compileInvoke(MethodVisitor visitor, Runnable compileArguments, int opcode) {
-        compileArguments.run();
+    private void compileInvoke(MethodVisitor visitor, CompilerContext context, Consumer<CompilerContext> compileArguments, int opcode) {
+        compileArguments.accept(context);
         visitor.visitMethodInsn(
                 opcode,
                 owner.getInternalName(),

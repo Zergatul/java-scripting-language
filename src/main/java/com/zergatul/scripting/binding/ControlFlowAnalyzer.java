@@ -4,6 +4,10 @@ import com.zergatul.scripting.binding.nodes.*;
 
 import java.util.List;
 
+import static com.zergatul.scripting.binding.FlowResult.CONTINUES;
+import static com.zergatul.scripting.binding.FlowResult.TERMINATES;
+import static java.lang.Thread.yield;
+
 public class ControlFlowAnalyzer {
 
     public FlowResult analyzeBlock(BoundBlockStatementNode block) {
@@ -12,130 +16,120 @@ public class ControlFlowAnalyzer {
 
     public FlowResult analyzeStatements(List<BoundStatementNode> statements) {
         for (BoundStatementNode statement : statements) {
-            if (analyzeStatement(statement) == FlowResult.TERMINATES) {
-                return FlowResult.TERMINATES;
+            if (analyzeStatement(statement) == TERMINATES) {
+                return TERMINATES;
             }
         }
-        return FlowResult.CONTINUES;
+        return CONTINUES;
     }
 
     public FlowResult analyzeStatement(BoundStatementNode statement) {
-        return switch (statement.getNodeType()) {
+        switch (statement.getNodeType()) {
+            case RETURN_STATEMENT:
+            case THROW_STATEMENT:
+                return TERMINATES;
 
-            case RETURN_STATEMENT, THROW_STATEMENT -> FlowResult.TERMINATES;
-
-            case BREAK_STATEMENT -> {
+            case BREAK_STATEMENT:
                 BoundBreakStatementNode breakStatement = (BoundBreakStatementNode) statement;
-                yield breakStatement.isInsideLoop ? FlowResult.TERMINATES : FlowResult.CONTINUES;
-            }
+                return breakStatement.isInsideLoop ? TERMINATES : CONTINUES;
 
-            case CONTINUE_STATEMENT -> {
+            case CONTINUE_STATEMENT:
                 BoundContinueStatementNode continueStatement = (BoundContinueStatementNode) statement;
-                yield continueStatement.isInsideLoop ? FlowResult.TERMINATES : FlowResult.CONTINUES;
-            }
+                return continueStatement.isInsideLoop ? TERMINATES : CONTINUES;
 
-            case BLOCK_STATEMENT -> analyzeBlock((BoundBlockStatementNode) statement);
+            case BLOCK_STATEMENT:
+                return analyzeBlock((BoundBlockStatementNode) statement);
 
-            case IF_STATEMENT -> {
+            case IF_STATEMENT:
                 BoundIfStatementNode ifStatement = (BoundIfStatementNode) statement;
                 FlowResult thenResult = analyzeStatement(ifStatement.thenStatement);
-                FlowResult elseResult = ifStatement.elseStatement != null ? analyzeStatement(ifStatement.elseStatement) : FlowResult.CONTINUES;
-                yield (thenResult == FlowResult.TERMINATES && elseResult == FlowResult.TERMINATES) ? FlowResult.TERMINATES : FlowResult.CONTINUES;
-            }
+                FlowResult elseResult = ifStatement.elseStatement != null ? analyzeStatement(ifStatement.elseStatement) : CONTINUES;
+                return (thenResult == TERMINATES && elseResult == TERMINATES) ? TERMINATES : CONTINUES;
 
-            case TRY_STATEMENT -> {
+            case TRY_STATEMENT:
                 BoundTryStatementNode tryStatement = (BoundTryStatementNode) statement;
-                FlowResult finallyBlockResult = tryStatement.finallyBlock != null ? analyzeStatement(tryStatement.finallyBlock) : FlowResult.CONTINUES;
-                if (finallyBlockResult == FlowResult.TERMINATES) {
-                    yield FlowResult.TERMINATES;
+                FlowResult finallyBlockResult = tryStatement.finallyBlock != null ? analyzeStatement(tryStatement.finallyBlock) : CONTINUES;
+                if (finallyBlockResult == TERMINATES) {
+                    return TERMINATES;
                 }
 
                 FlowResult tryBlockResult = analyzeStatement(tryStatement.block);
                 boolean normalCompletionPossible =
-                        tryBlockResult == FlowResult.CONTINUES ||
-                        (tryStatement.catchBlock != null && analyzeStatement(tryStatement.catchBlock) == FlowResult.CONTINUES);
+                        tryBlockResult == CONTINUES ||
+                                (tryStatement.catchBlock != null && analyzeStatement(tryStatement.catchBlock) == CONTINUES);
+                return normalCompletionPossible ? CONTINUES : TERMINATES;
 
-                yield normalCompletionPossible ? FlowResult.CONTINUES : FlowResult.TERMINATES;
-            }
-
-            case EXPRESSION_STATEMENT -> {
+            case EXPRESSION_STATEMENT:
                 BoundExpressionStatementNode expressionStatement = (BoundExpressionStatementNode) statement;
-                yield analyzeExpression(expressionStatement.expression);
-            }
+                return analyzeExpression (expressionStatement.expression);
 
-            default -> FlowResult.CONTINUES;
-        };
+            default:
+                return CONTINUES;
+        }
     }
 
     private FlowResult analyzeExpression(BoundExpressionNode expression) {
-        return switch (expression.getNodeType()) {
+        switch (expression.getNodeType()) {
+            case THROW_EXPRESSION:
+                return TERMINATES;
 
-            case THROW_EXPRESSION -> FlowResult.TERMINATES;
-
-            case CONVERSION -> {
+            case CONVERSION:
                 BoundConversionNode conversion = (BoundConversionNode) expression;
-                yield analyzeExpression(conversion.expression);
-            }
+                return analyzeExpression (conversion.expression);
 
-            case UNARY_EXPRESSION -> {
+            case UNARY_EXPRESSION:
                 BoundUnaryExpressionNode unary = (BoundUnaryExpressionNode) expression;
-                yield analyzeExpression(unary.operand);
-            }
+                return analyzeExpression (unary.operand);
 
-            case BINARY_EXPRESSION -> {
+            case BINARY_EXPRESSION:
                 BoundBinaryExpressionNode binary = (BoundBinaryExpressionNode) expression;
-                if (analyzeExpression(binary.left) == FlowResult.TERMINATES && analyzeExpression(binary.right) == FlowResult.TERMINATES) {
-                    yield FlowResult.TERMINATES;
+                if (analyzeExpression(binary.left) == TERMINATES && analyzeExpression(binary.right) == TERMINATES) {
+                    return FlowResult.TERMINATES;
                 } else {
-                    yield FlowResult.CONTINUES;
+                    return FlowResult.CONTINUES;
                 }
-            }
 
-            case CONDITIONAL_EXPRESSION -> {
+            case CONDITIONAL_EXPRESSION:
                 BoundConditionalExpressionNode conditionalExpression = (BoundConditionalExpressionNode) expression;
-                if (analyzeExpression(conditionalExpression.condition) == FlowResult.TERMINATES) {
-                    yield FlowResult.TERMINATES;
+                if (analyzeExpression(conditionalExpression.condition) == TERMINATES) {
+                    return FlowResult.TERMINATES;
                 }
-                if (analyzeExpression(conditionalExpression.whenTrue) == FlowResult.TERMINATES && analyzeExpression(conditionalExpression.whenFalse) == FlowResult.TERMINATES) {
-                    yield FlowResult.TERMINATES;
+                if (analyzeExpression(conditionalExpression.whenTrue) == TERMINATES && analyzeExpression(conditionalExpression.whenFalse) == TERMINATES) {
+                    return FlowResult.TERMINATES;
                 }
-                yield FlowResult.CONTINUES;
-            }
+                return FlowResult.CONTINUES;
 
-            case BASE_METHOD_INVOCATION_EXPRESSION -> {
-                BoundBaseMethodInvocationExpressionNode invocation = (BoundBaseMethodInvocationExpressionNode) expression;
-                yield analyzeArguments(invocation.arguments);
-            }
+            case BASE_METHOD_INVOCATION_EXPRESSION:
+                BoundBaseMethodInvocationExpressionNode invocation1 = (BoundBaseMethodInvocationExpressionNode) expression;
+                return analyzeArguments(invocation1.arguments);
 
-            case FUNCTION_INVOCATION -> {
-                BoundFunctionInvocationExpression invocation = (BoundFunctionInvocationExpression) expression;
-                yield analyzeArguments(invocation.arguments);
-            }
+            case FUNCTION_INVOCATION:
+                BoundFunctionInvocationExpression invocation2 = (BoundFunctionInvocationExpression) expression;
+                return analyzeArguments(invocation2.arguments);
 
-            case OBJECT_INVOCATION -> {
-                BoundObjectInvocationExpression invocation = (BoundObjectInvocationExpression) expression;
-                yield analyzeArguments(invocation.arguments);
-            }
+            case OBJECT_INVOCATION:
+                BoundObjectInvocationExpression invocation3 = (BoundObjectInvocationExpression) expression;
+                return analyzeArguments(invocation3.arguments);
 
-            case METHOD_INVOCATION_EXPRESSION -> {
-                BoundMethodInvocationExpressionNode invocation = (BoundMethodInvocationExpressionNode) expression;
-                if (analyzeExpression(invocation.objectReference) == FlowResult.TERMINATES) {
-                    yield FlowResult.TERMINATES;
+            case METHOD_INVOCATION_EXPRESSION:
+                BoundMethodInvocationExpressionNode invocation4 = (BoundMethodInvocationExpressionNode) expression;
+                if (analyzeExpression(invocation4.objectReference) == TERMINATES) {
+                    return FlowResult.TERMINATES;
                 }
-                yield analyzeArguments(invocation.arguments);
-            }
+                return analyzeArguments(invocation4.arguments);
 
-            default -> FlowResult.CONTINUES;
-        };
+            default:
+                return CONTINUES;
+        }
     }
 
     private FlowResult analyzeArguments(BoundArgumentsListNode list) {
         for (BoundExpressionNode expression : list.arguments) {
-            if (analyzeExpression(expression) == FlowResult.TERMINATES) {
-                return FlowResult.TERMINATES;
+            if (analyzeExpression(expression) == TERMINATES) {
+                return TERMINATES;
             }
         }
 
-        return FlowResult.CONTINUES;
+        return CONTINUES;
     }
 }

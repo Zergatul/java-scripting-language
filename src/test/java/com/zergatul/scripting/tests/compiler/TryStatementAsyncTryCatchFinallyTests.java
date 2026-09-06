@@ -1,5 +1,7 @@
 package com.zergatul.scripting.tests.compiler;
 
+import com.zergatul.scripting.utility.Lists;
+
 import com.zergatul.scripting.AsyncRunnable;
 import com.zergatul.scripting.tests.compiler.helpers.FutureHelper;
 import com.zergatul.scripting.tests.compiler.helpers.IntStorage;
@@ -24,334 +26,327 @@ public class TryStatementAsyncTryCatchFinallyTests {
 
     @Test
     public void simpleTest() {
-        String code = """
-                try {
-                    intStorage.add(1);
-                    await futures.create();
-                    intStorage.add(2);
-                } catch {
-                    intStorage.add(3);
-                } finally {
-                    intStorage.add(4);
-                }
-                intStorage.add(5);
-                """;
+        String code =
+                "try {\n" +
+                "    intStorage.add(1);\n" +
+                "    await futures.create();\n" +
+                "    intStorage.add(2);\n" +
+                "} catch {\n" +
+                "    intStorage.add(3);\n" +
+                "} finally {\n" +
+                "    intStorage.add(4);\n" +
+                "}\n" +
+                "intStorage.add(5);\n";
 
         AsyncRunnable program = compileAsync(ApiRoot.class, code);
         CompletableFuture<?> future = program.run();
 
-        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(1));
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, Lists.of(1));
         Assertions.assertFalse(future.isDone());
 
         ApiRoot.futures.get(0).complete(null);
-        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(1, 2, 4, 5));
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, Lists.of(1, 2, 4, 5));
         Assertions.assertTrue(future.isDone());
     }
 
     @Test
     public void exceptionTest() {
-        String code = """
-                try {
-                    intStorage.add(1);
-                    await futures.create();
-                    intStorage.add(2);
-                    [1][2] = 3; // throws
-                    intStorage.add(3);
-                } catch {
-                    intStorage.add(4);
-                } finally {
-                    intStorage.add(5);
-                }
-                intStorage.add(6);
-                """;
+        String code =
+                "try {\n" +
+                "    intStorage.add(1);\n" +
+                "    await futures.create();\n" +
+                "    intStorage.add(2);\n" +
+                "    [1][2] = 3; // throws\n" +
+                "    intStorage.add(3);\n" +
+                "} catch {\n" +
+                "    intStorage.add(4);\n" +
+                "} finally {\n" +
+                "    intStorage.add(5);\n" +
+                "}\n" +
+                "intStorage.add(6);\n";
 
         AsyncRunnable program = compileAsync(ApiRoot.class, code);
         CompletableFuture<?> future = program.run();
 
-        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(1));
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, Lists.of(1));
         Assertions.assertFalse(future.isDone());
 
         ApiRoot.futures.get(0).complete(null);
-        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(1, 2, 4, 5, 6));
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, Lists.of(1, 2, 4, 5, 6));
         Assertions.assertTrue(future.isDone());
     }
 
     @Test
     public void innerBlockTest() {
-        String code = """
-                try {
-                    intStorage.add(1);
-                    await futures.create();
-                    intStorage.add(2);
-                    try {
-                        intStorage.add(3);
-                        [1][2] = 3; // throws
-                        intStorage.add(999);
-                    } catch {
-                        intStorage.add(4);
-                        throw;
-                    } finally {
-                        intStorage.add(5);
-                    }
-                    intStorage.add(6);
-                } catch {
-                    intStorage.add(7);
-                } finally {
-                    intStorage.add(8);
-                }
-                intStorage.add(9);
-                """;
+        String code =
+                "try {\n" +
+                "    intStorage.add(1);\n" +
+                "    await futures.create();\n" +
+                "    intStorage.add(2);\n" +
+                "    try {\n" +
+                "        intStorage.add(3);\n" +
+                "        [1][2] = 3; // throws\n" +
+                "        intStorage.add(999);\n" +
+                "    } catch {\n" +
+                "        intStorage.add(4);\n" +
+                "        throw;\n" +
+                "    } finally {\n" +
+                "        intStorage.add(5);\n" +
+                "    }\n" +
+                "    intStorage.add(6);\n" +
+                "} catch {\n" +
+                "    intStorage.add(7);\n" +
+                "} finally {\n" +
+                "    intStorage.add(8);\n" +
+                "}\n" +
+                "intStorage.add(9);\n";
 
         AsyncRunnable program = compileAsync(ApiRoot.class, code);
         CompletableFuture<?> future = program.run();
 
-        Assertions.assertIterableEquals(List.of(1), ApiRoot.intStorage.list);
+        Assertions.assertIterableEquals(Lists.of(1), ApiRoot.intStorage.list);
         Assertions.assertFalse(future.isDone());
 
         ApiRoot.futures.get(0).complete(null);
-        Assertions.assertIterableEquals(List.of(1, 2, 3, 4, 5, 7, 8, 9), ApiRoot.intStorage.list);
+        Assertions.assertIterableEquals(Lists.of(1, 2, 3, 4, 5, 7, 8, 9), ApiRoot.intStorage.list);
         Assertions.assertTrue(future.isDone());
     }
 
     @Test
     public void sequentialTryCatchFinallyBlocksTest() {
-        String code = """
-                try {
-                    intStorage.add(1);
-                    await futures.create();              // F0
-                    intStorage.add(2);
-                } catch {
-                    intStorage.add(999);
-                } finally {
-                    intStorage.add(3);
-                    await futures.create();              // F1
-                    intStorage.add(4);
-                }
-
-                try {
-                    intStorage.add(5);
-                    await futures.create();              // F2
-                    [1][2] = 3;                          // throws
-                    intStorage.add(999);
-                } catch {
-                    intStorage.add(6);
-                    await futures.create();              // F3
-                    intStorage.add(7);
-                } finally {
-                    intStorage.add(8);
-                    await futures.create();              // F4
-                    intStorage.add(9);
-                }
-
-                intStorage.add(10);
-                """;
+        String code =
+                "try {\n" +
+                "    intStorage.add(1);\n" +
+                "    await futures.create();              // F0\n" +
+                "    intStorage.add(2);\n" +
+                "} catch {\n" +
+                "    intStorage.add(999);\n" +
+                "} finally {\n" +
+                "    intStorage.add(3);\n" +
+                "    await futures.create();              // F1\n" +
+                "    intStorage.add(4);\n" +
+                "}\n" +
+                "\n" +
+                "try {\n" +
+                "    intStorage.add(5);\n" +
+                "    await futures.create();              // F2\n" +
+                "    [1][2] = 3;                          // throws\n" +
+                "    intStorage.add(999);\n" +
+                "} catch {\n" +
+                "    intStorage.add(6);\n" +
+                "    await futures.create();              // F3\n" +
+                "    intStorage.add(7);\n" +
+                "} finally {\n" +
+                "    intStorage.add(8);\n" +
+                "    await futures.create();              // F4\n" +
+                "    intStorage.add(9);\n" +
+                "}\n" +
+                "\n" +
+                "intStorage.add(10);\n";
 
         AsyncRunnable program = compileAsync(ApiRoot.class, code);
         CompletableFuture<?> future = program.run();
 
-        Assertions.assertIterableEquals(List.of(1), ApiRoot.intStorage.list);
+        Assertions.assertIterableEquals(Lists.of(1), ApiRoot.intStorage.list);
         Assertions.assertFalse(future.isDone());
 
         ApiRoot.futures.get(0).complete(null);
-        Assertions.assertIterableEquals(List.of(1, 2, 3), ApiRoot.intStorage.list);
+        Assertions.assertIterableEquals(Lists.of(1, 2, 3), ApiRoot.intStorage.list);
         Assertions.assertFalse(future.isDone());
 
         ApiRoot.futures.get(1).complete(null);
-        Assertions.assertIterableEquals(List.of(1, 2, 3, 4, 5), ApiRoot.intStorage.list);
+        Assertions.assertIterableEquals(Lists.of(1, 2, 3, 4, 5), ApiRoot.intStorage.list);
         Assertions.assertFalse(future.isDone());
 
         ApiRoot.futures.get(2).complete(null);
-        Assertions.assertIterableEquals(List.of(1, 2, 3, 4, 5, 6), ApiRoot.intStorage.list);
+        Assertions.assertIterableEquals(Lists.of(1, 2, 3, 4, 5, 6), ApiRoot.intStorage.list);
         Assertions.assertFalse(future.isDone());
 
         ApiRoot.futures.get(3).complete(null);
-        Assertions.assertIterableEquals(List.of(1, 2, 3, 4, 5, 6, 7, 8), ApiRoot.intStorage.list);
+        Assertions.assertIterableEquals(Lists.of(1, 2, 3, 4, 5, 6, 7, 8), ApiRoot.intStorage.list);
         Assertions.assertFalse(future.isDone());
 
         ApiRoot.futures.get(4).complete(null);
-        Assertions.assertIterableEquals(List.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10), ApiRoot.intStorage.list);
+        Assertions.assertIterableEquals(Lists.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10), ApiRoot.intStorage.list);
         Assertions.assertTrue(future.isDone());
     }
 
     @Test
     public void returnFromCatchThroughNestedFinallyTest() {
-        String code = """
-                async int func() {
-                    try {
-                        try {
-                            intStorage.add(1);
-                            await futures.create();      // F0
-                            [1][2] = 3;                  // throws
-                            intStorage.add(999);
-                        } catch {
-                            intStorage.add(2);
-                            await futures.create();      // F1
-                            return 50;
-                        } finally {
-                            intStorage.add(3);
-                            await futures.create();      // F2
-                            intStorage.add(4);
-                        }
-                    } finally {
-                        intStorage.add(5);
-                        await futures.create();          // F3
-                        intStorage.add(6);
-                    }
-                    return 0;
-                }
-
-                intStorage.add(await func());
-                intStorage.add(7);
-                """;
+        String code =
+                "async int func() {\n" +
+                "    try {\n" +
+                "        try {\n" +
+                "            intStorage.add(1);\n" +
+                "            await futures.create();      // F0\n" +
+                "            [1][2] = 3;                  // throws\n" +
+                "            intStorage.add(999);\n" +
+                "        } catch {\n" +
+                "            intStorage.add(2);\n" +
+                "            await futures.create();      // F1\n" +
+                "            return 50;\n" +
+                "        } finally {\n" +
+                "            intStorage.add(3);\n" +
+                "            await futures.create();      // F2\n" +
+                "            intStorage.add(4);\n" +
+                "        }\n" +
+                "    } finally {\n" +
+                "        intStorage.add(5);\n" +
+                "        await futures.create();          // F3\n" +
+                "        intStorage.add(6);\n" +
+                "    }\n" +
+                "    return 0;\n" +
+                "}\n" +
+                "\n" +
+                "intStorage.add(await func());\n" +
+                "intStorage.add(7);\n";
 
         AsyncRunnable program = compileAsync(ApiRoot.class, code);
         CompletableFuture<?> future = program.run();
 
-        Assertions.assertIterableEquals(List.of(1), ApiRoot.intStorage.list);
+        Assertions.assertIterableEquals(Lists.of(1), ApiRoot.intStorage.list);
         Assertions.assertFalse(future.isDone());
 
         ApiRoot.futures.get(0).complete(null);
-        Assertions.assertIterableEquals(List.of(1, 2), ApiRoot.intStorage.list);
+        Assertions.assertIterableEquals(Lists.of(1, 2), ApiRoot.intStorage.list);
         Assertions.assertFalse(future.isDone());
 
         ApiRoot.futures.get(1).complete(null);
-        Assertions.assertIterableEquals(List.of(1, 2, 3), ApiRoot.intStorage.list);
+        Assertions.assertIterableEquals(Lists.of(1, 2, 3), ApiRoot.intStorage.list);
         Assertions.assertFalse(future.isDone());
 
         ApiRoot.futures.get(2).complete(null);
-        Assertions.assertIterableEquals(List.of(1, 2, 3, 4, 5), ApiRoot.intStorage.list);
+        Assertions.assertIterableEquals(Lists.of(1, 2, 3, 4, 5), ApiRoot.intStorage.list);
         Assertions.assertFalse(future.isDone());
 
         ApiRoot.futures.get(3).complete(null);
-        Assertions.assertIterableEquals(List.of(1, 2, 3, 4, 5, 6, 50, 7), ApiRoot.intStorage.list);
+        Assertions.assertIterableEquals(Lists.of(1, 2, 3, 4, 5, 6, 50, 7), ApiRoot.intStorage.list);
         Assertions.assertTrue(future.isDone());
     }
 
     @Test
     public void exceptionFromCatchThroughNestedFinallyTest() {
-        String code = """
-                try {
-                    try {
-                        intStorage.add(1);
-                        await futures.create();          // F0
-                        [1][2] = 3;                      // throws
-                        intStorage.add(999);
-                    } catch {
-                        intStorage.add(2);
-                        await futures.create();          // F1
-                        [1][2] = 4;                      // throws
-                        intStorage.add(999);
-                    } finally {
-                        intStorage.add(3);
-                        await futures.create();          // F2
-                        intStorage.add(4);
-                    }
-                } catch {
-                    intStorage.add(5);
-                } finally {
-                    intStorage.add(6);
-                    await futures.create();              // F3
-                    intStorage.add(7);
-                }
-
-                intStorage.add(8);
-                """;
+        String code =
+                "try {\n" +
+                "    try {\n" +
+                "        intStorage.add(1);\n" +
+                "        await futures.create();          // F0\n" +
+                "        [1][2] = 3;                      // throws\n" +
+                "        intStorage.add(999);\n" +
+                "    } catch {\n" +
+                "        intStorage.add(2);\n" +
+                "        await futures.create();          // F1\n" +
+                "        [1][2] = 4;                      // throws\n" +
+                "        intStorage.add(999);\n" +
+                "    } finally {\n" +
+                "        intStorage.add(3);\n" +
+                "        await futures.create();          // F2\n" +
+                "        intStorage.add(4);\n" +
+                "    }\n" +
+                "} catch {\n" +
+                "    intStorage.add(5);\n" +
+                "} finally {\n" +
+                "    intStorage.add(6);\n" +
+                "    await futures.create();              // F3\n" +
+                "    intStorage.add(7);\n" +
+                "}\n" +
+                "\n" +
+                "intStorage.add(8);\n";
 
         AsyncRunnable program = compileAsync(ApiRoot.class, code);
         CompletableFuture<?> future = program.run();
 
-        Assertions.assertIterableEquals(List.of(1), ApiRoot.intStorage.list);
+        Assertions.assertIterableEquals(Lists.of(1), ApiRoot.intStorage.list);
         Assertions.assertFalse(future.isDone());
 
         ApiRoot.futures.get(0).complete(null);
-        Assertions.assertIterableEquals(List.of(1, 2), ApiRoot.intStorage.list);
+        Assertions.assertIterableEquals(Lists.of(1, 2), ApiRoot.intStorage.list);
         Assertions.assertFalse(future.isDone());
 
         ApiRoot.futures.get(1).complete(null);
-        Assertions.assertIterableEquals(List.of(1, 2, 3), ApiRoot.intStorage.list);
+        Assertions.assertIterableEquals(Lists.of(1, 2, 3), ApiRoot.intStorage.list);
         Assertions.assertFalse(future.isDone());
 
         ApiRoot.futures.get(2).complete(null);
-        Assertions.assertIterableEquals(List.of(1, 2, 3, 4, 5, 6), ApiRoot.intStorage.list);
+        Assertions.assertIterableEquals(Lists.of(1, 2, 3, 4, 5, 6), ApiRoot.intStorage.list);
         Assertions.assertFalse(future.isDone());
 
         ApiRoot.futures.get(3).complete(null);
-        Assertions.assertIterableEquals(List.of(1, 2, 3, 4, 5, 6, 7, 8), ApiRoot.intStorage.list);
+        Assertions.assertIterableEquals(Lists.of(1, 2, 3, 4, 5, 6, 7, 8), ApiRoot.intStorage.list);
         Assertions.assertTrue(future.isDone());
     }
 
     @Test
     public void jumpFromCatchOuterFinallyTest() {
-        String code = """
-                for (int i = 0; i < 3; i++) {
-                    try {
-                        try {
-                            intStorage.add(i);
-                            await futures.create();          // F0, F2, F4...
-                            if (i == 0) {
-                                intStorage.add(10);
-                            }
-                        } finally {
-                            intStorage.add(100 + i);
-                            await futures.create();          // F1, F3, F5...
-                            if (i == 0) {
-                                [1][2] = 3;                  // throws
-                            }
-                            intStorage.add(200 + i);
-                        }
-                    } catch {
-                        intStorage.add(300 + i);
-                        continue;
-                    } finally {
-                        intStorage.add(400 + i);
-                        await futures.create();              // F? (only for iterations that reach here)
-                        intStorage.add(500 + i);
-                    }
-                    intStorage.add(600 + i);
-                }
-                intStorage.add(9999);
-                """;
+        String code =
+                "for (int i = 0; i < 3; i++) {\n" +
+                "    try {\n" +
+                "        try {\n" +
+                "            intStorage.add(i);\n" +
+                "            await futures.create();          // F0, F2, F4...\n" +
+                "            if (i == 0) {\n" +
+                "                intStorage.add(10);\n" +
+                "            }\n" +
+                "        } finally {\n" +
+                "            intStorage.add(100 + i);\n" +
+                "            await futures.create();          // F1, F3, F5...\n" +
+                "            if (i == 0) {\n" +
+                "                [1][2] = 3;                  // throws\n" +
+                "            }\n" +
+                "            intStorage.add(200 + i);\n" +
+                "        }\n" +
+                "    } catch {\n" +
+                "        intStorage.add(300 + i);\n" +
+                "        continue;\n" +
+                "    } finally {\n" +
+                "        intStorage.add(400 + i);\n" +
+                "        await futures.create();              // F? (only for iterations that reach here)\n" +
+                "        intStorage.add(500 + i);\n" +
+                "    }\n" +
+                "    intStorage.add(600 + i);\n" +
+                "}\n" +
+                "intStorage.add(9999);\n";
 
         AsyncRunnable program = compileAsync(ApiRoot.class, code);
         CompletableFuture<?> future = program.run();
 
-        Assertions.assertIterableEquals(List.of(0), ApiRoot.intStorage.list);
+        Assertions.assertIterableEquals(Lists.of(0), ApiRoot.intStorage.list);
         Assertions.assertFalse(future.isDone());
 
         ApiRoot.futures.get(0).complete(null);
-        Assertions.assertIterableEquals(List.of(0, 10, 100), ApiRoot.intStorage.list);
+        Assertions.assertIterableEquals(Lists.of(0, 10, 100), ApiRoot.intStorage.list);
         Assertions.assertFalse(future.isDone());
 
         ApiRoot.futures.get(1).complete(null);
-        Assertions.assertIterableEquals(List.of(0, 10, 100, 300, 400), ApiRoot.intStorage.list);
+        Assertions.assertIterableEquals(Lists.of(0, 10, 100, 300, 400), ApiRoot.intStorage.list);
         Assertions.assertFalse(future.isDone());
 
         ApiRoot.futures.get(2).complete(null);
-        Assertions.assertIterableEquals(List.of(0, 10, 100, 300, 400, 500, 1), ApiRoot.intStorage.list);
+        Assertions.assertIterableEquals(Lists.of(0, 10, 100, 300, 400, 500, 1), ApiRoot.intStorage.list);
         Assertions.assertFalse(future.isDone());
 
         ApiRoot.futures.get(3).complete(null);
-        Assertions.assertIterableEquals(List.of(0, 10, 100, 300, 400, 500, 1, 101), ApiRoot.intStorage.list);
+        Assertions.assertIterableEquals(Lists.of(0, 10, 100, 300, 400, 500, 1, 101), ApiRoot.intStorage.list);
         Assertions.assertFalse(future.isDone());
 
         ApiRoot.futures.get(4).complete(null);
-        Assertions.assertIterableEquals(List.of(0, 10, 100, 300, 400, 500, 1, 101, 201, 401), ApiRoot.intStorage.list);
+        Assertions.assertIterableEquals(Lists.of(0, 10, 100, 300, 400, 500, 1, 101, 201, 401), ApiRoot.intStorage.list);
         Assertions.assertFalse(future.isDone());
 
         ApiRoot.futures.get(5).complete(null);
-        Assertions.assertIterableEquals(List.of(0, 10, 100, 300, 400, 500, 1, 101, 201, 401, 501, 601, 2), ApiRoot.intStorage.list);
+        Assertions.assertIterableEquals(Lists.of(0, 10, 100, 300, 400, 500, 1, 101, 201, 401, 501, 601, 2), ApiRoot.intStorage.list);
         Assertions.assertFalse(future.isDone());
 
         ApiRoot.futures.get(6).complete(null);
-        Assertions.assertIterableEquals(List.of(0, 10, 100, 300, 400, 500, 1, 101, 201, 401, 501, 601, 2, 102), ApiRoot.intStorage.list);
+        Assertions.assertIterableEquals(Lists.of(0, 10, 100, 300, 400, 500, 1, 101, 201, 401, 501, 601, 2, 102), ApiRoot.intStorage.list);
         Assertions.assertFalse(future.isDone());
 
         ApiRoot.futures.get(7).complete(null);
-        Assertions.assertIterableEquals(List.of(0, 10, 100, 300, 400, 500, 1, 101, 201, 401, 501, 601, 2, 102, 202, 402), ApiRoot.intStorage.list);
+        Assertions.assertIterableEquals(Lists.of(0, 10, 100, 300, 400, 500, 1, 101, 201, 401, 501, 601, 2, 102, 202, 402), ApiRoot.intStorage.list);
         Assertions.assertFalse(future.isDone());
 
         ApiRoot.futures.get(8).complete(null);
-        Assertions.assertIterableEquals(List.of(0, 10, 100, 300, 400, 500, 1, 101, 201, 401, 501, 601, 2, 102, 202, 402, 502, 602, 9999), ApiRoot.intStorage.list);
+        Assertions.assertIterableEquals(Lists.of(0, 10, 100, 300, 400, 500, 1, 101, 201, 401, 501, 601, 2, 102, 202, 402, 502, 602, 9999), ApiRoot.intStorage.list);
         Assertions.assertTrue(future.isDone());
     }
 

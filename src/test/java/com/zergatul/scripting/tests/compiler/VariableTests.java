@@ -1,5 +1,7 @@
 package com.zergatul.scripting.tests.compiler;
 
+import com.zergatul.scripting.utility.Lists;
+
 import com.zergatul.scripting.DiagnosticMessage;
 import com.zergatul.scripting.SingleLineTextRange;
 import com.zergatul.scripting.binding.BinderErrors;
@@ -24,111 +26,105 @@ public class VariableTests extends ComparatorTest {
 
     @Test
     public void sumTest() {
-        String code = """
-                int x;
-                x = x + 1;
-                int y = 2;
-                y = x + y;
-                intStorage.add(x);
-                intStorage.add(y);
-                """;
+        String code =
+                "int x;\n" +
+                "x = x + 1;\n" +
+                "int y = 2;\n" +
+                "y = x + y;\n" +
+                "intStorage.add(x);\n" +
+                "intStorage.add(y);\n";
 
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
         Assertions.assertIterableEquals(
                 ApiRoot.intStorage.list,
-                List.of(1, 3));
+                Lists.of(1, 3));
     }
 
     @Test
     public void cannotReuseIdentifierSimpleTest() {
-        String code = """
-                int x;
-                int y = 2;
-                int x = y;
-                """;
+        String code =
+                "int x;\n" +
+                "int y = 2;\n" +
+                "int x = y;\n";
 
-        comparator.assertEquals(List.of(
+        comparator.assertEquals(Lists.of(
                 new DiagnosticMessage(BinderErrors.SymbolAlreadyDeclared, new SingleLineTextRange(3, 5, 22, 1), "x")),
                 getDiagnostics(ApiRoot.class, code));
     }
 
     @Test
     public void cannotReuseIdentifierNestedTest() {
-        String code = """
-                int x;
-                if (x > 0) {
-                    int x = 123;
-                }
-                """;
+        String code =
+                "int x;\n" +
+                "if (x > 0) {\n" +
+                "    int x = 123;\n" +
+                "}\n";
 
-        comparator.assertEquals(List.of(
+        comparator.assertEquals(Lists.of(
                 new DiagnosticMessage(BinderErrors.SymbolAlreadyDeclared, new SingleLineTextRange(3, 9, 28, 1), "x")),
                 getDiagnostics(ApiRoot.class, code));
     }
 
     @Test
     public void reuseIdentifierInAnotherScopeTest() {
-        String code = """
-                boolean b = true;
-                if (b) {
-                    int inner = 123;
-                    intStorage.add(inner);
-                }
-                b = !b;
-                if (!b) {
-                    int inner = 456;
-                    intStorage.add(inner);
-                }
-                int inner = 789;
-                intStorage.add(inner);
-                """;
+        String code =
+                "boolean b = true;\n" +
+                "if (b) {\n" +
+                "    int inner = 123;\n" +
+                "    intStorage.add(inner);\n" +
+                "}\n" +
+                "b = !b;\n" +
+                "if (!b) {\n" +
+                "    int inner = 456;\n" +
+                "    intStorage.add(inner);\n" +
+                "}\n" +
+                "int inner = 789;\n" +
+                "intStorage.add(inner);\n";
 
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
         Assertions.assertIterableEquals(
                 ApiRoot.intStorage.list,
-                List.of(123, 456, 789));
+                Lists.of(123, 456, 789));
     }
 
     @Test
     public void rawBlocksTest() {
-        String code = """
-                {
-                    int x = 23;
-                    intStorage.add(x);
-                }
-                {
-                    int x = 45;
-                    intStorage.add(x);
-                }
-                {
-                    int x = 67;
-                    intStorage.add(x);
-                }
-                """;
+        String code =
+                "{\n" +
+                "    int x = 23;\n" +
+                "    intStorage.add(x);\n" +
+                "}\n" +
+                "{\n" +
+                "    int x = 45;\n" +
+                "    intStorage.add(x);\n" +
+                "}\n" +
+                "{\n" +
+                "    int x = 67;\n" +
+                "    intStorage.add(x);\n" +
+                "}\n";
 
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
         Assertions.assertIterableEquals(
                 ApiRoot.intStorage.list,
-                List.of(23, 45, 67));
+                Lists.of(23, 45, 67));
     }
 
     @Test
     public void variableAsStaticConstantTest() {
-        String code = """
-                let run = 123;
-                intStorage.add(run);
-                """;
+        String code =
+                "let run = 123;\n" +
+                "intStorage.add(run);\n";
 
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
-        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(123));
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, Lists.of(123));
     }
 
     public static class ApiRoot {

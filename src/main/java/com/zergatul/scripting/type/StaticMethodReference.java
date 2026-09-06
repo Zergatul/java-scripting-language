@@ -1,10 +1,12 @@
 package com.zergatul.scripting.type;
 
 import com.zergatul.scripting.compiler.CompilerContext;
+import com.zergatul.scripting.utility.Lists;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Type;
 
 import java.util.List;
+import java.util.function.Consumer;
 
 import static org.objectweb.asm.Opcodes.INVOKESTATIC;
 
@@ -41,7 +43,7 @@ public class StaticMethodReference extends MethodReference {
 
     @Override
     public List<MethodParameter> getParameters() {
-        return List.of(parameters);
+        return Lists.of(parameters);
     }
 
     @Override
@@ -50,8 +52,8 @@ public class StaticMethodReference extends MethodReference {
     }
 
     @Override
-    public void compileInvoke(MethodVisitor visitor, CompilerContext context, Runnable compileArguments) {
-        compileArguments.run();
+    public void compileInvoke(MethodVisitor visitor, CompilerContext context, Consumer<CompilerContext> compileArguments) {
+        compileArguments.accept(context);
         visitor.visitMethodInsn(
                 INVOKESTATIC,
                 Type.getInternalName(ownerClass),

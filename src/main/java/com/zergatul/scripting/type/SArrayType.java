@@ -7,15 +7,16 @@ import com.zergatul.scripting.parser.BinaryOperator;
 import com.zergatul.scripting.runtime.ArrayUtils;
 import com.zergatul.scripting.type.operation.BinaryOperation;
 import com.zergatul.scripting.type.operation.IndexOperation;
-import org.jspecify.annotations.Nullable;
+import com.zergatul.scripting.utility.Lists;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Type;
 
+import java.lang.reflect.Array;
 import java.util.List;
 
 import static org.objectweb.asm.Opcodes.*;
 
-public class SArrayType extends SType {
+public class SArrayType extends SReferenceType {
 
     private final SType underlying;
 
@@ -29,42 +30,12 @@ public class SArrayType extends SType {
 
     @Override
     public Class<?> getJavaClass() {
-        return underlying.getJavaClass().arrayType();
-    }
-
-    @Override
-    public @Nullable SType getBaseType() {
-        return SJavaObject.instance;
-    }
-
-    @Override
-    public boolean isReference() {
-        return true;
+        return Array.newInstance(underlying.getJavaClass(), 0).getClass();
     }
 
     @Override
     public boolean isSyntheticType() {
         return underlying.isSyntheticType();
-    }
-
-    @Override
-    public int getLoadInst() {
-        return ALOAD;
-    }
-
-    @Override
-    public int getStoreInst() {
-        return ASTORE;
-    }
-
-    @Override
-    public int getArrayLoadInst() {
-        return AALOAD;
-    }
-
-    @Override
-    public int getArrayStoreInst() {
-        return AASTORE;
     }
 
     @Override
@@ -75,7 +46,8 @@ public class SArrayType extends SType {
     @Override
     public void storeDefaultValue(MethodVisitor visitor) {
         visitor.visitInsn(ICONST_0);
-        if (underlying instanceof SValueType valueType) {
+        if (underlying instanceof SValueType) {
+            SValueType valueType = (SValueType) underlying;
             visitor.visitIntInsn(NEWARRAY, valueType.getArrayTypeInst());
         } else {
             visitor.visitTypeInsn(ANEWARRAY, underlying.getInternalName());
@@ -84,17 +56,18 @@ public class SArrayType extends SType {
 
     @Override
     public List<PropertyReference> getDeclaredProperties() {
-        return List.of(PROP_LENGTH.value());
+        return Lists.of(PROP_LENGTH.value());
     }
 
     @Override
     public List<IndexOperation> getIndexOperations() {
-        return List.of(new ArrayIndexOperation(getElementsType()));
+        return Lists.of(new ArrayIndexOperation(getElementsType()));
     }
 
     @Override
     public boolean equals(Object obj) {
-        if (obj instanceof SArrayType other) {
+        if (obj instanceof SArrayType) {
+            SArrayType other = (SArrayType) obj;
             return underlying.equals(other.underlying);
         } else {
             return super.equals(obj);
@@ -102,13 +75,8 @@ public class SArrayType extends SType {
     }
 
     @Override
-    public int getReturnInst() {
-        return ARETURN;
-    }
-
-    @Override
     public List<BinaryOperation> getBinaryOperations() {
-        return List.of(
+        return Lists.of(
                 new AddElementOperation(this),
                 new AddArrayOperation(this));
     }

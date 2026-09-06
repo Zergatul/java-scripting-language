@@ -3,6 +3,7 @@ package com.zergatul.scripting.parser.nodes;
 import com.zergatul.scripting.Locatable;
 import com.zergatul.scripting.lexer.Token;
 import com.zergatul.scripting.parser.ParserTreeVisitor;
+import com.zergatul.scripting.utility.Lists;
 
 import java.util.List;
 
@@ -27,6 +28,6 @@ public class NullExpressionNode extends ExpressionNode {
 
     @Override
     public List<Locatable> getChildNodes() {
-        return List.of();
+        return Lists.of();
     }
 }

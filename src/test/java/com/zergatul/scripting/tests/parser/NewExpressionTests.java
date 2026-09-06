@@ -6,6 +6,7 @@ import com.zergatul.scripting.lexer.*;
 import com.zergatul.scripting.parser.ParserOutput;
 import com.zergatul.scripting.parser.PredefinedType;
 import com.zergatul.scripting.parser.nodes.*;
+import com.zergatul.scripting.utility.Lists;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -14,14 +15,14 @@ public class NewExpressionTests extends ParserTestBase {
 
     @Test
     public void newExpressionTest1() {
-        ParserOutput result = parse("""
-                let x = new int[10];
-                """);
-        comparator.assertEquals(List.of(), result.diagnostics());
+        String code =
+                "let x = new int[10];\n";
+        ParserOutput result = parse(code);
+        comparator.assertEquals(Lists.of(), result.diagnostics());
         comparator.assertEquals(
                 new CompilationUnitNode(
-                        new CompilationUnitMembersListNode(List.of(), new SingleLineTextRange(1, 1, 0, 0)),
-                        new StatementsListNode(List.of(
+                        new CompilationUnitMembersListNode(Lists.of(), new SingleLineTextRange(1, 1, 0, 0)),
+                        new StatementsListNode(Lists.of(
                                 new VariableDeclarationNode(
                                         new LetTypeNode(
                                                 new Token(TokenType.LET, new SingleLineTextRange(1, 1, 0, 3))
@@ -51,14 +52,14 @@ public class NewExpressionTests extends ParserTestBase {
 
     @Test
     public void newExpressionTest2() {
-        ParserOutput result = parse("""
-                let x = new int[] { 1, 2, 3 };
-                """);
-        comparator.assertEquals(List.of(), result.diagnostics());
+        String code =
+                "let x = new int[] { 1, 2, 3 };\n";
+        ParserOutput result = parse(code);
+        comparator.assertEquals(Lists.of(), result.diagnostics());
         comparator.assertEquals(
                 new CompilationUnitNode(
-                        new CompilationUnitMembersListNode(List.of(), new SingleLineTextRange(1, 1, 0, 0)),
-                        new StatementsListNode(List.of(
+                        new CompilationUnitMembersListNode(Lists.of(), new SingleLineTextRange(1, 1, 0, 0)),
+                        new StatementsListNode(Lists.of(
                                 new VariableDeclarationNode(
                                         new LetTypeNode(
                                                 new Token(TokenType.LET, new SingleLineTextRange(1, 1, 0, 3))
@@ -108,14 +109,14 @@ public class NewExpressionTests extends ParserTestBase {
 
     @Test
     public void newExpressionTest3() {
-        ParserOutput result = parse("""
-                let x = new ClassA();
-                """);
-        comparator.assertEquals(List.of(), result.diagnostics());
+        String code =
+                "let x = new ClassA();\n";
+        ParserOutput result = parse(code);
+        comparator.assertEquals(Lists.of(), result.diagnostics());
         comparator.assertEquals(
                 new CompilationUnitNode(
-                        new CompilationUnitMembersListNode(List.of(), new SingleLineTextRange(1, 1, 0, 0)),
-                        new StatementsListNode(List.of(
+                        new CompilationUnitMembersListNode(Lists.of(), new SingleLineTextRange(1, 1, 0, 0)),
+                        new StatementsListNode(Lists.of(
                                 new VariableDeclarationNode(
                                         new LetTypeNode(
                                                 new Token(TokenType.LET, new SingleLineTextRange(1, 1, 0, 3))

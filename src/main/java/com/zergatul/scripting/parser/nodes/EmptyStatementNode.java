@@ -3,6 +3,7 @@ package com.zergatul.scripting.parser.nodes;
 import com.zergatul.scripting.Locatable;
 import com.zergatul.scripting.lexer.Token;
 import com.zergatul.scripting.parser.ParserTreeVisitor;
+import com.zergatul.scripting.utility.Lists;
 
 import java.util.List;
 
@@ -25,6 +26,6 @@ public class EmptyStatementNode extends StatementNode {
 
     @Override
     public List<Locatable> getChildNodes() {
-        return List.of(semicolon);
+        return Lists.of(semicolon);
     }
 }

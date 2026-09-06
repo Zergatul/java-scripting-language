@@ -4,6 +4,7 @@ import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
 import com.zergatul.scripting.parser.nodes.ObjectCreationExpressionNode;
 import com.zergatul.scripting.type.ConstructorReference;
+import com.zergatul.scripting.utility.Lists;
 
 import java.util.List;
 
@@ -39,6 +40,6 @@ public class BoundObjectCreationExpressionNode extends BoundExpressionNode {
 
     @Override
     public List<BoundNode> getChildren() {
-        return List.of(typeNode, arguments);
+        return Lists.of(typeNode, arguments);
     }
 }

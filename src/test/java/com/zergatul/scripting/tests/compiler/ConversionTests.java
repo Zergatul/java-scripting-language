@@ -1,5 +1,7 @@
 package com.zergatul.scripting.tests.compiler;
 
+import com.zergatul.scripting.utility.Lists;
+
 import com.zergatul.scripting.DiagnosticMessage;
 import com.zergatul.scripting.SingleLineTextRange;
 import com.zergatul.scripting.binding.BinderErrors;
@@ -25,12 +27,11 @@ public class ConversionTests extends ComparatorTest {
 
     @Test
     public void unknownArrayTest() {
-        String code = """
-                string a = [b];
-                """;
+        String code =
+                "string a = [b];\n";
 
         comparator.assertEquals(
-                List.of(
+                Lists.of(
                         new DiagnosticMessage(BinderErrors.NameDoesNotExist, new SingleLineTextRange(1, 13, 12, 1), "b"),
                         new DiagnosticMessage(BinderErrors.CannotImplicitlyConvert, new SingleLineTextRange(1, 12, 11, 3), "<Unknown>[]", "string")),
                 getDiagnostics(ApiRoot.class, code));

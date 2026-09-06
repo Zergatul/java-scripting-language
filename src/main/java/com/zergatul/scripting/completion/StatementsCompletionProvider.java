@@ -3,6 +3,7 @@ package com.zergatul.scripting.completion;
 import com.zergatul.scripting.binding.BinderOutput;
 import com.zergatul.scripting.compiler.CompilationParameters;
 import com.zergatul.scripting.lexer.TokenType;
+import com.zergatul.scripting.utility.Lists;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -25,7 +26,7 @@ public class StatementsCompletionProvider<T> extends AbstractCompletionProvider<
             suggestions.add(factory.getKeywordSuggestion(TokenType.RETURN));
             return suggestions;
         } else {
-            return List.of();
+            return Lists.of();
         }
     }
 }

@@ -3,6 +3,7 @@ package com.zergatul.scripting.binding.nodes;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
 import com.zergatul.scripting.parser.nodes.TypeAliasNode;
 import com.zergatul.scripting.type.SAliasType;
+import com.zergatul.scripting.utility.Lists;
 
 import java.util.List;
 
@@ -32,7 +33,7 @@ public class BoundTypeAliasNode extends BoundCompilationUnitMemberNode {
 
     @Override
     public List<BoundNode> getChildren() {
-        return List.of(name, typeNode);
+        return Lists.of(name, typeNode);
     }
 
     public SAliasType getAliasType() {

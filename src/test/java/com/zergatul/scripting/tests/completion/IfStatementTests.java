@@ -3,9 +3,9 @@ package com.zergatul.scripting.tests.completion;
 import com.zergatul.scripting.lexer.TokenType;
 import com.zergatul.scripting.tests.compiler.helpers.IntStorage;
 import com.zergatul.scripting.tests.completion.helpers.CompletionTestHelper;
-import com.zergatul.scripting.tests.completion.helpers.Lists;
 import com.zergatul.scripting.tests.completion.helpers.TestCompletionContext;
 import com.zergatul.scripting.tests.completion.suggestions.*;
+import com.zergatul.scripting.utility.Lists;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -17,12 +17,13 @@ public class IfStatementTests {
 
     @Test
     public void conditionTest1() {
-        assertSuggestions("""
-                let x = 123;
-                if (<cursor>
-                x.toString();
-                """,
-                context -> Lists.of(
+        String code =
+                "let x = 123;\n" +
+                "if (<cursor>\n" +
+                "x.toString();\n";
+        assertSuggestions(
+                code,
+                context -> Lists.from(
                         expressions,
                         new StaticConstantSuggestion(context, "intStorage"),
                         new LocalVariableSuggestion(context, "x")));
@@ -30,12 +31,13 @@ public class IfStatementTests {
 
     @Test
     public void conditionTest2() {
-        assertSuggestions("""
-                let x = 123;
-                if (a<cursor>
-                x.toString();
-                """,
-                context -> Lists.of(
+        String code =
+                "let x = 123;\n" +
+                "if (a<cursor>\n" +
+                "x.toString();\n";
+        assertSuggestions(
+                code,
+                context -> Lists.from(
                         expressions,
                         new StaticConstantSuggestion(context, "intStorage"),
                         new LocalVariableSuggestion(context, "x")));
@@ -43,12 +45,13 @@ public class IfStatementTests {
 
     @Test
     public void conditionTest3() {
-        assertSuggestions("""
-                let x = 123;
-                if (<cursor>)
-                x.toString();
-                """,
-                context -> Lists.of(
+        String code =
+                "let x = 123;\n" +
+                "if (<cursor>)\n" +
+                "x.toString();\n";
+        assertSuggestions(
+                code,
+                context -> Lists.from(
                         expressions,
                         new StaticConstantSuggestion(context, "intStorage"),
                         new LocalVariableSuggestion(context, "x")));
@@ -56,13 +59,14 @@ public class IfStatementTests {
 
     @Test
     public void conditionTest4() {
-        assertSuggestions("""
-                let x = 123;
-                let y = 456;
-                if ( <cursor> )
-                x.toString();
-                """,
-                context -> Lists.of(
+        String code =
+                "let x = 123;\n" +
+                "let y = 456;\n" +
+                "if ( <cursor> )\n" +
+                "x.toString();\n";
+        assertSuggestions(
+                code,
+                context -> Lists.from(
                         expressions,
                         new StaticConstantSuggestion(context, "intStorage"),
                         new LocalVariableSuggestion(context, "x"),
@@ -71,24 +75,26 @@ public class IfStatementTests {
 
     @Test
     public void thenTest1() {
-        assertSuggestions("""
-                if (true) <cursor>
-                """,
-                context -> Lists.of(
+        String code =
+                "if (true) <cursor>\n";
+        assertSuggestions(
+                code,
+                context -> Lists.from(
                         statements,
                         new StaticConstantSuggestion(context, "intStorage")));
     }
 
     @Test
     public void elseTest1() {
-        assertSuggestions("""
-                let x = 123;
-                let y = 456;
-                if (x > y) intStorage.add(x + y);
-                <cursor>
-                x.toString();
-                """,
-                context -> Lists.of(
+        String code =
+                "let x = 123;\n" +
+                "let y = 456;\n" +
+                "if (x > y) intStorage.add(x + y);\n" +
+                "<cursor>\n" +
+                "x.toString();\n";
+        assertSuggestions(
+                code,
+                context -> Lists.from(
                         statements,
                         new KeywordSuggestion(TokenType.ELSE),
                         new StaticConstantSuggestion(context, "intStorage"),
@@ -98,13 +104,14 @@ public class IfStatementTests {
 
     @Test
     public void elseTest2() {
-        assertSuggestions("""
-                let x = 123;
-                let y = 456;
-                if (x > y) {} <cursor>
-                x.toString();
-                """,
-                context -> Lists.of(
+        String code =
+                "let x = 123;\n" +
+                "let y = 456;\n" +
+                "if (x > y) {} <cursor>\n" +
+                "x.toString();\n";
+        assertSuggestions(
+                code,
+                context -> Lists.from(
                         statements,
                         new KeywordSuggestion(TokenType.ELSE),
                         new StaticConstantSuggestion(context, "intStorage"),
@@ -114,20 +121,22 @@ public class IfStatementTests {
 
     @Test
     public void elseTest3() {
-        assertSuggestions("""
-                if (false) {} else <cursor>
-                """,
-                context -> Lists.of(
+        String code =
+                "if (false) {} else <cursor>\n";
+        assertSuggestions(
+                code,
+                context -> Lists.from(
                         statements,
                         new StaticConstantSuggestion(context, "intStorage")));
     }
 
     @Test
     public void elseTest4() {
-        assertSuggestions("""
-                if (false) intStorage.add(1); el<cursor>
-                """,
-                context -> Lists.of(
+        String code =
+                "if (false) intStorage.add(1); el<cursor>\n";
+        assertSuggestions(
+                code,
+                context -> Lists.from(
                         statements,
                         new KeywordSuggestion(TokenType.ELSE),
                         new StaticConstantSuggestion(context, "intStorage")));

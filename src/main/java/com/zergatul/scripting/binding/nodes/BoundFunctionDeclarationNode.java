@@ -4,6 +4,7 @@ import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
 import com.zergatul.scripting.parser.nodes.FunctionNode;
 import com.zergatul.scripting.symbols.LiftedVariable;
+import com.zergatul.scripting.utility.Lists;
 
 import java.util.List;
 
@@ -69,6 +70,6 @@ public class BoundFunctionDeclarationNode extends BoundCompilationUnitMemberNode
 
     @Override
     public List<BoundNode> getChildren() {
-        return List.of(returnType, name, parameters, body);
+        return Lists.of(returnType, name, parameters, body);
     }
 }

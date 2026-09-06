@@ -8,41 +8,41 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
-public class MethodHandleCache {
+public class PrivateMembersCache {
 
-    public static final String CLASS_NAME = "MethodHandleCache";
+    public static final String CLASS_NAME = "PrivateMembersCache";
     public static final String INTERNAL_NAME = "com/zergatul/scripting/dynamic/" + CLASS_NAME;
 
     private final Map<Field, String> fields = new HashMap<>();
     private final Map<Method, String> methods = new HashMap<>();
 
     public String createFieldAccess(Field field) {
-        String handleFieldName = fields.get(field);
-        if (handleFieldName != null) {
-            return handleFieldName;
+        String fieldName = fields.get(field);
+        if (fieldName != null) {
+            return fieldName;
         }
 
-        handleFieldName = String.format("$_%s_$_%s_$_var_handle",
+        fieldName = String.format("$_%s_$_%s_$_field",
                 SType.fromJavaType(field.getDeclaringClass()).asMethodPart(),
                 field.getName());
-        handleFieldName = uniquify(fields.values(), handleFieldName);
-        fields.put(field, handleFieldName);
-        return handleFieldName;
+        fieldName = uniquify(fields.values(), fieldName);
+        fields.put(field, fieldName);
+        return fieldName;
     }
 
     public String createMethodAccess(Method method) {
-        String handleFieldName = methods.get(method);
-        if (handleFieldName != null) {
-            return handleFieldName;
+        String fieldName = methods.get(method);
+        if (fieldName != null) {
+            return fieldName;
         }
 
-        handleFieldName = String.format("$_%s_$_%s_$_%s_$_method_handle",
+        fieldName = String.format("$_%s_$_%s_$_%s_$_method",
                 SType.fromJavaType(method.getDeclaringClass()).asMethodPart(),
                 method.getName(),
                 method.getParameterCount());
-        handleFieldName = uniquify(methods.values(), handleFieldName);
-        methods.put(method, handleFieldName);
-        return handleFieldName;
+        fieldName = uniquify(methods.values(), fieldName);
+        methods.put(method, fieldName);
+        return fieldName;
     }
 
     public Map<Field, String> getFieldsMap() {

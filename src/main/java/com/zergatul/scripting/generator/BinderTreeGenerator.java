@@ -7,6 +7,7 @@ import com.zergatul.scripting.type.SBoolean;
 import com.zergatul.scripting.type.SInt;
 import com.zergatul.scripting.type.MemberLookup;
 import com.zergatul.scripting.type.PropertyReference;
+import com.zergatul.scripting.utility.Lists;
 import com.zergatul.scripting.visitors.AwaitVisitor;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
 import com.zergatul.scripting.binding.nodes.*;
@@ -15,10 +16,7 @@ import com.zergatul.scripting.symbols.*;
 import com.zergatul.scripting.visitors.LoopControlFlowVisitor;
 import org.jspecify.annotations.Nullable;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 
 public class BinderTreeGenerator {
 
@@ -73,17 +71,38 @@ public class BinderTreeGenerator {
     private void rewriteStatement(BoundStatementNode node) {
         if (isAsync(node)) {
             switch (node.getNodeType()) {
-                case AUGMENTED_ASSIGNMENT_STATEMENT -> rewriteAsync((BoundAugmentedAssignmentStatementNode) node);
-                case BLOCK_STATEMENT -> rewriteAsync((BoundBlockStatementNode) node);
-                case EXPRESSION_STATEMENT -> rewriteAsync((BoundExpressionStatementNode) node);
-                case FOR_LOOP_STATEMENT -> rewriteAsync((BoundForLoopStatementNode) node);
-                case FOREACH_LOOP_STATEMENT -> rewriteAsync((BoundForEachLoopStatementNode) node);
-                case IF_STATEMENT -> rewriteAsync((BoundIfStatementNode) node);
-                case VARIABLE_DECLARATION -> rewriteAsync((BoundVariableDeclarationNode) node);
-                case WHILE_LOOP_STATEMENT -> rewriteAsync((BoundWhileLoopStatementNode) node);
-                case RETURN_STATEMENT -> rewriteAsync((BoundReturnStatementNode) node);
-                case TRY_STATEMENT -> rewriteAsync((BoundTryStatementNode) node);
-                default -> throw new InternalException(String.format("Async %s not supported yet.", node.getNodeType()));
+                case AUGMENTED_ASSIGNMENT_STATEMENT:
+                    rewriteAsync((BoundAugmentedAssignmentStatementNode) node);
+                    break;
+                case BLOCK_STATEMENT:
+                    rewriteAsync((BoundBlockStatementNode) node);
+                    break;
+                case EXPRESSION_STATEMENT:
+                    rewriteAsync((BoundExpressionStatementNode) node);
+                    break;
+                case FOR_LOOP_STATEMENT:
+                    rewriteAsync((BoundForLoopStatementNode) node);
+                    break;
+                case FOREACH_LOOP_STATEMENT:
+                    rewriteAsync((BoundForEachLoopStatementNode) node);
+                    break;
+                case IF_STATEMENT:
+                    rewriteAsync((BoundIfStatementNode) node);
+                    break;
+                case VARIABLE_DECLARATION:
+                    rewriteAsync((BoundVariableDeclarationNode) node);
+                    break;
+                case WHILE_LOOP_STATEMENT:
+                    rewriteAsync((BoundWhileLoopStatementNode) node);
+                    break;
+                case RETURN_STATEMENT:
+                    rewriteAsync((BoundReturnStatementNode) node);
+                    break;
+                case TRY_STATEMENT:
+                    rewriteAsync((BoundTryStatementNode) node);
+                    break;
+                default:
+                    throw new InternalException(String.format("Async %s not supported yet.", node.getNodeType()));
             }
         } else {
             processVariables(node);
@@ -92,23 +111,34 @@ public class BinderTreeGenerator {
     }
 
     private BoundStatementNode rewriteStatementSync(BoundStatementNode node) {
-        return switch (node.getNodeType()) {
-            case BLOCK_STATEMENT -> rewriteSync((BoundBlockStatementNode) node);
-            case IF_STATEMENT -> rewriteSync((BoundIfStatementNode) node);
-            case FOR_LOOP_STATEMENT -> rewriteSync((BoundForLoopStatementNode) node);
-            case FOREACH_LOOP_STATEMENT -> rewriteSync((BoundForEachLoopStatementNode) node);
-            case WHILE_LOOP_STATEMENT -> rewriteSync((BoundWhileLoopStatementNode) node);
-            case BREAK_STATEMENT -> rewriteSync((BoundBreakStatementNode) node);
-            case CONTINUE_STATEMENT -> rewriteSync((BoundContinueStatementNode) node);
-            case RETURN_STATEMENT -> rewriteSync((BoundReturnStatementNode) node);
-            case TRY_STATEMENT -> rewriteSync((BoundTryStatementNode) node);
-            case THROW_STATEMENT -> rewriteSync((BoundThrowStatementNode) node);
-            default -> node;
-        };
+        switch (node.getNodeType()) {
+            case BLOCK_STATEMENT:
+                return rewriteSync((BoundBlockStatementNode) node);
+            case IF_STATEMENT:
+                return rewriteSync((BoundIfStatementNode) node);
+            case FOR_LOOP_STATEMENT:
+                return rewriteSync((BoundForLoopStatementNode) node);
+            case FOREACH_LOOP_STATEMENT:
+                return rewriteSync((BoundForEachLoopStatementNode) node);
+            case WHILE_LOOP_STATEMENT:
+                return rewriteSync((BoundWhileLoopStatementNode) node);
+            case BREAK_STATEMENT:
+                return rewriteSync((BoundBreakStatementNode) node);
+            case CONTINUE_STATEMENT:
+                return rewriteSync((BoundContinueStatementNode) node);
+            case RETURN_STATEMENT:
+                return rewriteSync((BoundReturnStatementNode) node);
+            case TRY_STATEMENT:
+                return rewriteSync((BoundTryStatementNode) node);
+            case THROW_STATEMENT:
+                return rewriteSync((BoundThrowStatementNode) node);
+            default:
+                return node;
+        }
     }
 
     private BoundBlockStatementNode rewriteSync(BoundBlockStatementNode node) {
-        return new BoundBlockStatementNode(node.statements.stream().map(this::rewriteStatementSync).toList());
+        return new BoundBlockStatementNode(Lists.from(node.statements.stream().map(this::rewriteStatementSync)));
     }
 
     private BoundIfStatementNode rewriteSync(BoundIfStatementNode node) {
@@ -208,20 +238,23 @@ public class BinderTreeGenerator {
         boolean forgetException = false;
         StateBoundary pending = null;
         for (Frame current = frame; current != null; current = current.parent) {
-            if (current instanceof AsyncTryBlockFrame tryFrame) {
+            if (current instanceof AsyncTryBlockFrame) {
+                AsyncTryBlockFrame tryFrame = (AsyncTryBlockFrame) current;
                 if (tryFrame.finallyBlock != null) {
                     pending = tryFrame.finallyBlock.finallyState;
                     break;
                 }
             }
-            if (current instanceof AsyncCatchBlockFrame catchFrame) {
+            if (current instanceof AsyncCatchBlockFrame) {
+                AsyncCatchBlockFrame catchFrame = (AsyncCatchBlockFrame) current;
                 forgetException = true;
                 if (catchFrame.finallyState != null) {
                     pending = catchFrame.finallyState;
                     break;
                 }
             }
-            if (current instanceof AsyncFinallyBlockFrame finallyFrame) {
+            if (current instanceof AsyncFinallyBlockFrame) {
+                AsyncFinallyBlockFrame finallyFrame = (AsyncFinallyBlockFrame) current;
                 pending = finallyFrame.epilogueState;
                 break;
             }
@@ -229,7 +262,7 @@ public class BinderTreeGenerator {
 
         if (forgetException) {
             return new BoundBlockStatementNode(
-                    List.of(
+                    Lists.of(
                             new BoundGeneratorForgetException(),
                             new BoundGeneratorReturnNode(node.expression, pending)));
         } else {
@@ -303,7 +336,7 @@ public class BinderTreeGenerator {
             add(new BoundSetGeneratorStateNode(end));
             elseBlock = new BoundBlockStatementNode(elseTempBoundary.statements);
         } else {
-            elseBlock = new BoundBlockStatementNode(List.of(new BoundSetGeneratorStateNode(end)));
+            elseBlock = new BoundBlockStatementNode(Lists.of(new BoundSetGeneratorStateNode(end)));
         }
 
         original.statements.add(new BoundIfStatementNode(
@@ -397,8 +430,8 @@ public class BinderTreeGenerator {
         LiftedVariable index = new LiftedVariable(node.index.asLocalVariable());
         LiftedVariable length = new LiftedVariable(node.length.asLocalVariable());
         LiftedVariable item;
-        if (node.name.getSymbol() instanceof LiftedVariable lifted) {
-            item = lifted;
+        if (node.name.getSymbol() instanceof LiftedVariable) {
+            item = (LiftedVariable) node.name.getSymbol();
         } else {
             item = new LiftedVariable((LocalVariable) node.name.getSymbol());
             node.name.symbolRef.set(item);
@@ -408,7 +441,7 @@ public class BinderTreeGenerator {
                 .filter(p -> !p.isStatic())
                 .filter(p -> p.getName().equals("length"))
                 .findFirst()
-                .orElseThrow();
+                .orElseThrow(NoSuchElementException::new);
         add(new BoundVariableDeclarationNode(new BoundNameExpressionNode(iterable), iterableExpression));
         add(new BoundVariableDeclarationNode(new BoundNameExpressionNode(index), new BoundIntegerLiteralExpressionNode(0)));
         add(new BoundVariableDeclarationNode(
@@ -443,7 +476,7 @@ public class BinderTreeGenerator {
                 new BoundIndexExpressionNode(
                         new BoundNameExpressionNode(iterable),
                         new BoundNameExpressionNode(index),
-                        iterable.getType().getIndexOperations().stream().filter(o -> o.indexType == SInt.instance).findFirst().orElseThrow())));
+                        iterable.getType().getIndexOperations().stream().filter(o -> o.indexType == SInt.instance).findFirst().orElseThrow(NoSuchElementException::new))));
 
         frame = new AsyncLoopFrame(frame, false, end, cont);
         rewriteStatement(node.body);
@@ -637,16 +670,24 @@ public class BinderTreeGenerator {
 
     private BoundExpressionNode rewriteExpression(BoundExpressionNode node) {
         if (isAsync(node)) {
-            return switch (node.getNodeType()) {
-                case AWAIT_EXPRESSION -> rewriteAsync((BoundAwaitExpressionNode) node);
-                case PARENTHESIZED_EXPRESSION -> rewriteAsync((BoundParenthesizedExpressionNode) node);
-                case BINARY_EXPRESSION -> rewriteAsync((BoundBinaryExpressionNode) node);
-                case METHOD_INVOCATION_EXPRESSION -> rewriteAsync((BoundMethodInvocationExpressionNode) node);
-                case UNARY_EXPRESSION -> rewriteAsync((BoundUnaryExpressionNode) node);
-                case IMPLICIT_CAST -> rewriteAsync((BoundImplicitCastExpressionNode) node);
-                case CONVERSION -> rewriteAsync((BoundConversionNode) node);
-                default -> throw new InternalException(String.format("Async %s not supported yet.", node.getNodeType()));
-            };
+            switch (node.getNodeType()) {
+                case AWAIT_EXPRESSION:
+                    return rewriteAsync((BoundAwaitExpressionNode) node);
+                case PARENTHESIZED_EXPRESSION:
+                    return rewriteAsync((BoundParenthesizedExpressionNode) node);
+                case BINARY_EXPRESSION:
+                    return rewriteAsync((BoundBinaryExpressionNode) node);
+                case METHOD_INVOCATION_EXPRESSION:
+                    return rewriteAsync((BoundMethodInvocationExpressionNode) node);
+                case UNARY_EXPRESSION:
+                    return rewriteAsync((BoundUnaryExpressionNode) node);
+                case IMPLICIT_CAST:
+                    return rewriteAsync((BoundImplicitCastExpressionNode) node);
+                case CONVERSION:
+                    return rewriteAsync((BoundConversionNode) node);
+                default:
+                    throw new InternalException(String.format("Async %s not supported yet.", node.getNodeType()));
+            }
         } else {
             processVariables(node);
             return node;
@@ -699,7 +740,7 @@ public class BinderTreeGenerator {
                 variables[i] = new LiftedVariable(new LocalVariable(null, argument.type, null));
                 storeExpressionValue(variables[i], argument);
             }
-            arguments = new BoundArgumentsListNode(Arrays.stream(variables).map(v -> (BoundExpressionNode) new BoundNameExpressionNode(v)).toList());
+            arguments = new BoundArgumentsListNode(Lists.from(Arrays.stream(variables).map(v -> (BoundExpressionNode) new BoundNameExpressionNode(v))));
         } else {
             arguments = node.arguments;
         }
@@ -764,21 +805,24 @@ public class BinderTreeGenerator {
 
             @Override
             public void visit(BoundVariableDeclarationNode node) {
-                if (node.name.getSymbol() instanceof LocalVariable local) {
+                if (node.name.getSymbol() instanceof LocalVariable) {
+                    LocalVariable local = (LocalVariable) node.name.getSymbol();
                     local.setGeneratorState(currentBoundary);
                 }
             }
 
             @Override
             public void visit(BoundForEachLoopStatementNode node) {
-                if (node.name.getSymbol() instanceof LocalVariable local) {
+                if (node.name.getSymbol() instanceof LocalVariable) {
+                    LocalVariable local = (LocalVariable) node.name.getSymbol();
                     local.setGeneratorState(currentBoundary);
                 }
             }
 
             @Override
             public void visit(BoundDeclarationPatternNode node) {
-                if (node.symbolNode.symbolRef.get() instanceof LocalVariable local) {
+                if (node.symbolNode.symbolRef.get() instanceof LocalVariable) {
+                    LocalVariable local = (LocalVariable) node.symbolNode.symbolRef.get();
                     local.setGeneratorState(currentBoundary);
                 }
             }
@@ -789,7 +833,8 @@ public class BinderTreeGenerator {
                     return;
                 }
 
-                if (node.exceptionSymbol.symbolRef.get() instanceof LocalVariable local) {
+                if (node.exceptionSymbol.symbolRef.get() instanceof LocalVariable) {
+                    LocalVariable local = (LocalVariable) node.exceptionSymbol.symbolRef.get();
                     local.setGeneratorState(currentBoundary);
                 }
             }
@@ -806,7 +851,8 @@ public class BinderTreeGenerator {
 
             @Override
             public void visit(BoundNameExpressionNode node) {
-                if (node.getSymbol() instanceof LocalVariable local) {
+                if (node.getSymbol() instanceof LocalVariable) {
+                    LocalVariable local = (LocalVariable) node.getSymbol();
                     if (local.getGeneratorState() != currentBoundary) {
                         LiftedVariable lifted = new LiftedVariable(local);
                         node.symbolRef.set(lifted);
@@ -869,13 +915,16 @@ public class BinderTreeGenerator {
 
         public StateBoundary getClosestCatchOrFinallyEpilogue() {
             for (Frame frame = this; frame != null; frame = frame.parent) {
-                if (frame instanceof AsyncCatchBlockFrame catchFrame && catchFrame.finallyState != null) {
+                if (frame instanceof AsyncCatchBlockFrame && ((AsyncCatchBlockFrame) frame).finallyState != null) {
+                    AsyncCatchBlockFrame catchFrame = (AsyncCatchBlockFrame) frame;
                     return catchFrame.finallyState;
                 }
-                if (frame instanceof AsyncTryBlockFrame tryFrame && tryFrame.catchBlock != null) {
+                if (frame instanceof AsyncTryBlockFrame && ((AsyncTryBlockFrame) frame).catchBlock != null) {
+                    AsyncTryBlockFrame tryFrame = (AsyncTryBlockFrame) frame;
                     return tryFrame.catchBlock.catchState;
                 }
-                if (frame instanceof AsyncFinallyBlockFrame finallyFrame) {
+                if (frame instanceof AsyncFinallyBlockFrame) {
+                    AsyncFinallyBlockFrame finallyFrame = (AsyncFinallyBlockFrame) frame;
                     return finallyFrame.epilogueState;
                 }
             }
@@ -884,10 +933,12 @@ public class BinderTreeGenerator {
 
         public StateBoundary getClosestCatchOrFinallyOrEpilogue() {
             for (Frame frame = this; frame != null; frame = frame.parent) {
-                if (frame instanceof AsyncCatchBlockFrame catchFrame && catchFrame.finallyState != null) {
+                if (frame instanceof AsyncCatchBlockFrame && ((AsyncCatchBlockFrame) frame).finallyState != null) {
+                    AsyncCatchBlockFrame catchFrame = (AsyncCatchBlockFrame) frame;
                     return catchFrame.finallyState;
                 }
-                if (frame instanceof AsyncTryBlockFrame tryFrame) {
+                if (frame instanceof AsyncTryBlockFrame) {
+                    AsyncTryBlockFrame tryFrame = (AsyncTryBlockFrame) frame;
                     if (tryFrame.catchBlock != null) {
                         return tryFrame.catchBlock.catchState;
                     }
@@ -895,7 +946,8 @@ public class BinderTreeGenerator {
                         return tryFrame.finallyBlock.finallyState;
                     }
                 }
-                if (frame instanceof AsyncFinallyBlockFrame finallyFrame) {
+                if (frame instanceof AsyncFinallyBlockFrame) {
+                    AsyncFinallyBlockFrame finallyFrame = (AsyncFinallyBlockFrame) frame;
                     return finallyFrame.epilogueState;
                 }
             }
@@ -904,7 +956,8 @@ public class BinderTreeGenerator {
 
         public StateBoundary getClosestTryCatchFinallyState() {
             for (Frame frame = this; frame != null; frame = frame.parent) {
-                if (frame instanceof AsyncTryBlockFrame tryFrame) {
+                if (frame instanceof AsyncTryBlockFrame) {
+                    AsyncTryBlockFrame tryFrame = (AsyncTryBlockFrame) frame;
                     if (tryFrame.catchBlock != null) {
                         return tryFrame.catchBlock.catchState;
                     }
@@ -912,7 +965,8 @@ public class BinderTreeGenerator {
                         return tryFrame.finallyBlock.finallyState;
                     }
                 }
-                if (frame instanceof AsyncFinallyBlockFrame finallyFrame) {
+                if (frame instanceof AsyncFinallyBlockFrame) {
+                    AsyncFinallyBlockFrame finallyFrame = (AsyncFinallyBlockFrame) frame;
                     return finallyFrame.epilogueState;
                 }
             }
@@ -921,7 +975,8 @@ public class BinderTreeGenerator {
 
         public @Nullable StateBoundary getCurrentFinallyState() {
             for (Frame frame = this; frame != null; frame = frame.parent) {
-                if (frame instanceof AsyncTryFinallyBlockFrame asyncTryFinallyBlockFrame) {
+                if (frame instanceof AsyncTryFinallyBlockFrame) {
+                    AsyncTryFinallyBlockFrame asyncTryFinallyBlockFrame = (AsyncTryFinallyBlockFrame) frame;
                     return asyncTryFinallyBlockFrame.finallyState;
                 }
             }
@@ -930,8 +985,8 @@ public class BinderTreeGenerator {
 
         public @Nullable AsyncFinallyBlockFrame getCurrentFinallyFrame(Frame stop) {
             for (Frame frame = this; frame != stop; frame = frame.getParent()) {
-                if (frame instanceof AsyncFinallyBlockFrame finallyBlockFrame) {
-                    return finallyBlockFrame;
+                if (frame instanceof AsyncFinallyBlockFrame) {
+                    return (AsyncFinallyBlockFrame) frame;
                 }
             }
             return null;
@@ -939,8 +994,8 @@ public class BinderTreeGenerator {
 
         public LoopFrame getCurrentLoop() {
             for (Frame frame = this; frame != null; frame = frame.parent) {
-                if (frame instanceof LoopFrame loop) {
-                    return loop;
+                if (frame instanceof LoopFrame) {
+                    return (LoopFrame) frame;
                 }
             }
             throw new InternalException();

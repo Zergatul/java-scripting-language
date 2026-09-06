@@ -15,8 +15,8 @@ public abstract class Frame {
 
     public @Nullable LoopFrame getClosestLoop() {
         for (Frame frame = this; frame != null; frame = frame.parent) {
-            if (frame instanceof LoopFrame loop) {
-                return loop;
+            if (frame instanceof LoopFrame) {
+                return (LoopFrame) frame;
             }
         }
 
@@ -25,8 +25,8 @@ public abstract class Frame {
 
     public @Nullable TryCatchFrame getClosestTryCatch() {
         for (Frame frame = this; frame != null; frame = frame.parent) {
-            if (frame instanceof TryCatchFrame tryCatchFrame) {
-                return tryCatchFrame;
+            if (frame instanceof TryCatchFrame) {
+                return (TryCatchFrame) frame;
             }
         }
 
@@ -35,8 +35,8 @@ public abstract class Frame {
 
     public @Nullable TryFinallyFrame getClosestTryFinally() {
         for (Frame frame = this; frame != null; frame = frame.parent) {
-            if (frame instanceof TryFinallyFrame tryFinallyFrame) {
-                return tryFinallyFrame;
+            if (frame instanceof TryFinallyFrame) {
+                return (TryFinallyFrame) frame;
             }
         }
 
@@ -48,8 +48,8 @@ public abstract class Frame {
             if (frame == null) {
                 throw new InternalException();
             }
-            if (frame instanceof TryFinallyFrame tryFinallyFrame) {
-                return tryFinallyFrame;
+            if (frame instanceof TryFinallyFrame) {
+                return (TryFinallyFrame) frame;
             }
         }
 
@@ -58,8 +58,8 @@ public abstract class Frame {
 
     public FunctionFrame getFunction() {
         for (Frame frame = this; frame != null; frame = frame.parent) {
-            if (frame instanceof FunctionFrame function) {
-                return function;
+            if (frame instanceof FunctionFrame) {
+                return (FunctionFrame) frame;
             }
         }
 

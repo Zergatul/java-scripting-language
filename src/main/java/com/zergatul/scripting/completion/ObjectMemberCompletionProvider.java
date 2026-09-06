@@ -19,6 +19,7 @@ import com.zergatul.scripting.type.SStaticTypeReference;
 import com.zergatul.scripting.type.SType;
 import com.zergatul.scripting.type.SUnknown;
 import com.zergatul.scripting.type.Visibility;
+import com.zergatul.scripting.utility.Lists;
 import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
@@ -33,17 +34,17 @@ public class ObjectMemberCompletionProvider<T> extends AbstractCompletionProvide
     @Override
     public List<T> provide(CompilationParameters parameters, BinderOutput output, CompletionContext context) {
         if (context == null || context.entry == null) {
-            return List.of();
+            return Lists.of();
         }
 
         switch (context.entry.node.getNodeType()) {
-            case PROPERTY_ACCESS_EXPRESSION -> {
+            case PROPERTY_ACCESS_EXPRESSION:
                 BoundPropertyAccessExpressionNode propertyAccess = (BoundPropertyAccessExpressionNode) context.entry.node;
                 if (TextRange.combineFromEnd(propertyAccess.syntaxNode.operator, propertyAccess.property).containsOrEnds(context.line, context.column)) {
                     return getMembers(output, parameters, context, propertyAccess.callee, propertyAccess.syntaxNode.isPrivate());
                 }
-            }
-            case METHOD_INVOCATION_EXPRESSION -> {
+                break;
+            case METHOD_INVOCATION_EXPRESSION:
                 BoundMethodInvocationExpressionNode methodInvocation = (BoundMethodInvocationExpressionNode) context.entry.node;
                 if (TextRange.combineFromEnd(methodInvocation.getDotToken(), methodInvocation.method).containsOrEnds(context.line, context.column)) {
                     if (methodInvocation.syntaxNode.callee.is(ParserNodeType.MEMBER_ACCESS_EXPRESSION)) {
@@ -53,13 +54,13 @@ public class ObjectMemberCompletionProvider<T> extends AbstractCompletionProvide
                         return getMembers(output, parameters, context, methodInvocation.objectReference, false);
                     }
                 }
-            }
-            case PROPERTY, METHOD -> {
+                break;
+            case PROPERTY:
+            case METHOD:
                 return provide(parameters, output, context.up());
-            }
         }
 
-        return List.of();
+        return Lists.of();
     }
 
     private List<T> getMembers(
@@ -71,7 +72,7 @@ public class ObjectMemberCompletionProvider<T> extends AbstractCompletionProvide
     ) {
         SType type = objectReference.type;
         if (type == SUnknown.instance) {
-            return List.of();
+            return Lists.of();
         }
 
         List<T> suggestions = new ArrayList<>();
@@ -87,7 +88,8 @@ public class ObjectMemberCompletionProvider<T> extends AbstractCompletionProvide
                 .filter(m -> m.isStatic() == staticMembers)
                 .filter(m -> isVisible(m, type, currentType, isPrivate))
                 .filter(m -> {
-                    if (m instanceof NativeMethodReference nativeRef) {
+                    if (m instanceof NativeMethodReference) {
+                        NativeMethodReference nativeRef = (NativeMethodReference) m;
                         JavaInteropPolicy checker = parameters.getInteropPolicy();
                         if (checker != null) {
                             return checker.isMethodVisible(nativeRef.getUnderlying());
@@ -115,7 +117,8 @@ public class ObjectMemberCompletionProvider<T> extends AbstractCompletionProvide
             }
 
             for (BoundExtensionMemberNode extMemberNode : extensionNode.members) {
-                if (extMemberNode instanceof BoundExtensionMethodNode methodNode) {
+                if (extMemberNode instanceof BoundExtensionMethodNode) {
+                    BoundExtensionMethodNode methodNode = (BoundExtensionMethodNode) extMemberNode;
                     suggestions.add(factory.getMethodSuggestion(methodNode.method));
                 }
             }
@@ -141,9 +144,11 @@ public class ObjectMemberCompletionProvider<T> extends AbstractCompletionProvide
         }
 
         SType ownerType;
-        if (property instanceof FieldPropertyReference field) {
+        if (property instanceof FieldPropertyReference) {
+            FieldPropertyReference field = (FieldPropertyReference) property;
             ownerType = SType.fromJavaType(field.getUnderlyingField().getDeclaringClass());
-        } else if (property instanceof DeclaredFieldReference field) {
+        } else if (property instanceof DeclaredFieldReference) {
+            DeclaredFieldReference field = (DeclaredFieldReference) property;
             ownerType = field.getOwner();
         } else {
             return false;

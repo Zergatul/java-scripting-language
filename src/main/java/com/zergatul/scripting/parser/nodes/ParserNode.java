@@ -45,10 +45,12 @@ public abstract class ParserNode implements Locatable {
     public String asFullSource(String code) {
         StringBuilder builder = new StringBuilder();
         for (Locatable node : getChildNodes()) {
-            if (node instanceof Token token) {
+            if (node instanceof Token) {
+                Token token = (Token) node;
                 builder.append(token.asFullSource(code));
             }
-            if (node instanceof ParserNode syntaxNode) {
+            if (node instanceof ParserNode) {
+                ParserNode syntaxNode = (ParserNode) node;
                 builder.append(syntaxNode.asFullSource(code));
             }
         }

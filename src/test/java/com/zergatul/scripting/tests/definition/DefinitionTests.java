@@ -15,176 +15,191 @@ public class DefinitionTests extends ComparatorTest {
 
     @Test
     public void variableTest() {
-        checkDefinition("""
-                int x = 123;
-                x.toString();
-                """,
+        String code =
+                "int x = 123;\n" +
+                "x.toString();\n";
+        checkDefinition(
+                code,
                 2, 1,
                 new SingleLineTextRange(1, 1, 0, 5));
     }
 
     @Test
     public void functionTest() {
-        checkDefinition("""
-                void func() {}
-                func();
-                """,
+        String code =
+                "void func() {}\n" +
+                "func();\n";
+        checkDefinition(
+                code,
                 2, 1,
                 new SingleLineTextRange(1, 1, 0, 11));
     }
 
     @Test
     public void functionParameterTest() {
-        checkDefinition("""
-                int func(int value) {
-                    return value + 1;
-                }
-                """,
+        String code =
+                "int func(int value) {\n" +
+                "    return value + 1;\n" +
+                "}\n";
+        checkDefinition(
+                code,
                 2, 12,
                 new SingleLineTextRange(1, 10, 9, 9));
     }
 
     @Test
     public void lambdaParameterTest() {
-        checkDefinition("""
-                int func(fn<int => int> mapper) {
-                    return mapper(0);
-                }
-                func(x => x + 1);
-                """,
+        String code =
+                "int func(fn<int => int> mapper) {\n" +
+                "    return mapper(0);\n" +
+                "}\n" +
+                "func(x => x + 1);\n";
+        checkDefinition(
+                code,
                 4, 11,
                 new SingleLineTextRange(4, 6, 63, 1));
     }
 
     @Test
     public void classTest() {
-        checkDefinition("""
-                class MyClass {}
-                MyClass instance = new MyClass();
-                """,
+        String code =
+                "class MyClass {}\n" +
+                "MyClass instance = new MyClass();\n";
+        checkDefinition(
+                code,
                 2, 1,
                 new SingleLineTextRange(1, 1, 0, 13));
     }
 
     @Test
     public void fieldTest() {
-        checkDefinition("""
-                class MyClass {
-                    int value;
-                }
-                MyClass instance = new MyClass();
-                instance.value = 3;
-                """,
+        String code =
+                "class MyClass {\n" +
+                "    int value;\n" +
+                "}\n" +
+                "MyClass instance = new MyClass();\n" +
+                "instance.value = 3;\n";
+        checkDefinition(
+                code,
                 5, 10,
                 new SingleLineTextRange(2, 5, 20, 9));
     }
 
     @Test
     public void constructorTest1() {
-        checkDefinition("""
-                class MyClass {}
-                MyClass instance = new MyClass();
-                """,
+        String code =
+                "class MyClass {}\n" +
+                "MyClass instance = new MyClass();\n";
+        checkDefinition(
+                code,
                 2, 26,
                 new SingleLineTextRange(1, 1, 0, 13));
     }
 
     @Test
     public void constructorTest2() {
-        checkDefinition("""
-                class MyClass {
-                    constructor() {}
-                }
-                MyClass instance = new MyClass();
-                """,
+        String code =
+                "class MyClass {\n" +
+                "    constructor() {}\n" +
+                "}\n" +
+                "MyClass instance = new MyClass();\n";
+        checkDefinition(
+                code,
                 4, 25,
                 new SingleLineTextRange(2, 5, 20, 13));
     }
 
     @Test
     public void constructorTest3() {
-        checkDefinition("""
-                class MyClass {
-                    constructor() {}
-                    constructor(int x) : this() {}
-                }
-                """,
+        String code =
+                "class MyClass {\n" +
+                "    constructor() {}\n" +
+                "    constructor(int x) : this() {}\n" +
+                "}\n";
+        checkDefinition(
+                code,
                 3, 28,
                 new SingleLineTextRange(2, 5, 20, 13));
     }
 
     @Test
     public void constructorTest4() {
-        checkDefinition("""
-                class BaseClass {
-                    constructor(int x) {}
-                }
-                class ChildClass : BaseClass {
-                    constructor(int x) : base(x) {}
-                }
-                """,
+        String code =
+                "class BaseClass {\n" +
+                "    constructor(int x) {}\n" +
+                "}\n" +
+                "class ChildClass : BaseClass {\n" +
+                "    constructor(int x) : base(x) {}\n" +
+                "}\n";
+        checkDefinition(
+                code,
                 5, 28,
                 new SingleLineTextRange(2, 5, 22, 18));
     }
 
     @Test
     public void methodTest1() {
-        checkDefinition("""
-                class MyClass {
-                    void method(int x) {}
-                }
-                MyClass instance = new MyClass();
-                instance.method(10);
-                """,
+        String code =
+                "class MyClass {\n" +
+                "    void method(int x) {}\n" +
+                "}\n" +
+                "MyClass instance = new MyClass();\n" +
+                "instance.method(10);\n";
+        checkDefinition(
+                code,
                 5, 12,
                 new SingleLineTextRange(2, 5, 20, 18));
     }
 
     @Test
     public void methodTest2() {
-        checkDefinition("""
-                class BaseClass {
-                    virtual void method(int x) {}
-                }
-                class ChildClass : BaseClass {
-                    override void method(int x) {
-                        base.method(x + 1);
-                    }
-                }
-                """,
+        String code =
+                "class BaseClass {\n" +
+                "    virtual void method(int x) {}\n" +
+                "}\n" +
+                "class ChildClass : BaseClass {\n" +
+                "    override void method(int x) {\n" +
+                "        base.method(x + 1);\n" +
+                "    }\n" +
+                "}\n";
+        checkDefinition(
+                code,
                 6, 16,
                 new SingleLineTextRange(2, 5, 22, 26));
     }
 
     @Test
     public void extensionMethodTest() {
-        checkDefinition("""
-                extension(int) {
-                    int next() => this + 1;
-                }
-                (0).next();
-                """,
+        String code =
+                "extension(int) {\n" +
+                "    int next() => this + 1;\n" +
+                "}\n" +
+                "(0).next();\n";
+        checkDefinition(
+                code,
                 4, 6,
                 new SingleLineTextRange(2, 5, 21, 10));
     }
 
     @Test
     public void typeAliasTest1() {
-        checkDefinition("""
-                typealias Int1 = Int2;
-                typealias Int2 = int;
-                Int1 a;
-                """,
+        String code =
+                "typealias Int1 = Int2;\n" +
+                "typealias Int2 = int;\n" +
+                "Int1 a;\n";
+        checkDefinition(
+                code,
                 3, 1,
                 new SingleLineTextRange(1, 1, 0, 14));
     }
 
     @Test
     public void typeAliasTest2() {
-        checkDefinition("""
-                typealias Int1 = Int2;
-                typealias Int2 = int;
-                """,
+        String code =
+                "typealias Int1 = Int2;\n" +
+                "typealias Int2 = int;\n";
+        checkDefinition(
+                code,
                 1, 19,
                 new SingleLineTextRange(2, 1, 23, 14));
     }

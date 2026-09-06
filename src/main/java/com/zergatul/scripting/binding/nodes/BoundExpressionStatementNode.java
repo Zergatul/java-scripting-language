@@ -4,6 +4,7 @@ import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
 import com.zergatul.scripting.parser.SyntaxFactory;
 import com.zergatul.scripting.parser.nodes.ExpressionStatementNode;
+import com.zergatul.scripting.utility.Lists;
 
 import java.util.List;
 
@@ -38,7 +39,7 @@ public class BoundExpressionStatementNode extends BoundStatementNode {
 
     @Override
     public List<BoundNode> getChildren() {
-        return List.of(expression);
+        return Lists.of(expression);
     }
 
     @Override

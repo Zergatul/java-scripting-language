@@ -59,7 +59,8 @@ public class CapturedVariable extends Variable {
 
     private LiftedVariable getOriginal() {
         Variable current = variable;
-        while (current instanceof CapturedVariable captured) {
+        while (current instanceof CapturedVariable) {
+            CapturedVariable captured = (CapturedVariable) current;
             current = captured.variable;
         }
         return (LiftedVariable) current;

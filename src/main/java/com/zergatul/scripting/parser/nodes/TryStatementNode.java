@@ -62,6 +62,6 @@ public class TryStatementNode extends StatementNode {
     private static TextRange calculateRange(Token keyword, @Nullable CatchClauseNode catchClause, @Nullable FinallyClauseNode finallyClause) {
         assert catchClause != null || finallyClause != null;
 
-        return TextRange.combine(keyword, Objects.requireNonNullElse(finallyClause, catchClause));
+        return TextRange.combine(keyword, finallyClause != null ? finallyClause : Objects.requireNonNull(catchClause));
     }
 }

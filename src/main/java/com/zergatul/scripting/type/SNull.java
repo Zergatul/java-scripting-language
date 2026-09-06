@@ -4,6 +4,7 @@ import com.zergatul.scripting.compiler.BufferedMethodVisitor;
 import com.zergatul.scripting.compiler.CompilerContext;
 import com.zergatul.scripting.parser.BinaryOperator;
 import com.zergatul.scripting.type.operation.BinaryOperation;
+import com.zergatul.scripting.utility.Lists;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 
@@ -33,7 +34,7 @@ public class SNull extends SSyntheticType {
 
     @Override
     public List<BinaryOperation> getBinaryOperations() {
-        return List.of(
+        return Lists.of(
                 NULL_EQUALS_NULL,
                 NULL_NOT_EQUALS_NULL,
                 NULL_EQUALS_VALUE_TYPE,

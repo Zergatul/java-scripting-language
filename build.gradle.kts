@@ -22,10 +22,15 @@ dependencies {
 }
 
 tasks.withType(JavaCompile::class.java).configureEach {
+    // Avoid javac 8's crash on JSpecify's ElementType.MODULE annotation target.
+    options.release.set(8)
     options.encoding = "UTF-8"
     options.compilerArgs.add("-parameters")
 }
 
 tasks.named<Test>("test") {
+    javaLauncher.set(javaToolchains.launcherFor {
+        languageVersion = JavaLanguageVersion.of(8)
+    })
     useJUnitPlatform()
 }

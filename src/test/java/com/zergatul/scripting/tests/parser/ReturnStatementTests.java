@@ -1,5 +1,7 @@
 package com.zergatul.scripting.tests.parser;
 
+import com.zergatul.scripting.utility.Lists;
+
 import com.zergatul.scripting.SingleLineTextRange;
 import com.zergatul.scripting.lexer.EndOfFileToken;
 import com.zergatul.scripting.lexer.Token;
@@ -16,11 +18,11 @@ public class ReturnStatementTests extends ParserTestBase {
     @Test
     public void returnStatementTest1() {
         ParserOutput result = parse("return;");
-        comparator.assertEquals(List.of(), result.diagnostics());
+        comparator.assertEquals(Lists.of(), result.diagnostics());
         comparator.assertEquals(
                 new CompilationUnitNode(
-                        new CompilationUnitMembersListNode(List.of(), new SingleLineTextRange(1, 1, 0, 0)),
-                        new StatementsListNode(List.of(
+                        new CompilationUnitMembersListNode(Lists.of(), new SingleLineTextRange(1, 1, 0, 0)),
+                        new StatementsListNode(Lists.of(
                                 new ReturnStatementNode(
                                         new Token(TokenType.RETURN, new SingleLineTextRange(1, 1, 0, 6)),
                                         null,
@@ -33,11 +35,11 @@ public class ReturnStatementTests extends ParserTestBase {
     @Test
     public void returnStatementTest2() {
         ParserOutput result = parse("return true;");
-        comparator.assertEquals(List.of(), result.diagnostics());
+        comparator.assertEquals(Lists.of(), result.diagnostics());
         comparator.assertEquals(
                 new CompilationUnitNode(
-                        new CompilationUnitMembersListNode(List.of(), new SingleLineTextRange(1, 1, 0, 0)),
-                        new StatementsListNode(List.of(
+                        new CompilationUnitMembersListNode(Lists.of(), new SingleLineTextRange(1, 1, 0, 0)),
+                        new StatementsListNode(Lists.of(
                                 new ReturnStatementNode(
                                         new Token(TokenType.RETURN, new SingleLineTextRange(1, 1, 0, 6))
                                                 .withTrailingTrivia(new Trivia(TokenType.WHITESPACE, new SingleLineTextRange(1, 7, 6, 1))),

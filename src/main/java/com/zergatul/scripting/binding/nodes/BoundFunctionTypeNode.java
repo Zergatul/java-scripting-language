@@ -4,6 +4,7 @@ import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
 import com.zergatul.scripting.parser.nodes.FunctionTypeNode;
 import com.zergatul.scripting.type.SGenericFunction;
+import com.zergatul.scripting.utility.Lists;
 
 import java.util.List;
 
@@ -47,6 +48,6 @@ public class BoundFunctionTypeNode extends BoundTypeNode {
 
     @Override
     public List<BoundNode> getChildren() {
-        return List.of(returnTypeNode);
+        return Lists.of(returnTypeNode);
     }
 }

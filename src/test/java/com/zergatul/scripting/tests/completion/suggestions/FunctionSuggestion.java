@@ -52,7 +52,8 @@ public class FunctionSuggestion extends Suggestion {
 
     @Override
     public boolean equals(Object obj) {
-        if (obj instanceof FunctionSuggestion other) {
+        if (obj instanceof FunctionSuggestion) {
+            FunctionSuggestion other = (FunctionSuggestion) obj;
             return other.function.equals(function);
         } else {
             return false;

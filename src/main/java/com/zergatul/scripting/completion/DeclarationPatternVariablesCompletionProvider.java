@@ -5,6 +5,7 @@ import com.zergatul.scripting.binding.nodes.BoundIfStatementNode;
 import com.zergatul.scripting.binding.nodes.BoundNodeType;
 import com.zergatul.scripting.compiler.CompilationParameters;
 import com.zergatul.scripting.symbols.SymbolRef;
+import com.zergatul.scripting.utility.Lists;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -18,7 +19,7 @@ public class DeclarationPatternVariablesCompletionProvider<T> extends AbstractCo
     @Override
     public List<T> provide(CompilationParameters parameters, BinderOutput output, CompletionContext context) {
         if (!context.canExpression()) {
-            return List.of();
+            return Lists.of();
         }
 
         List<T> suggestions = new ArrayList<>();

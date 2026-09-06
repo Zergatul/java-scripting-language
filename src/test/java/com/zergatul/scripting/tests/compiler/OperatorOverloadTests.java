@@ -1,5 +1,7 @@
 package com.zergatul.scripting.tests.compiler;
 
+import com.zergatul.scripting.utility.Lists;
+
 import com.zergatul.scripting.BinaryOperatorMethod;
 import com.zergatul.scripting.Getter;
 import com.zergatul.scripting.Setter;
@@ -29,27 +31,26 @@ public class OperatorOverloadTests {
 
     @Test
     public void customTypeBinaryOverloadTest() {
-        String code = """
-                let v1 = new Vector3f(1, 2, 3);
-                let v2 = new Vector3f(2, 0, 0);
-                
-                stringStorage.add((+v1).toString());
-                stringStorage.add((-v1).toString());
-                stringStorage.add((!v1).toString());
-                
-                stringStorage.add((v1 + v2).toString());
-                stringStorage.add((v1 - v2).toString());
-                stringStorage.add((v1 * v2).toString());
-                stringStorage.add((5.0 * v1).toString());
-                stringStorage.add((v2 * 3.0).toString());
-                """;
+        String code =
+                "let v1 = new Vector3f(1, 2, 3);\n" +
+                "let v2 = new Vector3f(2, 0, 0);\n" +
+                "\n" +
+                "stringStorage.add((+v1).toString());\n" +
+                "stringStorage.add((-v1).toString());\n" +
+                "stringStorage.add((!v1).toString());\n" +
+                "\n" +
+                "stringStorage.add((v1 + v2).toString());\n" +
+                "stringStorage.add((v1 - v2).toString());\n" +
+                "stringStorage.add((v1 * v2).toString());\n" +
+                "stringStorage.add((5.0 * v1).toString());\n" +
+                "stringStorage.add((v2 * 3.0).toString());\n";
 
         Runnable program = compileWithCustomType(ApiRoot.class, Vector3f.class, code);
         program.run();
 
         Assertions.assertIterableEquals(
                 ApiRoot.stringStorage.list,
-                List.of(
+                Lists.of(
                         "(1.0, 2.0, 3.0)",
                         "(-1.0, -2.0, -3.0)",
                         "false",

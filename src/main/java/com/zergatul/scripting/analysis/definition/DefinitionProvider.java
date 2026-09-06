@@ -19,27 +19,25 @@ public class DefinitionProvider {
         }
 
         BoundNode node = chain.get(0);
-        return switch (node.getNodeType()) {
-            case NAME_EXPRESSION -> {
+        switch (node.getNodeType()) {
+
+            case NAME_EXPRESSION:
                 BoundNameExpressionNode name = (BoundNameExpressionNode) node;
                 Symbol symbol = name.getSymbol();
                 if (symbol == null) {
-                    yield null;
+                    return null;
                 }
-                yield symbol.getDefinition();
-            }
+                return symbol.getDefinition();
 
-            case FUNCTION -> {
+            case FUNCTION:
                 BoundFunctionNode functionNode = (BoundFunctionNode) node;
-                yield functionNode.function.getDefinition();
-            }
+                return functionNode.function.getDefinition();
 
-            case ALIASED_TYPE -> {
+            case ALIASED_TYPE:
                 BoundAliasedTypeNode aliasedTypeNode = (BoundAliasedTypeNode) node;
-                yield aliasedTypeNode.getSymbol().getDefinition();
-            }
+                return aliasedTypeNode.getSymbol().getDefinition();
 
-            case DECLARED_CLASS_TYPE -> {
+            case DECLARED_CLASS_TYPE:
                 BoundDeclaredClassTypeNode declaredClassTypeNode = (BoundDeclaredClassTypeNode) node;
                 BoundNode parent = chain.get(1);
                 if (parent.is(BoundNodeType.OBJECT_CREATION_EXPRESSION)) {
@@ -49,60 +47,61 @@ public class DefinitionProvider {
                         if (classNode != null) {
                             TextRange definition = findClassConstructorDefinition(classNode, creationExpressionNode.constructor);
                             if (definition != null) {
-                                yield definition;
+                                return definition;
                             }
                         }
                     }
                 }
-                yield declaredClassTypeNode.getSymbol().getDefinition();
-            }
+                return declaredClassTypeNode.getSymbol().getDefinition();
 
-            case CONSTRUCTOR_INITIALIZER -> {
+            case CONSTRUCTOR_INITIALIZER:
                 BoundConstructorInitializerNode initializerNode = (BoundConstructorInitializerNode) node;
                 if (initializerNode.syntaxNode.keyword.getRange().contains(line, column)) {
                     if (initializerNode.constructor != UnknownConstructorReference.instance) {
                         SType owner = initializerNode.constructor.getOwner();
-                        if (owner instanceof SDeclaredType declaredType) {
+                        if (owner instanceof SDeclaredType) {
+                            SDeclaredType declaredType = (SDeclaredType) owner;
                             BoundClassNode classNode = findClassByType(output, declaredType);
                             if (classNode != null) {
                                 TextRange definition = findClassConstructorDefinition(classNode, initializerNode.constructor);
                                 if (definition != null) {
-                                    yield definition;
+                                    return definition;
                                 }
                             }
                         }
                     }
                 }
-                yield null;
-            }
+                return null;
 
-            case PROPERTY -> {
+            case PROPERTY:
                 BoundPropertyNode propertyNode = (BoundPropertyNode) node;
-                if (propertyNode.property instanceof DeclaredFieldReference field) {
+                if (propertyNode.property instanceof DeclaredFieldReference) {
+                    DeclaredFieldReference field = (DeclaredFieldReference) propertyNode.property;
                     BoundClassNode classNode = findClassByType(output, field.getOwner());
                     if (classNode != null) {
-                        yield findClassFieldDefinition(classNode, propertyNode.property);
+                        return findClassFieldDefinition(classNode, propertyNode.property);
                     }
                 }
-                yield null;
-            }
+                return null;
 
-            case METHOD -> {
+            case METHOD:
                 BoundMethodNode methodNode = (BoundMethodNode) node;
-                if (methodNode.method instanceof DeclaredMethodReference method) {
+                if (methodNode.method instanceof DeclaredMethodReference) {
+                    DeclaredMethodReference method = (DeclaredMethodReference) methodNode.method;
                     BoundClassNode classNode = findClassByType(output, (SDeclaredType) method.getOwner());
                     if (classNode != null) {
-                        yield findClassMethodDefinition(classNode, method);
+                        return findClassMethodDefinition(classNode, method);
                     }
                 }
-                if (methodNode.method instanceof ExtensionMethodReference method) {
-                    yield findExtensionMethodDefinition(output, method);
+                if (methodNode.method instanceof ExtensionMethodReference) {
+                    ExtensionMethodReference method = (ExtensionMethodReference) methodNode.method;
+                    return findExtensionMethodDefinition(output, method);
                 }
-                yield null;
-            }
+                return null;
 
-            default -> null;
-        };
+            default:
+                return null;
+        }
     }
 
     @Nullable
@@ -163,7 +162,8 @@ public class DefinitionProvider {
             if (member.is(BoundNodeType.EXTENSION_DECLARATION)) {
                 BoundExtensionNode extensionNode = (BoundExtensionNode) member;
                 for (BoundExtensionMemberNode memberNode : extensionNode.members) {
-                    if (memberNode instanceof BoundExtensionMethodNode methodNode) {
+                    if (memberNode instanceof BoundExtensionMethodNode) {
+                        BoundExtensionMethodNode methodNode = (BoundExtensionMethodNode) memberNode;
                         if (methodNode.method == method) {
                             return methodNode.name.getSymbolOrThrow().getDefinition();
                         }

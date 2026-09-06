@@ -4,6 +4,7 @@ import com.zergatul.scripting.binding.BinderErrors;
 import com.zergatul.scripting.tests.compiler.helpers.FloatStorage;
 import com.zergatul.scripting.tests.compiler.helpers.StringStorage;
 import com.zergatul.scripting.tests.framework.ComparatorTest;
+import com.zergatul.scripting.utility.Lists;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -22,44 +23,41 @@ public class MethodOverloadTests extends ComparatorTest {
 
     @Test
     public void simpleTest() {
-        String code = """
-                stringStorage.add(methods.toString(0));
-                stringStorage.add(methods.toString(0.0));
-                """;
+        String code =
+                "stringStorage.add(methods.toString(0));\n" +
+                "stringStorage.add(methods.toString(0.0));\n";
 
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
         Assertions.assertIterableEquals(
                 ApiRoot.stringStorage.list,
-                List.of("int", "float"));
+                Lists.of("int", "float"));
     }
 
     @Test
     public void upcastTest() {
-        String code = """
-                floatStorage.add(methods.m1(1, 2, 3, ""));
-                floatStorage.add(methods.m1(1, 2.0, 3, ""));
-                """;
+        String code =
+                "floatStorage.add(methods.m1(1, 2, 3, \"\"));\n" +
+                "floatStorage.add(methods.m1(1, 2.0, 3, \"\"));\n";
 
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
         Assertions.assertIterableEquals(
                 ApiRoot.floatStorage.list,
-                List.of(1.0, 2.0));
+                Lists.of(1.0, 2.0));
     }
 
     @Test
     public void noOverloadTest() {
-        String code = """
-                floatStorage.add(methods.m1⟦(1, 2, 3, 4)⟧);
-                """;
+        String code =
+                "floatStorage.add(methods.m1⟦(1, 2, 3, 4)⟧);\n";
 
-        String candidates = """
-                Candidates:
-                float m1(float x, float y, float z, string s)
-                float m1(int x, int y, int z, string s)""";
+        String candidates =
+                "Candidates:\n" +
+                "float m1(float x, float y, float z, string s)\n" +
+                "float m1(int x, int y, int z, string s)";
 
         comparator.assertDiagnostics(
                 ApiRoot.class, code, "⟦⟧",

@@ -3,6 +3,7 @@ package com.zergatul.scripting.binding.nodes;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
 import com.zergatul.scripting.parser.nodes.ThrowExpressionNode;
 import com.zergatul.scripting.type.SNever;
+import com.zergatul.scripting.utility.Lists;
 
 import java.util.List;
 
@@ -29,6 +30,6 @@ public class BoundThrowExpressionNode extends BoundExpressionNode {
 
     @Override
     public List<BoundNode> getChildren() {
-        return List.of(expression);
+        return Lists.of(expression);
     }
 }

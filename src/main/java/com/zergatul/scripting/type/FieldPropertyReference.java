@@ -2,12 +2,12 @@ package com.zergatul.scripting.type;
 
 import com.zergatul.scripting.PropertyDescription;
 import com.zergatul.scripting.compiler.CompilerContext;
-import com.zergatul.scripting.compiler.MethodHandleCache;
+import com.zergatul.scripting.compiler.PrivateMembersCache;
+import com.zergatul.scripting.compiler.StackHelper;
 import com.zergatul.scripting.symbols.LocalVariable;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Type;
 
-import java.lang.invoke.VarHandle;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.Optional;
@@ -88,30 +88,18 @@ public final class FieldPropertyReference extends PropertyReference {
 
     @Override
     public void compileVarHandleLoad(MethodVisitor visitor, CompilerContext context, Runnable compileCallee) {
-        String varHandleFieldName = context.createCachedPrivateFieldHandle(this);
+        String fieldName = context.createCachedPrivateFieldMember(this);
         visitor.visitFieldInsn(
                 GETSTATIC,
-                MethodHandleCache.INTERNAL_NAME,
-                varHandleFieldName,
-                Type.getDescriptor(VarHandle.class));
+                PrivateMembersCache.INTERNAL_NAME,
+                fieldName,
+                Type.getDescriptor(Field.class));
         if (isStatic()) {
-            visitor.visitMethodInsn(
-                    INVOKEVIRTUAL,
-                    Type.getInternalName(VarHandle.class),
-                    "get",
-                    Type.getMethodDescriptor(Type.getType(field.getType())),
-                    false);
+            visitor.visitInsn(ACONST_NULL);
         } else {
             compileCallee.run();
-            visitor.visitMethodInsn(
-                    INVOKEVIRTUAL,
-                    Type.getInternalName(VarHandle.class),
-                    "get",
-                    Type.getMethodDescriptor(
-                            Type.getType(field.getType()),
-                            Type.getType(field.getDeclaringClass())),
-                    false);
         }
+        getType().compileReflectionGetField(visitor);
     }
 
     @Override
@@ -136,33 +124,19 @@ public final class FieldPropertyReference extends PropertyReference {
 
     @Override
     public void compileVarHandleStore(MethodVisitor visitor, CompilerContext context, Runnable compileCallee, Runnable compileValue) {
-        String varHandleFieldName = context.createCachedPrivateFieldHandle(this);
+        String fieldName = context.createCachedPrivateFieldMember(this);
         visitor.visitFieldInsn(
                 GETSTATIC,
-                MethodHandleCache.INTERNAL_NAME,
-                varHandleFieldName,
-                Type.getDescriptor(VarHandle.class));
+                PrivateMembersCache.INTERNAL_NAME,
+                fieldName,
+                Type.getDescriptor(Field.class));
         if (isStatic()) {
-            compileValue.run();
-            visitor.visitMethodInsn(
-                    INVOKEVIRTUAL,
-                    Type.getInternalName(VarHandle.class),
-                    "set",
-                    Type.getMethodDescriptor(Type.VOID_TYPE, Type.getType(field.getType())),
-                    false);
+            visitor.visitInsn(ACONST_NULL);
         } else {
             compileCallee.run();
-            compileValue.run();
-            visitor.visitMethodInsn(
-                    INVOKEVIRTUAL,
-                    Type.getInternalName(VarHandle.class),
-                    "set",
-                    Type.getMethodDescriptor(
-                            Type.VOID_TYPE,
-                            Type.getType(field.getDeclaringClass()),
-                            Type.getType(field.getType())),
-                    false);
         }
+        compileValue.run();
+        getType().compileReflectionSetField(visitor);
     }
 
     @Override
@@ -198,27 +172,23 @@ public final class FieldPropertyReference extends PropertyReference {
 
     @Override
     public void compileVarHandleLoadModifyStore(MethodVisitor visitor, CompilerContext context, Runnable compileCallee, Runnable compileModify) {
-        String varHandleFieldName = context.createCachedPrivateFieldHandle(this);
+        String fieldName = context.createCachedPrivateFieldMember(this);
         visitor.visitFieldInsn(
                 GETSTATIC,
-                MethodHandleCache.INTERNAL_NAME,
-                varHandleFieldName,
-                Type.getDescriptor(VarHandle.class));
+                PrivateMembersCache.INTERNAL_NAME,
+                fieldName,
+                Type.getDescriptor(Field.class));
         visitor.visitInsn(DUP);
         if (isStatic()) {
-            visitor.visitMethodInsn(
-                    INVOKEVIRTUAL,
-                    Type.getInternalName(VarHandle.class),
-                    "get",
-                    Type.getMethodDescriptor(Type.getType(field.getType())),
-                    false);
+            visitor.visitInsn(ACONST_NULL);
+            getType().compileReflectionGetField(visitor);
             compileModify.run();
-            visitor.visitMethodInsn(
-                    INVOKEVIRTUAL,
-                    Type.getInternalName(VarHandle.class),
-                    "set",
-                    Type.getMethodDescriptor(Type.VOID_TYPE, Type.getType(field.getType())),
-                    false);
+            // ..., Field, value
+            visitor.visitInsn(ACONST_NULL);
+            // ..., Field, value, null
+            StackHelper.swap(visitor, context, getType(), SJavaObject.instance);
+            // ..., Field, null, value
+            getType().compileReflectionSetField(visitor);
         } else {
             context = context.createChild();
             compileCallee.run();
@@ -226,35 +196,23 @@ public final class FieldPropertyReference extends PropertyReference {
             LocalVariable calleeVariable = new LocalVariable(null, SType.fromJavaType(field.getDeclaringClass()), null);
             context.setStackIndex(calleeVariable);
             calleeVariable.compileStore(context, visitor);
-            visitor.visitMethodInsn(
-                    INVOKEVIRTUAL,
-                    Type.getInternalName(VarHandle.class),
-                    "get",
-                    Type.getMethodDescriptor(
-                            Type.getType(field.getType()),
-                            Type.getType(field.getDeclaringClass())),
-                    false);
+            // ..., Field, callee
+            getType().compileReflectionGetField(visitor);
+            // ..., Field, old_value
             compileModify.run();
-            LocalVariable valueVariable = new LocalVariable(null, SType.fromJavaType(field.getType()), null);
-            context.setStackIndex(valueVariable);
-            valueVariable.compileStore(context, visitor);
+            // ..., Field, new_value
             calleeVariable.compileLoad(context, visitor);
-            valueVariable.compileLoad(context, visitor);
-            visitor.visitMethodInsn(
-                    INVOKEVIRTUAL,
-                    Type.getInternalName(VarHandle.class),
-                    "set",
-                    Type.getMethodDescriptor(
-                            Type.VOID_TYPE,
-                            Type.getType(field.getDeclaringClass()),
-                            Type.getType(field.getType())),
-                    false);
+            // ..., Field, new_value, object
+            StackHelper.swap(visitor, context, getType(), SJavaObject.instance);
+            // ..., Field, object, new_value
+            getType().compileReflectionSetField(visitor);
         }
     }
 
     @Override
     public boolean equals(Object obj) {
-        if (obj instanceof FieldPropertyReference other) {
+        if (obj instanceof FieldPropertyReference) {
+            FieldPropertyReference other = (FieldPropertyReference) obj;
             return other.field.equals(field);
         } else {
             return false;

@@ -5,6 +5,7 @@ import com.zergatul.scripting.binding.BinderTreeVisitor;
 import com.zergatul.scripting.parser.nodes.BinaryExpressionNode;
 import com.zergatul.scripting.type.MethodReference;
 import com.zergatul.scripting.type.SBoolean;
+import com.zergatul.scripting.utility.Lists;
 
 import java.util.List;
 
@@ -40,6 +41,6 @@ public class BoundInExpressionNode extends BoundExpressionNode {
 
     @Override
     public List<BoundNode> getChildren() {
-        return List.of(left, right);
+        return Lists.of(left, right);
     }
 }

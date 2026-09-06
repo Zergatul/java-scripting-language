@@ -21,7 +21,8 @@ public class StaticFieldSuggestion extends Suggestion {
 
     @Override
     public boolean equals(Object obj) {
-        if (obj instanceof StaticFieldSuggestion other) {
+        if (obj instanceof StaticFieldSuggestion) {
+            StaticFieldSuggestion other = (StaticFieldSuggestion) obj;
             return other.variable == variable;
         } else {
             return false;

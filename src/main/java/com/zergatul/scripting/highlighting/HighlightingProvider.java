@@ -8,6 +8,7 @@ import com.zergatul.scripting.parser.nodes.*;
 import com.zergatul.scripting.symbols.Function;
 import com.zergatul.scripting.symbols.StaticFieldConstantStaticVariable;
 import com.zergatul.scripting.symbols.StaticVariable;
+import com.zergatul.scripting.utility.Lists;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -31,110 +32,318 @@ public class HighlightingProvider {
 
     private void process(BoundNode node) {
         switch (node.getNodeType()) {
-            case ALIASED_TYPE -> process((BoundAliasedTypeNode) node);
-            case ARGUMENTS_LIST -> process((BoundArgumentsListNode) node);
-            case ARRAY_CREATION_EXPRESSION -> process((BoundArrayCreationExpressionNode) node);
-            case ARRAY_INITIALIZER_EXPRESSION -> process((BoundArrayInitializerExpressionNode) node);
-            case ARRAY_TYPE -> process((BoundArrayTypeNode) node);
-            case ASSIGNMENT_OPERATOR -> process((BoundAssignmentOperatorNode) node);
-            case ASSIGNMENT_STATEMENT -> process((BoundAssignmentStatementNode) node);
-            case AUGMENTED_ASSIGNMENT_STATEMENT -> process((BoundAugmentedAssignmentStatementNode) node);
-            case AWAIT_EXPRESSION -> process((BoundAwaitExpressionNode) node);
-            case BASE_METHOD_INVOCATION_EXPRESSION -> process((BoundBaseMethodInvocationExpressionNode) node);
-            case BINARY_EXPRESSION -> process((BoundBinaryExpressionNode) node);
-            case BINARY_OPERATOR -> process((BoundBinaryOperatorNode) node);
-            case BLOCK_STATEMENT -> process((BoundBlockStatementNode) node);
-            case BOOLEAN_LITERAL -> process((BoundBooleanLiteralExpressionNode) node);
-            case BREAK_STATEMENT -> process((BoundBreakStatementNode) node);
-            case CHAR_LITERAL -> process((BoundCharLiteralExpressionNode) node);
-            case CLASS_BINARY_OPERATION -> process((BoundClassBinaryOperationNode) node);
-            case CLASS_CONSTRUCTOR -> process((BoundClassConstructorNode) node);
-            case CLASS_DECLARATION -> process((BoundClassNode) node);
-            case CLASS_FIELD -> process((BoundClassFieldNode) node);
-            case CLASS_METHOD -> process((BoundClassMethodNode) node);
-            case COLLECTION_EXPRESSION -> process((BoundCollectionExpressionNode) node);
-            case COMPILATION_UNIT -> process((BoundCompilationUnitNode) node);
-            case COMPILATION_UNIT_MEMBERS -> process((BoundCompilationUnitMembersListNode) node);
-            case CONDITIONAL_EXPRESSION -> process((BoundConditionalExpressionNode) node);
-            case CONSTANT_PATTERN -> process((BoundConstantPatternNode) node);
-            case CONSTRUCTOR_INITIALIZER -> process((BoundConstructorInitializerNode) node);
-            case CONTINUE_STATEMENT -> process((BoundContinueStatementNode) node);
-            case CONVERSION -> process((BoundConversionNode) node);
-            case CUSTOM_TYPE -> process((BoundCustomTypeNode) node);
-            case DECLARATION_PATTERN -> process((BoundDeclarationPatternNode) node);
-            case DECLARED_CLASS_TYPE -> process((BoundDeclaredClassTypeNode) node);
-            case DECREMENT_STATEMENT -> process((BoundPostfixStatementNode) node);
-            case EMPTY_COLLECTION_EXPRESSION -> process((BoundEmptyCollectionExpressionNode) node);
-            case EMPTY_STATEMENT -> process((BoundEmptyStatementNode) node);
-            case EXPRESSION_STATEMENT -> process((BoundExpressionStatementNode) node);
-            case EXTENSION_DECLARATION -> process((BoundExtensionNode) node);
-            case EXTENSION_BINARY_OPERATION -> process((BoundExtensionBinaryOperationNode) node);
-            case EXTENSION_METHOD -> process((BoundExtensionMethodNode) node);
-            case EXTENSION_UNARY_OPERATION -> process((BoundExtensionUnaryOperationNode) node);
-            case FLOAT_LITERAL -> process((BoundFloatLiteralExpressionNode) node);
-            case FOREACH_LOOP_STATEMENT -> process((BoundForEachLoopStatementNode) node);
-            case FOR_LOOP_STATEMENT -> process((BoundForLoopStatementNode) node);
-            case FUNCTION -> process((BoundFunctionNode) node);
-            case FUNCTION_DECLARATION -> process((BoundFunctionDeclarationNode) node);
-            case FUNCTION_AS_LAMBDA -> process((BoundFunctionAsLambdaExpressionNode) node);
-            case FUNCTION_INVOCATION -> process((BoundFunctionInvocationExpression) node);
-            case FUNCTION_TYPE -> process((BoundFunctionTypeNode) node);
-            case GENERATOR_CONTINUE -> process((BoundGeneratorContinueNode) node);
-            case GENERATOR_GET_VALUE -> process((BoundGeneratorGetValueNode) node);
-            case GENERATOR_RETURN -> process((BoundGeneratorReturnNode) node);
-            case IF_STATEMENT -> process((BoundIfStatementNode) node);
-            case IMPLICIT_CAST -> process((BoundImplicitCastExpressionNode) node);
-            case INCREMENT_STATEMENT -> process((BoundPostfixStatementNode) node);
-            case INDEX_EXPRESSION -> process((BoundIndexExpressionNode) node);
-            case INTEGER64_LITERAL -> process((BoundInteger64LiteralExpressionNode) node);
-            case INTEGER_LITERAL -> process((BoundIntegerLiteralExpressionNode) node);
-            case INVALID_EXPRESSION -> process((BoundInvalidExpressionNode) node);
-            case INVALID_STATEMENT -> process((BoundInvalidStatementNode) node);
-            case INVALID_TYPE -> process((BoundInvalidTypeNode) node);
-            case JAVA_TYPE -> process((BoundJavaTypeNode) node);
-            case LAMBDA_EXPRESSION -> process((BoundLambdaExpressionNode) node);
-            case LET_TYPE -> process((BoundLetTypeNode) node);
-            case META_CAST_EXPRESSION -> process((BoundMetaCastExpressionNode) node);
-            case META_INVALID_EXPRESSION -> process((BoundInvalidMetaExpressionNode) node);
-            case META_TYPE_EXPRESSION -> process((BoundMetaTypeExpressionNode) node);
-            case META_TYPE_OF_EXPRESSION -> process((BoundMetaTypeOfExpressionNode) node);
-            case METHOD -> process((BoundMethodNode) node);
-            case METHOD_GROUP -> process((BoundMethodGroupExpressionNode) node);
-            case METHOD_INVOCATION_EXPRESSION -> process((BoundMethodInvocationExpressionNode) node);
-            case NAME_EXPRESSION -> process((BoundNameExpressionNode) node);
-            case NOT_PATTERN -> process((BoundNotPattern) node);
-            case NULL_EXPRESSION -> process((BoundNullExpressionNode) node);
-            case OBJECT_CREATION_EXPRESSION -> process((BoundObjectCreationExpressionNode) node);
-            case OBJECT_INVOCATION -> process((BoundObjectInvocationExpression) node);
-            case PARAMETER -> process((BoundParameterNode) node);
-            case PARAMETER_LIST -> process((BoundParameterListNode) node);
-            case PARENTHESIZED_EXPRESSION -> process((BoundParenthesizedExpressionNode) node);
-            case PREDEFINED_TYPE -> process((BoundPredefinedTypeNode) node);
-            case PROPERTY -> process((BoundPropertyNode) node);
-            case PROPERTY_ACCESS_EXPRESSION -> process((BoundPropertyAccessExpressionNode) node);
-            case REF_ARGUMENT_EXPRESSION -> process((BoundRefArgumentExpressionNode) node);
-            case REF_TYPE -> process((BoundRefTypeNode) node);
-            case RETURN_STATEMENT -> process((BoundReturnStatementNode) node);
-            case SET_GENERATOR_STATE -> process((BoundSetGeneratorStateNode) node);
-            case STACK_LOAD -> process((BoundStackLoadNode) node);
-            case STATEMENTS_LIST -> process((BoundStatementsListNode) node);
-            case STATIC_REFERENCE -> process((BoundStaticReferenceExpression) node);
-            case STATIC_VARIABLE -> process((BoundStaticVariableNode) node);
-            case STRING_LITERAL -> process((BoundStringLiteralExpressionNode) node);
-            case SYMBOL -> process((BoundSymbolNode) node);
-            case THIS_EXPRESSION -> process((BoundThisExpressionNode) node);
-            case TRY_STATEMENT -> process((BoundTryStatementNode) node);
-            case TYPE_ALIAS -> process((BoundTypeAliasNode) node);
-            case TYPE_CAST_EXPRESSION -> process((BoundTypeCastExpressionNode) node);
-            case TYPE_PATTERN -> process((BoundTypePatternNode) node);
-            case IS_EXPRESSION -> process((BoundIsExpressionNode) node);
-            case UNARY_EXPRESSION -> process((BoundUnaryExpressionNode) node);
-            case UNARY_OPERATOR -> process((BoundUnaryOperatorNode) node);
-            case UNCONVERTED_LAMBDA -> process((BoundUnconvertedLambdaExpressionNode) node);
-            case UNRESOLVED_METHOD -> process((BoundUnresolvedMethodNode) node);
-            case VARIABLE_DECLARATION -> process((BoundVariableDeclarationNode) node);
-            case VOID_TYPE -> process((BoundVoidTypeNode) node);
-            case WHILE_LOOP_STATEMENT -> process((BoundWhileLoopStatementNode) node);
+            case ALIASED_TYPE:
+                process((BoundAliasedTypeNode) node);
+                break;
+            case ARGUMENTS_LIST:
+                process((BoundArgumentsListNode) node);
+                break;
+            case ARRAY_CREATION_EXPRESSION:
+                process((BoundArrayCreationExpressionNode) node);
+                break;
+            case ARRAY_INITIALIZER_EXPRESSION:
+                process((BoundArrayInitializerExpressionNode) node);
+                break;
+            case ARRAY_TYPE:
+                process((BoundArrayTypeNode) node);
+                break;
+            case ASSIGNMENT_OPERATOR:
+                process((BoundAssignmentOperatorNode) node);
+                break;
+            case ASSIGNMENT_STATEMENT:
+                process((BoundAssignmentStatementNode) node);
+                break;
+            case AUGMENTED_ASSIGNMENT_STATEMENT:
+                process((BoundAugmentedAssignmentStatementNode) node);
+                break;
+            case AWAIT_EXPRESSION:
+                process((BoundAwaitExpressionNode) node);
+                break;
+            case BASE_METHOD_INVOCATION_EXPRESSION:
+                process((BoundBaseMethodInvocationExpressionNode) node);
+                break;
+            case BINARY_EXPRESSION:
+                process((BoundBinaryExpressionNode) node);
+                break;
+            case BINARY_OPERATOR:
+                process((BoundBinaryOperatorNode) node);
+                break;
+            case BLOCK_STATEMENT:
+                process((BoundBlockStatementNode) node);
+                break;
+            case BOOLEAN_LITERAL:
+                process((BoundBooleanLiteralExpressionNode) node);
+                break;
+            case BREAK_STATEMENT:
+                process((BoundBreakStatementNode) node);
+                break;
+            case CHAR_LITERAL:
+                process((BoundCharLiteralExpressionNode) node);
+                break;
+            case CLASS_BINARY_OPERATION:
+                process((BoundClassBinaryOperationNode) node);
+                break;
+            case CLASS_CONSTRUCTOR:
+                process((BoundClassConstructorNode) node);
+                break;
+            case CLASS_DECLARATION:
+                process((BoundClassNode) node);
+                break;
+            case CLASS_FIELD:
+                process((BoundClassFieldNode) node);
+                break;
+            case CLASS_METHOD:
+                process((BoundClassMethodNode) node);
+                break;
+            case COLLECTION_EXPRESSION:
+                process((BoundCollectionExpressionNode) node);
+                break;
+            case COMPILATION_UNIT:
+                process((BoundCompilationUnitNode) node);
+                break;
+            case COMPILATION_UNIT_MEMBERS:
+                process((BoundCompilationUnitMembersListNode) node);
+                break;
+            case CONDITIONAL_EXPRESSION:
+                process((BoundConditionalExpressionNode) node);
+                break;
+            case CONSTANT_PATTERN:
+                process((BoundConstantPatternNode) node);
+                break;
+            case CONSTRUCTOR_INITIALIZER:
+                process((BoundConstructorInitializerNode) node);
+                break;
+            case CONTINUE_STATEMENT:
+                process((BoundContinueStatementNode) node);
+                break;
+            case CONVERSION:
+                process((BoundConversionNode) node);
+                break;
+            case CUSTOM_TYPE:
+                process((BoundCustomTypeNode) node);
+                break;
+            case DECLARATION_PATTERN:
+                process((BoundDeclarationPatternNode) node);
+                break;
+            case DECLARED_CLASS_TYPE:
+                process((BoundDeclaredClassTypeNode) node);
+                break;
+            case DECREMENT_STATEMENT:
+                process((BoundPostfixStatementNode) node);
+                break;
+            case EMPTY_COLLECTION_EXPRESSION:
+                process((BoundEmptyCollectionExpressionNode) node);
+                break;
+            case EMPTY_STATEMENT:
+                process((BoundEmptyStatementNode) node);
+                break;
+            case EXPRESSION_STATEMENT:
+                process((BoundExpressionStatementNode) node);
+                break;
+            case EXTENSION_DECLARATION:
+                process((BoundExtensionNode) node);
+                break;
+            case EXTENSION_BINARY_OPERATION:
+                process((BoundExtensionBinaryOperationNode) node);
+                break;
+            case EXTENSION_METHOD:
+                process((BoundExtensionMethodNode) node);
+                break;
+            case EXTENSION_UNARY_OPERATION:
+                process((BoundExtensionUnaryOperationNode) node);
+                break;
+            case FLOAT_LITERAL:
+                process((BoundFloatLiteralExpressionNode) node);
+                break;
+            case FOREACH_LOOP_STATEMENT:
+                process((BoundForEachLoopStatementNode) node);
+                break;
+            case FOR_LOOP_STATEMENT:
+                process((BoundForLoopStatementNode) node);
+                break;
+            case FUNCTION:
+                process((BoundFunctionNode) node);
+                break;
+            case FUNCTION_DECLARATION:
+                process((BoundFunctionDeclarationNode) node);
+                break;
+            case FUNCTION_AS_LAMBDA:
+                process((BoundFunctionAsLambdaExpressionNode) node);
+                break;
+            case FUNCTION_INVOCATION:
+                process((BoundFunctionInvocationExpression) node);
+                break;
+            case FUNCTION_TYPE:
+                process((BoundFunctionTypeNode) node);
+                break;
+            case GENERATOR_CONTINUE:
+                process((BoundGeneratorContinueNode) node);
+                break;
+            case GENERATOR_GET_VALUE:
+                process((BoundGeneratorGetValueNode) node);
+                break;
+            case GENERATOR_RETURN:
+                process((BoundGeneratorReturnNode) node);
+                break;
+            case IF_STATEMENT:
+                process((BoundIfStatementNode) node);
+                break;
+            case IMPLICIT_CAST:
+                process((BoundImplicitCastExpressionNode) node);
+                break;
+            case INCREMENT_STATEMENT:
+                process((BoundPostfixStatementNode) node);
+                break;
+            case INDEX_EXPRESSION:
+                process((BoundIndexExpressionNode) node);
+                break;
+            case INTEGER64_LITERAL:
+                process((BoundInteger64LiteralExpressionNode) node);
+                break;
+            case INTEGER_LITERAL:
+                process((BoundIntegerLiteralExpressionNode) node);
+                break;
+            case INVALID_EXPRESSION:
+                process((BoundInvalidExpressionNode) node);
+                break;
+            case INVALID_STATEMENT:
+                process((BoundInvalidStatementNode) node);
+                break;
+            case INVALID_TYPE:
+                process((BoundInvalidTypeNode) node);
+                break;
+            case JAVA_TYPE:
+                process((BoundJavaTypeNode) node);
+                break;
+            case LAMBDA_EXPRESSION:
+                process((BoundLambdaExpressionNode) node);
+                break;
+            case LET_TYPE:
+                process((BoundLetTypeNode) node);
+                break;
+            case META_CAST_EXPRESSION:
+                process((BoundMetaCastExpressionNode) node);
+                break;
+            case META_INVALID_EXPRESSION:
+                process((BoundInvalidMetaExpressionNode) node);
+                break;
+            case META_TYPE_EXPRESSION:
+                process((BoundMetaTypeExpressionNode) node);
+                break;
+            case META_TYPE_OF_EXPRESSION:
+                process((BoundMetaTypeOfExpressionNode) node);
+                break;
+            case METHOD:
+                process((BoundMethodNode) node);
+                break;
+            case METHOD_GROUP:
+                process((BoundMethodGroupExpressionNode) node);
+                break;
+            case METHOD_INVOCATION_EXPRESSION:
+                process((BoundMethodInvocationExpressionNode) node);
+                break;
+            case NAME_EXPRESSION:
+                process((BoundNameExpressionNode) node);
+                break;
+            case NOT_PATTERN:
+                process((BoundNotPattern) node);
+                break;
+            case NULL_EXPRESSION:
+                process((BoundNullExpressionNode) node);
+                break;
+            case OBJECT_CREATION_EXPRESSION:
+                process((BoundObjectCreationExpressionNode) node);
+                break;
+            case OBJECT_INVOCATION:
+                process((BoundObjectInvocationExpression) node);
+                break;
+            case PARAMETER:
+                process((BoundParameterNode) node);
+                break;
+            case PARAMETER_LIST:
+                process((BoundParameterListNode) node);
+                break;
+            case PARENTHESIZED_EXPRESSION:
+                process((BoundParenthesizedExpressionNode) node);
+                break;
+            case PREDEFINED_TYPE:
+                process((BoundPredefinedTypeNode) node);
+                break;
+            case PROPERTY:
+                process((BoundPropertyNode) node);
+                break;
+            case PROPERTY_ACCESS_EXPRESSION:
+                process((BoundPropertyAccessExpressionNode) node);
+                break;
+            case REF_ARGUMENT_EXPRESSION:
+                process((BoundRefArgumentExpressionNode) node);
+                break;
+            case REF_TYPE:
+                process((BoundRefTypeNode) node);
+                break;
+            case RETURN_STATEMENT:
+                process((BoundReturnStatementNode) node);
+                break;
+            case SET_GENERATOR_STATE:
+                process((BoundSetGeneratorStateNode) node);
+                break;
+            case STACK_LOAD:
+                process((BoundStackLoadNode) node);
+                break;
+            case STATEMENTS_LIST:
+                process((BoundStatementsListNode) node);
+                break;
+            case STATIC_REFERENCE:
+                process((BoundStaticReferenceExpression) node);
+                break;
+            case STATIC_VARIABLE:
+                process((BoundStaticVariableNode) node);
+                break;
+            case STRING_LITERAL:
+                process((BoundStringLiteralExpressionNode) node);
+                break;
+            case SYMBOL:
+                process((BoundSymbolNode) node);
+                break;
+            case THIS_EXPRESSION:
+                process((BoundThisExpressionNode) node);
+                break;
+            case TRY_STATEMENT:
+                process((BoundTryStatementNode) node);
+                break;
+            case TYPE_ALIAS:
+                process((BoundTypeAliasNode) node);
+                break;
+            case TYPE_CAST_EXPRESSION:
+                process((BoundTypeCastExpressionNode) node);
+                break;
+            case TYPE_PATTERN:
+                process((BoundTypePatternNode) node);
+                break;
+            case IS_EXPRESSION:
+                process((BoundIsExpressionNode) node);
+                break;
+            case UNARY_EXPRESSION:
+                process((BoundUnaryExpressionNode) node);
+                break;
+            case UNARY_OPERATOR:
+                process((BoundUnaryOperatorNode) node);
+                break;
+            case UNCONVERTED_LAMBDA:
+                process((BoundUnconvertedLambdaExpressionNode) node);
+                break;
+            case UNRESOLVED_METHOD:
+                process((BoundUnresolvedMethodNode) node);
+                break;
+            case VARIABLE_DECLARATION:
+                process((BoundVariableDeclarationNode) node);
+                break;
+            case VOID_TYPE:
+                process((BoundVoidTypeNode) node);
+                break;
+            case WHILE_LOOP_STATEMENT:
+                process((BoundWhileLoopStatementNode) node);
+                break;
         }
     }
 
@@ -467,7 +676,7 @@ public class HighlightingProvider {
     }
 
     private void process(BoundFunctionNode node) {
-        process(node.syntaxNode.token, SemanticTokenType.IDENTIFIER, List.of(SemanticTokenModifier.FUNCTION));
+        process(node.syntaxNode.token, SemanticTokenType.IDENTIFIER, Lists.of(SemanticTokenModifier.FUNCTION));
     }
 
     private void process(BoundFunctionDeclarationNode node) {
@@ -564,15 +773,18 @@ public class HighlightingProvider {
     private void process(BoundInvalidStatementNode node) {}
 
     private void process(BoundInvalidTypeNode node) {
-        if (node.syntaxNode instanceof LetTypeNode let) {
+        if (node.syntaxNode instanceof LetTypeNode) {
+            LetTypeNode let = (LetTypeNode) node.syntaxNode;
             process(let.token);
             return;
         }
-        if (node.syntaxNode instanceof CustomTypeNode custom) {
+        if (node.syntaxNode instanceof CustomTypeNode) {
+            CustomTypeNode custom = (CustomTypeNode) node.syntaxNode;
             process(custom.token, SemanticTokenType.TYPE);
             return;
         }
-        if (node.syntaxNode instanceof InvalidTypeNode invalid) {
+        if (node.syntaxNode instanceof InvalidTypeNode) {
+            InvalidTypeNode invalid = (InvalidTypeNode) node.syntaxNode;
             process(invalid.token, SemanticTokenType.TYPE);
             return;
         }
@@ -638,7 +850,8 @@ public class HighlightingProvider {
 
     private void process(BoundMethodInvocationExpressionNode node) {
         process(node.objectReference);
-        if (node.syntaxNode.callee instanceof MemberAccessExpressionNode memberAccess) {
+        if (node.syntaxNode.callee instanceof MemberAccessExpressionNode) {
+            MemberAccessExpressionNode memberAccess = (MemberAccessExpressionNode) node.syntaxNode.callee;
             process(memberAccess.operator);
         }
         process(node.method);
@@ -647,15 +860,15 @@ public class HighlightingProvider {
 
     private void process(BoundNameExpressionNode node) {
         if (node.getSymbol() instanceof StaticFieldConstantStaticVariable) {
-            process(node.syntaxNode.token, SemanticTokenType.IDENTIFIER, List.of(SemanticTokenModifier.EXTERNAL, SemanticTokenModifier.STATIC));
+            process(node.syntaxNode.token, SemanticTokenType.IDENTIFIER, Lists.of(SemanticTokenModifier.EXTERNAL, SemanticTokenModifier.STATIC));
             return;
         }
         if (node.getSymbol() instanceof StaticVariable) {
-            process(node.syntaxNode.token, SemanticTokenType.IDENTIFIER, List.of(SemanticTokenModifier.STATIC));
+            process(node.syntaxNode.token, SemanticTokenType.IDENTIFIER, Lists.of(SemanticTokenModifier.STATIC));
             return;
         }
         if (node.getSymbol() instanceof Function) {
-            process(node.syntaxNode.token, SemanticTokenType.IDENTIFIER, List.of(SemanticTokenModifier.FUNCTION));
+            process(node.syntaxNode.token, SemanticTokenType.IDENTIFIER, Lists.of(SemanticTokenModifier.FUNCTION));
             return;
         }
         process(node.syntaxNode.token);
@@ -875,11 +1088,13 @@ public class HighlightingProvider {
         }
 
         for (Locatable locatable : node.getChildNodes()) {
-            if (locatable instanceof Token token) {
+            if (locatable instanceof Token) {
+                Token token = (Token) locatable;
                 process(token);
                 continue;
             }
-            if (locatable instanceof ParserNode child) {
+            if (locatable instanceof ParserNode) {
+                ParserNode child = (ParserNode) locatable;
                 processRaw(child);
                 continue;
             }
@@ -915,31 +1130,170 @@ public class HighlightingProvider {
         }
 
         if (!token.isMissing() && !token.is(TokenType.INVALID)) {
-            SemanticTokenType type = switch (token.getTokenType()) {
-                case IDENTIFIER -> SemanticTokenType.IDENTIFIER;
-                case LEFT_PARENTHESES, LEFT_CURLY_BRACKET, LEFT_SQUARE_BRACKET, RIGHT_PARENTHESES, RIGHT_CURLY_BRACKET,
-                     RIGHT_SQUARE_BRACKET -> SemanticTokenType.BRACKET;
-                case DOT, DOT_HASH, DOLLAR, COMMA, SEMICOLON, COLON -> SemanticTokenType.SEPARATOR;
-                case PLUS, PLUS_PLUS, PLUS_EQUAL, MINUS, MINUS_MINUS, MINUS_EQUAL, ASTERISK, ASTERISK_EQUAL, SLASH,
-                     SLASH_EQUAL, PERCENT, PERCENT_EQUAL, AMPERSAND, AMPERSAND_AMPERSAND, AMPERSAND_EQUAL, PIPE,
-                     PIPE_PIPE, PIPE_EQUAL, EQUAL, EQUAL_EQUAL, GREATER, GREATER_EQUAL, LESS, LESS_EQUAL, EXCLAMATION,
-                     EXCLAMATION_EQUAL, QUESTION, EQUAL_GREATER, QUESTION_QUESTION,
-                     QUESTION_QUESTION_EQUAL -> SemanticTokenType.OPERATOR;
-                case BOOLEAN, INT8, INT16, INT, INT32, INT64, LONG, CHAR, FLOAT32, FLOAT, FLOAT64, STRING, IF, ELSE, BREAK,
-                     CONTINUE, WHILE, FOR, FOREACH, FALSE, TRUE, IN, NEW, REF, RETURN, STATIC, VOID, ASYNC, AWAIT, LET, IS,
-                     AS, META_UNKNOWN, META_CAST, META_TYPE, META_TYPE_OF, CLASS, CONSTRUCTOR, THIS, EXTENSION, ABSTRACT,
-                     VIRTUAL, OVERRIDE, PUBLIC, PROTECTED, PRIVATE, BASE, TYPEALIAS, NULL, TRY, CATCH, FINALLY, THROW -> SemanticTokenType.KEYWORD;
-                case INTEGER_LITERAL, INTEGER64_LITERAL, FLOAT_LITERAL, INVALID_NUMBER -> SemanticTokenType.NUMBER;
-                case CHAR_LITERAL, STRING_LITERAL -> SemanticTokenType.STRING;
-                case LINE_BREAK, WHITESPACE, SINGLE_LINE_COMMENT, MULTI_LINE_COMMENT, END_OF_FILE, INVALID -> throw new InternalException();
-            };
-            List<SemanticTokenModifier> modifiers = switch (token.getTokenType()) {
-                case VOID, BOOLEAN, INT8, INT16, INT, INT32, INT64, LONG, CHAR, FLOAT32, FLOAT, FLOAT64, STRING -> List.of(SemanticTokenModifier.PREDEFINED_TYPE);
-                case AS, IS, NEW, AWAIT -> List.of(SemanticTokenModifier.OPERATOR_LIKE);
-                case ASYNC -> List.of(SemanticTokenModifier.ASYNC);
-                case FALSE, TRUE -> List.of(SemanticTokenModifier.VALUE);
-                default -> List.of();
-            };
+            SemanticTokenType type;
+            switch (token.getTokenType()) {
+                case IDENTIFIER:
+                    type = SemanticTokenType.IDENTIFIER;
+                    break;
+                case LEFT_PARENTHESES:
+                case LEFT_CURLY_BRACKET:
+                case LEFT_SQUARE_BRACKET:
+                case RIGHT_PARENTHESES:
+                case RIGHT_CURLY_BRACKET:
+                case RIGHT_SQUARE_BRACKET:
+                    type = SemanticTokenType.BRACKET;
+                    break;
+                case DOT:
+                case DOT_HASH:
+                case DOLLAR:
+                case COMMA:
+                case SEMICOLON:
+                case COLON:
+                    type = SemanticTokenType.SEPARATOR;
+                    break;
+                case PLUS:
+                case PLUS_PLUS:
+                case PLUS_EQUAL:
+                case MINUS:
+                case MINUS_MINUS:
+                case MINUS_EQUAL:
+                case ASTERISK:
+                case ASTERISK_EQUAL:
+                case SLASH:
+                case SLASH_EQUAL:
+                case PERCENT:
+                case PERCENT_EQUAL:
+                case AMPERSAND:
+                case AMPERSAND_AMPERSAND:
+                case AMPERSAND_EQUAL:
+                case PIPE:
+                case PIPE_PIPE:
+                case PIPE_EQUAL:
+                case EQUAL:
+                case EQUAL_EQUAL:
+                case GREATER:
+                case GREATER_EQUAL:
+                case LESS:
+                case LESS_EQUAL:
+                case EXCLAMATION:
+                case EXCLAMATION_EQUAL:
+                case QUESTION:
+                case EQUAL_GREATER:
+                case QUESTION_QUESTION:
+                case QUESTION_QUESTION_EQUAL:
+                    type = SemanticTokenType.OPERATOR;
+                    break;
+                case BOOLEAN:
+                case INT8:
+                case INT16:
+                case INT:
+                case INT32:
+                case INT64:
+                case LONG:
+                case CHAR:
+                case FLOAT32:
+                case FLOAT:
+                case FLOAT64:
+                case STRING:
+                case IF:
+                case ELSE:
+                case BREAK:
+                case CONTINUE:
+                case WHILE:
+                case FOR:
+                case FOREACH:
+                case FALSE:
+                case TRUE:
+                case IN:
+                case NEW:
+                case REF:
+                case RETURN:
+                case STATIC:
+                case VOID:
+                case ASYNC:
+                case AWAIT:
+                case LET:
+                case IS:
+                case AS:
+                case META_UNKNOWN:
+                case META_CAST:
+                case META_TYPE:
+                case META_TYPE_OF:
+                case CLASS:
+                case CONSTRUCTOR:
+                case THIS:
+                case EXTENSION:
+                case ABSTRACT:
+                case VIRTUAL:
+                case OVERRIDE:
+                case PUBLIC:
+                case PROTECTED:
+                case PRIVATE:
+                case BASE:
+                case TYPEALIAS:
+                case NULL:
+                case TRY:
+                case CATCH:
+                case FINALLY:
+                case THROW:
+                    type = SemanticTokenType.KEYWORD;
+                    break;
+                case INTEGER_LITERAL:
+                case INTEGER64_LITERAL:
+                case FLOAT_LITERAL:
+                case INVALID_NUMBER:
+                    type = SemanticTokenType.NUMBER;
+                    break;
+                case CHAR_LITERAL:
+                case STRING_LITERAL:
+                    type = SemanticTokenType.STRING;
+                    break;
+                case LINE_BREAK:
+                case WHITESPACE:
+                case SINGLE_LINE_COMMENT:
+                case MULTI_LINE_COMMENT:
+                case END_OF_FILE:
+                case INVALID:
+                    throw new InternalException();
+                default:
+                    throw new InternalException();
+            }
+
+            List<SemanticTokenModifier> modifiers;
+            switch (token.getTokenType()) {
+                case VOID:
+                case BOOLEAN:
+                case INT8:
+                case INT16:
+                case INT:
+                case INT32:
+                case INT64:
+                case LONG:
+                case CHAR:
+                case FLOAT32:
+                case FLOAT:
+                case FLOAT64:
+                case STRING:
+                    modifiers = Lists.of(SemanticTokenModifier.PREDEFINED_TYPE);
+                    break;
+                case AS:
+                case IS:
+                case NEW:
+                case AWAIT:
+                    modifiers = Lists.of(SemanticTokenModifier.OPERATOR_LIKE);
+                    break;
+                case ASYNC:
+                    modifiers = Lists.of(SemanticTokenModifier.ASYNC);
+                    break;
+                case FALSE:
+                case TRUE:
+                    modifiers = Lists.of(SemanticTokenModifier.VALUE);
+                    break;
+                default:
+                    modifiers = Lists.of();
+                    break;
+            }
+
             result.add(new SemanticToken(type, modifiers, token.getRange()));
         }
 
@@ -949,7 +1303,7 @@ public class HighlightingProvider {
     }
 
     private void process(Token token, SemanticTokenType type) {
-        process(token, type, List.of());
+        process(token, type, Lists.of());
     }
 
     private void process(Token token, SemanticTokenType type, List<SemanticTokenModifier> modifiers) {

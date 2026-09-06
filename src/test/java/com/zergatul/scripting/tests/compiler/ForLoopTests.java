@@ -1,5 +1,7 @@
 package com.zergatul.scripting.tests.compiler;
 
+import com.zergatul.scripting.utility.Lists;
+
 import com.zergatul.scripting.tests.compiler.helpers.FloatStorage;
 import com.zergatul.scripting.tests.compiler.helpers.IntStorage;
 import org.junit.jupiter.api.Assertions;
@@ -20,123 +22,117 @@ public class ForLoopTests {
 
     @Test
     public void breakStatementTest() {
-        String code = """
-                for (;;) {
-                    intStorage.add(10);
-                    break;
-                    intStorage.add(20);
-                }
-                """;
+        String code =
+                "for (;;) {\n" +
+                "    intStorage.add(10);\n" +
+                "    break;\n" +
+                "    intStorage.add(20);\n" +
+                "}\n";
 
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
         Assertions.assertIterableEquals(
                 ApiRoot.intStorage.list,
-                List.of(10));
+                Lists.of(10));
     }
 
     @Test
     public void continueStatementTest() {
-        String code = """
-                int sum;
-                for (int i = 10; i >= 0; i--) {
-                    if (i > 5) {
-                        continue;
-                    }
-                    sum = sum + i;
-                }
-                intStorage.add(sum);
-                """;
+        String code =
+                "int sum;\n" +
+                "for (int i = 10; i >= 0; i--) {\n" +
+                "    if (i > 5) {\n" +
+                "        continue;\n" +
+                "    }\n" +
+                "    sum = sum + i;\n" +
+                "}\n" +
+                "intStorage.add(sum);\n";
 
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
         Assertions.assertIterableEquals(
                 ApiRoot.intStorage.list,
-                List.of(15));
+                Lists.of(15));
     }
 
     @Test
     public void loopArrayAssignTest() {
-        String code = """
-                int[] a = new int[10];
-                for (int i = 0; i < a.length; i++) {
-                    a[i] = i + 1;
-                }
-                for (int i = 0; i < a.length; i++) {
-                    intStorage.add(a[i]);
-                }
-                """;
+        String code =
+                "int[] a = new int[10];\n" +
+                "for (int i = 0; i < a.length; i++) {\n" +
+                "    a[i] = i + 1;\n" +
+                "}\n" +
+                "for (int i = 0; i < a.length; i++) {\n" +
+                "    intStorage.add(a[i]);\n" +
+                "}\n";
 
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
         Assertions.assertIterableEquals(
                 ApiRoot.intStorage.list,
-                List.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10));
+                Lists.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10));
     }
 
     @Test
     public void noInitializerTest() {
-        String code = """
-                int sum = 0;
-                int j = 0;
-                for (; j <= 10;) {
-                    sum = sum + j;
-                    j = j + 1;
-                }
-                intStorage.add(sum);
-                """;
+        String code =
+                "int sum = 0;\n" +
+                "int j = 0;\n" +
+                "for (; j <= 10;) {\n" +
+                "    sum = sum + j;\n" +
+                "    j = j + 1;\n" +
+                "}\n" +
+                "intStorage.add(sum);\n";
 
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
         Assertions.assertIterableEquals(
                 ApiRoot.intStorage.list,
-                List.of(55));
+                Lists.of(55));
     }
 
     @Test
     public void backwardsTest() {
-        String code = """
-                int result = 1;
-                for (int i = 10; i >= 0; i--) {
-                    int mode = i % 3;
-                    if (mode == 0) {
-                        result = result + i;
-                    }
-                    if (mode == 1) {
-                        result = result - i;
-                    }
-                    if (mode == 2) {
-                        result = result * i;
-                    }
-                }
-                intStorage.add(result);
-                """;
+        String code =
+                "int result = 1;\n" +
+                "for (int i = 10; i >= 0; i--) {\n" +
+                "    int mode = i % 3;\n" +
+                "    if (mode == 0) {\n" +
+                "        result = result + i;\n" +
+                "    }\n" +
+                "    if (mode == 1) {\n" +
+                "        result = result - i;\n" +
+                "    }\n" +
+                "    if (mode == 2) {\n" +
+                "        result = result * i;\n" +
+                "    }\n" +
+                "}\n" +
+                "intStorage.add(result);\n";
 
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
         Assertions.assertIterableEquals(
                 ApiRoot.intStorage.list,
-                List.of(-13));
+                Lists.of(-13));
     }
 
     @Test
     public void floatArrayTest() {
-        String code = """
-                float[] a = new float[] { 0.5, 1.5, 2.5 };
-                for (int i = 0; i < 3; i++) floatStorage.add(a[i]);
-                """;
+        String code =
+                "float[] a = new float[] { 0.5, 1.5, 2.5 };\n" +
+                "for (int i = 0; i < 3; i++) floatStorage.add(a[i]);\n";
 
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
         Assertions.assertIterableEquals(
                 ApiRoot.floatStorage.list,
-                List.of(0.5, 1.5, 2.5));
+                Lists.of(0.5, 1.5, 2.5));
     }
 
     public static class ApiRoot {

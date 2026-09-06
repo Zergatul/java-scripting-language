@@ -1,5 +1,7 @@
 package com.zergatul.scripting.type;
 
+import com.zergatul.scripting.utility.Lists;
+
 import java.util.Comparator;
 import java.util.List;
 
@@ -28,7 +30,7 @@ public interface Invocable {
     List<MethodParameter> getParameters();
 
     default List<SType> getParameterTypes() {
-        return getParameters().stream().map(MethodParameter::type).toList();
+        return Lists.from(getParameters().stream().map(MethodParameter::type));
     }
 
     String toDiagnosticsString();

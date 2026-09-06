@@ -9,6 +9,7 @@ import com.zergatul.scripting.compiler.JavaInteropPolicy;
 import com.zergatul.scripting.lexer.Token;
 import com.zergatul.scripting.lexer.TokenType;
 import com.zergatul.scripting.lexer.ValueToken;
+import com.zergatul.scripting.utility.Lists;
 
 import java.util.List;
 
@@ -25,7 +26,7 @@ public class JavaTypeCompletionProvider<T> extends AbstractCompletionProvider<T>
     public List<T> provide(CompilationParameters parameters, BinderOutput output, CompletionContext context) {
         BoundJavaTypeNode javaType = getJavaType(context);
         if (javaType == null) {
-            return List.of();
+            return Lists.of();
         }
 
         if (!TextRange.isBetween2(
@@ -33,30 +34,29 @@ public class JavaTypeCompletionProvider<T> extends AbstractCompletionProvider<T>
                 context.column,
                 javaType.syntaxNode.openBracket,
                 javaType.syntaxNode.closeBracket)) {
-            return List.of();
+            return Lists.of();
         }
 
         JavaInteropPolicy policy = parameters.getInteropPolicy();
         if (policy != null && !policy.isJavaTypeUsageAllowed()) {
-            return List.of();
+            return Lists.of();
         }
 
         String prefix = getPrefix(javaType, context.line, context.column);
-        return provider.suggest(prefix).stream()
-                .map(factory::getJavaTypeSuggestion)
-                .toList();
+        return Lists.from(
+                provider.suggest(prefix).stream()
+                        .map(factory::getJavaTypeSuggestion));
     }
 
     private static BoundJavaTypeNode getJavaType(CompletionContext context) {
         if (context.entry == null) {
             return null;
         }
-        if (context.entry.node instanceof BoundJavaTypeNode javaType) {
-            return javaType;
+        if (context.entry.node instanceof BoundJavaTypeNode) {
+            return (BoundJavaTypeNode) context.entry.node;
         }
-        if (context.entry.node instanceof BoundStaticReferenceExpression staticReference &&
-                staticReference.typeNode instanceof BoundJavaTypeNode javaType) {
-            return javaType;
+        if (context.entry.node instanceof BoundStaticReferenceExpression && ((BoundStaticReferenceExpression) context.entry.node).typeNode instanceof BoundJavaTypeNode) {
+            return (BoundJavaTypeNode) ((BoundStaticReferenceExpression) context.entry.node).typeNode;
         }
         return null;
     }
@@ -78,7 +78,8 @@ public class JavaTypeCompletionProvider<T> extends AbstractCompletionProvider<T>
         StringBuilder builder = new StringBuilder();
         for (int i = 0; i < lastDotIndex; i++) {
             Token token = tokens.get(i);
-            if (token instanceof ValueToken valueToken) {
+            if (token instanceof ValueToken) {
+                ValueToken valueToken = (ValueToken) token;
                 builder.append(valueToken.value);
             } else if (token.is(TokenType.DOT)) {
                 builder.append('.');

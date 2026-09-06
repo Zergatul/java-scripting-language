@@ -1,5 +1,7 @@
 package com.zergatul.scripting.tests.compiler;
 
+import com.zergatul.scripting.utility.Lists;
+
 import com.zergatul.scripting.DiagnosticMessage;
 import com.zergatul.scripting.SingleLineTextRange;
 import com.zergatul.scripting.binding.BinderErrors;
@@ -25,73 +27,69 @@ public class ForEachLoopTests extends ComparatorTest {
 
     @Test
     public void breakStatementTest() {
-        String code = """
-                int[] array = new int[10];
-                for (int i = 0; i < array.length; i++) {
-                    array[i] = (i + 1) * 10;
-                }
-                foreach (int x in array) {
-                    if (x > 50) {
-                        break;
-                    }
-                    intStorage.add(x);
-                }
-                """;
+        String code =
+                "int[] array = new int[10];\n" +
+                "for (int i = 0; i < array.length; i++) {\n" +
+                "    array[i] = (i + 1) * 10;\n" +
+                "}\n" +
+                "foreach (int x in array) {\n" +
+                "    if (x > 50) {\n" +
+                "        break;\n" +
+                "    }\n" +
+                "    intStorage.add(x);\n" +
+                "}\n";
 
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
         Assertions.assertIterableEquals(
                 ApiRoot.intStorage.list,
-                List.of(10, 20, 30, 40, 50));
+                Lists.of(10, 20, 30, 40, 50));
     }
 
     @Test
     public void continueStatementTest()  {
-        String code = """
-                int[] array = new int[10];
-                for (int i = 0; i < array.length; i++) {
-                    array[i] = i + 1;
-                }
-                foreach (int x in array) {
-                    if (x % 2 == 0) {
-                        continue;
-                    }
-                    intStorage.add(x);
-                }
-                """;
+        String code =
+                "int[] array = new int[10];\n" +
+                "for (int i = 0; i < array.length; i++) {\n" +
+                "    array[i] = i + 1;\n" +
+                "}\n" +
+                "foreach (int x in array) {\n" +
+                "    if (x % 2 == 0) {\n" +
+                "        continue;\n" +
+                "    }\n" +
+                "    intStorage.add(x);\n" +
+                "}\n";
 
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
         Assertions.assertIterableEquals(
                 ApiRoot.intStorage.list,
-                List.of(1, 3, 5, 7, 9));
+                Lists.of(1, 3, 5, 7, 9));
     }
 
     @Test
     public void floatArrayTest() {
-        String code = """
-                float[] a = new float[] { 0.5, 1.5, 2.5 };
-                foreach (float f in a) floatStorage.add(f);
-                """;
+        String code =
+                "float[] a = new float[] { 0.5, 1.5, 2.5 };\n" +
+                "foreach (float f in a) floatStorage.add(f);\n";
 
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
         Assertions.assertIterableEquals(
                 ApiRoot.floatStorage.list,
-                List.of(0.5, 1.5, 2.5));
+                Lists.of(0.5, 1.5, 2.5));
     }
 
     @Test
     public void variableContextTest() {
-        String code = """
-                foreach (let x in [1]) x.toString();
-                let a = x;
-                """;
+        String code =
+                "foreach (let x in [1]) x.toString();\n" +
+                "let a = x;\n";
 
-        comparator.assertEquals(List.of(
+        comparator.assertEquals(Lists.of(
                 new DiagnosticMessage(BinderErrors.NameDoesNotExist, new SingleLineTextRange(2, 9, 45, 1), "x")),
                 getDiagnostics(ApiRoot.class, code));
     }

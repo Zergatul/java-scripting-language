@@ -1,6 +1,8 @@
 package com.zergatul.scripting.tests.compiler;
 
 import com.zergatul.scripting.compiler.Compiler;
+import com.zergatul.scripting.utility.Lists;
+import org.jspecify.annotations.Nullable;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.objectweb.asm.Opcodes;
@@ -9,6 +11,7 @@ import java.lang.ref.WeakReference;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 import static com.zergatul.scripting.tests.compiler.helpers.CompilerHelper.compile;
 
@@ -18,14 +21,14 @@ public class ClassLoaderUnloadTests {
     public void basicTest() throws InterruptedException {
         References references = compileAndRelease("");
 
-        awaitCollected(List.of(references));
+        awaitCollected(Lists.of(references));
     }
 
     @Test
     public void generatedClassesTargetJava17AndUseCompilerClassLoader() throws ReflectiveOperationException {
         Field field = Compiler.class.getDeclaredField("CLASS_FILE_VERSION");
         field.setAccessible(true);
-        Assertions.assertEquals(Opcodes.V17, field.getInt(null));
+        Assertions.assertEquals(Opcodes.V1_8, field.getInt(null));
 
         Runnable script = compile(ApiRoot.class, "");
         Assertions.assertSame(
@@ -84,16 +87,91 @@ public class ClassLoaderUnloadTests {
         Assertions.fail("Generated classes still reachable: " + classes + "; classloaders still reachable: " + classLoaders + ".");
     }
 
-    private record References(
-            WeakReference<Class<?>> scriptClass,
-            WeakReference<ClassLoader> classLoader
-    ) {
+    private static final class References {
+
+        private final WeakReference<Class<?>> scriptClass;
+        private final WeakReference<ClassLoader> classLoader;
+
+        private References(
+                WeakReference<Class<?>> scriptClass,
+                WeakReference<ClassLoader> classLoader
+        ) {
+            this.scriptClass = scriptClass;
+            this.classLoader = classLoader;
+        }
+
         public boolean isCollected() {
             return scriptClass.get() == null && classLoader.get() == null;
         }
+
+        public WeakReference<Class<?>> scriptClass() {
+            return scriptClass;
+        }
+
+        public WeakReference<ClassLoader> classLoader() {
+            return classLoader;
+        }
+
+        @Override
+        public boolean equals(@Nullable Object obj) {
+            if (obj == this) return true;
+            if (obj == null || obj.getClass() != this.getClass()) return false;
+            References that = (References) obj;
+            return  Objects.equals(this.scriptClass, that.scriptClass) &&
+                    Objects.equals(this.classLoader, that.classLoader);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(scriptClass, classLoader);
+        }
+
+        @Override
+        public String toString() {
+            return  "References[" +
+                    "scriptClass=" + scriptClass + ", " +
+                    "classLoader=" + classLoader + ']';
+        }
     }
 
-    private record ReplacementBatch(Runnable current, List<References> oldReferences) {
+    private static final class ReplacementBatch {
+
+        private final Runnable current;
+        private final List<References> oldReferences;
+
+        private ReplacementBatch(Runnable current, List<References> oldReferences) {
+            this.current = current;
+            this.oldReferences = oldReferences;
+        }
+
+        public Runnable current() {
+            return current;
+        }
+
+        public List<References> oldReferences() {
+            return oldReferences;
+        }
+
+        @Override
+        public boolean equals(@Nullable Object obj) {
+            if (obj == this) return true;
+            if (obj == null || obj.getClass() != this.getClass()) return false;
+            ReplacementBatch that = (ReplacementBatch) obj;
+            return  Objects.equals(this.current, that.current) &&
+                    Objects.equals(this.oldReferences, that.oldReferences);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(current, oldReferences);
+        }
+
+        @Override
+        public String toString() {
+            return  "ReplacementBatch[" +
+                    "current=" + current + ", " +
+                    "oldReferences=" + oldReferences + ']';
+        }
     }
 
     public static class ApiRoot {}

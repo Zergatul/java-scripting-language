@@ -6,6 +6,7 @@ import com.zergatul.scripting.lexer.Token;
 import com.zergatul.scripting.lexer.TokenType;
 import com.zergatul.scripting.lexer.ValueToken;
 import com.zergatul.scripting.parser.ParserTreeVisitor;
+import com.zergatul.scripting.utility.Lists;
 import org.jspecify.annotations.Nullable;
 
 import java.util.List;
@@ -42,9 +43,9 @@ public class Integer64LiteralExpressionNode extends ExpressionNode {
     @Override
     public List<Locatable> getChildNodes() {
         if (sign != null) {
-            return List.of(sign, token);
+            return Lists.of(sign, token);
         } else {
-            return List.of(token);
+            return Lists.of(token);
         }
     }
 

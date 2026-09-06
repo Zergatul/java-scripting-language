@@ -4,6 +4,7 @@ import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.binding.BinderTreeVisitor;
 import com.zergatul.scripting.parser.nodes.ForEachLoopStatementNode;
 import com.zergatul.scripting.symbols.SymbolRef;
+import com.zergatul.scripting.utility.Lists;
 
 import java.util.List;
 
@@ -64,7 +65,7 @@ public class BoundForEachLoopStatementNode extends BoundStatementNode {
 
     @Override
     public List<BoundNode> getChildren() {
-        return List.of(typeNode, name, iterable, body);
+        return Lists.of(typeNode, name, iterable, body);
     }
 
     public BoundForEachLoopStatementNode withBody(BoundStatementNode body) {

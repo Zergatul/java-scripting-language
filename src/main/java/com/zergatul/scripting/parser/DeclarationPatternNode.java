@@ -6,6 +6,7 @@ import com.zergatul.scripting.lexer.ValueToken;
 import com.zergatul.scripting.parser.nodes.ParserNodeType;
 import com.zergatul.scripting.parser.nodes.PatternNode;
 import com.zergatul.scripting.parser.nodes.TypeNode;
+import com.zergatul.scripting.utility.Lists;
 
 import java.util.List;
 
@@ -32,6 +33,6 @@ public class DeclarationPatternNode extends PatternNode {
 
     @Override
     public List<Locatable> getChildNodes() {
-        return List.of();
+        return Lists.of();
     }
 }

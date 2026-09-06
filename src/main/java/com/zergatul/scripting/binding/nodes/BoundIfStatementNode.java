@@ -5,6 +5,7 @@ import com.zergatul.scripting.binding.BinderTreeVisitor;
 import com.zergatul.scripting.binding.FallthroughFlow;
 import com.zergatul.scripting.parser.SyntaxFactory;
 import com.zergatul.scripting.parser.nodes.IfStatementNode;
+import com.zergatul.scripting.utility.Lists;
 import org.jspecify.annotations.Nullable;
 
 import java.util.List;
@@ -76,6 +77,6 @@ public class BoundIfStatementNode extends BoundStatementNode {
 
     @Override
     public List<BoundNode> getChildren() {
-        return elseStatement == null ? List.of(condition, thenStatement) : List.of(condition, thenStatement, elseStatement);
+        return elseStatement == null ? Lists.of(condition, thenStatement) : Lists.of(condition, thenStatement, elseStatement);
     }
 }

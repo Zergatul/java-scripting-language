@@ -4,6 +4,7 @@ import com.zergatul.scripting.InterfaceHelper;
 import com.zergatul.scripting.binding.BinderOutput;
 import com.zergatul.scripting.compiler.CompilationParameters;
 import com.zergatul.scripting.type.SType;
+import com.zergatul.scripting.utility.Lists;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
@@ -20,12 +21,12 @@ public class InputParametersCompletionProvider<T> extends AbstractCompletionProv
     @Override
     public List<T> provide(CompilationParameters parameters, BinderOutput output, CompletionContext context) {
         if (!context.canExpression()) {
-            return List.of();
+            return Lists.of();
         }
 
         Method method = InterfaceHelper.getFuncInterfaceMethod(parameters.getFunctionalInterface());
         if (method.getParameters().length == 0) {
-            return List.of();
+            return Lists.of();
         }
 
         if (context.type == ContextType.NO_CODE || context.type == ContextType.AFTER_LAST_WITH_STATEMENTS || context.type == ContextType.AFTER_LAST_NO_STATEMENTS) {
@@ -38,16 +39,14 @@ public class InputParametersCompletionProvider<T> extends AbstractCompletionProv
             }
 
             switch (current.entry.node.getNodeType()) {
-                case COMPILATION_UNIT_MEMBERS -> {
-                    return List.of();
-                }
-                case STATEMENTS_LIST -> {
+                case COMPILATION_UNIT_MEMBERS:
+                    return Lists.of();
+                case STATEMENTS_LIST:
                     return getSuggestions(method);
-                }
             }
         }
 
-        return List.of();
+        return Lists.of();
     }
 
     private List<T> getSuggestions(Method method) {

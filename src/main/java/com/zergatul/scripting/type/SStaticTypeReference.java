@@ -1,5 +1,7 @@
 package com.zergatul.scripting.type;
 
+import com.zergatul.scripting.utility.Lists;
+
 import java.util.List;
 
 public class SStaticTypeReference extends SSyntheticType {
@@ -16,16 +18,12 @@ public class SStaticTypeReference extends SSyntheticType {
 
     @Override
     public List<MethodReference> getDeclaredMethods() {
-        return MemberLookup.getMethods(underlying).stream()
-                .filter(MethodReference::isStatic)
-                .toList();
+        return Lists.from(MemberLookup.getMethods(underlying).stream().filter(MethodReference::isStatic));
     }
 
     @Override
     public List<PropertyReference> getDeclaredProperties() {
-        return MemberLookup.getProperties(underlying).stream()
-                .filter(PropertyReference::isStatic)
-                .toList();
+        return Lists.from(MemberLookup.getProperties(underlying).stream().filter(PropertyReference::isStatic));
     }
 
     @Override

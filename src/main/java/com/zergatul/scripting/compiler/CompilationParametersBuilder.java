@@ -1,6 +1,7 @@
 package com.zergatul.scripting.compiler;
 
 import com.zergatul.scripting.type.SType;
+import com.zergatul.scripting.utility.Lists;
 import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
@@ -23,7 +24,7 @@ public class CompilationParametersBuilder {
 
     public CompilationParametersBuilder() {
         functionalInterface = Runnable.class;
-        customTypes = List.of();
+        customTypes = Lists.of();
     }
 
     public CompilationParametersBuilder setRoot(Class<?> root) {

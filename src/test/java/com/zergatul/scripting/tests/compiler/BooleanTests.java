@@ -1,5 +1,7 @@
 package com.zergatul.scripting.tests.compiler;
 
+import com.zergatul.scripting.utility.Lists;
+
 import com.zergatul.scripting.tests.compiler.helpers.BoolStorage;
 import com.zergatul.scripting.tests.compiler.helpers.IntStorage;
 import com.zergatul.scripting.tests.compiler.helpers.StringStorage;
@@ -22,226 +24,213 @@ public class BooleanTests {
 
     @Test
     public void initialValueTest() {
-        String code = """
-                boolean b;
-                storage.add(b);
-                """;
+        String code =
+                "boolean b;\n" +
+                "storage.add(b);\n";
 
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
         Assertions.assertIterableEquals(
                 ApiRoot.storage.list,
-                List.of(false));
+                Lists.of(false));
     }
 
     @Test
     public void initExpressionTest() {
-        String code = """
-                boolean b = true || false;
-                storage.add(b);
-                """;
+        String code =
+                "boolean b = true || false;\n" +
+                "storage.add(b);\n";
 
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
         Assertions.assertIterableEquals(
                 ApiRoot.storage.list,
-                List.of(true));
+                Lists.of(true));
     }
 
     @Test
     public void constantsTest() {
-        String code = """
-                storage.add(true);
-                storage.add(false);
-                """;
+        String code =
+                "storage.add(true);\n" +
+                "storage.add(false);\n";
 
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
         Assertions.assertIterableEquals(
                 ApiRoot.storage.list,
-                List.of(true, false));
+                Lists.of(true, false));
     }
 
     @Test
     public void notOperatorTest() {
-        String code = """
-                storage.add(!true);
-                storage.add(!false);
-                """;
+        String code =
+                "storage.add(!true);\n" +
+                "storage.add(!false);\n";
 
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
         Assertions.assertIterableEquals(
                 ApiRoot.storage.list,
-                List.of(false, true));
+                Lists.of(false, true));
     }
 
     @Test
     public void equalsOperatorTest() {
-        String code = """
-                storage.add(true == true);
-                storage.add(false == false);
-                storage.add(true == false);
-                storage.add(false == true);
-                """;
+        String code =
+                "storage.add(true == true);\n" +
+                "storage.add(false == false);\n" +
+                "storage.add(true == false);\n" +
+                "storage.add(false == true);\n";
 
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
         Assertions.assertIterableEquals(
                 ApiRoot.storage.list,
-                List.of(true, true, false, false));
+                Lists.of(true, true, false, false));
     }
 
     @Test
     public void notEqualsOperatorTest() {
-        String code = """
-                storage.add(true != true);
-                storage.add(false != false);
-                storage.add(true != false);
-                storage.add(false != true);
-                """;
+        String code =
+                "storage.add(true != true);\n" +
+                "storage.add(false != false);\n" +
+                "storage.add(true != false);\n" +
+                "storage.add(false != true);\n";
 
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
         Assertions.assertIterableEquals(
                 ApiRoot.storage.list,
-                List.of(false, false, true, true));
+                Lists.of(false, false, true, true));
     }
 
     @Test
     public void andOperatorTest() {
-        String code = """
-                storage.add(true && true);
-                storage.add(false && false);
-                storage.add(true && false);
-                storage.add(false && true);
-                """;
+        String code =
+                "storage.add(true && true);\n" +
+                "storage.add(false && false);\n" +
+                "storage.add(true && false);\n" +
+                "storage.add(false && true);\n";
 
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
         Assertions.assertIterableEquals(
                 ApiRoot.storage.list,
-                List.of(true, false, false, false));
+                Lists.of(true, false, false, false));
     }
 
     @Test
     public void orOperatorTest() {
-        String code = """
-                storage.add(true || true);
-                storage.add(false || false);
-                storage.add(true || false);
-                storage.add(false || true);
-                """;
+        String code =
+                "storage.add(true || true);\n" +
+                "storage.add(false || false);\n" +
+                "storage.add(true || false);\n" +
+                "storage.add(false || true);\n";
 
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
         Assertions.assertIterableEquals(
                 ApiRoot.storage.list,
-                List.of(true, false, true, true));
+                Lists.of(true, false, true, true));
     }
 
     @Test
     public void lessThanOperatorTest() {
-        String code = """
-                storage.add(true < true);
-                storage.add(false < false);
-                storage.add(true < false);
-                storage.add(false < true);
-                """;
+        String code =
+                "storage.add(true < true);\n" +
+                "storage.add(false < false);\n" +
+                "storage.add(true < false);\n" +
+                "storage.add(false < true);\n";
 
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
         Assertions.assertIterableEquals(
                 ApiRoot.storage.list,
-                List.of(false, false, false, true));
+                Lists.of(false, false, false, true));
     }
 
     @Test
     public void greaterThanOperatorTest() {
-        String code = """
-                storage.add(true > true);
-                storage.add(false > false);
-                storage.add(true > false);
-                storage.add(false > true);
-                """;
+        String code =
+                "storage.add(true > true);\n" +
+                "storage.add(false > false);\n" +
+                "storage.add(true > false);\n" +
+                "storage.add(false > true);\n";
 
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
         Assertions.assertIterableEquals(
                 ApiRoot.storage.list,
-                List.of(false, false, true, false));
+                Lists.of(false, false, true, false));
     }
 
     @Test
     public void lessEqualsOperatorTest() {
-        String code = """
-                storage.add(true <= true);
-                storage.add(false <= false);
-                storage.add(true <= false);
-                storage.add(false <= true);
-                """;
+        String code =
+                "storage.add(true <= true);\n" +
+                "storage.add(false <= false);\n" +
+                "storage.add(true <= false);\n" +
+                "storage.add(false <= true);\n";
 
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
         Assertions.assertIterableEquals(
                 ApiRoot.storage.list,
-                List.of(true, true, false, true));
+                Lists.of(true, true, false, true));
     }
 
     @Test
     public void greaterEqualsOperatorTest() {
-        String code = """
-                storage.add(true >= true);
-                storage.add(false >= false);
-                storage.add(true >= false);
-                storage.add(false >= true);
-                """;
+        String code =
+                "storage.add(true >= true);\n" +
+                "storage.add(false >= false);\n" +
+                "storage.add(true >= false);\n" +
+                "storage.add(false >= true);\n";
 
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
         Assertions.assertIterableEquals(
                 ApiRoot.storage.list,
-                List.of(true, true, true, false));
+                Lists.of(true, true, true, false));
     }
 
     @Test
     public void bitwiseVsBooleanOr() {
-        String code = """
-                boolean getFalse() {
-                    intStorage.add(101);
-                    return false;
-                }
-                boolean getTrue() {
-                    intStorage.add(102);
-                    return true;
-                }
-                
-                intStorage.add(getTrue() | getFalse() ? 201 : 202);
-                intStorage.add(getFalse() | getTrue() ? 203 : 204);
-                
-                intStorage.add(getTrue() || getFalse() ? 205 : 206);
-                intStorage.add(getFalse() || getTrue() ? 207 : 208);
-                
-                """;
+        String code =
+                "boolean getFalse() {\n" +
+                "    intStorage.add(101);\n" +
+                "    return false;\n" +
+                "}\n" +
+                "boolean getTrue() {\n" +
+                "    intStorage.add(102);\n" +
+                "    return true;\n" +
+                "}\n" +
+                "\n" +
+                "intStorage.add(getTrue() | getFalse() ? 201 : 202);\n" +
+                "intStorage.add(getFalse() | getTrue() ? 203 : 204);\n" +
+                "\n" +
+                "intStorage.add(getTrue() || getFalse() ? 205 : 206);\n" +
+                "intStorage.add(getFalse() || getTrue() ? 207 : 208);\n" +
+                "\n";
 
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
         Assertions.assertIterableEquals(
                 ApiRoot.intStorage.list,
-                List.of(
+                Lists.of(
                         102, 101, 201,
                         101, 102, 203,
                         102, 205,
@@ -250,30 +239,29 @@ public class BooleanTests {
 
     @Test
     public void bitwiseVsBooleanAnd() {
-        String code = """
-                boolean getFalse() {
-                    intStorage.add(101);
-                    return false;
-                }
-                boolean getTrue() {
-                    intStorage.add(102);
-                    return true;
-                }
-                
-                intStorage.add(getTrue() & getFalse() ? 201 : 202);
-                intStorage.add(getFalse() & getTrue() ? 203 : 204);
-                
-                intStorage.add(getTrue() && getFalse() ? 205 : 206);
-                intStorage.add(getFalse() && getTrue() ? 207 : 208);
-                
-                """;
+        String code =
+                "boolean getFalse() {\n" +
+                "    intStorage.add(101);\n" +
+                "    return false;\n" +
+                "}\n" +
+                "boolean getTrue() {\n" +
+                "    intStorage.add(102);\n" +
+                "    return true;\n" +
+                "}\n" +
+                "\n" +
+                "intStorage.add(getTrue() & getFalse() ? 201 : 202);\n" +
+                "intStorage.add(getFalse() & getTrue() ? 203 : 204);\n" +
+                "\n" +
+                "intStorage.add(getTrue() && getFalse() ? 205 : 206);\n" +
+                "intStorage.add(getFalse() && getTrue() ? 207 : 208);\n" +
+                "\n";
 
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
         Assertions.assertIterableEquals(
                 ApiRoot.intStorage.list,
-                List.of(
+                Lists.of(
                         102, 101, 202,
                         101, 102, 204,
                         102, 101, 206,
@@ -282,57 +270,54 @@ public class BooleanTests {
 
     @Test
     public void augmentedAssignmentTest() {
-        String code = """
-                boolean b = false;
-
-                b |= false;
-                storage.add(b);
-                
-                b |= true;
-                storage.add(b);
-                
-                b &= true;
-                storage.add(b);
-                
-                b &= false;
-                storage.add(b);
-                """;
+        String code =
+                "boolean b = false;\n" +
+                "\n" +
+                "b |= false;\n" +
+                "storage.add(b);\n" +
+                "\n" +
+                "b |= true;\n" +
+                "storage.add(b);\n" +
+                "\n" +
+                "b &= true;\n" +
+                "storage.add(b);\n" +
+                "\n" +
+                "b &= false;\n" +
+                "storage.add(b);\n";
 
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
         Assertions.assertIterableEquals(
                 ApiRoot.storage.list,
-                List.of(false, true, true, false));
+                Lists.of(false, true, true, false));
     }
 
     @Test
     public void complexExpressionTest() {
-        String code = """
-                storage.add(1 < 2 && 3 < 4);
-                """;
+        String code =
+                "storage.add(1 < 2 && 3 < 4);\n";
 
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
         Assertions.assertIterableEquals(
                 ApiRoot.storage.list,
-                List.of(true));
+                Lists.of(true));
     }
 
     @Test
     public void toStringTest() {
-        String code = """
-                stringStorage.add(false.toString());
-                stringStorage.add(true.toString());
-                """;
+        String code =
+                "stringStorage.add(false.toString());\n" +
+                "stringStorage.add(true.toString());\n";
 
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
         Assertions.assertIterableEquals(
                 ApiRoot.stringStorage.list,
-                List.of("false", "true"));
+                Lists.of("false", "true"));
     }
 
     public static class ApiRoot {

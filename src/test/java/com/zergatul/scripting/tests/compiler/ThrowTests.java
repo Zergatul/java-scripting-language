@@ -1,5 +1,7 @@
 package com.zergatul.scripting.tests.compiler;
 
+import com.zergatul.scripting.utility.Lists;
+
 import com.zergatul.scripting.tests.compiler.helpers.BoolStorage;
 import com.zergatul.scripting.tests.compiler.helpers.FloatStorage;
 import com.zergatul.scripting.tests.compiler.helpers.IntStorage;
@@ -24,11 +26,10 @@ public class ThrowTests {
 
     @Test
     public void basicTest() {
-        String code = """
-                typealias RuntimeException = Java<java.lang.RuntimeException>;
-                
-                throw new RuntimeException();
-                """;
+        String code =
+                "typealias RuntimeException = Java<java.lang.RuntimeException>;\n" +
+                "\n" +
+                "throw new RuntimeException();\n";
 
         Runnable program = compile(ApiRoot.class, code);
         Assertions.assertThrows(RuntimeException.class, program::run);
@@ -36,29 +37,27 @@ public class ThrowTests {
 
     @Test
     public void conditionalExpressionTest() {
-        String code = """
-                typealias RuntimeException = Java<java.lang.RuntimeException>;
-                
-                boolean b = true;
-                intStorage.add(b ? 100 : throw new RuntimeException());
-                intStorage.add(b ? throw new RuntimeException() : 200);
-                """;
+        String code =
+                "typealias RuntimeException = Java<java.lang.RuntimeException>;\n" +
+                "\n" +
+                "boolean b = true;\n" +
+                "intStorage.add(b ? 100 : throw new RuntimeException());\n" +
+                "intStorage.add(b ? throw new RuntimeException() : 200);\n";
 
         Runnable program = compile(ApiRoot.class, code);
         Assertions.assertThrows(RuntimeException.class, program::run);
 
-        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(100));
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, Lists.of(100));
     }
 
     @Test
     public void arrowFunctionTest() {
-        String code = """
-                typealias RuntimeException = Java<java.lang.RuntimeException>;
-                
-                int func(int x1, int x2) => throw new RuntimeException();
-                
-                intStorage.add(func(1, 2));
-                """;
+        String code =
+                "typealias RuntimeException = Java<java.lang.RuntimeException>;\n" +
+                "\n" +
+                "int func(int x1, int x2) => throw new RuntimeException();\n" +
+                "\n" +
+                "intStorage.add(func(1, 2));\n";
 
         Runnable program = compile(ApiRoot.class, code);
         Assertions.assertThrows(RuntimeException.class, program::run);
@@ -66,13 +65,12 @@ public class ThrowTests {
 
     @Test
     public void lambdaTest() {
-        String code = """
-                typealias RuntimeException = Java<java.lang.RuntimeException>;
-                
-                void log(fn<() => int> func) => intStorage.add(func());
-                
-                log(() => throw new RuntimeException());
-                """;
+        String code =
+                "typealias RuntimeException = Java<java.lang.RuntimeException>;\n" +
+                "\n" +
+                "void log(fn<() => int> func) => intStorage.add(func());\n" +
+                "\n" +
+                "log(() => throw new RuntimeException());\n";
 
         Runnable program = compile(ApiRoot.class, code);
         Assertions.assertThrows(RuntimeException.class, program::run);
@@ -80,15 +78,14 @@ public class ThrowTests {
 
     @Test
     public void controlFlowTest1() {
-        String code = """
-                typealias RuntimeException = Java<java.lang.RuntimeException>;
-                
-                int func() {
-                    throw new RuntimeException();
-                }
-                
-                func();
-                """;
+        String code =
+                "typealias RuntimeException = Java<java.lang.RuntimeException>;\n" +
+                "\n" +
+                "int func() {\n" +
+                "    throw new RuntimeException();\n" +
+                "}\n" +
+                "\n" +
+                "func();\n";
 
         Runnable program = compile(ApiRoot.class, code);
         Assertions.assertThrows(RuntimeException.class, program::run);
@@ -96,15 +93,14 @@ public class ThrowTests {
 
     @Test
     public void controlFlowTest2() {
-        String code = """
-                typealias RuntimeException = Java<java.lang.RuntimeException>;
-                
-                int func(boolean b) {
-                    intStorage.add(b ? throw new RuntimeException("1") : throw new RuntimeException("2"));
-                }
-                
-                func(true);
-                """;
+        String code =
+                "typealias RuntimeException = Java<java.lang.RuntimeException>;\n" +
+                "\n" +
+                "int func(boolean b) {\n" +
+                "    intStorage.add(b ? throw new RuntimeException(\"1\") : throw new RuntimeException(\"2\"));\n" +
+                "}\n" +
+                "\n" +
+                "func(true);\n";
 
         Runnable program = compile(ApiRoot.class, code);
         Assertions.assertThrows(RuntimeException.class, program::run);

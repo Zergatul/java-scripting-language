@@ -1,5 +1,7 @@
 package com.zergatul.scripting.tests.compiler;
 
+import com.zergatul.scripting.utility.Lists;
+
 import com.zergatul.scripting.tests.compiler.helpers.BoolStorage;
 import com.zergatul.scripting.tests.compiler.helpers.IntStorage;
 import org.junit.jupiter.api.Assertions;
@@ -20,40 +22,38 @@ public class ConditionalExpressionTests {
 
     @Test
     public void simpleTest() {
-        String code = """
-                int x = 123;
-                int y = 234;
-                intStorage.add(x < y ? 100 : 200);
-                """;
+        String code =
+                "int x = 123;\n" +
+                "int y = 234;\n" +
+                "intStorage.add(x < y ? 100 : 200);\n";
 
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
-        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(100));
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, Lists.of(100));
     }
 
     @Test
     public void rightAssociativityTest() {
-        String code = """
-                boolean a() { intStorage.add(1); return true; }
-                boolean b() { intStorage.add(2); return true; }
-                boolean c() { intStorage.add(3); return false; }
-                boolean d() { intStorage.add(4); return false; }
-                boolean e() { intStorage.add(5); return true; }
-                
-                boolStorage.add((a() ? b() : c()) ? d() : e());
-                intStorage.add(0);
-                boolStorage.add(a() ? b() : (c() ? d() : e()));
-                intStorage.add(0);
-                boolStorage.add(a() ? b() : c() ? d() : e());
-                intStorage.add(0);
-                """;
+        String code =
+                "boolean a() { intStorage.add(1); return true; }\n" +
+                "boolean b() { intStorage.add(2); return true; }\n" +
+                "boolean c() { intStorage.add(3); return false; }\n" +
+                "boolean d() { intStorage.add(4); return false; }\n" +
+                "boolean e() { intStorage.add(5); return true; }\n" +
+                "\n" +
+                "boolStorage.add((a() ? b() : c()) ? d() : e());\n" +
+                "intStorage.add(0);\n" +
+                "boolStorage.add(a() ? b() : (c() ? d() : e()));\n" +
+                "intStorage.add(0);\n" +
+                "boolStorage.add(a() ? b() : c() ? d() : e());\n" +
+                "intStorage.add(0);\n";
 
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
-        Assertions.assertIterableEquals(ApiRoot.boolStorage.list, List.of(false, true, true));
-        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(
+        Assertions.assertIterableEquals(ApiRoot.boolStorage.list, Lists.of(false, true, true));
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, Lists.of(
                 1, 2, 4, 0,
                 1, 2, 0,
                 1, 2, 0));

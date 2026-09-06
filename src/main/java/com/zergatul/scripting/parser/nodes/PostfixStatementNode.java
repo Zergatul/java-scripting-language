@@ -4,6 +4,7 @@ import com.zergatul.scripting.Locatable;
 import com.zergatul.scripting.TextRange;
 import com.zergatul.scripting.lexer.Token;
 import com.zergatul.scripting.parser.ParserTreeVisitor;
+import com.zergatul.scripting.utility.Lists;
 import org.jspecify.annotations.Nullable;
 
 import java.util.List;
@@ -39,9 +40,9 @@ public class PostfixStatementNode extends StatementNode {
     @Override
     public List<Locatable> getChildNodes() {
         if (semicolon != null) {
-            return List.of(expression, operation, semicolon);
+            return Lists.of(expression, operation, semicolon);
         } else {
-            return List.of(expression, operation);
+            return Lists.of(expression, operation);
         }
     }
 

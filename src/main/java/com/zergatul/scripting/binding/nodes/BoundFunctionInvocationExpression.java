@@ -6,6 +6,7 @@ import com.zergatul.scripting.compiler.RefHolder;
 import com.zergatul.scripting.parser.SyntaxFactory;
 import com.zergatul.scripting.parser.nodes.InvocationExpressionNode;
 import com.zergatul.scripting.type.SType;
+import com.zergatul.scripting.utility.Lists;
 
 import java.util.List;
 
@@ -17,7 +18,7 @@ public class BoundFunctionInvocationExpression extends BoundExpressionNode {
     public final List<RefHolder> refVariables;
 
     public BoundFunctionInvocationExpression(BoundFunctionNode functionNode, SType type, BoundArgumentsListNode arguments) {
-        this(SyntaxFactory.missingInvocationExpression(), functionNode, type, arguments, List.of(), TextRange.MISSING);
+        this(SyntaxFactory.missingInvocationExpression(), functionNode, type, arguments, Lists.of(), TextRange.MISSING);
     }
 
     public BoundFunctionInvocationExpression(
@@ -48,6 +49,6 @@ public class BoundFunctionInvocationExpression extends BoundExpressionNode {
 
     @Override
     public List<BoundNode> getChildren() {
-        return List.of(functionNode, arguments);
+        return Lists.of(functionNode, arguments);
     }
 }

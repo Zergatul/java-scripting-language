@@ -1,5 +1,7 @@
 package com.zergatul.scripting.tests.compiler;
 
+import com.zergatul.scripting.utility.Lists;
+
 import com.zergatul.scripting.tests.compiler.helpers.StringStorage;
 import com.zergatul.scripting.type.CustomType;
 import org.junit.jupiter.api.Assertions;
@@ -19,16 +21,15 @@ public class StaticMethodTests {
 
     @Test
     public void simpleTest() {
-        String code = """
-                stringStorage.add(SomeClass.get());
-                stringStorage.add(SomeClass.get());
-                stringStorage.add(SomeClass.get());
-                """;
+        String code =
+                "stringStorage.add(SomeClass.get());\n" +
+                "stringStorage.add(SomeClass.get());\n" +
+                "stringStorage.add(SomeClass.get());\n";
 
         Runnable program = compileWithCustomType(ApiRoot.class, SomeClass.class, code);
         program.run();
 
-        Assertions.assertIterableEquals(ApiRoot.stringStorage.list, List.of("x1", "x2", "x3"));
+        Assertions.assertIterableEquals(ApiRoot.stringStorage.list, Lists.of("x1", "x2", "x3"));
     }
 
     public static class ApiRoot {

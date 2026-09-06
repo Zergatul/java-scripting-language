@@ -1,5 +1,7 @@
 package com.zergatul.scripting.tests.compiler;
 
+import com.zergatul.scripting.utility.Lists;
+
 import com.zergatul.scripting.AsyncRunnable;
 import com.zergatul.scripting.DiagnosticMessage;
 import com.zergatul.scripting.SingleLineTextRange;
@@ -29,77 +31,73 @@ public class ExtensionTests extends ComparatorTest {
 
     @Test
     public void int32Test() {
-        String code = """
-                extension(int) {
-                    int next() => this + 1;
-                    int more(int x) => this + x;
-                }
-                
-                intStorage.add((10).next());
-                intStorage.add((10).more(5));
-                """;
+        String code =
+                "extension(int) {\n" +
+                "    int next() => this + 1;\n" +
+                "    int more(int x) => this + x;\n" +
+                "}\n" +
+                "\n" +
+                "intStorage.add((10).next());\n" +
+                "intStorage.add((10).more(5));\n";
 
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
-        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(11, 15));
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, Lists.of(11, 15));
     }
 
     @Test
     public void int64Test() {
-        String code = """
-                extension(int64) {
-                    int64 next() => this + 1;
-                    int64 more(long x) => this + x;
-                }
-                
-                int64 x = 10;
-                int64Storage.add(x.next());
-                int64Storage.add(x.more(5));
-                """;
+        String code =
+                "extension(int64) {\n" +
+                "    int64 next() => this + 1;\n" +
+                "    int64 more(long x) => this + x;\n" +
+                "}\n" +
+                "\n" +
+                "int64 x = 10;\n" +
+                "int64Storage.add(x.next());\n" +
+                "int64Storage.add(x.more(5));\n";
 
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
-        Assertions.assertIterableEquals(ApiRoot.int64Storage.list, List.of(11L, 15L));
+        Assertions.assertIterableEquals(ApiRoot.int64Storage.list, Lists.of(11L, 15L));
     }
 
     @Test
     public void intArrayTest() {
-        String code = """
-                extension(int[]) {
-                    boolean contains(int value) {
-                        for (int i = 0; i < this.length; i++) {
-                            if (this[i] == value) {
-                                return true;
-                            }
-                        }
-                        return false;
-                    }
-                }
-                
-                boolStorage.add([1].contains(1));
-                boolStorage.add([2].contains(3));
-                """;
+        String code =
+                "extension(int[]) {\n" +
+                "    boolean contains(int value) {\n" +
+                "        for (int i = 0; i < this.length; i++) {\n" +
+                "            if (this[i] == value) {\n" +
+                "                return true;\n" +
+                "            }\n" +
+                "        }\n" +
+                "        return false;\n" +
+                "    }\n" +
+                "}\n" +
+                "\n" +
+                "boolStorage.add([1].contains(1));\n" +
+                "boolStorage.add([2].contains(3));\n";
 
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
-        Assertions.assertIterableEquals(ApiRoot.boolStorage.list, List.of(true, false));
+        Assertions.assertIterableEquals(ApiRoot.boolStorage.list, Lists.of(true, false));
     }
 
     @Test
     public void conflictWithInstanceMethodTest() {
-        String code = """
-                extension(MyClass) {
-                    void myMethod() {}
-                }
-                class MyClass {
-                    void myMethod() {}
-                }
-                """;
+        String code =
+                "extension(MyClass) {\n" +
+                "    void myMethod() {}\n" +
+                "}\n" +
+                "class MyClass {\n" +
+                "    void myMethod() {}\n" +
+                "}\n";
 
-        comparator.assertEquals(List.of(
+        comparator.assertEquals(Lists.of(
                         new DiagnosticMessage(
                                 BinderErrors.MethodAlreadyDeclared,
                                 new SingleLineTextRange(2, 10, 30, 8))),
@@ -108,20 +106,19 @@ public class ExtensionTests extends ComparatorTest {
 
     @Test
     public void conflictWithExtensionMethodTest() {
-        String code = """
-                extension(MyClass) {
-                    void myMethod(long[] array) {}
-                    void lol(string[] strings) {}
-                }
-                class MyClass {
-                    void myMethod(int[] array) {}
-                }
-                extension(MyClass) {
-                    int lol(string[] strings) => 1;
-                }
-                """;
+        String code =
+                "extension(MyClass) {\n" +
+                "    void myMethod(long[] array) {}\n" +
+                "    void lol(string[] strings) {}\n" +
+                "}\n" +
+                "class MyClass {\n" +
+                "    void myMethod(int[] array) {}\n" +
+                "}\n" +
+                "extension(MyClass) {\n" +
+                "    int lol(string[] strings) => 1;\n" +
+                "}\n";
 
-        comparator.assertEquals(List.of(
+        comparator.assertEquals(Lists.of(
                         new DiagnosticMessage(
                                 BinderErrors.ExtensionMethodAlreadyDeclared,
                                 new SingleLineTextRange(9, 9, 173, 3))),
@@ -130,36 +127,34 @@ public class ExtensionTests extends ComparatorTest {
 
     @Test
     public void extensionFromClassTest() {
-        String code = """
-                extension(int) {
-                    int next() => this + 1;
-                }
-                class Test {
-                    int inc(int value) => value.next();
-                }
-                
-                intStorage.add(new Test().inc(123));
-                """;
+        String code =
+                "extension(int) {\n" +
+                "    int next() => this + 1;\n" +
+                "}\n" +
+                "class Test {\n" +
+                "    int inc(int value) => value.next();\n" +
+                "}\n" +
+                "\n" +
+                "intStorage.add(new Test().inc(123));\n";
 
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
-        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(124));
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, Lists.of(124));
     }
 
     @Test
     public void asyncVoidTest() {
-        String code = """
-                extension(int) {
-                    async void wait() {
-                        for (int i = 0; i < this; i++) {
-                            await futures.create();
-                        }
-                    }
-                }
-                
-                await (3).wait();
-                """;
+        String code =
+                "extension(int) {\n" +
+                "    async void wait() {\n" +
+                "        for (int i = 0; i < this; i++) {\n" +
+                "            await futures.create();\n" +
+                "        }\n" +
+                "    }\n" +
+                "}\n" +
+                "\n" +
+                "await (3).wait();\n";
 
         AsyncRunnable program = compileAsync(ApiRoot.class, code);
         CompletableFuture<?> future = program.run();
@@ -175,19 +170,18 @@ public class ExtensionTests extends ComparatorTest {
 
     @Test
     public void asyncValueTest() {
-        String code = """
-                extension(int) {
-                    async int sum() {
-                        int result = 0;
-                        for (int i = 0; i < this; i++) {
-                            result += await futures.createInt();
-                        }
-                        return result;
-                    }
-                }
-                
-                intStorage.add(await (3).sum());
-                """;
+        String code =
+                "extension(int) {\n" +
+                "    async int sum() {\n" +
+                "        int result = 0;\n" +
+                "        for (int i = 0; i < this; i++) {\n" +
+                "            result += await futures.createInt();\n" +
+                "        }\n" +
+                "        return result;\n" +
+                "    }\n" +
+                "}\n" +
+                "\n" +
+                "intStorage.add(await (3).sum());\n";
 
         AsyncRunnable program = compileAsync(ApiRoot.class, code);
         CompletableFuture<?> future = program.run();
@@ -199,182 +193,175 @@ public class ExtensionTests extends ComparatorTest {
         Assertions.assertFalse(future.isDone());
         ApiRoot.futures.getInt(2).complete(5);
         Assertions.assertTrue(future.isDone());
-        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(12));
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, Lists.of(12));
     }
 
     @Test
     public void capturingVariableTest() {
-        String code = """
-                extension(int) {
-                    fn<int => int> createMultiplier() {
-                        int self = this;
-                        return x => x * self;
-                    }
-                }
-                
-                let mult0 = (0).createMultiplier();
-                let mult1 = (1).createMultiplier();
-                let mult3 = (3).createMultiplier();
-                intStorage.add(mult0(5));
-                intStorage.add(mult1(5));
-                intStorage.add(mult3(5));
-                """;
+        String code =
+                "extension(int) {\n" +
+                "    fn<int => int> createMultiplier() {\n" +
+                "        int self = this;\n" +
+                "        return x => x * self;\n" +
+                "    }\n" +
+                "}\n" +
+                "\n" +
+                "let mult0 = (0).createMultiplier();\n" +
+                "let mult1 = (1).createMultiplier();\n" +
+                "let mult3 = (3).createMultiplier();\n" +
+                "intStorage.add(mult0(5));\n" +
+                "intStorage.add(mult1(5));\n" +
+                "intStorage.add(mult3(5));\n";
 
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
-        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(0, 5, 15));
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, Lists.of(0, 5, 15));
     }
 
     @Test
     public void capturingParameterTest() {
-        String code = """
-                extension(int) {
-                    fn<int => int> createLinearFunction(int add) {
-                        int self = this;
-                        return x => x * self + add;
-                    }
-                }
-                
-                let func = (10).createLinearFunction(7);
-                intStorage.add(func(1));
-                intStorage.add(func(2));
-                intStorage.add(func(3));
-                """;
+        String code =
+                "extension(int) {\n" +
+                "    fn<int => int> createLinearFunction(int add) {\n" +
+                "        int self = this;\n" +
+                "        return x => x * self + add;\n" +
+                "    }\n" +
+                "}\n" +
+                "\n" +
+                "let func = (10).createLinearFunction(7);\n" +
+                "intStorage.add(func(1));\n" +
+                "intStorage.add(func(2));\n" +
+                "intStorage.add(func(3));\n";
 
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
-        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(17, 27, 37));
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, Lists.of(17, 27, 37));
     }
 
     @Test
     public void javaTypeTest() {
-        String code = """
-                extension(Java<java.util.Hashtable>) {
-                    int getInt(string key) {
-                        let value = this.get(key);
-                        if (value is int) {
-                            return value as int;
-                        } else {
-                            return 0;
-                        }
-                    }
-                }
-                
-                let table = new Java<java.util.Hashtable>();
-                table.put("key1", 123);
-                table.put("key2", "");
-                intStorage.add(table.getInt("key1"));
-                intStorage.add(table.getInt("key2"));
-                intStorage.add(table.getInt("key3"));
-                """;
+        String code =
+                "extension(Java<java.util.Hashtable>) {\n" +
+                "    int getInt(string key) {\n" +
+                "        let value = this.get(key);\n" +
+                "        if (value is int) {\n" +
+                "            return value as int;\n" +
+                "        } else {\n" +
+                "            return 0;\n" +
+                "        }\n" +
+                "    }\n" +
+                "}\n" +
+                "\n" +
+                "let table = new Java<java.util.Hashtable>();\n" +
+                "table.put(\"key1\", 123);\n" +
+                "table.put(\"key2\", \"\");\n" +
+                "intStorage.add(table.getInt(\"key1\"));\n" +
+                "intStorage.add(table.getInt(\"key2\"));\n" +
+                "intStorage.add(table.getInt(\"key3\"));\n";
 
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
-        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(123, 0, 0));
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, Lists.of(123, 0, 0));
     }
 
     @Test
     public void classInheritanceTest() {
-        String code = """
-                extension(Java<java.util.Dictionary>) {
-                    int getInt(string key) {
-                        let value = this.get(key);
-                        if (value is int) {
-                            return value as int;
-                        } else {
-                            return 0;
-                        }
-                    }
-                }
-                
-                let table = new Java<java.util.Hashtable>();
-                table.put("key1", 123);
-                table.put("key2", "");
-                intStorage.add(table.getInt("key1"));
-                intStorage.add(table.getInt("key2"));
-                intStorage.add(table.getInt("key3"));
-                """;
+        String code =
+                "extension(Java<java.util.Dictionary>) {\n" +
+                "    int getInt(string key) {\n" +
+                "        let value = this.get(key);\n" +
+                "        if (value is int) {\n" +
+                "            return value as int;\n" +
+                "        } else {\n" +
+                "            return 0;\n" +
+                "        }\n" +
+                "    }\n" +
+                "}\n" +
+                "\n" +
+                "let table = new Java<java.util.Hashtable>();\n" +
+                "table.put(\"key1\", 123);\n" +
+                "table.put(\"key2\", \"\");\n" +
+                "intStorage.add(table.getInt(\"key1\"));\n" +
+                "intStorage.add(table.getInt(\"key2\"));\n" +
+                "intStorage.add(table.getInt(\"key3\"));\n";
 
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
-        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(123, 0, 0));
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, Lists.of(123, 0, 0));
     }
 
     @Test
     public void interfaceInheritanceTest() {
-        String code = """
-                extension(Java<java.util.Map>) {
-                    int getInt(string key) {
-                        let value = this.get(key);
-                        if (value is int) {
-                            return value as int;
-                        } else {
-                            return 0;
-                        }
-                    }
-                }
-                
-                let table = new Java<java.util.Hashtable>();
-                table.put("key1", 123);
-                table.put("key2", "");
-                intStorage.add(table.getInt("key1"));
-                intStorage.add(table.getInt("key2"));
-                intStorage.add(table.getInt("key3"));
-                """;
+        String code =
+                "extension(Java<java.util.Map>) {\n" +
+                "    int getInt(string key) {\n" +
+                "        let value = this.get(key);\n" +
+                "        if (value is int) {\n" +
+                "            return value as int;\n" +
+                "        } else {\n" +
+                "            return 0;\n" +
+                "        }\n" +
+                "    }\n" +
+                "}\n" +
+                "\n" +
+                "let table = new Java<java.util.Hashtable>();\n" +
+                "table.put(\"key1\", 123);\n" +
+                "table.put(\"key2\", \"\");\n" +
+                "intStorage.add(table.getInt(\"key1\"));\n" +
+                "intStorage.add(table.getInt(\"key2\"));\n" +
+                "intStorage.add(table.getInt(\"key3\"));\n";
 
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
-        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(123, 0, 0));
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, Lists.of(123, 0, 0));
     }
 
     @Test
     public void unaryOperationTest() {
-        String code = """
-                extension(string) {
-                    operator [+] int(string str) {
-                        int value;
-                        if (int.tryParse(str, ref value)) {
-                            return value;
-                        } else {
-                            return int.MIN_VALUE;
-                        }
-                    }
-                }
-                
-                intStorage.add(+"");
-                intStorage.add(+"100");
-                intStorage.add(+"123");
-                """;
+        String code =
+                "extension(string) {\n" +
+                "    operator [+] int(string str) {\n" +
+                "        int value;\n" +
+                "        if (int.tryParse(str, ref value)) {\n" +
+                "            return value;\n" +
+                "        } else {\n" +
+                "            return int.MIN_VALUE;\n" +
+                "        }\n" +
+                "    }\n" +
+                "}\n" +
+                "\n" +
+                "intStorage.add(+\"\");\n" +
+                "intStorage.add(+\"100\");\n" +
+                "intStorage.add(+\"123\");\n";
 
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
-        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(Integer.MIN_VALUE, 100, 123));
+        Assertions.assertIterableEquals(ApiRoot.intStorage.list, Lists.of(Integer.MIN_VALUE, 100, 123));
     }
 
     @Test
     public void binaryOperationTest() {
-        String code = """
-                extension(string) {
-                    operator [/] string[](string str, char ch) => str.split(ch);
-                }
-                
-                let str = "hello world! bye world!";
-                let parts = str / ' ';
-                foreach (let part in parts) {
-                    stringStorage.add(part);
-                }
-                """;
+        String code =
+                "extension(string) {\n" +
+                "    operator [/] string[](string str, char ch) => str.split(ch);\n" +
+                "}\n" +
+                "\n" +
+                "let str = \"hello world! bye world!\";\n" +
+                "let parts = str / ' ';\n" +
+                "foreach (let part in parts) {\n" +
+                "    stringStorage.add(part);\n" +
+                "}\n";
 
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
-        Assertions.assertIterableEquals(ApiRoot.stringStorage.list, List.of("hello", "world!", "bye", "world!"));
+        Assertions.assertIterableEquals(ApiRoot.stringStorage.list, Lists.of("hello", "world!", "bye", "world!"));
     }
 
     public static class ApiRoot {

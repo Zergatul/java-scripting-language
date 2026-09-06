@@ -12,7 +12,8 @@ public class TypeAliasSuggestion extends Suggestion {
 
     @Override
     public boolean equals(Object obj) {
-        if (obj instanceof TypeAliasSuggestion other) {
+        if (obj instanceof TypeAliasSuggestion) {
+            TypeAliasSuggestion other = (TypeAliasSuggestion) obj;
             return other.type.equals(type);
         } else {
             return false;

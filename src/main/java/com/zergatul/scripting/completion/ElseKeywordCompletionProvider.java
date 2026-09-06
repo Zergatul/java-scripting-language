@@ -5,6 +5,7 @@ import com.zergatul.scripting.binding.nodes.BoundIfStatementNode;
 import com.zergatul.scripting.binding.nodes.BoundStatementNode;
 import com.zergatul.scripting.compiler.CompilationParameters;
 import com.zergatul.scripting.lexer.TokenType;
+import com.zergatul.scripting.utility.Lists;
 
 import java.util.List;
 
@@ -17,26 +18,27 @@ public class ElseKeywordCompletionProvider<T> extends AbstractCompletionProvider
     @Override
     public List<T> provide(CompilationParameters parameters, BinderOutput output, CompletionContext context) {
         if (context.entry == null) {
-            return List.of();
+            return Lists.of();
         }
 
         switch (context.entry.node.getNodeType()) {
-            case STATEMENTS_LIST, BLOCK_STATEMENT -> {
-                if (context.prev instanceof BoundIfStatementNode ifStatement && ifStatement.elseStatement == null) {
-                    return List.of(factory.getKeywordSuggestion(TokenType.ELSE));
+            case STATEMENTS_LIST:
+            case BLOCK_STATEMENT:
+                if (context.prev instanceof BoundIfStatementNode && ((BoundIfStatementNode) context.prev).elseStatement == null) {
+                    return Lists.of(factory.getKeywordSuggestion(TokenType.ELSE));
                 }
-            }
-            default -> {
+                break;
+            default:
                 if (context.entry.isSingleWordStatementStart(context.line, context.column)) {
                     CompletionContext statementContext = context.closestStatement(output);
                     BoundStatementNode prevStatement = statementContext.getPreviousStatement(output);
-                    if (prevStatement instanceof BoundIfStatementNode ifStatement && ifStatement.elseStatement == null) {
-                        return List.of(factory.getKeywordSuggestion(TokenType.ELSE));
+                    if (prevStatement instanceof BoundIfStatementNode && ((BoundIfStatementNode) prevStatement).elseStatement == null) {
+                        return Lists.of(factory.getKeywordSuggestion(TokenType.ELSE));
                     }
                 }
-            }
+                break;
         }
 
-        return List.of();
+        return Lists.of();
     }
 }
