@@ -3,6 +3,7 @@ package com.zergatul.scripting.compiler;
 import org.objectweb.asm.Handle;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.Opcodes;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -13,7 +14,7 @@ public class BufferedMethodVisitor extends MethodVisitor {
     private final List<Consumer<MethodVisitor>> buffer = new ArrayList<>();
 
     public BufferedMethodVisitor() {
-        super(589824);
+        super(Opcodes.ASM5);
     }
 
     @Override
