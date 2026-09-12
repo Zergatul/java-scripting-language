@@ -1,13 +1,10 @@
 package com.zergatul.scripting.compiler;
 
 import com.zergatul.scripting.InternalException;
-import com.zergatul.scripting.symbols.LocalVariable;
-import com.zergatul.scripting.symbols.SymbolRef;
 import com.zergatul.scripting.type.SType;
 import org.objectweb.asm.MethodVisitor;
 
-import static org.objectweb.asm.Opcodes.DUP2;
-import static org.objectweb.asm.Opcodes.SWAP;
+import static org.objectweb.asm.Opcodes.*;
 
 public class StackHelper {
 
@@ -27,19 +24,22 @@ public class StackHelper {
         }
     }
 
-    public static void swap(MethodVisitor visitor, CompilerContext context, SType type1, SType type2) {
-        if (type1.isJvmCategoryOneComputationalType() && type2.isJvmCategoryOneComputationalType()) {
-            visitor.visitInsn(SWAP);
+    public static void swap(MethodVisitor visitor, SType type1, SType type2) {
+        if (type1.isJvmCategoryOneComputationalType()) {
+            if (type2.isJvmCategoryOneComputationalType()) {
+                visitor.visitInsn(SWAP);
+            } else {
+                visitor.visitInsn(DUP2_X1);
+                visitor.visitInsn(POP2);
+            }
         } else {
-            context = context.createChild();
-            SymbolRef var1 = context.addLocalVariable(null, type1, null);
-            SymbolRef var2 = context.addLocalVariable(null, type2, null);
-            context.setStackIndex(var1.asLocalVariable());
-            context.setStackIndex(var2.asLocalVariable());
-            var2.asVariable().compileStore(context, visitor);
-            var1.asVariable().compileStore(context, visitor);
-            var2.asVariable().compileLoad(context, visitor);
-            var1.asVariable().compileLoad(context, visitor);
+            if (type2.isJvmCategoryOneComputationalType()) {
+                visitor.visitInsn(DUP_X2);
+                visitor.visitInsn(POP);
+            } else {
+                visitor.visitInsn(DUP2_X2);
+                visitor.visitInsn(POP2);
+            }
         }
     }
 }

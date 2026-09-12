@@ -50,7 +50,7 @@ public class LambdaTests extends ComparatorTest {
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
-        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(10, 5, 2, 2, 2));
+        Assertions.assertIterableEquals(List.of(10, 5, 2, 2, 2), ApiRoot.intStorage.list);
     }
 
     @Test
@@ -62,7 +62,7 @@ public class LambdaTests extends ComparatorTest {
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
-        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(120));
+        Assertions.assertIterableEquals(List.of(120), ApiRoot.intStorage.list);
     }
 
     @Test
@@ -76,7 +76,7 @@ public class LambdaTests extends ComparatorTest {
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
-        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(200));
+        Assertions.assertIterableEquals(List.of(200), ApiRoot.intStorage.list);
     }
 
     @Test
@@ -90,7 +90,7 @@ public class LambdaTests extends ComparatorTest {
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
-        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(101));
+        Assertions.assertIterableEquals(List.of(101), ApiRoot.intStorage.list);
     }
 
     @Test
@@ -104,7 +104,7 @@ public class LambdaTests extends ComparatorTest {
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
-        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(99));
+        Assertions.assertIterableEquals(List.of(99), ApiRoot.intStorage.list);
     }
 
     @Test
@@ -118,7 +118,7 @@ public class LambdaTests extends ComparatorTest {
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
-        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(300));
+        Assertions.assertIterableEquals(List.of(300), ApiRoot.intStorage.list);
     }
 
     @Test
@@ -132,7 +132,7 @@ public class LambdaTests extends ComparatorTest {
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
-        Assertions.assertIterableEquals(ApiRoot.stringStorage.list, List.of("1. qwerty", "2. qwerty"));
+        Assertions.assertIterableEquals(List.of("1. qwerty", "2. qwerty"), ApiRoot.stringStorage.list);
     }
 
     @Test
@@ -147,7 +147,7 @@ public class LambdaTests extends ComparatorTest {
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
-        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(1, 4, 2, 5));
+        Assertions.assertIterableEquals(List.of(1, 4, 2, 5), ApiRoot.intStorage.list);
     }
 
     @Test
@@ -161,7 +161,7 @@ public class LambdaTests extends ComparatorTest {
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
-        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(101, 102));
+        Assertions.assertIterableEquals(List.of(101, 102), ApiRoot.intStorage.list);
     }
 
     @Test
@@ -175,7 +175,7 @@ public class LambdaTests extends ComparatorTest {
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
-        Assertions.assertIterableEquals(ApiRoot.floatStorage.list, List.of(1.5, 1.25));
+        Assertions.assertIterableEquals(List.of(1.5, 1.25), ApiRoot.floatStorage.list);
     }
 
     @Test
@@ -189,8 +189,8 @@ public class LambdaTests extends ComparatorTest {
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
-        Assertions.assertIterableEquals(ApiRoot.floatStorage.list, List.of(1.5));
-        Assertions.assertIterableEquals(ApiRoot.stringStorage.list, List.of("$a"));
+        Assertions.assertIterableEquals(List.of(1.5), ApiRoot.floatStorage.list);
+        Assertions.assertIterableEquals(List.of("$a"), ApiRoot.stringStorage.list);
     }
 
     @Test
@@ -204,7 +204,7 @@ public class LambdaTests extends ComparatorTest {
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
-        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(321, 123));
+        Assertions.assertIterableEquals(List.of(321, 123), ApiRoot.intStorage.list);
     }
 
     @Test
@@ -216,7 +216,7 @@ public class LambdaTests extends ComparatorTest {
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
-        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(100));
+        Assertions.assertIterableEquals(List.of(100), ApiRoot.intStorage.list);
     }
 
     @Test
@@ -228,7 +228,7 @@ public class LambdaTests extends ComparatorTest {
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
-        Assertions.assertIterableEquals(ApiRoot.floatStorage.list, List.of(50.0));
+        Assertions.assertIterableEquals(List.of(50.0), ApiRoot.floatStorage.list);
     }
 
     @Test
@@ -253,7 +253,7 @@ public class LambdaTests extends ComparatorTest {
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
-        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(2, 4, 6, 8, 10));
+        Assertions.assertIterableEquals(List.of(2, 4, 6, 8, 10), ApiRoot.intStorage.list);
     }
 
     @Test
@@ -268,7 +268,7 @@ public class LambdaTests extends ComparatorTest {
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
-        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(2, 4, 6, 8, 10));
+        Assertions.assertIterableEquals(List.of(2, 4, 6, 8, 10), ApiRoot.intStorage.list);
     }
 
     @Test
@@ -281,7 +281,7 @@ public class LambdaTests extends ComparatorTest {
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
-        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(2, 4, 6, 8, 10));
+        Assertions.assertIterableEquals(List.of(2, 4, 6, 8, 10), ApiRoot.intStorage.list);
     }
 
     @Test
@@ -294,7 +294,7 @@ public class LambdaTests extends ComparatorTest {
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
-        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(155));
+        Assertions.assertIterableEquals(List.of(155), ApiRoot.intStorage.list);
     }
 
     @Test
@@ -309,7 +309,7 @@ public class LambdaTests extends ComparatorTest {
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
-        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(155));
+        Assertions.assertIterableEquals(List.of(155), ApiRoot.intStorage.list);
     }
 
     @Test
@@ -325,7 +325,7 @@ public class LambdaTests extends ComparatorTest {
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
-        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(101, 200));
+        Assertions.assertIterableEquals(List.of(101, 200), ApiRoot.intStorage.list);
     }
 
     @Test
@@ -343,7 +343,7 @@ public class LambdaTests extends ComparatorTest {
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
-        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(200));
+        Assertions.assertIterableEquals(List.of(200), ApiRoot.intStorage.list);
     }
 
     @Test
@@ -362,7 +362,7 @@ public class LambdaTests extends ComparatorTest {
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
-        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(300));
+        Assertions.assertIterableEquals(List.of(300), ApiRoot.intStorage.list);
     }
 
     @Test
@@ -398,7 +398,7 @@ public class LambdaTests extends ComparatorTest {
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
-        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(2, 3, 4, 5, 6));
+        Assertions.assertIterableEquals(List.of(2, 3, 4, 5, 6), ApiRoot.intStorage.list);
     }
 
     @Test
@@ -422,7 +422,7 @@ public class LambdaTests extends ComparatorTest {
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
-        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(120));
+        Assertions.assertIterableEquals(List.of(120), ApiRoot.intStorage.list);
     }
 
     @Test
@@ -458,7 +458,7 @@ public class LambdaTests extends ComparatorTest {
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
-        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(753));
+        Assertions.assertIterableEquals(List.of(753), ApiRoot.intStorage.list);
     }
 
     @Test
@@ -481,7 +481,7 @@ public class LambdaTests extends ComparatorTest {
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
-        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(2));
+        Assertions.assertIterableEquals(List.of(2), ApiRoot.intStorage.list);
     }
 
     @Test
@@ -505,7 +505,7 @@ public class LambdaTests extends ComparatorTest {
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
-        Assertions.assertIterableEquals(ApiRoot.floatStorage.list, List.of(120.0));
+        Assertions.assertIterableEquals(List.of(120.0), ApiRoot.floatStorage.list);
     }
 
     @Test
@@ -529,7 +529,7 @@ public class LambdaTests extends ComparatorTest {
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
-        Assertions.assertIterableEquals(ApiRoot.boolStorage.list, List.of(true));
+        Assertions.assertIterableEquals(List.of(true), ApiRoot.boolStorage.list);
     }
 
     @Test
@@ -558,7 +558,7 @@ public class LambdaTests extends ComparatorTest {
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
-        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(21));
+        Assertions.assertIterableEquals(List.of(21), ApiRoot.intStorage.list);
     }
 
     @Test
@@ -570,7 +570,7 @@ public class LambdaTests extends ComparatorTest {
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
-        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(100, 101, 102, 103, 104));
+        Assertions.assertIterableEquals(List.of(100, 101, 102, 103, 104), ApiRoot.intStorage.list);
     }
 
     @Test
@@ -585,8 +585,8 @@ public class LambdaTests extends ComparatorTest {
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
-        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(33));
-        Assertions.assertIterableEquals(ApiRoot.floatStorage.list, List.of(0.875));
+        Assertions.assertIterableEquals(List.of(33), ApiRoot.intStorage.list);
+        Assertions.assertIterableEquals(List.of(0.875), ApiRoot.floatStorage.list);
     }
 
     @Test
@@ -598,7 +598,7 @@ public class LambdaTests extends ComparatorTest {
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
-        Assertions.assertIterableEquals(ApiRoot.boolStorage.list, List.of(true));
+        Assertions.assertIterableEquals(List.of(true), ApiRoot.boolStorage.list);
     }
 
     @Test
@@ -610,7 +610,7 @@ public class LambdaTests extends ComparatorTest {
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
-        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(10, 11, 12, 13, 14));
+        Assertions.assertIterableEquals(List.of(10, 11, 12, 13, 14), ApiRoot.intStorage.list);
     }
 
     @Test
@@ -622,7 +622,7 @@ public class LambdaTests extends ComparatorTest {
         AsyncRunnable program = compileAsyncWithCustomTypes(ApiRoot.class, code, ClassA.class);
         program.run();
 
-        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(0, 1, 2, 3, 4, 5));
+        Assertions.assertIterableEquals(List.of(0, 1, 2, 3, 4, 5), ApiRoot.intStorage.list);
     }
 
     @Test
@@ -639,7 +639,7 @@ public class LambdaTests extends ComparatorTest {
         Runnable program = compile(ApiRoot.class, code);
         program.run();
 
-        Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(12));
+        Assertions.assertIterableEquals(List.of(12), ApiRoot.intStorage.list);
     }
 
     @Test
@@ -717,8 +717,25 @@ public class LambdaTests extends ComparatorTest {
         Assertions.assertEquals(new SingleLineTextRange(1, 18, 17, 9), lambda.getRange());
     }
 
-    // TODO: capture function parameters?
-    // maybe not allow!
+    @Test
+    public void capturedFloatAssignmentBeforeBranchLocalsTest() {
+        String code = """
+                let value = 0.0;
+                run.once(() => {
+                    value = 1.0;
+                    if (value > 0.0) {
+                        let unused = 0.0;
+                        let text = "";
+                    }
+                });
+                floatStorage.add(value);
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(List.of(1.0), ApiRoot.floatStorage.list);
+    }
 
     public static class ApiRoot {
         public static Run run;
@@ -729,7 +746,9 @@ public class LambdaTests extends ComparatorTest {
         public static Custom custom = new Custom();
     }
 
+    @SuppressWarnings("unused")
     public static class Custom {
+
         public void test(EntityIdConsumer consumer) {
             for (int i = 100; i < 105; i++) {
                 consumer.accept(i);

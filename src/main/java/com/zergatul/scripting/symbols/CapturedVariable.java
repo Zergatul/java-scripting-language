@@ -35,7 +35,7 @@ public class CapturedVariable extends Variable {
     @Override
     public void compileStore(CompilerContext context, MethodVisitor visitor) {
         closure.get().compileLoad(context, visitor);
-        StackHelper.swap(visitor, context, variable.getType(), closure.get().getType());
+        StackHelper.swap(visitor, variable.getType(), closure.get().getType());
         visitor.visitFieldInsn(PUTFIELD, getClosureClassName(), getClosureFieldName(), variable.getType().getDescriptor());
     }
 
