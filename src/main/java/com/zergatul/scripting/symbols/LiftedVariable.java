@@ -36,7 +36,7 @@ public class LiftedVariable extends Variable {
     @Override
     public void compileStore(CompilerContext context, MethodVisitor visitor) {
         closure.compileLoad(context, visitor);
-        StackHelper.swap(visitor, context, variable.getType(), closure.getType());
+        StackHelper.swap(visitor, variable.getType(), closure.getType());
         visitor.visitFieldInsn(PUTFIELD, className, fieldName, variable.getType().getDescriptor());
     }
 

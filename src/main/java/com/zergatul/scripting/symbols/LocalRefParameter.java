@@ -33,7 +33,7 @@ public class LocalRefParameter extends LocalVariable {
     @Override
     public void compileStore(CompilerContext context, MethodVisitor visitor) {
         visitor.visitVarInsn(refType.getLoadInst(), getStackIndex());
-        StackHelper.swap(visitor, context, getType(), refType);
+        StackHelper.swap(visitor, getType(), refType);
         visitor.visitMethodInsn(
                 INVOKEVIRTUAL,
                 refType.getInternalName(),

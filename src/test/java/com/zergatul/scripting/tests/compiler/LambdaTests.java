@@ -717,8 +717,25 @@ public class LambdaTests extends ComparatorTest {
         Assertions.assertEquals(new SingleLineTextRange(1, 18, 17, 9), lambda.getRange());
     }
 
-    // TODO: capture function parameters?
-    // maybe not allow!
+    @Test
+    public void capturedFloatAssignmentBeforeBranchLocalsTest() {
+        String code = """
+                let value = 0.0;
+                run.once(() => {
+                    value = 1.0;
+                    if (value > 0.0) {
+                        let unused = 0.0;
+                        let text = "";
+                    }
+                });
+                floatStorage.add(value);
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertIterableEquals(List.of(1.0), ApiRoot.floatStorage.list);
+    }
 
     public static class ApiRoot {
         public static Run run;
@@ -729,7 +746,9 @@ public class LambdaTests extends ComparatorTest {
         public static Custom custom = new Custom();
     }
 
+    @SuppressWarnings("unused")
     public static class Custom {
+
         public void test(EntityIdConsumer consumer) {
             for (int i = 100; i < 105; i++) {
                 consumer.accept(i);
