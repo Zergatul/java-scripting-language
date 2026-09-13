@@ -667,6 +667,20 @@ public class CompilerContext {
         this.classLoaderContext = classLoaderContext;
     }
 
+    public void registerClass(String name, int access, String superName, @Nullable String[] interfaces) {
+        if (root.classLoaderContext == null) {
+            throw new InternalException();
+        }
+        root.classLoaderContext.registerClass(name, access, superName, interfaces);
+    }
+
+    public ClassWriter createClassWriter(int version, int access, String name, String superName, @Nullable String[] interfaces) {
+        if (root.classLoaderContext == null) {
+            throw new InternalException();
+        }
+        return root.classLoaderContext.createClassWriter(version, access, name, superName, interfaces);
+    }
+
     public Class<?> defineClass(String name, byte[] code) {
         if (root.classLoaderContext == null) {
             throw new InternalException();

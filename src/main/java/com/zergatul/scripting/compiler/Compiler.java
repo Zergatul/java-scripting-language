@@ -72,18 +72,16 @@ public class Compiler {
     private <T> T compileUnit(BinderOutput output) {
         BoundCompilationUnitNode unit = output.unit();
 
-        ClassWriter writer = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
-        emitSourceFile(writer);
+        CompilerContext context = parameters.getContext();
+        context.setClassLoaderContext(new ClassLoaderContext(context.getJavaTypeClassLoader()));
         String name = "com/zergatul/scripting/dynamic/" + parameters.getMainClassName();
-        writer.visit(
+        ClassWriter writer = context.createClassWriter(
                 CLASS_FILE_VERSION,
                 ACC_PUBLIC,
                 name,
-                null,
                 Type.getInternalName(Object.class),
                 new String[] { Type.getInternalName(parameters.getFunctionalInterface()) });
-        CompilerContext context = parameters.getContext();
-        context.setClassLoaderContext(new ClassLoaderContext());
+        emitSourceFile(writer);
         context.setClassName(name);
         context.setClassWriter(writer);
 
@@ -108,18 +106,16 @@ public class Compiler {
     private ExpressionEvaluator compileExpressionUnit(BinderExpressionOutput output) {
         BoundExpressionUnitNode unit = output.unit();
 
-        ClassWriter writer = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
-        emitSourceFile(writer);
+        CompilerContext context = parameters.getContext();
+        context.setClassLoaderContext(new ClassLoaderContext(context.getJavaTypeClassLoader()));
         String name = "com/zergatul/scripting/dynamic/" + parameters.getMainClassName();
-        writer.visit(
+        ClassWriter writer = context.createClassWriter(
                 CLASS_FILE_VERSION,
                 ACC_PUBLIC,
                 name,
-                null,
                 Type.getInternalName(Object.class),
                 new String[] { Type.getInternalName(ExpressionEvaluator.class) });
-        CompilerContext context = parameters.getContext();
-        context.setClassLoaderContext(new ClassLoaderContext());
+        emitSourceFile(writer);
         context.setClassName(name);
         context.setClassWriter(writer);
 
@@ -203,6 +199,14 @@ public class Compiler {
             classNode.getDeclaredType().setInternalName(name);
         }
 
+        // Methods may merge types whose classes have not been emitted yet.
+        for (BoundClassNode classNode : classNodes) {
+            SDeclaredType type = classNode.getDeclaredType();
+            context.registerClass(
+                    type.getInternalName(), ACC_PUBLIC, type.getBaseType().getInternalName(),
+                    type.getInterfaces().stream().map(SType::getInternalName).toArray(String[]::new));
+        }
+
         for (BoundClassNode classNode : classNodes) {
             SDeclaredType declaredType = classNode.getDeclaredType();
             String name = declaredType.getInternalName();
@@ -213,12 +217,10 @@ public class Compiler {
                     classNode.name.value,
                     ACC_PUBLIC | ACC_STATIC);
 
-            ClassWriter innerWriter = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
-            innerWriter.visit(
+            ClassWriter innerWriter = context.createClassWriter(
                     CLASS_FILE_VERSION,
                     ACC_PUBLIC,
                     name,
-                    null,
                     declaredType.getBaseType().getInternalName(),
                     declaredType.getInterfaces().stream().map(SType::getInternalName).toArray(String[]::new));
 
@@ -537,12 +539,10 @@ public class Compiler {
             String name = "com/zergatul/scripting/dynamic/GenericFunction_" + context.getNextUniqueIndex();
             function.setInternalName(name);
 
-            ClassWriter writer = new ClassWriter(0);
-            writer.visit(
+            ClassWriter writer = context.createClassWriter(
                     CLASS_FILE_VERSION,
                     ACC_PUBLIC | ACC_ABSTRACT | ACC_INTERFACE,
                     function.getInternalName(),
-                    null,
                     Type.getInternalName(Object.class),
                     null);
 
@@ -1472,16 +1472,14 @@ public class Compiler {
     }
 
     private void compileClosureClass(MethodVisitor parentVisitor, CompilerContext parentContext, List<LiftedVariable> variables) {
-        ClassWriter writer = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
-        emitSourceFile(writer);
         String name = "com/zergatul/scripting/dynamic/DynamicClosure_" + parentContext.getNextUniqueIndex();
-        writer.visit(
+        ClassWriter writer = parentContext.createClassWriter(
                 CLASS_FILE_VERSION,
                 ACC_PUBLIC,
                 name,
-                null,
                 Type.getInternalName(Object.class),
                 null);
+        emitSourceFile(writer);
 
         buildEmptyConstructor(writer);
 
@@ -1588,8 +1586,6 @@ public class Compiler {
         BinderTreeGenerator generator = new BinderTreeGenerator();
         generator.generate(node);
 
-        ClassWriter writer = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
-        emitSourceFile(writer);
         int asyncIndex = context.getNextUniqueIndex();
         String name = "com/zergatul/scripting/dynamic/DynamicAsyncStateMachine_" + asyncIndex;
         String sourceMethodName = context.getSourceMethodName();
@@ -1604,13 +1600,13 @@ public class Compiler {
                 Type.getType(CompletableFuture.class),
                 Type.getObjectType(name),
                 Type.getType(Object.class));
-        writer.visit(
+        ClassWriter writer = context.createClassWriter(
                 CLASS_FILE_VERSION,
                 ACC_PUBLIC,
                 name,
-                null,
                 Type.getInternalName(Object.class),
                 null);
+        emitSourceFile(writer);
 
         // state field
         writer.visitField(ACC_SYNTHETIC, "state", Type.getDescriptor(int.class), null, null);
@@ -3985,17 +3981,15 @@ public class Compiler {
 
         int[] paramStackIndexes = StackHelper.buildStackIndexes(rawParameters);
 
-        ClassWriter writer = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
-        emitSourceFile(writer);
         int lambdaIndex = context.getNextUniqueIndex();
         String name = "com/zergatul/scripting/dynamic/DynamicLambdaClass_" + lambdaIndex;
-        writer.visit(
+        ClassWriter writer = context.createClassWriter(
                 CLASS_FILE_VERSION,
                 ACC_PUBLIC,
                 name,
-                null,
                 Type.getInternalName(Object.class),
                 new String[] { functionType.getInternalName() });
+        emitSourceFile(writer);
 
         List<Variable> closures = new ArrayList<>();
         for (CapturedVariable captured : expression.captured) {
@@ -4421,15 +4415,13 @@ public class Compiler {
 
         MethodHandleCache cache = context.getMethodHandleCache();
 
-        ClassWriter writer = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
-        emitSourceFile(writer);
-        writer.visit(
+        ClassWriter writer = context.createClassWriter(
                 CLASS_FILE_VERSION,
                 ACC_PUBLIC,
                 MethodHandleCache.INTERNAL_NAME,
-                null,
                 Type.getInternalName(Object.class),
                 null);
+        emitSourceFile(writer);
 
         // fields
         for (Map.Entry<Field, String> entry : cache.getFieldsMap().entrySet()) {
