@@ -31,12 +31,15 @@ public class ComplexMethodParameterTests extends ComparatorTest {
 
         String candidates = """
                 Candidates:
-                Java<java.lang.Object> modifyAttached(Java<com.zergatul.scripting.tests.compiler.ComplexMethodParameterTests$AttachmentType> type, Java<java.util.function.UnaryOperator> modifier)""";
+                Java<java.lang.Object> modifyAttached(Java<com.zergatul.scripting.tests.compiler.ComplexMethodParameterTests$AttachmentType> type, Java<java.util.function.UnaryOperator> modifier)
+                """;
 
         comparator.assertDiagnostics(
                 ApiRoot.class, code, "⟦⟧",
                 BinderErrors.MethodInvalidArguments,
-                "modifyAttached", candidates);
+                "modifyAttached",
+                "int, int",
+                candidates.trim());
     }
 
     @Test
@@ -69,12 +72,15 @@ public class ComplexMethodParameterTests extends ComparatorTest {
 
         String candidates = """
                 Candidates:
-                Java<java.lang.Comparable> getValueOrElse(Java<com.zergatul.scripting.tests.compiler.ComplexMethodParameterTests$Property> property, Java<java.lang.Comparable> defaultValue)""";
+                Java<java.lang.Comparable> getValueOrElse(Java<com.zergatul.scripting.tests.compiler.ComplexMethodParameterTests$Property> property, Java<java.lang.Comparable> defaultValue)
+                """;
 
         comparator.assertDiagnostics(
                 ApiRoot.class, code, "⟦⟧",
                 BinderErrors.MethodInvalidArguments,
-                "getValueOrElse", candidates);
+                "getValueOrElse",
+                "int, int",
+                candidates.trim());
     }
 
     @Test

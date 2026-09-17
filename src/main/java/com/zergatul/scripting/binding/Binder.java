@@ -263,6 +263,7 @@ public class Binder {
                         BinderErrors.ConstructorInvalidArguments,
                         constructorNode.initializer.arguments,
                         constructorOwner,
+                        formatArgumentTypes(result.argumentsListNode),
                         formatCandidates(candidates));
             }
 
@@ -1484,6 +1485,7 @@ public class Binder {
                         BinderErrors.FunctionInvalidArguments,
                         invocation.arguments,
                         functionGroup.syntaxNode.value,
+                        formatArgumentTypes(result.argumentsListNode),
                         formatCandidates(functionGroup.candidates));
             }
 
@@ -1520,6 +1522,7 @@ public class Binder {
                         BinderErrors.MethodInvalidArguments,
                         invocation.arguments,
                         methodGroup.method.name,
+                        formatArgumentTypes(result.argumentsListNode),
                         formatCandidates(methodGroup.candidates));
             }
 
@@ -1554,6 +1557,7 @@ public class Binder {
                 addDiagnostic(
                         BinderErrors.CallableInvalidArguments,
                         invocation.arguments,
+                        formatArgumentTypes(result.argumentsListNode),
                         invocable.toDiagnosticsString());
             }
 
@@ -1615,7 +1619,9 @@ public class Binder {
             addDiagnostic(
                     BinderErrors.MethodInvalidArguments,
                     invocation.arguments,
-                    methodName, formatCandidates(candidates));
+                    methodName,
+                    formatArgumentTypes(result.argumentsListNode),
+                    formatCandidates(candidates));
         }
 
         BoundMethodNode methodNode = new BoundMethodNode(memberAccessNode.name, result.invocable);
@@ -1864,7 +1870,9 @@ public class Binder {
             addDiagnostic(
                     BinderErrors.ConstructorInvalidArguments,
                     expression.arguments,
-                    typeNode.type, formatCandidates(candidates));
+                    typeNode.type,
+                    formatArgumentTypes(result.argumentsListNode),
+                    formatCandidates(candidates));
         }
 
         return new BoundObjectCreationExpressionNode(
@@ -2731,6 +2739,11 @@ public class Binder {
                 new InvalidExpressionNode(expression.getRange().getStart()),
                 semicolon);
         return new BoundReturnStatementNode(syntaxNode, converted, expressionStatement.getRange());
+    }
+
+    private String formatArgumentTypes(BoundArgumentsListNode argumentsListNode) {
+        List<String> types = argumentsListNode.arguments.stream().map(a -> a.type.toString()).toList();
+        return String.join(", ", types);
     }
 
     private <T extends Invocable> String formatCandidates(List<T> candidates) {

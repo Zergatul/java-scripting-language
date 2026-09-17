@@ -666,12 +666,15 @@ public class LambdaTests extends ComparatorTest {
 
         String candidates = """
                 Candidates:
-                void multiple(int count, Java<java.lang.Runnable> runnable)""";
+                void multiple(int count, Java<java.lang.Runnable> runnable)
+                """;
 
         comparator.assertDiagnostics(
                 ApiRoot.class, code, "⟦⟧",
                 BinderErrors.MethodInvalidArguments,
-                "multiple", candidates);
+                "multiple",
+                "string, fn<() => void>",
+                candidates.trim());
     }
 
     @Test
@@ -682,12 +685,15 @@ public class LambdaTests extends ComparatorTest {
 
         String candidates = """
                 Candidates:
-                void multiple(int count, Java<java.lang.Runnable> runnable)""";
+                void multiple(int count, Java<java.lang.Runnable> runnable)
+                """;
 
         comparator.assertDiagnostics(
                 ApiRoot.class, code, "⟦⟧",
                 BinderErrors.MethodInvalidArguments,
-                "multiple", candidates);
+                "multiple",
+                "int, fn<? => void>",
+                candidates.trim());
     }
 
     @Test

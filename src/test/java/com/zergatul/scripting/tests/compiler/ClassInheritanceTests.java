@@ -248,12 +248,15 @@ public class ClassInheritanceTests extends ComparatorTest {
 
         String candidates = """
                 Candidates:
-                void method(int x)""";
+                void method(int x)
+                """;
 
         comparator.assertDiagnostics(
                 ApiRoot.class, code, "⟦⟧",
                 BinderErrors.MethodInvalidArguments,
-                "method", candidates);
+                "method",
+                "string",
+                candidates.trim());
     }
 
     @Test
@@ -1355,12 +1358,15 @@ public class ClassInheritanceTests extends ComparatorTest {
 
         String candidates = """
                 Candidates:
-                constructor ClassA(int value)""";
+                constructor ClassA(int value)
+                """;
 
         comparator.assertDiagnostics(
                 ApiRoot.class, code, "⟦⟧",
                 BinderErrors.ConstructorInvalidArguments,
-                "ClassA", candidates);
+                "ClassA",
+                "string",
+                candidates.trim());
     }
 
     @Test
@@ -1401,7 +1407,9 @@ public class ClassInheritanceTests extends ComparatorTest {
         comparator.assertDiagnostics(
                 ApiRoot.class, code, "⟦⟧",
                 BinderErrors.ConstructorInvalidArguments,
-                "ClassA", candidates);
+                "ClassA",
+                "string",
+                candidates.trim());
     }
 
     @Test
@@ -1477,6 +1485,68 @@ public class ClassInheritanceTests extends ComparatorTest {
                 """;
 
         comparator.assertDiagnostics(ApiRoot.class, code, "⟦⟧", BinderErrors.BaseClassNoParameterlessConstructor);
+    }
+
+    @Test
+    public void rootApiShadowsInheritedFieldConstructorArgumentTest() {
+        String code = """
+                typealias Screen = Java<com.zergatul.scripting.tests.compiler.ClassInheritanceTests$Screen>;
+                typealias Button = Java<com.zergatul.scripting.tests.compiler.ClassInheritanceTests$Button>;
+
+                class MyScreen : Screen {
+                    override void init() {
+                        let button = new Button⟦(10, "OK", font)⟧;
+                        objectStorage.add(button);
+                    }
+                }
+
+                let screen = new MyScreen();
+                screen.init();
+                objectStorage.add(screen);
+                """;
+
+        comparator.assertDiagnostics(
+                ScreenApiRoot.class, code, "⟦⟧",
+                BinderErrors.ConstructorInvalidArguments,
+                "Java<com.zergatul.scripting.tests.compiler.ClassInheritanceTests$Button>",
+                "int, string, Java<com.zergatul.scripting.tests.compiler.ClassInheritanceTests$FontApi>",
+                "Candidates:\nconstructor Java<com.zergatul.scripting.tests.compiler.ClassInheritanceTests$Button>(int x, string label, Java<com.zergatul.scripting.tests.compiler.ClassInheritanceTests$Font> font)");
+
+        String corrected = code.replace("⟦", "").replace("⟧", "").replace(", font)", ", this.font)");
+        ScreenApiRoot.objectStorage = new ObjectStorage();
+        Runnable program = compile(ScreenApiRoot.class, corrected);
+        program.run();
+
+        Assertions.assertEquals(2, ScreenApiRoot.objectStorage.list.size());
+        Button button = (Button) ScreenApiRoot.objectStorage.list.get(0);
+        Screen screen = (Screen) ScreenApiRoot.objectStorage.list.get(1);
+        Assertions.assertSame(screen.font, button.font);
+    }
+
+    @SuppressWarnings("unused")
+    public static class ScreenApiRoot {
+        public static final FontApi font = new FontApi();
+        public static ObjectStorage objectStorage;
+    }
+
+    public static class FontApi {}
+
+    public static class Font {}
+
+    @SuppressWarnings("unused")
+    public static class Screen {
+        protected final Font font = new Font();
+
+        public void init() {}
+    }
+
+    @SuppressWarnings("unused")
+    public static class Button {
+        public final Font font;
+
+        public Button(int x, String label, Font font) {
+            this.font = font;
+        }
     }
 
     public static class ApiRoot {

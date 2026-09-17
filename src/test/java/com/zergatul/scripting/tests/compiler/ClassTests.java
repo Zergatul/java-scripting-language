@@ -870,7 +870,9 @@ public class ClassTests extends ComparatorTest {
         comparator.assertDiagnostics(
                 ApiRoot.class, code, "⟦⟧",
                 BinderErrors.ConstructorInvalidArguments,
-                "Class", candidates);
+                "Class",
+                "string",
+                candidates.trim());
     }
 
     @Test

@@ -88,10 +88,10 @@ public class BinderErrors {
     public static final ErrorCode MultipleBaseClasses = new ErrorCode("B086", "Class cannot extend multiple classes");
     public static final ErrorCode AbstractMethodNotSupported = new ErrorCode("B088", "Abstract methods are not supported");
     public static final ErrorCode MissingInheritedMethodImplementation = new ErrorCode("B089", "Class does not implement inherited method '%s'");
-    public static final ErrorCode FunctionInvalidArguments = new ErrorCode("B090", "Invalid arguments for function '%s'\n%s");
-    public static final ErrorCode ConstructorInvalidArguments = new ErrorCode("B091", "Invalid arguments for '%s' constructor\n%s");
-    public static final ErrorCode MethodInvalidArguments = new ErrorCode("B092", "Invalid arguments for method '%s'\n%s");
-    public static final ErrorCode CallableInvalidArguments = new ErrorCode("B093", "Invalid arguments for callable\nSignature: %s");
+    public static final ErrorCode FunctionInvalidArguments = new ErrorCode("B090", "Invalid arguments for function '%s'\nProvided argument types: (%s)\n%s");
+    public static final ErrorCode ConstructorInvalidArguments = new ErrorCode("B091", "Invalid arguments for '%s' constructor\nProvided argument types: (%s)\n%s");
+    public static final ErrorCode MethodInvalidArguments = new ErrorCode("B092", "Invalid arguments for method '%s'\nProvided argument types: (%s)\n%s");
+    public static final ErrorCode CallableInvalidArguments = new ErrorCode("B093", "Invalid arguments for callable\nProvided argument types: (%s)\nExpected signature: %s");
     public static final ErrorCode VisibilityModifierNotAllowed = new ErrorCode("B094", "Visibility modifiers are only allowed on class fields, constructors, and methods");
     public static final ErrorCode PrivateMethodCannotBeVirtual = new ErrorCode("B095", "Private methods cannot be abstract or virtual");
     public static final ErrorCode CannotReduceMethodVisibility = new ErrorCode("B096", "Cannot reduce visibility when overriding a method");

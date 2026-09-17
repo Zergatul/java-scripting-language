@@ -282,6 +282,7 @@ public class JavaTypeTests extends ComparatorTest {
         comparator.assertDiagnostics(
                 ApiRoot.class, code, "⟦⟧",
                 BinderErrors.CallableInvalidArguments,
+                "string",
                 "string <invocable>(int value)");
     }
 

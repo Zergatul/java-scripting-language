@@ -28,12 +28,15 @@ public class RefTests extends ComparatorTest {
 
         String candidates = """
                 Candidates:
-                boolean tryParse(string str, ref float result)""";
+                boolean tryParse(string str, ref float result)
+                """;
 
         comparator.assertDiagnostics(
                 ApiRoot.class, code, "⟦⟧",
                 BinderErrors.MethodInvalidArguments,
-                "tryParse", candidates);
+                "tryParse",
+                "string, ref float32",
+                candidates.trim());
     }
 
     public static class ApiRoot {}

@@ -93,11 +93,13 @@ public class NullTests extends ComparatorTest {
                         "⟦⟧",
                         BinderErrors.FunctionInvalidArguments,
                         "takesInt",
+                        "null",
                         "Candidates:\nvoid takesInt(int x)"),
                 new MarkedDiagnostic(
                         "⟪⟫",
                         BinderErrors.FunctionInvalidArguments,
                         "takesBool",
+                        "null",
                         "Candidates:\nvoid takesBool(boolean b)"));
     }
 

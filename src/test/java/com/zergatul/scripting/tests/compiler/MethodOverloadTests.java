@@ -59,12 +59,15 @@ public class MethodOverloadTests extends ComparatorTest {
         String candidates = """
                 Candidates:
                 float m1(float x, float y, float z, string s)
-                float m1(int x, int y, int z, string s)""";
+                float m1(int x, int y, int z, string s)
+                """;
 
         comparator.assertDiagnostics(
                 ApiRoot.class, code, "⟦⟧",
                 BinderErrors.MethodInvalidArguments,
-                "m1", candidates);
+                "m1",
+                "int, int, int, int",
+                candidates.trim());
     }
 
     @SuppressWarnings("unused")
