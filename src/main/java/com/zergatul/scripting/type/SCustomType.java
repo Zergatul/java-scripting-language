@@ -66,16 +66,6 @@ public class SCustomType extends SReferenceType {
     }
 
     @Override
-    public boolean hasDefaultValue() {
-        return false;
-    }
-
-    @Override
-    public void storeDefaultValue(MethodVisitor visitor) {
-        throw new InternalException();
-    }
-
-    @Override
     public boolean isAbstract() {
         return Modifier.isAbstract(clazz.getModifiers());
     }
@@ -247,7 +237,7 @@ public class SCustomType extends SReferenceType {
             SType indexType = SType.fromJavaType(getterMethod.getParameters()[0].getType());
             SType returnType = SType.fromJavaType(getterMethod.getReturnType());
             if (operations.stream().anyMatch(o -> o.indexType.equals(indexType))) {
-                throw new InternalException(String.format("Method %s has invalid @IndexGetter. @IndexGetter for type %s already defined.", getterMethod.getName(), indexType.toString()));
+                throw new InternalException(String.format("Method %s has invalid @IndexGetter. @IndexGetter for type %s already defined.", getterMethod.getName(), indexType));
             }
 
             // find corresponding setter

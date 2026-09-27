@@ -1,6 +1,5 @@
 package com.zergatul.scripting.type;
 
-import com.zergatul.scripting.InternalException;
 import com.zergatul.scripting.compiler.BufferedMethodVisitor;
 import com.zergatul.scripting.compiler.CompilerContext;
 import com.zergatul.scripting.parser.BinaryOperator;
@@ -49,6 +48,16 @@ public abstract class SReferenceType extends SType {
     @Override
     public int getReturnInst() {
         return ARETURN;
+    }
+
+    @Override
+    public boolean hasDefaultValue() {
+        return true;
+    }
+
+    @Override
+    public void storeDefaultValue(MethodVisitor visitor) {
+        visitor.visitInsn(ACONST_NULL);
     }
 
     @Override

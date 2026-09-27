@@ -7,6 +7,7 @@ import com.zergatul.scripting.tests.compiler.helpers.BoolStorage;
 import com.zergatul.scripting.tests.compiler.helpers.IntStorage;
 import com.zergatul.scripting.tests.compiler.helpers.StringStorage;
 import com.zergatul.scripting.tests.framework.ComparatorTest;
+import com.zergatul.scripting.tests.utility.MarkedDiagnostic;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -262,6 +263,20 @@ public class GenericFunctionTests extends ComparatorTest {
         program.run();
 
         Assertions.assertIterableEquals(ApiRoot.intStorage.list, List.of(8));
+    }
+
+    @Test
+    public void defaultValueTest() {
+        String code = """
+                ⟪static fn<int => int> add;⟫
+                ⟦fn<int => boolean> sub;⟧
+                """;
+
+        comparator.assertDiagnostics(
+                ApiRoot.class,
+                code,
+                new MarkedDiagnostic("⟪⟫", BinderErrors.NoDefaultValue, "fn<int => int>"),
+                new MarkedDiagnostic("⟦⟧", BinderErrors.NoDefaultValue, "fn<int => boolean>"));
     }
 
     public static class ApiRoot {

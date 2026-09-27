@@ -2,10 +2,8 @@ package com.zergatul.scripting.type;
 
 import com.zergatul.scripting.Getter;
 import com.zergatul.scripting.InterfaceHelper;
-import com.zergatul.scripting.InternalException;
 import com.zergatul.scripting.Setter;
 import org.jspecify.annotations.Nullable;
-import org.objectweb.asm.MethodVisitor;
 
 import java.lang.reflect.*;
 import java.util.*;
@@ -49,16 +47,6 @@ public class SClassType extends SReferenceType {
     @Override
     public boolean isInterface() {
         return clazz.isInterface();
-    }
-
-    @Override
-    public boolean hasDefaultValue() {
-        return false;
-    }
-
-    @Override
-    public void storeDefaultValue(MethodVisitor visitor) {
-        throw new InternalException();
     }
 
     @Override

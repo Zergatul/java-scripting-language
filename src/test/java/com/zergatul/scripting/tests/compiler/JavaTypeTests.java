@@ -3,6 +3,7 @@ package com.zergatul.scripting.tests.compiler;
 import com.zergatul.scripting.binding.BinderErrors;
 import com.zergatul.scripting.tests.compiler.helpers.BoolStorage;
 import com.zergatul.scripting.tests.compiler.helpers.IntStorage;
+import com.zergatul.scripting.tests.compiler.helpers.ObjectStorage;
 import com.zergatul.scripting.tests.compiler.helpers.StringStorage;
 import com.zergatul.scripting.tests.framework.ComparatorTest;
 import org.junit.jupiter.api.Assertions;
@@ -20,6 +21,7 @@ public class JavaTypeTests extends ComparatorTest {
         ApiRoot.boolStorage = new BoolStorage();
         ApiRoot.intStorage = new IntStorage();
         ApiRoot.stringStorage = new StringStorage();
+        ApiRoot.objectStorage = new ObjectStorage();
         ApiRoot.api = new Api();
     }
 
@@ -349,10 +351,26 @@ public class JavaTypeTests extends ComparatorTest {
                 "Java<java.util.ArrayList>", 2, candidates);
     }
 
+    @Test
+    public void defaultValueTest() {
+        String code = """
+                typealias ArrayList = Java<java.util.ArrayList>;
+                ArrayList list;
+                objectStorage.add(list);
+                """;
+
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertEquals(1, ApiRoot.objectStorage.list.size());
+        Assertions.assertNull(ApiRoot.objectStorage.list.getFirst());
+    }
+
     public static class ApiRoot {
         public static BoolStorage boolStorage;
         public static IntStorage intStorage;
         public static StringStorage stringStorage;
+        public static ObjectStorage objectStorage;
         public static Api api;
     }
 

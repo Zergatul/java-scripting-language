@@ -17,6 +17,7 @@ import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Member;
 import java.lang.reflect.Modifier;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
@@ -999,11 +1000,14 @@ public class ClassTests extends ComparatorTest {
         String code = """
                 class Class {}
                 Class c;
+                objectStorage.add(c);
                 """;
 
-        comparator.assertEquals(List.of(
-                        new DiagnosticMessage(BinderErrors.NoDefaultValue, new SingleLineTextRange(2, 1, 15, 8), "Class")),
-                getDiagnostics(ApiRoot.class, code));
+        Runnable program = compile(ApiRoot.class, code);
+        program.run();
+
+        Assertions.assertEquals(1, ApiRoot.objectStorage.list.size());
+        Assertions.assertNull(ApiRoot.objectStorage.list.getFirst());
     }
 
     private static void assertVisibility(Member member, int expected) {

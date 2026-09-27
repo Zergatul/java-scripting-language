@@ -7,7 +7,6 @@ import com.zergatul.scripting.parser.BinaryOperator;
 import com.zergatul.scripting.runtime.ArrayUtils;
 import com.zergatul.scripting.type.operation.BinaryOperation;
 import com.zergatul.scripting.type.operation.IndexOperation;
-import org.jspecify.annotations.Nullable;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Type;
 
@@ -15,7 +14,7 @@ import java.util.List;
 
 import static org.objectweb.asm.Opcodes.*;
 
-public class SArrayType extends SType {
+public class SArrayType extends SReferenceType {
 
     private final SType underlying;
 
@@ -33,43 +32,8 @@ public class SArrayType extends SType {
     }
 
     @Override
-    public @Nullable SType getBaseType() {
-        return SJavaObject.instance;
-    }
-
-    @Override
-    public boolean isReference() {
-        return true;
-    }
-
-    @Override
     public boolean isSyntheticType() {
         return underlying.isSyntheticType();
-    }
-
-    @Override
-    public int getLoadInst() {
-        return ALOAD;
-    }
-
-    @Override
-    public int getStoreInst() {
-        return ASTORE;
-    }
-
-    @Override
-    public int getArrayLoadInst() {
-        return AALOAD;
-    }
-
-    @Override
-    public int getArrayStoreInst() {
-        return AASTORE;
-    }
-
-    @Override
-    public boolean hasDefaultValue() {
-        return true;
     }
 
     @Override
@@ -99,11 +63,6 @@ public class SArrayType extends SType {
         } else {
             return super.equals(obj);
         }
-    }
-
-    @Override
-    public int getReturnInst() {
-        return ARETURN;
     }
 
     @Override

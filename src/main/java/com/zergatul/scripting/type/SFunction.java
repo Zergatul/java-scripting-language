@@ -116,7 +116,7 @@ public abstract class SFunction extends SReferenceType {
             sb.append(')');
         }
         sb.append(" => ");
-        sb.append(returnType.toString());
+        sb.append(returnType);
         sb.append('>');
         return sb.toString();
     }

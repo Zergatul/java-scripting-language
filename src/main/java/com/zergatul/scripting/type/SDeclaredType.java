@@ -7,9 +7,7 @@ import com.zergatul.scripting.type.operation.BinaryOperation;
 import com.zergatul.scripting.type.operation.OverloadBinaryOperation;
 import com.zergatul.scripting.type.operation.OverloadUnaryOperation;
 import com.zergatul.scripting.type.operation.UnaryOperation;
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
-import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Type;
 
 import java.lang.reflect.Method;
@@ -21,8 +19,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
-import static org.objectweb.asm.Opcodes.*;
 
 public class SDeclaredType extends SReferenceType {
 
@@ -113,7 +109,7 @@ public class SDeclaredType extends SReferenceType {
         return operation;
     }
 
-    public @NonNull SType getBaseType() {
+    public SType getBaseType() {
         return baseType != null ? baseType : SJavaObject.instance;
     }
 
@@ -194,16 +190,6 @@ public class SDeclaredType extends SReferenceType {
         } else {
             return Type.getObjectType(internalName).getDescriptor();
         }
-    }
-
-    @Override
-    public boolean hasDefaultValue() {
-        return false;
-    }
-
-    @Override
-    public void storeDefaultValue(MethodVisitor visitor) {
-        throw new InternalException();
     }
 
     @Override

@@ -92,7 +92,8 @@ public class Binder {
         StaticVariableDeclaration declaration = declarationTable.getStaticVariableDeclaration(staticVariableNode);
 
         BoundTypeNode typeNode = declaration.typeNode();
-        DeclaredStaticVariable variable = new DeclaredStaticVariable(declaration.name(), typeNode.type, staticVariableNode.name.getRange());
+        SType variableType = typeNode.type;
+        DeclaredStaticVariable variable = new DeclaredStaticVariable(declaration.name(), variableType, staticVariableNode.name.getRange());
         SymbolRef symbolRef = new ImmutableSymbolRef(variable);
         if (!declaration.hasError()) {
             context.addStaticSymbol(declaration.name(), symbolRef);
@@ -100,8 +101,11 @@ public class Binder {
 
         BoundExpressionNode expression;
         if (staticVariableNode.expression != null) {
-            expression = convert(bindExpression(staticVariableNode.expression), typeNode.type);
+            expression = convert(bindExpression(staticVariableNode.expression), variableType);
         } else {
+            if (!variableType.hasDefaultValue()) {
+                addDiagnostic(BinderErrors.NoDefaultValue, staticVariableNode, variableType);
+            }
             expression = null;
         }
 
@@ -715,7 +719,7 @@ public class Binder {
                 expression = convert(bindExpression(variableDeclaration.expression), variableType.type);
             } else {
                 if (!variableType.type.hasDefaultValue()) {
-                    addDiagnostic(BinderErrors.NoDefaultValue, variableDeclaration, variableType.type.toString());
+                    addDiagnostic(BinderErrors.NoDefaultValue, variableDeclaration, variableType.type);
                 }
                 expression = null;
             }
