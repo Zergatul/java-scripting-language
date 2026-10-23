@@ -24,13 +24,13 @@ public class ExpressionTests extends ComparatorTest {
     @Test
     public void popExpressionReturnFromStackTest() {
         String code = """
-                int get() {
-                    return 123;
-                }
+                int32 get1() => 123;
+                int64 get2() => 321;
                 
                 int count = 0;
                 for (int i = 0; i < 1000000; i++) {
-                    get();
+                    get1();
+                    get2();
                     count++;
                 }
                 

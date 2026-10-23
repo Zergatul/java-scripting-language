@@ -1281,7 +1281,11 @@ public class Compiler {
     private void compileExpressionStatement(MethodVisitor visitor, CompilerContext context, BoundExpressionStatementNode statement) {
         compileExpression(visitor, context, statement.expression);
         if (!statement.expression.type.equals(SVoidType.instance)) {
-            visitor.visitInsn(POP);
+            if (statement.expression.type.isJvmCategoryOneComputationalType()) {
+                visitor.visitInsn(POP);
+            } else {
+                visitor.visitInsn(POP2);
+            }
         }
     }
 
