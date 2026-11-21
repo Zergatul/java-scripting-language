@@ -6,7 +6,7 @@ import com.zergatul.scripting.InternalException;
 import com.zergatul.scripting.binding.BinderErrors;
 import com.zergatul.scripting.compiler.CompilationParameters;
 import com.zergatul.scripting.compiler.CompilationParametersBuilder;
-import com.zergatul.scripting.compiler.CompilationResult;
+import com.zergatul.scripting.compiler.InstanceCompilationResult;
 import com.zergatul.scripting.compiler.Compiler;
 import com.zergatul.scripting.tests.compiler.helpers.CompilerHelper;
 import com.zergatul.scripting.tests.compiler.helpers.IntStorage;
@@ -258,9 +258,9 @@ public class SymbolOverrideTests extends ComparatorTest {
                 .setRoot(ApiRoot.class)
                 .setInterface(InputAction.class)
                 .build();
-        CompilationResult result = new Compiler(parameters).compile("intStorage.add(apiValue);");
+        InstanceCompilationResult result = new Compiler(parameters).compileInstance("intStorage.add(apiValue);");
 
-        Assertions.assertNull(result.getDiagnostics());
+        Assertions.assertTrue(result.isSuccess());
         Assertions.assertTrue(result.getProgram() instanceof InputAction);
         InputAction program = result.getProgram();
         program.invoke(321);
@@ -548,22 +548,22 @@ public class SymbolOverrideTests extends ComparatorTest {
                 .setRoot(ApiRoot.class)
                 .emitVariableNames(true);
         builder.addCustomTypes(List.of(customTypes));
-        CompilationResult result = new Compiler(builder.build()).compile(code);
+        InstanceCompilationResult result = new Compiler(builder.build()).compileInstance(code);
 
-        Assertions.assertNull(result.getDiagnostics());
+        Assertions.assertTrue(result.isSuccess());
         Assertions.assertTrue(result.getProgram() instanceof Runnable);
         return result.getProgram();
     }
 
     private void assertDiagnostic(String text, ErrorCode error, Object... parameters) {
         MarkedCode marked = MarkedCode.from(text);
-        CompilationResult result = new Compiler(
+        InstanceCompilationResult result = new Compiler(
                 new CompilationParametersBuilder()
                         .setRoot(ApiRoot.class)
                         .build())
-                .compile(marked.getCode());
+                .compileInstance(marked.getCode());
 
-        Assertions.assertNull(result.getProgram());
+        Assertions.assertFalse(result.isSuccess());
         comparator.assertEquals(
                 List.of(new DiagnosticMessage(error, marked.getRange(MARK), parameters)),
                 result.getDiagnostics());

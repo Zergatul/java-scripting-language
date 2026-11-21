@@ -2,7 +2,7 @@ package com.zergatul.scripting.tests.compiler;
 
 import com.zergatul.scripting.AsyncRunnable;
 import com.zergatul.scripting.compiler.CompilationParametersBuilder;
-import com.zergatul.scripting.compiler.CompilationResult;
+import com.zergatul.scripting.compiler.InstanceCompilationResult;
 import com.zergatul.scripting.compiler.Compiler;
 import com.zergatul.scripting.tests.compiler.helpers.*;
 import com.zergatul.scripting.type.SVoidType;
@@ -388,8 +388,8 @@ public class LineNumberTests {
                 .emitLineNumbers(true)
                 //.setDebug()
                 .build());
-        CompilationResult result = compiler.compile(code);
-        Assertions.assertNull(result.getDiagnostics());
+        InstanceCompilationResult result = compiler.compileInstance(code);
+        Assertions.assertTrue(result.isSuccess());
         return result.getProgram();
     }
 
@@ -402,8 +402,8 @@ public class LineNumberTests {
                 .emitLineNumbers(true)
                 //.setDebug()
                 .build());
-        CompilationResult result = compiler.compile(code);
-        Assertions.assertNull(result.getDiagnostics());
+        InstanceCompilationResult result = compiler.compileInstance(code);
+        Assertions.assertTrue(result.isSuccess());
         return result.getProgram();
     }
 

@@ -45,8 +45,8 @@ public class MethodUsagePolicyTests extends ComparatorTest {
 
     private static List<DiagnosticMessage> getDiagnostics(String code, MethodUsagePolicy policy) {
         Compiler compiler = new Compiler(new CompilationParametersBuilder().setRoot(ApiRoot.class).setPolicy(policy).build());
-        CompilationResult result = compiler.compile(code);
-        Assertions.assertNull(result.getProgram());
+        InstanceCompilationResult result = compiler.compileInstance(code);
+        Assertions.assertFalse(result.isSuccess());
         return result.getDiagnostics();
     }
 

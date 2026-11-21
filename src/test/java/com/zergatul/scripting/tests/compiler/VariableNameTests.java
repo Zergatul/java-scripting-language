@@ -1,7 +1,7 @@
 package com.zergatul.scripting.tests.compiler;
 
 import com.zergatul.scripting.compiler.CompilationParametersBuilder;
-import com.zergatul.scripting.compiler.CompilationResult;
+import com.zergatul.scripting.compiler.InstanceCompilationResult;
 import com.zergatul.scripting.compiler.Compiler;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -198,8 +198,8 @@ public class VariableNameTests {
                 .emitVariableNames(true)
                 //.setDebug()
                 .build());
-        CompilationResult result = compiler.compile(code);
-        Assertions.assertNull(result.getDiagnostics());
+        InstanceCompilationResult result = compiler.compileInstance(code);
+        Assertions.assertTrue(result.isSuccess());
         return result.getProgram();
     }
 

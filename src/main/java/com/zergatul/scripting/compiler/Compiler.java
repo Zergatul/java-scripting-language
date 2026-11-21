@@ -47,14 +47,26 @@ public class Compiler {
         this.parameters = parameters;
     }
 
-    public CompilationResult compile(String code) {
+    /** Generates the program class and instantiates it */
+    public InstanceCompilationResult compileInstance(String code) {
+        ClassCompilationResult result = compileClass(code);
+        if (result.isSuccess()) {
+            Object instance = createInstance(result.getProgram());
+            return InstanceCompilationResult.success(instance);
+        } else {
+            return InstanceCompilationResult.failed(result.getDiagnostics());
+        }
+    }
+
+    /** Generates the program class without instantiating it or running user static initializers. */
+    public ClassCompilationResult compileClass(String code) {
         AnalysisResult analysis = new Analyzer().analyze(code, parameters);
         BinderOutput binderOutput = analysis.binderOutput();
 
         if (binderOutput.diagnostics().isEmpty()) {
-            return CompilationResult.success(compileUnit(binderOutput));
+            return ClassCompilationResult.success(compileUnit(binderOutput));
         } else {
-            return CompilationResult.failed(binderOutput.diagnostics());
+            return ClassCompilationResult.failed(binderOutput.diagnostics());
         }
     }
 
@@ -69,7 +81,7 @@ public class Compiler {
         }
     }
 
-    private <T> T compileUnit(BinderOutput output) {
+    private Class<?> compileUnit(BinderOutput output) {
         BoundCompilationUnitNode unit = output.unit();
 
         CompilerContext context = parameters.getContext();
@@ -98,9 +110,7 @@ public class Compiler {
         byte[] bytecode = writer.toByteArray();
         saveClassFile(name, bytecode);
 
-        @SuppressWarnings("unchecked")
-        Class<T> dynamic = (Class<T>) context.defineClass(name.replace('/', '.'), bytecode);
-        return createInstance(dynamic);
+        return context.defineClass(name.replace('/', '.'), bytecode);
     }
 
     private ExpressionEvaluator compileExpressionUnit(BinderExpressionOutput output) {

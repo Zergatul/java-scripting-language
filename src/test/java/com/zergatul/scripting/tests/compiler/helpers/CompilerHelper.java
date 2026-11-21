@@ -3,7 +3,7 @@ package com.zergatul.scripting.tests.compiler.helpers;
 import com.zergatul.scripting.AsyncRunnable;
 import com.zergatul.scripting.DiagnosticMessage;
 import com.zergatul.scripting.compiler.CompilationParametersBuilder;
-import com.zergatul.scripting.compiler.CompilationResult;
+import com.zergatul.scripting.compiler.InstanceCompilationResult;
 import com.zergatul.scripting.compiler.Compiler;
 import com.zergatul.scripting.type.SVoidType;
 import org.junit.jupiter.api.Assertions;
@@ -18,15 +18,15 @@ public class CompilerHelper {
                 .emitVariableNames(true)
                 //.setDebug()
                 .build());
-        CompilationResult result = compiler.compile(code);
-        Assertions.assertNull(result.getDiagnostics());
+        InstanceCompilationResult result = compiler.compileInstance(code);
+        Assertions.assertTrue(result.isSuccess());
         return result.getProgram();
     }
 
     public static List<DiagnosticMessage> getDiagnostics(Class<?> api, String code) {
         Compiler compiler = new Compiler(new CompilationParametersBuilder().setRoot(api).build());
-        CompilationResult result = compiler.compile(code);
-        Assertions.assertNull(result.getProgram());
+        InstanceCompilationResult result = compiler.compileInstance(code);
+        Assertions.assertFalse(result.isSuccess());
         return result.getDiagnostics();
     }
 
@@ -35,8 +35,8 @@ public class CompilerHelper {
                 .setRoot(api)
                 .addCustomTypes(List.of(customTypes))
                 .build());
-        CompilationResult result = compiler.compile(code);
-        Assertions.assertNull(result.getProgram());
+        InstanceCompilationResult result = compiler.compileInstance(code);
+        Assertions.assertFalse(result.isSuccess());
         return result.getDiagnostics();
     }
 
@@ -48,8 +48,8 @@ public class CompilerHelper {
                 .emitVariableNames(true)
                 //.setDebug()
                 .build());
-        CompilationResult result = compiler.compile(code);
-        Assertions.assertNull(result.getDiagnostics());
+        InstanceCompilationResult result = compiler.compileInstance(code);
+        Assertions.assertTrue(result.isSuccess());
         return result.getProgram();
     }
 
@@ -60,8 +60,8 @@ public class CompilerHelper {
                 .emitVariableNames(true)
                 //.setDebug()
                 .build());
-        CompilationResult result = compiler.compile(code);
-        Assertions.assertNull(result.getDiagnostics());
+        InstanceCompilationResult result = compiler.compileInstance(code);
+        Assertions.assertTrue(result.isSuccess());
         return result.getProgram();
     }
 
@@ -72,8 +72,8 @@ public class CompilerHelper {
                 .emitVariableNames(true)
                 //.setDebug()
                 .build());
-        CompilationResult result = compiler.compile(code);
-        Assertions.assertNull(result.getDiagnostics());
+        InstanceCompilationResult result = compiler.compileInstance(code);
+        Assertions.assertTrue(result.isSuccess());
         return result.getProgram();
     }
 
@@ -86,8 +86,8 @@ public class CompilerHelper {
                 .emitVariableNames(true)
                 //.setDebug()
                 .build());
-        CompilationResult result = compiler.compile(code);
-        Assertions.assertNull(result.getDiagnostics());
+        InstanceCompilationResult result = compiler.compileInstance(code);
+        Assertions.assertTrue(result.isSuccess());
         return result.getProgram();
     }
 

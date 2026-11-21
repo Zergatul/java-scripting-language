@@ -4,7 +4,7 @@ import com.zergatul.scripting.DiagnosticMessage;
 import com.zergatul.scripting.SingleLineTextRange;
 import com.zergatul.scripting.binding.BinderErrors;
 import com.zergatul.scripting.compiler.CompilationParametersBuilder;
-import com.zergatul.scripting.compiler.CompilationResult;
+import com.zergatul.scripting.compiler.InstanceCompilationResult;
 import com.zergatul.scripting.compiler.Compiler;
 import com.zergatul.scripting.compiler.JavaInteropPolicy;
 import com.zergatul.scripting.tests.compiler.helpers.IntStorage;
@@ -93,8 +93,8 @@ public class JavaInteropPolicyTests extends ComparatorTest {
 
     private static List<DiagnosticMessage> getDiagnostics(String code, JavaInteropPolicy checker) {
         Compiler compiler = new Compiler(new CompilationParametersBuilder().setRoot(ApiRoot.class).setPolicy(checker).build());
-        CompilationResult result = compiler.compile(code);
-        Assertions.assertNull(result.getProgram());
+        InstanceCompilationResult result = compiler.compileInstance(code);
+        Assertions.assertFalse(result.isSuccess());
         return result.getDiagnostics();
     }
 

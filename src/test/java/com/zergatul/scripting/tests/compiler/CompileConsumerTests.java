@@ -1,7 +1,7 @@
 package com.zergatul.scripting.tests.compiler;
 
 import com.zergatul.scripting.compiler.CompilationParametersBuilder;
-import com.zergatul.scripting.compiler.CompilationResult;
+import com.zergatul.scripting.compiler.InstanceCompilationResult;
 import com.zergatul.scripting.compiler.Compiler;
 import com.zergatul.scripting.tests.compiler.helpers.FutureHelper;
 import com.zergatul.scripting.tests.compiler.helpers.IntStorage;
@@ -162,8 +162,8 @@ public class CompileConsumerTests {
                 .setRoot(ApiRoot.class)
                 .setInterface(clazz)
                 .build());
-        CompilationResult result = compiler.compile(code);
-        Assertions.assertNull(result.getDiagnostics());
+        InstanceCompilationResult result = compiler.compileInstance(code);
+        Assertions.assertTrue(result.isSuccess());
         return result.getProgram();
     }
 
@@ -173,8 +173,8 @@ public class CompileConsumerTests {
                 .setInterface(clazz)
                 .setAsyncReturnType(returnType)
                 .build());
-        CompilationResult result = compiler.compile(code);
-        Assertions.assertNull(result.getDiagnostics());
+        InstanceCompilationResult result = compiler.compileInstance(code);
+        Assertions.assertTrue(result.isSuccess());
         return result.getProgram();
     }
 
